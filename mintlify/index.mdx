@@ -15,7 +15,8 @@ export const HeroCard = ({ title, description, href, icon }) => {
   );
 };
 
-<div className="flex flex-col items-center self-stretch w-full hero">
+<div className="flex relative flex-col items-center self-stretch w-full hero">
+  <div className="blue-lines w-full h-full absolute top-0 left-0 z-0" noZoom />
   <div className="flex flex-col items-center gap-[48px]">
     <div className="flex items-center title">
       <img
@@ -51,25 +52,25 @@ export const HeroCard = ({ title, description, href, icon }) => {
           title="Payouts"
           description="Send value instantly across currencies and borders."
           href="/payouts"
-          icon="/images/IconGlobus.svg"
+          icon="/images/IconChevronDoubleUp.svg"
         />
         <HeroCard
           title="Ramps"
           description="Convert between crypto and fiat currencies."
           href="/ramps"
-          icon="/images/IconGlobus.svg"
+          icon="/images/IconArrowTopBottom.svg"
         />
         <HeroCard
           title="Rewards & cashback"
           description="Deliver micro-payouts at scale instantly and in local currency."
           href="/rewards"
-          icon="/images/IconGlobus.svg"
+          icon="/images/IconGift.svg"
         />
         <HeroCard
           title="Global P2P"
           description="Accept funds via bank transfers, wallets, or UMAs, and settle them in the currency of your choice."
           href="/remittances"
-          icon="/images/IconGlobus.svg"
+          icon="/images/IconGlobus-green.svg"
         />
       </div>
     </div>
@@ -78,8 +79,8 @@ export const HeroCard = ({ title, description, href, icon }) => {
 <div className="flex usecase w-full justify-center items-center">
   <div className="section mx-auto">
   <div>
-    <h2 className="highlight">Get started</h2>
-    <h2>Grid resources</h2>
+    <h2 className="highlight">Resources</h2>
+    <h2>Explore, test, and integrate</h2>
     </div>
     <div className="flex flex-col gap-8">
       <div className="flex items-stretch w-full gap-6 flex-wrap">
@@ -93,13 +94,13 @@ export const HeroCard = ({ title, description, href, icon }) => {
           title="Tools"
           description="Tools and resources to help you understand and test payment flows."
           href="/developer-resources/tools"
-          icon="/images/IconGlobus.svg"
+          icon="/images/IconHammer.svg"
         />
         <HeroCard
           title="Postman collection"
           description="Quickly get started with Grid using our Postman collection."
           href="/developer-resources/postman-collection"
-          icon="/images/IconGlobus.svg"
+          icon="/images/postman.svg"
         />
       </div>
     </div>
