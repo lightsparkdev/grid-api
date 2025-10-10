@@ -24,9 +24,3 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Skipping Lint Code & Documentation - no relevant changes"
-
-  test-deploy:
-    name: Test deployment
-    runs-on: ubuntu-24.04
-    steps:
-      - run: echo "Skipping Test deployment - no relevant changes"
