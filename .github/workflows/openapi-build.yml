@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
+      - 'mintlify/**'
   pull_request:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
+      - 'mintlify/**'
   # Allow manual triggering
   workflow_dispatch:
 

@@ -6,11 +6,13 @@ on:
     paths:
       - 'openapi.yaml'
       - '.markdownlint.json'
+      - 'mintlify/**'
   pull_request:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
       - '.markdownlint.json'
+      - 'mintlify/**'
   # Allow manual triggering
   workflow_dispatch:
 
