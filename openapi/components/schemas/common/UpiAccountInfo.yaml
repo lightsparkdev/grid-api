@@ -1,0 +1,13 @@
+type: object
+required:
+  - accountType
+  - vpa
+properties:
+  accountType:
+    allOf:
+      - $ref: ./BankAccountType.yaml
+    example: UPI
+  vpa:
+    type: string
+    description: Virtual Payment Address for UPI payments
+    example: somecustomers@okbank

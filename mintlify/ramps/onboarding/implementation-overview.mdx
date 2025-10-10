@@ -1,0 +1,149 @@
+---
+title: "Implementation Overview"
+---
+
+This page gives you a 10,000‑ft view of an end‑to‑end ramps implementation. It is intentionally generalized to cover both on-ramp (fiat → crypto) and off-ramp (crypto → fiat) flows. The detailed guides that follow provide concrete fields, edge cases, and step‑by‑step instructions.
+
+<Info>
+  This overview highlights the main building blocks: platform setup, customer
+  onboarding, account management, conversion flows, reconciliation, sandbox
+  testing, and go‑live enablement.
+</Info>
+
+## Platform configuration
+
+Configure your platform once before building user flows.
+
+- Provide webhook endpoints for transaction and conversion status notifications
+- Generate API credentials for Sandbox (and later Production)
+- Configure supported currencies for conversions (fiat and crypto)
+- Review settlement methods and supported crypto destinations
+
+## Onboarding customers
+
+Onboard customers who will use ramp services. There are two patterns:
+
+- Regulated platforms can directly create customers by providing minimal KYC data via API
+- Unregulated entities should request a KYC link and embed the hosted KYC flow; once completed, the customer can transact
+
+You'll need to persist the Grid customer IDs for use in conversion flows.
+
+## Account management
+
+Set up accounts for funding and receiving conversions.
+
+### Internal Accounts
+
+- Platform and customer internal accounts hold fiat or crypto balances
+- Used for pre-funded off-ramp scenarios (crypto → fiat)
+- Fund via ACH, wire, or crypto deposits
+
+### External Accounts
+
+- Register crypto wallets (Spark, Bitcoin addresses) for on-ramp destinations
+- Register bank accounts for off-ramp destinations
+- Capture required beneficiary and account information
+
+<Tip>
+  On-ramps typically deliver to external crypto wallets, while off-ramps
+  typically deliver to external bank accounts.
+</Tip>
+
+## On-ramp flow (Fiat → Crypto)
+
+Enable users to convert fiat currency to cryptocurrency.
+
+### Quote Creation
+
+- Create a quote specifying source (fiat) and destination (crypto wallet)
+- Lock exchange rate and receive payment instructions
+- Quote includes reference code for payment matching
+
+### Just-in-Time Funding
+
+- User sends fiat payment to provided bank account details
+- Include reference code in payment memo for matching
+- Grid detects payment and automatically executes conversion
+
+### Crypto Delivery
+
+- Grid converts fiat to crypto at locked rate
+- Crypto delivered to specified wallet (Spark, Bitcoin, etc.)
+- Webhook notification confirms delivery
+
+<Note>
+  For JIT-funded quotes, do NOT call the execute endpoint. Grid automatically
+  processes the conversion when it receives your payment.
+</Note>
+
+## Off-ramp flow (Crypto → Fiat)
+
+Enable users to convert cryptocurrency to fiat currency.
+
+### Pre-funding
+
+- Customer or platform holds crypto in internal accounts
+- Balances can be funded via crypto deposits (Lightning, on-chain)
+
+### Quote and Execution
+
+- Create a quote specifying source (crypto account) and destination (bank account)
+- Lock exchange rate and fees
+- Execute the quote to initiate conversion
+- Grid converts crypto to fiat and delivers to bank account
+
+### Fiat Delivery
+
+- Fiat delivered via local banking rails
+- Settlement times vary by destination (instant to 1-3 business days)
+- Webhook notification confirms delivery
+
+## Self-custody wallet integration
+
+Support for sending crypto to user-controlled wallets.
+
+- **Spark wallets**: Lightning-compatible wallets for instant, low-fee Bitcoin transfers
+- **Validation**: Validate wallet addresses before creating external accounts
+- **Limits**: Verify minimum and maximum amounts for crypto transfers
+- **Monitoring**: Track transfer completion via webhooks
+
+<Tip>
+  Spark wallets are recommended for crypto delivery as transfers complete within
+  seconds with minimal fees.
+</Tip>
+
+## Reconciling transactions
+
+Implement operational processes to keep your ledger in sync.
+
+- Process webhooks idempotently; map statuses (pending, processing, completed, failed)
+- Tie transactions back to quotes and customers
+- Track conversion rates and fees for accurate accounting
+- Query for transactions by date range or customer as necessary
+
+## Testing in Sandbox
+
+Use Sandbox to build and validate end‑to‑end without moving real funds.
+
+- Simulate fiat funding using `/sandbox/send` endpoint
+- Simulate crypto deposits using `/sandbox/receive` endpoint
+- Test quote creation, conversion, and webhook lifecycles
+- Validate customer onboarding flows with test data
+
+## Enabling Production
+
+When you're ready to go live:
+
+- Ensure adequate funding mechanisms are in place (for off-ramps)
+- Confirm webhook security, monitoring, and alerting are configured
+- Review rate limits, error handling, and idempotency
+- Test conversion flows thoroughly in Sandbox
+- Run final UAT in Sandbox, then request Production access from our team
+
+<Check>
+  Contact our team to enable Production and begin processing real conversions.
+</Check>
+
+## Support
+
+If you need assistance with Grid Ramps, please contact our support team at [support@lightspark.com](mailto:support@lightspark.com) or visit our support portal at [https://support.lightspark.com](https://support.lightspark.com).

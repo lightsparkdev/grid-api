@@ -1,0 +1,4 @@
+allOf:
+  - $ref: ../common/SparkWalletInfo.yaml
+  - $ref: ./BankAccountBase.yaml
+

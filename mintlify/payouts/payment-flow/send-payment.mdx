@@ -1,0 +1,586 @@
+---
+title: "Sending Payments"
+description: "Learn how to send payments from internal accounts to external bank accounts with same-currency and cross-currency transfers"
+---
+
+Send payments from your customers' internal accounts to their external bank accounts or to other destinations. Grid supports both same-currency transfers and cross-currency transfers with automatic exchange rate handling.
+
+## Overview
+
+Grid provides two payment methods depending on your use case:
+
+<CardGroup cols={2}>
+<Card title="Same-Currency Transfers" icon="arrow-right-arrow-left" href="#same-currency-transfers">
+  Send funds in the same currency from an internal account to an external account. Fast and straightforward.
+</Card>
+
+<Card title="Cross-Currency Transfers" icon="globe" href="#cross-currency-transfers">
+  Send funds with currency conversion using real-time exchange rates. Supports multiple fiat currencies and payment rails.
+</Card>
+</CardGroup>
+
+## Prerequisites
+
+Before sending payments, ensure you have:
+
+- An active internal account with sufficient balance
+- A verified external account for the destination
+- Valid API credentials with appropriate permissions
+- A webhook endpoint configured to receive payment status updates (recommended)
+
+<Tip>
+  If you don't have these set up yet, review the [Internal
+  Accounts](/payouts/depositing-funds/internal-accounts) and [External
+  Accounts](/payouts/depositing-funds/external-accounts) guides first.
+</Tip>
+
+## Same-Currency Transfers
+
+Use the `/transfer-out` endpoint when sending funds in the same currency (no exchange rate needed). This is the simplest and fastest option for domestic transfers.
+
+### When to use same-currency transfers
+
+- Transferring USD from a USD internal account to a USD external account
+- Sending funds within the same country using the same payment rail
+- No currency conversion is required
+
+### Create a transfer
+
+<Steps>
+<Step title="Get account IDs">
+  Retrieve the internal account (source) and external account (destination) IDs:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+Note the `id` fields from both the internal and external accounts you want to use.
+
+</Step>
+
+<Step title="Initiate the transfer">
+  Create the transfer by specifying the source and destination accounts:
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "destination": {
+      "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "amount": 12550
+  }'
+```
+
+
+```json Success (201 Created)
+{
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
+  "status": "PENDING",
+  "type": "OUTGOING",
+  "source": {
+    "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
+  },
+  "sentAmount": {
+    "amount": 12550,
+    "currency": {
+      "code": "USD",
+      "name": "United States Dollar",
+      "symbol": "$",
+      "decimals": 2
+    }
+  },
+  "receivedAmount": {
+    "amount": 12550,
+    "currency": {
+      "code": "USD",
+      "name": "United States Dollar",
+      "symbol": "$",
+      "decimals": 2
+    }
+  },
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "customer_12345",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "settledAt": null
+}
+```
+
+<Info>
+  The `amount` is specified in the smallest unit of the currency (cents for USD, pence for GBP, etc.). For example, `12550` represents $125.50 USD.
+</Info>
+</Step>
+
+<Step title="Track transfer status">
+  The transaction is created with a `PENDING` status. Monitor the status by:
+
+**Option 1: Webhook notifications** (recommended)
+
+```json
+{
+  "type": "OUTGOING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
+    "status": "COMPLETED",
+    "settledAt": "2025-10-03T15:02:30Z"
+  },
+  "timestamp": "2025-10-03T15:03:00Z"
+}
+```
+
+**Option 2: Poll the transaction endpoint**
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000015' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+<Check>
+  When the transaction status changes to `COMPLETED`, the funds have been successfully transferred to the external account.
+</Check>
+</Step>
+</Steps>
+
+### Transaction statuses
+
+| Status       | Description                                   |
+| ------------ | --------------------------------------------- |
+| `PENDING`    | Transfer initiated and awaiting processing    |
+| `PROCESSING` | Transfer in progress through the payment rail |
+| `COMPLETED`  | Transfer successfully completed               |
+| `FAILED`     | Transfer failed (see error details)           |
+
+## Cross-Currency Transfers
+
+Use the quotes flow when sending funds with currency conversion. This locks in an exchange rate and provides all details needed to execute the transfer.
+
+### When to use cross-currency transfers
+
+- Converting USD to EUR, MXN, BRL, or other supported currencies
+- Sending international payments with automatic currency conversion
+- Need to lock in a specific exchange rate for the transfer
+
+### Create and execute a quote
+
+<Steps>
+<Step title="Create a quote">
+  Request a quote to lock in the exchange rate and get transfer details:
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+      "currency": "EUR"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "Payment for services - Invoice #1234"
+  }'
+```
+
+```json Success (201 Created)
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
+  "status": "PENDING",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "EUR"
+  },
+  "sendingAmount": {
+    "amount": 10000,
+    "currency": {
+      "code": "USD",
+      "name": "United States Dollar",
+      "symbol": "$",
+      "decimals": 2
+    }
+  },
+  "receivingAmount": {
+    "amount": 9200,
+    "currency": {
+      "code": "EUR",
+      "name": "Euro",
+      "symbol": "€",
+      "decimals": 2
+    }
+  },
+  "exchangeRate": 0.92,
+  "fee": {
+    "amount": 50,
+    "currency": {
+      "code": "USD",
+      "symbol": "$",
+      "decimals": 2
+    }
+  },
+  "expiresAt": "2025-10-03T15:15:00Z",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "description": "Payment for services - Invoice #1234"
+}
+```
+
+<Info>
+  **Locked currency side** determines which amount is fixed:
+  - `SENDING`: Lock the sending amount (receiving amount calculated based on exchange rate)
+  - `RECEIVING`: Lock the receiving amount (sending amount calculated based on exchange rate)
+</Info>
+</Step>
+
+<Step title="Review quote details">
+  Before executing, review the quote to ensure:
+
+- Exchange rate is acceptable
+- Fees are as expected
+- Receiving amount meets requirements
+- Quote hasn't expired (check `expiresAt`)
+
+<Warning>
+  Quotes typically expire after 15 minutes. If expired, create a new quote to get an updated exchange rate.
+</Warning>
+</Step>
+
+<Step title="Execute the quote">
+  Confirm and execute the quote to initiate the transfer:
+
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000025/execute' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+```json Success (200 OK)
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
+  "status": "PROCESSING",
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "EUR"
+  },
+  "sendingAmount": {
+    "amount": 10000,
+    "currency": {
+      "code": "USD",
+      "symbol": "$",
+      "decimals": 2
+    }
+  },
+  "receivingAmount": {
+    "amount": 9200,
+    "currency": {
+      "code": "EUR",
+      "symbol": "€",
+      "decimals": 2
+    }
+  },
+  "exchangeRate": 0.92,
+  "executedAt": "2025-10-03T15:05:00Z"
+}
+```
+
+<Check>
+  Once executed, the quote creates a transaction and the transfer begins processing. The `transactionId` can be used to track the payment.
+</Check>
+</Step>
+
+<Step title="Monitor completion">
+  Track the transfer using webhooks or by polling the transaction:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000030' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+You'll receive a webhook when the transaction completes:
+
+```json
+{
+  "type": "OUTGOING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+    "status": "COMPLETED",
+    "sentAmount": {
+      "amount": 10000,
+      "currency": { "code": "USD", "symbol": "$", "decimals": 2 }
+    },
+    "receivedAmount": {
+      "amount": 9200,
+      "currency": { "code": "EUR", "symbol": "€", "decimals": 2 }
+    },
+    "exchangeRate": 0.92,
+    "settledAt": "2025-10-03T15:30:00Z",
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000025"
+  },
+  "timestamp": "2025-10-03T15:31:00Z"
+}
+```
+
+</Step>
+</Steps>
+
+### Quote statuses
+
+| Status       | Description                                |
+| ------------ | ------------------------------------------ |
+| `PENDING`    | Quote created, awaiting execution          |
+| `PROCESSING` | Quote executed, transfer in progress       |
+| `COMPLETED`  | Transfer successfully completed            |
+| `FAILED`     | Transfer failed (funds returned to source) |
+| `EXPIRED`    | Quote expired without execution            |
+
+## Checking Payment Status
+
+### Using webhooks (recommended)
+
+Configure a webhook endpoint to receive real-time notifications when payment status changes:
+
+```javascript
+// Your webhook endpoint
+app.post("/webhooks/grid", (req, res) => {
+  const { type, transaction } = req.body;
+
+  if (type === "OUTGOING_PAYMENT") {
+    const { id, status, settledAt } = transaction;
+
+    switch (status) {
+      case "COMPLETED":
+        console.log(`Payment ${id} completed at ${settledAt}`);
+        // Update your database, notify customer, etc.
+        break;
+
+      case "FAILED":
+        console.log(`Payment ${id} failed`);
+        // Handle failure, refund, notify customer
+        break;
+
+      case "PROCESSING":
+        console.log(`Payment ${id} is processing`);
+        // Optional: Update UI to show processing state
+        break;
+    }
+  }
+
+  res.status(200).json({ received: true });
+});
+```
+
+<Tip>
+  See the [Webhooks guide](/payouts/developer-guides/webhooks) for complete
+  webhook implementation details including signature verification.
+</Tip>
+
+### Polling transactions
+
+If webhooks aren't available, poll the transaction endpoint:
+
+```javascript
+async function checkPaymentStatus(transactionId) {
+  const response = await fetch(
+    `https://api.lightspark.com/grid/2025-10-13/transactions/${transactionId}`,
+    {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+      },
+    }
+  );
+
+  const transaction = await response.json();
+  return transaction.status;
+}
+
+// Poll every 10 seconds
+const pollInterval = setInterval(async () => {
+  const status = await checkPaymentStatus(
+    "Transaction:019542f5-b3e7-1d02-0000-000000000015"
+  );
+
+  if (status === "COMPLETED" || status === "FAILED") {
+    clearInterval(pollInterval);
+    // Handle completion
+  }
+}, 10000);
+```
+
+<Warning>
+  Polling can delay status updates and increase API usage. Use webhooks for
+  production applications whenever possible.
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+<Accordion title="Always check account balance before transfers">
+Verify the internal account has sufficient balance to avoid failed transfers:
+
+```javascript
+async function checkBalance(accountId, requiredAmount) {
+  const response = await fetch(
+    `https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts`,
+    {
+      headers: { Authorization: `Basic ${credentials}` },
+    }
+  );
+
+  const { data } = await response.json();
+  const account = data.find((a) => a.id === accountId);
+
+  if (account.balance.amount < requiredAmount) {
+    throw new Error("Insufficient balance");
+  }
+
+  return true;
+}
+```
+
+This prevents unnecessary API calls and provides better user feedback.
+
+</Accordion>
+
+<Accordion title="Use idempotency for quote execution">
+Store quote IDs in your database to prevent accidental duplicate executions:
+
+```javascript
+async function executeQuoteOnce(quoteId) {
+  // Check if already executed
+  const existing = await db.quotes.findOne({ quoteId });
+  if (existing?.executed) {
+    throw new Error("Quote already executed");
+  }
+
+  // Execute and mark as executed
+  const result = await executeQuote(quoteId);
+  await db.quotes.update(
+    { quoteId },
+    { executed: true, transactionId: result.transactionId }
+  );
+
+  return result;
+}
+```
+
+</Accordion>
+
+<Accordion title="Handle quote expiration gracefully">
+Quotes expire after a short period. Always check expiration before executing:
+
+```javascript
+async function executeQuoteWithCheck(quoteId) {
+  const quote = await getQuote(quoteId);
+
+  if (new Date(quote.expiresAt) < new Date()) {
+    // Quote expired, create a new one
+    const newQuote = await createQuote({
+      source: quote.source,
+      destination: quote.destination,
+      lockedCurrencySide: quote.lockedCurrencySide,
+      lockedCurrencyAmount: quote.lockedCurrencyAmount,
+    });
+
+    return executeQuote(newQuote.id);
+  }
+
+  return executeQuote(quoteId);
+}
+```
+
+</Accordion>
+
+<Accordion title="Include descriptive payment references">
+Always include meaningful descriptions to help with reconciliation:
+
+```javascript
+const description = [
+  `Invoice #${invoiceId}`,
+  `Customer: ${customerName}`,
+  `Date: ${new Date().toISOString().split("T")[0]}`,
+].join(" | ");
+
+await createQuote({
+  // ... other fields
+  description: description,
+});
+```
+
+This makes it easier to match payments in your accounting system and provides context when reviewing transactions.
+
+</Accordion>
+
+<Accordion title="Store transaction IDs in your system">
+Always save transaction and quote IDs for audit trails and support:
+
+```javascript
+const quote = await createQuote(quoteData);
+
+// Save to your database immediately
+await db.payments.create({
+  quoteId: quote.id,
+  customerId: customer.id,
+  amount: quote.sendingAmount.amount,
+  currency: quote.sendingAmount.currency.code,
+  status: "pending",
+  createdAt: new Date(),
+});
+
+const execution = await executeQuote(quote.id);
+
+// Update with transaction ID
+await db.payments.update(
+  { quoteId: quote.id },
+  { transactionId: execution.transactionId, status: "processing" }
+);
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Receive Payments" icon="arrow-down-to-bracket" href="/payouts/payment-flow/receive-payment">
+  Learn how to receive incoming payments from external sources
+</Card>
+
+<Card
+  title="Error Handling"
+  icon="triangle-exclamation"
+  href="/payouts/payment-flow/error-handling"
+>
+  Handle payment failures and error scenarios
+</Card>
+
+<Card
+  title="List Transactions"
+  icon="list"
+  href="/payouts/payment-flow/list-transactions"
+>
+  Query and filter transaction history
+</Card>
+
+<Card title="Reconciliation" icon="file-invoice-dollar" href="/payouts/payment-flow/reconciliation">
+  Match payments with your internal systems
+</Card>
+</CardGroup>

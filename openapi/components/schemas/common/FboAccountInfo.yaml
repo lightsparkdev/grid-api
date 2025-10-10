@@ -1,0 +1,14 @@
+type: object
+required:
+  - accountType
+  - currencyCode
+properties:
+  accountType:
+    allOf:
+      - $ref: ./BankAccountType.yaml
+    example: FBO
+  currencyCode:
+    type: string
+    description: Three-letter currency code (ISO 4217)
+    example: USD
+

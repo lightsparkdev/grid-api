@@ -1,0 +1,163 @@
+post:
+  summary: Create a new API token
+  description: Create a new API token to access the Grid APIs.
+  operationId: createToken
+  tags:
+    - API Tokens
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          title: tokenCreate
+          properties:
+            name:
+              type: string
+              description: Name of the token to help identify it
+              example: Sandbox read-only
+            permissions:
+              type: array
+              description: A list of permissions to grant to the token
+              items:
+                $ref: ../../components/schemas/tokens/Permission.yaml
+          required:
+            - name
+            - permissions
+  responses:
+    '201':
+      description: API token created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/tokens/ApiToken.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List tokens
+  description: >
+    Retrieve a list of API tokens with optional filtering parameters. Returns
+    all tokens that match
+
+    the specified filters. If no filters are provided, returns all tokens
+    (paginated).
+  operationId: listTokens
+  tags:
+    - API Tokens
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: name
+      in: query
+      description: Filter by name of the token
+      required: false
+      schema:
+        type: string
+    - name: createdAfter
+      in: query
+      description: Filter customers created after this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: createdBefore
+      in: query
+      description: Filter customers created before this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: updatedAfter
+      in: query
+      description: Filter customers updated after this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: updatedBefore
+      in: query
+      description: Filter customers updated before this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of tokens matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/tokens/ApiToken.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: >-
+                  Total number of tokens matching the criteria (excluding
+                  pagination)
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

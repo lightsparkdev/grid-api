@@ -1,0 +1,88 @@
+get:
+  summary: Get all internal accounts
+  description: |
+    Retrieve a list of internal accounts with optional filtering parameters. Returns all
+    internal accounts that match the specified filters. If no filters are provided, returns all internal accounts
+    (paginated).
+
+    Internal accounts are created automatically when a customer is created based on the platform configuration.
+  operationId: listInternalAccounts
+  tags:
+    - Internal Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: currency
+      in: query
+      description: Filter by currency code
+      required: false
+      schema:
+        type: string
+    - name: customerId
+      in: query
+      description: Filter by internal accounts associated with a specific customer
+      required: false
+      schema:
+        type: string
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of internal accounts matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/users/InternalAccount.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: >-
+                  Total number of customers matching the criteria (excluding
+                  pagination)
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

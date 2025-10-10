@@ -1,0 +1,754 @@
+---
+title: "Receiving Payments"
+description: "Accept incoming payments to customer accounts with real-time approval workflows and webhook notifications"
+---
+
+Receive payments into your customers' internal accounts from external sources. Grid notifies you via webhook when a payment arrives, allowing you to approve or reject it based on your compliance requirements.
+
+## Overview
+
+When someone sends a payment to one of your customers, Grid sends a webhook to your platform for approval before processing. This gives you control over which payments to accept based on your compliance policies and risk management.
+
+<Info>
+  All incoming payments require webhook approval. Ensure your webhook endpoint
+  is properly configured and can respond within 5 seconds.
+</Info>
+
+## How it works
+
+<Steps>
+<Step title="Payment initiated">
+  An external party initiates a payment to your customer's account through Grid.
+</Step>
+
+<Step title="Webhook notification">
+  Grid sends a webhook to your endpoint with payment details and sender
+  information.
+</Step>
+
+<Step title="Approve or reject">
+  Your platform validates the payment and responds to approve, reject, or
+  process asynchronously.
+</Step>
+
+<Step title="Payment processed">
+  If approved, Grid processes the payment and credits the customer's internal
+  account.
+</Step>
+
+<Step title="Completion notification">
+  Grid sends another webhook when the payment completes or fails.
+</Step>
+</Steps>
+
+## Prerequisites
+
+Before receiving payments, ensure you have:
+
+- A configured webhook endpoint that can respond within 5 seconds
+- Webhook signature verification implemented for security
+- Customer accounts with valid beneficiary information
+- Compliance logic for validating sender information (if required)
+
+<Tip>
+  See the [Platform
+  Configuration](/payouts/developer-guides/platform-configuration) guide to
+  set up your webhook endpoint URL.
+</Tip>
+
+## Webhook approval flow
+
+When Grid receives an incoming payment, it sends a webhook to your configured endpoint with `status: "PENDING"`. You must respond to approve or reject the payment.
+
+### Incoming payment webhook
+
+Grid sends this webhook when a payment arrives:
+
+```json Webhook Payload
+{
+  "type": "INCOMING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+    "status": "PENDING",
+    "type": "INCOMING",
+    "source": {
+      "umaAddress": "$sender@external.domain",
+      "currency": "USD"
+    },
+    "destination": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "currency": "USD"
+    },
+    "receivedAmount": {
+      "amount": 50000,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "customer_12345",
+    "counterpartyInformation": {
+      "FULL_NAME": "John Sender",
+      "BIRTH_DATE": "1985-06-15",
+      "NATIONALITY": "US"
+    },
+    "createdAt": "2025-10-03T15:00:00Z"
+  },
+  "timestamp": "2025-10-03T15:00:01Z",
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007"
+}
+```
+
+### Response options
+
+You have four options for responding to a pending payment webhook:
+
+<Tabs>
+<Tab title="Approve (Synchronous)">
+**Recommended for most use cases**
+
+Return `200 OK` to immediately approve the payment:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  const { type, transaction } = req.body;
+
+  if (type === "INCOMING_PAYMENT" && transaction.status === "PENDING") {
+    // Validate the payment
+    const isValid = await validatePayment(transaction);
+
+    if (isValid) {
+      // Approve synchronously
+      return res.status(200).json({
+        message: "Payment approved",
+      });
+    }
+  }
+});
+```
+
+<Check>
+  The payment will be processed immediately and funds credited to the customer's account.
+</Check>
+</Tab>
+
+<Tab title="Reject (Synchronous)">
+Return `403 Forbidden` to reject the payment:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  const { type, transaction } = req.body;
+
+  if (type === "INCOMING_PAYMENT" && transaction.status === "PENDING") {
+    const isValid = await validatePayment(transaction);
+
+    if (!isValid) {
+      // Reject synchronously
+      return res.status(403).json({
+        code: "REJECTED_BY_PLATFORM",
+        message: "Payment rejected due to compliance policy",
+        reason: "FAILED_COUNTERPARTY_CHECK",
+      });
+    }
+  }
+});
+```
+
+<Info>
+  The sender will be notified that the payment was rejected. Include a clear reason in your response.
+</Info>
+</Tab>
+
+<Tab title="Async Processing">
+Return `202 Accepted` to process asynchronously, then call the approve/reject endpoint within 5 seconds:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  const { type, transaction } = req.body;
+
+  if (type === "INCOMING_PAYMENT" && transaction.status === "PENDING") {
+    // Acknowledge receipt immediately
+    res.status(202).json({
+      message: "Processing payment asynchronously",
+    });
+
+    // Process in background (must complete within 5 seconds)
+    processPaymentAsync(transaction.id);
+  }
+});
+
+async function processPaymentAsync(transactionId) {
+  const isValid = await performDetailedChecks(transactionId);
+
+  if (isValid) {
+    // Approve via API
+    await fetch(
+      `https://api.lightspark.com/grid/2025-10-13/transactions/${transactionId}/approve`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${credentials}`,
+        },
+      }
+    );
+  } else {
+    // Reject via API
+    await fetch(
+      `https://api.lightspark.com/grid/2025-10-13/transactions/${transactionId}/reject`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reason: "FAILED_COMPLIANCE_CHECK",
+        }),
+      }
+    );
+  }
+}
+```
+
+<Warning>
+  **Critical:** You must call the approve or reject endpoint within 5 seconds, or the payment will timeout and be rejected automatically.
+</Warning>
+</Tab>
+
+<Tab title="Request More Info">
+Return `422 Unprocessable Entity` to request additional information from the sender:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  const { type, transaction } = req.body;
+
+  if (type === "INCOMING_PAYMENT" && transaction.status === "PENDING") {
+    const missingFields = checkRequiredFields(
+      transaction.counterpartyInformation
+    );
+
+    if (missingFields.length > 0) {
+      return res.status(422).json({
+        code: "MISSING_REQUIRED_FIELDS",
+        message: "Additional information required",
+        requiredFields: missingFields,
+      });
+    }
+  }
+});
+```
+
+<Info>
+  The sender's system will prompt them to provide the missing information and resend the payment.
+</Info>
+</Tab>
+</Tabs>
+
+## Verifying webhook signatures
+
+Always verify webhook signatures to ensure requests are from Grid:
+
+```javascript
+const crypto = require("crypto");
+
+function verifyWebhookSignature(req) {
+  const signature = req.headers["x-grid-signature"];
+  const publicKey = process.env.GRID_PUBLIC_KEY; // Provided during integration
+
+  // Decode the base64 signature
+  const signatureBuffer = Buffer.from(signature, "base64");
+
+  // Create SHA-256 hash of request body
+  const hash = crypto
+    .createHash("sha256")
+    .update(JSON.stringify(req.body))
+    .digest();
+
+  // Verify signature
+  const verifier = crypto.createVerify("SHA256");
+  verifier.update(hash);
+  verifier.end();
+
+  return verifier.verify(publicKey, signatureBuffer);
+}
+
+app.post("/webhooks/grid", (req, res) => {
+  // Verify signature first
+  if (!verifyWebhookSignature(req)) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // Process webhook
+  const { type, transaction } = req.body;
+  // ... rest of your logic
+});
+```
+
+<Warning>
+  **Security:** Always verify webhook signatures in production. Reject any
+  webhooks with invalid signatures to prevent unauthorized payment approvals.
+</Warning>
+
+## Completion notification
+
+After you approve a payment, Grid processes it and sends another webhook when it completes:
+
+```json
+{
+  "type": "INCOMING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+    "status": "COMPLETED",
+    "type": "INCOMING",
+    "source": {
+      "umaAddress": "$sender@external.domain",
+      "currency": "USD"
+    },
+    "destination": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "currency": "USD"
+    },
+    "receivedAmount": {
+      "amount": 50000,
+      "currency": {
+        "code": "USD",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "customer_12345",
+    "settledAt": "2025-10-03T15:02:30Z",
+    "createdAt": "2025-10-03T15:00:00Z"
+  },
+  "timestamp": "2025-10-03T15:03:00Z",
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000008"
+}
+```
+
+<Check>
+  When `status` is `COMPLETED`, the funds have been credited to the customer's
+  internal account and are available for use.
+</Check>
+
+## Transaction statuses
+
+| Status       | Description                                       | Action Required              |
+| ------------ | ------------------------------------------------- | ---------------------------- |
+| `PENDING`    | Payment received, awaiting your approval          | Approve or reject            |
+| `PROCESSING` | Payment approved and being processed              | None (informational)         |
+| `COMPLETED`  | Payment successfully completed and funds credited | None (informational)         |
+| `FAILED`     | Payment failed during processing                  | None (review failure reason) |
+| `REJECTED`   | Payment rejected by your platform or timeout      | None (informational)         |
+
+## Validation examples
+
+### Basic compliance check
+
+```javascript
+async function validatePayment(transaction) {
+  const { counterpartyInformation, receivedAmount, customerId } = transaction;
+
+  // Check if sender is on sanctions list
+  const isSanctioned = await checkSanctionsList(
+    counterpartyInformation.FULL_NAME,
+    counterpartyInformation.NATIONALITY
+  );
+
+  if (isSanctioned) {
+    console.log("Payment rejected: Sender on sanctions list");
+    return false;
+  }
+
+  // Check amount limits
+  const customer = await getCustomer(customerId);
+  if (receivedAmount.amount > customer.maxIncomingAmount) {
+    console.log("Payment rejected: Exceeds customer limit");
+    return false;
+  }
+
+  // Check customer account status
+  if (customer.status !== "ACTIVE") {
+    console.log("Payment rejected: Customer account not active");
+    return false;
+  }
+
+  return true;
+}
+```
+
+### Checking required fields
+
+```javascript
+function checkRequiredFields(counterpartyInfo) {
+  const required = ["FULL_NAME", "BIRTH_DATE", "NATIONALITY", "ADDRESS"];
+  const missing = [];
+
+  for (const field of required) {
+    if (!counterpartyInfo[field]) {
+      missing.push(field);
+    }
+  }
+
+  return missing;
+}
+```
+
+### Amount-based validation
+
+```javascript
+async function validateByAmount(transaction) {
+  const { receivedAmount, counterpartyInformation } = transaction;
+  const amountInDollars = receivedAmount.amount / 100; // Convert cents to dollars
+
+  // Payments over $10,000 require additional KYC
+  if (amountInDollars > 10000) {
+    const hasEnhancedKYC = await checkEnhancedKYC(counterpartyInformation);
+
+    if (!hasEnhancedKYC) {
+      return {
+        approved: false,
+        reason: "ENHANCED_KYC_REQUIRED",
+      };
+    }
+  }
+
+  // Payments over $50,000 require manual review
+  if (amountInDollars > 50000) {
+    return {
+      approved: false,
+      reason: "MANUAL_REVIEW_REQUIRED",
+    };
+  }
+
+  return { approved: true };
+}
+```
+
+## Complete webhook handler example
+
+Here's a full example webhook handler with all response types:
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.post("/webhooks/grid", async (req, res) => {
+  // 1. Verify webhook signature
+  if (!verifyWebhookSignature(req)) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  const { type, transaction, webhookId } = req.body;
+
+  // 2. Handle incoming payment
+  if (type === "INCOMING_PAYMENT") {
+    if (transaction.status === "PENDING") {
+      try {
+        // Check for missing required fields
+        const missingFields = checkRequiredFields(
+          transaction.counterpartyInformation
+        );
+
+        if (missingFields.length > 0) {
+          return res.status(422).json({
+            code: "MISSING_REQUIRED_FIELDS",
+            message: "Additional sender information required",
+            requiredFields: missingFields,
+          });
+        }
+
+        // Validate payment
+        const validation = await validatePayment(transaction);
+
+        if (validation.approved) {
+          // Log approval
+          await logPaymentEvent(transaction.id, "APPROVED", webhookId);
+
+          // Notify customer
+          await notifyCustomer(transaction.customerId, {
+            type: "PAYMENT_RECEIVED",
+            amount: transaction.receivedAmount,
+          });
+
+          return res.status(200).json({
+            message: "Payment approved",
+          });
+        } else {
+          // Log rejection
+          await logPaymentEvent(
+            transaction.id,
+            "REJECTED",
+            webhookId,
+            validation.reason
+          );
+
+          return res.status(403).json({
+            code: "REJECTED_BY_PLATFORM",
+            message: "Payment rejected",
+            reason: validation.reason,
+          });
+        }
+      } catch (error) {
+        console.error("Error processing payment:", error);
+
+        // Process asynchronously on error
+        res.status(202).json({
+          message: "Processing asynchronously",
+        });
+
+        processPaymentAsync(transaction.id);
+      }
+    } else {
+      // COMPLETED, FAILED, or REJECTED status - informational only
+      await logPaymentEvent(transaction.id, transaction.status, webhookId);
+
+      if (transaction.status === "COMPLETED") {
+        await notifyCustomer(transaction.customerId, {
+          type: "PAYMENT_COMPLETED",
+          amount: transaction.receivedAmount,
+        });
+      }
+
+      return res.status(200).json({ received: true });
+    }
+  }
+
+  // 3. Acknowledge other webhook types
+  res.status(200).json({ received: true });
+});
+```
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Respond quickly to webhooks">
+Webhooks must be acknowledged within a reasonable timeframe. For pending payments, respond within 5 seconds:
+
+```javascript
+// Set a timeout for async processing
+const APPROVAL_TIMEOUT = 4500; // 4.5 seconds (leave buffer)
+
+async function processWithTimeout(transaction) {
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout")), APPROVAL_TIMEOUT)
+  );
+
+  const validationPromise = validatePayment(transaction);
+
+  try {
+    return await Promise.race([validationPromise, timeoutPromise]);
+  } catch (error) {
+    // Fall back to async processing
+    return null;
+  }
+}
+```
+
+If you can't complete validation in time, use asynchronous processing.
+
+</Accordion>
+
+<Accordion title="Implement idempotency">
+Grid may retry webhooks if it doesn't receive a response. Use the `webhookId` to prevent duplicate processing:
+
+```javascript
+const processedWebhooks = new Set();
+
+app.post("/webhooks/grid", async (req, res) => {
+  const { webhookId, transaction } = req.body;
+
+  // Check if already processed
+  if (processedWebhooks.has(webhookId)) {
+    return res.status(200).json({ message: "Already processed" });
+  }
+
+  // Process webhook
+  const result = await handlePayment(transaction);
+
+  // Mark as processed
+  processedWebhooks.add(webhookId);
+  await db.webhooks.create({ webhookId, processedAt: new Date() });
+
+  return res.status(result.status).json(result.body);
+});
+```
+
+</Accordion>
+
+<Accordion title="Log all incoming payments">
+Maintain an audit trail of all payments and approval decisions:
+
+```javascript
+async function logPaymentEvent(
+  transactionId,
+  action,
+  webhookId,
+  reason = null
+) {
+  await db.paymentLogs.create({
+    transactionId,
+    action,
+    webhookId,
+    reason,
+    timestamp: new Date(),
+    metadata: {
+      serverTime: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    },
+  });
+}
+```
+
+This helps with compliance reporting and debugging issues.
+
+</Accordion>
+
+<Accordion title="Notify customers in real-time">
+Send immediate notifications when payments are received and completed:
+
+```javascript
+async function notifyCustomer(customerId, event) {
+  const customer = await getCustomer(customerId);
+
+  // Send push notification
+  await sendPushNotification(customer.deviceToken, {
+    title: "Payment Received",
+    body: `You received ${formatAmount(event.amount)}`,
+  });
+
+  // Send email
+  await sendEmail(customer.email, "payment-received", {
+    amount: formatAmount(event.amount),
+    timestamp: new Date(),
+  });
+
+  // Update in-app balance
+  await updateCustomerBalance(customerId);
+}
+```
+
+</Accordion>
+
+<Accordion title="Handle webhook failures gracefully">
+If your webhook endpoint is down, Grid will retry. Implement graceful degradation:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  try {
+    const result = await processWebhook(req.body);
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+
+    // For pending payments, default to async processing
+    if (req.body.transaction?.status === "PENDING") {
+      // Queue for async processing
+      await queueForRetry(req.body);
+
+      return res.status(202).json({
+        message: "Queued for processing",
+      });
+    }
+
+    // For other statuses, acknowledge receipt
+    return res.status(200).json({ received: true });
+  }
+});
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Testing incoming payments
+
+### Using sandbox mode
+
+In sandbox, you can simulate incoming payments to test your webhook handler:
+
+```bash
+# Trigger a test incoming payment webhook
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/trigger-webhook' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "type": "INCOMING_PAYMENT",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "amount": 10000,
+    "currency": "USD"
+  }'
+```
+
+This sends a test webhook to your configured endpoint.
+
+### Testing webhook responses
+
+Test each response type:
+
+```javascript
+// Test data
+const testPayment = {
+  type: "INCOMING_PAYMENT",
+  transaction: {
+    id: "Transaction:test-12345",
+    status: "PENDING",
+    receivedAmount: { amount: 10000, currency: { code: "USD" } },
+    counterpartyInformation: {
+      FULL_NAME: "Test Sender",
+      NATIONALITY: "US",
+    },
+  },
+};
+
+// Test approval
+const approveResponse = await fetch("http://localhost:3000/webhooks/grid", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(testPayment),
+});
+
+console.log("Approval test:", approveResponse.status); // Should be 200
+
+// Test rejection (sanctioned sender)
+testPayment.transaction.counterpartyInformation.NATIONALITY =
+  "SANCTIONED_COUNTRY";
+
+const rejectResponse = await fetch("http://localhost:3000/webhooks/grid", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(testPayment),
+});
+
+console.log("Rejection test:", rejectResponse.status); // Should be 403
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="Send Payments" icon="paper-plane" href="/payouts/payment-flow/send-payment">
+  Learn how to send payments from internal accounts
+</Card>
+
+<Card
+  title="List Transactions"
+  icon="list"
+  href="/payouts/payment-flow/list-transactions"
+>
+  Query and filter payment history
+</Card>
+
+<Card
+  title="Error Handling"
+  icon="triangle-exclamation"
+  href="/payouts/payment-flow/error-handling"
+>
+  Handle payment failures and error scenarios
+</Card>
+
+<Card title="Webhooks" icon="webhook" href="/payouts/developer-guides/webhooks">
+  Complete webhook implementation guide
+</Card>
+</CardGroup>

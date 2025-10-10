@@ -1,0 +1,27 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    enum:
+      - 409
+    type: integer
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
+      | UMA_ADDRESS_EXISTS | UMA address already exists |
+    enum:
+      - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
+      - UMA_ADDRESS_EXISTS
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details

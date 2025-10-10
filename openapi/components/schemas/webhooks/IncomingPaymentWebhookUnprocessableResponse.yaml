@@ -1,0 +1,14 @@
+allOf:
+  - $ref: ../common/Error.yaml
+  - type: object
+    properties:
+      requiredFields:
+        type: array
+        items:
+          type: string
+        description: >-
+          List of fields that are required by the platform, but are
+          not present in the counterparty information.
+        example:
+          - TAX_ID
+          - REGISTRATION_NUMBER

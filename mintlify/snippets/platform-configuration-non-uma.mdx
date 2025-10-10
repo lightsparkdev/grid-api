@@ -1,0 +1,115 @@
+When you first sign up for Grid, a platform will be created for you with preconfigured settings.
+Use the `/config` endpoint to view and update your platform configuration for the Grid API.
+
+## Retrieve Current Configuration
+
+You can retrieve your current platform configuration to see what settings are already in place:
+
+
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u 'YOUR_CLIENT_ID:YOUR_CLIENT_SECRET'
+```
+
+```json Success
+{
+  "id": "PlatformConfig:019542f5-b3e7-1d02-0000-000000000003",
+  "webhookEndpoint": "https://api.example.com/webhooks/grid",
+  "supportedCurrencies": [
+    {
+      "currencyCode": "USD",
+      "minAmount": 100,
+      "maxAmount": 1000000,
+      "enabledTransactionTypes": ["OUTGOING", "INCOMING"]
+    }
+  ],
+  "createdAt": "2023-06-15T12:30:45Z",
+  "updatedAt": "2023-07-01T10:00:00Z"
+}
+```
+
+<Note>
+If this is your first time configuring the platform, some default values may be returned which were set up when you first created your account.
+</Note>
+
+## Update Platform Configuration
+
+To update your platform configuration for payouts payments, use the PATCH endpoint:
+
+
+```bash cURL
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u 'YOUR_CLIENT_ID:YOUR_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "webhookEndpoint": "https://api.mycompany.com/webhooks/grid",
+    "supportedCurrencies": [
+      {
+        "currencyCode": "USD",
+        "minAmount": 100,
+        "maxAmount": 1000000,
+        "enabledTransactionTypes": ["OUTGOING", "INCOMING"],
+      }
+    ]
+  }'
+```
+
+```json Success
+{
+  "id": "PlatformConfig:019542f5-b3e7-1d02-0000-000000000003",
+  "webhookEndpoint": "https://api.mycompany.com/webhooks/grid",
+  "supportedCurrencies": [
+    {
+      "currencyCode": "USD",
+      "minAmount": 100,
+      "maxAmount": 1000000,
+      "enabledTransactionTypes": ["OUTGOING", "INCOMING"]
+    }
+  ],
+  "createdAt": "2023-06-15T12:30:45Z",
+  "updatedAt": "2023-06-15T12:30:45Z"
+}
+```
+
+Note that not all fields are patchable. If you need to update a field that is not patchable, please contact support.
+
+<Warning>
+The `webhookSecret` is not returned in the response. It can only be retrieved from the Grid dashboard. Store this securely as it's used to verify the authenticity of webhooks (see the [Webhook Verification Guide](/snippets/webhooks)).
+</Warning>
+
+## Configuration Parameters
+
+### Webhook Endpoint
+
+The `webhookEndpoint` parameter specifies the URL where Grid will send webhook notifications about payment events. Your webhook endpoint must:
+
+- Be publicly accessible over HTTPS
+- Respond with appropriate HTTP status codes
+- Handle webhook verification (see [Webhook Verification Guide](/docs/webhooks))
+- Process webhook payloads within a reasonable time (recommended: under 5 seconds)
+
+### Supported Currencies
+
+The `supportedCurrencies` array allows you to define settings for each currency your platform will support for payouts payments. Each object in this array can contain:
+
+- `currencyCode`: (String, required) The ISO 4217 currency code (e.g., "USD").
+- `minAmount`: (Integer, required) Minimum transaction amount in the smallest unit of the currency.
+- `maxAmount`: (Integer, required) Maximum transaction amount in the smallest unit of the currency.
+- `enabledTransactionTypes`: (Array, optional) Specifies which transaction types are allowed (e.g., `["OUTGOING", "INCOMING"]`).
+
+<Note>
+For payouts payments, you do not need UMA-specific fields like `providerRequiredCustomerFields` or `providerRequiredCounterpartyCustomerFields`. The configuration is simpler and focuses on basic currency requirements.
+</Note>
+
+## Verify Configuration
+
+After updating your configuration, it's recommended to verify that the changes were saved correctly:
+
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u 'YOUR_CLIENT_ID:YOUR_CLIENT_SECRET'
+```
+
+<Warning>
+PATCH may return 400 for validation errors, 401 for authentication issues, and 500/501 for server or unsupported operations.
+</Warning>

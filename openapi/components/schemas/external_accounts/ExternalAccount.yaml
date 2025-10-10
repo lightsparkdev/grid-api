@@ -1,0 +1,30 @@
+allOf:
+  - type: object
+    required:
+      - id
+      - status
+      - currency
+      - accountInfo
+    properties:
+      id:
+        type: string
+        description: The system generated identifier of this account
+        example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+      customerId:
+        type: string
+        description: The customer this account is tied to, or null if the account is on behalf of the platform.
+        example: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+      status:
+        $ref: ../external_accounts/ExternalAccountStatus.yaml
+        description: Status of the external account
+        example: ACTIVE
+      platformAccountId:
+        type: string
+        description: Optional platform-specific identifier for this account
+        example: acc_123456789
+      currency:
+        type: string
+        description: The ISO 4217 currency code
+        example: USD
+      accountInfo:
+        $ref: ./ExternalAccountInfo.yaml

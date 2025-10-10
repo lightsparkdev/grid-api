@@ -1,0 +1,33 @@
+post:
+  summary: Send a test webhook
+  description: Send a test webhook to the configured endpoint
+  operationId: sendTestWebhook
+  tags:
+    - Webhooks
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Webhook delivered successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/webhooks/TestWebhookResponse.yaml
+    '400':
+      description: Bad request - Webhook delivery failed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

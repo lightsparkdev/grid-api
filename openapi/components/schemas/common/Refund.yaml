@@ -1,0 +1,19 @@
+type: object
+required:
+  - reference
+  - initiatedAt
+properties:
+  reference:
+    type: string
+    description: The unique reference code of the refund
+    example: UMA-Q12345-REFUND
+  initiatedAt:
+    type: string
+    format: date-time
+    description: When the refund was initiated
+    example: '2025-08-15T14:30:00Z'
+  settledAt:
+    type: string
+    format: date-time
+    description: When the refund was or will be settled
+    example: '2025-08-15T14:30:00Z'

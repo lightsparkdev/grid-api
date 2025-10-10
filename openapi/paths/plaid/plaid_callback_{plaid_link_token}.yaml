@@ -1,0 +1,65 @@
+post:
+  summary: Submit Plaid public token
+  description: |
+    After the customer completes Plaid Link authentication, the platform should POST
+    the public_token to this callback URL (provided in the link token response).
+
+    This will trigger asynchronous processing:
+    1. Lightspark exchanges the public_token for an access_token with Plaid
+    2. Lightspark retrieves and verifies the account details
+    3. An external account is created
+    4. A webhook notification is sent to the platform when complete
+
+  operationId: submitPlaidPublicToken
+  tags:
+    - External Accounts
+  parameters:
+    - name: plaid_link_token
+      in: path
+      required: true
+      description: The Plaid link token from the link token response, used to identify the session
+      schema:
+        type: string
+      example: link-sandbox-abc123xyz-1234-5678
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/plaid/PlaidCallbackRequest.yaml
+        example:
+          publicToken: public-sandbox-12345678-1234-1234-1234-123456789012
+          accountId: plaid_account_id_123
+  responses:
+    '202':
+      description: |
+        Public token accepted and external account creation initiated.
+        The platform will receive a webhook notification when the external account is ready.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/plaid/PlaidCallbackResponse.yaml
+    '400':
+      description: Bad request - Invalid public token or link token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '404':
+      description: Link token not found or expired
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Link token already used
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,36 @@
+name: OpenAPI Documentation Build
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'openapi.yaml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'openapi.yaml'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build OpenAPI Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build documentation
+        run: make build

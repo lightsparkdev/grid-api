@@ -1,0 +1,11 @@
+allOf:
+  - $ref: ../common/Error.yaml
+  - type: object
+    properties:
+      reason:
+        type: string
+        description: >-
+          Optional reason for rejecting the payment. This is just
+          for debugging purposes or can be used for a platform's own
+          purposes.
+        example: RESTRICTED_JURISDICTION

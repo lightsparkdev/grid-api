@@ -1,0 +1,3 @@
+allOf:
+  - $ref: ../common/IbanAccountInfo.yaml
+  - $ref: ./BankAccountBase.yaml

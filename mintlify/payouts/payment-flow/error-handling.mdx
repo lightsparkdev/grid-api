@@ -1,0 +1,562 @@
+---
+title: "Error Handling"
+description: "Handle payment failures, API errors, and transaction issues gracefully"
+---
+
+Learn how to handle errors when working with payments and transactions in Grid. Proper error handling ensures a smooth user experience and helps you quickly identify and resolve issues.
+
+## HTTP status codes
+
+Grid uses standard HTTP status codes to indicate the success or failure of requests:
+
+| Status Code                 | Meaning                 | When It Occurs                                          |
+| --------------------------- | ----------------------- | ------------------------------------------------------- |
+| `200 OK`                    | Success                 | Request completed successfully                          |
+| `201 Created`               | Resource created        | New transaction, quote, or customer created             |
+| `202 Accepted`              | Accepted for processing | Async operation initiated (e.g., bulk CSV upload)       |
+| `400 Bad Request`           | Invalid input           | Missing required fields or invalid parameters           |
+| `401 Unauthorized`          | Authentication failed   | Invalid or missing API credentials                      |
+| `403 Forbidden`             | Permission denied       | Insufficient permissions or customer not ready          |
+| `404 Not Found`             | Resource not found      | Customer, transaction, or quote doesn't exist           |
+| `409 Conflict`              | Resource conflict       | Quote already executed, external account already exists |
+| `412 Precondition Failed`   | UMA version mismatch    | Counterparty doesn't support required UMA version       |
+| `422 Unprocessable Entity`  | Missing info            | Additional counterparty information required            |
+| `424 Failed Dependency`     | Counterparty issue      | Problem with external UMA provider                      |
+| `500 Internal Server Error` | Server error            | Unexpected server issue (contact support)               |
+| `501 Not Implemented`       | Not implemented         | Feature not yet supported                               |
+
+## API error responses
+
+All error responses include a structured format:
+
+```json
+{
+  "status": 400,
+  "code": "INVALID_AMOUNT",
+  "message": "Amount must be greater than 0",
+  "details": {
+    "field": "amount",
+    "value": -100
+  }
+}
+```
+
+### Common error codes
+
+<AccordionGroup>
+<Accordion title="INVALID_INPUT">
+**Cause:** Missing required fields or invalid data format
+
+**Solution:** Check request parameters match API specification
+
+```javascript
+// Error
+{
+  "status": 400,
+  "code": "INVALID_INPUT",
+  "message": "Invalid account ID format"
+}
+
+// Fix: Ensure proper ID format
+const accountId = "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965";
+```
+
+</Accordion>
+
+<Accordion title="QUOTE_EXPIRED">
+**Cause:** Attempting to execute an expired quote
+
+**Solution:** Create a new quote before executing
+
+```javascript
+async function executeQuoteWithRetry(quoteId) {
+  try {
+    return await executeQuote(quoteId);
+  } catch (error) {
+    if (error.code === "QUOTE_EXPIRED") {
+      // Create new quote and execute
+      const newQuote = await createQuote(originalQuoteParams);
+      return await executeQuote(newQuote.id);
+    }
+    throw error;
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="INSUFFICIENT_BALANCE">
+**Cause:** Internal account doesn't have enough funds
+
+**Solution:** Check balance before initiating transfer
+
+```javascript
+async function safeSendPayment(accountId, amount) {
+  const account = await getInternalAccount(accountId);
+
+  if (account.balance.amount < amount) {
+    throw new Error(
+      `Insufficient balance. Available: ${account.balance.amount}, Required: ${amount}`
+    );
+  }
+
+  return await createTransferOut({ accountId, amount });
+}
+```
+
+</Accordion>
+
+<Accordion title="INVALID_BANK_ACCOUNT">
+**Cause:** Bank account details are invalid or incomplete
+
+**Solution:** Validate account details before submission
+
+```javascript
+function validateUSAccount(account) {
+  if (!account.accountNumber || !account.routingNumber) {
+    throw new Error("Account and routing numbers required");
+  }
+
+  if (account.routingNumber.length !== 9) {
+    throw new Error("Routing number must be 9 digits");
+  }
+
+  return true;
+}
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Transaction failure reasons
+
+When a transaction fails, the `failureReason` field provides specific details:
+
+### Outgoing payment failures
+
+```json
+{
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+  "status": "FAILED",
+  "type": "OUTGOING",
+  "failureReason": "QUOTE_EXECUTION_FAILED"
+}
+```
+
+**Common outgoing failure reasons:**
+
+- `QUOTE_EXPIRED` - Quote expired before execution
+- `QUOTE_EXECUTION_FAILED` - Error executing the quote
+- `FUNDING_AMOUNT_MISMATCH` - Funding amount doesn't match expected amount
+- `TIMEOUT` - Transaction timed out
+
+### Incoming payment failures
+
+```json
+{
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+  "status": "FAILED",
+  "type": "INCOMING",
+  "failureReason": "PAYMENT_APPROVAL_TIMED_OUT"
+}
+```
+
+**Common incoming failure reasons:**
+
+- `PAYMENT_APPROVAL_TIMED_OUT` - Webhook approval not received within 5 seconds
+- `PAYMENT_APPROVAL_WEBHOOK_ERROR` - Webhook returned an error
+- `OFFRAMP_FAILED` - Failed to convert and send funds to destination
+- `QUOTE_EXPIRED` - Quote expired during processing
+
+## Handling failures
+
+### Monitor transaction status
+
+```javascript
+async function monitorTransaction(transactionId) {
+  const maxAttempts = 30; // 5 minutes with 10-second intervals
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    const transaction = await getTransaction(transactionId);
+
+    if (transaction.status === "COMPLETED") {
+      return { success: true, transaction };
+    }
+
+    if (transaction.status === "FAILED") {
+      return {
+        success: false,
+        transaction,
+        failureReason: transaction.failureReason,
+      };
+    }
+
+    // Still processing
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    attempts++;
+  }
+
+  throw new Error("Transaction monitoring timed out");
+}
+```
+
+### Retry logic for transient errors
+
+```javascript
+async function createQuoteWithRetry(params, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await createQuote(params);
+    } catch (error) {
+      const isRetryable =
+        error.status === 500 ||
+        error.status === 424 ||
+        error.code === "QUOTE_REQUEST_FAILED";
+
+      if (!isRetryable || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff
+      const delay = Math.pow(2, attempt) * 1000;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+```
+
+### Handle webhook failures
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  try {
+    await processWebhook(req.body);
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+
+    // For pending payments, default to async processing
+    if (req.body.transaction?.status === "PENDING") {
+      // Queue for retry
+      await queueWebhookForRetry(req.body);
+      return res.status(202).json({ message: "Queued for processing" });
+    }
+
+    // For other webhooks, acknowledge receipt
+    res.status(200).json({ received: true });
+  }
+});
+```
+
+## Error recovery strategies
+
+<Tabs>
+<Tab title="Quote Expiration">
+Automatically create a new quote when one expires:
+
+```javascript
+async function executeQuoteSafe(quoteId, originalParams) {
+  try {
+    return await fetch(
+      `https://api.lightspark.com/grid/2025-10-13/quotes/${quoteId}/execute`,
+      {
+        method: "POST",
+        headers: { Authorization: `Basic ${credentials}` },
+      }
+    );
+  } catch (error) {
+    if (error.status === 409 && error.code === "QUOTE_EXPIRED") {
+      // Create new quote with same parameters
+      const newQuote = await createQuote(originalParams);
+
+      // Execute immediately
+      return await fetch(
+        `https://api.lightspark.com/grid/2025-10-13/quotes/${newQuote.id}/execute`,
+        {
+          method: "POST",
+          headers: { Authorization: `Basic ${credentials}` },
+        }
+      );
+    }
+
+    throw error;
+  }
+}
+```
+
+</Tab>
+
+<Tab title="Insufficient Balance">
+Notify users and suggest funding:
+
+```javascript
+async function handleInsufficientBalance(customerId, requiredAmount) {
+  const accounts = await getInternalAccounts(customerId);
+  const account = accounts.data[0];
+
+  const shortfall = requiredAmount - account.balance.amount;
+
+  // Notify customer
+  await sendNotification(customerId, {
+    type: "INSUFFICIENT_BALANCE",
+    message: `You need ${formatAmount(
+      shortfall
+    )} more to complete this payment`,
+    action: {
+      label: "Add Funds",
+      url: "/deposit",
+    },
+  });
+
+  // Return funding instructions
+  return {
+    error: "INSUFFICIENT_BALANCE",
+    currentBalance: account.balance.amount,
+    requiredAmount,
+    shortfall,
+    fundingInstructions: account.fundingPaymentInstructions,
+  };
+}
+```
+
+</Tab>
+
+<Tab title="Network Errors">
+Implement retry with exponential backoff:
+
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw error;
+      }
+
+      return await response.json();
+    } catch (error) {
+      const isLastAttempt = i === maxRetries - 1;
+      const isNetworkError =
+        error.code === "ECONNRESET" ||
+        error.code === "ETIMEDOUT" ||
+        error.status === 500;
+
+      if (isLastAttempt || !isNetworkError) {
+        throw error;
+      }
+
+      // Wait before retry (exponential backoff)
+      const delay = Math.pow(2, i) * 1000;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## User-friendly error messages
+
+Convert technical errors to user-friendly messages:
+
+```javascript
+function getUserFriendlyMessage(error) {
+  const errorMessages = {
+    QUOTE_EXPIRED: "Exchange rate expired. Please try again.",
+    INSUFFICIENT_BALANCE: "You don't have enough funds for this payment.",
+    INVALID_BANK_ACCOUNT:
+      "Bank account details are invalid. Please check and try again.",
+    PAYMENT_APPROVAL_TIMED_OUT: "Payment approval timed out. Please try again.",
+    AMOUNT_OUT_OF_RANGE: "Payment amount is too high or too low.",
+    INVALID_CURRENCY: "This currency is not supported.",
+    WEBHOOK_ENDPOINT_NOT_SET:
+      "Payment receiving is not configured. Contact support.",
+  };
+
+  return (
+    errorMessages[error.code] ||
+    error.message ||
+    "An unexpected error occurred. Please try again or contact support."
+  );
+}
+
+// Usage
+try {
+  await createQuote(params);
+} catch (error) {
+  const userMessage = getUserFriendlyMessage(error);
+  showErrorToUser(userMessage);
+}
+```
+
+## Logging and monitoring
+
+Implement comprehensive error logging:
+
+```javascript
+class PaymentErrorLogger {
+  static async logError(error, context) {
+    const errorLog = {
+      timestamp: new Date().toISOString(),
+      errorCode: error.code,
+      errorMessage: error.message,
+      httpStatus: error.status,
+      context: {
+        customerId: context.customerId,
+        transactionId: context.transactionId,
+        operation: context.operation,
+      },
+      stackTrace: error.stack,
+    };
+
+    // Log to your monitoring service
+    await logToMonitoring(errorLog);
+
+    // Alert on critical errors
+    if (error.status >= 500 || error.code === "WEBHOOK_DELIVERY_ERROR") {
+      await sendAlert({
+        severity: "high",
+        message: `Payment error: ${error.code}`,
+        details: errorLog,
+      });
+    }
+
+    return errorLog;
+  }
+}
+
+// Usage
+try {
+  await executeQuote(quoteId);
+} catch (error) {
+  await PaymentErrorLogger.logError(error, {
+    customerId: "Customer:123",
+    operation: "executeQuote",
+  });
+  throw error;
+}
+```
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Always validate before API calls">
+Validate data on your side before making API requests to catch errors early:
+
+```javascript
+function validateTransferRequest(request) {
+  const errors = [];
+
+  if (!request.source?.accountId) {
+    errors.push("Source account ID is required");
+  }
+
+  if (!request.destination?.accountId) {
+    errors.push("Destination account ID is required");
+  }
+
+  if (!request.amount || request.amount <= 0) {
+    errors.push("Amount must be greater than 0");
+  }
+
+  if (errors.length > 0) {
+    throw new ValidationError(errors.join(", "));
+  }
+
+  return true;
+}
+```
+
+</Accordion>
+
+<Accordion title="Implement idempotency">
+Store transaction IDs to prevent duplicate submissions on retry:
+
+```javascript
+const processedTransactions = new Set();
+
+async function createTransferIdempotent(params) {
+  const idempotencyKey = generateKey(params);
+
+  if (processedTransactions.has(idempotencyKey)) {
+    throw new Error("Transaction already processed");
+  }
+
+  try {
+    const result = await createTransferOut(params);
+    processedTransactions.add(idempotencyKey);
+    return result;
+  } catch (error) {
+    // Don't mark as processed on error
+    throw error;
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Set appropriate timeouts">
+Configure timeouts for long-running operations:
+
+```javascript
+async function executeWithTimeout(promise, timeoutMs = 30000) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Operation timed out")), timeoutMs)
+  );
+
+  return Promise.race([promise, timeout]);
+}
+
+// Usage
+try {
+  const result = await executeWithTimeout(
+    executeQuote(quoteId),
+    30000 // 30 seconds
+  );
+} catch (error) {
+  if (error.message === "Operation timed out") {
+    // Handle timeout specifically
+    console.log("Quote execution timed out, checking status...");
+    const transaction = await checkTransactionStatus(quoteId);
+  }
+}
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="Send Payments" icon="paper-plane" href="/payouts/payment-flow/send-payment">
+  Learn how to send payments from internal accounts
+</Card>
+
+<Card
+  title="Receive Payments"
+  icon="arrow-down-to-bracket"
+  href="/payouts/payment-flow/receive-payment"
+>
+  Accept incoming payments with webhook approval
+</Card>
+
+<Card
+  title="List Transactions"
+  icon="list"
+  href="/payouts/payment-flow/list-transactions"
+>
+  Query and filter payment history
+</Card>
+
+<Card
+  title="Reconciliation"
+  icon="file-invoice-dollar"
+  href="/payouts/payment-flow/reconciliation"
+>
+  Match payments with your internal systems
+</Card>
+</CardGroup>

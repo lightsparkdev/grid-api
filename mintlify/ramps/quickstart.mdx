@@ -1,0 +1,254 @@
+---
+title: "Quickstart"
+description: "Complete guide for converting fiat to crypto (on-ramp) and delivering Bitcoin to a Spark wallet"
+---
+
+import KycOnboarding from "/snippets/kyc-onboarding.mdx";
+
+This guide walks you through the complete process of converting USD to Bitcoin and sending it to a Spark wallet using just-in-time (JIT) funding.
+
+## Prerequisites
+
+Before starting this guide, ensure you have:
+
+- A Grid API account with valid authentication credentials
+- Access to the Grid API endpoints (production or sandbox)
+- A webhook endpoint configured to receive notifications
+- A Spark wallet address where the Bitcoin will be delivered
+
+## Overview
+
+The on-ramp process consists of the following steps:
+
+1. **Create a customer** via the API
+2. **Create a quote** for the USD-to-BTC conversion with current exchange rate
+3. **Fund the quote** using the provided payment instructions (JIT funding)
+4. **Receive webhook notification** confirming Bitcoin delivery to the Spark wallet
+
+---
+
+## Step 1: Customer Onboarding
+
+Onboard customers via the API. The required information depends on your platform's regulatory status.
+
+<KycOnboarding />
+
+---
+
+## Step 2: Create a Quote for Fiat-to-Crypto Conversion
+
+Create a quote to convert USD to Bitcoin and deliver it to a Spark wallet. The quote will provide the current exchange rate and payment instructions for funding.
+
+### Request
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "USD"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "On-ramp: Buy $100 of Bitcoin"
+  }'
+```
+
+<Note>
+  **Combined External Account Creation**: The `externalAccountDetails` option
+  automatically creates the external account (Spark wallet) and uses it as the
+  destination for the Bitcoin transfer in a single API call.
+</Note>
+
+### Response
+
+```json
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "status": "PENDING",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "expiresAt": "2025-10-03T15:05:00Z",
+  "source": {
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456",
+    "currency": "BTC"
+  },
+  "sendingCurrency": {
+    "code": "USD",
+    "name": "United States Dollar",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "BTC",
+    "name": "Bitcoin",
+    "symbol": "₿",
+    "decimals": 8
+  },
+  "totalSendingAmount": 10000,
+  "totalReceivingAmount": 95000,
+  "exchangeRate": 9.5,
+  "feesIncluded": 250,
+  "paymentInstructions": [
+    {
+      "reference": "RAMP-ABC123",
+      "instructionsNotes": "Include reference code in transfer memo",
+      "bankAccountInfo": {
+        "accountType": "US_ACCOUNT",
+        "accountNumber": "9876543210",
+        "routingNumber": "021000021",
+        "accountHolderName": "Lightspark Grid FBO Customer",
+        "bankName": "JP Morgan Chase"
+      }
+    }
+  ]
+}
+```
+
+The quote shows:
+
+- **Sending**: $100.00 USD (including $2.50 fee)
+- **Receiving**: 0.00095 BTC (95,000 satoshis)
+- **Exchange rate**: 9.5 sats per USD cent (~$105,000 per BTC)
+- **Quote expires**: In 5 minutes
+- **Payment instructions**: Bank account details and reference code for funding
+
+<Warning>
+  For JIT-funded quotes, do NOT call the `/quotes/{quoteId}/execute` endpoint.
+  Simply fund using the payment instructions, and Grid will automatically
+  execute the conversion upon receiving your payment.
+</Warning>
+
+---
+
+## Step 3: Fund the Quote (Just-in-Time)
+
+In production, you would initiate a real-time push payment (ACH, RTP, wire, etc.) to the bank account provided in `paymentInstructions`, making sure to include the exact reference code `RAMP-ABC123` in the transfer memo.
+
+<Tabs>
+<Tab title="Sandbox (Simulated)">
+In Sandbox, you can simulate funding using the `/sandbox/send` endpoint:
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reference": "RAMP-ABC123",
+    "currencyCode": "USD",
+    "currencyAmount": 10000
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
+  "status": "PROCESSING",
+  "type": "OUTGOING",
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
+}
+```
+
+</Tab>
+
+<Tab title="Production (Real Funding)">
+In production, your customer or platform would initiate a bank transfer to the provided account details, include the reference code `RAMP-ABC123` in the transfer memo, and wait for Grid to detect the incoming payment (typically 1-3 business days for ACH, instant for RTP/wire). You'll receive a webhook notification when Bitcoin is delivered to the Spark wallet.
+</Tab>
+</Tabs>
+
+<Tip>
+  The reference code is critical for matching your payment to the quote. Always
+  include it exactly as provided in the payment instructions.
+</Tip>
+
+---
+
+## Step 4: Receive Completion Webhook
+
+Once Grid receives your payment and completes the USD-to-BTC conversion and delivery, you'll receive a webhook notification:
+
+```json
+{
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
+    "status": "COMPLETED",
+    "type": "OUTGOING",
+    "sentAmount": {
+      "amount": 10000,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "receivedAmount": {
+      "amount": 95000,
+      "currency": {
+        "code": "BTC",
+        "name": "Bitcoin",
+        "symbol": "₿",
+        "decimals": 8
+      }
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "settledAt": "2025-10-03T15:02:30Z",
+    "createdAt": "2025-10-03T15:00:00Z",
+    "description": "On-ramp: Buy $100 of Bitcoin",
+    "exchangeRate": 9.5,
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "paymentInstructions": {
+      "reference": "RAMP-ABC123"
+    }
+  },
+  "timestamp": "2025-10-03T15:03:00Z",
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000030",
+  "type": "OUTGOING_PAYMENT"
+}
+```
+
+<Check>
+  The customer now has 95,000 satoshis (0.00095 BTC) in their Spark wallet!
+</Check>
+
+---
+
+## Summary
+
+You've successfully completed a fiat-to-crypto on-ramp! Here's what happened:
+
+1. ✅ Created a customer via API
+2. ✅ Created a quote with exchange rate and payment instructions
+3. ✅ Funded the quote using JIT payment (simulated in sandbox)
+4. ✅ Bitcoin automatically converted and delivered to Spark wallet
+
+## Next Steps
+
+- **Off-ramps**: Learn how to convert crypto to fiat in the [Crypto-to-Fiat guide](/ramps/conversion-flows/fiat-crypto-conversion)
+- **Self-custody wallets**: Explore advanced wallet integration in the [Self-Custody Wallets guide](/ramps/conversion-flows/self-custody-wallets)
+- **Webhook verification**: Implement signature verification for security (see [Webhooks guide](/ramps/platform-tools/webhooks))
+- **Sandbox testing**: Learn more about testing in the [Sandbox Testing guide](/ramps/platform-tools/sandbox-testing)
+
+## Related Resources
+
+- [API Reference](/api-reference) - Complete API documentation
+- [Implementation Overview](/ramps/onboarding/implementation-overview) - High-level architecture and flow
+- [Platform Configuration](/ramps/onboarding/platform-configuration) - Configure your platform settings
+- [Developer Tools](/developer-resources/tools) - Additional development resources

@@ -1,0 +1,6 @@
+type: string
+enum:
+  - INDIVIDUAL
+  - BUSINESS
+description: Whether the customer is an individual or a business entity
+example: INDIVIDUAL

@@ -1,0 +1,227 @@
+The KYC/KYB flow allows you to onboard customers through a hosted KYC link or direct API calls.
+
+### Platform Regulation Status
+
+Your platform's regulatory status determines the KYC/onboarding requirements and available flows.
+
+#### Regulated Platforms
+
+<Check>
+**Regulated platforms** have lighter KYC requirements since they handle compliance verification internally.
+</Check>
+
+Regulated financial institutions can:
+
+- **Direct API Onboarding**: Create customers directly via API calls with minimal verification
+- **Internal KYC/KYB**: Handle identity verification through your own compliance systems
+- **Reduced Documentation**: Only provide essential customer information required by your payment counterparty or service provider.
+- **Faster Onboarding**: Streamlined process for known, verified customers
+
+#### Unregulated Platforms
+
+<Warning>
+**Unregulated platforms** require full KYC/KYB verification of customers through hosted flows.
+</Warning>
+
+Unregulated platforms must:
+
+- **Hosted KYC Flow**: Use the hosted KYC link for complete identity verification
+- **Extended Review**: Customers may require manual review and approval in some cases
+
+### Choosing Your Onboarding Flow
+
+Use this decision tree to determine the best onboarding approach for your platform:
+
+<AccordionGroup>
+<Accordion title="Are you a regulated financial institution?">
+**Yes**
+
+- ✅ **Use Direct API Onboarding** for customers
+- ✅ Provide essential fields required by UMA providers if you are using UMA addressing
+- ✅ Faster customer onboarding process
+
+**No**
+
+- ✅ **Use Hosted KYC Link Flow** or **Direct API Onboarding** for new individual customers
+- ✅ **Use Hosted KYC Link Flow** for new business customers
+- ✅ Provide complete customer information if using direct API
+</Accordion>
+</AccordionGroup>
+
+### Hosted KYC Link Flow
+
+The hosted KYC flow provides a secure, hosted interface where customers can complete their identity verification and onboarding process.
+
+#### Generate KYC Link
+
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link?redirectUri=https://yourapp.com/onboarding-complete&platformCustomerId=019542f5-b3e7-1d02-0000-000000000001" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+**Response:**
+
+```json
+{
+  "kycUrl": "https://kyc.lightspark.com/onboard/abc123def456",
+  "platformCustomerId": "019542f5-b3e7-1d02-0000-000000000001"
+}
+```
+
+<ParamField query="redirectUri" type="string">
+Optional URI parameter that specifies where the customer will be automatically redirected after successfully completing the hosted KYC verification process. If not provided, customers will be redirected to a default completion page.
+</ParamField>
+
+<ResponseField name="kycUrl" type="string" required>
+A hosted KYC link for your customer to complete identity verification and onboarding. This URL contains the KYC session and any redirect configuration.
+</ResponseField>
+
+<Note>
+The `redirectUri` parameter is embedded in the KYC URL and will be used to redirect the customer back to your application after they complete the verification process. This provides a seamless user experience by returning them to your platform.
+</Note>
+
+#### Complete KYC Process
+
+<Steps>
+<Step title="Generate KYC Link">
+  Call the `/customers/kyc-link` endpoint with your `redirectUri` parameter to generate a hosted KYC URL for your customer.
+  
+  <Note>
+  The `redirectUri` parameter is embedded in the generated KYC URL and will be used to automatically redirect the customer back to your application after they complete verification.
+  </Note>
+</Step>
+
+<Step title="Redirect Customer">
+  Redirect your customer to the returned `kycUrl` where they can complete their identity verification in the hosted interface.
+  
+  <Warning>
+  The KYC link is single-use and expires after a limited time period for security.
+  </Warning>
+</Step>
+
+<Step title="Customer Completes Verification">
+  The customer completes the identity verification process in the hosted KYC interface, providing required documents and information.
+  
+  <Info>
+  The hosted interface handles document collection, verification checks, and compliance requirements automatically.
+  </Info>
+  
+  <Note>
+  After verification processing, you'll receive a KYC status webhook notification indicating the final verification result.
+  </Note>
+</Step>
+
+<Step title="Automatic Redirect">
+  Upon successful KYC completion, the customer is automatically redirected to your specified `redirectUri` URL.
+  
+  <Check>
+  The customer account will be automatically created by the system upon successful KYC completion. You can identify the new customer using your `platformCustomerId` or other identifiers.
+  </Check>
+</Step>
+
+<Step title="Handle Completion">
+  On your redirect page, handle the completed KYC flow and integrate the new customer into your application.
+  
+  <Tip>
+  You may want to query the customer details or internal accounts to confirm successful onboarding.
+  </Tip>
+</Step>
+</Steps>
+
+#### Handling KYC Status Webhooks
+
+After a customer completes the hosted KYC verification process, you'll receive webhook notifications about their KYC status. These notifications are sent to your configured webhook endpoint.
+
+**Webhook Payload (sent to your endpoint):**
+
+```json
+{
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "KYC_STATUS",
+  "timestamp": "2023-07-21T17:32:28Z",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "kycStatus": "APPROVED",
+  "platformCustomerId": "1234567"
+}
+```
+
+**Webhook Headers:**
+- `Content-Type: application/json`
+- `X-Webhook-Signature: sha256=abc123...`
+
+<ResponseField name="customerId" type="string" required>
+System-generated unique identifier of the customer whose KYC status has changed.
+</ResponseField>
+
+<ResponseField name="kycStatus" type="string" required>
+Final KYC verification status. Webhooks are only sent for final states:
+- `APPROVED`: Customer verification completed successfully
+- `REJECTED`: Customer verification was rejected
+- `EXPIRED`: KYC verification has expired and needs renewal
+- `CANCELED`: Verification process was canceled
+- `MANUALLY_APPROVED`: Customer was manually approved by platform
+- `MANUALLY_REJECTED`: Customer was manually rejected by platform
+</ResponseField>
+
+<Note>
+Intermediate states like `PENDING_REVIEW` do not trigger webhook notifications. Only final resolution states will send webhook notifications.
+</Note>
+
+<Tip>
+**Webhook Implementation**: Ensure your webhook endpoint can handle KYC status updates and update your internal customer records accordingly. You may want to trigger different actions based on the status (e.g., activate accounts for `APPROVED` customers, notify support for `REJECTED` customers).
+</Tip>
+
+<AccordionGroup>
+<Accordion title="Example Webhook Handler">
+```javascript
+// Example webhook handler for KYC status updates
+// Note: Only final states trigger webhook notifications
+app.post('/webhooks/kyc-status', (req, res) => {
+  const { customerId, kycStatus } = req.body;
+  
+  switch (kycStatus) {
+    case 'APPROVED':
+      // Activate customer account
+      await activateCustomer(customerId);
+      await sendWelcomeEmail(customerId);
+      break;
+      
+    case 'REJECTED':
+      // Notify support and customer
+      await notifySupport(customerId, 'KYC_REJECTED');
+      await sendRejectionEmail(customerId);
+      break;
+      
+    case 'MANUALLY_APPROVED':
+      // Handle manual approval
+      await activateCustomer(customerId);
+      await sendWelcomeEmail(customerId);
+      break;
+      
+    case 'MANUALLY_REJECTED':
+      // Handle manual rejection
+      await notifySupport(customerId, 'KYC_MANUALLY_REJECTED');
+      await sendRejectionEmail(customerId);
+      break;
+      
+    case 'EXPIRED':
+      // Handle expired KYC
+      await notifyCustomerForReKyc(customerId);
+      break;
+      
+    case 'CANCELED':
+      // Handle canceled verification
+      await logKycCancelation(customerId);
+      break;
+      
+    default:
+      // Log unexpected statuses
+      console.log(`Unexpected KYC status ${kycStatus} for customer ${customerId}`);
+  }
+  
+  res.status(200).send('OK');
+});
+```
+</Accordion>
+</AccordionGroup>

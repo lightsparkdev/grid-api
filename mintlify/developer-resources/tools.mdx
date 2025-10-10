@@ -1,0 +1,49 @@
+---
+title: "Tools"
+---
+
+Grid provides a set of tools to help you understand and test payment flows.
+
+## UMA Test Wallet
+The UMA Test Wallet is an external, dogfooded sandbox that demonstrates UMA payment flows end to end and gives you a realistic counterparty for development and QA. It helps you understand flows through hands-on interaction, explore recommended UX patterns, and develop against a live UMA VASP without setting up complex infrastructure.
+
+<Info>
+Purpose-built to: (1) build intuition for UMA flows, (2) showcase UX best practices for send and receive, and (3) act as a counterparty VASP for developers working on UMA Auth and UMA Invoice.
+</Info>
+
+<CardGroup cols={2}>
+<Card title="Launch Test Wallet" icon="/images/IconGlobus.svg" href="https://test.uma.me">
+Open the hosted sandbox to try UMA flows in your browser.
+</Card>
+
+<Card title="GitHub Repository" icon="/images/github.svg" href="https://github.com/uma-universal-money-address/uma-test-wallet">
+Browse the code, file issues, and contribute improvements.
+</Card>
+</CardGroup>
+
+### What you can do
+- **Experience UMA flows**: Send and receive payments using UMA handles with real-time feedback.
+- **Preview UX best practices**: See recommended entry points, confirmations, and error handling.
+- **Develop and test**: Use the wallet as a counterparty VASP when building UMA integrations (e.g., UMA Auth clients).
+- **Demo features**: Explore address resolution, quoting/rate locking, funding instructions, and status transitions.
+
+<Note>
+For background on UMA itself, see the UMA Standard: [UMA Standard—Introduction](https://docs.uma.me/uma-standard/introduction).
+</Note>
+
+### Quick start
+<Steps>
+<Step title="Open the sandbox">
+Launch the hosted wallet at `https://test.uma.me`.
+</Step>
+<Step title="Create or select a demo identity">
+Use the provided onboarding to get a test-ready account.
+</Step>
+<Step title="Try a payment flow">
+Send a small test payment to a UMA handle, preview rates/fees, and confirm.
+</Step>
+<Step title="Observe the lifecycle">
+Watch status updates in real time and review relevant details for troubleshooting.
+</Step>
+</Steps>
+

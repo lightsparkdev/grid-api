@@ -1,0 +1,35 @@
+allOf:
+  - $ref: ../common/UsAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [US_ACCOUNT]
+        example: US_ACCOUNT
+      beneficiary:
+        oneOf:
+          - title: Individual Beneficiary
+            allOf:
+              - $ref: ./IndividualBeneficiary.yaml
+              - type: object
+                properties:
+                  beneficiaryType:
+                    type: string
+                    enum: [INDIVIDUAL]
+                    example: INDIVIDUAL
+          - title: Business Beneficiary
+            allOf:
+              - $ref: ./BusinessBeneficiary.yaml
+              - type: object
+                properties:
+                  beneficiaryType:
+                    type: string
+                    enum: [BUSINESS]
+                    example: BUSINESS
+        discriminator:
+          propertyName: beneficiaryType
+          mapping:
+            INDIVIDUAL: ./IndividualBeneficiary.yaml
+            BUSINESS: ./BusinessBeneficiary.yaml

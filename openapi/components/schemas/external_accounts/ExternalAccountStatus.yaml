@@ -1,0 +1,7 @@
+type: string
+enum:
+  - PENDING
+  - ACTIVE
+  - UNDER_REVIEW
+  - INACTIVE
+description: Status of an external account

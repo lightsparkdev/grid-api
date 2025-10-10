@@ -1,0 +1,30 @@
+type: object
+required:
+  - line1
+  - postalCode
+  - country
+properties:
+  line1:
+    type: string
+    description: Street address line 1
+    example: 123 Main Street
+  line2:
+    type: string
+    description: Street address line 2
+    example: Apt 4B
+  city:
+    type: string
+    description: City
+    example: San Francisco
+  state:
+    type: string
+    description: State/Province/Region
+    example: CA
+  postalCode:
+    type: string
+    description: Postal/ZIP code
+    example: '94105'
+  country:
+    type: string
+    description: Country code (ISO 3166-1 alpha-2)
+    example: US

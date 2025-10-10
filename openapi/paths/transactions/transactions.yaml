@@ -1,0 +1,146 @@
+get:
+  summary: List transactions
+  description: |
+    Retrieve a paginated list of transactions with optional filtering.
+    The transactions can be filtered by customer ID, platform customer ID, UMA address,
+    date range, status, and transaction type.
+  operationId: listTransactions
+  tags:
+    - Transactions
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: Filter by system customer ID
+      required: false
+      schema:
+        type: string
+    - name: platformCustomerId
+      in: query
+      description: Filter by platform-specific customer ID
+      required: false
+      schema:
+        type: string
+    - name: accountIdentifier
+      in: query
+      description: Filter by account identifier (either sender or receiver)
+      required: false
+      schema:
+        type: string
+    - name: senderAccountIdentifier
+      in: query
+      description: Filter by sender account identifier
+      required: false
+      schema:
+        type: string
+    - name: receiverAccountIdentifier
+      in: query
+      description: Filter by receiver account identifier
+      required: false
+      schema:
+        type: string
+    - name: status
+      in: query
+      description: Filter by transaction status
+      required: false
+      schema:
+        $ref: ../../components/schemas/transactions/TransactionStatus.yaml
+    - name: type
+      in: query
+      description: Filter by transaction type
+      required: false
+      schema:
+        $ref: ../../components/schemas/transactions/TransactionType.yaml
+    - name: reference
+      in: query
+      description: Filter by reference
+      required: false
+      schema:
+        type: string
+    - name: startDate
+      in: query
+      description: Filter by start date (inclusive) in ISO 8601 format
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: endDate
+      in: query
+      description: Filter by end date (inclusive) in ISO 8601 format
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+    - name: sortOrder
+      in: query
+      description: Order to sort results in
+      required: false
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+        default: desc
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of transactions matching the criteria
+                items:
+                  $ref: ../../components/schemas/transactions/Transaction.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: >-
+                  Total number of transactions matching the criteria (excluding
+                  pagination)
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

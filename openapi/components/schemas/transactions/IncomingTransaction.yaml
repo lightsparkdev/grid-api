@@ -1,0 +1,18 @@
+allOf:
+  - $ref: ./Transaction.yaml
+  - type: object
+    required:
+      - receivedAmount
+    properties:
+      receivedAmount:
+        $ref: ../common/CurrencyAmount.yaml
+        description: Amount received in the recipient's currency
+      reconciliationInstructions:
+        $ref: ../common/ReconciliationInstructions.yaml
+        description: Included for all transactions except those with "CREATED" status
+      rateDetails:
+        $ref: ./IncomingRateDetails.yaml
+        description: Details about the rate and fees for the transaction.
+      failureReason:
+        $ref: ./IncomingTransactionFailureReason.yaml
+        description: If the transaction failed, this field provides the reason for failure.

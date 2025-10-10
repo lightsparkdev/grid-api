@@ -1,0 +1,16 @@
+type: object
+required:
+  - publicToken
+properties:
+  publicToken:
+    type: string
+    description: |
+      The public token returned by Plaid Link after the customer successfully
+      authenticates and selects an account.
+    example: public-sandbox-12345678-1234-1234-1234-123456789012
+  accountId:
+    type: string
+    description: |
+      Optional Plaid account ID if the customer selected a specific account.
+      If not provided, the default account will be used.
+    example: plaid_account_id_123

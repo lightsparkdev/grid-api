@@ -1,0 +1,105 @@
+---
+title: "Introduction"
+description: "Convert between fiat and crypto with Grid's on-ramp and off-ramp infrastructure"
+---
+
+With **Grid Ramps**, you can seamlessly convert between fiat currencies and cryptocurrencies through a single, simple API. The Lightspark Grid automatically handles currency conversion, compliance, and instant settlement via the Lightning Network.
+
+<CardGroup cols={3}>
+  <Card title="Instant Conversion" icon="bolt">
+    Convert fiat to crypto (on-ramp) or crypto to fiat (off-ramp) in seconds
+    using real-time exchange rates.
+  </Card>
+  <Card title="Simplified Infrastructure" icon="shield-check">
+    Grid handles the conversion and settlement process, reducing complexity in
+    your crypto integration.
+  </Card>
+  <Card title="Global Settlement" icon="globe">
+    Leverages the Lightning Network for instant Bitcoin transfers and local
+    banking rails for fiat settlement worldwide.
+  </Card>
+</CardGroup>
+
+---
+
+## How Ramps Work
+
+<Steps>
+  <Step title="Quote Creation">
+    Get real-time exchange rates and payment instructions for your desired
+    conversion (fiat → crypto or crypto → fiat).
+  </Step>
+  <Step title="Funding & Conversion">
+    Fund the quote using the provided payment instructions. Grid executes the
+    conversion at the quoted rate.
+  </Step>
+  <Step title="Settlement">
+    Receive your converted funds via Lightning Network (for crypto) or local
+    banking rails (for fiat) within seconds.
+  </Step>
+</Steps>
+
+---
+
+## Grid Ramps Features
+
+Users interact with **Grid Ramps** through two main interfaces:
+
+<Tabs>
+  <Tab title="API">
+    Programmatic access to create quotes, fund conversions, execute transfers,
+    and reconcile all activity with real-time webhooks.
+  </Tab>
+  <Tab title="Dashboard">
+    Your development and operations team can use the dashboard to monitor
+    conversions, manage API keys and environments, and troubleshoot with
+    detailed logs.
+  </Tab>
+</Tabs>
+
+### On-Ramp: Fiat to Crypto
+
+Convert fiat currency to cryptocurrency and deliver it to self-custody wallets.
+
+- **Create quotes** to lock exchange rates for fiat-to-crypto conversions
+- **Payment instructions** guide users on how to fund their conversion
+- **Instant delivery** to Spark wallets or other supported crypto destinations
+- **Webhook notifications** confirm successful conversion and delivery
+
+### Off-Ramp: Crypto to Fiat
+
+Convert cryptocurrency to fiat currency and deliver it to bank accounts.
+
+- **Pre-funded accounts** hold crypto balances for conversion
+- **Real-time rates** for crypto-to-fiat exchange
+- **Bank account delivery** via local payment rails
+- **Compliance** handled automatically through Grid's infrastructure
+
+### Funding Options
+
+**Grid Ramps** supports multiple funding models:
+
+- **Just-in-time (JIT)**: Create a quote and fund it in real-time using payment instructions (ideal for on-ramps)
+- **Pre-funded accounts**: Maintain balances in crypto or fiat and convert from those balances (ideal for off-ramps)
+
+<Tip>
+  You can mix funding models based on your use case. On-ramps typically use JIT
+  funding, while off-ramps use pre-funded accounts.
+</Tip>
+
+### Environments
+
+<Note>
+**Grid Ramps** supports two environments: **Sandbox** and **Production**.
+
+The Sandbox mirrors production behavior, allowing you to test the full end-to-end flow—from creating quotes and simulating funding to executing conversions and receiving webhooks—without moving real funds.
+
+The Production environment uses live credentials and base URLs for real transactions once you're ready to launch.
+
+</Note>
+
+---
+
+<Card title="Get Started" icon="play" href="/ramps/quickstart">
+  Ready to integrate Grid Ramps? Check out our quickstart guide.
+</Card>

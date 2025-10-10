@@ -1,0 +1,44 @@
+---
+title: "Introduction"
+description: "Introduction to Payouts"
+---
+
+import { payToBankProductName } from '/snippets/variables.mdx';
+import PaymentFlow from '/snippets/payment-flow.mdx';
+
+With {payToBankProductName}, you can send and receive low cost real-time payments to bank accounts worldwide through a single, simple API. Lightspark Grid automatically routes each payment across its network of Grid switches, handling FX, blockchain settlement, and instant banking off-ramps for you.
+
+- **Single API, global reach**: {payToBankProductName} interacts with the Money Grid to route your payments globally.
+- **No crypto handling**: {payToBankProductName} converts between fiat and crypto for you on demand to simplify your implementation and minimize FX costs.
+- **Real-time settlement**: Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
+
+
+<PaymentFlow/>
+
+## {payToBankProductName} Features
+Users interact with {payToBankProductName} through two main interfaces.
+
+- **API**: Programmatic access to create customers, quotes, fund the account, send payments and reconcile via webhooks.
+- **Dashboard**: Your development and operations team can use the dashboard to monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
+
+{payToBankProductName} supports the following functionality.  
+
+### Onboarding customers
+{payToBankProductName} has two customer onboarding options - one for non regulated entities where {payToBankProductName} handles the KYC/KYB process and one for regulated entities where you handle the KYC/KYB process.
+
+When creating customers, you'll be able to also connect external accounts or internal accounts to a specific customer and also add accounts for counterparties on the receiving end. 
+To learn more about accounts read our [internal accounts guide](/payouts/depositing-funds/internal-accounts) or setting up [external accounts guide](/payouts/depositing-funds/external-accounts)
+
+### Funding Payments
+{payToBankProductName} supports multiple transaction funding options including prefunded accounts and real-time funding. You can prefund an account using several payment rails such as ACH, SEPA Instant, wire transfers, Lightning, and more.  
+
+With real-time funding, you'll receive payment instructions as part of the quote. Once payment is received by our services, we'll initiate the payment to the receiver. 
+
+### Sending Payments
+To send with {payToBankProductName}, onboard an account for a customer and the counter party, then execute and fund a quote. {payToBankProductName} resolves the receiver by external bank details, returns min/max and an exchange rate, and provides funding instructions. Once funded, {payToBankProductName} handles FX and delivery to the receiving account.
+
+### Environments
+{payToBankProductName} supports two environments: Sandbox and Production. Sandbox mirrors production behavior and webhooks so you can test receiver resolution, quotes and funding instructions, settlement status changes, and full end‑to‑end flows without moving real funds. Production uses live credentials and base URLs for real payments once you’re ready to launch.
+
+### Country Availability
+TODO(ADD COUNTRY AVAILABILITY)

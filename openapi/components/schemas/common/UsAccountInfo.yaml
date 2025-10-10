@@ -1,0 +1,33 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - routingNumber
+  - accountCategory
+properties:
+  accountType:
+    allOf:
+      - $ref: ./BankAccountType.yaml
+    example: US_ACCOUNT
+  accountNumber:
+    type: string
+    description: US bank account number
+    example: '123456789'
+  routingNumber:
+    type: string
+    description: ACH routing number (9 digits)
+    example: '987654321'
+    minLength: 9
+    maxLength: 9
+    pattern: ^[0-9]{9}$
+  accountCategory:
+    type: string
+    enum:
+      - CHECKING
+      - SAVINGS
+    description: Type of account (checking or savings)
+    example: CHECKING
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Chase Bank

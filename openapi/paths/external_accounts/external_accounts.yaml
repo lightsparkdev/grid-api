@@ -1,0 +1,163 @@
+get:
+  summary: List external accounts
+  description: >
+    Retrieve a list of external accounts with optional filtering parameters. Returns all
+    external accounts that match the specified filters. If no filters are provided, returns all
+    external accounts (paginated).
+  operationId: listExternalAccounts
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: currency
+      in: query
+      description: Filter by currency code
+      required: false
+      schema:
+        type: string
+    - name: customerId
+      in: query
+      description: Filter by external accounts associated with a specific customer
+      required: false
+      schema:
+        type: string
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of external accounts matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: >-
+                  Total number of external accounts matching the criteria (excluding
+                  pagination)
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+
+post:
+  summary: Add a new external account
+  description: >-
+    Register a new external bank account for a customer
+  operationId: createExternalAccount
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/external_accounts/ExternalAccountCreateRequest.yaml
+        examples:
+          usBankAccount:
+            summary: Create external US bank account
+            value:
+              currency: USD
+              accountInfo:
+                accountType: US_ACCOUNT
+                accountNumber: "12345678901"
+                routingNumber: "123456789"
+                accountCategory: CHECKING
+                bankName: Chase Bank
+                platformAccountId: ext_acc_123456
+                beneficiary:
+                  beneficiaryType: INDIVIDUAL
+                  fullName: John Doe
+                  birthDate: "1990-01-15"
+                  nationality: US
+                  address:
+                    line1: 123 Main Street
+                    city: San Francisco
+                    state: CA
+                    postalCode: "94105"
+                    country: US
+          sparkWallet:
+            summary: Create external Spark wallet
+            value:
+              currency: BTC
+              accountInfo:
+                accountType: SPARK_WALLET
+                address: "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+  responses:
+    '201':
+      description: External account created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - External account already exists
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

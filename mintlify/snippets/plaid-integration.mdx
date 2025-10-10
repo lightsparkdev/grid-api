@@ -1,0 +1,705 @@
+## Overview
+
+Plaid integration allows your customers to securely connect their bank accounts without manually entering account numbers and routing information. Grid handles the complete Plaid Link flow, automatically creating external accounts when customers authenticate their banks.
+
+Benefits of using Plaid:
+
+- **No manual entry**: No need for customers to type account numbers or routing numbers
+- **Better UX**: Customers authenticate directly with their bank in a familiar interface
+- **Automatic account creation**: Grid creates the external account asynchronously after authentication
+- **Secure**: Bank credentials never touch your servers or Grid's—handled entirely by Plaid
+
+<Info>
+  Plaid integration requires Grid to manage your Plaid configuration. Contact
+  support to enable Plaid for your platform.
+</Info>
+
+## How Plaid integration works
+
+The Plaid flow involves collaboration between your platform, Grid, Plaid, and the customer's bank:
+
+1. **Request link token**: Your platform requests a Plaid Link token from Grid for a specific customer
+2. **Initialize Plaid Link**: Display Plaid Link UI to your customer using the link token
+3. **Customer authenticates**: Customer selects their bank and authenticates using Plaid Link
+4. **Exchange tokens**: Plaid returns a public token; your platform sends it to Grid's callback URL
+5. **Async processing**: Grid exchanges the public token with Plaid and retrieves account details
+6. **External account created**: Grid creates the external account and sends a webhook notification
+7. **Ready to use**: The external account is available for transfers and payments
+
+## Prerequisites
+
+Before implementing Plaid integration:
+
+- Grid API account with Plaid enabled (contact support)
+- At least one customer created in Grid
+- Webhook endpoint configured to receive external account notifications
+- Frontend capability to display Plaid Link UI (React, vanilla JS, mobile SDKs)
+
+<Tip>
+  Plaid provides SDKs for React, React Native, iOS, Android, and vanilla
+  JavaScript. Choose the SDK that matches your platform.
+</Tip>
+
+## Step 1: Request a Plaid Link token
+
+To initiate the Plaid flow, request a link token from Grid:
+
+<CodeGroup>
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch(
+  "https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens",
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(
+        `${apiTokenId}:${apiSecret}`
+      ).toString("base64")}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      customerId: "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    }),
+  }
+);
+
+const { linkToken, callbackUrl, expiration } = await response.json();
+console.log("Link token:", linkToken);
+console.log("Callback URL:", callbackUrl);
+```
+
+```python Python
+import requests
+import base64
+
+credentials = base64.b64encode(
+    f"{api_token_id}:{api_secret}".encode()
+).decode()
+
+response = requests.post(
+    'https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens',
+    headers={
+        'Authorization': f'Basic {credentials}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'customerId': 'Customer:019542f5-b3e7-1d02-0000-000000000001'
+    }
+)
+
+data = response.json()
+link_token = data['linkToken']
+callback_url = data['callbackUrl']
+print(f"Link token: {link_token}")
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "linkToken": "link-sandbox-af1a0311-da53-4636-b754-dd15cc058176",
+  "expiration": "2025-10-05T18:30:00Z",
+  "callbackUrl": "https://api.lightspark.com/grid/2025-10-13/plaid/callback/link-sandbox-af1a0311-da53-4636-b754-dd15cc058176",
+  "requestId": "req_abc123def456"
+}
+```
+
+### Key response fields:
+
+- **`linkToken`**: Use this to initialize Plaid Link in your frontend
+- **`callbackUrl`**: Where to POST the public token after Plaid authentication completes. The URL follows the pattern `https://api.lightspark.com/grid/{version}/plaid/callback/{linkToken}` and can be constructed manually if needed, though we recommend using the provided URL for forward compatibility.
+- **`expiration`**: Link tokens typically expire after 4 hours
+- **`requestId`**: Unique identifier for debugging purposes
+
+<Info>
+  Link tokens are single-use and will expire. If the customer doesn't complete
+  the flow, you'll need to request a new link token.
+</Info>
+
+## Step 2: Initialize Plaid Link
+
+Display the Plaid Link UI to your customer using the link token. The implementation varies by platform:
+
+<Warning>
+  **Important:** The callback URL should be called from your backend server, not
+  directly from the frontend. This prevents exposing your Grid API credentials
+  to the client.
+</Warning>
+
+### React/React Native
+
+<Tabs>
+<Tab title="React">
+```javascript
+import { usePlaidLink } from 'react-plaid-link';
+
+function BankAccountConnector({ linkToken, onSuccess }) {
+const { open, ready } = usePlaidLink({
+token: linkToken,
+onSuccess: async (publicToken, metadata) => {
+console.log('Plaid authentication successful');
+
+      // Send public token to YOUR backend endpoint
+      await fetch('/api/plaid/exchange-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          publicToken: publicToken,
+          accountId: metadata.account_id, // Optional
+        }),
+      });
+
+      onSuccess();
+    },
+    onExit: (error, metadata) => {
+      if (error) {
+        console.error('Plaid Link error:', error);
+      }
+      console.log('User exited Plaid Link');
+    },
+
+});
+
+return (
+
+<button onClick={() => open()} disabled={!ready}>
+  Connect your bank account
+</button>
+); }
+
+````
+</Tab>
+
+<Tab title="React Native">
+```javascript
+import { PlaidLink } from 'react-native-plaid-link-sdk';
+
+function BankAccountConnector({ linkToken, onSuccess }) {
+  return (
+    <PlaidLink
+      tokenConfig={{
+        token: linkToken,
+      }}
+      onSuccess={async ({ publicToken, metadata }) => {
+        console.log('Plaid authentication successful');
+
+        // Send public token to YOUR backend endpoint
+        await fetch('https://yourapi.com/api/plaid/exchange-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            publicToken: publicToken,
+            accountId: metadata.account_id,
+          }),
+        });
+
+        onSuccess();
+      }}
+      onExit={(error, metadata) => {
+        if (error) {
+          console.error('Plaid Link error:', error);
+        }
+      }}
+    >
+      <Text>Connect your bank account</Text>
+    </PlaidLink>
+  );
+}
+````
+
+</Tab>
+
+<Tab title="Vanilla JavaScript">
+```html
+<button id="link-button">Connect your bank account</button>
+
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+
+<script>
+  const linkButton = document.getElementById('link-button');
+  const linkToken = 'YOUR_LINK_TOKEN';
+  
+  const handler = Plaid.create({
+    token: linkToken,
+    onSuccess: async (publicToken, metadata) => {
+      console.log('Plaid authentication successful');
+      
+      // Send public token to YOUR backend endpoint
+      await fetch('/api/plaid/exchange-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          publicToken: publicToken,
+          accountId: metadata.account_id,
+        }),
+      });
+      
+      // Show success message to user
+      alert('Bank account connected successfully!');
+    },
+    onExit: (error, metadata) => {
+      if (error) {
+        console.error('Plaid Link error:', error);
+      }
+    },
+  });
+  
+  linkButton.onclick = function() {
+    handler.open();
+  };
+</script>
+
+````
+</Tab>
+</Tabs>
+
+<Note>
+Install the appropriate Plaid SDK for your platform:
+- React: `npm install react-plaid-link`
+- React Native: `npm install react-native-plaid-link-sdk`
+- Vanilla JS: Include the Plaid script tag as shown above
+</Note>
+
+## Step 3: Exchange the public token on your backend
+
+Create a backend endpoint that receives the public token from your frontend and forwards it to Grid's callback URL:
+
+```javascript
+// Backend endpoint: POST /api/plaid/exchange-token
+app.post('/api/plaid/exchange-token', async (req, res) => {
+  const { publicToken, accountId } = req.body;
+  const customerId = req.user.gridCustomerId; // From your auth
+
+  try {
+    // Get the callback URL (you stored this when requesting the link token)
+    const callbackUrl = await getStoredCallbackUrl(customerId);
+
+    // Forward to Grid's callback URL with proper authentication
+    const response = await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        publicToken: publicToken,
+        accountId: accountId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Grid API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    res.json({ success: true, message: result.message });
+  } catch (error) {
+    console.error('Error exchanging token:', error);
+    res.status(500).json({ error: 'Failed to process bank account' });
+  }
+});
+```
+
+<Tip>
+Store the `callbackUrl` when you request the link token so you can retrieve it later when exchanging the public token.
+</Tip>
+
+**Response from Grid (HTTP 202 Accepted):**
+
+```json
+{
+  "message": "External account creation initiated. You will receive a webhook notification when complete.",
+  "requestId": "req_def456ghi789"
+}
+```
+
+<Info>
+  A `202 Accepted` response indicates Grid has received the token and is
+  processing it asynchronously. The external account will be created in the
+  background.
+</Info>
+
+## Step 4: Handle webhook notification
+
+After Grid creates the external account, you'll receive a webhook notification. Listen for this webhook to know when the account is ready:
+
+```javascript
+// Your webhook endpoint (implemented on your server)
+app.post("/webhooks/grid", async (req, res) => {
+  const webhookPayload = req.body;
+
+  // Verify webhook signature (important for security)
+  const signature = req.headers["x-grid-signature"];
+  if (!verifyWebhookSignature(req.body, signature)) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // Handle external account creation
+  if (webhookPayload.type === "ACCOUNT_STATUS") {
+    const { account, customerId } = webhookPayload;
+
+    console.log("External account created:", account.accountId);
+    console.log("For customer:", customerId);
+
+    // Update your database
+    await database.externalAccounts.create({
+      gridAccountId: account.accountId,
+      customerId: customerId,
+      status: "ACTIVE",
+    });
+
+    // Notify the customer
+    await notifyCustomer(customerId, {
+      message: "Your bank account has been connected successfully!",
+    });
+  }
+
+  res.status(200).json({ received: true });
+});
+```
+
+<Warning>
+  Always verify webhook signatures using the Grid public key provided during
+  integration. This prevents malicious actors from sending fake webhook
+  notifications.
+</Warning>
+
+## Complete integration example
+
+Here's a full end-to-end example combining all steps:
+
+<Steps>
+<Step title="Backend: Request link token">
+```javascript
+// Backend endpoint: GET /api/plaid/link-token
+app.get('/api/plaid/link-token', async (req, res) => {
+  const customerId = req.user.gridCustomerId;
+
+  const response = await fetch(
+    'https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${gridApiCredentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ customerId }),
+    }
+  );
+
+  const data = await response.json();
+  res.json(data);
+});
+```
+</Step>
+
+<Step title="Frontend: Initialize Plaid Link">
+```javascript
+// Frontend component
+function ConnectBankAccount() {
+  const [linkToken, setLinkToken] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Fetch link token from your backend
+    fetch('/api/plaid/link-token')
+      .then(res => res.json())
+      .then(data => {
+        setLinkToken(data.linkToken);
+      });
+  }, []);
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess: async (publicToken, metadata) => {
+      setLoading(true);
+
+      try {
+        // Submit token to YOUR backend
+        await fetch('/api/plaid/exchange-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            publicToken,
+            accountId: metadata.account_id,
+          }),
+        });
+
+        // Show success message
+        alert('Bank account connected! We\'ll notify you when it\'s ready.');
+      } catch (error) {
+        console.error('Error submitting token:', error);
+        alert('Something went wrong. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    },
+  });
+
+  return (
+    <button onClick={() => open()} disabled={!ready || loading}>
+      {loading ? 'Processing...' : 'Connect Bank Account'}
+    </button>
+  );
+}
+```
+</Step>
+
+<Step title="Backend: Exchange token with Grid">
+```javascript
+// Backend endpoint to exchange public token
+app.post('/api/plaid/exchange-token', async (req, res) => {
+  const { publicToken, accountId } = req.body;
+  const customerId = req.user.gridCustomerId;
+
+  // Retrieve the callback URL you stored when requesting the link token
+  const callbackUrl = await redis.get(`plaid:callback:${customerId}`);
+
+  try {
+    // Forward to Grid's callback URL
+    const response = await fetch(callbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publicToken, accountId }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Grid API error: ${response.status}`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to process' });
+  }
+});
+```
+</Step>
+
+<Step title="Backend: Handle webhook">
+```javascript
+// Backend webhook endpoint
+app.post('/webhooks/grid', async (req, res) => {
+  // Verify signature
+  if (!verifySignature(req.body, req.headers['x-grid-signature'])) {
+    return res.status(401).end();
+  }
+
+  const { type, account, customerId } = req.body;
+
+  if (type === 'ACCOUNT_STATUS' && account) {
+    // Store external account reference
+    await db.users.update({
+      where: { gridCustomerId: customerId },
+      data: {
+        externalAccountId: account.accountId,
+        bankAccountStatus: 'CONNECTED',
+      },
+    });
+
+    // Notify user via push notification, email, etc.
+    await sendNotification(customerId, 'Bank account connected!');
+  }
+
+  res.status(200).json({ received: true });
+});
+```
+</Step>
+</Steps>
+
+## Error handling
+
+Handle common error scenarios to provide a smooth user experience:
+
+### Link token expired
+
+```javascript
+try {
+  const response = await fetch(callbackUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ publicToken }),
+  });
+
+  if (response.status === 404) {
+    // Link token not found or expired
+    alert("Your session expired. Please try connecting your bank again.");
+    // Request a new link token
+    await refreshLinkToken();
+  }
+} catch (error) {
+  console.error("Error:", error);
+}
+```
+
+### Link token already used
+
+```javascript
+if (response.status === 409) {
+  // Link token already used
+  alert("This connection has already been processed.");
+  // Redirect to account list or dashboard
+  navigate("/accounts");
+}
+```
+
+### User exits Plaid Link
+
+```javascript
+const { open } = usePlaidLink({
+  token: linkToken,
+  onExit: (error, metadata) => {
+    if (error) {
+      console.error("Plaid error:", error);
+      // Show user-friendly error message
+      setError("Unable to connect to your bank. Please try again.");
+    } else {
+      // User closed the modal without completing
+      console.log("User exited without connecting");
+    }
+  },
+});
+```
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Store callback URL with link token">
+Keep the callback URL associated with each link token request:
+
+```javascript
+// Backend: When requesting link token, store the callback URL
+app.get('/api/plaid/link-token', async (req, res) => {
+  const customerId = req.user.gridCustomerId;
+
+  const response = await fetch(
+    'https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${gridApiCredentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ customerId }),
+    }
+  );
+
+  const { linkToken, callbackUrl } = await response.json();
+
+  // Store callback URL for later use (e.g., in Redis with expiration)
+  await redis.setex(`plaid:callback:${customerId}`, 3600, callbackUrl);
+
+  // Only send link token to frontend
+  res.json({ linkToken });
+});
+
+// Backend: When exchanging token, retrieve the callback URL
+app.post('/api/plaid/exchange-token', async (req, res) => {
+  const customerId = req.user.gridCustomerId;
+  const callbackUrl = await redis.get(`plaid:callback:${customerId}`);
+
+  // Forward to Grid's callback URL
+  await fetch(callbackUrl, {
+    method: 'POST',
+    body: JSON.stringify(req.body),
+  });
+
+  res.json({ success: true });
+});
+```
+
+This keeps the callback URL server-side and prevents exposing Grid API endpoints to the client.
+
+</Accordion>
+
+<Accordion title="Provide clear user feedback">
+Keep users informed throughout the asynchronous process:
+
+```javascript
+// After submitting public token
+showNotification({
+  title: "Bank account connected!",
+  message:
+    "We're verifying your account details. You'll be notified when it's ready.",
+  type: "success",
+});
+
+// When webhook arrives
+showNotification({
+  title: "Account verified!",
+  message: "You can now use this account for payments and withdrawals.",
+  type: "success",
+  action: { label: "View Account", link: "/accounts" },
+});
+```
+
+</Accordion>
+
+<Accordion title="Handle webhook retries idempotently">
+Grid may send the same webhook multiple times. Handle them idempotently:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  const { webhookId, account } = req.body;
+
+  // Check if already processed
+  const existing = await db.webhooks.findUnique({
+    where: { webhookId },
+  });
+
+  if (existing) {
+    // Already processed, acknowledge and return
+    return res.status(200).json({ received: true });
+  }
+
+  // Process webhook
+  await processExternalAccountCreation(account);
+
+  // Record webhook ID to prevent duplicate processing
+  await db.webhooks.create({
+    data: { webhookId, processedAt: new Date() },
+  });
+
+  res.status(200).json({ received: true });
+});
+```
+
+</Accordion>
+
+<Accordion title="Set appropriate timeouts">
+The Plaid flow is user-driven and can take several minutes:
+
+```javascript
+// Don't set aggressive timeouts on the link token request
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 30000); // 30 seconds
+
+try {
+  const response = await fetch(plaidEndpoint, {
+    signal: controller.signal,
+    // ...
+  });
+} finally {
+  clearTimeout(timeout);
+}
+```
+
+However, submitting the public token should complete quickly.
+
+</Accordion>
+</AccordionGroup>

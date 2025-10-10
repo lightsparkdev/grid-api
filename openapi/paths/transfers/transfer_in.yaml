@@ -1,0 +1,88 @@
+post:
+  summary: Create a transfer-in request
+  description: >
+    Transfer funds from an external account to an internal account for a specific customer.
+    This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull).
+    Otherwise, use the paymentInstructions on the internal account to deposit funds.
+  operationId: createTransferIn
+  tags:
+    - Same-Currency Transfers
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - source
+            - destination
+          properties:
+            source:
+              type: object
+              required:
+                - accountId
+              properties:
+                accountId:
+                  type: string
+                  description: Reference to an external account ID
+                  example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              description: Source external account details
+            destination:
+              type: object
+              required:
+                - accountId
+              properties:
+                accountId:
+                  type: string
+                  description: Reference to an internal account ID
+                  example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              description: Destination internal account details
+            amount:
+              type: integer
+              format: int64
+              description: >-
+                Amount in the smallest unit of the currency (e.g., cents for USD/EUR,
+                satoshis for BTC)
+              example: 12550
+        examples:
+          transferIn:
+            summary: Transfer from external to internal account
+            value:
+              source:
+                accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              destination:
+                accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              amount: 12550
+  responses:
+    '201':
+      description: Transfer-in request created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/Transaction.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

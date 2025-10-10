@@ -1,0 +1,153 @@
+---
+title: "Lightspark Grid"
+mode: "custom"
+---
+
+export const HeroCard = ({ title, description, href, icon }) => {
+  return (
+    <a className="group cursor-pointer pb-8 hero-card grow-0 basis-full sm:basis-1/2 lg:basis-[30%]" href={href}>
+      <img src={icon} alt="Globe icon" className="w-10 h-10" />
+      <div className="card-content">
+        <h3 className="highlight">{title}</h3>
+        <span>{description}</span>
+      </div>
+    </a>
+  );
+};
+
+<div className="flex flex-col items-center self-stretch w-full hero">
+  <div className="flex flex-col items-center gap-[48px]">
+    <div className="flex items-center title">
+      <img
+        className="h-12 w-auto"
+        src="/images/grid.svg"
+        alt="Lightspark Grid"
+      />
+      <span className="pl-[19px] text-[64px] leading-none inline-flex items-center h-12 py-0 tracking-tight">
+        Grid
+      </span>
+    </div>
+    <div className="flex justify-center subtext">
+      <p>
+        <span className="highlight">Commands for money.</span> One API/SDK to
+        send, receive, and settle value globally—fiat, stablecoins, or Bitcoin.
+        Always real time, always low cost, built on an open network.
+      </p>
+    </div>
+    <div className="flex justify-center">
+      <button className="call-to-action">Get started</button>
+    </div>
+  </div>
+</div>
+<div className="flex usecase w-full justify-center items-center">
+  <div className="section mx-auto">
+    <div>
+    <h2 className="highlight">Build with Lightspark Grid</h2>
+    <h2>Choose your use case</h2>
+    </div>
+    <div className="flex flex-col">
+      <div className="flex items-stretch w-full gap-6 flex-wrap">
+        <HeroCard
+          title="Payouts"
+          description="Send value instantly across currencies and borders."
+          href="/payouts"
+          icon="/images/IconGlobus.svg"
+        />
+        <HeroCard
+          title="Ramps"
+          description="Convert between crypto and fiat currencies."
+          href="/ramps"
+          icon="/images/IconGlobus.svg"
+        />
+        <HeroCard
+          title="Rewards & cashback"
+          description="Deliver micro-payouts at scale instantly and in local currency."
+          href="/rewards"
+          icon="/images/IconGlobus.svg"
+        />
+        <HeroCard
+          title="Global P2P"
+          description="Accept funds via bank transfers, wallets, or UMAs, and settle them in the currency of your choice."
+          href="/remittances"
+          icon="/images/IconGlobus.svg"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+<div className="flex usecase w-full justify-center items-center">
+  <div className="section mx-auto">
+  <div>
+    <h2 className="highlight">Get started</h2>
+    <h2>Grid resources</h2>
+    </div>
+    <div className="flex flex-col gap-8">
+      <div className="flex items-stretch w-full gap-6 flex-wrap">
+        <HeroCard
+          title="Github Repository"
+          description="View the Grid API repository on GitHub."
+          href="https://github.com/lightsparkdev/grid-api"
+          icon="/images/github.svg"
+        />
+        <HeroCard
+          title="Tools"
+          description="Tools and resources to help you understand and test payment flows."
+          href="/developer-resources/tools"
+          icon="/images/IconGlobus.svg"
+        />
+        <HeroCard
+          title="Postman collection"
+          description="Quickly get started with Grid using our Postman collection."
+          href="/developer-resources/postman-collection"
+          icon="/images/IconGlobus.svg"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="flex w-full justify-center items-center mb-6">
+  <div className="footer mx-auto">
+    <a href="https://x.com/lightspark" target="_blank" className="h-fit">
+      <span className="sr-only">x</span>
+      <svg
+        className="w-5 h-5 bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 dark:hover:bg-gray-400"
+        style={{
+          maskImage: 'url("/images/x-twitter.svg")',
+          maskRepeat: "no-repeat",
+          maskPosition: "center center",
+        }}
+      ></svg>
+    </a>
+    <a
+      href="https://github.com/lightsparkdev"
+      target="_blank"
+      className="h-fit"
+    >
+      <span className="sr-only">github</span>
+      <svg
+        className="w-5 h-5 bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 dark:hover:bg-gray-400"
+        style={{
+          maskImage: 'url("/images/github.svg")',
+          maskRepeat: "no-repeat",
+          maskPosition: "center center",
+        }}
+      ></svg>
+    </a>
+    <a
+      href="https://linkedin.com/company/lightspark-group"
+      target="_blank"
+      className="h-fit"
+    >
+      <span className="sr-only">linkedin</span>
+      <svg
+        className="w-5 h-5 bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 dark:hover:bg-gray-400"
+        style={{
+          maskImage: 'url("/images/linkedin.svg")',
+          maskRepeat: "no-repeat",
+          maskPosition: "center center",
+        }}
+      ></svg>
+    </a>
+  </div>
+</div>

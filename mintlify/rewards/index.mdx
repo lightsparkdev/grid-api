@@ -1,0 +1,79 @@
+---
+title: 'Introduction'
+description: 'Send instant Bitcoin rewards to users worldwide through a single API'
+---
+
+With **Grid Rewards**, you can send instant Bitcoin rewards to your **users' self-custody wallets** worldwide through a single, simple API. The Lightspark Grid automatically handles the entire process, managing the fiat-to-crypto conversion, compliance checks, and instant delivery for you.
+
+<CardGroup cols={3}>
+  <Card title="Buy & Send in One Call" icon="bolt">
+    The Grid API combines USD-to-BTC conversion and payout into a single, atomic operation, simplifying the process of distributing rewards.
+  </Card>
+  <Card title="No Crypto Handling" icon="shield-check">
+    Grid converts your platform's fiat balance into Bitcoin on demand, allowing you to offer crypto rewards without managing digital asset custody or complex exchange integrations.
+  </Card>
+  <Card title="Instant Delivery" icon="rocket">
+    Leverages the Lightning Network to deliver Bitcoin to your users' wallets (like a Spark wallet) in seconds, giving them immediate ownership and control.
+  </Card>
+</CardGroup>
+
+---
+
+## Rewards Payout Flow
+
+<Steps>
+  <Step title="Funding">
+    Your platform's internal account is pre-funded with fiat currency (e.g., USD) via standard payment rails like ACH push.
+  </Step>
+  <Step title="Customer Onboarding">
+    Your user is onboarded via a secure, hosted KYC flow to meet compliance requirements before they can receive a reward.
+  </Step>
+  <Step title="Quote & Execution">
+    You execute a single API call to create a quote, instantly convert a specific USD amount to BTC at the current market rate, and transfer the Bitcoin to the user's wallet address.
+  </Step>
+</Steps>
+
+---
+
+## Grid Rewards Features
+
+Users interact with **Grid Rewards** through two main interfaces:
+
+<Tabs>
+  <Tab title="API">
+    Programmatic access to onboard customers, fund your platform account, get quotes for Bitcoin purchases, and execute reward payouts. Reconcile all activity with real-time webhooks.
+  </Tab>
+  <Tab title="Dashboard">
+    Your development and operations team can use the dashboard to monitor balances and transactions, manage API keys and environments, and troubleshoot with detailed logs.
+  </Tab>
+</Tabs>
+
+### Onboarding Customers
+
+<Info>
+**Grid Rewards** has two customer onboarding options—one for non-regulated entities where Lightspark handles the KYC/KYB process via a hosted flow, and one for regulated entities where you handle the KYC/KYB process and can create users directly via the API.
+</Info>
+
+### Funding Your Platform Account
+
+**Grid Rewards** operates on a pre-funded model. You can fund your internal platform account using several payment rails such as ACH, wire transfers, Lightning, and more. This stored balance is then used to instantly purchase and send Bitcoin rewards to your customers.
+
+### Sending Rewards
+
+To send a reward with **Grid Rewards**, you create and execute a quote. The API call specifies your funded internal account as the source and the customer's Bitcoin wallet address as the destination. Grid handles the USD-to-BTC conversion and instant delivery to the receiving wallet, notifying you of the completed transfer via webhook.
+
+### Environments
+
+<Note>
+**Grid Rewards** supports two environments: **Sandbox** and **Production**. 
+
+The Sandbox mirrors production behavior, allowing you to test the full end-to-end flow—from funding a test account and onboarding a mock customer to sending a simulated Bitcoin reward—without moving real funds. 
+
+The Production environment uses live credentials and base URLs for real transactions once you're ready to launch.
+</Note>
+
+---
+
+<Card title="Get Started" icon="play" href="/rewards/quickstart">
+  Ready to integrate Grid Rewards? Check out our quickstart guide.
+</Card>

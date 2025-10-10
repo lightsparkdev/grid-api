@@ -1,0 +1,302 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Grid API Documentation",
+  "description": "The Grid API enables modern financial institutions to easily send and receive global payments.  The following documentation helps developers understand the Grid API and how to integrate with it.",
+  "colors": {
+    "primary": "#1A1A1A",
+    "light": "#07C983",
+    "dark": "#00B3E0"
+  },
+  "background": {
+    "color": {
+      "light": "#F8F8F7"
+    }
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "pages": ["index"]
+      },
+      {
+        "tab": "Payouts",
+        "pages": [
+          "payouts/index",
+          "payouts/quickstart",
+          {
+            "group": "Getting Started",
+            "pages": [
+              "developer-resources/terminology",
+              "payouts/onboarding/implementation-overview"
+            ]
+          },
+          {
+            "group": "Onboarding",
+            "pages": [
+              "payouts/onboarding/platform-configuration",
+              "payouts/onboarding/configuring-users"
+            ]
+          },
+          {
+            "group": "Accounts",
+            "pages": [
+              "payouts/depositing-funds/internal-accounts",
+              "payouts/depositing-funds/external-accounts",
+              "payouts/depositing-funds/plaid"
+            ]
+          },
+          {
+            "group": "Payment Flow",
+            "pages": [
+              "payouts/payment-flow/send-payment",
+              "payouts/payment-flow/receive-payment",
+              "payouts/payment-flow/list-transactions",
+              "payouts/payment-flow/reconciliation",
+              "payouts/payment-flow/error-handling"
+            ]
+          },
+          {
+            "group": "Developer Resources",
+            "pages": [
+              "developer-resources/tools",
+              "developer-resources/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Ramps",
+        "pages": [
+          "ramps/index",
+          "ramps/quickstart",
+          {
+            "group": "Getting Started",
+            "pages": [
+              "ramps/onboarding/implementation-overview",
+              "developer-resources/terminology"
+            ]
+          },
+          {
+            "group": "Onboarding",
+            "pages": [
+              "ramps/onboarding/platform-configuration",
+              "ramps/onboarding/configuring-customers"
+            ]
+          },
+          {
+            "group": "Accounts",
+            "pages": [
+              "ramps/accounts/internal-accounts",
+              "ramps/accounts/external-accounts",
+              "ramps/accounts/plaid"
+            ]
+          },
+          {
+            "group": "Conversion Flows",
+            "pages": [
+              "ramps/conversion-flows/fiat-crypto-conversion",
+              "ramps/conversion-flows/self-custody-wallets"
+            ]
+          },
+          {
+            "group": "Platform Tools",
+            "pages": [
+              "ramps/platform-tools/webhooks",
+              "ramps/platform-tools/sandbox-testing"
+            ]
+          },
+          {
+            "group": "Developer Resources",
+            "pages": [
+              "developer-resources/tools",
+              "developer-resources/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Rewards",
+        "pages": [
+          "rewards/index",
+          "rewards/quickstart",
+          {
+            "group": "Getting Started",
+            "pages": [
+              "rewards/developer-guides/implementation-overview",
+              "developer-resources/terminology"
+            ]
+          },
+          {
+            "group": "Onboarding",
+            "pages": [
+              "rewards/developer-guides/platform-configuration",
+              "rewards/developer-guides/configuring-customers"
+            ]
+          },
+          {
+            "group": "Accounts",
+            "pages": [
+              "rewards/developer-guides/internal-accounts",
+              "rewards/developer-guides/external-accounts",
+              "rewards/developer-guides/plaid"
+            ]
+          },
+          {
+            "group": "Distributing Rewards",
+            "pages": [
+              "rewards/developer-guides/distributing-rewards",
+              "rewards/developer-guides/listing-transactions"
+            ]
+          },
+          {
+            "group": "Platform Tools",
+            "pages": [
+              "remittances/developer-guides/webhooks",
+              "remittances/developer-guides/sandbox-testing"
+            ]
+          },
+          {
+            "group": "Developer Resources",
+            "pages": [
+              "developer-resources/tools",
+              "developer-resources/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Global P2P",
+        "pages": [
+          "remittances/index",
+          "remittances/terminology",
+          "remittances/quickstart",
+          {
+            "group": "Getting Started",
+            "pages": [
+              "remittances/developer-guides/implementation-overview",
+              "remittances/developer-guides/platform-configuration"
+            ]
+          },
+          {
+            "group": "Onboarding Customers",
+            "pages": [
+              "remittances/developer-guides/configuring-users",
+              "remittances/developer-guides/invitations"
+            ]
+          },
+          {
+            "group": "Managing Accounts",
+            "pages": [
+              "remittances/developer-guides/internal-accounts",
+              "remittances/developer-guides/external-accounts"
+            ]
+          },
+          {
+            "group": "Sending & Receiving Payments",
+            "pages": [
+              "remittances/developer-guides/sending-payments",
+              "remittances/developer-guides/receiving-payments",
+              "remittances/developer-guides/reconciliation"
+            ]
+          },
+          {
+            "group": "Platform Tools",
+            "pages": [
+              "remittances/developer-guides/webhooks",
+              "remittances/developer-guides/sandbox-testing"
+            ]
+          },
+          {
+            "group": "Developer Resources",
+            "pages": [
+              "developer-resources/tools",
+              "developer-resources/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "groups": [
+          {
+            "group": "Using the API",
+            "pages": [
+              "api-reference/environments",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "API documentation",
+            "openapi": "openapi.yaml"
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Changelog",
+            "pages": ["changelog"]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Github",
+        "href": "https://github.com/lightsparkdev/grid-api",
+        "icon": "github"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dash.lightspark.com"
+    }
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude"]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/lightspark",
+      "github": "https://github.com/lightsparkdev",
+      "linkedin": "https://linkedin.com/company/lightspark-group"
+    }
+  },
+  "head": {
+    "links": [
+      {
+        "rel": "preload",
+        "href": "/fonts/suisse-intl/SuisseIntl-Medium.woff2",
+        "as": "font",
+        "type": "font/woff2",
+        "crossOrigin": "anonymous"
+      },
+      {
+        "rel": "preload",
+        "href": "/fonts/suisse-intl/SuisseIntl-Regular.woff2",
+        "as": "font",
+        "type": "font/woff2",
+        "crossOrigin": "anonymous"
+      },
+      {
+        "rel": "preload",
+        "href": "/fonts/suisse-intl/SuisseIntl-Bold.woff2",
+        "as": "font",
+        "type": "font/woff2",
+        "crossOrigin": "anonymous"
+      },
+      { "rel": "stylesheet", "href": "/styles/fonts.css" },
+      { "rel": "stylesheet", "href": "/styles/styles.css" }
+    ]
+  }
+}

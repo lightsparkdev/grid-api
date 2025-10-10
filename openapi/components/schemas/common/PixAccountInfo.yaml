@@ -1,0 +1,28 @@
+type: object
+required:
+  - accountType
+  - pixKey
+  - pixKeyType
+properties:
+  accountType:
+    allOf:
+      - $ref: ./BankAccountType.yaml
+    example: PIX
+  pixKey:
+    type: string
+    description: PIX key for Brazilian instant payments
+    example: '55119876543210'
+  pixKeyType:
+    type: string
+    enum:
+      - CPF
+      - CNPJ
+      - EMAIL
+      - PHONE
+      - RANDOM
+    description: Type of PIX key being used
+    example: PHONE
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Nubank

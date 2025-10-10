@@ -1,0 +1,22 @@
+type: object
+properties:
+  code:
+    type: string
+    description: >-
+      Three-letter currency code (ISO 4217) for fiat currencies. Some
+      cryptocurrencies may use their own ticker symbols (e.g. "SAT" for
+      satoshis, "USDC" for USDCoin, etc.)
+    example: USD
+  name:
+    type: string
+    description: Full name of the currency
+    example: United States Dollar
+  symbol:
+    type: string
+    description: Symbol of the currency
+    example: $
+  decimals:
+    type: integer
+    description: Number of decimal places for the currency
+    minimum: 0
+    example: 2

@@ -1,0 +1,189 @@
+post:
+  summary: Incoming payment webhook and approval mechanism
+  description: >
+    Webhook that is called when an incoming payment is received by a customer's UMA
+    address.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    ### Payment Approval Flow
+
+    When a transaction has `status: "PENDING"`, this webhook serves as an
+    approval mechanism:
+
+
+    1. The client should check the `counterpartyInformation` against their
+    requirements
+
+    2. To APPROVE the payment synchronously, return a 200 OK response
+
+    3. To REJECT the payment, return a 403 Forbidden response with an Error
+    object
+
+    4. To request more information, return a 422 Unprocessable Entity with
+    specific missing fields
+
+    5. To process the payment asynchronously, return a 202 Accepted response and
+    then call the `/transactions/{transactionId}/approve` or
+    `/transactions/{transactionId}/reject` endpoint within 5 seconds. Note that
+    synchronous approval/rejection is preferred where possible.
+
+
+    The Grid system will proceed or cancel the payment based on your response.
+
+
+    For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this
+    webhook is purely informational.
+  operationId: incomingPaymentWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/IncomingPaymentWebhook.yaml
+        examples:
+          pendingPayment:
+            summary: Pending payment example requiring approval
+            value:
+              transaction:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000005
+                status: PENDING
+                type: INCOMING
+                senderUmaAddress: $sender@external.domain
+                receiverUmaAddress: $recipient@uma.domain
+                receivedAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                reconciliationInstructions:
+                  reference: REF-123456789
+                counterpartyInformation:
+                  FULL_NAME: John Sender
+                  BIRTH_DATE: '1985-06-15'
+                  NATIONALITY: US
+              requestedReceiverCustomerInfoFields:
+                - name: NATIONALITY
+                  mandatory: true
+                - name: ADDRESS
+                  mandatory: false
+              timestamp: '2025-08-15T14:32:00Z'
+              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: INCOMING_PAYMENT
+          incomingCompletedPayment:
+            summary: Completed payment notification
+            value:
+              transaction:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000005
+                status: COMPLETED
+                type: INCOMING
+                senderUmaAddress: $sender@external.domain
+                receiverUmaAddress: $recipient@uma.domain
+                receivedAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: Payment for services
+                reconciliationInstructions:
+                  reference: REF-123456789
+              timestamp: '2025-08-15T14:32:00Z'
+              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: INCOMING_PAYMENT
+  responses:
+    '200':
+      description: >
+        Webhook received successfully.
+
+        For PENDING transactions, this indicates approval to proceed with the
+        payment.
+
+        If `requestedReceiverCustomerInfoFields` were present in the webhook
+        request, the corresponding fields for the recipient must be included in
+        this response in the `receiverCustomerInfo` object.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/webhooks/IncomingPaymentWebhookResponse.yaml
+
+    '202':
+      description: >
+        Webhook received and will be processed asynchronously. The synchronous
+        200 response should be preferred where possible. This asycnhronous path
+        should only be used in
+
+        cases where the platform's architecture requires async (but still very
+        quick) processing before approving or rejecting the payment.
+
+        The platform must call the `/transactions/{transactionId}/approve` or
+        `/transactions/{transactionId}/reject` endpoint to approve or reject the
+        payment within 5 seconds or the payment will be automatically rejected.
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '403':
+      description: |
+        Forbidden - Payment rejected by the client.
+        Only applicable for PENDING transactions.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/webhooks/IncomingPaymentWebhookForbiddenResponse.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml
+    '422':
+      description: |
+        Unprocessable Entity - Additional counterparty information required.
+        Only applicable for PENDING transactions.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/webhooks/IncomingPaymentWebhookUnprocessableResponse.yaml

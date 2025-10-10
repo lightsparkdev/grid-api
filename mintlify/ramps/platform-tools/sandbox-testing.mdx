@@ -1,0 +1,508 @@
+---
+title: "Sandbox Testing"
+description: "Test ramp flows safely without moving real funds"
+---
+
+The Grid Sandbox environment provides a complete testing environment for ramp operations, allowing you to validate on-ramp and off-ramp flows without using real money or cryptocurrency.
+
+## Sandbox overview
+
+Sandbox mirrors production behavior while using simulated funds:
+
+- **Same API endpoints**: Use identical API calls as production
+- **Simulated funding**: Mock bank transfers and crypto deposits
+- **Real webhooks**: Receive actual webhook notifications
+- **No real money**: All transactions use test funds
+- **Isolated environment**: Sandbox data never affects production
+
+<Info>
+  Sandbox is perfect for development, testing, and demonstrating ramp
+  functionality before going live.
+</Info>
+
+## Getting started
+
+### Create sandbox credentials
+
+1. Log into the Grid dashboard
+2. Navigate to **Settings** → **API Keys**
+3. Click **Create API Key** and select **Sandbox** environment
+4. Save your API key ID and secret securely
+
+<Warning>
+  Sandbox credentials only work with the sandbox environment. They cannot access
+  production data or move real funds.
+</Warning>
+
+### Configure sandbox webhook
+
+Set up a webhook endpoint for sandbox notifications:
+
+```bash
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "webhookEndpoint": "https://api.yourapp.dev/webhooks/grid"
+  }'
+```
+
+<Tip>
+  Use tools like ngrok to expose local webhook endpoints during development:
+  `ngrok http 3000`
+</Tip>
+
+## Testing on-ramps (Fiat → Crypto)
+
+Simulate the complete on-ramp flow in sandbox:
+
+### Step 1: Create a test customer
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "platformCustomerId": "test_user_001",
+    "customerType": "INDIVIDUAL",
+    "fullName": "Alice Test",
+    "email": "alice@example.com",
+    "birthDate": "1990-01-15",
+    "address": {
+      "line1": "123 Test Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "US"
+    }
+  }'
+```
+
+<Check>In sandbox, customers are automatically approved for testing.</Check>
+
+### Step 2: Create an on-ramp quote
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {
+      "customerId": "Customer:sandbox001",
+      "currency": "USD"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:sandbox001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "Test on-ramp conversion"
+  }'
+```
+
+The quote response includes payment instructions with a reference code.
+
+### Step 3: Simulate funding
+
+Use the sandbox endpoint to simulate receiving the fiat payment:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/send' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "reference": "RAMP-ABC123",
+    "currencyCode": "USD",
+    "currencyAmount": 10000
+  }'
+```
+
+<Note>
+  The reference code must match the one provided in the quote's payment
+  instructions.
+</Note>
+
+### Step 4: Verify completion
+
+Within seconds, you'll receive a webhook notification confirming the on-ramp completed:
+
+```json
+{
+  "transaction": {
+    "id": "Transaction:sandbox025",
+    "status": "COMPLETED",
+    "type": "OUTGOING",
+    "sentAmount": {
+      "amount": 10000,
+      "currency": { "code": "USD" }
+    },
+    "receivedAmount": {
+      "amount": 95000,
+      "currency": { "code": "BTC" }
+    },
+    "settledAt": "2025-10-03T15:02:30Z"
+  },
+  "type": "OUTGOING_PAYMENT"
+}
+```
+
+## Testing off-ramps (Crypto → Fiat)
+
+Simulate the complete off-ramp flow:
+
+### Step 1: Fund internal account with crypto
+
+Simulate a Bitcoin deposit to the customer's internal account:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/receive' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "accountId": "InternalAccount:sandbox_btc001",
+    "currencyCode": "BTC",
+    "currencyAmount": 10000000,
+    "reference": "test_deposit_001"
+  }'
+```
+
+<Check>
+  You'll receive an `ACCOUNT_STATUS` webhook showing the updated balance.
+</Check>
+
+### Step 2: Create external bank account
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerId": "Customer:sandbox001",
+    "currency": "USD",
+    "platformAccountId": "test_bank_001",
+    "accountInfo": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "123456789",
+      "routingNumber": "021000021",
+      "accountCategory": "CHECKING",
+      "bankName": "Test Bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Alice Test",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
+        "address": {
+          "line1": "123 Test Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+  }'
+```
+
+### Step 3: Create and execute off-ramp quote
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:sandbox_btc001"
+    },
+    "destination": {
+      "accountId": "ExternalAccount:sandbox_bank001",
+      "currency": "USD"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 5000000,
+    "description": "Test off-ramp conversion"
+  }'
+```
+
+Then execute the quote:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute' \
+  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET"
+```
+
+<Info>
+  In sandbox, off-ramp conversions complete instantly. In production, bank
+  settlement may take 1-3 business days.
+</Info>
+
+## Test scenarios
+
+### Successful conversions
+
+Test happy path scenarios:
+
+```javascript
+// On-ramp: $100 USD → BTC
+const onRampTest = async () => {
+  const quote = await createQuote({
+    source: { customerId, currency: "USD" },
+    destination: {
+      externalAccountDetails: {
+        /* Spark wallet */
+      },
+    },
+    lockedCurrencySide: "SENDING",
+    lockedCurrencyAmount: 10000,
+  });
+
+  // Simulate funding
+  await sandboxSend({
+    reference: quote.paymentInstructions[0].reference,
+    currencyCode: "USD",
+    currencyAmount: 10000,
+  });
+
+  // Wait for webhook
+  await waitForWebhook("OUTGOING_PAYMENT", quote.transactionId);
+};
+
+// Off-ramp: 0.1 BTC → USD
+const offRampTest = async () => {
+  // Fund crypto account
+  await sandboxReceive({
+    accountId: btcAccountId,
+    currencyCode: "BTC",
+    currencyAmount: 10000000,
+  });
+
+  // Create and execute quote
+  const quote = await createQuote({
+    source: { accountId: btcAccountId },
+    destination: { accountId: bankAccountId, currency: "USD" },
+    lockedCurrencySide: "SENDING",
+    lockedCurrencyAmount: 10000000,
+  });
+
+  await executeQuote(quote.id);
+
+  // Wait for webhook
+  await waitForWebhook("OUTGOING_PAYMENT", quote.transactionId);
+};
+```
+
+### Failed conversions
+
+Test error scenarios:
+
+```javascript
+// Insufficient balance
+const insufficientBalanceTest = async () => {
+  try {
+    const quote = await createQuote({
+      source: { accountId: emptyBtcAccountId }, // Empty account
+      destination: { accountId: bankAccountId, currency: "USD" },
+      lockedCurrencySide: "SENDING",
+      lockedCurrencyAmount: 10000000, // More than available
+    });
+
+    await executeQuote(quote.id);
+  } catch (error) {
+    console.log("Expected error:", error.message);
+    // Handle insufficient balance error
+  }
+};
+
+// Invalid wallet address
+const invalidAddressTest = async () => {
+  try {
+    await createQuote({
+      destination: {
+        externalAccountDetails: {
+          customerId,
+          currency: "BTC",
+          accountInfo: {
+            accountType: "SPARK_WALLET",
+            address: "invalid_address", // Invalid format
+          },
+        },
+      },
+      /* ... */
+    });
+  } catch (error) {
+    console.log("Expected validation error:", error.message);
+  }
+};
+```
+
+## Sandbox data
+
+### Test Spark wallet addresses
+
+Use these pre-configured Spark addresses in sandbox:
+
+```
+sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+sprt1pgs3yuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dtest1
+sprt1pgs4zuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dtest2
+```
+
+<Note>
+  These addresses are for sandbox testing only and will not receive real
+  Bitcoin.
+</Note>
+
+### Test bank account details
+
+Use these test account numbers in sandbox:
+
+```
+Account Number: 123456789
+Routing Number: 021000021 (Chase Bank test routing)
+Account Number: 987654321
+Routing Number: 111000025 (Bank of America test routing)
+```
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Test all conversion paths">
+  Validate both on-ramp and off-ramp flows:
+  
+  ```javascript
+  describe('Ramp Integration Tests', () => {
+    it('should complete USD to BTC on-ramp', async () => {
+      const result = await testOnRamp({
+        amountUsd: 10000,
+        destinationWallet: testSparkAddress,
+      });
+      expect(result.status).toBe('COMPLETED');
+    });
+    
+    it('should complete BTC to USD off-ramp', async () => {
+      const result = await testOffRamp({
+        amountBtc: 10000000,
+        destinationBank: testBankAccountId,
+      });
+      expect(result.status).toBe('COMPLETED');
+    });
+  });
+  ```
+</Accordion>
+
+<Accordion title="Test webhook delivery">
+  Verify webhook handling works correctly:
+  
+  ```javascript
+  it('should receive and process conversion webhooks', async () => {
+    const webhookPromise = waitForWebhook('OUTGOING_PAYMENT');
+    
+    await createAndFundQuote({ /* ... */ });
+    
+    const webhook = await webhookPromise;
+    expect(webhook.transaction.status).toBe('COMPLETED');
+    expect(webhook.transaction.receivedAmount.currency.code).toBe('BTC');
+  });
+  ```
+</Accordion>
+
+<Accordion title="Test error scenarios">
+  Ensure error handling works as expected:
+  
+  ```javascript
+  it('should handle insufficient balance gracefully', async () => {
+    await expect(
+      createQuote({
+        source: { accountId: emptyAccountId },
+        lockedCurrencyAmount: 10000000,
+      })
+    ).rejects.toThrow('Insufficient balance');
+  });
+  
+  it('should handle invalid wallet addresses', async () => {
+    await expect(
+      createQuote({
+        destination: {
+          externalAccountDetails: {
+            accountInfo: {
+              accountType: 'SPARK_WALLET',
+              address: 'invalid',
+            },
+          },
+        },
+      })
+    ).rejects.toThrow('Invalid Spark address');
+  });
+  ```
+</Accordion>
+
+<Accordion title="Test quote expiration">
+  Validate quote expiration behavior:
+  
+  ```javascript
+  it('should fail to execute expired quote', async () => {
+    const quote = await createQuote({ /* ... */ });
+    
+    // Wait for expiration (quotes typically expire in 5 minutes)
+    await sleep(6 * 60 * 1000);
+    
+    await expect(
+      executeQuote(quote.id)
+    ).rejects.toThrow('Quote expired');
+  });
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Moving to production
+
+When ready to launch:
+
+<Steps>
+<Step title="Create production credentials">
+  Generate production API keys in the dashboard and store them securely.
+</Step>
+
+<Step title="Update base URLs and credentials">
+  Switch from sandbox to production credentials in your environment variables.
+  ```bash # Sandbox GRID_API_KEY=sandbox_key GRID_API_SECRET=sandbox_secret #
+  Production GRID_API_KEY=prod_key GRID_API_SECRET=prod_secret ```
+</Step>
+
+<Step title="Configure production webhook">
+  Update your production webhook endpoint to handle live traffic.
+  
+  ```bash
+  curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+    -u "$PROD_API_KEY:$PROD_API_SECRET" \
+    -d '{"webhookEndpoint": "https://api.yourapp.com/webhooks/grid"}'
+  ```
+</Step>
+
+<Step title="Test with small amounts">
+  Start with small real conversions to validate the flow before scaling.
+  
+  <Tip>
+  Test with $10-$50 conversions initially to verify everything works correctly with real funds.
+  </Tip>
+</Step>
+</Steps>
+
+## Next steps
+
+- [Webhooks](/ramps/platform-tools/webhooks) - Handle real-time notifications
+- [Fiat-to-Crypto Conversion](/ramps/conversion-flows/fiat-crypto-conversion) - Implement production flows
+- [Self-Custody Wallets](/ramps/conversion-flows/self-custody-wallets) - Advanced wallet integration
+- [Platform Configuration](/ramps/onboarding/platform-configuration) - Configure production settings
+
+## Related resources
+
+- [Developer Tools](/developer-resources/tools) - Testing and debugging tools
+- [API Reference](/api-reference) - Complete sandbox API documentation
+- [Error Handling](/pay-to-bank/payment-flow/error-handling) - Handle conversion errors

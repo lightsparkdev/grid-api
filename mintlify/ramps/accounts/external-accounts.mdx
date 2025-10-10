@@ -1,0 +1,354 @@
+---
+title: "External Accounts"
+description: "Configure external bank accounts and crypto wallets for ramp destinations"
+---
+
+import ExternalAccountsContent from "/snippets/external-accounts.mdx";
+
+<ExternalAccountsContent />
+
+## Using external accounts for ramps
+
+External accounts serve as destinations for ramp conversions:
+
+### For on-ramps (Fiat → Crypto)
+
+External accounts represent crypto wallet destinations:
+
+- **Spark wallets**: Lightning Network wallets for instant Bitcoin delivery
+- **Self-custody**: User-controlled wallets for full ownership
+- **No beneficiary required**: Crypto wallets don't need compliance information
+
+<Tip>
+  Spark wallets are the recommended destination for on-ramps due to instant
+  settlement and minimal fees.
+</Tip>
+
+### For off-ramps (Crypto → Fiat)
+
+External accounts represent bank account destinations:
+
+- **Traditional bank accounts**: ACH, wire, SEPA, CLABE, PIX, UPI, etc.
+- **Beneficiary required**: Full compliance information needed for fiat destinations
+- **Multiple currencies**: Support for USD, EUR, MXN, BRL, INR, and more
+
+<Warning>
+  Off-ramp destinations require complete beneficiary information for compliance.
+  Ensure all required fields are provided.
+</Warning>
+
+## Crypto wallet destinations
+
+### Spark wallet addresses
+
+The primary destination type for on-ramps:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "BTC",
+    "platformAccountId": "user_wallet_001",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+    }
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": "ExternalAccount:wallet001",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "BTC",
+  "platformAccountId": "user_wallet_001",
+  "accountInfo": {
+    "accountType": "SPARK_WALLET",
+    "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+  },
+  "createdAt": "2025-10-03T14:00:00Z"
+}
+```
+
+<Check>
+  Spark wallet external accounts are immediately `ACTIVE` and ready for on-ramp
+  conversions.
+</Check>
+
+### Validate Spark addresses
+
+Before creating external accounts, validate Spark wallet addresses:
+
+```javascript
+function isValidSparkAddress(address) {
+  // Spark addresses start with 'sprt1' and are 87 characters
+  return address.startsWith("sprt1") && address.length === 87;
+}
+
+const walletAddress =
+  "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu";
+
+if (!isValidSparkAddress(walletAddress)) {
+  throw new Error("Invalid Spark wallet address format");
+}
+
+// Create external account
+await createExternalAccount({
+  customerId,
+  currency: "BTC",
+  accountInfo: {
+    accountType: "SPARK_WALLET",
+    address: walletAddress,
+  },
+});
+```
+
+<Note>
+  Spark addresses are case-insensitive and follow the bech32 format starting
+  with `sprt1`.
+</Note>
+
+## Bank account destinations
+
+For off-ramp flows, create external bank accounts with full beneficiary information:
+
+### Example: US bank account for off-ramp
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "platformAccountId": "user_bank_usd_001",
+    "accountInfo": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "123456789",
+      "routingNumber": "021000021",
+      "accountCategory": "CHECKING",
+      "bankName": "Chase Bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "John Doe",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
+        "address": {
+          "line1": "123 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+  }'
+```
+
+## Creating accounts inline with quotes
+
+For one-time conversions, create external accounts inline using `externalAccountDetails`:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "USD"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000
+  }'
+```
+
+<Tip>
+  Use `externalAccountDetails` for one-time destinations. The external account
+  will be automatically created and can be reused for future quotes using its
+  returned ID.
+</Tip>
+
+## Listing external accounts
+
+### List customer external accounts
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+### Filter by currency
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=BTC' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+### Filter by account type
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&accountType=SPARK_WALLET' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+## Account status and verification
+
+External accounts move through verification states:
+
+| Status     | Description              | Can Use for Conversions |
+| ---------- | ------------------------ | ----------------------- |
+| `PENDING`  | Verification in progress | ❌                      |
+| `ACTIVE`   | Verified and ready       | ✅                      |
+| `FAILED`   | Verification failed      | ❌                      |
+| `DISABLED` | Manually disabled        | ❌                      |
+
+<Info>
+  Spark wallet accounts are immediately `ACTIVE`. Bank accounts may require
+  verification (typically instant to a few hours).
+</Info>
+
+## Best practices for ramps
+
+<AccordionGroup>
+<Accordion title="Validate addresses before creation">
+Always validate wallet addresses and bank account details before creating external accounts:
+
+```javascript
+// Validate Spark address format
+function validateSparkAddress(address) {
+  if (!address.startsWith("sprt1")) {
+    throw new Error("Spark address must start with sprt1");
+  }
+  if (address.length !== 87) {
+    throw new Error("Spark address must be 87 characters");
+  }
+  // Additional validation logic
+  return true;
+}
+```
+
+</Accordion>
+
+<Accordion title="Use platform account IDs for tracking">
+Map external accounts to your internal system using `platformAccountId`:
+
+```javascript
+const externalAccount = await createExternalAccount({
+  customerId,
+  currency: "BTC",
+  platformAccountId: `${userId}_spark_primary`, // Your internal ID
+  accountInfo: {
+    accountType: "SPARK_WALLET",
+    address: sparkAddress,
+  },
+});
+
+// Store mapping in your database
+await db.userWallets.create({
+  userId,
+  gridAccountId: externalAccount.id,
+  internalId: `${userId}_spark_primary`,
+});
+```
+
+</Accordion>
+
+<Accordion title="Handle multiple destinations per customer">
+Support multiple wallets or bank accounts for flexibility:
+
+```javascript
+// Primary Spark wallet for on-ramps
+await createExternalAccount({
+  customerId,
+  currency: "BTC",
+  platformAccountId: `${userId}_spark_primary`,
+  accountInfo: { accountType: "SPARK_WALLET", address: primaryWallet },
+});
+
+// Secondary wallet for larger amounts
+await createExternalAccount({
+  customerId,
+  currency: "BTC",
+  platformAccountId: `${userId}_spark_savings`,
+  accountInfo: { accountType: "SPARK_WALLET", address: savingsWallet },
+});
+```
+
+</Accordion>
+
+<Accordion title="Implement address verification for crypto">
+For crypto destinations, implement additional verification:
+
+```javascript
+// Verify Spark wallet is reachable (optional)
+async function verifySparkWallet(address) {
+  try {
+    // Use Lightning Network tools to verify wallet exists
+    const probe = await lightningClient.probeWallet(address);
+    return probe.reachable;
+  } catch (error) {
+    console.error("Wallet verification failed:", error);
+    return false;
+  }
+}
+
+// Only create external account after verification
+if (await verifySparkWallet(sparkAddress)) {
+  await createExternalAccount({
+    /* ... */
+  });
+}
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Ramp-specific considerations
+
+### On-ramp destinations
+
+- **Instant delivery**: Spark wallets receive Bitcoin within seconds
+- **No KYC required**: Self-custody wallets don't need beneficiary info
+- **Reusable addresses**: Store and reuse Spark addresses for multiple conversions
+- **No minimum**: Send any amount supported by Lightning Network
+
+### Off-ramp destinations
+
+- **Full compliance**: Bank accounts require complete beneficiary information
+- **Verification delays**: Bank account verification may take a few hours
+- **Settlement times**: Vary by destination (instant for RTP/PIX, 1-3 days for ACH)
+- **Amount limits**: Check minimum and maximum amounts per destination currency
+
+<Warning>
+  Always verify account details before initiating large off-ramp conversions.
+  Test with small amounts first.
+</Warning>
+
+## Next steps
+
+- [Plaid Integration](/ramps/accounts/plaid) - Connect bank accounts via Plaid
+- [Fiat-to-Crypto Conversion](/ramps/conversion-flows/fiat-crypto-conversion) - Build conversion flows
+- [Self-Custody Wallets](/ramps/conversion-flows/self-custody-wallets) - Advanced wallet integration
+- [Webhooks](/ramps/platform-tools/webhooks) - Handle account status updates
+
+## Related resources
+
+- [Platform Configuration](/ramps/onboarding/platform-configuration) - Configure supported account types
+- [Sandbox Testing](/ramps/platform-tools/sandbox-testing) - Test with mock accounts
+- [API Reference](/api-reference) - Complete API documentation

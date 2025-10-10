@@ -1,0 +1,21 @@
+type: object
+required:
+  - accountType
+  - clabeNumber
+  - bankName
+properties:
+  accountType:
+    allOf:
+      - $ref: ./BankAccountType.yaml
+    example: CLABE
+  clabeNumber:
+    type: string
+    description: 18-digit CLABE number (Mexican banking standard)
+    example: '123456789012345678'
+    minLength: 18
+    maxLength: 18
+    pattern: ^[0-9]{18}$
+  bankName:
+    type: string
+    description: Name of the bank
+    example: BBVA Mexico

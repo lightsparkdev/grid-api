@@ -1,0 +1,72 @@
+post:
+  summary: Reject a pending incoming payment
+  description: >
+    Reject a pending incoming payment that was previously acknowledged with a
+    202 response.
+
+    This endpoint allows platforms to asynchronously reject payments after
+    additional processing.
+  operationId: rejectPendingPayment
+  tags:
+    - Transactions
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: transactionId
+      in: path
+      description: Unique identifier of the transaction to reject
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              description: >-
+                Optional reason for rejecting the payment. This is just for
+                debugging purposes or can be used for a platform's own purposes.
+              example: RESTRICTED_JURISDICTION
+  responses:
+    '200':
+      description: Payment rejected successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/IncomingTransaction.yaml
+    '400':
+      description: Bad request - Invalid parameters or payment cannot be rejected
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - Payment is not in a pending state or has already been
+        processed or timed out.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

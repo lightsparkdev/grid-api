@@ -1,0 +1,281 @@
+---
+title: "Listing Transactions"
+description: "Query and track Bitcoin reward payment history with filtering and pagination"
+---
+
+Retrieve transaction history for Bitcoin rewards distributed through your platform. Transactions are returned in descending order (most recent first) and are paginated.
+
+## Basic request
+
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+```json response
+{
+  "data": [
+    {
+      "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
+      "status": "COMPLETED",
+      "type": "OUTGOING",
+      "source": {
+        "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+        "currency": "USD"
+      },
+      "destination": {
+        "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456",
+        "currency": "BTC"
+      },
+      "sentAmount": {
+        "amount": 100,
+        "currency": {
+          "code": "USD",
+          "symbol": "$",
+          "decimals": 2
+        }
+      },
+      "receivedAmount": {
+        "amount": 810,
+        "currency": {
+          "code": "BTC",
+          "symbol": "₿",
+          "decimals": 8
+        }
+      },
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "platformCustomerId": "user_789",
+      "description": "Weekly reward payout",
+      "exchangeRate": 8.1,
+      "settledAt": "2025-10-03T15:01:45Z",
+      "createdAt": "2025-10-03T15:00:00Z"
+    }
+  ],
+  "hasMore": true,
+  "nextCursor": "eyJpZCI6IlRyYW5zYWN0aW9uOjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAyNSJ9",
+  "totalCount": 142
+}
+```
+
+## Common filtering patterns
+
+### Rewards for a specific customer
+
+Get all Bitcoin rewards sent to a customer:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+Or use your platform's customer ID:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=user_789' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+### Rewards by date range
+
+Get all rewards distributed in a specific period:
+
+```bash
+# October 2025 rewards
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+<Tip>Dates must be in ISO 8601 format (e.g., `2025-10-03T15:00:00Z`).</Tip>
+
+### Failed rewards
+
+Track rewards that failed to complete:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?status=FAILED&type=OUTGOING' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+**Transaction statuses:**
+
+- `PENDING` - Reward initiated, awaiting processing
+- `PROCESSING` - Bitcoin purchase and transfer in progress
+- `COMPLETED` - Reward successfully delivered
+- `FAILED` - Reward failed (invalid wallet address, insufficient balance, etc.)
+
+### Rewards from platform account
+
+Get all rewards paid from your platform's USD internal account:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?senderAccountIdentifier=InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965&type=OUTGOING' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+## Combining filters
+
+Narrow down results by combining multiple filters:
+
+```bash
+# All completed rewards for a customer in October
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=user_789&status=COMPLETED&startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+## Pagination
+
+Handle large result sets with cursor-based pagination:
+
+```javascript
+async function getAllRewardsForCustomer(platformCustomerId) {
+  const allRewards = [];
+  let cursor = null;
+  let hasMore = true;
+
+  while (hasMore) {
+    const url = cursor
+      ? `https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=${platformCustomerId}&limit=100&cursor=${cursor}`
+      : `https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=${platformCustomerId}&limit=100`;
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Basic ${credentials}` },
+    });
+
+    const { data, hasMore: more, nextCursor } = await response.json();
+
+    allRewards.push(...data);
+    hasMore = more;
+    cursor = nextCursor;
+  }
+
+  return allRewards;
+}
+```
+
+<Info>The maximum `limit` is 100 transactions per request. Default is 20.</Info>
+
+## Get a single transaction
+
+Retrieve details for a specific reward transaction:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000025' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+## Common use cases
+
+### Calculate total rewards distributed
+
+```javascript
+async function calculateMonthlyRewards(month) {
+  const startDate = new Date(month);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  let totalUSD = 0;
+  let totalBTC = 0;
+  let cursor = null;
+
+  do {
+    const url = `/transactions?status=COMPLETED&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&cursor=${cursor || ''}`;
+
+    const { data, nextCursor } = await fetch(url).then(r => r.json());
+
+    data.forEach(tx => {
+      totalUSD += tx.sentAmount.amount;
+      totalBTC += tx.receivedAmount.amount;
+    });
+
+    cursor = nextCursor;
+  } while (cursor);
+
+  return {
+    totalUSD: totalUSD / 100, // Convert cents to dollars
+    totalBTC: totalBTC / 100000000, // Convert sats to BTC
+  };
+}
+```
+
+### Track customer reward history
+
+```javascript
+async function getCustomerRewardsSummary(platformCustomerId) {
+  const response = await fetch(
+    `/transactions?platformCustomerId=${platformCustomerId}&status=COMPLETED`,
+    { headers: { Authorization: `Basic ${credentials}` } }
+  );
+
+  const { data, totalCount } = await response.json();
+
+  const totalSatsReceived = data.reduce(
+    (sum, tx) => sum + tx.receivedAmount.amount,
+    0
+  );
+
+  return {
+    rewardCount: totalCount,
+    totalSatsReceived,
+    lastRewardAt: data[0]?.settledAt,
+  };
+}
+```
+
+### Monitor failed rewards
+
+```javascript
+async function getFailedRewards(startDate) {
+  const response = await fetch(
+    `/transactions?status=FAILED&type=OUTGOING&startDate=${startDate}`,
+    { headers: { Authorization: `Basic ${credentials}` } }
+  );
+
+  const { data } = await response.json();
+
+  return data.map(tx => ({
+    transactionId: tx.id,
+    customerId: tx.platformCustomerId,
+    amount: tx.sentAmount.amount / 100,
+    failedAt: tx.createdAt,
+    description: tx.description,
+  }));
+}
+```
+
+## Best practices
+
+<Check>
+Use pagination when fetching transaction history to avoid timeouts and memory issues.
+</Check>
+
+<Check>
+Filter by `platformCustomerId` for easier reconciliation with your internal user IDs.
+</Check>
+
+<Check>
+Cache completed transaction data since it won't change after settlement.
+</Check>
+
+<Warning>
+Always filter by `type=OUTGOING` when tracking rewards to exclude incoming transactions.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="Distributing Rewards" icon="gift" href="/rewards/developer-guides/distributing-rewards">
+  Learn how to create and execute Bitcoin reward payouts
+</Card>
+
+<Card title="Webhooks" icon="webhook" href="/remittances/developer-guides/webhooks">
+  Set up webhook handling for real-time transaction notifications
+</Card>
+
+<Card title="Reconciliation" icon="file-invoice-dollar" href="/payouts/payment-flow/reconciliation">
+  Match payments with your internal accounting systems
+</Card>
+
+<Card title="API Reference" icon="code" href="/api-reference/transactions/list-transactions">
+  View complete transaction API documentation
+</Card>
+</CardGroup>

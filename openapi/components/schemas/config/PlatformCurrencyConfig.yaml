@@ -1,0 +1,73 @@
+type: object
+properties:
+  currencyCode:
+    type: string
+    description: Three-letter currency code (ISO 4217)
+    example: USD
+  minAmount:
+    type: integer
+    format: int64
+    description: Minimum amount that can be sent in the smallest unit of this currency
+    minimum: 0
+    example: 100
+  maxAmount:
+    type: integer
+    format: int64
+    description: Maximum amount that can be sent in the smallest unit of this currency
+    minimum: 0
+    example: 1000000
+  requiredCounterpartyFields:
+    type: array
+    items:
+      $ref: ../common/CounterpartyFieldDefinition.yaml
+    description: >-
+      List of fields which the platform requires from the counterparty
+      institutions about counterparty customers. Platforms can set mandatory to
+      false if the platform does not require the field, but would like to have
+      it available. Some fields may be required by the underlying UMA provider.
+    example:
+      - name: FULL_NAME
+        mandatory: true
+      - name: BIRTH_DATE
+        mandatory: true
+      - name: NATIONALITY
+        mandatory: true
+  providerRequiredCustomerFields:
+    type: array
+    items:
+      $ref: ../customers/CustomerInfoFieldName.yaml
+    description: >-
+      List of customer info field names that are required by the underlying UMA
+      provider when creating a customer for this currency. These fields must be
+      supplied when creating or updating a customer if this currency is intended to
+      be used by that customer. If no fields are required, this field is omitted.
+    readOnly: true
+    example:
+      - NATIONALITY
+      - BIRTH_DATE
+  providerRequiredCounterpartyCustomerFields:
+    type: array
+    items:
+      $ref: ../customers/CustomerInfoFieldName.yaml
+    description: >-
+      List of fields that are required by the underlying UMA provider for this
+      currency. If the counterparty does not provide these fields, quote
+      requests will fail.
+    readOnly: true
+    example:
+      - FULL_NAME
+      - COUNTRY_OF_RESIDENCE
+  enabledTransactionTypes:
+    type: array
+    items:
+      $ref: ../transactions/TransactionType.yaml
+    description: List of transaction types that are enabled for this currency.
+    example:
+      - OUTGOING
+      - INCOMING
+required:
+  - currencyCode
+  - minAmount
+  - maxAmount
+  - requiredCounterpartyFields
+  - enabledTransactionTypes

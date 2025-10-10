@@ -1,0 +1,25 @@
+---
+title: 'Environments'
+---
+import { topLevelProductName } from '/snippets/variables.mdx'
+
+{topLevelProductName} provides two environments: production and sandbox.  Both environments use the same base URL and API tokens are scoped to an environment.
+
+## Base API URL
+ `https://api.lightspark.com/grid/2025-10-13`
+
+## Sandbox
+Sandbox enables you to test your integration without making real payments.  In sandbox, we expose sandbox specific APIs to trigger specific test cases like incoming payments.  Additionally you'll find test UMA addresses to simulate different sending scenarios.  For more information, see [Sandbox Testing](../remittances/developer-guides/sandbox-testing).
+
+## Production
+Production moves real money.  To get access to a production environment, please reach out to your Lightspark contact.
+
+## Service IPs
+
+Lightspark Grid APIs and webhooks are served from the following IP addresses:
+
+- `52.42.15.30`
+- `34.216.87.164`
+- `44.226.21.146`
+
+<Warning>These IPs are subject to change, but we will notify the account contact email before making any changes.</Warning>

@@ -1,0 +1,8 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    properties:
+      type:
+        $ref: ./WebhookType.yaml
+        description: Type of webhook event
+        example: TEST

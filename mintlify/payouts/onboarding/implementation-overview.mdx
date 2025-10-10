@@ -1,0 +1,76 @@
+---
+title: "Implementation Overview"
+---
+This page gives you a 10,000‑ft view of an end‑to‑end implementation. It is intentionally generalized because the flow supports multiple customer types and external account types (e.g., CLABE, IBAN, US accounts, UPI). The detailed guides that follow provide concrete fields, edge cases, and step‑by‑step instructions.
+
+<Info>
+This overview highlights the main building blocks: platform setup, onboarding, funding, payout accounts, sending and receiving flows, reconciliation, sandbox testing, and go‑live enablement.
+</Info>
+
+## Platform configuration
+Configure your platform once before building user flows.
+
+- Provide webhook endpoints for outgoing and incoming payment notifications
+- Generate API credentials for Sandbox (and later Production)
+- Review regional capabilities (rails, currencies, settlement windows)
+
+## Onboarding customers
+Onboard customers and accounts. There are two patterns:
+
+- Regulated entities can directly create customers by providing KYC/KYB data via API
+- Unregulated entities should request a KYC link and embed the hosted KYC flow; once completed, the customer can transact.
+
+You'll also need to persist the Grid customer IDs for use in payment flows
+
+
+## Account funding
+Choose how transactions are funded based on your product design and region.
+
+- Prefunded: Maintain balances in one or more currencies/cryptocurrencies and spend from those balances
+- Just‑in‑time (JIT): Create a quote and fund it in real time using the payment instructions provided; ideal when you don’t wish to hold float
+
+<Tip>
+You can mix models as necessary. But it may make reconciliation more complex.
+</Tip>
+
+## External account creation
+Register accounts your customers will send to or receive from, such as CLABE (MX), IBAN (EU/UK), ACH/RTP(US), UPI (IN), Spark address, and others.
+- Capture beneficiary details (individual or business) and required banking fields
+- Validate account formats where applicable and map them to your internal customer
+
+## Sending payments
+Sending consists of lookup, pricing, funding, and execution.
+- Resolve the counterparty: look up receiver account for compliance review and to determine capabilities
+- Create a quote: specify source/destination, currencies, and whether you lock sending or receiving amount; receive exchange rate, limits, fees, and (for JIT) funding instructions
+- Fund and execute: for prefunded, confirm/execute; for JIT, push funds exactly as instructed (amount, reference) and the platform handles FX and delivery
+- Observe status via webhooks and surface outcomes in your UI
+
+## Receiving payments
+Enable customers to receive funds to their linked bank account.
+- Expose customer addressing to payers
+- The platform handles conversion and offramping to the receiver’s account currency
+- Approve or auto‑approve per your policy; update balances on completion via webhooks
+
+## Reconciling transactions
+Implement operational processes to keep your ledger in sync.
+- Process webhooks idempotently; map statuses (pending, processing, completed, failed)
+- Tie transactions back to quotes and customers; persist references
+- Query for transactions by date range or other filters as necessary
+
+## Testing in Sandbox
+Use Sandbox to build and validate end‑to‑end without moving real funds.
+- Exercise receiver lookup, quote creation, funding instructions, and webhook lifecycles
+- Validate compliance decisioning with realistic but synthetic data
+- Optionally use the Test Wallet as a counterparty for faster iteration (see Tools)
+
+## Enabling Production
+When you’re ready to go live:
+- Complete corridor and provider onboarding as needed for your regions
+- Confirm webhook security, monitoring, and alerting are in place
+- Review rate limits, error handling, retries, and idempotency keys
+- Run final UAT in Sandbox, then request Production access from our team
+
+<Check>
+Contact our team to enable Production and finalize corridor activations.
+</Check>
+

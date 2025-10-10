@@ -1,0 +1,43 @@
+type: object
+required:
+  - reference
+  - bankAccountInfo
+properties:
+  reference:
+    type: string
+    description: >-
+      Unique reference code that must be included with the payment to properly
+      credit it
+    example: UMA-Q12345-REF
+  instructionsNotes:
+    type: string
+    description: Additional human-readable instructions for making the payment
+    example: >-
+      Please ensure the reference code is included in the payment
+      memo/description field
+  bankAccountInfo:
+    oneOf:
+      - title: CLABE Account
+        $ref: ../common/PaymentClabeAccountInfo.yaml
+      - title: US Bank Account
+        $ref: ../common/PaymentUsAccountInfo.yaml
+      - title: PIX Account
+        $ref: ../common/PaymentPixAccountInfo.yaml
+      - title: IBAN Account
+        $ref: ../common/PaymentIbanAccountInfo.yaml
+      - title: FBO Account
+        $ref: ../common/PaymentFboAccountInfo.yaml
+      - title: UPI Account
+        $ref: ../common/PaymentUpiAccountInfo.yaml
+      - title: Spark Wallet
+        $ref: ../common/PaymentSparkWalletInfo.yaml
+    discriminator:
+      propertyName: accountType
+      mapping:
+        CLABE: ../common/PaymentClabeAccountInfo.yaml
+        US_ACCOUNT: ../common/PaymentUsAccountInfo.yaml
+        PIX: ../common/PaymentPixAccountInfo.yaml
+        IBAN: ../common/PaymentIbanAccountInfo.yaml
+        FBO: ../common/PaymentFboAccountInfo.yaml
+        UPI: ../common/PaymentUpiAccountInfo.yaml
+        SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml

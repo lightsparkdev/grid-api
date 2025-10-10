@@ -1,0 +1,400 @@
+---
+title: "Plaid Integration"
+description: "Connect bank accounts securely via Plaid for seamless off-ramp destinations"
+---
+
+import PlaidContent from "/snippets/plaid-integration.mdx";
+
+<PlaidContent />
+
+## Using Plaid for ramps
+
+Plaid integration is particularly valuable for off-ramp flows where users convert crypto to fiat and need a bank account destination:
+
+### Off-ramp benefits
+
+- **Seamless UX**: Users authenticate with their bank directly—no manual account entry
+- **Instant verification**: Bank accounts are verified in real-time
+- **Reduced errors**: Eliminates typos in account numbers and routing information
+- **Higher conversion**: Simplified flow increases completion rates
+
+<Tip>
+  Plaid is recommended for consumer off-ramp flows where users need to quickly
+  connect a bank account to receive fiat currency.
+</Tip>
+
+### When to use Plaid
+
+Use Plaid integration when:
+
+- **Consumer off-ramps**: Individual users converting crypto to USD/fiat
+- **First-time users**: Simplifying the initial bank account setup
+- **Mobile apps**: Plaid's mobile SDKs provide native integration
+- **Compliance**: Plaid's bank authentication provides additional verification
+
+### When to use manual entry
+
+Manual bank account entry may be preferred for:
+
+- **Business accounts**: Corporate bank accounts often require additional documentation
+- **International accounts**: Plaid primarily supports US banks (though expanding)
+- **Wire transfers**: Large amounts that require wire-specific account details
+- **Non-supported banks**: Some smaller banks or credit unions may not be available via Plaid
+
+## Ramp-specific implementation
+
+### Off-ramp flow with Plaid
+
+<Steps>
+<Step title="User initiates off-ramp">
+  User requests to convert Bitcoin to USD and wants to receive funds in their bank account.
+  
+  ```javascript
+  // User clicks "Cash out Bitcoin"
+  const initiateOffRamp = async (amountSats) => {
+    // Check if user has connected bank account
+    const hasAccount = await checkExternalBankAccount(userId);
+    
+    if (!hasAccount) {
+      // Trigger Plaid flow
+      await connectBankViaPlaid();
+    } else {
+      // Proceed with quote
+      await createOffRampQuote(amountSats);
+    }
+  };
+  ```
+</Step>
+
+<Step title="Request Plaid link token">
+  Your backend requests a link token for the customer from Grid.
+  
+  ```javascript
+  const response = await fetch(
+    'https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${gridCredentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customerId: gridCustomerId,
+      }),
+    }
+  );
+  
+  const { linkToken, callbackUrl } = await response.json();
+  ```
+</Step>
+
+<Step title="Display Plaid Link">
+  Show Plaid Link UI to the user for bank authentication.
+  
+  ```javascript
+  const { open } = usePlaidLink({
+    token: linkToken,
+    onSuccess: async (publicToken, metadata) => {
+      // Forward to your backend
+      await fetch('/api/plaid/connect-bank', {
+        method: 'POST',
+        body: JSON.stringify({
+          publicToken,
+          accountId: metadata.account_id,
+        }),
+      });
+      
+      // Show success message
+      setMessage('Bank connected! Processing your withdrawal...');
+    },
+  });
+  ```
+</Step>
+
+<Step title="Wait for webhook">
+  Grid creates the external account and sends a webhook notification.
+  
+  ```javascript
+  // Your webhook handler
+  if (webhookPayload.type === 'ACCOUNT_STATUS' && webhookPayload.account) {
+    const { account, customerId } = webhookPayload;
+    
+    // Bank account is ready for off-ramp
+    await db.users.update({
+      where: { gridCustomerId: customerId },
+      data: { bankAccountId: account.accountId },
+    });
+    
+    // Automatically proceed with off-ramp if amount is pending
+    const pendingOffRamp = await db.offRamps.findPending(customerId);
+    if (pendingOffRamp) {
+      await createOffRampQuote({
+        customerId,
+        sourceAccountId: pendingOffRamp.btcAccountId,
+        destinationAccountId: account.accountId,
+        amountSats: pendingOffRamp.amountSats,
+      });
+    }
+  }
+  ```
+</Step>
+</Steps>
+
+### Combining Plaid with quote creation
+
+For a seamless user experience, combine Plaid bank connection with immediate quote execution:
+
+```javascript
+// Complete off-ramp flow
+async function executeOffRamp({ userId, amountSats }) {
+  const customer = await getCustomer(userId);
+
+  // Check for existing bank account
+  let bankAccountId = customer.bankAccountId;
+
+  if (!bankAccountId) {
+    // Initiate Plaid flow
+    const plaidToken = await requestPlaidLinkToken(customer.gridCustomerId);
+
+    // Wait for user to complete Plaid (via frontend)
+    await waitForPlaidCompletion(userId);
+
+    // Refresh customer to get bank account ID
+    const updated = await getCustomer(userId);
+    bankAccountId = updated.bankAccountId;
+  }
+
+  // Create off-ramp quote
+  const quote = await createQuote({
+    source: {
+      accountId: customer.btcInternalAccountId, // User's BTC balance
+    },
+    destination: {
+      accountId: bankAccountId, // Plaid-connected bank account
+      currency: "USD",
+    },
+    lockedCurrencySide: "SENDING",
+    lockedCurrencyAmount: amountSats,
+  });
+
+  // Execute quote
+  await executeQuote(quote.id);
+
+  return quote;
+}
+```
+
+## Advanced patterns
+
+### Pre-fetching link tokens
+
+Improve UX by prefetching link tokens before users request off-ramps:
+
+```javascript
+// On app load or settings page
+useEffect(() => {
+  async function prefetchPlaidToken() {
+    if (!user.hasBankAccount && !sessionStorage.getItem("plaidLinkToken")) {
+      const response = await fetch("/api/plaid/link-token");
+      const { linkToken } = await response.json();
+      sessionStorage.setItem("plaidLinkToken", linkToken);
+    }
+  }
+
+  prefetchPlaidToken();
+}, [user]);
+
+// When user clicks "Cash out", token is already available
+const startOffRamp = () => {
+  const linkToken = sessionStorage.getItem("plaidLinkToken");
+  if (linkToken) {
+    plaidLinkHandler.open();
+  }
+};
+```
+
+<Note>
+  Link tokens expire after 4 hours, so prefetch close to when you expect users
+  to need them.
+</Note>
+
+### Handling multiple bank accounts
+
+Allow users to connect multiple bank accounts for different off-ramp scenarios:
+
+```javascript
+// List all Plaid-connected accounts
+async function listBankAccounts(userId) {
+  const customer = await getCustomer(userId);
+  const accounts = await fetch(
+    `https://api.lightspark.com/grid/2025-10-13/customers/external-accounts?customerId=${customer.gridCustomerId}&accountType=US_ACCOUNT`,
+    { headers: { Authorization: `Basic ${gridCredentials}` } }
+  );
+
+  return accounts.json();
+}
+
+// Let user choose destination for off-ramp
+const selectBankForOffRamp = async (amountSats) => {
+  const banks = await listBankAccounts(userId);
+
+  if (banks.data.length === 0) {
+    // No banks connected, trigger Plaid
+    await connectNewBank();
+  } else {
+    // Show bank selection UI
+    showBankSelector(banks.data, (selectedBank) => {
+      createOffRampQuote({
+        destinationAccountId: selectedBank.id,
+        amountSats,
+      });
+    });
+  }
+};
+```
+
+### Error recovery
+
+Gracefully handle Plaid errors and offer alternatives:
+
+```javascript
+const { open } = usePlaidLink({
+  token: linkToken,
+  onSuccess: handleSuccess,
+  onExit: (error, metadata) => {
+    if (error) {
+      console.error("Plaid error:", error);
+
+      // Show error-specific messaging
+      if (error.error_code === "ITEM_LOGIN_REQUIRED") {
+        setError(
+          "Your bank requires you to log in again. Please try reconnecting."
+        );
+      } else if (error.error_code === "INSTITUTION_NOT_RESPONDING") {
+        setError(
+          "Your bank is temporarily unavailable. Please try again later or connect manually."
+        );
+        // Offer manual entry option
+        setShowManualEntry(true);
+      } else {
+        setError(
+          "Unable to connect to your bank. Would you like to enter your account details manually?"
+        );
+        setShowManualEntry(true);
+      }
+    } else {
+      // User exited without completing
+      console.log("User closed Plaid without connecting");
+    }
+  },
+});
+
+{
+  showManualEntry && <ManualBankAccountForm onSubmit={handleManualEntry} />;
+}
+```
+
+## Best practices for ramps
+
+<AccordionGroup>
+<Accordion title="Optimize for mobile">
+Plaid's mobile SDKs provide the best UX for app-based off-ramps:
+
+```javascript
+// React Native example
+import { PlaidLink } from "react-native-plaid-link-sdk";
+
+<PlaidLink
+  tokenConfig={{ token: linkToken }}
+  onSuccess={async ({ publicToken }) => {
+    await submitToBackend(publicToken);
+    // Navigate to off-ramp confirmation
+    navigation.navigate("OffRampConfirm");
+  }}
+>
+  <TouchableOpacity style={styles.bankButton}>
+    <Text>Connect Bank Account</Text>
+  </TouchableOpacity>
+</PlaidLink>;
+```
+
+</Accordion>
+
+<Accordion title="Cache bank account details">
+Store Plaid-connected accounts to avoid re-connection:
+
+```javascript
+// After successful Plaid connection
+const handlePlaidSuccess = async (account) => {
+  // Store reference in your DB
+  await db.users.update({
+    where: { id: userId },
+    data: {
+      primaryBankAccountId: account.id,
+      bankAccountLastFour: account.accountInfo.accountNumber.slice(-4),
+      bankName: account.accountInfo.bankName,
+    },
+  });
+
+  // Show in UI without re-fetching
+  setBankAccount({
+    id: account.id,
+    lastFour: account.accountInfo.accountNumber.slice(-4),
+    bankName: account.accountInfo.bankName,
+  });
+};
+```
+
+</Accordion>
+
+<Accordion title="Provide real-time status updates">
+Keep users informed during async bank account creation:
+
+```javascript
+// Show loading state while waiting for webhook
+const [accountStatus, setAccountStatus] = useState("connecting");
+
+useEffect(() => {
+  // After Plaid success
+  if (plaidConnected) {
+    setAccountStatus("verifying");
+
+    // Poll for account or wait for WebSocket
+    const pollInterval = setInterval(async () => {
+      const account = await checkBankAccountStatus(userId);
+      if (account?.status === "ACTIVE") {
+        setAccountStatus("ready");
+        clearInterval(pollInterval);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }
+}, [plaidConnected]);
+
+// Show appropriate UI
+{
+  accountStatus === "verifying" && (
+    <div className="status-banner">
+      <Spinner />
+      <p>Verifying your bank account...</p>
+    </div>
+  );
+}
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Next steps
+
+- [Fiat-to-Crypto Conversion](/ramps/conversion-flows/fiat-crypto-conversion) - Build conversion flows
+- [Internal Accounts](/ramps/accounts/internal-accounts) - Manage crypto balances for off-ramps
+- [Webhooks](/ramps/platform-tools/webhooks) - Handle account creation notifications
+- [Sandbox Testing](/ramps/platform-tools/sandbox-testing) - Test Plaid integration safely
+
+## Related resources
+
+- [External Accounts](/ramps/accounts/external-accounts) - Manual bank account setup
+- [Platform Configuration](/ramps/onboarding/platform-configuration) - Enable Plaid for your platform
+- [API Reference](/api-reference) - Complete Plaid API documentation

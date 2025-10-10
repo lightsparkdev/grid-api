@@ -1,0 +1,61 @@
+## Supported currencies
+During onboarding, choose the currencies your platform will support. For prefunded models, Grid automatically creates per‑currency accounts for each new customer. You can add or remove supported currencies anytime in the Grid dashboard.
+
+## API credentials and authentication
+Create API credentials in the Grid dashboard. Credentials are scoped to an environment (Sandbox or Production) and cannot be used across environments.
+
+- Authentication: Use HTTP Basic Auth with your API key and secret in the `Authorization` header.
+- Keys: Sandbox keys only work against Sandbox; Production keys only work against Production.
+
+<Tip>
+Never share or expose your API secret. Rotate credentials periodically and restrict access.
+</Tip>
+
+### Example: HTTP Basic Auth in cURL
+
+```bash
+# Using cURL's Basic Auth shorthand (-u):
+curl -sS -X GET "$GRID_BASE_URL/config" \
+  -u "$GRID_API_KEY:$GRID_API_SECRET"
+
+```
+
+## Base API path
+
+The base API path is consistent across environments; your credentials determine the environment.
+
+Base URL: `https://api.lightspark.com/grid/2025-10-13` (same for Sandbox and Production; your keys select the environment).
+
+<Tip>
+If you use an SDK, it manages request paths and authentication after you initialize it with your credentials.
+</Tip>
+
+## Webhooks and signature verification
+Configure your webhook endpoint to receive payment lifecycle events. Webhooks use asymmetric (public/private key) signatures; verify each webhook using the Grid public key available in your dashboard.
+
+- Expose a public HTTPS endpoint (for development, reverse proxies like ngrok can help). You'll also need to set your webhook endpoint in the Grid dashboard.
+- When receiving webhooks, verify the `X-Grid-Signature` header against the exact request body using the dashboard-provided public key
+- Process events idempotently and respond with 2xx on success
+
+You can trigger a test delivery from the API to validate your endpoint setup. The public key for verification is shown in the dashboard; rotate and update it when instructed by Lightspark.
+
+### Test your webhook endpoint
+Use the webhook test endpoint to send a synthetic event to your configured endpoint.
+
+```bash
+curl -sS -X POST "$GRID_BASE_URL/webhooks/test" \
+  -u "$GRID_API_KEY:$GRID_API_SECRET"
+```
+
+Example test webhook payload:
+
+```json
+{
+  "test": true,
+  "timestamp": "2023-08-15T14:32:00Z",
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000001",
+  "type": "TEST"
+}
+```
+
+For more details about webhooks like retry policy and examples, take a look at our [Webhooks](/developer-tools/webhooks) documentation.

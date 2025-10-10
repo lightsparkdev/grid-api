@@ -1,0 +1,41 @@
+get:
+  summary: Get a specific UMA invitation by code.
+  description: |
+    Get a specific UMA invitation by code.
+  operationId: getInvitation
+  tags:
+    - Invitations
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: invitationCode
+      in: path
+      description: The code of the invitation to get
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Invitation retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/invitations/UmaInvitation.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Invitation not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

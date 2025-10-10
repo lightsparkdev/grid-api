@@ -1,0 +1,58 @@
+post:
+  summary: Request Plaid Link token
+  description: |
+    Creates a Plaid Link token that can be used to initialize Plaid Link in your application.
+    The Link token is used to authenticate the customer and allow them to select their bank account.
+
+    **Async Flow:**
+    1. Platform calls this endpoint to get a link_token and callbackUrl
+    2. Platform displays Plaid Link UI to the end customer using the link_token
+    3. End customer authenticates with their bank and selects an account
+    4. Plaid returns a public_token to the platform
+    5. Platform POSTs the public_token to the callbackUrl
+    6. Lightspark exchanges the public_token with Plaid and creates the external account asynchronously
+    7. Platform receives a webhook notification when the external account is ready
+  operationId: createPlaidLinkToken
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/plaid/PlaidLinkTokenRequest.yaml
+        example:
+          customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+  responses:
+    '200':
+      description: Link token created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/plaid/PlaidLinkTokenResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

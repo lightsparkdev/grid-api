@@ -1,0 +1,93 @@
+---
+title: "Implementation Overview"
+---
+
+This page gives you a 10,000‑ft view of an end‑to‑end Bitcoin rewards implementation. It is intentionally generalized to cover the main building blocks. The detailed guides that follow provide concrete fields, edge cases, and step‑by‑step instructions.
+
+<Info>
+This overview highlights the main building blocks: platform setup, funding, customer onboarding, external account creation, and Bitcoin reward distribution.
+</Info>
+
+## Platform configuration
+
+Configure your platform once before building user flows.
+
+- Provide webhook endpoints for transaction and account status notifications
+- Generate API credentials for Sandbox (and later Production)
+- Configure supported currencies (typically a Fiat currency and BTC or stables for rewards)
+
+## Platform account funding
+
+Fund your platform's internal account to enable instant Bitcoin rewards distribution.
+
+- **Platform internal accounts**: Automatically created for each supported currency when your platform is set up
+- **Funding options**: ACH transfer, wire transfer, or crypto deposits (BTC, Stablecoins)
+- **Balance management**: Monitor balances via API or webhook notifications to ensure sufficient funds for rewards distribution
+
+<Tip>
+For Bitcoin rewards, maintaining a prefunded USD balance allows you to instantly purchase and distribute Bitcoin to customers without delays.
+</Tip>
+
+## Onboarding customers
+
+Onboard customers who will receive Bitcoin rewards. There are two patterns:
+
+- Regulated platforms can directly create customers by providing minimal KYC data via API
+- Unregulated entities should request a KYC link and embed the hosted KYC flow; once completed, the customer can receive rewards
+
+You'll need to persist the Grid customer IDs for use in reward distribution flows.
+
+## External account creation
+
+Register external accounts where customers will receive their Bitcoin rewards.
+
+- **Spark wallets**: Lightning-compatible Spark wallets for instant, low-fee transfers of Bitcoin and Stablecoins
+- **Other cryptocurrency wallets**: Support for various Bitcoin destination types
+- Capture wallet addresses and validate formats where applicable
+
+<Note>
+Spark wallets are recommended for Bitcoin rewards as transfers complete within seconds with minimal fees.
+</Note>
+
+## Distributing rewards
+
+Send Bitcoin rewards to customers using a streamlined quote-and-execute flow.
+
+- **Create and execute quote**: Specify source (your platform's USD account), destination (customer's Spark wallet), and amount
+- **Currency conversion**: Platform handles USD to BTC conversion at current market rates
+- **Immediate execution**: Use `immediatelyExecute: true` for one-step market-order style distribution
+- **Monitor status**: Track completion via webhooks or polling
+
+<Tip>
+For recurring small-dollar rewards, use `immediatelyExecute: true` to skip the quote confirmation step and send at the current market rate.
+</Tip>
+
+## Reconciling transactions
+
+Implement operational processes to keep your ledger in sync.
+
+- Process webhooks idempotently; map statuses (pending, processing, completed, failed)
+- Tie transactions back to customers and reward events
+- Monitor platform account balances to ensure adequate funding
+- Query for transactions by date range or customer as necessary
+
+## Testing in Sandbox
+
+Use Sandbox to build and validate end‑to‑end without moving real funds.
+
+- Simulate account funding using `/sandbox/receive` endpoint
+- Test quote creation, execution, and webhook lifecycles
+- Validate customer onboarding flows with test data
+
+## Enabling Production
+
+When you're ready to go live:
+
+- Ensure adequate funding in your production platform account
+- Confirm webhook security, monitoring, and alerting are in place
+- Review rate limits, error handling, and idempotency
+- Run final UAT in Sandbox, then request Production access from our team
+
+<Check>
+Contact our team to enable Production and begin distributing Bitcoin rewards.
+</Check>

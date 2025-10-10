@@ -1,0 +1,65 @@
+post:
+  summary: Execute a quote
+  description: |
+    Execute a quote by its ID. This endpoint initiates the transfer between
+    the source and destination accounts.
+
+    This endpoint can only be used for quotes with a `source` which is either an internal account,
+    or has direct pull functionality (e.g. ACH pull with an external account).
+
+    Once executed, the quote cannot be cancelled and the transfer will be processed.
+  operationId: executeQuote
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: quoteId
+      in: path
+      required: true
+      description: The unique identifier of the quote to execute
+      schema:
+        type: string
+      example: Quote:019542f5-b3e7-1d02-0000-000000000001
+  responses:
+    '200':
+      description: >
+        Quote confirmed successfully. The transfer has been initiated and
+
+        the quote status has been updated.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/quotes/Quote.yaml
+    '400':
+      description: Bad request - Invalid quote ID or quote cannot be confirmed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Quote not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Quote already confirmed, expired, or in invalid state
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+
+

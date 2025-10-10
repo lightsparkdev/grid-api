@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ../common/SparkWalletInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [SPARK_WALLET]
+        example: SPARK_WALLET

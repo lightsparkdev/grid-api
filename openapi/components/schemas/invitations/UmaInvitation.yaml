@@ -1,0 +1,68 @@
+type: object
+required:
+  - code
+  - createdAt
+  - inviterUma
+  - status
+  - url
+properties:
+  code:
+    type: string
+    description: The unique code of the invitation
+    example: 019542f5
+  createdAt:
+    type: string
+    format: date-time
+    description: When the invitation was created
+    example: '2025-09-01T14:30:00Z'
+  claimedAt:
+    type: string
+    format: date-time
+    description: When the invitation was claimed if it has been claimed
+    example: '2025-09-01T14:30:00Z'
+  url:
+    type: string
+    description: The URL where this invitation can be claimed.
+    example: https://uma.me/i/019542f5
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the invitation expires (if at all)
+    example: '2025-09-01T14:30:00Z'
+  inviterUma:
+    type: string
+    description: The UMA address of the inviter
+    example: $inviter@uma.domain
+  inviteeUma:
+    type: string
+    description: The UMA address of the invitee
+    example: $invitee@uma.domain
+  status:
+    type: string
+    enum:
+      - PENDING
+      - CLAIMED
+      - EXPIRED
+      - CANCELLED
+    description: The status of the invitation
+    example: PENDING
+  firstName:
+    type: string
+    description: The inviter's first name. Will be displayed when the recipient clicks the invite link
+    example: Jane
+  amountToSend:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The amount to send to the invitee when the invitation is claimed. This is
+      optional and if not provided, the invitee will not receive any amount.
+      Note that the actual sending of the amount must be done by the inviter
+      platform once the INVITATION_CLAIMED webhook is received. If the inviter
+      platform either does not send the payment or the payment fails, the
+      invitee will not receive this amount. This field is primarily used for
+      display purposes on the claiming side of the invitation.
+
+      This field is useful for "send-by-link" style customer flows where an inviter
+      can send a payment simply by sharing a link without knowing the receiver's
+      UMA address. Note that these sends can only be sender-locked, meaning that
+      the sender will not know ahead of time how much the receiver will receive
+      in the receiving currency.

@@ -1,0 +1,26 @@
+type: object
+required:
+  - accountType
+  - iban
+  - bankName
+properties:
+  accountType:
+    allOf:
+      - $ref: ./BankAccountType.yaml
+    example: IBAN
+  iban:
+    type: string
+    description: International Bank Account Number
+    example: DE89370400440532013000
+    minLength: 15
+    maxLength: 34
+  swiftBic:
+    type: string
+    description: SWIFT/BIC code (8 or 11 characters)
+    example: DEUTDEFF
+    minLength: 8
+    maxLength: 11
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Deutsche Bank

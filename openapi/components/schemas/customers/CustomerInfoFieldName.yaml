@@ -1,0 +1,21 @@
+type: string
+enum:
+  - FULL_NAME
+  - BIRTH_DATE
+  - NATIONALITY
+  - PHONE_NUMBER
+  - EMAIL
+  - ADDRESS
+  - TAX_ID
+  - REGISTRATION_NUMBER
+  - USER_TYPE
+  - COUNTRY_OF_RESIDENCE
+  - ACCOUNT_IDENTIFIER
+  - FI_LEGAL_ENTITY_NAME
+  - FI_ADDRESS
+  - PURPOSE_OF_PAYMENT
+  - ULTIMATE_INSTITUTION_COUNTRY
+description: >-
+  Name of a type of field containing info about a platform's customer or
+  counterparty customer.
+example: FULL_NAME

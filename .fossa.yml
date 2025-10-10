@@ -1,0 +1,6 @@
+version: 3
+
+project:
+  id: lightspark/grid-api 
+  name: grid-api
+  url: https://github.com/lightsparkdev/grid-api

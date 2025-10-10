@@ -1,0 +1,39 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    enum:
+      - 404
+    type: integer
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | TRANSACTION_NOT_FOUND | Transaction not found |
+      | INVITATION_NOT_FOUND | Invitation not found |
+      | USER_NOT_FOUND | Customer not found |
+      | QUOTE_NOT_FOUND | Quote not found |
+      | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
+      | TOKEN_NOT_FOUND | Token not found |
+      | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
+      | REFERENCE_NOT_FOUND | Reference not found |
+    enum:
+      - TRANSACTION_NOT_FOUND
+      - INVITATION_NOT_FOUND
+      - USER_NOT_FOUND
+      - QUOTE_NOT_FOUND
+      - LOOKUP_REQUEST_NOT_FOUND
+      - TOKEN_NOT_FOUND
+      - BULK_UPLOAD_JOB_NOT_FOUND
+      - REFERENCE_NOT_FOUND
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details

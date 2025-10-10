@@ -1,0 +1,193 @@
+post:
+  summary: Upload customers via CSV file
+  description: >
+    Upload a CSV file containing customer information for bulk creation. The CSV
+    file should follow
+
+    a specific format with required and optional columns based on customer type.
+
+
+    ### CSV Format
+
+    The CSV file should have the following columns:
+
+
+    Required columns for all customers:
+
+    - umaAddress: The customer's UMA address (e.g., $john.doe@uma.domain.com)
+
+    - platformCustomerId: Your platform's unique identifier for the customer
+
+    - customerType: Either "INDIVIDUAL" or "BUSINESS"
+
+
+    Required columns for individual customers:
+
+    - fullName: Individual's full name
+
+    - birthDate: Date of birth in YYYY-MM-DD format
+
+    - addressLine1: Street address line 1
+
+    - city: City
+
+    - state: State/Province/Region
+
+    - postalCode: Postal/ZIP code
+
+    - country: Country code (ISO 3166-1 alpha-2)
+
+    - accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN)
+
+    - accountNumber: Bank account number
+
+    - bankName: Name of the bank
+
+
+    Required columns for business customers:
+
+    - businessLegalName: Legal name of the business
+
+    - addressLine1: Street address line 1
+
+    - city: City
+
+    - state: State/Province/Region
+
+    - postalCode: Postal/ZIP code
+
+    - country: Country code (ISO 3166-1 alpha-2)
+
+    - accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN)
+
+    - accountNumber: Bank account number
+
+    - bankName: Name of the bank
+
+
+    Optional columns for all customers:
+
+    - addressLine2: Street address line 2
+
+    - platformAccountId: Your platform's identifier for the bank account
+
+    - description: Optional description for the customer
+
+
+    Optional columns for individual customers:
+
+    - email: Customer's email address
+
+
+    Optional columns for business customers:
+
+    - businessRegistrationNumber: Business registration number
+
+    - businessTaxId: Tax identification number
+
+
+    Additional required columns based on account type:
+
+
+    For US_ACCOUNT:
+
+    - routingNumber: ACH routing number (9 digits)
+
+    - accountCategory: Either "CHECKING" or "SAVINGS"
+
+
+    For CLABE:
+
+    - clabeNumber: 18-digit CLABE number
+
+
+    For PIX:
+
+    - pixKey: PIX key value
+
+    - pixKeyType: Type of PIX key (CPF, CNPJ, EMAIL, PHONE, RANDOM)
+
+
+    For IBAN:
+
+    - iban: International Bank Account Number
+
+    - swiftBic: SWIFT/BIC code (8 or 11 characters)
+
+
+    See the CustomerBankAccountInfo and CustomerInfo schemas for more details on the
+    required and optional fields.
+
+
+    ### Example CSV
+
+    ```csv
+
+    umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory
+
+    john.doe@uma.domain.com,customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main
+    St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase
+    Bank,chase_primary_1234,,222888888,SAVINGS
+
+    acme@uma.domain.com,biz456,BUSINESS,,,400 Commerce
+    Way,Austin,TX,78701,US,US_ACCOUNT,987654321,Bank of
+    America,boa_business_5678,Acme Corp,121212121,CHECKING
+
+    ```
+
+
+    The upload process is asynchronous and will return a job ID that can be used
+    to track progress.
+
+    You can monitor the job status using the `/customers/bulk/jobs/{jobId}`
+    endpoint.
+  operationId: uploadCustomersCsv
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - file
+          properties:
+            file:
+              type: string
+              format: binary
+              description: CSV file containing customer information
+  responses:
+    '202':
+      description: CSV upload accepted for processing
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - jobId
+              - status
+            properties:
+              jobId:
+                type: string
+                description: Unique identifier for the bulk import job
+                example: Job:019542f5-b3e7-1d02-0000-000000000006
+              status:
+                type: string
+                enum:
+                  - PENDING
+                  - PROCESSING
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

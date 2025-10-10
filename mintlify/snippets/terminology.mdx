@@ -1,0 +1,96 @@
+There are several key entities in the Grid API: **Platform**, **Customers**, **Internal Accounts**, **External Accounts**, **Quotes**, **Transactions**, and **UMA Addresses**.
+
+<Frame>
+<img src="/images/entities.png" alt="Entity relationships diagram showing platform, customers, internal accounts, external accounts, transactions, and UMA addresses" />
+</Frame>
+
+- A platform has many customers
+- Customers can have multiple internal accounts (one per currency)
+- Customers can have multiple external accounts (bank accounts)
+- The platform has its own internal accounts separate from customers
+- Transactions move money between internal accounts, external accounts, and UMA addresses
+- Quotes define the parameters for creating transactions
+- Each customer has one UMA address (optional)
+
+## Platform
+
+Your **platform** is you! It's the top-level entity that integrates with the Grid API. The platform:
+
+- Has its own configuration (webhook endpoint, supported currencies, API tokens, etc.)
+- Manages multiple customers and their accounts
+- Can hold platform-owned internal accounts for settlement and liquidity management
+- Acts as the integration point between your application and the Grid payment network
+
+## Customers
+
+**Customers** are your end users who send and receive payments through your platform. Each customer:
+
+- Can be an individual or business entity
+- Has a KYC/KYB status that determines their ability to transact. If you are a regulated financial institution, this will typically be `APPROVED` since you do the KYC/KYB yourself.
+- Is identified by both a system-generated ID and optionally your platform-specific customer ID
+- May have associated internal accounts and external accounts
+- May have a unique **UMA address** (e.g., `$john.doe@yourdomain.com`). If you don't assign an UMA address when creating a customer, they will be assigned a system-generated one.
+
+## Internal Accounts
+
+**Internal accounts** are Grid-managed accounts that hold balances in specific currencies. They can belong to either:
+
+- **Platform internal accounts** - Owned by the platform for settlement, liquidity, and float management
+- **Customer internal accounts** - Associated with specific customers for holding funds
+
+Internal accounts:
+- Have balances in a single currency (USD, EUR, MXN, etc.)
+- Can be funded via bank transfers or crypto deposits using payment instructions
+- Are used as sources or destinations for transactions instantly 24/7/365
+- Track available balance for sending payments or receiving funds
+
+## External Accounts
+
+**External accounts** are traditional bank accounts, crypto wallets, or other payment instruments connected to customers
+for on-ramping or off-ramping funds. Each external account:
+
+- Belongs to a specific customer or the platform
+- Represents a real-world bank account (with routing number, account number, IBAN, etc.), wallet, or payment instrument
+- Has an associated beneficiary (individual or business)
+- Has a status indicating screening status (ACTIVE, PENDING, INACTIVE, etc.)
+- Can be used as a destination for quote-based transfers or same currency transfers like withdrawals
+- For pullable sources like a debit cards or ACH pulls, an external account can be used as a source for transfers-in to
+  fund internal accounts or to fund cross-border transfers.
+
+## Quotes
+
+**Quotes** provide locked-in exchange rates and payment instructions for transfers. A quote:
+
+- Specifies a source (internal account, customer ID, or UMA address) and destination (internal/external account or UMA address)
+- Locks an exchange rate for a short period (typically 1-5 minutes) or can be immediately executed with the `immediatelyExecute` flag
+- Calculates total fees and amounts for currency conversion
+- Provides payment instructions for funding the transfer if needed
+- Must be executed before it expires
+- Creates a transaction when executed
+
+## Transactions
+
+**Transactions** represent completed or in-progress payment transfers. Each transaction:
+
+- Has a type (INCOMING or OUTGOING from the platform's perspective)
+- Has a status (PENDING, COMPLETED, FAILED, etc.)
+- References a customer (sender for outgoing, recipient for incoming) or a platform internal account
+- Specifies source and destination (accounts or UMA addresses)
+- Includes amounts, currencies, and settlement information
+- May include counterparty information for compliance purposes if required by your platform configuration
+
+Transactions are created when:
+- A quote is executed (either incoming or outgoing)
+- A same currency transfer is initiated (transfer-in or transfer-out)
+
+## UMA Addresses
+
+**UMA addresses** are human-readable payment identifiers that follow the format `$username@domain.com`. They:
+
+- Uniquely identify entities on the Grid network
+- Enable sending and receiving payments across different platforms without knowing the recipient's underlying account details or personal information
+- Support currency negotiation and cross-border transfers
+- Work similar to email addresses but for payments
+- Are an optional UX improvement for some use cases. Use of UMA addresses is not required in order to use the Grid API.
+
+

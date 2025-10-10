@@ -1,0 +1,27 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    enum:
+      - 501
+    type: integer
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY | Unrecognized mandatory payee data key |
+      | NOT_IMPLEMENTED | Feature not implemented |
+    enum:
+      - UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY
+      - NOT_IMPLEMENTED
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details

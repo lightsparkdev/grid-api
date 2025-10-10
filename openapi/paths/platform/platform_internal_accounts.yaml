@@ -1,0 +1,51 @@
+get:
+  summary: List platform internal accounts
+  description: |
+    Retrieve a list of all internal accounts that belong to the platform, as opposed to an individual customer.
+
+    These accounts are created automatically when the platform is configured for each supported currency. They can be used for things like distributing bitcoin rewards to customers, or for other platform-wide purposes.
+  operationId: listPlatformInternalAccounts
+  tags:
+    - Internal Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: currency
+      in: query
+      description: Filter by currency code
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - accounts
+            properties:
+              accounts:
+                type: array
+                description: List of internal accounts matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/customers/InternalAccount.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

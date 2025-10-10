@@ -1,0 +1,32 @@
+name: Dummy
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'openapi.yaml'
+      - 'mintlify/**'
+      - '.markdownlint.json'
+  merge_group:
+    paths-ignore:
+      - 'openapi.yaml'
+      - 'mintlify/**'
+      - '.markdownlint.json'
+
+jobs:
+  build:
+    name: Build OpenAPI Documentation
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Skipping Build OpenAPI Documentation - no relevant changes"
+
+  lint:
+    name: Lint Code & Documentation
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Skipping Lint Code & Documentation - no relevant changes"
+
+  test-deploy:
+    name: Test deployment
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Skipping Test deployment - no relevant changes"

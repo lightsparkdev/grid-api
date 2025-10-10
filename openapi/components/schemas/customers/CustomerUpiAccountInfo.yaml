@@ -1,0 +1,3 @@
+allOf:
+  - $ref: ../common/UpiAccountInfo.yaml
+  - $ref: ./BankAccountBase.yaml

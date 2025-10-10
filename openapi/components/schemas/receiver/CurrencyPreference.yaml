@@ -1,0 +1,29 @@
+type: object
+required:
+  - currency
+  - estimatedExchangeRate
+  - min
+  - max
+properties:
+  currency:
+    $ref: ../common/Currency.yaml
+  estimatedExchangeRate:
+    type: number
+    description: >-
+      An estimated exchange rate from the sender's currency to this currency.
+      This is not a locked rate and is subject to change when calling the quotes
+      endpoint.
+    exclusiveMinimum: 0
+    example: 1.08
+  min:
+    type: integer
+    format: int64
+    description: The minimum amount that can be received in this currency.
+    exclusiveMinimum: 0
+    example: 1
+  max:
+    type: integer
+    format: int64
+    description: The maximum amount that can be received in this currency.
+    exclusiveMinimum: 0
+    example: 1000000

@@ -1,0 +1,84 @@
+get:
+  summary: Look up a UMA address for payment
+  description: >
+    Lookup a receiving UMA address to determine supported currencies and
+    exchange rates.
+
+    This endpoint helps platforms determine what currencies they can send to a
+    given UMA address.
+  operationId: lookupUma
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: receiverUmaAddress
+      in: path
+      description: UMA address of the intended recipient
+      required: true
+      schema:
+        type: string
+    - name: senderUmaAddress
+      in: query
+      description: UMA address of the sender (optional if customerId is provided)
+      required: false
+      schema:
+        type: string
+    - name: customerId
+      in: query
+      description: System ID of the sender (optional if senderUmaAddress is provided)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful lookup
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../../../components/schemas/receiver/ReceiverLookupResponse.yaml
+              - type: object
+                required:
+                  - receiverUmaAddress
+                properties:
+                  receiverUmaAddress:
+                    type: string
+                    description: The UMA address that was looked up
+                    example: $receiver@uma.domain
+    '400':
+      description: Bad request - Missing or invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '404':
+      description: UMA address not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '412':
+      description: Counterparty doesn't support UMA version
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error412.yaml
+    '424':
+      description: Counterparty issue
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error424.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml

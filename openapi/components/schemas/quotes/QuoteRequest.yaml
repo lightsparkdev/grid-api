@@ -1,0 +1,106 @@
+type: object
+required:
+  - source
+  - destination
+  - lockedCurrencySide
+  - lockedCurrencyAmount
+properties:
+  lookupId:
+    type: string
+    description: >-
+      Lookup ID from a previous receiver lookup request. If provided,
+      this can make the quote creation more efficient by reusing cached lookup data.
+
+      NOTE: This is required for UMA destinations due to counterparty institution requirements.
+      See `senderCustomerInfo` for more information.
+    example: Lookup:019542f5-b3e7-1d02-0000-000000000009
+  source:
+    $ref: ./QuoteSource.yaml
+  destination:
+    oneOf:
+      - title: Account
+        type: object
+        required:
+          - accountId
+          - currency
+        properties:
+          accountId:
+            type: string
+            description: Destination account identifier
+            example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          currency:
+            type: string
+            description: Currency code for the destination account
+            example: EUR
+        description: Destination account details
+      - title: UMA Address
+        type: object
+        required:
+          - umaAddress
+          - currency
+        properties:
+          umaAddress:
+            type: string
+            description: UMA address of the recipient
+            example: $receiver@uma.domain.com
+          currency:
+            type: string
+            description: Currency code for the destination
+            example: EUR
+        description: UMA address destination details
+      - title: External Account Details
+        type: object
+        required:
+          - externalAccountDetails
+        properties:
+          externalAccountDetails:
+            $ref: ../external_accounts/ExternalAccountCreateRequest.yaml
+        description: >-
+          A convenient destination option which adds the external account and creates
+          the quote in one step rather than first needing to call /external-accounts
+          to add the account. Useful for one-off payments to some destination.
+  lockedCurrencySide:
+    $ref: ./QuoteLockSide.yaml
+  lockedCurrencyAmount:
+    type: integer
+    format: int64
+    description: >-
+      The amount to send/receive in the smallest unit of the locked
+      currency (eg. cents). See `lockedCurrencySide` for more
+      information.
+    exclusiveMinimum: 0
+    maximum: 9000000000000000
+    example: 1000
+  immediatelyExecute:
+    type: boolean
+    description: >-
+      Whether to immediately execute the quote after creation. If true,
+      the quote will be executed and the transaction will be created at
+      the current exchange rate. It should only be used if you don't want
+      to lock and view rate details before executing the quote. If you are
+      executing a pre-existing quote, use the `/quotes/{quoteId}/execute`
+      endpoint instead. This is false by default.
+    example: false
+  description:
+    type: string
+    description: Optional description/memo for the transfer
+    example: 'Invoice #1234 payment'
+  senderCustomerInfo:
+    type: object
+    additionalProperties: true
+    description: >
+      Only relevant for UMA destinations.
+
+      Key-value pairs of information about the sender which was
+      requested by the counterparty (recipient) institution.
+
+      Any fields specified in `requiredPayerDataFields` from the
+      response of the `/receiver/uma/{receiverUmaAddress}` (lookupUma)
+      endpoint
+
+      MUST be provided here if they were requested. If the
+      counterparty (recipient) institution did not request any
+      information, this field can be omitted.
+    example:
+      FULL_NAME: Jane Receiver
+      NATIONALITY: FR

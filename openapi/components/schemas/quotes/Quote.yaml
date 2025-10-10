@@ -1,0 +1,142 @@
+type: object
+required:
+  - quoteId
+  - status
+  - expiresAt
+  - createdAt
+  - source
+  - destination
+  - sendingCurrency
+  - receivingCurrency
+  - totalSendingAmount
+  - totalReceivingAmount
+  - exchangeRate
+  - feesIncluded
+  - transactionId
+properties:
+  quoteId:
+    type: string
+    description: Unique identifier for this quote
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+  status:
+    type: string
+    enum:
+      - PENDING
+      - PROCESSING
+      - COMPLETED
+      - FAILED
+      - EXPIRED
+    description: Current status of the quote
+    example: PENDING
+  createdAt:
+    type: string
+    format: date-time
+    description: When this quote was created
+    example: '2025-10-03T12:00:00Z'
+  expiresAt:
+    type: string
+    format: date-time
+    description: When this quote expires (typically 1-5 minutes after creation)
+    example: '2025-10-03T12:05:00Z'
+  # Transfer details
+  source:
+    $ref: ./QuoteSource.yaml
+  destination:
+    oneOf:
+      - title: Account Destination
+        type: object
+        required:
+          - accountId
+        properties:
+          accountId:
+            type: string
+            description: Destination account identifier
+            example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          currency:
+            type: string
+            description: Currency code for the destination account
+            example: EUR
+        description: Destination account details
+      - title: UMA Address Destination
+        type: object
+        required:
+          - umaAddress
+        properties:
+          umaAddress:
+            type: string
+            description: UMA address of the recipient
+            example: $receiver@uma.domain.com
+          currency:
+            type: string
+            description: Currency code for the destination
+            example: EUR
+          counterpartyInformation:
+            type: object
+            description: >-
+              Information about the recipient, as required by the platform in their
+              configuration.
+            additionalProperties: true
+            example:
+              FULL_NAME: Jane Receiver
+              BIRTH_DATE: '1990-01-01'
+              NATIONALITY: FR
+        description: UMA address destination details
+  sendingCurrency:
+    $ref: ../common/Currency.yaml
+    description: Currency for the sending amount
+  receivingCurrency:
+    $ref: ../common/Currency.yaml
+    description: Currency for the receiving amount
+  totalSendingAmount:
+    type: integer
+    format: int64
+    description: >-
+      The total amount that will be sent in the smallest unit of the sending
+      currency (eg. cents).
+    exclusiveMinimum: 0
+    example: 123010
+  totalReceivingAmount:
+    type: integer
+    format: int64
+    description: >-
+      The total amount that will be received in the smallest unit of the
+      receiving currency (eg. cents).
+    exclusiveMinimum: 0
+    example: 1000
+  exchangeRate:
+    type: number
+    description: Number of sending currency units per receiving currency unit.
+    exclusiveMinimum: 0
+  feesIncluded:
+    type: integer
+    format: int64
+    description: >-
+      The fees associated with the quote in the smallest unit of the sending
+      currency (eg. cents).
+    minimum: 0
+    example: 10
+  paymentInstructions:
+    type: array
+    description: Payment instructions for executing the payment. This is not required when using an internal account source.
+    items:
+      $ref: ../common/PaymentInstructions.yaml
+    example:
+      - accountType: US_ACCOUNT
+        accountNumber: "1234567890"
+        routingNumber: "021000021"
+        bankName: "Chase Bank"
+        referenceCode: "REF123456"
+      - accountType: SPARK_WALLET
+        address: "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        invoice: "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
+  transactionId:
+    type: string
+    description: The ID of the transaction created from this quote.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+  originalQuoteId:
+    description: ID of the quote that is being retried
+    type: string
+    example: Quote:019542f5-b3e7-1d02-0000-000000000001
+  rateDetails:
+    $ref: ../transactions/OutgoingRateDetails.yaml
+    description: Details about the rate and fees for the transaction.

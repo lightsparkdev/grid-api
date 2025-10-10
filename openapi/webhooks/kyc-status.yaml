@@ -1,0 +1,85 @@
+post:
+  summary: KYC customer status change
+  description: >
+    Webhook that is called when the KYC status of a customer is updated.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid API public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    ### KYC/B Flow
+
+    This webhook is triggered when KYC/B has reached a decision on a customer. Generally most customers will finish KYC within a few minutes.
+    Others might be rejected because of incorrect data passed in or may have been flagged for manual review.
+
+    The webhook will only trigger for final states. This will be APPROVED, REJECTED, EXPIRED, CANCELED, MANUALLY_APPROVED, MANUALLY_REJECTED.
+
+      * APPROVED: The customer has been approved.
+      * REJECTED: The customer has been rejected after a KYC check.
+      * PENDING_REVIEW: KYC check is in progress.
+      * EXPIRED: KYC check has expired. This is generally because a customer did not submit all required information needed within a session.
+      * CANCELED: KYC check was canceled.
+      * MANUALLY_APPROVED: The customer was manually approved.
+      * MANUALLY_REJECTED: The customer was manually rejected.
+      * NOT_STARTED: KYC has not started on the customer.
+  operationId: kycStatusWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/KycStatusWebhook.yaml
+        examples:
+          kycApprovedWebhook:
+            summary: When a customer KYC has been approved
+            value:
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              kycStatus: APPROVED
+              type: KYC_STATUS
+              timestamp: '2025-08-15T14:32:00Z'
+              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

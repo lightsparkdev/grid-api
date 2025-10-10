@@ -1,0 +1,5 @@
+type: string
+enum:
+  - INCOMING
+  - OUTGOING
+description: Type of transaction (incoming payment or outgoing payment)

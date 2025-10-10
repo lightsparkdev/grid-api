@@ -1,0 +1,37 @@
+---
+title: "Rails by Country"
+description: "Overview of supported payment rails by country and asset type"
+---
+
+This page lists the currently supported payment rails by destination country and asset type. Use this as a quick reference when configuring destinations and creating quotes.
+
+Note: Internal accounts are USD-only. External accounts can support multiple fiat currencies, cryptocurrencies, and stablecoins depending on the destination.
+
+### Legend
+- ✅ Supported
+- 🚧 Limited (contact support)
+- ❌ Not supported
+
+### Supported Rails by Country
+
+| Country | Fiat Bank (Local) | IBAN | US ACH/Wire (USD) | PIX (BRL) | UPI (INR) | UK Faster Payments | Crypto (BTC) | Stablecoin (USDC) |
+|---|---|---|---|---|---|---|---|---|
+| United States (US) | ✅ US local | ❌ | ✅ ACH/Wire | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Mexico (MX) | ✅ CLABE | ❌ | 🚧 | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Brazil (BR) | 🚧 | ❌ | 🚧 | ✅ PIX | ❌ | ❌ | ✅ | ✅ |
+| United Kingdom (GB) | ✅ Sort code/account | ✅ IBAN (GB) | 🚧 | ❌ | ❌ | ✅ FPS | ✅ | ✅ |
+| European Union (EU) | 🚧 local schemes | ✅ IBAN (SEPA) | 🚧 | ❌ | ❌ | ❌ | ✅ | ✅ |
+| India (IN) | 🚧 | ❌ | ❌ | ❌ | ✅ UPI | ❌ | ✅ | ✅ |
+| Japan (JP) | 🚧 Zengin | ❌ | 🚧 | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Australia (AU) | 🚧 | ❌ | ❌ | ❌ | ❌ | 🚧 NPP | ✅ | ✅ |
+
+<Note>
+  This matrix is an integration guide. Actual availability depends on your platform configuration and partner coverage. Contact support for production readiness per corridor.
+</Note>
+
+### Tips
+- Use `/receiver/external-account/{accountId}` to confirm supported currencies and limits for a specific destination.
+- For same-currency transfers, consider `/transfer-in` and `/transfer-out` endpoints.
+- For crypto and stablecoin destinations, ensure destination wallets are correctly configured and test via sandbox before going live.
+
+

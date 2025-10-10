@@ -1,0 +1,16 @@
+type: object
+required:
+  - accountType
+properties:
+  accountType:
+    $ref: ./BankAccountType.yaml
+discriminator:
+  propertyName: accountType
+  mapping:
+    CLABE: ./PaymentClabeAccountInfo.yaml
+    US_ACCOUNT: ./PaymentUsAccountInfo.yaml
+    PIX: ./PaymentPixAccountInfo.yaml
+    IBAN: ./PaymentIbanAccountInfo.yaml
+    FBO: ./PaymentFboAccountInfo.yaml
+    UPI: ./PaymentUpiAccountInfo.yaml
+    SPARK_WALLET: ./PaymentSparkWalletInfo.yaml

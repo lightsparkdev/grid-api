@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./BankAccountBase.yaml
+  - type: object
+    required:
+    - currencyCode
+    properties:
+      currencyCode:
+        type: string
+        description: Three-letter currency code (ISO 4217)
+        example: USD

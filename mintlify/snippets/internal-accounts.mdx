@@ -1,0 +1,399 @@
+## Overview
+
+Internal accounts are Lightspark managed accounts that hold funds within the Grid platform. They serve as staging accounts that allow you to receive deposits and send payments to external bank accounts or other payment destinations.
+
+Internal accounts are created for both:
+
+- **Platform-level accounts**: Hold pooled funds for your platform operations (rewards distribution, reconciliation, etc.)
+- **Customer accounts**: Hold individual customer funds for their transactions
+
+<Info>
+  Internal accounts are automatically created when you onboard a customer, based
+  on your platform's currency configuration. Platform-level internal accounts
+  are created when you configure your platform with supported currencies.
+</Info>
+
+## How internal accounts work
+
+Internal accounts act as an intermediary holding account in the payment flow:
+
+1. **Deposit funds**: You or your customers deposit money into internal accounts using bank transfers (ACH, wire, PIX, etc.) or crypto transfers
+2. **Hold balance**: Funds are held securely in the internal account until needed
+3. **Send payments**: You initiate transfers from internal accounts to external destinations
+
+Each internal account:
+
+- Is denominated in a single currency (USD, MXN, BRL, etc.)
+- Has a unique balance that you can query at any time
+- Includes unique payment instructions for depositing funds
+- Supports multiple funding methods depending on the currency
+
+## Prerequisites
+
+Before working with internal accounts, ensure you have:
+
+- An active Grid API account with API credentials
+- Completed platform configuration with at least one supported currency enabled
+- Created at least one customer account (internal accounts are created automatically)
+
+<Tip>
+  Platform-level internal accounts are also created automatically for each
+  currency you support. These can be used for business operations like
+  distributing rewards or managing pooled funds.
+</Tip>
+
+## Retrieving internal accounts
+
+### List customer internal accounts
+
+To retrieve all internal accounts for a specific customer, use the customer ID to filter the results:
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+```javascript Node.js
+const response = await fetch(
+  "https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001",
+  {
+    headers: {
+      Authorization: `Basic ${Buffer.from(
+        `${apiTokenId}:${apiSecret}`
+      ).toString("base64")}`,
+    },
+  }
+);
+
+const data = await response.json();
+console.log(data.data); // Array of internal accounts
+```
+
+```python Python
+import requests
+import base64
+
+credentials = base64.b64encode(
+    f"{api_token_id}:{api_secret}".encode()
+).decode()
+
+response = requests.get(
+    'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts',
+    params={'customerId': 'Customer:019542f5-b3e7-1d02-0000-000000000001'},
+    headers={'Authorization': f'Basic {credentials}'}
+)
+
+accounts = response.json()['data']
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "balance": {
+        "amount": 50000,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
+      },
+      "fundingPaymentInstructions": [
+        {
+          "reference": "FUND-ABC123",
+          "instructionsNotes": "Include the reference code in your ACH transfer memo",
+          "bankAccountInfo": {
+            "accountType": "US_ACCOUNT",
+            "accountNumber": "9876543210",
+            "routingNumber": "021000021",
+            "accountHolderName": "Lightspark Grid FBO John Doe",
+            "bankName": "JP Morgan Chase"
+          }
+        }
+      ],
+      "createdAt": "2025-10-03T12:00:00Z",
+      "updatedAt": "2025-10-03T14:30:00Z"
+    }
+  ],
+  "hasMore": false,
+  "totalCount": 1
+}
+```
+
+### Filter by currency
+
+You can filter internal accounts by currency to find accounts for specific denominations:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USD' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+### List platform internal accounts
+
+To retrieve platform-level internal accounts (not tied to individual customers), use the platform internal accounts endpoint:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/internal-accounts' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+<Info>
+  Platform internal accounts are useful for managing pooled funds, distributing
+  rewards, or handling platform-level operations.
+</Info>
+
+## Understanding funding payment instructions
+
+Each internal account includes `fundingPaymentInstructions` that tell your customers how to deposit funds. The structure varies by payment rail and currency:
+
+### US ACH transfers
+
+For USD accounts, instructions include routing and account numbers:
+
+```json
+{
+  "reference": "FUND-ABC123",
+  "instructionsNotes": "Include the reference code in your ACH transfer memo",
+  "bankAccountInfo": {
+    "accountType": "US_ACCOUNT",
+    "accountNumber": "9876543210",
+    "routingNumber": "021000021",
+    "accountHolderName": "Lightspark Grid FBO John Doe",
+    "bankName": "JP Morgan Chase"
+  }
+}
+```
+
+<Tip>
+  Each internal account has unique banking details in the `bankAccountInfo`
+  field, which ensures deposits are automatically credited to the correct
+  account.
+</Tip>
+
+### Mexico SPEI/CLABE
+
+For MXN accounts, instructions use CLABE numbers:
+
+```json
+{
+  "reference": "FUND-MX789",
+  "instructionsNotes": "Include reference in SPEI transfer description",
+  "bankAccountInfo": {
+    "accountType": "CLABE",
+    "clabeNumber": "123456789012345678",
+    "accountHolderName": "Lightspark Grid FBO Maria Garcia",
+    "bankName": "Banco de México"
+  }
+}
+```
+
+### Brazil PIX
+
+For BRL accounts, instructions use PIX keys:
+
+```json
+{
+  "reference": "FUND-BR456",
+  "instructionsNotes": "Include reference when making PIX payment",
+  "bankAccountInfo": {
+    "accountType": "PIX",
+    "pixKey": "12345678901",
+    "pixKeyType": "CPF",
+    "accountHolderName": "Lightspark Grid FBO João Silva"
+  }
+}
+```
+
+## Checking account balances
+
+The internal account balance reflects all deposits and withdrawals. The balance includes:
+
+- **amount**: The balance amount in the smallest currency unit (cents for USD, centavos for MXN/BRL, etc.)
+- **currency**: Full currency details including code, name, symbol, and decimal places
+
+### Example balance check
+
+```javascript
+// Check if customer has sufficient balance
+const accounts = await getInternalAccounts(customerId);
+const usdAccount = accounts.data.find(
+  (acc) => acc.balance.currency.code === "USD"
+);
+
+if (usdAccount.balance.amount >= requiredAmount) {
+  console.log("Sufficient balance for transfer");
+  // Proceed with payment
+} else {
+  console.log("Insufficient balance - request deposit");
+  // Show funding instructions to customer
+}
+```
+
+<Tip>
+  Always check the `decimals` field in the currency object to correctly convert
+  between display amounts and API amounts. For example, USD has 2 decimals, so
+  an amount of 50000 represents $500.00.
+</Tip>
+
+## Displaying funding instructions to customers
+
+When customers need to deposit funds themselves, display the funding payment instructions in your application:
+
+<Steps>
+<Step title="Retrieve the internal account">
+Fetch the customer's internal account for their desired currency using the API.
+</Step>
+
+<Step title="Extract payment instructions">
+Parse the `fundingPaymentInstructions` array and select the appropriate instructions based on your customer's preferred payment method.
+
+```javascript
+const instructions = account.fundingPaymentInstructions[0];
+const bankInfo = instructions.bankAccountInfo;
+```
+
+</Step>
+
+<Step title="Display instructions clearly">
+Show the payment details prominently in your UI:
+
+- Account holder name
+- Bank name and routing information (account/routing number, CLABE, PIX key, etc.)
+- Reference code (if provided)
+- Any additional notes from `instructionsNotes`
+
+<Tip>
+  The unique banking details in each internal account automatically route
+  deposits to the correct destination.
+</Tip>
+
+</Step>
+
+<Step title="Monitor for deposits">
+Set up webhook listeners to receive notifications when deposits are credited to the internal account. The account balance will update automatically.
+
+<Info>
+You'll receive `ACCOUNT_STATUS` webhook events when the internal account balance changes.
+</Info>
+</Step>
+</Steps>
+
+## Common use cases
+
+### Holding funds before international transfers
+
+Internal accounts are ideal for scenarios where customers need to deposit funds in advance:
+
+```javascript
+// Customer deposits $500 to their USD internal account
+// Later, initiate a cross-currency transfer to Mexico
+
+const quoteResponse = await fetch(
+  "https://api.lightspark.com/grid/2025-10-13/quotes",
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      source: {
+        accountId: "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      },
+      destination: {
+        accountId: "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+        currency: "MXN",
+      },
+      lockedCurrencySide: "RECEIVING",
+      lockedCurrencyAmount: 1000000, // 10,000 MXN
+    }),
+  }
+);
+
+const quote = await quoteResponse.json();
+
+// Execute the transfer using the quote ID
+const executeResponse = await fetch(
+  `https://api.lightspark.com/grid/2025-10-13/quotes/${quote.id}/execute`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/json",
+    },
+  }
+);
+```
+
+### Managing customer float
+
+Use internal accounts to hold customer funds that will be used for multiple transactions:
+
+```javascript
+// Check available balance across all currencies
+const response = await fetch(
+  `https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=${customerId}`,
+  { headers: { Authorization: `Basic ${credentials}` } }
+);
+
+const allAccounts = await response.json();
+const balances = allAccounts.data.map((acc) => ({
+  currency: acc.balance.currency.code,
+  amount: acc.balance.amount / Math.pow(10, acc.balance.currency.decimals),
+  symbol: acc.balance.currency.symbol,
+}));
+
+console.log("Customer balances:", balances);
+// [{ currency: 'USD', amount: 500, symbol: '$' }, ...]
+```
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Display complete funding instructions">
+Ensure your customers have all the information needed to make deposits. Consider implementing:
+- Clear display of all banking details from `fundingPaymentInstructions`
+- Copy-to-clipboard functionality for account numbers and reference codes
+- Email/SMS confirmations with complete deposit instructions
+</Accordion>
+
+<Accordion title="Monitor account balances proactively">
+Set up monitoring to alert customers when their balance is low:
+```javascript
+if (account.balance.amount < minimumThreshold) {
+  await notifyCustomer({
+    type: 'LOW_BALANCE',
+    account: account.id,
+    instructions: account.fundingPaymentInstructions
+  });
+}
+```
+</Accordion>
+
+<Accordion title="Handle multiple currencies efficiently">
+If your platform supports multiple currencies, organize internal accounts by currency in your UI:
+```javascript
+const accountsByCurrency = accounts.data.reduce((acc, account) => {
+  const code = account.balance.currency.code;
+  acc[code] = account;
+  return acc;
+}, {});
+
+// Quick lookup: accountsByCurrency['USD']
+
+```
+</Accordion>
+
+<Accordion title="Cache account data appropriately">
+Internal account details (especially funding instructions) rarely change, so you can cache them safely. However, always fetch fresh balance data before initiating transfers.
+</Accordion>
+</AccordionGroup>

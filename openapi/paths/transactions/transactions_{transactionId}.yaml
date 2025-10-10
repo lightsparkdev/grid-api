@@ -1,0 +1,40 @@
+parameters:
+  - name: transactionId
+    in: path
+    description: Unique identifier of the transaction
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get transaction by ID
+  description: Retrieve detailed information about a specific transaction
+  operationId: getTransactionById
+  tags:
+    - Transactions
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/Transaction.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

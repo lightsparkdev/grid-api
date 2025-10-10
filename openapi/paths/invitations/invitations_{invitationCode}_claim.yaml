@@ -1,0 +1,74 @@
+post:
+  summary: Claim an UMA invitation
+  description: >
+    Claim an UMA invitation by associating it with an invitee UMA address.
+
+
+    When an invitation is successfully claimed:
+
+    1. The invitation status changes from PENDING to CLAIMED
+
+    2. The invitee UMA address is associated with the invitation
+
+    3. An INVITATION_CLAIMED webhook is triggered to notify the platform that
+    created the invitation
+
+
+    This endpoint allows customers to accept invitations sent to them by other UMA
+    customers.
+  operationId: claimInvitation
+  tags:
+    - Invitations
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: invitationCode
+      in: path
+      description: The code of the invitation to claim
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - inviteeUma
+          properties:
+            inviteeUma:
+              type: string
+              description: The UMA address of the customer claiming the invitation
+              example: $invitee@uma.domain
+  responses:
+    '200':
+      description: Invitation claimed successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/invitations/UmaInvitation.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Invitation not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,123 @@
+html.light .hero {
+  background: #f0f0ee;
+  background-image: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  background-position: 0 0;
+  background-repeat: repeat;
+  border-bottom: 1px solid var(--border-tertiary, rgba(0, 0, 0, 0.1));
+  border-top: 1px solid var(--border-tertiary, rgba(0, 0, 0, 0.1));
+}
+
+html.light .title {
+  color: #1a1a1a;
+}
+
+html.light .usecase {
+  background: #f8f8f7;
+}
+
+html.light .highlight {
+  color: #1a1a1a;
+}
+
+html.light .hero .call-to-action {
+  background: #00b3e0;
+  color: var(--gray-050, #f8f8f7);
+}
+
+html.light .hero-card {
+  background: var(--surface-base, #fff);
+}
+
+.hero .call-to-action {
+  display: flex;
+  height: 40px;
+  padding: var(--spacing-xs, 8px) 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  font-feature-settings: "salt" on;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.hero {
+  padding-top: 128px;
+  padding-bottom: 128px;
+  padding-left: 120px;
+  padding-right: 120px;
+  gap: 64px;
+  font-family: "Suisse Intl";
+}
+
+.hero .subtext {
+  width: 538px;
+  color: var(--gray-950, #989898);
+  text-align: center;
+  font-feature-settings: "salt" on;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.6px;
+}
+
+.usecase {
+  display: flex;
+  padding: 128px 120px 64px 120px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 48px;
+  align-self: stretch;
+  font-family: "Suisse Intl";
+}
+
+.usecase h2 {
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 32px; /* 133.333% */
+  letter-spacing: -0.72px;
+}
+
+.section {
+  display: flex;
+  width: 1200px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.footer {
+  display: flex;
+  width: 1200px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.hero-card {
+  display: flex;
+  height: 240px;
+  padding: 24px;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  align-self: stretch;
+  border-radius: 4px;
+}
+
+.card-content {
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px; /* 120% */
+    letter-spacing: -0.6px;
+}

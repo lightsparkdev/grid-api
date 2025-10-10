@@ -1,0 +1,31 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    enum:
+      - 403
+    type: integer
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | FORBIDDEN | Insufficient permissions |
+      | USER_NOT_READY | Customer exists but is not ready for operation |
+      | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+      | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+    enum:
+      - FORBIDDEN
+      - USER_NOT_READY
+      - COUNTERPARTY_NOT_ALLOWED
+      - VELOCITY_LIMIT_EXCEEDED
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details

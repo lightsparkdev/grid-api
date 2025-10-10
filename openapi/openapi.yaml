@@ -1,0 +1,157 @@
+openapi: 3.1.0
+info:
+  title: Lightspark Grid API
+  description: >
+    API for managing global payments on the Money Grid.
+  version: "2025-10-13"
+  contact:
+    name: Lightspark Support
+    email: support@lightspark.com
+  license:
+    name: Proprietary
+    url: https://lightspark.com/terms
+tags:
+  - name: Platform Configuration
+    description: >-
+      Platform configuration endpoints for managing global settings. You can
+      also configure these settings in the Grid dashboard.
+  - name: Customers
+    description: Customer management endpoints for creating and updating customer information
+  - name: Internal Accounts
+    description: Internal account management endpoints for creating and managing internal accounts
+  - name: External Accounts
+    description: External account management endpoints for creating and managing external bank accounts
+  - name: Same-Currency Transfers
+    description: Endpoints for transferring funds between internal and external accounts with the same currency
+  - name: Cross-Currency Transfers
+    description: Endpoints for creating and confirming quotes for cross-currency transfers
+  - name: Transactions
+    description: Endpoints for retrieving transaction information
+  - name: Webhooks
+    description: Webhook endpoints and configuration for receiving notifications
+  - name: Invitations
+    description: Endpoints for creating, claiming and managing UMA invitations
+  - name: Sandbox
+    description: Endpoints to trigger test cases in sandbox
+  - name: API Tokens
+    description: Endpoints to programmatically manage API tokens
+servers:
+  - url: https://api.lightspark.com/grid/2025-10-13
+    description: Production server
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: >-
+        API token authentication using format `<api token id>:<api client
+        secret>`
+    WebhookSignature:
+      type: apiKey
+      in: header
+      name: X-Grid-Signature
+      description: >
+        Secp256r1 (P-256) asymmetric signature of the webhook payload, which can
+        be used to verify that the webhook was sent by Grid.
+
+
+        To verify the signature:
+
+        1. Get the Grid public key provided to you during integration
+
+        2. Decode the base64 signature from the header
+
+        3. Create a SHA-256 hash of the request body
+
+        4. Verify the signature using the public key and the hash
+
+
+        If the signature verification succeeds, the webhook is authentic. If
+        not, it should be rejected.
+
+paths:
+  /config:
+    $ref: paths/platform/config.yaml
+  /customers:
+    $ref: paths/customers/customers.yaml
+  /platform/internal-accounts:
+    $ref: paths/platform/platform_internal_accounts.yaml
+  /customers/{customerId}:
+    $ref: paths/customers/customers_{customerId}.yaml
+  /customers/kyc-link:
+    $ref: paths/customers/customers_kyc_link.yaml
+  /customers/internal-accounts:
+    $ref: paths/customers/customers_internal_accounts.yaml
+  /customers/external-accounts:
+    $ref: paths/customers/customers_external_accounts.yaml
+  /platform/external-accounts:
+    $ref: paths/platform/platform_external_accounts.yaml
+  /plaid/link-tokens:
+    $ref: paths/plaid/plaid_link-tokens.yaml
+  /plaid/callback/{plaid_link_token}:
+    $ref: paths/plaid/plaid_callback_{plaid_link_token}.yaml
+  /transfer-in:
+    $ref: paths/transfers/transfer_in.yaml
+  /transfer-out:
+    $ref: paths/transfers/transfer_out.yaml
+  /receiver/uma/{receiverUmaAddress}:
+    $ref: paths/receiver/uma/receiver_uma_{receiverUmaAddress}.yaml
+  /receiver/external-account/{accountId}:
+    $ref: paths/receiver/external-account/receiver_external-account_{accountId}.yaml
+  /quotes/{quoteId}:
+    $ref: paths/quotes/quotes_{quoteId}.yaml
+  /quotes:
+    $ref: paths/quotes/quotes.yaml
+  /quotes/{quoteId}/retry:
+    $ref: paths/quotes/quotes_{quoteId}_retry.yaml
+  /quotes/{quoteId}/execute:
+    $ref: paths/quotes/quotes_{quoteId}_execute.yaml
+  /transactions:
+    $ref: paths/transactions/transactions.yaml
+  /transactions/{transactionId}:
+    $ref: paths/transactions/transactions_{transactionId}.yaml
+  /transactions/{transactionId}/approve:
+    $ref: paths/transactions/transactions_{transactionId}_approve.yaml
+  /transactions/{transactionId}/reject:
+    $ref: paths/transactions/transactions_{transactionId}_reject.yaml
+  /webhooks/test:
+    $ref: paths/webhooks/webhooks_test.yaml
+  /customers/bulk/csv:
+    $ref: paths/customers/customers_bulk_csv.yaml
+  /customers/bulk/jobs/{jobId}:
+    $ref: paths/customers/customers_bulk_jobs_{jobId}.yaml
+  /invitations:
+    $ref: paths/invitations/invitations.yaml
+  /invitations/{invitationCode}:
+    $ref: paths/invitations/invitations_{invitationCode}.yaml
+  /invitations/{invitationCode}/claim:
+    $ref: paths/invitations/invitations_{invitationCode}_claim.yaml
+  /invitations/{invitationCode}/cancel:
+    $ref: paths/invitations/invitations_{invitationCode}_cancel.yaml
+  /sandbox/send:
+    $ref: paths/sandbox/sandbox_send.yaml
+  /sandbox/receive:
+    $ref: paths/sandbox/sandbox_receive.yaml
+  /uma-providers:
+    $ref: paths/uma_providers/uma_providers.yaml
+  /tokens:
+    $ref: paths/tokens/tokens.yaml
+  /tokens/{tokenId}:
+    $ref: paths/tokens/tokens_{tokenId}.yaml
+webhooks:
+  incoming-payment:
+    $ref: webhooks/incoming-payment.yaml
+  outgoing-payment:
+    $ref: webhooks/outgoing-payment.yaml
+  test-webhook:
+    $ref: webhooks/test-webhook.yaml
+  bulk-upload:
+    $ref: webhooks/bulk-upload.yaml
+  invitation-claimed:
+    $ref: webhooks/invitation-claimed.yaml
+  kyc-status:
+    $ref: webhooks/kyc-status.yaml
+  account-status:
+    $ref: webhooks/account-status.yaml
+security:
+  - BasicAuth: []

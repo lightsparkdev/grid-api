@@ -1,0 +1,51 @@
+get:
+  summary: List platform external accounts
+  description: |
+    Retrieve a list of all external accounts that belong to the platform, as opposed to an individual customer.
+
+    These accounts are used for platform-wide operations such as receiving funds from external sources or managing platform-level payment destinations.
+  operationId: listPlatformExternalAccounts
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: currency
+      in: query
+      description: Filter by currency code
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - accounts
+            properties:
+              accounts:
+                type: array
+                description: List of external accounts matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

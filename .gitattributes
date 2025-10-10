@@ -1,0 +1,4 @@
+# Generated files - GitHub will ignore these in PR reviews
+openapi.yaml linguist-generated=true
+mintlify/openapi.yaml linguist-generated=true
+

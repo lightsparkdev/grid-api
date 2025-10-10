@@ -1,0 +1,463 @@
+---
+title: "Quickstart"
+description: "Complete guide for sending cross-border payments from basic bank transfers to advanced multi-currency scenarios across different customer types"
+---
+
+import KycOnboarding from '/snippets/kyc-onboarding.mdx';
+
+This comprehensive guide covers cross-border payouts from basic examples to advanced multi-currency scenarios. Learn how to enable payments across fiat currencies, cryptocurrencies, and stablecoins for different customer types using the Grid API.
+
+## Prerequisites
+
+Before starting this guide, ensure you have:
+
+- A Grid API account with valid authentication credentials
+- Access to the Grid API endpoints (production or sandbox)
+- A webhook endpoint configured to receive notifications
+- Understanding of your customer type and compliance requirements
+
+## Overview
+
+Cross-border payments enable transfers between different currencies using real-time exchange rates. The Grid API supports:
+
+- **Fiat currencies**: USD (primary), with support for other currencies as external accounts
+- **Cryptocurrencies**: Bitcoin (BTC), Ethereum (ETH), and other major cryptocurrencies  
+- **Stablecoins**: USDC, USDT, and other USD-pegged stablecoins
+
+### Funding Account Types
+
+- **Internal Accounts**: USD-only accounts managed by Grid, funded via ACH pull
+- **External Accounts**: Multi-currency accounts supporting various asset types including fiat, crypto, and stablecoins
+
+## Basic Example: Send to Foreign Bank Account
+
+This example walks through the complete process of sending funds to an external bank account, from customer onboarding through quote execution.
+
+### Step 1: Customer Onboarding
+
+<KycOnboarding />
+
+### Step 2: List Internal Accounts
+
+Once the customer is created, list their internal accounts to see the available balances and funding instructions.
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/internal-account?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "balance": {
+        "amount": 0,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
+      },
+      "fundingPaymentInstructions": [
+        {
+          "reference": "FUND-ABC123",
+          "instructionsNotes": "Include the reference code in your ACH transfer memo",
+          "bankAccountInfo": {
+            "accountType": "US_ACCOUNT",
+            "accountNumber": "9876543210",
+            "routingNumber": "021000021",
+            "accountHolderName": "Lightspark Grid FBO John Doe",
+            "bankName": "JP Morgan Chase"
+          }
+        }
+      ],
+      "createdAt": "2025-10-03T12:00:00Z",
+      "updatedAt": "2025-10-03T12:00:00Z"
+    }
+  ],
+  "hasMore": false,
+  "totalCount": 1
+}
+```
+
+The `fundingPaymentInstructions` provide the bank account details and reference code needed to fund this internal account via ACH pull from the customer's bank.
+
+### Step 3: Fund the Internal Account
+
+Your customer initiates an ACH transfer from their bank to the account details provided in the funding instructions, making sure to include the reference code `FUND-ABC123` in the transfer memo.
+
+<Note>
+  In sandbox mode, you can use the `/sandbox/receive` endpoint to simulate receiving funds. In production, actual ACH transfers typically take 1-3 business days to settle.
+</Note>
+
+**Webhook Notification:**
+```json
+{
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000010",
+    "status": "COMPLETED",
+    "type": "INCOMING",
+    "receivedAmount": {
+      "amount": 100000,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "settledAt": "2025-10-03T14:30:00Z",
+    "createdAt": "2025-10-03T14:25:00Z",
+    "description": "Internal account funding"
+  },
+  "timestamp": "2025-10-03T14:32:00Z",
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "INCOMING_PAYMENT"
+}
+```
+
+The internal account now has a balance of $1,000.00 (100000 cents).
+
+### Step 4: Add an External Bank Account
+
+Now add the destination bank account where you want to send the funds. In this example, we'll add a Mexican CLABE account.
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "MXN",
+    "platformAccountId": "maria_garcia_account",
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "123456789012345678",
+      "bankName": "BBVA Mexico",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Maria Garcia",
+        "birthDate": "1990-01-01",
+        "nationality": "MX",
+        "address": {
+          "line1": "Av. Reforma 123",
+          "city": "Ciudad de México",
+          "state": "CDMX",
+          "postalCode": "06600",
+          "country": "MX"
+        }
+      }
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "MXN",
+  "platformAccountId": "maria_garcia_account",
+  "accountInfo": {
+    "accountType": "CLABE",
+    "clabeNumber": "123456789012345678",
+    "bankName": "BBVA Mexico",
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "Maria Garcia",
+      "birthDate": "1990-01-01",
+      "nationality": "MX",
+      "address": {
+        "line1": "Av. Reforma 123",
+        "city": "Ciudad de México",
+        "state": "CDMX",
+        "postalCode": "06600",
+        "country": "MX"
+      }
+    }
+  }
+}
+```
+
+### Step 5: Look Up the External Account
+
+Before creating a quote, look up the external account to verify supported currencies and get estimated exchange rates.
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/external-account/ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+**Response:**
+```json
+{
+  "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+  "supportedCurrencies": [
+    {
+      "currency": {
+        "code": "MXN",
+        "name": "Mexican Peso",
+        "symbol": "$",
+        "decimals": 2
+      },
+      "estimatedExchangeRate": 17.25,
+      "min": 1000,
+      "max": 1000000
+    }
+  ],
+  "lookupId": "LookupRequest:019542f5-b3e7-1d02-0000-000000000009"
+}
+```
+
+This shows you can send MXN to this account, with an estimated exchange rate of 17.25 MXN per 1 USD. The minimum send amount is 10.00 MXN and maximum is 10,000.00 MXN.
+
+### Step 6: Create a Quote
+
+Create a quote to lock in the exchange rate, fees, and get the final transfer details.
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "lookupId": "LookupRequest:019542f5-b3e7-1d02-0000-000000000009",
+    "source": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+      "currency": "MXN"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 50000,
+    "description": "Payment to Maria Garcia for services"
+  }'
+```
+
+<Note>
+  **Amount Locking**: You can lock either the sending amount (`SENDING`) or receiving amount (`RECEIVING`). In this example, we're locking the sending amount to exactly $500.00 USD (50000 cents).
+</Note>
+
+**Response:**
+```json
+{
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "status": "PENDING",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "expiresAt": "2025-10-03T15:05:00Z",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "MXN"
+  },
+  "sendingCurrency": {
+    "code": "USD",
+    "name": "United States Dollar",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "MXN",
+    "name": "Mexican Peso",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "totalSendingAmount": 50000,
+  "totalReceivingAmount": 861250,
+  "exchangeRate": 17.25,
+  "feesIncluded": 250,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000015"
+}
+```
+
+The quote shows:
+- **Sending**: $500.00 USD (including $2.50 fee)
+- **Receiving**: $8,612.50 MXN
+- **Exchange rate**: 17.25 MXN per USD
+- **Quote expires**: In 5 minutes
+
+<Warning>
+  Quotes typically expire in 1-5 minutes. Make sure to execute the quote before the `expiresAt` timestamp, or you'll need to create a new quote.
+</Warning>
+
+**Alternative: Send Payout To External Account For Crypto**
+
+Send a BTC payout from an internal account to an external account executed immediately:
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "beneficiary": {
+          "counterPartyType": "INDIVIDUAL",
+          "fullName": "Maria Garcia",
+          "dateOfBirth": "1990-01-01",
+          "nationality": "MX"
+        },
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 50000,
+    "immediatelyExecute": true,
+    "description": "Payment to Maria Garcia for services"
+  }'
+```
+
+### Step 7: Execute the Quote
+
+Execute the quote to initiate the transfer from the internal account to the external bank account.
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+**Response:**
+```json
+{
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "status": "PROCESSING",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "expiresAt": "2025-10-03T15:05:00Z",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "MXN"
+  },
+  "sendingCurrency": {
+    "code": "USD",
+    "name": "United States Dollar",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "MXN",
+    "name": "Mexican Peso",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "totalSendingAmount": 50000,
+  "totalReceivingAmount": 861250,
+  "exchangeRate": 17.25,
+  "feesIncluded": 250,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000015"
+}
+```
+
+The quote status changes to `PROCESSING` and the transfer is initiated. You can track the status by:
+1. Polling the quote endpoint: `GET /quotes/{quoteId}`
+2. Waiting for a webhook notification
+
+**Completion Webhook:**
+```json
+{
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
+    "status": "COMPLETED",
+    "type": "OUTGOING",
+    "sentAmount": {
+      "amount": 50000,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "receivedAmount": {
+      "amount": 861250,
+      "currency": {
+        "code": "MXN",
+        "name": "Mexican Peso",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "settledAt": "2025-10-03T15:02:30Z",
+    "createdAt": "2025-10-03T15:00:00Z",
+    "description": "Payment to Maria Garcia for services",
+    "exchangeRate": 17.25,
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
+  },
+  "timestamp": "2025-10-03T15:03:00Z",
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000025",
+  "type": "OUTGOING_PAYMENT"
+}
+```
+
+---
+
+## Best Practices
+
+### 1. Currency Selection
+- **USD (Internal Accounts)**: Primary fiat currency for traditional business payments
+- **Multi-currency (External Accounts)**: Support for various fiat, crypto, and stablecoin currencies
+- **Stablecoins**: Ideal for faster settlements and lower fees
+- **Cryptocurrencies**: Suitable for tech-savvy businesses and international transfers
+
+### 2. Exchange Rate Management
+- Always check current rates before creating quotes
+- Consider quote expiration times (typically 1-5 minutes)
+- Use internal accounts for USD funding or external accounts for multi-currency funding
+
+### 3. Compliance Considerations
+- Ensure proper KYB/KYC verification for each customer type
+- Maintain audit trails for all cross-border transactions
+- Implement proper webhook signature verification
+- Support both business-to-business and business-to-individual payment flows
+
+### 4. Error Handling
+- Monitor quote status and handle failures gracefully
+- Implement proper retry mechanisms for failed transfers
+- Use webhooks for real-time status updates
+- Handle both internal and external account funding scenarios
+
+---
+
+## Summary
+
+This guide covered cross-border payments from basic examples to advanced multi-currency scenarios:
+
+1. **Basic Example**: Complete walkthrough of USD to MXN transfer
+2. **Advanced Scenarios**: Multi-currency transfers for three customer types
+3. **Funding Options**: Both internal (USD-only) and external (multi-currency) accounts
+4. **Payment Types**: Business-to-business, business-to-individual, and individual-to-individual
+5. **Asset Support**: Fiat currencies, cryptocurrencies, and stablecoins
+
+Each customer type has specific requirements and use cases, but all can benefit from Grid's cross-currency capabilities supporting comprehensive payment solutions.
+
+## Next Steps
+
+- **API Reference**: Explore the complete [API](/api-reference/environments)
+- **Platform Configuration**: Set up your [platform settings](/api-reference/platform-configuration/get-platform-configuration)
+- **Webhook Security**: Implement [webhook verification](/remittances/developer-guides/webhooks)
+- **Sandbox Testing**: Test your integration in [sandbox mode](/remittances/developer-guides/sandbox-testing)
+
+## Related Resources
+
+- [Platform Configuration](/api-reference/platform-configuration/update-platform-configuration) - Configure your platform
+- [Webhooks Guide](/remittances/developer-guides/webhooks) - Real-time notifications
+- [Sandbox Testing](/remittances/developer-guides/sandbox-testing) - Safe testing environment

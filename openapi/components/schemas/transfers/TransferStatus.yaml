@@ -1,0 +1,7 @@
+type: string
+enum:
+  - PENDING
+  - COMPLETED
+  - FAILED
+  - CANCELED
+description: Status of a transfer

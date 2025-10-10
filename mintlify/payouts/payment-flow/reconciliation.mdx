@@ -1,0 +1,268 @@
+---
+title: "Reconciliation"
+description: "Match Grid payments with your internal accounting systems using platform IDs and references"
+---
+
+Grid provides several fields to help you match payments with your internal systems and accounting records.
+
+## Using platform customer IDs
+
+Link Grid customers to your internal user records with `platformCustomerId`:
+
+```javascript
+// When creating a customer
+{
+  "platformCustomerId": "your_internal_user_id_12345",
+  // ... other customer fields
+}
+```
+
+Every transaction includes this field for easy matching:
+
+```json
+{
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "your_internal_user_id_12345",
+  "status": "COMPLETED",
+  "type": "OUTGOING"
+  // ... other fields
+}
+```
+
+## Using platform account IDs
+
+Link external accounts to your internal account records with `platformAccountId`:
+
+```javascript
+// When creating an external account
+{
+  "platformAccountId": "checking_account_789",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  // ... other account fields
+}
+```
+
+## Reconciliation workflow
+
+<Steps>
+<Step title="Store platform IDs">
+When creating customers and accounts, include your internal IDs:
+
+```javascript
+const gridCustomer = await createCustomer({
+  platformCustomerId: internalUser.id,
+  // ... other fields
+});
+
+// Save mapping in your database
+await db.users.update(internalUser.id, {
+  gridCustomerId: gridCustomer.id,
+});
+```
+
+</Step>
+
+<Step title="Match transactions">
+Use `platformCustomerId` to match transactions to your records:
+
+```javascript
+// Webhook handler
+app.post("/webhooks/grid", async (req, res) => {
+  const { transaction } = req.body;
+
+  // Find internal user by platform ID
+  const user = await db.users.findOne({
+    id: transaction.platformCustomerId,
+  });
+
+  // Update internal ledger
+  await db.ledger.create({
+    userId: user.id,
+    gridTransactionId: transaction.id,
+    amount: transaction.receivedAmount.amount,
+    currency: transaction.receivedAmount.currency.code,
+    type: transaction.type,
+    status: transaction.status,
+    date: transaction.createdAt,
+  });
+
+  res.status(200).json({ received: true });
+});
+```
+
+</Step>
+
+<Step title="Query by platform ID">
+Retrieve transactions using your platform's customer ID:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=your_internal_user_id_12345' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
+```
+
+</Step>
+</Steps>
+
+## Reconciliation best practices
+
+<AccordionGroup>
+<Accordion title="Always include platform IDs">
+Set `platformCustomerId` and `platformAccountId` when creating resources to simplify future reconciliation:
+
+```javascript
+// Good: Include platform IDs from the start
+const customer = await createCustomer({
+  platformCustomerId: user.id,
+  // ... other fields
+});
+
+const account = await createExternalAccount({
+  platformAccountId: bankAccount.id,
+  customerId: customer.id,
+  // ... other fields
+});
+```
+
+This eliminates the need to maintain separate mapping tables.
+
+</Accordion>
+
+<Accordion title="Build a reconciliation report">
+Generate daily reconciliation reports by comparing Grid transactions with your internal ledger:
+
+```javascript
+async function generateDailyReconciliationReport(date) {
+  // Get Grid transactions for the day
+  const startDate = new Date(date).toISOString();
+  const endDate = new Date(date);
+  endDate.setDate(endDate.getDate() + 1);
+
+  const gridTxns = await fetch(
+    `https://api.lightspark.com/grid/2025-10-13/transactions?startDate=${startDate}&endDate=${endDate.toISOString()}&status=COMPLETED`,
+    {
+      headers: { Authorization: `Basic ${credentials}` },
+    }
+  ).then((r) => r.json());
+
+  // Get internal ledger entries
+  const internalTxns = await db.ledger.find({
+    date: { $gte: startDate, $lt: endDate.toISOString() },
+  });
+
+  // Compare
+  const report = {
+    date,
+    gridTotal: 0,
+    internalTotal: 0,
+    discrepancies: [],
+  };
+
+  gridTxns.data.forEach((txn) => {
+    const amount =
+      txn.type === "OUTGOING"
+        ? txn.sentAmount.amount
+        : txn.receivedAmount.amount;
+    report.gridTotal += amount;
+
+    // Check if exists in internal ledger
+    const internal = internalTxns.find((t) => t.gridTransactionId === txn.id);
+
+    if (!internal) {
+      report.discrepancies.push({
+        gridId: txn.id,
+        issue: "Missing from internal ledger",
+        amount,
+      });
+    }
+  });
+
+  internalTxns.forEach((txn) => {
+    report.internalTotal += txn.amount;
+  });
+
+  return report;
+}
+```
+
+</Accordion>
+
+<Accordion title="Handle webhook idempotency">
+Store webhook IDs to prevent duplicate ledger entries:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  const { webhookId, transaction } = req.body;
+
+  // Check if already processed
+  const existing = await db.webhooks.findOne({ webhookId });
+  if (existing) {
+    return res.status(200).json({ received: true });
+  }
+
+  // Process and record webhook
+  await db.ledger.create({
+    gridTransactionId: transaction.id,
+    platformCustomerId: transaction.platformCustomerId,
+    amount: transaction.receivedAmount?.amount,
+    type: transaction.type,
+    processedAt: new Date(),
+  });
+
+  await db.webhooks.create({ webhookId, processedAt: new Date() });
+
+  res.status(200).json({ received: true });
+});
+```
+
+</Accordion>
+
+<Accordion title="Use transaction descriptions">
+Include meaningful descriptions for easier reconciliation:
+
+```javascript
+await createQuote({
+  source: { accountId: internalAccountId },
+  destination: { accountId: externalAccountId },
+  lockedCurrencySide: "SENDING",
+  lockedCurrencyAmount: 10000,
+  description: `Invoice #${invoiceId} - ${customerName} - ${date}`,
+});
+```
+
+This helps when manually reviewing transactions or resolving discrepancies.
+
+</Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="Send Payments" icon="paper-plane" href="/payouts/payment-flow/send-payment">
+  Learn how to send payments from internal accounts
+</Card>
+
+<Card
+  title="Receive Payments"
+  icon="arrow-down-to-bracket"
+  href="/payouts/payment-flow/receive-payment"
+>
+  Accept incoming payments with webhook approval
+</Card>
+
+<Card
+  title="List Transactions"
+  icon="list"
+  href="/payouts/payment-flow/list-transactions"
+>
+  Query and filter payment history
+</Card>
+
+<Card
+  title="Error Handling"
+  icon="triangle-exclamation"
+  href="/payouts/payment-flow/error-handling"
+>
+  Handle payment failures and errors
+</Card>
+</CardGroup>

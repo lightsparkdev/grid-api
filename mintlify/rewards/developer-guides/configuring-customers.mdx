@@ -1,0 +1,203 @@
+---
+title: "Configuring Customers"
+description: "Complete guide to creating and managing customers for Bitcoin rewards"
+---
+
+import KycOnboarding from '/snippets/kyc-onboarding.mdx';
+
+This guide covers everything you need to know about creating and managing customers in the Grid API for Bitcoin rewards distribution.
+
+## Overview
+
+Customers are the recipients of your Bitcoin rewards. They can be individuals or businesses. Each customer in the Grid system has:
+
+- **System-generated ID**: Unique identifier assigned by Grid (e.g., `Customer:019542f5-b3e7-1d02-0000-000000000001`)
+- **Customer Type**: Either `INDIVIDUAL` or `BUSINESS`
+- **KYC Status**: Indicates if the customer has been verified and approved.
+- **Internal Accounts**: Automatically created for each supported currency upon customer creation
+- **Platform Customer ID**: Optional field to link to your own user/customer ID
+
+<Note>
+The `platformCustomerId` field is optional but recommended. Use your existing user IDs to maintain a simple mapping between your system and Grid.
+</Note>
+
+## Customer Onboarding
+
+<KycOnboarding />
+
+### Creating Customers via API
+
+For platforms that are regulated financial institutions who already handle your own KYC/KYB, you can create customers directly via API with lower data requirements.
+
+#### Create Individual Customer
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platformCustomerId": "user_12345",
+    "customerType": "INDIVIDUAL",
+    "fullName": "Jane Doe",
+    "birthDate": "1992-03-25",
+    "nationality": "US"
+  }'
+```
+
+#### Create Business Customer
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platformCustomerId": "biz_67890",
+    "customerType": "BUSINESS",
+    "businessInfo": {
+      "legalName": "Acme Corporation",
+      "registrationNumber": "BRN-456789123",
+      "taxId": "EIN-987123456"
+    },
+    "address": {
+      "line1": "400 Commerce Way",
+      "city": "Austin",
+      "state": "TX",
+      "postalCode": "78701",
+      "country": "US"
+    }
+  }'
+```
+
+### Response
+
+Both requests return a customer object:
+
+```json
+{
+  "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "user_12345",
+  "customerType": "INDIVIDUAL",
+  "kycStatus": "APPROVED",
+  "umaAddress": "$jane.doe@uma.domain.com",
+  "fullName": "Jane Doe",
+  "birthDate": "1992-03-25",
+  "nationality": "US",
+  "createdAt": "2025-10-03T12:00:00Z",
+  "updatedAt": "2025-10-03T12:00:00Z",
+  "isDeleted": false
+}
+```
+
+<Info>
+When a customer is created successfully, internal accounts are automatically created for each currency configured on your platform. These accounts can be used as sources or destinations for transfers.
+</Info>
+
+## Listing Customers
+
+Retrieve a paginated list of customers with optional filtering:
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers?limit=20&customerType=INDIVIDUAL" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+### Query Parameters
+
+<ParamField query="platformCustomerId" type="string">
+Filter by your platform's customer identifier
+</ParamField>
+
+<ParamField query="customerType" type="string">
+Filter by customer type (`INDIVIDUAL` or `BUSINESS`)
+</ParamField>
+
+<ParamField query="createdAfter" type="string">
+Filter customers created after this timestamp (ISO 8601)
+</ParamField>
+
+<ParamField query="createdBefore" type="string">
+Filter customers created before this timestamp (ISO 8601)
+</ParamField>
+
+<ParamField query="updatedAfter" type="string">
+Filter customers updated after this timestamp (ISO 8601)
+</ParamField>
+
+<ParamField query="updatedBefore" type="string">
+Filter customers updated before this timestamp (ISO 8601)
+</ParamField>
+
+<ParamField query="isIncludingDeleted" type="boolean">
+Whether to include deleted customers in results (default: false)
+</ParamField>
+
+<ParamField query="limit" type="integer">
+Maximum number of results per page (default: 20, max: 100)
+</ParamField>
+
+<ParamField query="cursor" type="string">
+Pagination cursor from previous response
+</ParamField>
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "platformCustomerId": "user_12345",
+      "customerType": "INDIVIDUAL",
+      "kycStatus": "APPROVED",
+      "fullName": "Jane Doe",
+      "birthDate": "1992-03-25",
+      "address": {
+        "line1": "123 Pine Street",
+        "line2": "Unit 501",
+        "city": "Seattle",
+        "state": "WA",
+        "postalCode": "98101",
+        "country": "US"
+      },
+      "createdAt": "2025-10-03T12:00:00Z",
+      "updatedAt": "2025-10-03T12:00:00Z",
+      "isDeleted": false
+    }
+  ],
+  "hasMore": true,
+  "nextCursor": "MjAyNS0xMC0wM1QxMjowMDowMFo=",
+  "totalCount": 152
+}
+```
+
+<Tip>
+To find a specific customer by your platform ID, use: `GET /customers?platformCustomerId=user_12345`
+</Tip>
+
+## Retrieving a Single Customer
+
+Get detailed information about a specific customer:
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+## Deleting Customers
+
+Delete a customer by their system-generated ID:
+
+```bash
+curl -X DELETE "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
+  -H "Authorization: Basic <base64-encoded-credentials>"
+```
+
+<Warning>
+Deleting a customer is permanent and will prevent them from receiving future payments. Their transaction history will be preserved but the customer record will be marked as deleted.
+</Warning>
+
+## Related Resources
+
+- [API Reference: Customers](/api-reference/customers/add-a-new-customer) - Complete customer API documentation
+- [Quick Start Guide](/rewards/quickstart) - End-to-end Bitcoin rewards walkthrough
+- [Handling Webhooks](/remittances/developer-guides/webhooks) - Implement webhook handling for real-time notifications

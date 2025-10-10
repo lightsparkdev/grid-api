@@ -1,0 +1,11 @@
+type: object
+properties:
+  name:
+    $ref: ../customers/CustomerInfoFieldName.yaml
+  mandatory:
+    type: boolean
+    description: Whether the field is mandatory
+    example: true
+required:
+  - name
+  - mandatory

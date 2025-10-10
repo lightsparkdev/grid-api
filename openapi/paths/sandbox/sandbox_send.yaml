@@ -1,0 +1,76 @@
+post:
+  summary: Simulate sending funds
+  description: >
+    Simulate sending funds to the bank account as instructed in the quote.
+
+    This endpoint is only for the sandbox environment and will fail for
+    production platforms/keys.
+  operationId: sandboxSend
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - reference
+            - currencyCode
+            - currencyAmount
+          properties:
+            reference:
+              type: string
+              description: The unique reference code that was in the payment instructions
+              example: UMA-Q12345-REF
+            currencyCode:
+              type: string
+              description: Currency code for the funds to be sent
+              example: USD
+            currencyAmount:
+              type: integer
+              format: int64
+              description: >-
+                The amount to send in the smallest unit of the currency (eg.
+                cents)
+              exclusiveMinimum: 0
+              example: 1000
+  responses:
+    '200':
+      description: Funds received successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/OutgoingTransaction.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Reference not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
