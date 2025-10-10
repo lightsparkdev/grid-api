@@ -12,6 +12,13 @@ html.light .hero {
   border-top: 1px solid var(--border-tertiary, rgba(0, 0, 0, 0.1));
 }
 
+html.light .blue-lines {
+  background-image: url('/images/blue-lines.svg');
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
 html.light .title {
   color: #1a1a1a;
 }
