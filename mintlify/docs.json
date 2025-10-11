@@ -25,18 +25,18 @@
         "tab": "Payouts",
         "pages": [
           "payouts/index",
+          "developer-resources/terminology",
           "payouts/quickstart",
           {
             "group": "Getting Started",
             "pages": [
-              "developer-resources/terminology",
+              "payouts/onboarding/platform-configuration",
               "payouts/onboarding/implementation-overview"
             ]
           },
           {
             "group": "Onboarding",
             "pages": [
-              "payouts/onboarding/platform-configuration",
               "payouts/onboarding/configuring-users"
             ]
           },
@@ -71,18 +71,18 @@
         "tab": "Ramps",
         "pages": [
           "ramps/index",
+          "developer-resources/terminology",
           "ramps/quickstart",
           {
             "group": "Getting Started",
             "pages": [
               "ramps/onboarding/implementation-overview",
-              "developer-resources/terminology"
+              "ramps/onboarding/platform-configuration"
             ]
           },
           {
             "group": "Onboarding",
             "pages": [
-              "ramps/onboarding/platform-configuration",
               "ramps/onboarding/configuring-customers"
             ]
           },
@@ -121,18 +121,18 @@
         "tab": "Rewards",
         "pages": [
           "rewards/index",
+          "developer-resources/terminology",
           "rewards/quickstart",
           {
             "group": "Getting Started",
             "pages": [
               "rewards/developer-guides/implementation-overview",
-              "developer-resources/terminology"
+              "rewards/developer-guides/platform-configuration"
             ]
           },
           {
             "group": "Onboarding",
             "pages": [
-              "rewards/developer-guides/platform-configuration",
               "rewards/developer-guides/configuring-customers"
             ]
           },
