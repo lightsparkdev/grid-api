@@ -52,7 +52,6 @@
             "group": "Payment Flow",
             "pages": [
               "payouts/payment-flow/send-payment",
-              "payouts/payment-flow/receive-payment",
               "payouts/payment-flow/list-transactions",
               "payouts/payment-flow/reconciliation",
               "payouts/payment-flow/error-handling"
