@@ -58,10 +58,10 @@
             ]
           },
           {
-            "group": "Developer Resources",
+            "group": "Platform Tools",
             "pages": [
-              "developer-resources/tools",
-              "developer-resources/postman-collection"
+              "payouts/platform-tools/webhooks",
+              "payouts/platform-tools/postman-collection"
             ]
           }
         ]
@@ -104,14 +104,8 @@
             "group": "Platform Tools",
             "pages": [
               "ramps/platform-tools/webhooks",
-              "ramps/platform-tools/sandbox-testing"
-            ]
-          },
-          {
-            "group": "Developer Resources",
-            "pages": [
-              "developer-resources/tools",
-              "developer-resources/postman-collection"
+              "ramps/platform-tools/sandbox-testing",
+              "ramps/platform-tools/postman-collection"
             ]
           }
         ]
@@ -153,15 +147,8 @@
           {
             "group": "Platform Tools",
             "pages": [
-              "remittances/developer-guides/webhooks",
-              "remittances/developer-guides/sandbox-testing"
-            ]
-          },
-          {
-            "group": "Developer Resources",
-            "pages": [
-              "developer-resources/tools",
-              "developer-resources/postman-collection"
+              "rewards/platform-tools/webhooks",
+              "rewards/platform-tools/postman-collection"
             ]
           }
         ]
@@ -204,15 +191,10 @@
           {
             "group": "Platform Tools",
             "pages": [
-              "remittances/developer-guides/webhooks",
-              "remittances/developer-guides/sandbox-testing"
-            ]
-          },
-          {
-            "group": "Developer Resources",
-            "pages": [
-              "developer-resources/tools",
-              "developer-resources/postman-collection"
+              "remittances/platform-tools/webhooks",
+              "remittances/platform-tools/sandbox-testing",
+              "remittances/platform-tools/postman-collection",
+              "remittances/platform-tools/uma-test-wallet"
             ]
           }
         ]
