@@ -26,10 +26,6 @@ The base API path is consistent across environments; your credentials determine 
 
 Base URL: `https://api.lightspark.com/grid/2025-10-13` (same for Sandbox and Production; your keys select the environment).
 
-<Tip>
-If you use an SDK, it manages request paths and authentication after you initialize it with your credentials.
-</Tip>
-
 ## Webhooks and signature verification
 Configure your webhook endpoint to receive payment lifecycle events. Webhooks use asymmetric (public/private key) signatures; verify each webhook using the Grid public key available in your dashboard.
 
