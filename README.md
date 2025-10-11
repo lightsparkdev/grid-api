@@ -1,6 +1,6 @@
 # Grid API
 
-Grid is an API that enables modern financial institutions to easily send and receive global payments. One API/SDK to send, receive, and settle value globally—fiat, stablecoins, or Bitcoin. Always real time, always low cost, built on an open network.
+Grid is an API that enables modern financial institutions to easily send and receive global payments. One API to send, receive, and settle value globally—fiat, stablecoins, or Bitcoin. Always real time, always low cost, built on an open network.
 
 See the full documentation at <https://grid.lightspark.com/>.
 
