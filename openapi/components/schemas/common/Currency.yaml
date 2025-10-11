@@ -4,8 +4,8 @@ properties:
     type: string
     description: >-
       Three-letter currency code (ISO 4217) for fiat currencies. Some
-      cryptocurrencies may use their own ticker symbols (e.g. "SAT" for
-      satoshis, "USDC" for USDCoin, etc.)
+      cryptocurrencies may use their own ticker symbols (e.g. "BTC" for
+      Bitcoin, "USDC" for USDC, etc.)
     example: USD
   name:
     type: string

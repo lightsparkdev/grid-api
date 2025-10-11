@@ -27,6 +27,7 @@ html .blue-lines {
   background-position: top left;
   background-repeat: no-repeat;
   background-size: 100% 100%;
+  pointer-events: none;
 }
 
 html.light .title {
@@ -48,12 +49,6 @@ html.light .highlight {
 html .highlight {
   color: #f8f8f7;
 }
-
-html .hero .call-to-action {
-  background: #00b3e0;
-  color: var(--gray-050, #f8f8f7);
-}
-
 html.light .hero-card {
   background: var(--surface-base, #fff);
 }
@@ -63,6 +58,9 @@ html.dark .hero-card {
 }
 
 .hero .call-to-action {
+  cursor: pointer;
+  background: #00b3e0;
+  color: var(--gray-050, #f8f8f7);
   display: flex;
   height: 40px;
   padding: var(--spacing-xs, 8px) 16px;
