@@ -25,7 +25,7 @@
         "tab": "Payouts",
         "pages": [
           "payouts/index",
-          "payouts/terminology",
+          "developer-resources/terminology",
           "payouts/quickstart",
           {
             "group": "Getting Started",
@@ -71,7 +71,7 @@
         "tab": "Ramps",
         "pages": [
           "ramps/index",
-          "ramps/terminology",
+          "developer-resources/terminology",
           "ramps/quickstart",
           {
             "group": "Getting Started",
@@ -115,7 +115,7 @@
         "tab": "Rewards",
         "pages": [
           "rewards/index",
-          "rewards/terminology",
+          "developer-resources/terminology",
           "rewards/quickstart",
           {
             "group": "Getting Started",
