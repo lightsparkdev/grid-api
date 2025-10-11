@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Lightspark Grid API
+  title: Grid API
   description: |
-    API for managing global payments on the Money Grid.
+    API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://grid.lightspark.com/.
   version: '2025-10-13'
   contact:
     name: Lightspark Support

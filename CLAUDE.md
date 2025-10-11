@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **Lightspark Grid API** documentation repository. Grid is an API that enables modern financial institutions to send and receive global payments across fiat, stablecoins, and Bitcoin. The repository contains:
+This is the **Grid API** documentation repository. Grid is an API that enables modern financial institutions to send and receive global payments across fiat, stablecoins, and Bitcoin. The repository contains:
 
 1. **OpenAPI specification** (split into modular YAML files)
 2. **Mintlify documentation** (MDX files with guides, tutorials, and API reference)

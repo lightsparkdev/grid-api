@@ -2,6 +2,7 @@
 title: "Platform Configuration"
 ---
 import PlatformConfigAPI from '/snippets/platform-config-currency-api-webhooks.mdx';
+import { topLevelProductName } from '/snippets/variables.mdx';
 
 This guide explains how to configure your platform: get API credentials, set the base API path, configure webhooks, and set up UMA parameters and compliance settings.
 
@@ -11,7 +12,7 @@ This guide explains how to configure your platform: get API credentials, set the
 To send and receive using UMA with your own domain (e.g., `$alice@yourdomain.com`), configure the following:
 
 1. Configure your UMA domain
-2. Proxy inbound UMA requests to Lightspark Grid
+2. Proxy inbound UMA requests to {topLevelProductName}
 3. Define supported currencies and, if you are a regulated institution, the counterparty information you require
 
 If you do not configure a UMA domain, Grid will use the default domain `grid.lightspark.com`.
