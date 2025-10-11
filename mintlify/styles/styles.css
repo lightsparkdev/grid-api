@@ -12,7 +12,21 @@ html.light .hero {
   border-top: 1px solid var(--border-tertiary, rgba(0, 0, 0, 0.1));
 }
 
-html.light .blue-lines {
+html .hero {
+  background: var(--surface-secondary, #282828);
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  background-position: 0 0;
+  background-repeat: repeat;
+  border-bottom: 1px solid var(--border-tertiary, rgba(255, 255, 255, 0.05));
+  border-top: 1px solid var(--border-tertiary, rgba(255, 255, 255, 0.05));
+}
+
+html .blue-lines {
   background-image: url('/images/blue-lines.svg');
   background-position: top left;
   background-repeat: no-repeat;
@@ -23,6 +37,10 @@ html.light .title {
   color: #1a1a1a;
 }
 
+html .title {
+  color: #f8f8f7;
+}
+
 html.light .usecase {
   background: #f8f8f7;
 }
@@ -31,13 +49,21 @@ html.light .highlight {
   color: #1a1a1a;
 }
 
-html.light .hero .call-to-action {
+html .highlight {
+  color: #f8f8f7;
+}
+
+html .hero .call-to-action {
   background: #00b3e0;
   color: var(--gray-050, #f8f8f7);
 }
 
 html.light .hero-card {
   background: var(--surface-base, #fff);
+}
+
+html.dark .hero-card {
+  background: var(--surface-base, #000);
 }
 
 .hero .call-to-action {
@@ -60,6 +86,7 @@ html.light .hero-card {
   padding-bottom: 128px;
   padding-left: 120px;
   padding-right: 120px;
+  margin-bottom: 64px;
   gap: 64px;
   font-family: "Suisse Intl";
 }
@@ -78,7 +105,7 @@ html.light .hero-card {
 
 .usecase {
   display: flex;
-  padding: 128px 120px 64px 120px;
+  padding: 64px 120px 64px 120px;
   flex-direction: column;
   align-items: flex-start;
   gap: 48px;
