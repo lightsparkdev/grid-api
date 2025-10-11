@@ -4,8 +4,9 @@ description: "Convert between fiat and crypto with Grid's on-ramp and off-ramp i
 ---
 
 import { topLevelProductName } from '/snippets/variables.mdx';
+import { rampsProductName } from '/snippets/variables.mdx';
 
-With **Grid Ramps**, you can seamlessly convert between fiat currencies and cryptocurrencies through a single, simple API. The {topLevelProductName} automatically handles currency conversion, compliance, and instant settlement via the Lightning Network.
+With Grid, you can seamlessly convert between fiat currencies and cryptocurrencies through a single, simple API. The {topLevelProductName} automatically handles currency conversion, compliance, and instant settlement via the Lightning Network.
 
 <CardGroup cols={3}>
   <Card title="Instant Conversion" icon="bolt">
@@ -43,9 +44,9 @@ With **Grid Ramps**, you can seamlessly convert between fiat currencies and cryp
 
 ---
 
-## Grid Ramps Features
+## {rampsProductName} Features
 
-Users interact with **Grid Ramps** through two main interfaces:
+Users interact with {rampsProductName} through two main interfaces:
 
 <Tabs>
   <Tab title="API">
@@ -79,7 +80,7 @@ Convert cryptocurrency to fiat currency and deliver it to bank accounts.
 
 ### Funding Options
 
-**Grid Ramps** supports multiple funding models:
+{rampsProductName} supports multiple funding models for on-ramps and off-ramps:
 
 - **Just-in-time (JIT)**: Create a quote and fund it in real-time using payment instructions (ideal for on-ramps)
 - **Pre-funded accounts**: Maintain balances in crypto or fiat and convert from those balances (ideal for off-ramps)
@@ -92,7 +93,7 @@ Convert cryptocurrency to fiat currency and deliver it to bank accounts.
 ### Environments
 
 <Note>
-**Grid Ramps** supports two environments: **Sandbox** and **Production**.
+{rampsProductName} supports two environments: **Sandbox** and **Production**.
 
 The Sandbox mirrors production behavior, allowing you to test the full end-to-end flow—from creating quotes and simulating funding to executing conversions and receiving webhooks—without moving real funds.
 
@@ -103,5 +104,5 @@ The Production environment uses live credentials and base URLs for real transact
 ---
 
 <Card title="Get Started" icon="play" href="/ramps/quickstart">
-  Ready to integrate Grid Ramps? Check out our quickstart guide.
+  Ready to integrate {rampsProductName}? Check out our quickstart guide.
 </Card>
