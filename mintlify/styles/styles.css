@@ -13,12 +13,8 @@ html.light .hero {
 }
 
 html .hero {
-  background: var(--surface-secondary, #282828);
-  background-image: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.05) 1px,
-    transparent 1px
-  );
+  background: var(--surface-secondary, #1a1a1a);
+  background-image: radial-gradient(circle, #2b2b2a 1px, transparent 1px);
   background-size: 24px 24px;
   background-position: 0 0;
   background-repeat: repeat;
@@ -27,7 +23,7 @@ html .hero {
 }
 
 html .blue-lines {
-  background-image: url('/images/blue-lines.svg');
+  background-image: url("/images/blue-lines.svg");
   background-position: top left;
   background-repeat: no-repeat;
   background-size: 100% 100%;
@@ -63,7 +59,7 @@ html.light .hero-card {
 }
 
 html.dark .hero-card {
-  background: var(--surface-base, #000);
+  background: var(--surface-base, #1a1a1a);
 }
 
 .hero .call-to-action {
@@ -139,19 +135,18 @@ html.dark .hero-card {
 
 .hero-card {
   display: flex;
-  height: 240px;
   padding: 24px;
   flex-direction: column;
-  justify-content: space-between;
   align-items: flex-start;
   align-self: stretch;
   border-radius: 4px;
 }
 
 .card-content {
-    font-size: 20px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 24px; /* 120% */
-    letter-spacing: -0.6px;
+  margin-top: 24px;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px; /* 120% */
+  letter-spacing: -0.6px;
 }
