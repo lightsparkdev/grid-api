@@ -22,12 +22,18 @@ html .hero {
   border-top: 1px solid var(--border-tertiary, rgba(255, 255, 255, 0.05));
 }
 
-html .blue-lines {
-  background-image: url("/images/blue-lines.svg");
+.blue-lines {
+  background-image: url("/images/blue-lines-sm.svg");
   background-position: top left;
   background-repeat: no-repeat;
   background-size: 100% 100%;
   pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .blue-lines {
+    background-image: url("/images/blue-lines.svg");
+  }
 }
 
 html.light .title {
@@ -76,35 +82,86 @@ html.dark .hero-card {
 }
 
 .hero {
-  padding-top: 128px;
-  padding-bottom: 128px;
-  padding-left: 120px;
-  padding-right: 120px;
-  margin-bottom: 64px;
-  gap: 64px;
+  padding-top: 64px;
+  padding-bottom: 64px;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-bottom: 32px;
+  gap: 32px;
   font-family: "Suisse Intl";
 }
 
+@media (min-width: 640px) {
+  .hero {
+    padding-top: 96px;
+    padding-bottom: 96px;
+    padding-left: 32px;
+    padding-right: 32px;
+    margin-bottom: 48px;
+    gap: 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    padding-top: 128px;
+    padding-bottom: 128px;
+    padding-left: 120px;
+    padding-right: 120px;
+    margin-bottom: 64px;
+    gap: 64px;
+  }
+}
+
 .hero .subtext {
-  width: 538px;
+  width: 100%;
+  max-width: 538px;
   color: var(--gray-950, #989898);
   text-align: center;
   font-feature-settings: "salt" on;
-  font-size: 20px;
+  font-size: 18px;
   font-style: normal;
   font-weight: 400;
-  line-height: 24px;
+  line-height: 20px;
   letter-spacing: -0.6px;
+}
+
+@media (min-width: 640px) {
+  .hero .subtext {
+    font-size: 18px;
+    line-height: 22px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero .subtext {
+    font-size: 20px;
+    line-height: 24px;
+  }
 }
 
 .usecase {
   display: flex;
-  padding: 64px 120px 64px 120px;
+  padding: 32px 16px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 48px;
+  gap: 32px;
   align-self: stretch;
   font-family: "Suisse Intl";
+}
+
+@media (min-width: 640px) {
+  .usecase {
+    padding: 48px 32px;
+    gap: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .usecase {
+    padding: 64px 120px;
+    gap: 48px;
+  }
 }
 
 .usecase h2 {
@@ -117,34 +174,91 @@ html.dark .hero-card {
 
 .section {
   display: flex;
-  width: 1200px;
+  width: 100%;
+  max-width: 1200px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 48px;
+  gap: 32px;
+}
+
+@media (min-width: 640px) {
+  .section {
+    gap: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section {
+    gap: 48px;
+  }
 }
 
 .footer {
   display: flex;
-  width: 1200px;
+  width: 100%;
+  max-width: 1200px;
   flex-direction: row;
   align-items: flex-start;
-  gap: 24px;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .footer {
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .footer {
+    gap: 24px;
+  }
 }
 
 .hero-card {
   display: flex;
-  padding: 24px;
+  padding: 16px;
   flex-direction: column;
   align-items: flex-start;
   align-self: stretch;
   border-radius: 4px;
+  min-height: 200px;
+}
+
+@media (min-width: 640px) {
+  .hero-card {
+    padding: 20px;
+    min-height: 220px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-card {
+    padding: 24px;
+    min-height: 240px;
+  }
 }
 
 .card-content {
   margin-top: 24px;
-  font-size: 20px;
+  font-size: 18px;
   font-style: normal;
   font-weight: 400;
-  line-height: 24px; /* 120% */
+  line-height: 24px;
   letter-spacing: -0.6px;
+}
+
+@media (min-width: 640px) {
+  .card-content {
+    margin-top: 20px;
+    font-size: 18px;
+    line-height: 22px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-content {
+    margin-top: 24px;
+    font-size: 20px;
+    line-height: 24px;
+  }
 }

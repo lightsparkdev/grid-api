@@ -6,12 +6,12 @@ export const GridLogo = () => {
   return (
     <>
       <img
-        className="h-12 w-auto dark:hidden"
+        className="h-8 sm:h-10 lg:h-12 w-auto dark:hidden"
         src="/images/grid.svg"
         alt="Lightspark Grid"
       />
       <img
-        className="h-12 w-auto hidden dark:block"
+        className="h-8 sm:h-10 lg:h-12 w-auto hidden dark:block"
         src="/images/grid-white.svg"
         alt="Lightspark Grid"
       />
@@ -25,12 +25,12 @@ export const HeroCard = ({ title, description, href, icon, whiteIcon }) => {
       <img
         src={icon}
         alt="Icon"
-        className="w-10 h-10 dark:hidden"
+        className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 dark:hidden"
       />
       <img
         src={whiteIcon || icon}
         alt="Icon"
-        className="w-10 h-10 hidden dark:block"
+        className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 hidden dark:block"
       />
       <div className="card-content">
         <h3 className="highlight">{title}</h3>
@@ -45,9 +45,9 @@ export const HeroCard = ({ title, description, href, icon, whiteIcon }) => {
   <div className="flex flex-col items-center gap-[48px]">
     <div className="flex items-center title">
       <GridLogo />
-      <span className="pl-[19px] text-[64px] leading-none inline-flex items-center h-12 py-0 tracking-tight">
-        Grid
-      </span>
+        <span className="pl-[19px] text-[32px] sm:text-[48px] lg:text-[64px] leading-none inline-flex items-center h-8 sm:h-10 lg:h-12 py-0 tracking-tight">
+          Grid
+        </span>
     </div>
     <div className="flex justify-center subtext">
       <p>
