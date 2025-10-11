@@ -200,11 +200,13 @@ html.dark .hero-card {
   flex-direction: row;
   align-items: flex-start;
   gap: 16px;
+  padding: 0 16px;
 }
 
 @media (min-width: 640px) {
   .footer {
     gap: 20px;
+    padding: 0;
   }
 }
 
