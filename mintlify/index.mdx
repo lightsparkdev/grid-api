@@ -2,11 +2,36 @@
 title: "Lightspark Grid"
 mode: "custom"
 ---
+export const GridLogo = () => {
+  return (
+    <>
+      <img
+        className="h-12 w-auto dark:hidden"
+        src="/images/grid.svg"
+        alt="Lightspark Grid"
+      />
+      <img
+        className="h-12 w-auto hidden dark:block"
+        src="/images/grid-white.svg"
+        alt="Lightspark Grid"
+      />
+    </>
+  );
+};
 
-export const HeroCard = ({ title, description, href, icon }) => {
+export const HeroCard = ({ title, description, href, icon, whiteIcon }) => {
   return (
     <a className="group cursor-pointer pb-8 hero-card" href={href}>
-      <img src={icon} alt="Globe icon" className="w-10 h-10" />
+      <img
+        src={icon}
+        alt="Icon"
+        className="w-10 h-10 dark:hidden"
+      />
+      <img
+        src={whiteIcon || icon}
+        alt="Icon"
+        className="w-10 h-10 hidden dark:block"
+      />
       <div className="card-content">
         <h3 className="highlight">{title}</h3>
         <span>{description}</span>
@@ -19,11 +44,7 @@ export const HeroCard = ({ title, description, href, icon }) => {
   <div className="blue-lines w-full h-full absolute top-0 left-0 z-0" noZoom />
   <div className="flex flex-col items-center gap-[48px]">
     <div className="flex items-center title">
-      <img
-        className="h-12 w-auto"
-        src="/images/grid.svg"
-        alt="Lightspark Grid"
-      />
+      <GridLogo />
       <span className="pl-[19px] text-[64px] leading-none inline-flex items-center h-12 py-0 tracking-tight">
         Grid
       </span>
@@ -89,18 +110,21 @@ export const HeroCard = ({ title, description, href, icon }) => {
           description="View the Grid API repository on GitHub."
           href="https://github.com/lightsparkdev/grid-api"
           icon="/images/github.svg"
+          whiteIcon="/images/github-white.svg"
         />
         <HeroCard
           title="Tools"
           description="Test payment flows and explore how Grid handles real-time transfers."
           href="/developer-resources/tools"
           icon="/images/IconHammer.svg"
+          whiteIcon="/images/IconHammer-white.svg"
         />
         <HeroCard
           title="Postman collection"
           description="Explore and test Grid endpoints instantly—no setup required."
           href="/developer-resources/postman-collection"
           icon="/images/postman.svg"
+          whiteIcon="/images/postman-white.svg"
         />
       </div>
     </div>
