@@ -5,13 +5,13 @@
   "description": "The Grid API enables modern financial institutions to easily send and receive global payments.  The following documentation helps developers understand the Grid API and how to integrate with it.",
   "colors": {
     "primary": "#1A1A1A",
-    "light": "#07C983",
+    "light": "#f0f0ee",
     "dark": "#00B3E0"
   },
   "background": {
     "color": {
       "light": "#F8F8F7",
-      "dark": "#1A1A1A"
+      "dark": "#000000"
     }
   },
   "favicon": "/favicon.svg",
