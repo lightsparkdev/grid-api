@@ -233,15 +233,6 @@
             "openapi": "openapi.yaml"
           }
         ]
-      },
-      {
-        "tab": "Changelog",
-        "groups": [
-          {
-            "group": "Changelog",
-            "pages": ["changelog"]
-          }
-        ]
       }
     ]
   },
