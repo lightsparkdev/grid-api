@@ -1,6 +1,6 @@
-# Lightspark Grid API
+# Grid API
 
-Lightspark Grid is an API that enables modern financial institutions to easily send and receive global payments. One API/SDK to send, receive, and settle value globally—fiat, stablecoins, or Bitcoin. Always real time, always low cost, built on an open network.
+Grid is an API that enables modern financial institutions to easily send and receive global payments. One API/SDK to send, receive, and settle value globally—fiat, stablecoins, or Bitcoin. Always real time, always low cost, built on an open network.
 
 See the full documentation at <https://grid.lightspark.com/>.
 
@@ -31,7 +31,7 @@ Authorization: Basic <base64-encoded-credentials>
 
 Where `<base64-encoded-credentials>` is the Base64 encoding of `<api token id>:<api client secret>`.
 
-You can generate a new API token and client secret at any time in the Lightspark Grid dashboard.
+You can generate a new API token and client secret at any time in the Grid dashboard.
 
 ## API Documentation
 

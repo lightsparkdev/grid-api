@@ -2,8 +2,9 @@
 title: 'Introduction'
 description: 'Send instant Bitcoin rewards to users worldwide through a single API'
 ---
+import { rewardsProductName, topLevelProductName } from '/snippets/variables.mdx';
 
-With **Grid Rewards**, you can send instant Bitcoin rewards to your **users' self-custody wallets** worldwide through a single, simple API. The Lightspark Grid automatically handles the entire process, managing the fiat-to-crypto conversion, compliance checks, and instant delivery for you.
+With {rewardsProductName}, you can send instant Bitcoin rewards to your **users' self-custody wallets** worldwide through a single, simple API. {topLevelProductName} automatically handles the entire process, managing the fiat-to-crypto conversion, compliance checks, and instant delivery for you.
 
 <CardGroup cols={3}>
   <Card title="Buy & Send in One Call" icon="bolt">
@@ -35,9 +36,9 @@ With **Grid Rewards**, you can send instant Bitcoin rewards to your **users' sel
 
 ---
 
-## Grid Rewards Features
+## {rewardsProductName} Features
 
-Users interact with **Grid Rewards** through two main interfaces:
+Users interact with {rewardsProductName} through two main interfaces:
 
 <Tabs>
   <Tab title="API">
@@ -51,21 +52,21 @@ Users interact with **Grid Rewards** through two main interfaces:
 ### Onboarding Customers
 
 <Info>
-**Grid Rewards** has two customer onboarding options—one for non-regulated entities where Lightspark handles the KYC/KYB process via a hosted flow, and one for regulated entities where you handle the KYC/KYB process and can create users directly via the API.
+{rewardsProductName} has two customer onboarding options—one for non-regulated entities where Lightspark handles the KYC/KYB process via a hosted flow, and one for regulated entities where you handle the KYC/KYB process and can create users directly via the API.
 </Info>
 
 ### Funding Your Platform Account
 
-**Grid Rewards** operates on a pre-funded model. You can fund your internal platform account using several payment rails such as ACH, wire transfers, Lightning, and more. This stored balance is then used to instantly purchase and send Bitcoin rewards to your customers.
+{rewardsProductName} operates on a pre-funded model. You can fund your internal platform account using several payment rails such as ACH, wire transfers, Lightning, and more. This stored balance is then used to instantly purchase and send Bitcoin rewards to your customers.
 
 ### Sending Rewards
 
-To send a reward with **Grid Rewards**, you create and execute a quote. The API call specifies your funded internal account as the source and the customer's Bitcoin wallet address as the destination. Grid handles the USD-to-BTC conversion and instant delivery to the receiving wallet, notifying you of the completed transfer via webhook.
+To send a reward with {rewardsProductName}, you create and execute a quote. The API call specifies your funded internal account as the source and the customer's Bitcoin wallet address as the destination. Grid handles the USD-to-BTC conversion and instant delivery to the receiving wallet, notifying you of the completed transfer via webhook.
 
 ### Environments
 
 <Note>
-**Grid Rewards** supports two environments: **Sandbox** and **Production**. 
+{rewardsProductName} supports two environments: **Sandbox** and **Production**. 
 
 The Sandbox mirrors production behavior, allowing you to test the full end-to-end flow—from funding a test account and onboarding a mock customer to sending a simulated Bitcoin reward—without moving real funds. 
 
@@ -75,5 +76,5 @@ The Production environment uses live credentials and base URLs for real transact
 ---
 
 <Card title="Get Started" icon="play" href="/rewards/quickstart">
-  Ready to integrate Grid Rewards? Check out our quickstart guide.
+  Ready to integrate {rewardsProductName}? Check out our quickstart guide.
 </Card>
