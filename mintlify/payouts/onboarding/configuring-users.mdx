@@ -3,6 +3,9 @@ title: "Configuring Users"
 description: "Configuring users for Pay 2 Bank"
 ---
 
+import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
+import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
+
 This guide provides comprehensive information about user configuration in the Grid API, including user types, registration processes, management, and bank account information.
 
 ## User Types
@@ -36,104 +39,21 @@ Beyond the base requirements, additional fields commonly associated with busines
 - Physical address (including country, state, city, postalCode)
 
 
-When creating or updating users, the `userType` field must be specified as either `INDIVIDUAL` or `BUSINESS`. Depending if you are a regulated or unregulated platform your KYC/KYB requirements will vary. Check
-out the [Quickstart Guide KYC/KYB section](/payouts/quickstart#choosing-your-onboarding-flow) for more information.
-
 ## User Registration Process
 
 ### Creating a New User
 
-To register a new user in the system, use the `POST /users` endpoint:
+When creating or updating users, the `userType` field must be specified as either `INDIVIDUAL` or `BUSINESS`. Depending if you are a regulated or unregulated platform your KYC/KYB requirements will vary.
 
-```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/users" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "platformUserId": "9f84e0c2a72c4fa",
-    "userType": "INDIVIDUAL",
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123450000",
-      "routingNumber": "000123456",
-      "accountCategory": "CHECKING",
-      "bankName": "Example Bank"
-    }
-  }'
-```
+<AccordionGroup>
+    <Accordion title="Regulated Platforms" icon="">
+        <KycRegulated />
+    </Accordion>
+    <Accordion title="Unregulated Platforms" icon="">
+        <KycUnregulated />
+    </Accordion>
+</AccordionGroup>
 
-The API allows creating a user with minimal PII.
-
-Here is an example of a user creation request body `bankAccountInfo` is always required:
-
-```json
-{
-  "platformUserId": "9f84e0c2a72c4fa",
-  "userType": "INDIVIDUAL",
-  "bankAccountInfo": {
-    "accountType": "US_ACCOUNT",
-    "accountNumber": "123450000",
-    "routingNumber": "000123456",
-    "accountCategory": "CHECKING",
-    "bankName": "Example Bank"
-  }
-}
-```
-
-The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for user creation itself, but become necessary based on currency and UMA provider requirements.
-
-Example request body for an individual user:
-
-```json
-{
-  "platformUserId": "9f84e0c2a72c4fa",
-  "userType": "INDIVIDUAL",
-  "fullName": "John Sender",
-  "birthDate": "1985-06-15",
-  "address": {
-    "line1": "Paseo de la Reforma 222",
-    "line2": "Piso 15",
-    "city": "Ciudad de México",
-    "state": "Ciudad de México",
-    "postalCode": "06600",
-    "country": "MX"
-  },
-  "bankAccountInfo": {
-    "accountType": "CLABE",
-    "clabeNumber": "123456789012345678",
-    "bankName": "Banco de México"
-  }
-}
-```
-
-Example request body for a business user:
-
-```json
-{
-  "platformUserId": "b87d2e4a9c13f5b",
-  "userType": "BUSINESS",
-  "businessInfo": {
-    "legalName": "Acme Corporation",
-    "registrationNumber": "789012345",
-    "taxId": "123-45-6789"
-  },
-  "address": {
-    "line1": "456 Oak Avenue",
-    "line2": "Floor 12",
-    "city": "New York",
-    "state": "NY",
-    "postalCode": "10001",
-    "country": "US"
-  },
-  "bankAccountInfo": {
-    "accountType": "US_ACCOUNT",
-    "accountNumber": "123456789",
-    "routingNumber": "987654321",
-    "accountCategory": "CHECKING",
-    "bankName": "Chase Bank"
-  }
-}
-```
 
 ## User Management
 

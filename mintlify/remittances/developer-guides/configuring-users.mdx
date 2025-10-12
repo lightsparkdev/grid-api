@@ -1,7 +1,8 @@
 ---
 title: "Creating Customers"
+description: "This guide provides comprehensive information about creating customers in the Grid API, including customer types, onboarding models, registration, and management."
 ---
-This guide provides comprehensive information about creating customers in the Grid API, including customer types, onboarding models, registration, and management.
+import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
 
 ## Onboarding model
 
@@ -171,21 +172,9 @@ Response:
 3. After the user is redirected back to your app, they can continue with account setup until KYC review is complete.  
 4. Handle the KYC status webhook. Grid notifies you when a decision is reached; update your records and unlock funding on APPROVED.
 
-Webhook example:
-```json
-{
-  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-  "kycStatus": "APPROVED",
-  "type": "KYC_STATUS",
-  "timestamp": "2025-01-15T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007"
-}
-```
+### Handling KYC/KYB Webhooks
 
-<Note>
-Possible final statuses include APPROVED, REJECTED, EXPIRED, CANCELED, MANUALLY_APPROVED, and MANUALLY_REJECTED. Verify `X-Grid-Signature` against the raw request body using the dashboard public key.
-</Note>
-
+<KycWebhooks />
 
 ## Customer management
 

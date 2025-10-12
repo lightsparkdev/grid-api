@@ -1,5 +1,3 @@
-#### Handling KYC Status Webhooks
-
 After a customer completes the KYC/KYB verification process, you'll receive webhook notifications about their KYC status. These notifications are sent to your configured webhook endpoint.
 
 <Note>
@@ -41,6 +39,7 @@ Final KYC verification status. Webhooks are only sent for final states:
 Intermediate states like `PENDING_REVIEW` do not trigger webhook notifications. Only final resolution states will send webhook notifications.
 </Note>
 
+<Accordion title="Webhook Implementation Example">
 ```javascript
 // Example webhook handler for KYC status updates
 // Note: Only final states trigger webhook notifications
@@ -90,3 +89,4 @@ app.post('/webhooks/kyc-status', (req, res) => {
   res.status(200).send('OK');
 });
 ```
+</Accordion>

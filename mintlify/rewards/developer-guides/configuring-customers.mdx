@@ -3,7 +3,9 @@ title: "Configuring Customers"
 description: "Complete guide to creating and managing customers for Bitcoin rewards"
 ---
 
-import KycOnboarding from '/snippets/kyc-onboarding.mdx';
+import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
+import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
+import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
 
 This guide covers everything you need to know about creating and managing customers in the Grid API for Bitcoin rewards distribution.
 
@@ -23,74 +25,22 @@ The `platformCustomerId` field is optional but recommended. Use your existing us
 
 ## Customer Onboarding
 
-<KycOnboarding />
-
-### Creating Customers via API
-
-For platforms that are regulated financial institutions who already handle your own KYC/KYB, you can create customers directly via API with lower data requirements.
-
-#### Create Individual Customer
-
-```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "platformCustomerId": "user_12345",
-    "customerType": "INDIVIDUAL",
-    "fullName": "Jane Doe",
-    "birthDate": "1992-03-25",
-    "nationality": "US"
-  }'
-```
-
-#### Create Business Customer
-
-```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "platformCustomerId": "biz_67890",
-    "customerType": "BUSINESS",
-    "businessInfo": {
-      "legalName": "Acme Corporation",
-      "registrationNumber": "BRN-456789123",
-      "taxId": "EIN-987123456"
-    },
-    "address": {
-      "line1": "400 Commerce Way",
-      "city": "Austin",
-      "state": "TX",
-      "postalCode": "78701",
-      "country": "US"
-    }
-  }'
-```
-
-### Response
-
-Both requests return a customer object:
-
-```json
-{
-  "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-  "platformCustomerId": "user_12345",
-  "customerType": "INDIVIDUAL",
-  "kycStatus": "APPROVED",
-  "umaAddress": "$jane.doe@uma.domain.com",
-  "fullName": "Jane Doe",
-  "birthDate": "1992-03-25",
-  "nationality": "US",
-  "createdAt": "2025-10-03T12:00:00Z",
-  "updatedAt": "2025-10-03T12:00:00Z",
-  "isDeleted": false
-}
-```
+<AccordionGroup>
+    <Accordion title="Regulated Platforms" icon="">
+        <KycRegulated />
+    </Accordion>
+    <Accordion title="Unregulated Platforms" icon="">
+        <KycUnregulated />
+    </Accordion>
+</AccordionGroup>
 
 <Info>
 When a customer is created successfully, internal accounts are automatically created for each currency configured on your platform. These accounts can be used as sources or destinations for transfers.
 </Info>
+
+### Hanlding KYC/KYC Webhooks 
+
+<KycWebhooks />
 
 ## Listing Customers
 

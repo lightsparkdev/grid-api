@@ -28,14 +28,6 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link?redir
 }
 ```
 
-<ParamField query="redirectUri" type="string">
-Optional URI parameter that specifies where the customer will be automatically redirected after successfully completing the hosted KYC verification process.
-</ParamField>
-
-<ResponseField name="kycUrl" type="string" required>
-A hosted KYC link for your customer to complete identity verification and onboarding. This URL contains the KYC session and any redirect configuration.
-</ResponseField>
-
 #### Complete KYC Process
 
 <Steps>
