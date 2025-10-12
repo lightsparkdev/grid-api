@@ -264,3 +264,7 @@ html.dark .hero-card {
     line-height: 24px;
   }
 }
+
+#footer > div.flex.items-center.justify-between > div > a {
+  display: none;
+}
