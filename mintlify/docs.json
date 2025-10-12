@@ -25,7 +25,7 @@
         "tab": "Payouts",
         "pages": [
           "payouts/index",
-          "payouts/terminology",
+          "developer-resources/terminology",
           "payouts/quickstart",
           {
             "group": "Getting Started",
@@ -43,6 +43,7 @@
           {
             "group": "Accounts",
             "pages": [
+             
               "payouts/depositing-funds/internal-accounts",
               "payouts/depositing-funds/external-accounts",
               "payouts/depositing-funds/plaid"
@@ -51,6 +52,7 @@
           {
             "group": "Payment Flow",
             "pages": [
+              "payouts/depositing-funds/depositing-funds",
               "payouts/payment-flow/send-payment",
               "payouts/payment-flow/list-transactions",
               "payouts/payment-flow/reconciliation",
@@ -71,7 +73,7 @@
         "tab": "Ramps",
         "pages": [
           "ramps/index",
-          "ramps/terminology",
+          "developer-resources/terminology",
           "ramps/quickstart",
           {
             "group": "Getting Started",
@@ -97,6 +99,7 @@
           {
             "group": "Conversion Flows",
             "pages": [
+              "ramps/accounts/depositing-funds",
               "ramps/conversion-flows/fiat-crypto-conversion",
               "ramps/conversion-flows/self-custody-wallets"
             ]
@@ -115,7 +118,7 @@
         "tab": "Rewards",
         "pages": [
           "rewards/index",
-          "rewards/terminology",
+          "developer-resources/terminology",
           "rewards/quickstart",
           {
             "group": "Getting Started",
@@ -179,12 +182,14 @@
             "group": "Managing Accounts",
             "pages": [
               "remittances/developer-guides/internal-accounts",
-              "remittances/developer-guides/external-accounts"
+              "remittances/developer-guides/external-accounts",
+              "remittances/developer-guides/plaid"
             ]
           },
           {
             "group": "Sending & Receiving Payments",
             "pages": [
+              "remittances/developer-guides/depositing-funds",
               "remittances/developer-guides/sending-payments",
               "remittances/developer-guides/receiving-payments",
               "remittances/developer-guides/reconciliation"

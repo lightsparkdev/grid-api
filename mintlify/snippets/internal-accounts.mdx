@@ -1,6 +1,6 @@
 ## Overview
 
-Internal accounts are Lightspark managed accounts that hold funds within the Grid platform. They serve as staging accounts that allow you to receive deposits and send payments to external bank accounts or other payment destinations.
+Internal accounts are Lightspark managed accounts that hold funds within the Grid platform. They allow you to receive deposits and send payments to external bank accounts or other payment destinations.
 
 Internal accounts are created for both:
 
@@ -51,7 +51,7 @@ To retrieve all internal accounts for a specific customer, use the customer ID t
 <CodeGroup>
 ```bash cURL
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ```javascript Node.js
@@ -134,7 +134,7 @@ You can filter internal accounts by currency to find accounts for specific denom
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USD' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ### List platform internal accounts
@@ -143,7 +143,7 @@ To retrieve platform-level internal accounts (not tied to individual customers),
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/internal-accounts' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 <Info>
