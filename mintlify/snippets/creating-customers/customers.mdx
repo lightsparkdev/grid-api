@@ -103,7 +103,7 @@ Typically bank account information is provided separately via internal and exter
 UMA addresses follow the format `$username@domain`. For your platform:
 
 1. The `domain` part will be your configured UMA domain (set in platform configuration)
-2. The `username` part can be chosen by you or your users, following these rules:
+2. The `username` part can be chosen by you or your customers, following these rules:
    - Must start with a $ symbol. This is to differentiate from email addresses and clearly identify an uma address.
    - The `username` portion is limited to a-z0-9-_.+
    - Addresses are case-insensitive, but by convention are written only with lowercase letters
@@ -149,7 +149,7 @@ curl -sS -X POST "$GRID_BASE_URL/customers" \
 
 Unregulated institutions should initiate a hosted KYC/KYB flow. Generate a link and redirect the customer to complete verification. While KYC is pending, allow account setup but block funding and money movement.
 
-1. Request a hosted KYC link for a customer using your `platformCustomerId` (optional `redirectUri` to return the user to your app when finished):
+1. Request a hosted KYC link for a customer using your `platformCustomerId` (optional `redirectUri` to return the customer to your app when finished):
 
 ```bash
 curl -sS -G "$GRID_BASE_URL/customers/kyc-link" \
@@ -168,7 +168,7 @@ Response:
 ```
 
 2. Redirect the customer to `kycUrl` to complete KYC/KYB in their locale.
-3. After the user is redirected back to your app, they can continue with account setup until KYC review is complete.  
+3. After the customer is redirected back to your app, they can continue with account setup until KYC review is complete.  
 4. Handle the KYC status webhook. Grid notifies you when a decision is reached; update your records and unlock funding on APPROVED.
 
 Webhook example:
@@ -272,7 +272,7 @@ curl -sS -X POST "$GRID_BASE_URL/customers/bulk/csv" \
   -F "file=@customers.csv"
 ```
 
-The CSV file should follow a specific format with required and optional columns based on user type. Here's an example:
+The CSV file should follow a specific format with required and optional columns based on customer type. Here's an example:
 
 ```csv
 umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory\
