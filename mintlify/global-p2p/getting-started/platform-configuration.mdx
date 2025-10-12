@@ -75,7 +75,7 @@ For regulated financial institutions, the `providerRequiredCustomerFields` array
 
 This list specifies which user information fields are mandated by the underlying UMA provider for *your own registered users* if they intend to send or receive payments in that particular currency. For example, to allow a user to transact in "USD", the UMA provider might require that the user has a `NATIONALITY` on record.
 
-These fields must be supplied when creating or updating a user via the `POST /users` or `PATCH /users/{userId}` endpoints if that user is expected to use the specified currency. Refer to the [Configuring Users](/remittances/developer-guides/configuring-users) guide for more details on how this impacts user setup.
+These fields must be supplied when creating or updating a user via the `POST /users` or `PATCH /users/{userId}` endpoints if that user is expected to use the specified currency. Refer to the [Configuring Users](/global-p2p/onboarding-customers/configuring-users) guide for more details on how this impacts user setup.
 
 ## Manage configuration via API
 If you prefer to manage settings programmatically, use the `/config` endpoints.
@@ -191,7 +191,6 @@ Response:
 
 
 ## Verify Configuration
-
 After updating your configuration, it's recommended to verify that the changes were saved correctly:
 
 ```bash
@@ -200,3 +199,5 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/config" \
 ```
 
 The response should reflect your updated **settings**.
+
+
