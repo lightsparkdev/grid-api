@@ -162,6 +162,7 @@
         "pages": [
           "global-p2p/index",
           "global-p2p/terminology",
+          "global-p2p/country-support",
           "global-p2p/quickstart",
           {
             "group": "Getting Started",
