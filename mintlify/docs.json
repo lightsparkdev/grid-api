@@ -151,6 +151,7 @@
             "group": "Platform Tools",
             "pages": [
               "rewards/platform-tools/webhooks",
+              "rewards/platform-tools/sandbox-testing",
               "rewards/platform-tools/postman-collection"
             ]
           }
