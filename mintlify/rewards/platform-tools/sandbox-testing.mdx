@@ -1,0 +1,342 @@
+---
+title: "Sandbox Testing"
+description: "Test your rewards integration in the Grid sandbox environment"
+---
+
+## Overview
+
+The Grid sandbox environment allows you to test your rewards integration without moving real money or cryptocurrency. All API endpoints work the same way in sandbox as they do in production, but transactions are simulated and you can control test scenarios using special test values.
+
+## Getting Started with Sandbox
+
+### Sandbox Credentials
+
+To use the sandbox environment:
+
+1. Log into the [Grid Dashboard](https://dash.lightspark.com)
+2. Create a sandbox API token from the API Tokens section
+3. Use the normal production base URL: `https://api.lightspark.com/grid/2025-10-13`
+4. Authenticate using your sandbox token with HTTP Basic Auth
+
+## Simulating Money Movements
+
+### Funding Platform Internal Accounts
+
+In production, your platform's internal account is funded by following the payment instructions (bank transfer, wire, etc.). In sandbox, you can instantly add funds to your platform's internal account using the following endpoint:
+
+```bash
+POST /sandbox/internal-accounts/{accountId}/fund
+
+{
+  "amount": 200000  # $2,000 in cents
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965/fund \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 200000
+  }'
+```
+
+This endpoint returns the updated `InternalAccount` object with the new balance. You'll also receive an `ACCOUNT_STATUS` webhook showing the balance change.
+
+<Note>
+  In production, ACH transfers typically take 1-3 business days to settle. In sandbox, funding is instant.
+</Note>
+
+## Testing Reward Distributions
+
+### Testing Successful Bitcoin Rewards
+
+The standard reward flow works seamlessly in sandbox. Create and execute a quote to instantly convert USD to BTC and send to a Spark wallet:
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 100,
+    "immediatelyExecute": true,
+    "description": "Bitcoin reward payout!"
+  }'
+```
+
+In sandbox:
+- The USD is instantly debited from your platform's internal account
+- Bitcoin is "purchased" at a simulated exchange rate
+- The Bitcoin is delivered to the Spark wallet address. In sandbox, BTC funds are regtest funds so that they're compatible with real regtest spark wallets.
+- You receive an `OUTGOING_PAYMENT` webhook notification
+
+<Info>
+  In sandbox, Bitcoin transfers complete instantly on regtest. In production, Spark wallet transfers typically complete within seconds.
+</Info>
+
+### Testing Wallet Address Failures
+
+Use special Spark wallet address patterns to test different failure scenarios. The **last 3 digits** of the wallet address determine the test behavior:
+
+| Last Digits | Behavior | Use Case |
+|-------------|----------|----------|
+| **003** | Wallet unavailable | Recipient wallet is offline or unreachable |
+| **005** | Timeout/delayed failure | Transaction stays pending ~30s, then fails |
+| **Any other** | Success | All transfers complete normally |
+
+**Example - Testing Wallet Unavailable:**
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m003"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 100,
+    "immediatelyExecute": true
+  }'
+```
+
+The quote execution will fail immediately with a wallet unavailable error.
+
+Note that these failure test patterns work for any external account type. If you want to test other cases of funding from a broken fiat account,
+you can create an external account with the appropriate test pattern and use that for the quote source for funding. There are also two other
+failure test patterns relevant for bank accounts:
+
+- **002**: Insufficient funds (transfer-in will fail)
+- **004**: Transfer rejected (bank rejects the transfer)
+
+## Testing Customer Onboarding
+
+### Sandbox KYC Flow
+
+In sandbox, the KYC onboarding process is simplified to always use the `/customers` endpoint instead of the KYC link flow.
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platformCustomerId": "user_12345",
+    "customerType": "INDIVIDUAL",
+    "fullName": "Jane Doe",
+    "birthDate": "1992-03-25",
+    "nationality": "US"
+  }'
+```
+
+In sandbox, customers are automatically approved. In production, KYC verification may take several minutes.
+
+## Testing Insufficient Balance
+
+To test insufficient balance scenarios, simply attempt to send more than your platform's internal account balance:
+
+```bash
+# Assuming account balance is $2,000 (200000 cents)
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 300000,
+    "immediatelyExecute": true
+  }'
+```
+
+The quote execution will fail with an insufficient balance error.
+
+## Testing Webhooks
+
+All webhook events fire normally in sandbox. To test your webhook endpoint:
+
+1. Configure your webhook URL in the dashboard
+2. Perform actions that trigger webhooks (funding accounts, executing quotes, etc.)
+3. Receive webhook events at your endpoint
+4. Verify signature using the sandbox public key
+
+You can also manually trigger a test webhook:
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/webhooks/test" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com/webhooks"
+  }'
+```
+
+## Common Testing Workflows
+
+### Complete Reward Distribution Test
+
+Here's a complete test workflow for distributing a $1.00 Bitcoin reward:
+
+1. **Fund your platform's internal account:**
+   ```bash
+   POST /sandbox/internal-accounts/InternalAccount:platform-usd/fund
+   { "amount": 100000 }  # $1,000
+   ```
+
+2. **Create a test customer:**
+   ```bash
+   POST /customers
+   ```
+
+3. **Execute a reward quote:**
+   ```bash
+   POST /quotes
+   # Platform USD account → Customer's Spark wallet
+   # With immediatelyExecute: true
+   ```
+
+4. **Verify completion via webhook** (`OUTGOING_PAYMENT` event)
+
+5. **Check transaction history:**
+   ```bash
+   GET /transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001
+   ```
+
+### Testing Error Scenarios
+
+Test each failure mode systematically:
+
+```bash
+# 1. Test wallet unavailable (003)
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {"accountId": "InternalAccount:platform-usd"},
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:test001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m003" # Wallet unavailable *003
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 100,
+    "immediatelyExecute": true
+  }'
+# Response: Transaction fails with wallet unavailable error
+
+# 2. Test insufficient balance
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {"accountId": "InternalAccount:platform-usd"},
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:test001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000000,
+    "immediatelyExecute": true
+  }'
+# Response: 400 Bad Request with insufficient balance error
+
+# 3. Test timeout scenario (005)
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {"accountId": "InternalAccount:platform-usd"},
+    "destination": {
+      "externalAccountDetails": {
+        "customerId": "Customer:test001",
+        "currency": "BTC",
+        "accountInfo": {
+          "accountType": "SPARK_WALLET",
+          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m005" # Timeout/delayed failure *005
+        }
+      }
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 100,
+    "immediatelyExecute": true
+  }'
+# Check status immediately - will show PENDING
+# Wait 30s, check again - will show FAILED
+```
+
+## Sandbox Limitations
+
+While sandbox closely mimics production, there are some differences:
+
+- **Instant settlement**: All Bitcoin transfers complete instantly (success cases) or fail immediately (error cases), except timeout scenarios (005)
+- **Uses Regtest funds**: Spark bitcoin funds are regtest funds so that they're compatible with real regtest spark wallets.
+- **Simplified KYC**: KYC processes are simulated and complete instantly with automatic approval
+- **Fixed exchange rates**: Currency conversion rates may not reflect real-time market rates
+
+<Warning>
+Do not try sending money to any sandbox wallet addresses or bank accounts. These are not real addresses and will not receive funds.
+</Warning>
+
+## Moving to Production
+
+When you're ready to move to production:
+
+1. Generate production API tokens in the dashboard
+2. Swap those credentials for the sandbox credentials in your environment variables
+3. Remove any sandbox-specific test patterns from your code (magic number wallet addresses)
+4. Configure production webhook endpoints
+5. Test with small reward amounts first ($0.01-$1.00)
+6. Gradually increase volume as you gain confidence
+
+## Next Steps
+
+- Review [Webhooks](/rewards/platform-tools/webhooks) for event handling
+- Check out the [Postman Collection](/rewards/platform-tools/postman-collection) for API examples
+- See [Platform Configuration](/rewards/developer-guides/platform-configuration) for production settings
