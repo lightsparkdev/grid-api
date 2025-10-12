@@ -15,10 +15,12 @@ Regulated financial institutions can:
 
 For regulated platforms, you can create customers directly through the API without requiring external KYC verification:
 
-```bash cURL
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Basic YOUR_API_CREDENTIALS' \
+To register a new user in the system, use the `POST /customers` endpoint:
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Content-Type: application/json" \
   -d '{
     "platformCustomerId": "customer_12345",
     "customerType": "INDIVIDUAL",
@@ -31,42 +33,86 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
       "state": "WA",
       "postalCode": "98101",
       "country": "US"
-    },
+    }
     "bankAccountInfo": {
       "accountType": "US_ACCOUNT",
-      "accountNumber": "12345678901",
-      "routingNumber": "123456789",
+      "accountNumber": "123450000",
+      "routingNumber": "000123456",
       "accountCategory": "CHECKING",
-      "bankName": "Chase Bank",
-      "platformAccountId": "chase_primary_1234"
+      "bankName": "Chase Bank"
     }
   }'
 ```
 
-```json Success
+The API allows creating a user with minimal PII.
+
+Here is an example of a user creation request body `bankAccountInfo` is always required:
+
+```json
 {
-  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-  "platformCustomerId": "customer_12345",
-  "customerType": "INDIVIDUAL",
-  "fullName": "Jane Doe",
-  "birthDate": "1992-03-25",
-  "nationality": "US",
+  "platformUserId": "9f84e0c2a72c4fa",
+  "userType": "INDIVIDUAL",
+  "bankAccountInfo": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "123450000",
+      "routingNumber": "000123456",
+      "accountCategory": "CHECKING",
+      "bankName": "Chase Bank"
+    }
+}
+```
+
+The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for user creation itself, but become necessary based on currency and UMA provider requirements if using UMA.
+
+Example request body for an individual user:
+
+```json
+{
+  "platformUserId": "9f84e0c2a72c4fa",
+  "userType": "INDIVIDUAL",
+  "fullName": "John Sender",
+  "birthDate": "1985-06-15",
   "address": {
-    "line1": "123 Pine Street",
-    "city": "Seattle",
-    "state": "WA",
-    "postalCode": "98101",
+    "line1": "Paseo de la Reforma 222",
+    "line2": "Piso 15",
+    "city": "Ciudad de México",
+    "state": "Ciudad de México",
+    "postalCode": "06600",
+    "country": "MX"
+  },
+  "bankAccountInfo": {
+    "accountType": "CLABE",
+    "clabeNumber": "123456789012345678",
+    "bankName": "Banco de México"
+  }
+}
+```
+
+Example request body for a business user:
+
+```json
+{
+  "platformUserId": "b87d2e4a9c13f5b",
+  "userType": "BUSINESS",
+  "businessInfo": {
+    "legalName": "Acme Corporation",
+    "registrationNumber": "789012345",
+    "taxId": "123-45-6789"
+  },
+  "address": {
+    "line1": "456 Oak Avenue",
+    "line2": "Floor 12",
+    "city": "New York",
+    "state": "NY",
+    "postalCode": "10001",
     "country": "US"
   },
   "bankAccountInfo": {
     "accountType": "US_ACCOUNT",
-    "accountNumber": "12345678901",
-    "routingNumber": "123456789",
+    "accountNumber": "123456789",
+    "routingNumber": "987654321",
     "accountCategory": "CHECKING",
-    "bankName": "Chase Bank",
-    "platformAccountId": "chase_primary_1234"
-  },
-  "createdAt": "2023-07-21T17:32:28Z",
-  "updatedAt": "2023-07-21T17:32:28Z"
+    "bankName": "Chase Bank"
+  }
 }
 ```
