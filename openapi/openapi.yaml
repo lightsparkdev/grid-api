@@ -74,14 +74,14 @@ paths:
     $ref: paths/platform/config.yaml
   /customers:
     $ref: paths/customers/customers.yaml
-  /platform/internal-accounts:
-    $ref: paths/platform/platform_internal_accounts.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
   /customers/kyc-link:
     $ref: paths/customers/customers_kyc_link.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
+  /platform/internal-accounts:
+    $ref: paths/platform/platform_internal_accounts.yaml
   /customers/external-accounts:
     $ref: paths/customers/customers_external_accounts.yaml
   /platform/external-accounts:
@@ -130,8 +130,10 @@ paths:
     $ref: paths/invitations/invitations_{invitationCode}_cancel.yaml
   /sandbox/send:
     $ref: paths/sandbox/sandbox_send.yaml
-  /sandbox/receive:
-    $ref: paths/sandbox/sandbox_receive.yaml
+  /sandbox/uma/receive:
+    $ref: paths/sandbox/sandbox_uma_receive.yaml
+  /sandbox/internal-accounts/{accountId}/fund:
+    $ref: paths/sandbox/sandbox_internal_accounts_{accountId}_fund.yaml
   /uma-providers:
     $ref: paths/uma_providers/uma_providers.yaml
   /tokens:

@@ -1,0 +1,87 @@
+post:
+  summary: Simulate funding an internal account
+  description: >
+    Simulate receiving funds into an internal account in the sandbox environment.
+    This is useful for testing scenarios where you need to add funds to a customer's
+    or platform's internal account without going through a real bank transfer or
+    following payment instructions.
+
+    This endpoint is only for the sandbox environment and will fail for
+    production platforms/keys.
+  operationId: sandboxFundInternalAccount
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: accountId
+      in: path
+      required: true
+      description: The ID of the internal account to fund
+      schema:
+        type: string
+      example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - amount
+          properties:
+            amount:
+              type: integer
+              format: int64
+              description: >-
+                Amount to add in the smallest unit of the account's currency (e.g.,
+                cents for USD/EUR, satoshis for BTC)
+              exclusiveMinimum: 0
+              maximum: 100000000000
+              example: 100000
+        examples:
+          fundUSDAccount:
+            summary: Fund USD internal account with $1,000
+            value:
+              amount: 100000
+          fundBTCAccount:
+            summary: Fund BTC internal account with 0.01 BTC
+            value:
+              amount: 1000000
+  responses:
+    '200':
+      description: Internal account funded successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/InternalAccount.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

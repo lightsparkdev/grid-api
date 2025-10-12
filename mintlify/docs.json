@@ -61,6 +61,7 @@
             "group": "Platform Tools",
             "pages": [
               "payouts/platform-tools/webhooks",
+              "payouts/platform-tools/sandbox-testing",
               "payouts/platform-tools/postman-collection"
             ]
           }

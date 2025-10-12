@@ -90,7 +90,7 @@ The `fundingPaymentInstructions` provide the bank account details and reference 
 Your customer initiates an ACH transfer from their bank to the account details provided in the funding instructions, making sure to include the reference code `FUND-ABC123` in the transfer memo.
 
 <Note>
-  In sandbox mode, you can use the `/sandbox/receive` endpoint to simulate receiving funds. In production, actual ACH transfers typically take 1-3 business days to settle.
+  In sandbox mode, you can use the `/sandbox/internal-accounts/{accountId}/fund` endpoint to simulate receiving funds. In production, actual ACH transfers typically take 1-3 business days to settle.
 </Note>
 
 **Webhook Notification:**
@@ -452,11 +452,11 @@ Each customer type has specific requirements and use cases, but all can benefit 
 
 - **API Reference**: Explore the complete [API](/api-reference/environments)
 - **Platform Configuration**: Set up your [platform settings](/api-reference/platform-configuration/get-platform-configuration)
-- **Webhook Security**: Implement [webhook verification](/remittances/developer-guides/webhooks)
-- **Sandbox Testing**: Test your integration in [sandbox mode](/remittances/developer-guides/sandbox-testing)
+- **Webhook Security**: Implement [webhook verification](/payouts/platform-tools/webhooks)
+- **Sandbox Testing**: Test your integration in [sandbox mode](/payouts/platform-tools/sandbox-testing)
 
 ## Related Resources
 
 - [Platform Configuration](/api-reference/platform-configuration/update-platform-configuration) - Configure your platform
-- [Webhooks Guide](/remittances/developer-guides/webhooks) - Real-time notifications
-- [Sandbox Testing](/remittances/developer-guides/sandbox-testing) - Safe testing environment
+- [Webhooks Guide](/payouts/platform-tools/webhooks) - Real-time notifications
+- [Sandbox Testing](/payouts/platform-tools/sandbox-testing) - Safe testing environment

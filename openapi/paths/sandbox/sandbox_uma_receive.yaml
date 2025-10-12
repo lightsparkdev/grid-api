@@ -1,5 +1,5 @@
 post:
-  summary: Simulate payment send to test receiving a payment
+  summary: Simulate payment send to test receiving an UMA payment
   description: >
     Simulate sending payment from an sandbox uma address to a platform customer to
     test payment receive.

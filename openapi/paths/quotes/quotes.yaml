@@ -17,6 +17,15 @@ post:
 
     **Important:** If you are transferring funds in the same currency (no exchange required),
     use the `/transfer-in` or `/transfer-out` endpoints instead.
+
+    **Sandbox Testing:** When using the `externalAccountDetails` destination type in sandbox mode, use account number patterns ending in specific digits to test different scenarios.
+    These patterns should be used with the primary alias, address, or identifier of whatever account type you're testing.
+    For example, the US account number, a CLABE, an IBAN, a spark wallet address, etc. The failure patterns are:
+    - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
+    - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
+    - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
+    - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+    - Any other account number: Success (transfers complete normally)
   operationId: createQuote
   tags:
     - Cross-Currency Transfers

@@ -90,7 +90,7 @@ The `fundingPaymentInstructions` provide the bank account details and reference 
 You can initiate an ACH transfer from your bank to the account details provided in the funding instructions, making sure to include the reference code `FUND-BTC123` in the transfer memo.
 
 <Note>
-  In sandbox mode, you can use the `/sandbox/receive` endpoint to simulate receiving funds. In production, actual ACH transfers typically take 1-3 business days to settle.
+  In sandbox mode, you can use the `/sandbox/internal-accounts/{accountId}/fund` endpoint to simulate receiving funds. In production, actual ACH transfers typically take 1-3 business days to settle.
 </Note>
 
 ### Webhook Notification
@@ -282,12 +282,10 @@ The customer now has 810 Satoshis in their self-custody Spark wallet!
 
 - **Transaction history**: Use `GET /transactions` to track all Bitcoin purchases
 - **Price monitoring**: Build price alerts using the lookup endpoint to monitor rates
-- **Webhook verification**: Implement signature verification for webhook security (see [Webhooks guide](/remittances/developer-guides/webhooks))
+- **Webhook verification**: Implement signature verification for webhook security (see [Webhooks guide](/rewards/platform-tools/webhooks))
 
 ## Related Resources
 
 - [API Reference](/api-reference) - Complete API documentation
-- [Send to Foreign Bank Account](/x-border-payouts/getting-started/quick-start) - Guide for fiat currency transfers
-- [Platform Configuration](/x-border-payouts/developer-guides/platform-configuration) - Configure your platform settings
-- [Webhooks](/remittances/developer-guides/webhooks) - Webhook security and verification
-- [Sandbox Testing](/remittances/developer-guides/sandbox-testing) - Test your integration safely
+- [Platform Configuration](/rewards/developer-guides/platform-configuration) - Configure your platform settings
+- [Webhooks](/rewards/platform-tools/webhooks) - Webhook security and verification
