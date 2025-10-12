@@ -15,7 +15,7 @@ Regulated financial institutions can:
 
 For regulated platforms, you can create customers directly through the API without requiring external KYC verification:
 
-To register a new user in the system, use the `POST /customers` endpoint:
+To register a new customer in the system, use the `POST /customers` endpoint:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
@@ -44,14 +44,14 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   }'
 ```
 
-The API allows creating a user with minimal PII.
+The API allows creating a customer with minimal PII.
 
-Here is an example of a user creation request body `bankAccountInfo` is always required:
+Here is an example of a customer creation request body `bankAccountInfo` is always required:
 
 ```json
 {
-  "platformUserId": "9f84e0c2a72c4fa",
-  "userType": "INDIVIDUAL",
+  "platformCustomerId": "9f84e0c2a72c4fa",
+  "customerType": "INDIVIDUAL",
   "bankAccountInfo": {
       "accountType": "US_ACCOUNT",
       "accountNumber": "123450000",
@@ -62,14 +62,14 @@ Here is an example of a user creation request body `bankAccountInfo` is always r
 }
 ```
 
-The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for user creation itself, but become necessary based on currency and UMA provider requirements if using UMA.
+The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for customer creation itself, but become necessary based on currency and UMA provider requirements if using UMA.
 
-Example request body for an individual user:
+Example request body for an individual customer:
 
 ```json
 {
-  "platformUserId": "9f84e0c2a72c4fa",
-  "userType": "INDIVIDUAL",
+  "platformCustomerId": "9f84e0c2a72c4fa",
+  "customerType": "INDIVIDUAL",
   "fullName": "John Sender",
   "birthDate": "1985-06-15",
   "address": {
@@ -88,12 +88,12 @@ Example request body for an individual user:
 }
 ```
 
-Example request body for a business user:
+Example request body for a business customer:
 
 ```json
 {
-  "platformUserId": "b87d2e4a9c13f5b",
-  "userType": "BUSINESS",
+  "platformCustomerId": "b87d2e4a9c13f5b",
+  "customerType": "BUSINESS",
   "businessInfo": {
     "legalName": "Acme Corporation",
     "registrationNumber": "789012345",
