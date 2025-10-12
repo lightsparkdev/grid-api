@@ -45,7 +45,7 @@ sequenceDiagram
     Grid->>Client: Webhook: OUTGOING_PAYMENT (COMPLETED)
 
     Note over Client, Grid: Testing Incoming Payments
-    Client->>Grid: POST /sandbox/receive
+    Client->>Grid: POST /sandbox/uma/receive
     Grid->>Client: Webhook: INCOMING_PAYMENT (PENDING)
     Client-->>Grid: HTTP 200 OK (approve payment)
     Grid->>Client: Webhook: INCOMING_PAYMENT (COMPLETED)
@@ -93,7 +93,7 @@ The sandbox will simulate the payment and send appropriate webhooks just like in
 To test receiving payments to your platform's users, use the sandbox receive endpoint:
 
 ```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/receive" \
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive" \
   -H "Authorization: Basic <base64-encoded-credentials>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -146,7 +146,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/users" \
 2. Test receiving a payment:
 
 ```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/receive" \
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive" \
   -H "Authorization: Basic <base64-encoded-credentials>" \
   -H "Content-Type: application/json" \
   -d '{

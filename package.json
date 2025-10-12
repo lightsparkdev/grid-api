@@ -6,7 +6,8 @@
     "build:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
     "prelint:openapi": "npm run build:openapi",
     "lint:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && npx @redocly/cli lint openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
-    "lint": "npm run lint:openapi && cd mintlify && mint broken-links",
+    "lint": "npm run lint:openapi",
+    "broken-links": "cd mintlify && mint broken-links",
     "validate": "npm run lint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

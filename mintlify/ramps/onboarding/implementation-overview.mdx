@@ -130,9 +130,11 @@ Implement operational processes to keep your ledger in sync.
 Use Sandbox to build and validate end‑to‑end without moving real funds.
 
 - Simulate fiat funding using `/sandbox/send` endpoint
-- Simulate crypto deposits using `/sandbox/receive` endpoint
+- Simulate crypto deposits using `/sandbox/internal-accounts/{accountId}/fund` endpoint or `/transfer-in` endpoint
 - Test quote creation, conversion, and webhook lifecycles
 - Validate customer onboarding flows with test data
+
+See the [Sandbox Testing](../platform-tools/sandbox-testing.mdx) page for more details.
 
 ## Enabling Production
 

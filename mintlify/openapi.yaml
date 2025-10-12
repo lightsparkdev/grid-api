@@ -429,58 +429,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /platform/internal-accounts:
-    get:
-      summary: List platform internal accounts
-      description: |
-        Retrieve a list of all internal accounts that belong to the platform, as opposed to an individual customer.
-
-        These accounts are created automatically when the platform is configured for each supported currency. They can be used for things like distributing bitcoin rewards to customers, or for other platform-wide purposes.
-      operationId: listPlatformInternalAccounts
-      tags:
-        - Internal Accounts
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: currency
-          in: query
-          description: Filter by currency code
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - accounts
-                properties:
-                  accounts:
-                    type: array
-                    description: List of internal accounts matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/InternalAccount'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /customers/{customerId}:
     parameters:
       - name: customerId
@@ -822,6 +770,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /platform/internal-accounts:
+    get:
+      summary: List platform internal accounts
+      description: |
+        Retrieve a list of all internal accounts that belong to the platform, as opposed to an individual customer.
+
+        These accounts are created automatically when the platform is configured for each supported currency. They can be used for things like distributing bitcoin rewards to customers, or for other platform-wide purposes.
+      operationId: listPlatformInternalAccounts
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: currency
+          in: query
+          description: Filter by currency code
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accounts
+                properties:
+                  accounts:
+                    type: array
+                    description: List of internal accounts matching the filter criteria
+                    items:
+                      $ref: '#/components/schemas/InternalAccount'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/external-accounts:
     get:
       summary: List Customer external accounts
@@ -909,7 +909,15 @@ paths:
                 $ref: '#/components/schemas/Error500'
     post:
       summary: Add a new external account
-      description: Register a new external bank account for a customer
+      description: |-
+        Register a new external bank account for a customer.
+
+        **Sandbox Testing:** In sandbox mode, use these account number patterns to test different transfer scenarios. These patterns should be used with the primary alias, address, or identifier of whatever account type you're testing. For example, the US account number, a CLABE, an IBAN, a spark wallet address, etc. The failure patterns are:
+        - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
+        - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
+        - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
+        - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+        - Any other account number: Success (transfers complete normally)
       operationId: createCustomerExternalAccount
       tags:
         - External Accounts
@@ -1030,6 +1038,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Add a new platform external account
+      description: |-
+        Register a new external bank account for the platform.
+
+        **Sandbox Testing:** In sandbox mode, use these account number patterns to test different transfer scenarios. These patterns should be used with the primary alias, address, or identifier of whatever account type you're testing. For example, the US account number, a CLABE, an IBAN, a spark wallet address, etc. The failure patterns are:
+        - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
+        - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
+        - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
+        - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+        - Any other account number: Success (transfers complete normally)
+      operationId: createPlatformExternalAccount
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAccountCreateRequest'
+            examples:
+              usBankAccount:
+                summary: Create external US bank account
+                value:
+                  currency: USD
+                  accountInfo:
+                    accountType: US_ACCOUNT
+                    accountNumber: '12345678901'
+                    routingNumber: '123456789'
+                    accountCategory: CHECKING
+                    bankName: Chase Bank
+                    platformAccountId: ext_acc_123456
+                    beneficiary:
+                      beneficiaryType: INDIVIDUAL
+                      fullName: John Doe
+                      birthDate: '1990-01-15'
+                      nationality: US
+                      address:
+                        line1: 123 Main Street
+                        city: San Francisco
+                        state: CA
+                        postalCode: '94105'
+                        country: US
+              sparkWallet:
+                summary: Create external Spark wallet
+                value:
+                  currency: BTC
+                  accountInfo:
+                    accountType: SPARK_WALLET
+                    address: sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+      responses:
+        '201':
+          description: External account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - External account already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -1559,6 +1650,15 @@ paths:
 
         **Important:** If you are transferring funds in the same currency (no exchange required),
         use the `/transfer-in` or `/transfer-out` endpoints instead.
+
+        **Sandbox Testing:** When using the `externalAccountDetails` destination type in sandbox mode, use account number patterns ending in specific digits to test different scenarios.
+        These patterns should be used with the primary alias, address, or identifier of whatever account type you're testing.
+        For example, the US account number, a CLABE, an IBAN, a spark wallet address, etc. The failure patterns are:
+        - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
+        - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
+        - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
+        - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+        - Any other account number: Success (transfers complete normally)
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
@@ -2770,9 +2870,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /sandbox/receive:
+  /sandbox/uma/receive:
     post:
-      summary: Simulate payment send to test receiving a payment
+      summary: Simulate payment send to test receiving an UMA payment
       description: |
         Simulate sending payment from an sandbox uma address to a platform customer to test payment receive.
         This endpoint is only for the sandbox environment and will fail for production platforms/keys.
@@ -2841,6 +2941,87 @@ paths:
                 $ref: '#/components/schemas/Error403'
         '404':
           description: Sender or receiver not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/internal-accounts/{accountId}/fund:
+    post:
+      summary: Simulate funding an internal account
+      description: |
+        Simulate receiving funds into an internal account in the sandbox environment. This is useful for testing scenarios where you need to add funds to a customer's or platform's internal account without going through a real bank transfer or following payment instructions.
+        This endpoint is only for the sandbox environment and will fail for production platforms/keys.
+      operationId: sandboxFundInternalAccount
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The ID of the internal account to fund
+          schema:
+            type: string
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: integer
+                  format: int64
+                  description: Amount to add in the smallest unit of the account's currency (e.g., cents for USD/EUR, satoshis for BTC)
+                  exclusiveMinimum: 0
+                  maximum: 100000000000
+                  example: 100000
+            examples:
+              fundUSDAccount:
+                summary: Fund USD internal account with $1,000
+                value:
+                  amount: 100000
+              fundBTCAccount:
+                summary: Fund BTC internal account with 0.01 BTC
+                value:
+                  amount: 1000000
+      responses:
+        '200':
+          description: Internal account funded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Internal account not found
           content:
             application/json:
               schema:
@@ -4674,6 +4855,58 @@ components:
         details:
           type: object
           description: Additional error details
+    Error404:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          enum:
+            - 404
+          type: integer
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | TRANSACTION_NOT_FOUND | Transaction not found |
+            | INVITATION_NOT_FOUND | Invitation not found |
+            | USER_NOT_FOUND | Customer not found |
+            | QUOTE_NOT_FOUND | Quote not found |
+            | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
+            | TOKEN_NOT_FOUND | Token not found |
+            | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
+            | REFERENCE_NOT_FOUND | Reference not found |
+          enum:
+            - TRANSACTION_NOT_FOUND
+            - INVITATION_NOT_FOUND
+            - USER_NOT_FOUND
+            - QUOTE_NOT_FOUND
+            - LOOKUP_REQUEST_NOT_FOUND
+            - TOKEN_NOT_FOUND
+            - BULK_UPLOAD_JOB_NOT_FOUND
+            - REFERENCE_NOT_FOUND
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
     Currency:
       type: object
       properties:
@@ -4847,58 +5080,6 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
-    Error404:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          enum:
-            - 404
-          type: integer
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | TRANSACTION_NOT_FOUND | Transaction not found |
-            | INVITATION_NOT_FOUND | Invitation not found |
-            | USER_NOT_FOUND | Customer not found |
-            | QUOTE_NOT_FOUND | Quote not found |
-            | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
-            | TOKEN_NOT_FOUND | Token not found |
-            | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
-            | REFERENCE_NOT_FOUND | Reference not found |
-          enum:
-            - TRANSACTION_NOT_FOUND
-            - INVITATION_NOT_FOUND
-            - USER_NOT_FOUND
-            - QUOTE_NOT_FOUND
-            - LOOKUP_REQUEST_NOT_FOUND
-            - TOKEN_NOT_FOUND
-            - BULK_UPLOAD_JOB_NOT_FOUND
-            - REFERENCE_NOT_FOUND
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-    Error:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Error code
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
     ExternalAccountStatus:
       type: string
       enum:
@@ -5948,7 +6129,7 @@ components:
               properties:
                 externalAccountDetails:
                   $ref: '#/components/schemas/ExternalAccountCreateRequest'
-              description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination.
+              description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination. See the external accounts endpoints for test values in sandbox mode.
         lockedCurrencySide:
           $ref: '#/components/schemas/QuoteLockSide'
         lockedCurrencyAmount:

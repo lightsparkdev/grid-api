@@ -2,7 +2,8 @@
 # See https://redocly.com/docs/cli/ for more information.
 openapi.yaml:
   no-invalid-media-type-examples:
-    - '#/paths/~1customers/post/requestBody/content/application~1json/schema'
     - >-
       #/paths/~1customers~1external-accounts/post/requestBody/content/application~1json/schema
+    - >-
+      #/paths/~1platform~1external-accounts/post/requestBody/content/application~1json/schema
     - '#/paths/~1quotes/post/requestBody/content/application~1json/schema'
