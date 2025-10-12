@@ -185,6 +185,7 @@
           {
             "group": "Sending & Receiving Payments",
             "pages": [
+              "remittances/developer-guides/depositing-funds",
               "remittances/developer-guides/sending-payments",
               "remittances/developer-guides/receiving-payments",
               "remittances/developer-guides/reconciliation"
