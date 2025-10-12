@@ -84,11 +84,11 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/users" \
   }'
 ```
 
-See the [Configuring Users](/remittances/developer-guides/configuring-users) guide for more details.
+See the [Configuring Users](/global-p2p/onboarding-customers/configuring-users) guide for more details.
 
 ## Step 3: Webhook setup (one-time setup)
 
-Configure your webhook endpoints to receive notifications about incoming payments. You'll need to implement the webhook endpoints on your server. Remember to validate webhook signatures to ensure they are authentic. See the [Webhook Verification](/remittances/platform-tools/webhooks) guide for more details.
+Configure your webhook endpoints to receive notifications about incoming payments. You'll need to implement the webhook endpoints on your server. Remember to validate webhook signatures to ensure they are authentic. See the [Webhook Verification](/global-p2p/platform-tools/webhooks) guide for more details.
 
 ## Step 4: Receive and approve incoming payments
 
@@ -257,8 +257,6 @@ sequenceDiagram
     Note over Sender, Grid: Payment initiated by sender
     Sender->>Grid: Lnurlp request for UMA address
     Note over Grid: Resolves the UMA address to a registered user
-    Grid->>Sender: Lnurlp response with currencies and requested payer fields
-    Sender->>Grid: Payreq request with payer information and amount
     Grid->>Client: Webhook: INCOMING_PAYMENT (PENDING)
     
     alt Payment approved
@@ -273,3 +271,5 @@ sequenceDiagram
         Grid->>Sender: Failed payreq response.
     end
 ```
+
+

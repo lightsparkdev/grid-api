@@ -161,47 +161,47 @@
       {
         "tab": "Global P2P",
         "pages": [
-          "remittances/index",
-          "remittances/terminology",
-          "remittances/quickstart",
+          "global-p2p/index",
+          "global-p2p/terminology",
+          "global-p2p/quickstart",
           {
             "group": "Getting Started",
             "pages": [
-              "remittances/developer-guides/implementation-overview",
-              "remittances/developer-guides/platform-configuration"
+              "global-p2p/getting-started/implementation-overview",
+              "global-p2p/getting-started/platform-configuration"
             ]
           },
           {
             "group": "Onboarding Customers",
             "pages": [
-              "remittances/developer-guides/configuring-users",
-              "remittances/developer-guides/invitations"
+              "global-p2p/onboarding-customers/configuring-users",
+              "global-p2p/onboarding-customers/invitations"
             ]
           },
           {
             "group": "Managing Accounts",
             "pages": [
-              "remittances/developer-guides/internal-accounts",
-              "remittances/developer-guides/external-accounts",
-              "remittances/developer-guides/plaid"
+              "global-p2p/managing-accounts/internal-accounts",
+              "global-p2p/managing-accounts/external-accounts",
+              "global-p2p/managing-accounts/plaid"
             ]
           },
           {
             "group": "Sending & Receiving Payments",
             "pages": [
-              "remittances/developer-guides/depositing-funds",
-              "remittances/developer-guides/sending-payments",
-              "remittances/developer-guides/receiving-payments",
-              "remittances/developer-guides/reconciliation"
+              "global-p2p/sending-receiving-payments/depositing-funds",
+              "global-p2p/sending-receiving-payments/sending-payments",
+              "global-p2p/sending-receiving-payments/receiving-payments",
+              "global-p2p/sending-receiving-payments/reconciliation"
             ]
           },
           {
             "group": "Platform Tools",
             "pages": [
-              "remittances/platform-tools/webhooks",
-              "remittances/platform-tools/sandbox-testing",
-              "remittances/platform-tools/postman-collection",
-              "remittances/platform-tools/uma-test-wallet"
+              "global-p2p/platform-tools/webhooks",
+              "global-p2p/platform-tools/sandbox-testing",
+              "global-p2p/platform-tools/postman-collection",
+              "global-p2p/platform-tools/uma-test-wallet"
             ]
           }
         ]
