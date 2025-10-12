@@ -191,7 +191,8 @@
               "global-p2p/sending-receiving-payments/depositing-funds",
               "global-p2p/sending-receiving-payments/sending-payments",
               "global-p2p/sending-receiving-payments/receiving-payments",
-              "global-p2p/sending-receiving-payments/reconciliation"
+              "global-p2p/sending-receiving-payments/reconciliation",
+              "global-p2p/sending-receiving-payments/error-handling"
             ]
           },
           {
