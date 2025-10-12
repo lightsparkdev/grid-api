@@ -6,9 +6,17 @@ import PaymentFlow from '/snippets/payment-flow.mdx';
 
 With {remittanceProductName}, you can send and receive low cost real-time payments to bank accounts and UMA addresses worldwide through a single, simple API. {topLevelProductName} automatically routes each payment across its network of Grid switches, handling FX, blockchain settlement, and instant banking off-ramps for you.
 
-- **Single API, global reach**: {remittanceProductName} interacts with the Money Grid to route your payments globally.
-- **No crypto handling**: {remittanceProductName} converts between fiat and crypto for you on demand to simplify your implementation and minimize FX costs.
-- **Real-time settlement**: Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
+<CardGroup cols={3}>
+  <Card title="Single API, global reach" icon="bolt">
+     {remittanceProductName} interacts with the Money Grid to route your payments globally.
+  </Card>
+  <Card title="No Crypto Handling" icon="shield-check">
+    Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
+  </Card>
+  <Card title="Instant Delivery" icon="rocket">
+    Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
+  </Card>
+</CardGroup>
 
 <Note>For background on the UMA protocol itself, see the UMA Standard documentation: [UMA Standard—Introduction](https://docs.uma.me/uma-standard/introduction).</Note>
 
@@ -17,15 +25,23 @@ With {remittanceProductName}, you can send and receive low cost real-time paymen
 ## {remittanceProductName} Features
 Users interact with {remittanceProductName} through two main interfaces.
 
-- **API**: Programmatic access to create customers, quotes, fund the account, send payments and reconcile via webhooks.
-- **Dashboard**: Your development and operations team can use the dashboard to monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
+<Tabs>
+  <Tab title="API">
+   Programmatic access to create customers, quotes, fund the account, send payments and reconcile via webhooks.
+  </Tab>
+  <Tab title="Dashboard">
+   Your development and operations team can use the dashboard to monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
+  </Tab>
+</Tabs>
 
 {remittanceProductName} supports the following functionality.  
 
 ### Onboarding customers
+<Info>
 {remittanceProductName} has two customer onboarding options - one for non regulated entities where {remittanceProductName} handles the KYC/KYB process and one for regulated entities where you handle the KYC/KYB process.
 
 When creating customers, you'll be able to assign a customized UMA address to facilitate sending and receiving UMA payments.
+</Info>
 
 ### Funding Payments
 {remittanceProductName} supports multiple transaction funding options including prefunded accounts and real-time funding. You can prefund an account using several payment rails such as ACH, SEPA Instant, wire transfers, Lightning, and more.  
@@ -38,7 +54,15 @@ To send with {remittanceProductName}, you query recipient information and pricin
 To receive with {remittanceProductName}, you expose a UMA or supported account identifier. The platform handles conversion and offramping to the receiver’s account currency and notifies you via webhooks so you can credit the customer.
 
 ### Environments
-{remittanceProductName} supports two environments: Sandbox and Production. Sandbox mirrors production behavior and webhooks so you can test receiver resolution, quotes and funding instructions, settlement status changes, and full end‑to‑end flows without moving real funds. Production uses live credentials and base URLs for real payments once you’re ready to launch.
+<Note>
+{remittanceProductName} supports two environments: **Sandbox** and **Production**. 
+
+Sandbox mirrors production behavior and webhooks so you can test receiver resolution, quotes and funding instructions, settlement status changes, and full end‑to‑end flows without moving real funds. 
+
+Production uses live credentials and base URLs for real payments once you’re ready to launch.
+</Note>
+
+---
 
 ### Country Availability
 
