@@ -1,0 +1,121 @@
+## Cross-Currency Transfers
+
+Use the quotes flow when sending funds with currency conversion. This locks in an exchange rate and provides all details needed to execute the transfer.
+
+### When to use cross-currency transfers
+
+- Converting USD to EUR, MXN, BRL, or other supported currencies
+- Sending international payments with automatic currency conversion
+- Need to lock in a specific exchange rate for the transfer
+
+### Create and execute a quote
+
+<Steps>
+<Step title="Create a quote">
+  Request a quote to lock in the exchange rate and get transfer details:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": { "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+    "destination": { "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR" },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "Payment for services - Invoice #1234"
+  }'
+```
+
+```json Success (201 Created)
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
+  "status": "PENDING",
+  "source": { "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965", "currency": "USD" },
+  "destination": { "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR" },
+  "sendingAmount": { "amount": 10000, "currency": { "code": "USD", "decimals": 2 } },
+  "receivingAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
+  "exchangeRate": 0.92,
+  "fee": { "amount": 50, "currency": { "code": "USD", "decimals": 2 } },
+  "expiresAt": "2025-10-03T15:15:00Z",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "description": "Payment for services - Invoice #1234"
+}
+```
+
+<Info>
+  **Locked currency side** determines which amount is fixed:
+  - `SENDING`: Lock the sending amount (receiving amount calculated based on exchange rate)
+  - `RECEIVING`: Lock the receiving amount (sending amount calculated based on exchange rate)
+</Info>
+</Step>
+
+<Step title="Review quote details">
+  Before executing, review the quote to ensure:
+
+- Exchange rate is acceptable
+- Fees are as expected
+- Receiving amount meets requirements
+- Quote hasn't expired (check `expiresAt`)
+
+<Warning>
+  Quotes typically expire after a short period. If expired, create a new quote to get an updated exchange rate.
+</Warning>
+</Step>
+
+<Step title="Execute the quote">
+  Confirm and execute the quote to initiate the transfer:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000025/execute' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```json Success (200 OK)
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
+  "status": "PROCESSING",
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+  "source": { "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965", "currency": "USD" },
+  "destination": { "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR" },
+  "sendingAmount": { "amount": 10000, "currency": { "code": "USD", "decimals": 2 } },
+  "receivingAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
+  "exchangeRate": 0.92,
+  "executedAt": "2025-10-03T15:05:00Z"
+}
+```
+
+<Check>
+  Once executed, the quote creates a transaction and the transfer begins processing. The `transactionId` can be used to track the payment.
+</Check>
+</Step>
+
+<Step title="Monitor completion">
+  Track the transfer using webhooks or by polling the transaction:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000030' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+You'll receive a webhook when the transaction completes:
+
+```json
+{
+  "type": "OUTGOING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+    "status": "COMPLETED",
+    "sentAmount": { "amount": 10000, "currency": { "code": "USD", "decimals": 2 } },
+    "receivedAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
+    "exchangeRate": 0.92,
+    "settledAt": "2025-10-03T15:30:00Z",
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000025"
+  },
+  "timestamp": "2025-10-03T15:31:00Z"
+}
+```
+
+</Step>
+</Steps>
+

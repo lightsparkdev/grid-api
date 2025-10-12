@@ -1,0 +1,97 @@
+## Sending to a UMA Address 
+Send to a UMA address when the receiver is identified by their UMA handle eg $alice@example.com. You'll look up the receiver, create a quote, and then fund.
+
+### Look up the recipient
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$recipient@example.com?platformUserId=9f84e0c2a72c4fa" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+#### Response
+```json Success (200 OK)
+{
+  "id": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
+  "receiver": {
+    "handle": "$recipient@example.com",
+    "vaspName": "ExampleBank",
+    "network": "UMA"
+  },
+  "supportedCurrencies": [
+    { "code": "EUR", "decimals": 2 },
+    { "code": "BRL", "decimals": 2 }
+  ],
+  "requiredPayerFields": [
+    "FULL_NAME",
+    "BIRTH_DATE"
+  ],
+  "constraints": {
+    "minAmount": { "amount": 100, "currency": { "code": "USD", "decimals": 2 } },
+    "maxAmount": { "amount": 10000000, "currency": { "code": "USD", "decimals": 2 } }
+  },
+  "createdAt": "2025-10-03T15:00:00Z"
+}
+```
+The response includes supported currencies and any required payer information fields.  
+
+If the receiver's VASP requires payer data, include it in `senderUserInfo` (applies to either tab).
+### Create a quote
+
+<CodeGroup>
+```bash Just-in-time funding
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
+    "sendingCurrencyCode": "USD",
+    "receivingCurrencyCode": "EUR",
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "Invoice #1234 payment",
+    "senderUserInfo": { "FULL_NAME": "John Sender", "BIRTH_DATE": "1985-06-15" }
+  }'
+```
+
+```bash Prefunded (use internal account as source)
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
+    "source": { "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+    "sendingCurrencyCode": "USD",
+    "receivingCurrencyCode": "EUR",
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "UMA payment from prefunded balance"
+  }'
+```
+</CodeGroup>
+
+### Execute payment (just-in-time)
+
+Use the `paymentInstructions` from the quote to instruct your bank to push funds. Include the exact `reference` provided.
+
+### Execute payment (prefunded)
+
+Existing internal account balances will be used to fund the payment. Use the lookup Id above to confirm the payment and execute the quote.
+
+#### Execute the quote
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000025/execute" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Executing the quote creates a transaction that draws from your internal account and delivers to the recipient associated with the UMA address.
+
+#### Track status
+Listen for `OUTGOING_PAYMENT` webhooks until the transaction reaches `COMPLETED` or `FAILED`.
+
+You can also query for the transaction with the following snippet:
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000030" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
