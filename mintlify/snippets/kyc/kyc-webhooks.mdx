@@ -1,0 +1,92 @@
+#### Handling KYC Status Webhooks
+
+After a customer completes the KYC/KYB verification process, you'll receive webhook notifications about their KYC status. These notifications are sent to your configured webhook endpoint.
+
+<Note>
+For regulated platforms, customers are created with `APPROVED` KYC status by default.
+</Note>
+
+**Webhook Payload (sent to your endpoint):**
+
+```json
+{
+  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "KYC_STATUS",
+  "timestamp": "2023-07-21T17:32:28Z",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "kycStatus": "APPROVED",
+  "platformCustomerId": "1234567"
+}
+```
+
+**Webhook Headers:**
+- `Content-Type: application/json`
+- `X-Webhook-Signature: sha256=abc123...`
+
+<ResponseField name="customerId" type="string" required>
+System-generated unique identifier of the customer whose KYC status has changed.
+</ResponseField>
+
+<ResponseField name="kycStatus" type="string" required>
+Final KYC verification status. Webhooks are only sent for final states:
+- `APPROVED`: Customer verification completed successfully
+- `REJECTED`: Customer verification was rejected
+- `EXPIRED`: KYC verification has expired and needs renewal
+- `CANCELED`: Verification process was canceled
+- `MANUALLY_APPROVED`: Customer was manually approved by platform
+- `MANUALLY_REJECTED`: Customer was manually rejected by platform
+</ResponseField>
+
+<Note>
+Intermediate states like `PENDING_REVIEW` do not trigger webhook notifications. Only final resolution states will send webhook notifications.
+</Note>
+
+```javascript
+// Example webhook handler for KYC status updates
+// Note: Only final states trigger webhook notifications
+app.post('/webhooks/kyc-status', (req, res) => {
+  const { customerId, kycStatus } = req.body;
+  
+  switch (kycStatus) {
+    case 'APPROVED':
+      // Activate customer account
+      await activateCustomer(customerId);
+      await sendWelcomeEmail(customerId);
+      break;
+      
+    case 'REJECTED':
+      // Notify support and customer
+      await notifySupport(customerId, 'KYC_REJECTED');
+      await sendRejectionEmail(customerId);
+      break;
+      
+    case 'MANUALLY_APPROVED':
+      // Handle manual approval
+      await activateCustomer(customerId);
+      await sendWelcomeEmail(customerId);
+      break;
+      
+    case 'MANUALLY_REJECTED':
+      // Handle manual rejection
+      await notifySupport(customerId, 'KYC_MANUALLY_REJECTED');
+      await sendRejectionEmail(customerId);
+      break;
+      
+    case 'EXPIRED':
+      // Handle expired KYC
+      await notifyCustomerForReKyc(customerId);
+      break;
+      
+    case 'CANCELED':
+      // Handle canceled verification
+      await logKycCancelation(customerId);
+      break;
+      
+    default:
+      // Log unexpected statuses
+      console.log(`Unexpected KYC status ${kycStatus} for customer ${customerId}`);
+  }
+  
+  res.status(200).send('OK');
+});
+```
