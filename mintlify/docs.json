@@ -37,6 +37,7 @@
           {
             "group": "Onboarding",
             "pages": [
+              "payouts/onboarding/kyc",
               "payouts/onboarding/configuring-users"
             ]
           },
@@ -82,6 +83,7 @@
           {
             "group": "Onboarding",
             "pages": [
+              "ramps/onboarding/kyc",
               "ramps/onboarding/configuring-customers"
             ]
           },
@@ -170,6 +172,7 @@
             "group": "Onboarding Customers",
             "pages": [
               "remittances/developer-guides/configuring-users",
+              "remittances/developer-guides/kyc",
               "remittances/developer-guides/invitations"
             ]
           },

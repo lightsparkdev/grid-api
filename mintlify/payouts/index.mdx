@@ -8,10 +8,18 @@ import PaymentFlow from '/snippets/payment-flow.mdx';
 
 With {payToBankProductName}, you can send and receive low cost real-time payments to bank accounts worldwide through a single, simple API. {topLevelProductName} automatically routes each payment across its network of {topLevelProductName} switches, handling FX, blockchain settlement, and instant banking off-ramps for you.
 
-- **Single API, global reach**: {payToBankProductName} interacts with the Money Grid to route your payments globally.
-- **No crypto handling**: {payToBankProductName} converts between fiat and crypto for you on demand to simplify your implementation and minimize FX costs.
-- **Real-time settlement**: Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
 
+<CardGroup cols={3}>
+  <Card title="Instant Conversion" icon="bolt">
+    Single API, global reach. {payToBankProductName} interacts with the Money Grid to route your payments globally.
+  </Card>
+  <Card title="Simplified Infrastructure" icon="shield-check">
+    No crypto handling. {payToBankProductName} converts between fiat and crypto for you on demand to simplify your implementation and minimize FX costs.
+  </Card>
+  <Card title="Global Settlement" icon="globe">
+    Real-time settlement. Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
+  </Card>
+</CardGroup>
 
 <PaymentFlow/>
 

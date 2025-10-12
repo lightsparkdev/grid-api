@@ -1,0 +1,72 @@
+<Check>
+**Regulated platforms** have lighter KYC requirements since they handle compliance verification internally.
+</Check>
+
+The KYC/KYB flow allows you to onboard customers through direct API calls.
+
+Regulated financial institutions can:
+
+- **Direct API Onboarding**: Create customers directly via API calls with minimal verification
+- **Internal KYC/KYB**: Handle identity verification through your own compliance systems
+- **Reduced Documentation**: Only provide essential customer information required by your payment counterparty or service provider.
+- **Faster Onboarding**: Streamlined process for known, verified customers
+
+#### Creating Customers via Direct API
+
+For regulated platforms, you can create customers directly through the API without requiring external KYC verification:
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Basic YOUR_API_CREDENTIALS' \
+  -d '{
+    "platformCustomerId": "customer_12345",
+    "customerType": "INDIVIDUAL",
+    "fullName": "Jane Doe",
+    "birthDate": "1992-03-25",
+    "nationality": "US",
+    "address": {
+      "line1": "123 Pine Street",
+      "city": "Seattle",
+      "state": "WA",
+      "postalCode": "98101",
+      "country": "US"
+    },
+    "bankAccountInfo": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "12345678901",
+      "routingNumber": "123456789",
+      "accountCategory": "CHECKING",
+      "bankName": "Chase Bank",
+      "platformAccountId": "chase_primary_1234"
+    }
+  }'
+```
+
+```json Success
+{
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "customer_12345",
+  "customerType": "INDIVIDUAL",
+  "fullName": "Jane Doe",
+  "birthDate": "1992-03-25",
+  "nationality": "US",
+  "address": {
+    "line1": "123 Pine Street",
+    "city": "Seattle",
+    "state": "WA",
+    "postalCode": "98101",
+    "country": "US"
+  },
+  "bankAccountInfo": {
+    "accountType": "US_ACCOUNT",
+    "accountNumber": "12345678901",
+    "routingNumber": "123456789",
+    "accountCategory": "CHECKING",
+    "bankName": "Chase Bank",
+    "platformAccountId": "chase_primary_1234"
+  },
+  "createdAt": "2023-07-21T17:32:28Z",
+  "updatedAt": "2023-07-21T17:32:28Z"
+}
+```
