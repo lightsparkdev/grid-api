@@ -1,49 +1,31 @@
 ---
-title: "Configuring Users"
-description: "Configuring users for Pay 2 Bank"
+title: "Configuring Customer"
+description: "Configuring customers for Payouts"
 ---
 
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
 
-This guide provides comprehensive information about user configuration in the Grid API, including user types, registration processes, management, and bank account information.
+This guide provides comprehensive information about customer configuration in the Grid API, including customer types, registration processes, management, and bank account information.
 
-## User Types
+## Customer Types
 
-The Grid API supports both individual and business users. While the API schema itself makes most Personally Identifiable Information (PII) optional at the initial user creation, specific fields may become mandatory based on the currencies the user will transact with.
+The Grid API supports both individual and business customers. While the API schema itself makes most Personally Identifiable Information (PII) optional at the initial customer creation, specific fields may become mandatory based on the currencies the customer will transact with.
 
-Your platform's configuration (retrieved via `GET /config`) includes a `supportedCurrencies` array. If a user is intended to use a specific currency, any fields listed in for that currency **must** be provided when creating or updating the user.
+Your platform's configuration (retrieved via `GET /config`) includes a `supportedCurrencies` array. If a customer is intended to use a specific currency, any fields listed in for that currency **must** be provided when creating or updating the customer.
 
-The base required information for all users is only:
+The base required information for all customers is only:
 
-- Platform user ID (your internal user identifier)
-- User Type (`INDIVIDUAL` or `BUSINESS`)
+- Platform customer ID (your internal customer identifier)
+- Customer Type (`INDIVIDUAL` or `BUSINESS`)
 - Bank account information (see below for supported formats)
 
-### Individual Users
 
-In some cases, only the above fields are required at user creation! Beyond those base requirements, additional fields commonly associated with individual users include:
+## Customer Registration Process
 
-- Full name
-- Date of birth (YYYY-MM-DD format)
-- Physical address (including country, state, city, postalCode)
+### Creating a New Customer
 
-### Business Users
-
-Beyond the base requirements, additional fields commonly associated with business users include:
-
-- Business information:
-  - Legal name
-  - Registration number
-  - Tax ID 
-- Physical address (including country, state, city, postalCode)
-
-
-## User Registration Process
-
-### Creating a New User
-
-When creating or updating users, the `userType` field must be specified as either `INDIVIDUAL` or `BUSINESS`. Depending if you are a regulated or unregulated platform your KYC/KYB requirements will vary.
+When creating or updating customers, the `customerType` field must be specified as either `INDIVIDUAL` or `BUSINESS`. Depending if you are a regulated or unregulated platform your KYC/KYB requirements will vary.
 
 <AccordionGroup>
     <Accordion title="Regulated Platforms" icon="">
@@ -55,32 +37,32 @@ When creating or updating users, the `userType` field must be specified as eithe
 </AccordionGroup>
 
 
-## User Management
+## Customer Management
 
-### Retrieving User Information
+### Retrieving Customer Information
 
-You can retrieve user information using either the Grid-assigned user ID or your platform's user ID:
+You can retrieve customer information using either the Grid-assigned customer ID or your platform's customer ID:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/users/{userId}" \
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
   -H "Authorization: Basic <base64-encoded-credentials>"
 ```
 
-or list users with a filter:
+or list customers with a filter:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/users?platformUserId={platformUserId}&userType={userType}&createdAfter={createdAfter}&createdBefore={createdBefore}&cursor={cursor}&limit={limit}" \
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers?platformCustomerId={platformCustomerId}&customerType={customerType}&createdAfter={createdAfter}&createdBefore={createdBefore}&cursor={cursor}&limit={limit}" \
   -H "Authorization: Basic <base64-encoded-credentials>"
 ```
 
 Note that this example shows all available filters. You can use any combination of them.
 
-### Updating User Information
+### Updating Customer Information
 
-To update user information:
+To update customer information:
 
 ```bash
-curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/users/{userId}" \
+curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
   -H "Authorization: Basic <base64-encoded-credentials>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -93,7 +75,7 @@ curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/users/{userId}" \
   }'
 ```
 
-Example request body for updating a user's bank account information:
+Example request body for updating a customer's bank account information:
 
 ```json
 {
@@ -109,7 +91,7 @@ Example request body for updating a user's bank account information:
 ## Bank Account Information
 
 The API supports various bank account formats based on country and funding type. There are two types of funding
-mechanisms supported by Grid: an omnibus FBO (for benefit of) account owned by the platform, or direct user-owned accounts. You must provide the correct format based on the user's region and bank account type.
+mechanisms supported by Grid: an omnibus FBO (for benefit of) account owned by the platform, or direct customer-owned accounts. You must provide the correct format based on the customer's region and bank account type.
 
 ### Optional Platform Account ID
 
@@ -129,15 +111,15 @@ Example with platform account ID:
 
 Common use cases for `platformAccountId`:
 
-- Tracking multiple bank accounts and uma addresses for the same user
+- Tracking multiple bank accounts and uma addresses for the same customer
 - Linking accounts to internal accounting systems
 - Maintaining consistency between the Grid API and your platform's account records
 - Facilitating account reconciliation and reporting
 
 ### FBO Accounts
 
-FBO accounts are used when the platform has a single omnibus account that is used to fund all users. Account details
-must be provided manually at the platform level. For each user, during you should simply provide:
+FBO accounts are used when the platform has a single omnibus account that is used to fund all customers. Account details
+must be provided manually at the platform level. For each customer, during you should simply provide:
 
 ```json
 "bankAccountInfo": {
@@ -192,7 +174,7 @@ PIX key types can be one of: `CPF`, `CNPJ`, `PHONE`, `EMAIL`, or `RANDOM`.
 ```json
 {
   "accountType": "UPI",
-  "vpa": "someuser@okbank",
+  "vpa": "somecustomer@okbank",
   "platformAccountId": "upi_primary_1234"
 }
 ```
@@ -210,9 +192,9 @@ PIX key types can be one of: `CPF`, `CNPJ`, `PHONE`, `EMAIL`, or `RANDOM`.
 
 ## Data Validation
 
-The Grid API performs validation on all user data. Common validation rules include:
+The Grid API performs validation on all customer data. Common validation rules include:
 
-- All required fields must be present based on user type
+- All required fields must be present based on customer type
 - Date of birth must be in YYYY-MM-DD format and represent a valid date
 - Names must not contain special characters or excessive spaces
 - Bank account information must follow country-specific formats
@@ -223,30 +205,30 @@ If validation fails, the API will return a 400 Bad Request response with detaile
 ## Best Practices
 
 1. **Identity Verification**: Choose a proper KYC/KYB identity verification flow as detailed in the [Quickstart Guide](/payouts/quickstart#choosing-your-onboarding-flow)
-2. **Data Security**: Store and transmit user data securely, following data protection regulations
-3. **Regular Updates**: Keep user information up to date, especially banking details
+2. **Data Security**: Store and transmit customer data securely, following data protection regulations
+3. **Regular Updates**: Keep customer information up to date, especially banking details
 4. **Error Handling**: Implement proper error handling to manage validation failures gracefully
-5. **Idempotent Operations**: Use your platformUserId consistently to avoid duplicate user creation
+5. **Idempotent Operations**: Use your platformCustomerId consistently to avoid duplicate customer creation
 
-## Bulk User Import Operations
+## Bulk Customer Import Operations
 
-For scenarios where you need to add many users to the system at once, the API provides a CSV file upload endpoint.
+For scenarios where you need to add many customers to the system at once, the API provides a CSV file upload endpoint.
 
 ### CSV File Upload
 
-For large-scale user imports, you can upload a CSV file containing user information:
+For large-scale customer imports, you can upload a CSV file containing customer information:
 
 ```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/users/bulk/csv" \
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/bulk/csv" \
   -H "Authorization: Basic <base64-encoded-credentials>" \
-  -F "file=@users.csv"
+  -F "file=@customers.csv"
 ```
 
-The CSV file should follow a specific format with required and optional columns based on user type. Here's an example:
+The CSV file should follow a specific format with required and optional columns based on customer type. Here's an example:
 
 ```csv
-platformUserId,userType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory
-user123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase Bank,chase_primary_1234,,222888888,SAVINGS
+platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory
+customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase Bank,chase_primary_1234,,222888888,SAVINGS
 biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US,US_ACCOUNT,987654321,Bank of America,boa_business_5678,Acme Corp,121212121,CHECKING
 ```
 
@@ -266,7 +248,7 @@ You can track the job status through:
 2. Status polling endpoint:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/users/bulk/jobs/{jobId}" \
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/bulk/jobs/{jobId}" \
   -H "Authorization: Basic <base64-encoded-credentials>"
 ```
 
@@ -284,7 +266,7 @@ Example job status response:
   },
   "errors": [
     {
-      "platformUserId": "biz456",
+      "platformCustomerId": "biz456",
       "error": {
         "code": "validation_error",
         "message": "Invalid bank account number"
@@ -297,7 +279,7 @@ Example job status response:
 <Tip>
 Best Practices for Bulk Operations
 
-1. Use platform user IDs to track individual users in the bulk operation
+1. Use platform customer IDs to track individual customers in the bulk operation
 2. Implement proper error handling for partial successes
 3. Consider breaking very large datasets into multiple smaller jobs
 4. Use webhooks for real-time status updates on asynchronous jobs
@@ -308,12 +290,12 @@ Best Practices for Bulk Operations
 
 The CSV file should have the following columns:
 
-Required columns for all users:
+Required columns for all customers:
 
-- platformUserId: Your platform's unique identifier for the user
-- userType: Either "INDIVIDUAL" or "BUSINESS"
+- platformCustomerId: Your platform's unique identifier for the customer
+- customerType: Either "INDIVIDUAL" or "BUSINESS"
 
-Required columns for individual users:
+Required columns for individual customers:
 
 - fullName: Individual's full name
 - birthDate: Date of birth in YYYY-MM-DD format
@@ -326,7 +308,7 @@ Required columns for individual users:
 - accountNumber: Bank account number
 - bankName: Name of the bank
 
-Required columns for business users:
+Required columns for business customers:
 
 - businessLegalName: Legal name of the business
 - addressLine1: Street address line 1
@@ -338,17 +320,17 @@ Required columns for business users:
 - accountNumber: Bank account number
 - bankName: Name of the bank
 
-Optional columns for all users:
+Optional columns for all customers:
 
 - addressLine2: Street address line 2
 - platformAccountId: Your platform's identifier for the bank account
-- description: Optional description for the user
+- description: Optional description for the customer
 
-Optional columns for individual users:
+Optional columns for individual customers:
 
-- email: User's email address
+- email: Customer's email address
 
-Optional columns for business users:
+Optional columns for business customers:
 
 - businessRegistrationNumber: Business registration number
 - businessTaxId: Tax identification number
