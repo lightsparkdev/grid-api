@@ -64,55 +64,57 @@ Here is an example of a customer creation request body `bankAccountInfo` is alwa
 
 The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for customer creation itself, but become necessary based on currency and UMA provider requirements if using UMA.
 
-Example request body for an individual customer:
+<Tabs>
+  <Tab title="Individual customer">
+    ```json
+    {
+      "platformCustomerId": "9f84e0c2a72c4fa",
+      "customerType": "INDIVIDUAL",
+      "fullName": "John Sender",
+      "birthDate": "1985-06-15",
+      "address": {
+        "line1": "Paseo de la Reforma 222",
+        "line2": "Piso 15",
+        "city": "Ciudad de México",
+        "state": "Ciudad de México",
+        "postalCode": "06600",
+        "country": "MX"
+      },
+      "bankAccountInfo": {
+        "accountType": "CLABE",
+        "clabeNumber": "123456789012345678",
+        "bankName": "Banco de México"
+      }
+    }
+    ```
+  </Tab>
 
-```json
-{
-  "platformCustomerId": "9f84e0c2a72c4fa",
-  "customerType": "INDIVIDUAL",
-  "fullName": "John Sender",
-  "birthDate": "1985-06-15",
-  "address": {
-    "line1": "Paseo de la Reforma 222",
-    "line2": "Piso 15",
-    "city": "Ciudad de México",
-    "state": "Ciudad de México",
-    "postalCode": "06600",
-    "country": "MX"
-  },
-  "bankAccountInfo": {
-    "accountType": "CLABE",
-    "clabeNumber": "123456789012345678",
-    "bankName": "Banco de México"
-  }
-}
-```
-
-Example request body for a business customer:
-
-```json
-{
-  "platformCustomerId": "b87d2e4a9c13f5b",
-  "customerType": "BUSINESS",
-  "businessInfo": {
-    "legalName": "Acme Corporation",
-    "registrationNumber": "789012345",
-    "taxId": "123-45-6789"
-  },
-  "address": {
-    "line1": "456 Oak Avenue",
-    "line2": "Floor 12",
-    "city": "New York",
-    "state": "NY",
-    "postalCode": "10001",
-    "country": "US"
-  },
-  "bankAccountInfo": {
-    "accountType": "US_ACCOUNT",
-    "accountNumber": "123456789",
-    "routingNumber": "987654321",
-    "accountCategory": "CHECKING",
-    "bankName": "Chase Bank"
-  }
-}
-```
+  <Tab title="Business Customer">
+    ```json
+    {
+      "platformCustomerId": "b87d2e4a9c13f5b",
+      "customerType": "BUSINESS",
+      "businessInfo": {
+        "legalName": "Acme Corporation",
+        "registrationNumber": "789012345",
+        "taxId": "123-45-6789"
+      },
+      "address": {
+        "line1": "456 Oak Avenue",
+        "line2": "Floor 12",
+        "city": "New York",
+        "state": "NY",
+        "postalCode": "10001",
+        "country": "US"
+      },
+      "bankAccountInfo": {
+        "accountType": "US_ACCOUNT",
+        "accountNumber": "123456789",
+        "routingNumber": "987654321",
+        "accountCategory": "CHECKING",
+        "bankName": "Chase Bank"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
