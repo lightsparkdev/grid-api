@@ -30,12 +30,12 @@ Grid supports sending Bitcoin via Lightning Network to self-custody wallets usin
 
 ### Step 1: Collect wallet address
 
-Request the user's Spark wallet address. Spark addresses start with `sprt1`:
+Request the user's Spark wallet address. Spark addresses start with `spark1`:
 
 ```javascript
 function validateSparkAddress(address) {
-  // Spark addresses start with sprt1 and are typically 90+ characters
-  if (!address.startsWith("sprt1")) {
+  // Spark addresses start with spark1 and are typically 90+ characters
+  if (!address.startsWith("spark1")) {
     throw new Error("Invalid Spark wallet address");
   }
 
@@ -48,7 +48,7 @@ function validateSparkAddress(address) {
 
 // Example valid address
 const sparkAddress =
-  "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu";
+  "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu";
 ```
 
 <Warning>
@@ -75,7 +75,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     },
     "accountInfo": {
       "accountType": "SPARK_WALLET",
-      "address": "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
     }
   }'
 ```
@@ -242,8 +242,8 @@ Always validate Spark addresses before processing:
 ```javascript
 function validateSparkAddress(address) {
   // Check format
-  if (!address.startsWith("sprt1")) {
-    return { valid: false, error: "Must start with sprt1" };
+  if (!address.startsWith("spark1")) {
+    return { valid: false, error: "Must start with spark1" };
   }
 
   // Check length (typical Spark addresses are 90+ chars)
@@ -365,7 +365,7 @@ Test self-custody wallet flows in sandbox mode:
 ```javascript
 // Sandbox: Use test Spark addresses
 const testSparkAddress =
-  "sprt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu";
+  "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu";
 
 // Create test transfer
 const testTransfer = await fetch(
