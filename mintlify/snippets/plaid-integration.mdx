@@ -47,7 +47,7 @@ To initiate the Plaid flow, request a link token from Grid:
 <CodeGroup>
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/plaid/link-tokens' \
-  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"

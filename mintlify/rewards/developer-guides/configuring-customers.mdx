@@ -48,7 +48,7 @@ Retrieve a paginated list of customers with optional filtering:
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers?limit=20&customerType=INDIVIDUAL" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ### Query Parameters
@@ -130,7 +130,7 @@ Get detailed information about a specific customer:
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ## Deleting Customers
@@ -139,7 +139,7 @@ Delete a customer by their system-generated ID:
 
 ```bash
 curl -X DELETE "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 <Warning>

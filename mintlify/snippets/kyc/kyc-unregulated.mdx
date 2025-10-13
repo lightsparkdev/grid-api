@@ -16,7 +16,7 @@ The hosted KYC flow provides a secure, hosted interface where customers can comp
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link?redirectUri=https://yourapp.com/onboarding-complete&platformCustomerId=019542f5-b3e7-1d02-0000-000000000001" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 **Response:**
