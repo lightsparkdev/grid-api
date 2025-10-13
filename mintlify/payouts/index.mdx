@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-description: "Introduction to Payouts"
+description: "Integrate Global payments quickly and easily"
 ---
 
 import { payToBankProductName, topLevelProductName } from '/snippets/variables.mdx';
@@ -14,7 +14,7 @@ With {payToBankProductName}, you can send and receive low cost real-time payment
     Single API, global reach. {payToBankProductName} interacts with the Money Grid to route your payments globally.
   </Card>
   <Card title="Simplified Infrastructure" icon="shield-check">
-    No crypto handling. {payToBankProductName} converts between fiat and crypto for you on demand to simplify your implementation and minimize FX costs.
+    No crypto handling. {payToBankProductName} converts between fiat and crypto instantly to simplify your implementation and minimize FX costs.
   </Card>
   <Card title="Global Settlement" icon="globe">
     Real-time settlement. Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
@@ -25,17 +25,25 @@ With {payToBankProductName}, you can send and receive low cost real-time payment
 
 ## {payToBankProductName} Features
 Customers interact with {payToBankProductName} through two main interfaces.
-
-- **API**: Programmatic access to create customers, quotes, fund the account, send payments and reconcile via webhooks.
-- **Dashboard**: Your development and operations team can use the dashboard to monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
+<Tabs>
+  <Tab title="API">
+   Programmatic access to create customers, quotes, fund the account, send payments and reconcile via webhooks.
+  </Tab>
+  <Tab title="Dashboard">
+   Your development and operations team can use the dashboard to monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
+  </Tab>
+</Tabs>
 
 {payToBankProductName} supports the following functionality.  
 
 ### Onboarding customers
+
+<Info>
 {payToBankProductName} has two customer onboarding options - one for non regulated entities where {payToBankProductName} handles the KYC/KYB process and one for regulated entities where you handle the KYC/KYB process.
 
 When creating customers, you'll be able to also connect external accounts or internal accounts to a specific customer and also add accounts for counterparties on the receiving end. 
 To learn more about accounts read our [internal accounts guide](/payouts/depositing-funds/internal-accounts) or setting up [external accounts guide](/payouts/depositing-funds/external-accounts)
+</Info>
 
 ### Funding Payments
 {payToBankProductName} supports multiple transaction funding options including prefunded accounts and real-time funding. You can prefund an account using several payment rails such as ACH, SEPA Instant, wire transfers, Lightning, and more.  
@@ -46,7 +54,12 @@ With real-time funding, you'll receive payment instructions as part of the quote
 To send with {payToBankProductName}, onboard an account for a customer and the counter party, then execute and fund a quote. {payToBankProductName} resolves the receiver by external bank details, returns min/max and an exchange rate, and provides funding instructions. Once funded, {payToBankProductName} handles FX and delivery to the receiving account.
 
 ### Environments
+
+<Note>
 {payToBankProductName} supports two environments: Sandbox and Production. Sandbox mirrors production behavior and webhooks so you can test receiver resolution, quotes and funding instructions, settlement status changes, and full end‑to‑end flows without moving real funds. Production uses live credentials and base URLs for real payments once you’re ready to launch.
+</Note>
+
+---
 
 ### Country Availability
 TODO(ADD COUNTRY AVAILABILITY)
