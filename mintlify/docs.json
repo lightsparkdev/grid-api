@@ -236,6 +236,11 @@
         "label": "Github",
         "href": "https://github.com/lightsparkdev/grid-api",
         "icon": "github"
+      },
+      {
+        "label": "Contact Sales",
+        "href": "mailto:sales@lightspark.com",
+        "icon": "envelope"
       }
     ],
     "primary": {
