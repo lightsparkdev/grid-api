@@ -3,94 +3,19 @@ title: "Receiving Payments"
 description: "Receiving payments from UMA addresses"
 ---
 
-# Receiving Payments
+This guide explains how to enable your customers to receive UMA payments. When an external sender initiates a payment to your customer's UMA address, the Grid API requests the counterparty fields you defined in your platform configuration. You can review the counterparty and transaction details for risk before approving the payment.
 
-This guide outlines the process for platforms to receive payments from UMA addresses.
+<Note>
+Before you begin, make sure you:
 
-## Process Overview
+- Configure UMA, supported currencies, and required counterparty fields in <a href="/global-p2p/getting-started/platform-configuration">Platform Configuration</a>
+- Create customers and capture any provider-required user fields in <a href="/global-p2p/onboarding-customers/creating-customers">Creating Customers</a>
+- Set up and verify webhooks in <a href="/global-p2p/platform-tools/webhooks">Webhooks</a>
+</Note>
 
-The following sequence diagram illustrates the interaction between your platform and the Grid API when receiving payments:
 
-```mermaid
-sequenceDiagram
-    participant Sender as External Sender
-    participant Grid as Grid API
-    participant Client as Your Platform
-    participant Bank as Banking Provider
-    
-    Note over Client, Grid: One-time setup
-    Client->>Grid: PUT /config (set domain, webhook URL)
-    Grid-->>Client: Configuration saved
-    Client->>Grid: POST /users (register users with bank info)
-    Grid-->>Client: User registered
-    
-    Note over Sender, Grid: Payment initiated by sender
-    Sender->>Grid: Initiates payment to UMA address
-    Grid->>Client: Webhook: INCOMING_PAYMENT (PENDING)
-    
-    alt Payment approved
-        Client-->>Grid: HTTP 200 OK (approve payment, provide PII if requested)
-        Grid->>Bank: Execute payment to user's bank account
-        Grid->>Client: Webhook: INCOMING_PAYMENT (COMPLETED)
-        Client-->>Grid: HTTP 200 OK (acknowledge completion)
-    else Payment rejected
-        Client-->>Grid: HTTP 403 Forbidden with rejection reason
-        Grid->>Sender: Payment rejected notification
-    end
-```
 
-The process consists of five main steps:
-
-1. **Platform configuration** (one-time setup) to set your UMA domain and required counterparty fields
-2. **Register users** with their bank account information so they can receive payments
-3. **Set up webhook endpoints** to receive notifications about incoming payments
-4. **Receive and approve/reject incoming payments** via webhooks
-5. **Receive completion notification** when the payment completes
-
-## Step 1: Platform configuration (one-time setup)
-
-Configure your platform settings (if you haven't already in the onboarding process). See the [Platform Configuration](/api-reference/platform-configuration/get-platform-configuration) guide for more details.
-
-## Step 2: Register users with bank account information
-
-First, register your users in the system so they can receive payments via UMA. You can optionally include a `platformAccountId` in the bank account information to link accounts with your internal systems.
-
-```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/users" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "umaAddress": "$john.receiver@thegoodbank.com",
-    "platformUserId": "9f84e0c2a72c4fa",
-    "userType": "INDIVIDUAL",
-    "fullName": "John Receiver",
-    "birthDate": "1985-06-15",
-    "address": {
-      "line1": "123 Pine Street",
-      "line2": "Unit 501",
-      "city": "Seattle",
-      "state": "WA",
-      "postalCode": "98101",
-      "country": "US"
-    },
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123456789",
-      "routingNumber": "987654321",
-      "accountCategory": "CHECKING",
-      "bankName": "Chase Bank",
-      "platformAccountId": "chase_primary_1234"
-    }
-  }'
-```
-
-See the [Configuring Users](/global-p2p/onboarding-customers/configuring-customers) guide for more details.
-
-## Step 3: Webhook setup (one-time setup)
-
-Configure your webhook endpoints to receive notifications about incoming payments. You'll need to implement the webhook endpoints on your server. Remember to validate webhook signatures to ensure they are authentic. See the [Webhook Verification](/global-p2p/platform-tools/webhooks) guide for more details.
-
-## Step 4: Receive and approve incoming payments
+## Receive webhook for initiated payment
 
 When someone initiates a payment to one of your users' UMA addresses, you'll receive a webhook call with a pending transaction:
 
@@ -133,11 +58,11 @@ When someone initiates a payment to one of your users' UMA addresses, you'll rec
 }
 ```
 
-The `counterpartyInformation` object contains PII about the *sender*, provided by their VASP. The `requestedReceiverUserInfoFields` array, if present, lists information fields that the sender's VASP (or governing regulations) require about your user (the *recipient*). Grid does not have this information and is requesting it from your platform to proceed with the payment. Each item in this array is an object specifying the `name` of the field (from `UserInfoFieldName`) and whether it's `mandatory`.
+The `counterpartyInformation` object contains PII about the sender, provided by their FI, based on your configured `requiredCounterpartyFields`. If present, `requestedReceiverUserInfoFields` lists information needed about your user to proceed. Provide those fields when approving.
 
-You have two options for approving or rejecting the payment:
+You can approve or reject the payment synchronously (recommended) or asynchronously:
 
-### Option 1: Synchronous Processing (Recommended)
+### Option 1: Synchronous (recommended)
 
 To approve the payment synchronously, respond with a `200 OK` status:
 
@@ -201,11 +126,13 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/transactions/Transactio
   }'
 ```
 
-> **Important**: If you choose the asynchronous path, you must call the approve/reject endpoint within 5 seconds, or the payment will be automatically rejected. The synchronous path (Option 1) is preferred where possible.
+<Warning>
+If you choose the asynchronous path, you must call the approve/reject endpoint within 5 seconds, or the payment will be automatically rejected.
+</Warning>
 
-## Step 5: Receive completion notification
+## Receive completion notification and credit
 
-When the payment completes, your webhook endpoint will receive another notification:
+When the payment completes, you'll receive another webhook notifying you of the completion:
 
 ```json
 {
@@ -243,33 +170,10 @@ When the payment completes, your webhook endpoint will receive another notificat
 }
 ```
 
-## Detailed UMA flow
+On completion, the received funds are immediately credited to the account associated with the UMA customer. 
 
-This section is not necessary knowledge for platforms, but it describes the flow at a more detailed level including UMA protocol messages for those who are curious.
+## Test the inbound flow
 
-```mermaid
-sequenceDiagram
-    participant Sender as External Sender
-    participant Grid as Grid API
-    participant Client as Your Platform
-    participant Bank as Banking Provider
-    
-    Note over Sender, Grid: Payment initiated by sender
-    Sender->>Grid: Lnurlp request for UMA address
-    Note over Grid: Resolves the UMA address to a registered user
-    Grid->>Client: Webhook: INCOMING_PAYMENT (PENDING)
-    
-    alt Payment approved
-        Client-->>Grid: HTTP 200 OK (approve payment, provide recipient PII if requested)
-        Grid-->>Sender: Payreq response with payee info and a Lightning Invoice
-        Note over Sender: Sender pays Lightning Invoice
-        Grid->>Bank: Execute payment to user's bank account
-        Grid->>Client: Webhook: INCOMING_PAYMENT (COMPLETED)
-        Client-->>Grid: HTTP 200 OK (acknowledge completion)
-    else Payment rejected
-        Client-->>Grid: HTTP 403 Forbidden with rejection reason
-        Grid->>Sender: Failed payreq response.
-    end
-```
+Use the <a href="/global-p2p/platform-tools/uma-test-wallet">UMA Test Wallet</a> to send a regtest payment to your customer's UMA address.
 
 
