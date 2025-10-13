@@ -6,10 +6,10 @@ There are several key entities in the Grid API: **Platform**, **Customers**, **I
 
 - A platform has many customers
 - Customers can have multiple internal accounts (one per currency)
-- Customers can have multiple external accounts (bank accounts)
+- Customers can have multiple external accounts (bank accounts or crypto wallets)
 - The platform has its own internal accounts separate from customers
+- Quotes define the parameters for creating transactions, and lock in an exchange rate for a short period of time
 - Transactions move money between internal accounts, external accounts, and UMA addresses
-- Quotes define the parameters for creating transactions
 - Each customer has one UMA address (optional)
 
 ## Platform
@@ -49,13 +49,13 @@ Internal accounts:
 **External accounts** are traditional bank accounts, crypto wallets, or other payment instruments connected to customers
 for on-ramping or off-ramping funds. Each external account:
 
-- Belongs to a specific customer or the platform
+- Are associated with a specific customer or the platform
 - Represents a real-world bank account (with routing number, account number, IBAN, etc.), wallet, or payment instrument
-- Has an associated beneficiary (individual or business)
+- Has an associated beneficiary (individual or business) who receives payments from the customer or platform
 - Has a status indicating screening status (ACTIVE, PENDING, INACTIVE, etc.)
 - Can be used as a destination for quote-based transfers or same currency transfers like withdrawals
-- For pullable sources like a debit cards or ACH pulls, an external account can be used as a source for transfers-in to
-  fund internal accounts or to fund cross-border transfers.
+- For pullable sources like debit cards or ACH pulls, an external account can be used as a source for transfers-in to
+  fund internal accounts or to fund cross-border transfers via quotes.
 
 ## Quotes
 
@@ -64,7 +64,7 @@ for on-ramping or off-ramping funds. Each external account:
 - Specifies a source (internal account, customer ID, or the platform itself) and destination (internal/external account or UMA address)
 - Locks an exchange rate for a short period (typically 1-5 minutes) or can be immediately executed with the `immediatelyExecute` flag
 - Calculates total fees and amounts for currency conversion
-- Provides payment instructions for funding the transfer if needed
+- Provides payment instructions for funding the transfer if needed, or can be funded via an internal account balance.
 - Must be executed before it expires
 - Creates a transaction when executed
 
