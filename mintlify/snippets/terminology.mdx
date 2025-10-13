@@ -4,19 +4,12 @@ There are several key entities in the Grid API: **Platform**, **Customers**, **I
 <img src="/images/entities.png" alt="Entity relationships diagram showing platform, customers, internal accounts, external accounts, transactions, and UMA addresses" />
 </Frame>
 
-- A platform has many customers
-- Customers can have multiple internal accounts (one per currency)
-- Customers can have multiple external accounts (bank accounts or crypto wallets)
-- The platform has its own internal accounts separate from customers
-- Quotes define the parameters for creating transactions, and lock in an exchange rate for a short period of time
-- Transactions move money between internal accounts, external accounts, and UMA addresses
-- Each customer has one UMA address (optional)
-
 ## Platform
 
 Your **platform** is you! It's the top-level entity that integrates with the Grid API. The platform:
 
 - Has its own configuration (webhook endpoint, supported currencies, API tokens, etc.)
+- A platform can have many customers both business and individual
 - Manages multiple customers and their accounts
 - Can hold platform-owned internal accounts for settlement and liquidity management
 - Acts as the integration point between your application and the open Money Grid
@@ -83,7 +76,7 @@ Transactions are created when:
 - A quote is executed (either incoming or outgoing)
 - A same currency transfer is initiated (transfer-in or transfer-out)
 
-## UMA Addresses
+## UMA Addresses (optional)
 
 **UMA addresses** are human-readable payment identifiers that follow the format `$username@domain.com`. They:
 

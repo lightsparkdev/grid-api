@@ -25,7 +25,7 @@ This quickstart guides you through a regulated FI sending a individual customer 
   Register a customer who will send the payment. You can provide your own UMA handle or let the system generate one.
 
   ```bash
-  curl -sS -X POST "$GRID_BASE_URL/customers" \
+  curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
     -u "$GRID_API_KEY:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
@@ -58,7 +58,7 @@ This quickstart guides you through a regulated FI sending a individual customer 
   Add a beneficiary account in Mexico using their CLABE. We attach it to the same customer for this example.
 
   ```bash
-  curl -sS -X POST "$GRID_BASE_URL/customers/external-accounts" \
+  curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
     -u "$GRID_API_KEY:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
@@ -120,7 +120,7 @@ This quickstart guides you through a regulated FI sending a individual customer 
   Quote a transfer 100 USD from the customer to the MXN CLABE account. The quote returns the exchange rate, fees, and `paymentInstructions` to fund in real time.
 
   ```bash
-  curl -sS -X POST "$GRID_BASE_URL/quotes" \
+  curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
     -u "$GRID_API_KEY:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
@@ -163,7 +163,7 @@ This quickstart guides you through a regulated FI sending a individual customer 
   In production, you would trigger a real‑time push on a local instant rail (e.g., RTP, SPEI, SEPA Instant) to the provided `bankAccountInfo` using the exact `reference`. In Sandbox, you can mock funding using the simulate send endpoint.
 
   ```bash
-  curl -sS -X POST "$GRID_BASE_URL/sandbox/send" \
+  curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
     -u "$GRID_API_KEY:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{

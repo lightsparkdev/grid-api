@@ -15,7 +15,7 @@ Never share or expose your API secret. Rotate credentials periodically and restr
 
 ```bash
 # Using cURL's Basic Auth shorthand (-u):
-curl -sS -X GET "$GRID_BASE_URL/config" \
+curl -sS -X GET "https://api.lightspark.com/grid/2025-10-13/config" \
   -u "$GRID_API_KEY:$GRID_API_SECRET"
 
 ```
@@ -39,7 +39,7 @@ You can trigger a test delivery from the API to validate your endpoint setup. Th
 Use the webhook test endpoint to send a synthetic event to your configured endpoint.
 
 ```bash
-curl -sS -X POST "$GRID_BASE_URL/webhooks/test" \
+curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/webhooks/test" \
   -u "$GRID_API_KEY:$GRID_API_SECRET"
 ```
 
