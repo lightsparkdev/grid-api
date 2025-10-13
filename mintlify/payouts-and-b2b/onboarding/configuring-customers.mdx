@@ -14,12 +14,6 @@ The Grid API supports both individual and business customers. While the API sche
 
 Your platform's configuration (retrieved via `GET /config`) includes a `supportedCurrencies` array. If a customer is intended to use a specific currency, any fields listed in for that currency **must** be provided when creating or updating the customer.
 
-The base required information for all customers is only:
-
-- Platform customer ID (your internal customer identifier)
-- Customer Type (`INDIVIDUAL` or `BUSINESS`)
-- Bank account information (see below for supported formats)
-
 
 ## Customer Registration Process
 
@@ -87,6 +81,8 @@ Example request body for updating a customer's bank account information:
   }
 }
 ```
+
+Note that not all customer information can be updated. Particularly for non-regulated platforms, you cannot update personal information after the customer has been created.
 
 ## Bank Account Information
 
