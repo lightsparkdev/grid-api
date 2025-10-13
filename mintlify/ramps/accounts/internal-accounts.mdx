@@ -193,7 +193,7 @@ Use platform-level internal accounts for pooled liquidity:
 ```bash
 # Get platform internal accounts
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/internal-accounts?currency=BTC' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 <Info>

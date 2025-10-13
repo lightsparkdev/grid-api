@@ -98,7 +98,7 @@ Retrieve transactions using your platform's customer ID:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=your_internal_user_id_12345' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 </Step>

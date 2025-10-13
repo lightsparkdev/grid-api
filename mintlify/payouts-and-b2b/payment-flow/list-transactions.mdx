@@ -8,7 +8,7 @@ Retrieve transaction history with flexible filtering options. Transactions are r
 
 ```bash cURL
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 
 {
   "data": [
@@ -64,14 +64,14 @@ Get all transactions for a specific customer:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 Or use your platform's customer ID:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=customer_12345' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ### Filter by transaction type
@@ -82,14 +82,14 @@ Get only incoming or outgoing transactions:
 <Tab title="Outgoing Only">
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?type=OUTGOING' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 </Tab>
 
 <Tab title="Incoming Only">
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?type=INCOMING' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 </Tab>
 </Tabs>
@@ -101,11 +101,11 @@ Get transactions in a specific status:
 ```bash
 # Get all pending transactions
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?status=PENDING' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 
 # Get all completed transactions
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?status=COMPLETED' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 **Available statuses:**
@@ -122,7 +122,7 @@ Get transactions within a specific date range:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 <Tip>Dates must be in ISO 8601 format (e.g., `2025-10-03T15:00:00Z`).</Tip>
@@ -134,15 +134,15 @@ Get transactions for a specific account:
 ```bash
 # Any transactions involving this account (sent or received)
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?accountIdentifier=InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 
 # Only transactions sent FROM this account
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?senderAccountIdentifier=InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 
 # Only transactions sent TO this account
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?receiverAccountIdentifier=ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ## Combining filters
@@ -152,7 +152,7 @@ You can combine multiple filters to narrow down results:
 ```bash
 # Get completed outgoing transactions for a customer in October 2025
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=OUTGOING&status=COMPLETED&startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ## Pagination
@@ -163,7 +163,7 @@ Handle large result sets with cursor-based pagination:
 <Step title="Get first page">
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?limit=20' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 Response:
@@ -186,7 +186,7 @@ Use the `nextCursor` from the previous response:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?limit=20&cursor=eyJpZCI6IlRyYW5z...' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 </Step>
@@ -231,7 +231,7 @@ Retrieve details for a specific transaction by ID:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000030' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ## Best practices

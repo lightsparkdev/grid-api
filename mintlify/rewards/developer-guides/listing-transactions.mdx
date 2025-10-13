@@ -9,7 +9,7 @@ Retrieve transaction history for Bitcoin rewards distributed through your platfo
 
 ```bash cURL
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ```json response
@@ -65,14 +65,14 @@ Get all Bitcoin rewards sent to a customer:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 Or use your platform's customer ID:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=user_789' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ### Rewards by date range
@@ -82,7 +82,7 @@ Get all rewards distributed in a specific period:
 ```bash
 # October 2025 rewards
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 <Tip>Dates must be in ISO 8601 format (e.g., `2025-10-03T15:00:00Z`).</Tip>
@@ -93,7 +93,7 @@ Track rewards that failed to complete:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?status=FAILED&type=OUTGOING' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 **Transaction statuses:**
@@ -109,7 +109,7 @@ Get all rewards paid from your platform's USD internal account:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?senderAccountIdentifier=InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965&type=OUTGOING' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ## Combining filters
@@ -119,7 +119,7 @@ Narrow down results by combining multiple filters:
 ```bash
 # All completed rewards for a customer in October
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCustomerId=user_789&status=COMPLETED&startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ## Pagination
@@ -160,7 +160,7 @@ Retrieve details for a specific reward transaction:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000025' \
-  -H 'Authorization: Basic <base64-encoded-credentials>'
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
 ## Common use cases

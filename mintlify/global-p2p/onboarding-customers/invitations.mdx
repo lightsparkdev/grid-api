@@ -65,7 +65,7 @@ To create a pay-by-link invitation, include the `amountToSend` field when creati
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/invitations" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "inviterUma": "$inviter@uma.domain",
@@ -119,7 +119,7 @@ POST request to `/invitations/{invitationCode}/claim` including the invitee's ne
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/invitations/019542f5/claim" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "inviteeUma": "$invitee@uma.domain"
@@ -138,7 +138,7 @@ To cancel a pending invitation, make a POST request to `/invitations/{invitation
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/invitations/019542f5/cancel" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 A successful cancellation will:

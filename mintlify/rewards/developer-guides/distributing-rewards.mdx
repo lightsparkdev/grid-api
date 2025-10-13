@@ -22,7 +22,7 @@ You can find your platform's internal account by listing all internal accounts f
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accounts" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 Response:
@@ -41,7 +41,7 @@ The core request specifies your platform's internal account as the source and th
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
@@ -160,7 +160,7 @@ After reviewing the quote's exchange rate and fees, execute it:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 <Note>
@@ -198,7 +198,7 @@ First, create the external account:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
-  -H "Authorization: Basic <base64-encoded-credentials>" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
@@ -257,14 +257,14 @@ Alternatively, poll the quote or transaction endpoint:
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 Or:
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/transactions/{transactionId}" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ## Common Patterns
@@ -309,7 +309,7 @@ Then review the exchange rate and fees, and execute:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute" \
-  -H "Authorization: Basic <base64-encoded-credentials>"
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ## Best Practices
