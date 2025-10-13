@@ -6,7 +6,7 @@ External accounts are bank accounts, cryptocurrency wallets, or payment destinat
 - **Platform external accounts** - Scoped to your platform, used for platform-wide operations like receiving funds from external sources
 
 <Info>
-  Customer external accounts require beneficiary information for compliance.
+  Customer external accounts often require some basic beneficiary information for compliance.
   Platform accounts are managed at the organization level.
 </Info>
 
@@ -432,47 +432,36 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/external-accoun
 
 Use `/transfer-out` for transfers without currency exchange:
 
-```javascript
-const response = await fetch(
-  "https://api.lightspark.com/grid/2025-10-13/transfer-out",
-  {
-    method: "POST",
-    headers: { Authorization: `Basic ${credentials}` },
-    body: JSON.stringify({
-      source: { accountId: "InternalAccount:a12dcbd6..." },
-      destination: { accountId: "ExternalAccount:e85dcbd6..." },
-      amount: 50000, // $500.00 in cents
-    }),
-  }
-);
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": { accountId: "InternalAccount:a12dcbd6..." },
+    "destination": { accountId: "ExternalAccount:e85dcbd6..." },
+    "amount": 50000, // $500.00 in cents
+  }'
 ```
 
 ### Cross-currency transfers
 
 For currency exchange, create and execute a quote:
 
-```javascript
-// 1. Create quote
-const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
-  method: "POST",
-  body: JSON.stringify({
-    source: { accountId: "InternalAccount:a12dcbd6..." },
-    destination: {
-      accountId: "ExternalAccount:e85dcbd6...",
-      currency: "MXN",
-    },
-    lockedCurrencySide: "RECEIVING",
-    lockedCurrencyAmount: 1000000, // 10,000 MXN
-  }),
-}).then((r) => r.json());
+```bash Create quote
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -H 'Authorization: Basic <base64-encoded-credentials>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": { accountId: "InternalAccount:a12dcbd6..." },
+    "destination": { accountId: "ExternalAccount:e85dcbd6...", currency: "MXN" },
+    "lockedCurrencySide": "RECEIVING",
+    "lockedCurrencyAmount": 1000000, // 10,000 MXN
+  }'
+```
 
-// 2. Execute quote
-await fetch(
-  `https://api.lightspark.com/grid/2025-10-13/quotes/${quote.id}/execute`,
-  {
-    method: "POST",
-  }
-);
+```bash Execute quote
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute' \
+  -H 'Authorization: Basic <base64-encoded-credentials>'
 ```
 
 ### Lookup receiver details
@@ -482,57 +471,6 @@ Check supported currencies and rates before creating a quote:
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/receiver/external-account/ExternalAccount:e85dcbd6...?customerId=Customer:019542f5...' \
   -H 'Authorization: Basic <base64-encoded-credentials>'
-```
-
-## Common use cases
-
-### International contractor payments
-
-```javascript
-// Register accounts for multiple countries
-const contractors = [
-  { country: "MX", accountType: "CLABE", clabeNumber: "..." },
-  { country: "BR", accountType: "PIX", pixKey: "..." },
-  { country: "IN", accountType: "UPI", vpa: "contractor@bank" },
-];
-
-for (const contractor of contractors) {
-  const account = await createExternalAccount({
-    currency: contractor.currency,
-    customerId: contractor.customerId,
-    platformAccountId: `contractor_${contractor.id}`,
-    accountInfo: {
-      accountType: contractor.accountType,
-      ...contractor.accountDetails,
-      beneficiary: contractor.beneficiary
-    }
-  });
-
-  await savePaymentMethod(contractor.id, account.id);
-}
-```
-
-### Cryptocurrency withdrawals
-
-```javascript
-// Add Bitcoin Lightning wallet
-const cryptoAccount = await createExternalAccount({
-  currency: "BTC",
-  customerId,
-  platformAccountId: `crypto_wallet_${customerId}`,
-  accountInfo: {
-    accountType: "SPARK_WALLET",
-    address: sparkWalletAddress
-  }
-});
-
-// Send withdrawal
-await createQuote({
-  source: { accountId: internalAccountId },
-  destination: { accountId: cryptoAccount.id, currency: "BTC" },
-  lockedCurrencySide: "SENDING",
-  lockedCurrencyAmount: usdAmountInCents,
-});
 ```
 
 ## Best practices
