@@ -237,17 +237,11 @@ The Grid API performs validation on all customer data. Common validation rules i
 
 - All required fields must be present based on customer type
 - Date of birth must be in YYYY-MM-DD format and represent a valid date
-- Names must not contain special characters or excessive spaces
+- Names must not contain special characters
 - Bank account information must follow country-specific formats
 - Addresses must include all required fields including country code
 
 If validation fails, the API will return a 400 Bad Request response with detailed error information.
-
-## Best practices
-
-1. **Regular updates**: Keep customer information up to date, especially banking details
-1. **Error handling**: Implement proper error handling to manage validation failures gracefully
-1. **Idempotent operations**: Use your platformCustomerId consistently to avoid duplicate customer creation
 
 ## Bulk customer import operations
 
