@@ -77,7 +77,9 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 <Note>
   **Combined External Account Creation**: The `externalAccountDetails` option
   automatically creates the external account (Spark wallet) and uses it as the
-  destination for the Bitcoin transfer in a single API call.
+  destination for the Bitcoin transfer in a single API call. If you want to reuse
+  the same external accounts for many quotes, you can add them using the
+  `/external-accounts` endpoint, and then use the `accountId` in the quote creation request.
 </Note>
 
 ### Response
@@ -109,8 +111,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
     "decimals": 8
   },
   "totalSendingAmount": 10000,
-  "totalReceivingAmount": 95000,
-  "exchangeRate": 9.5,
+  "totalReceivingAmount": 83333,
+  "exchangeRate": 8.3333,
   "feesIncluded": 250,
   "paymentInstructions": [
     {
@@ -130,16 +132,17 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 
 The quote shows:
 
-- **Sending**: $100.00 USD (including $2.50 fee)
-- **Receiving**: 0.00095 BTC (95,000 satoshis)
-- **Exchange rate**: 9.5 sats per USD cent (~$105,000 per BTC)
+- **Sending**: \$100.00 USD (including $2.50 fee)
+- **Receiving**: 0.00083333 BTC (83,333 satoshis)
+- **Exchange rate**: 8.3333 sats per USD cent (~$120,000 per BTC)
 - **Quote expires**: In 5 minutes
 - **Payment instructions**: Bank account details and reference code for funding
 
 <Warning>
   For JIT-funded quotes, do NOT call the `/quotes/{quoteId}/execute` endpoint.
   Simply fund using the payment instructions, and Grid will automatically
-  execute the conversion upon receiving your payment.
+  execute the conversion upon receiving your payment. The execute endpoint is
+  used for quotes with an internal account or pullable external account as the source.
 </Warning>
 
 ---
@@ -208,7 +211,7 @@ Once Grid receives your payment and completes the USD-to-BTC conversion and deli
       }
     },
     "receivedAmount": {
-      "amount": 95000,
+      "amount": 83333,
       "currency": {
         "code": "BTC",
         "name": "Bitcoin",
@@ -220,7 +223,7 @@ Once Grid receives your payment and completes the USD-to-BTC conversion and deli
     "settledAt": "2025-10-03T15:02:30Z",
     "createdAt": "2025-10-03T15:00:00Z",
     "description": "On-ramp: Buy $100 of Bitcoin",
-    "exchangeRate": 9.5,
+    "exchangeRate": 8.3333,
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
     "paymentInstructions": {
       "reference": "RAMP-ABC123"
@@ -233,7 +236,7 @@ Once Grid receives your payment and completes the USD-to-BTC conversion and deli
 ```
 
 <Check>
-  The customer now has 95,000 satoshis (0.00095 BTC) in their Spark wallet!
+  The customer now has 83,333 satoshis (0.00083333 BTC) in their Spark wallet!
 </Check>
 
 ---
