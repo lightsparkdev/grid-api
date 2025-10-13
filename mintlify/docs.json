@@ -22,48 +22,48 @@
         "pages": ["index"]
       },
       {
-        "tab": "Payouts",
+        "tab": "Payouts & B2B",
         "pages": [
-          "payouts/index",
-          "payouts/terminology",
-          "payouts/quickstart",
+          "payouts-and-b2b/index",
+          "payouts-and-b2b/terminology",
+          "payouts-and-b2b/quickstart",
           {
             "group": "Getting Started",
             "pages": [
-              "payouts/onboarding/platform-configuration",
-              "payouts/onboarding/implementation-overview"
+              "payouts-and-b2b/onboarding/platform-configuration",
+              "payouts-and-b2b/onboarding/implementation-overview"
             ]
           },
           {
             "group": "Onboarding",
             "pages": [
-              "payouts/onboarding/configuring-customers"
+              "payouts-and-b2b/onboarding/configuring-customers"
             ]
           },
           {
             "group": "Accounts",
             "pages": [
-              "payouts/depositing-funds/internal-accounts",
-              "payouts/depositing-funds/external-accounts",
-              "payouts/depositing-funds/plaid"
+              "payouts-and-b2b/depositing-funds/internal-accounts",
+              "payouts-and-b2b/depositing-funds/external-accounts",
+              "payouts-and-b2b/depositing-funds/plaid"
             ]
           },
           {
             "group": "Payment Flow",
             "pages": [
-              "payouts/depositing-funds/depositing-funds",
-              "payouts/payment-flow/send-payment",
-              "payouts/payment-flow/list-transactions",
-              "payouts/payment-flow/reconciliation",
-              "payouts/payment-flow/error-handling"
+              "payouts-and-b2b/depositing-funds/depositing-funds",
+              "payouts-and-b2b/payment-flow/send-payment",
+              "payouts-and-b2b/payment-flow/list-transactions",
+              "payouts-and-b2b/payment-flow/reconciliation",
+              "payouts-and-b2b/payment-flow/error-handling"
             ]
           },
           {
             "group": "Platform Tools",
             "pages": [
-              "payouts/platform-tools/webhooks",
-              "payouts/platform-tools/sandbox-testing",
-              "payouts/platform-tools/postman-collection"
+              "payouts-and-b2b/platform-tools/webhooks",
+              "payouts-and-b2b/platform-tools/sandbox-testing",
+              "payouts-and-b2b/platform-tools/postman-collection"
             ]
           }
         ]
