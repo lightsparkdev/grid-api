@@ -1,19 +1,350 @@
-## Fiat
-| Countries | Individual Customer Onboarding (regulated) | Business Customer Onboarding (regulated) | Individual Customer Onboarding (non regulated) | Business Customer Onboarding (non regulated) | Supported Payment Rails |
-|---|:---:|:---:|:---:|:---:|:---:|
-| US | ✅ | ✅ | ✅ | ✅ | ACH, RTP, Wires |
-| MX | ✅ | ✅ | ✅ | ✅ | SPEI |
-| BR | ✅ | ✅ | ✅ | ✅ | PIX |
-| GB | ✅ | ✅ | ✅ | ✅ | Faster Payments |
-| EU | ✅ | ✅ | ✅ | ✅ | SEPA Instant |
-| IN | ✅ | ✅ | ✅ | ✅ | UPI |
+## Supported Countries
+We support Bitcoin and stablecoins globally, below are the list of countries we currently support and the rails we use in each country. 
+<table>
+  <thead>
+    <tr>
+      <th>Country</th>
+      <th>Payment Rails</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>🇦🇹 Austria</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇪 Belgium</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇯 Benin</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇼 Botswana</td>
+      <td><code>SWIFT</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇷 Brazil</td>
+      <td><code>PIX</code> <code>TED</code> <code>DOC</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇬 Bulgaria</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇫 Burkina Faso</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇲 Cameroon</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇦 Canada</td>
+      <td><code>EFT</code> <code>Wire Transfer</code> <code>Interac</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇳 China</td>
+      <td><code>Alipay</code> <code>WeChat Pay</code> <code>UnionPay</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇷 Costa Rica</td>
+      <td><code>SINPE</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇭🇷 Croatia</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇾 Cyprus</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇿 Czech Republic</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇩🇰 Denmark</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇩 DR Congo</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇪🇪 Estonia</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇫🇮 Finland</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇫🇷 France</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇩🇪 Germany</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇬🇭 Ghana</td>
+      <td><code>GhIPSS Instant Pay</code> <code>Mobile Money</code></td>
+    </tr>
+    <tr>
+      <td>🇬🇷 Greece</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇭🇰 Hong Kong</td>
+      <td><code>FPS</code> <code>CHATS</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇭🇺 Hungary</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇸 Iceland</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇳 India</td>
+      <td><code>UPI</code> <code>IMPS</code> <code>NEFT</code> <code>RTGS</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇩 Indonesia</td>
+      <td><code>BI-FAST</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇪 Ireland</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇹 Italy</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇮 Ivory Coast</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇰🇪 Kenya</td>
+      <td><code>M-Pesa</code> <code>RTGS</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇱🇻 Latvia</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇱🇮 Liechtenstein</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇱🇹 Lithuania</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇱🇺 Luxembourg</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇼 Malawi</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇾 Malaysia</td>
+      <td><code>DuitNow</code> <code>FPX</code> <code>RENTAS</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇱 Mali</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇹 Malta</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇽 Mexico</td>
+      <td><code>SPEI</code></td>
+    </tr>
+    <tr>
+      <td>🇳🇱 Netherlands</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇳🇬 Nigeria</td>
+      <td><code>NIP</code> <code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇳🇴 Norway</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code> <code>Vipps</code></td>
+    </tr>
+    <tr>
+      <td>🇵🇭 Philippines</td>
+      <td><code>InstaPay</code> <code>PESONet</code></td>
+    </tr>
+    <tr>
+      <td>🇵🇱 Poland</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇵🇹 Portugal</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇷🇴 Romania</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇳 Senegal</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇬 Singapore</td>
+      <td><code>PayNow</code> <code>FAST</code> <code>MEPS+</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇰 Slovakia</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇮 Slovenia</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇿🇦 South Africa</td>
+      <td><code>RTC</code> <code>EFT</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇰🇷 South Korea</td>
+      <td><code>Bank Transfer</code> <code>Wire Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇪🇸 Spain</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code></td>
+    </tr>
+    <tr>
+      <td>🇱🇰 Sri Lanka</td>
+      <td><code>SLIPS</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇪 Sweden</td>
+      <td><code>SEPA</code> <code>SEPA Instant</code> <code>Swish</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇭 Switzerland</td>
+      <td><code>SEPA</code> <code>SIC</code> <code>TWINT</code></td>
+    </tr>
+    <tr>
+      <td>🇹🇿 Tanzania</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇹🇭 Thailand</td>
+      <td><code>PromptPay</code> <code>BAHTNET</code></td>
+    </tr>
+    <tr>
+      <td>🇹🇬 Togo</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇺🇬 Uganda</td>
+      <td><code>Mobile Money</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇬🇧 United Kingdom</td>
+      <td><code>Faster Payments</code> <code>BACS</code> <code>CHAPS</code></td>
+    </tr>
+    <tr>
+      <td>🇺🇸 United States</td>
+      <td><code>ACH</code> <code>Wire Transfer</code> <code>RTP</code> <code>FedNow</code></td>
+    </tr>
+    <tr>
+      <td>🇻🇳 Vietnam</td>
+      <td><code>VietQR</code> <code>NAPAS</code> <code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇿🇲 Zambia</td>
+      <td><code>ZIPIT</code> <code>Mobile Money</code></td>
+    </tr>
+  </tbody>
+</table>
 
-## Crypto
-| Countries | Individual Customer Onboarding (regulated) | Business Customer Onboarding (regulated) | Individual Customer Onboarding (non regulated) | Business Customer Onboarding (non regulated) | Cryptocurrencies | Supported Rails |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| US | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| EU | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| GB | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| MX | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| BR | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| IN | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
+Payment Rail Glossary
+<AccordionGroup>
+  <Accordion title="Europe - SEPA">
+    **SEPA (Single Euro Payments Area)** - Standard bank transfers across 36 European countries
+**SEPA Instant** - Real-time transfers completed in under 10 seconds, available 24/7/365
+  </Accordion>
+  <Accordion title="Americas">
+    **PIX** (Brazil) - Instant payment system, 24/7 availability
+**TED/DOC** (Brazil) - Traditional bank transfers
+
+**SPEI** (Mexico) - Real-time electronic fund transfers
+
+**ACH** (US) - Automated Clearing House, 1-2 business days
+
+**RTP** (US) - Real-Time Payments network
+
+**FedNow** (US) - Federal Reserve instant payment service
+
+**EFT** (Canada) - Electronic Funds Transfer
+
+**Interac** (Canada) - Instant e-Transfer system
+
+**SINPE** (Costa Rica) - Instant payment system
+  </Accordion>
+  <Accordion title="Asia-Pacific">
+    **UPI/IMPS/NEFT/RTGS** (India) - Unified Payments Interface and various instant/standard transfer systems
+**PromptPay** (Thailand) - Real-time payment system
+
+**BAHTNET** (Thailand) - Interbank payment system
+
+**PayNow** (Singapore) - Peer-to-peer and business payment system
+
+**FAST** (Singapore) - Fast and Secure Transfers
+
+**FPS** (Hong Kong) - Faster Payment System
+
+**CHATS** (Hong Kong) - Clearing House Automated Transfer System
+
+**DuitNow** (Malaysia) - Instant transfer service
+
+**FPX** (Malaysia) - Financial Process Exchange
+
+**InstaPay** (Philippines) - Real-time electronic fund transfer
+
+**PESONet** (Philippines) - Batch electronic fund transfer
+
+**BI-FAST** (Indonesia) - Bank Indonesia Fast Payment System
+
+**VietQR** (Vietnam) - QR-based instant payment
+
+**NAPAS** (Vietnam) - National Payment Corporation system
+
+**Alipay/WeChat Pay/UnionPay** (China) - Major digital payment platforms
+  </Accordion>
+  <Accordion title="Africa">
+    **Mobile Money** - Widely used across Africa for instant transfers (M-Pesa in Kenya, MTN, Airtel, etc.)
+**M-Pesa** (Kenya) - Leading mobile money platform
+
+**GhIPSS Instant Pay** (Ghana) - Real-time payment system
+
+**NIP** (Nigeria) - Nigeria Inter-Bank Settlement System Instant Payment
+
+**RTC** (South Africa) - Real-Time Clearing
+
+**ZIPIT** (Zambia) - Instant payment system
+  </Accordion>
+  <Accordion title="Other Regions">
+    **Vipps** (Norway) - Mobile payment application
+**Swish** (Sweden) - Mobile payment system
+
+**TWINT** (Switzerland) - Mobile payment solution
+
+**SIC** (Switzerland) - Swiss Interbank Clearing
+
+**SLIPS** (Sri Lanka) - Sri Lanka Interbank Payment System
+  </Accordion>
+</AccordionGroup>
