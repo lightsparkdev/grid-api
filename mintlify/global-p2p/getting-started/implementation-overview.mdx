@@ -4,10 +4,6 @@ description: "High-level implementation plan for configuring, onboarding, fundin
 ---
 This page gives you a 1,000‑ft view of an end‑to‑end implementation. It is intentionally generalized because the flow supports multiple customer types and external account types (e.g., CLABE, IBAN, US accounts, UPI). The detailed guides that follow provide concrete fields, edge cases, and step‑by‑step instructions.
 
-<Info>
-This overview highlights the main building blocks: platform setup, onboarding, funding, payout accounts, sending and receiving flows, reconciliation, sandbox testing, and go‑live enablement.
-</Info>
-
 ## Platform configuration
 Configure your platform once before building user flows.
 - Set your UMA domain and brand details used for UMA addressing
@@ -16,16 +12,12 @@ Configure your platform once before building user flows.
 - Generate API credentials for Sandbox (and later Production)
 - Review regional capabilities (rails, currencies, settlement windows)
 
-## Customer creation (onboarding)
-Onboard customers and assign UMA addresses where appropriate. There are two patterns:
+## Customer creation and onboarding
+Onboard customers and assign UMA addresses if appropriate. There are two patterns:
 
-<Note>
-Regulated entities can directly create customers by providing KYC/KYB data via API. Unregulated entities should request a KYC link and embed the hosted KYC flow; once completed, the customer can transact.
-</Note>
-
-- Decide whether you will supply UMA addresses or have them generated
+- Regulated entities can directly create customers by providing KYC/KYB data via API
+- Unregulated entities should request a KYC link and embed the hosted KYC flow; once completed, the customer can transact
 - Store platform customer IDs and UMA handles for use in payment flows
-- Collect any additional compliance attributes required for your corridors
 
 ## Account funding
 Choose how transactions are funded based on your product design and region.
@@ -42,7 +34,7 @@ Register payout accounts your customers will send to (or receive from), such as 
 - Capture beneficiary details (individual or business) and required banking fields
 - Validate account formats where applicable and map them to your internal customer
 
-## Sending payments (high‑level)
+## Sending payments
 Sending consists of lookup, pricing, funding, and execution.
 - Resolve the counterparty: look up receiver information (UMA or bank account) for compliance review and to determine capabilities
 - Create a quote: specify source/destination, currencies, and whether you lock sending or receiving amount; receive exchange rate, limits, fees, and (for JIT) funding instructions
@@ -53,7 +45,7 @@ Sending consists of lookup, pricing, funding, and execution.
 When sending UMA payments, the sender can retrieve counterparty information before initiating to support compliance and risk checks.
 </Note>
 
-## Receiving payments (high‑level)
+## Receiving payments
 Enable customers to receive funds to their UMA or linked bank account.
 - Expose customer UMA/addressing to payers
 - The platform handles conversion and offramping to the receiver’s account currency

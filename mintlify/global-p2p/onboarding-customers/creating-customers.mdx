@@ -60,7 +60,7 @@ There can be multiple customers with the same platformCustomerId but different U
 To register a new customer directly, use the `POST /customers` endpoint (regulated institutions):
 
 ```bash
-curl -sS -X POST "$GRID_BASE_URL/customers" \
+curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   -u "$GRID_API_KEY:$GRID_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -118,7 +118,7 @@ The Grid API validates these requirements and will return an error if they are n
 ### Creating a new business customer (regulated institutions)
 
 ```bash
-curl -sS -X POST "$GRID_BASE_URL/customers" \
+curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   -u "$GRID_API_KEY:$GRID_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -155,7 +155,7 @@ Unregulated institutions should initiate a hosted KYC/KYB flow. Generate a link 
 1. Request a hosted KYC link for a customer using your `platformCustomerId` (optional `redirectUri` to return the user to your app when finished):
 
 ```bash
-curl -sS -G "$GRID_BASE_URL/customers/kyc-link" \
+curl -sS -G "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link" \
   -u "$GRID_API_KEY:$GRID_API_SECRET" \
   --data-urlencode "platformCustomerId=9f84e0c2a72c4fa" \
   --data-urlencode "redirectUri=https://app.example.com/onboarding/completed"
@@ -185,14 +185,14 @@ Response:
 You can retrieve customer information using either the Grid-assigned customer ID or your platform's customer ID:
 
 ```bash
-curl -sS -X GET "$GRID_BASE_URL/customers/{customerId}" \
+curl -sS -X GET "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
   -u "$GRID_API_KEY:$GRID_API_SECRET"
 ```
 
 or list customers with a filter:
 
 ```bash
-curl -sS -G "$GRID_BASE_URL/customers" \
+curl -sS -G "https://api.lightspark.com/grid/2025-10-13/customers" \
   -u "$GRID_API_KEY:$GRID_API_SECRET" \
   --data-urlencode "umaAddress={umaAddress}" \
   --data-urlencode "platformCustomerId={platformCustomerId}" \
@@ -210,7 +210,7 @@ Note that this example shows all available filters. You can use any combination 
 Use PATCH to update customer information:
 
 ```bash
-curl -sS -X PATCH "$GRID_BASE_URL/customers/{customerId}" \
+curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
   -u "$GRID_API_KEY:$GRID_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -237,17 +237,11 @@ The Grid API performs validation on all customer data. Common validation rules i
 
 - All required fields must be present based on customer type
 - Date of birth must be in YYYY-MM-DD format and represent a valid date
-- Names must not contain special characters or excessive spaces
+- Names must not contain special characters
 - Bank account information must follow country-specific formats
 - Addresses must include all required fields including country code
 
 If validation fails, the API will return a 400 Bad Request response with detailed error information.
-
-## Best practices
-
-1. **Regular updates**: Keep customer information up to date, especially banking details
-1. **Error handling**: Implement proper error handling to manage validation failures gracefully
-1. **Idempotent operations**: Use your platformCustomerId consistently to avoid duplicate customer creation
 
 ## Bulk customer import operations
 
@@ -258,7 +252,7 @@ For scenarios where you need to add many customers to the system at once, the AP
 For large-scale customer imports, you can upload a CSV file containing customer information:
 
 ```bash
-curl -sS -X POST "$GRID_BASE_URL/customers/bulk/csv" \
+curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers/bulk/csv" \
   -u "$GRID_API_KEY:$GRID_API_SECRET" \
   -F "file=@customers.csv"
 ```
@@ -287,7 +281,7 @@ You can track the job status through:
 2. Status polling endpoint:
 
 ```bash
-curl -sS -X GET "$GRID_BASE_URL/customers/bulk/jobs/{jobId}" \
+curl -sS -X GET "https://api.lightspark.com/grid/2025-10-13/customers/bulk/jobs/{jobId}" \
   -u "$GRID_API_KEY:$GRID_API_SECRET"
 ```
 
