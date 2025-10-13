@@ -241,7 +241,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dash.lightspark.com"
+      "href": "https://lightspark.com/grid#signup"
     }
   },
   "contextual": {
