@@ -1,11 +1,12 @@
 ## Payment Flow
 <Steps>
-  <Step title="On-Ramp">
-    Fund with fiat/crypto and convert to BTC.
+  <Step title="Fund Internal Account or prepare for Just-in-Time Funding">
+    You can either prefund an internal account with fiat or receive just-in-time payment instructions as part of the quote.
   </Step>
-  <Step title="Lightning Settlement">
-    Instantly send payment to the receiving locale.
+  <Step title="Create Quote">
+    Create a quote to lock exchange rate to the receiving foreign account and parse payment instructions.
   </Step>
-  <Step title="Off-Ramp & Payout">
-    Convert BTC to local fiat for instant deposit via local banking rails.
+  <Step title="Execute Quote">
+    Execute the quote or send funds as per payment instructions to initiate the transfer from the internal account to the external bank account.
+  </Step>
 </Steps>
