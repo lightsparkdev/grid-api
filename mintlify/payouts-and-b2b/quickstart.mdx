@@ -1,60 +1,79 @@
 ---
 title: "Quickstart"
-description: "Complete guide for sending cross-border payments from basic bank transfers to advanced multi-currency scenarios across different customer types"
+description: "Send your first cross-border payment"
 ---
 
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx';
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx';
 
-This quick guide covers an end-to-end example of sending cross-border payouts for different customer types using the Grid API.
+This quickstart covers an example of sending a prefunded cross-border payout for a business customer on an unregulated platform. 
 
-## Prerequisites
+## Get API credentials
+  Create a Sandbox API credentialsin the dashboard, then set environment variables for local use.
 
-Before starting this guide, ensure you have:
+  ```bash
+  export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
+  export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
+  export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
+  ```
 
-- A Grid API account with valid authentication credentials
-- Access to the Grid API endpoints (production or sandbox)
-- A webhook endpoint configured to receive notifications
-- Understanding of your customer type and compliance requirements
+  <Tip>
+  Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_API_SECRET"`.
+  </Tip>
 
-## Overview
+## Onboard a Customer
+Onboard a customer using the hosted KYC/KYB link flow.
+### Generate KYC Link
+  Call the `/customers/kyc-link` endpoint with your `redirectUri` parameter to generate a hosted KYC URL for your customer.
+  
+  <Note>
+  The `redirectUri` parameter is embedded in the generated KYC URL and will be used to automatically redirect the customer back to your application after they complete verification.
+  </Note>
+  ```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link?redirectUri=https://yourapp.com/onboarding-complete&platformCustomerId=019542f5-b3e7-1d02-0000-000000000001" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+**Response:**
 
-Cross-border payments enable transfers between different currencies using real-time exchange rates. The Grid API supports:
+```json
+{
+  "kycUrl": "https://kyc.lightspark.com/onboard/abc123def456",
+  "platformCustomerId": "019542f5-b3e7-1d02-0000-000000000001"
+}
+```
+### Redirect Customer
+  Redirect your customer to the returned `kycUrl` where they can complete their identity verification in the hosted interface.
+  
+  <Warning>
+  The KYC link is single-use and expires after a limited time period for security.
+  </Warning>
 
-- **Fiat currencies**: USD (primary), with support for many other currencies as payment destination external accounts
-- **Cryptocurrencies**: Bitcoin (BTC) and Stablecoins
+### Customer Completes Verification
+  The customer completes the identity verification process in the hosted KYC interface, providing required documents and information.
+  
+  <Info>
+  The hosted interface handles document collection, verification checks, and compliance requirements automatically.
+  </Info>
+  
+  <Note>
+  After verification processing, you'll receive a KYC status webhook notification indicating the final verification result.
+  </Note>
 
-### Funding Account Types
+### Redirect back to your app
+  Upon successful KYC completion, the customer is automatically redirected to your specified `redirectUri` URL.
+  
+  On your redirect page, handle the completed KYC flow and integrate the new customer into your application.
 
-- **Internal Accounts**: USD or EUR accounts managed by Grid, funded via bank transfers or crypto deposits using `paymentInstructions` or quotes (described below).
-- **External Accounts**: External real-world bank accounts or crypto wallets supporting various asset types including fiat, crypto, and stablecoins
+  <Check>
+  The customer account will be automatically created by the system upon successful KYC completion. You can identify the new customer using your `platformCustomerId` or other identifiers.
+  </Check>
 
-## Basic Example: Send to Foreign Bank Account
+## Get the Customer's Internal Account
 
-This example walks through the complete process of sending funds to an external bank account, from customer onboarding through quote execution.
-
-### Step 1: Customer Onboarding
-
-If your platform is a regulated financial institution that already has a KYC/KYB process in place,
-you can create a customer directly via the API. However, if your platform is not regulated, you must use the hosted KYC/KYB
-link flow to onboard your customers.
-
-<Tabs>
-  <Tab title="Regulated Platforms">
-    <KycRegulated />
-  </Tab>
-  <Tab title="Unregulated Platforms">
-    <KycUnregulated />
-  </Tab>
-</Tabs>
-
-### Step 2: List Internal Accounts
-
-Once the customer is created, internal accounts will automatically be created on their behalf. List their
-internal accounts to see the available balances and funding instructions.
+Once the customer is created, internal accounts will automatically be created on their behalf. Get their internal account in the desired currency for funding instructions.
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/internal-account?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/internal-account?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USD" \
   -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
@@ -99,15 +118,25 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/internal-account?custome
 The `fundingPaymentInstructions` provide the bank account details and reference code needed to fund
 this internal account via ACH or wire transfer from the customer's bank.
 
-### Step 3: Fund the Internal Account
+## Fund the Internal Account
+For this quickstart, we'll fund the account using the `/sandbox/internal-accounts/{accountId}/fund` endpoint to simulate receiving funds.
 
-Your customer initiates an ACH transfer from their bank to the account details provided in the funding instructions,
+In production, your customer would initiate a transfer from their bank to the account details provided in the funding instructions,
 making sure to include the reference code `FUND-ABC123` in the transfer memo.
 
-<Note>
-  In sandbox mode, you can use the `/sandbox/internal-accounts/{accountId}/fund` endpoint to simulate receiving funds.
-  In production, actual ACH transfers can take 1-3 business days to settle.
-</Note>
+```bash
+# Sandbox: fund internal account directly
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965/fund" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currencyCode": "USD",
+    "currencyAmount": 100000,
+    "reference": "FUND-ABC123"
+  }'
+```
+
+During the funding process, you'll receive transaction status update webhooks.
 
 **Webhook Notification:**
 ```json
@@ -137,11 +166,10 @@ making sure to include the reference code `FUND-ABC123` in the transfer memo.
 ```
 
 The internal account now has a balance of $1,000.00 (100000 cents).
+## Add the beneficiary as an External Account
 
-### Step 4: Add an External Bank Account
-
-Now add the destination bank account where you want to send the funds. In this example, we'll add a
-Mexican CLABE account as the destination external account.
+Now add the beneficiary bank account where you want to send the funds. In this example, we'll add a
+Mexican CLABE account as the external account.
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
@@ -200,45 +228,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }
 }
 ```
-
-### Step 5: Look Up the External Account (Optional)
-
-As an optional step before creating a quote, you can look up the external account to verify supported
-currencies and get estimated exchange rates.
-
-```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/external-account/ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-```
-
-**Response:**
-```json
-{
-  "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-  "supportedCurrencies": [
-    {
-      "currency": {
-        "code": "MXN",
-        "name": "Mexican Peso",
-        "symbol": "$",
-        "decimals": 2
-      },
-      "estimatedExchangeRate": 17.25,
-      "min": 1000,
-      "max": 1000000
-    }
-  ],
-  "lookupId": "LookupRequest:019542f5-b3e7-1d02-0000-000000000009"
-}
-```
-
-This shows you can send MXN to this account, with an estimated exchange rate of 17.25 MXN per 1 USD.
-The minimum send amount is 10.00 MXN and the maximum is 10,000.00 MXN.
-
-### Step 6: Create a Quote
-
-Create a quote to lock in the exchange rate, fees, and get the final transfer details. If you are using
-the optional step of looking up the external account, you can use the `lookupId` to create the quote.
+## Create a quote
+Create a quote to lock in the exchange rate, fees, and get the  transfer details.
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
@@ -311,39 +302,7 @@ The quote shows:
   Quotes typically expire in 1-5 minutes. Make sure to execute the quote before the `expiresAt` timestamp, or you'll need to create a new quote.
 </Warning>
 
-**Alternative: Send Payout To External Account For Crypto**
-
-Send a BTC payout from an internal account to an external account executed immediately:
-
-```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": {
-      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
-    },
-    "destination": {
-      "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
-    },
-    "lockedCurrencySide": "SENDING",
-    "lockedCurrencyAmount": 50000,
-    "immediatelyExecute": true, # Execute immediately at the current market rate
-    "description": "Payment to Maria Garcia for services"
-  }'
-```
-
-This will send the external spark wallet address $500.00 USD worth of BTC immediately at the current market rate.
-
-### Step 7: Execute the Quote
-
+## Execute the quote
 Execute the quote to initiate the transfer from the internal account to the external bank account.
 
 ```bash
@@ -388,7 +347,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
 
 The quote status changes to `PROCESSING` and the transfer is initiated. You can track the status by:
 1. Polling the quote endpoint: `GET /quotes/{quoteId}`
-2. Waiting for a webhook notification
+2. Waiting for webhook notifications
 
 **Completion Webhook:**
 ```json
@@ -428,41 +387,4 @@ The quote status changes to `PROCESSING` and the transfer is initiated. You can 
 }
 ```
 
----
-
-## Best Practices
-
-### 1. Currency Selection
-- **USD or EUR (Internal Accounts)**: Primary fiat currency for traditional business payments
-- **Multi-currency (External Accounts)**: Support for various fiat, crypto, and stablecoin currencies
-- **Stablecoins**: Ideal for faster settlements and lower fees
-- **BTC**: Suitable for crypto-savvy businesses, rewards, and more
-
-### 2. Exchange Rate Management
-- Always check current rates before creating quotes
-- Consider quote expiration times (typically 1-5 minutes)
-
-### 3. Compliance Considerations
-- Ensure proper KYB/KYC verification for each customer type
-- Maintain audit trails for all cross-border transactions if you are a regulated platform
-- Implement proper webhook signature verification
-- Support both business-to-business and business-to-individual payment flows
-
-### 4. Error Handling
-- Monitor quote status and handle failures gracefully
-- Implement proper retry mechanisms for failed transfers
-- Use webhooks for real-time status updates
-- Handle both internal and external account funding scenarios
-
-## Next Steps
-
-- **API Reference**: Explore the complete [API](/api-reference/environments)
-- **Platform Configuration**: Set up your [platform settings](/api-reference/platform-configuration/get-platform-configuration)
-- **Webhook Security**: Implement [webhook verification](/payouts-and-b2b/platform-tools/webhooks)
-- **Sandbox Testing**: Test your integration in [sandbox mode](/payouts-and-b2b/platform-tools/sandbox-testing)
-
-## Related Resources
-
-- [Platform Configuration](/api-reference/platform-configuration/update-platform-configuration) - Configure your platform
-- [Webhooks Guide](/payouts-and-b2b/platform-tools/webhooks) - Real-time notifications
-- [Sandbox Testing](/payouts-and-b2b/platform-tools/sandbox-testing) - Safe testing environment
+Congrats, you've sent a real time cross-border payout to a Mexican bank account!
