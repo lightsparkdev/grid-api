@@ -8,16 +8,16 @@ This quickstart guides you through a regulated FI sending an individual customer
 
 <Steps>
 <Step title="Get API credentials">
-  Create a Sandbox API key and secret in the dashboard, then set environment variables for local use.
+  Create a Sandbox API credentialsin the dashboard, then set environment variables for local use.
 
   ```bash
   export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
-  export GRID_API_KEY="YOUR_SANDBOX_KEY"
-  export GRID_API_SECRET="YOUR_SANDBOX_SECRET"
+  export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
+  export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
   ```
 
   <Tip>
-  Use Basic Auth in cURL with `-u "$GRID_API_KEY:$GRID_API_SECRET"`.
+  Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_API_SECRET"`.
   </Tip>
 </Step>
 
@@ -26,7 +26,7 @@ This quickstart guides you through a regulated FI sending an individual customer
 
   ```bash
   curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
-    -u "$GRID_API_KEY:$GRID_API_SECRET" \
+    -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
       "platformCustomerId": "cust_7b3c5a89d2f1e0",
@@ -59,7 +59,7 @@ This quickstart guides you through a regulated FI sending an individual customer
 
   ```bash
   curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
-    -u "$GRID_API_KEY:$GRID_API_SECRET" \
+    -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
       "currency": "MXN",
@@ -121,7 +121,7 @@ This quickstart guides you through a regulated FI sending an individual customer
 
   ```bash
   curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-    -u "$GRID_API_KEY:$GRID_API_SECRET" \
+    -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
       "source": {
@@ -164,7 +164,7 @@ This quickstart guides you through a regulated FI sending an individual customer
 
   ```bash
   curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
-    -u "$GRID_API_KEY:$GRID_API_SECRET" \
+    -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
     -H "Content-Type: application/json" \
     -d '{
       "reference": "UMA-Q12345-REF",

@@ -21,7 +21,7 @@ Create API credentials in the Grid dashboard. Credentials are scoped to an envir
 ```bash
 # Using cURL's Basic Auth shorthand (-u):
 curl -sS -X GET 'https://api.lightspark.com/grid/2025-10-13/config' \
-  -u "$GRID_API_KEY:$GRID_API_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET"
 ```
 
 ## Base API path
@@ -95,7 +95,7 @@ Use the webhook test endpoint to verify your endpoint configuration:
 
 ```bash
 curl -sS -X POST 'https://api.lightspark.com/grid/2025-10-13/webhooks/test' \
-  -u "$GRID_API_KEY:$GRID_API_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET"
 ```
 
 **Example test webhook payload:**
@@ -128,7 +128,7 @@ You can retrieve your current platform configuration programmatically:
 
 ```bash
 curl -sS -X GET 'https://api.lightspark.com/grid/2025-10-13/config' \
-  -u "$GRID_API_KEY:$GRID_API_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET"
 ```
 
 **Response example:**
@@ -162,7 +162,7 @@ Update your platform configuration using the PATCH endpoint:
 
 ```bash
 curl -sS -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "webhookEndpoint": "https://api.mycompany.com/webhooks/grid",
