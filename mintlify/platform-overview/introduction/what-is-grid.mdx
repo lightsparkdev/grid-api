@@ -4,16 +4,14 @@ title: "What is Grid?"
 
 Grid is a low-level payment infrastructure API that enables modern financial institutions, businesses, or any developer to send, receive, and settle value globally across fiat currencies, stablecoins, and Bitcoin. With a single, simple API, you can build applications that move money instantly across borders without the complexity of orchestrating multiple payment rails or currencies.
 
-
 ## Features
 
-|                                                                                                                  |
-| ----------------------------------------------------------------------------------------------------------------------- |
-| <Icon icon="code" /> **One API**<br/>Move money anywhere. Fiat to fiat, crypto to fiat, or the other way around, all through a single API.          |
-| <Icon icon="globe" /> **Global Coverage**<br/>Send and receive across 65+ countries using local instant rails or global crypto rails. |
-| <Icon icon="bolt" /> **Real-Time Settlement**<br/>Instant, 24/7/365. Powered by Bitcoin and local payment networks. |
+|                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------- |
+| <Icon icon="code" /> **One API**<br/>Move money anywhere. Fiat to fiat, crypto to fiat, or the other way around, all through a single API.   |
+| <Icon icon="globe" /> **Global Coverage**<br/>Send and receive across 65+ countries using local instant rails or global crypto rails.        |
+| <Icon icon="bolt" /> **Real-Time Settlement**<br/>Instant, 24/7/365. Powered by Bitcoin and local payment networks.                          |
 | <Icon icon="shield-check" /> **No Crypto Headaches**<br/>We handle all the on-chain logic, wallet ops, and conversions so you don’t have to. |
-
 
 ## What to build
 
@@ -30,17 +28,65 @@ Whether you're receiving Bitcoin or sending dollars as pesos to a bank account, 
 
   </Tab>
 
-  <Tab title="Stablecoin Payments">
-    - **Stablecoin Payouts**: Send a stablecoin to users, wallets, or bank accounts directly.
-    - **Global USD Account**: Let users hold a stable USD balance anywhere in the world.
-    - **Orchestration**: Move liquidity between stablecoins and fiat automatically.
-    - **Treasury**: Park business reserves in stablecoins with instant conversion to local currency when needed.
-  </Tab>
+{" "}
+<Tab title="Stablecoin Payments">
+  - **Stablecoin Payouts**: Send a stablecoin to users, wallets, or bank
+  accounts directly. - **Global USD Account**: Let users hold a stable USD
+  balance anywhere in the world. - **Orchestration**: Move liquidity between
+  stablecoins and fiat automatically. - **Treasury**: Park business reserves in
+  stablecoins with instant conversion to local currency when needed.
+</Tab>
 
-  <Tab title="Bitcoin Payments">
-    - **Buy & Sell Bitcoin**: Enable users to buy or sell Bitcoin instantly inside your app.
-    - **Rewards**: Offer instant Bitcoin cashbacks for actions or purchases.
-    - **Merchant Settlement**: Accept Bitcoin and auto-convert to fiat on the fly.
-  </Tab>
+{" "}
+<Tab title="Bitcoin Payments">
+  - **Buy & Sell Bitcoin**: Enable users to buy or sell Bitcoin instantly inside
+  your app. - **Rewards**: Offer instant Bitcoin cashbacks for actions or
+  purchases. - **Merchant Settlement**: Accept Bitcoin and auto-convert to fiat
+  on the fly.
+</Tab>
 
-</Tabs>  
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card
+  title="Entities & Relationships"
+  icon="diagram-project"
+  href="/platform-overview/core-concepts/entities"
+>
+  Understand Grid's core data model and how entities relate to each other
+</Card>
+
+<Card
+  title="Quote System"
+  icon="money-bill-transfer"
+  href="/platform-overview/core-concepts/quote-system"
+>
+  Learn how exchange rates, pricing, and payment execution work
+</Card>
+
+<Card
+  title="Account Model"
+  icon="building-columns"
+  href="/platform-overview/core-concepts/account-model"
+>
+  Explore internal and external accounts and how they work together
+</Card>
+
+<Card
+  title="Transaction Lifecycle"
+  icon="arrows-spin"
+  href="/platform-overview/core-concepts/transaction-lifecycle"
+>
+  Follow a payment from creation through settlement
+</Card>
+
+<Card
+  title="Currencies & Payment Rails"
+  icon="earth-americas"
+  href="/platform-overview/core-concepts/currencies-and-rails"
+>
+  View supported currencies, countries, and payment methods
+</Card>
+</CardGroup>
