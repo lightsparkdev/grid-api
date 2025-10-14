@@ -48,17 +48,12 @@
         "pages": [
           "payouts-and-b2b/index",
           "payouts-and-b2b/terminology",
+          "payouts-and-b2b/onboarding/implementation-overview",
           "payouts-and-b2b/quickstart",
-          {
-            "group": "Getting Started",
-            "pages": [
-              "payouts-and-b2b/onboarding/platform-configuration",
-              "payouts-and-b2b/onboarding/implementation-overview"
-            ]
-          },
           {
             "group": "Onboarding",
             "pages": [
+              "payouts-and-b2b/onboarding/platform-configuration",
               "payouts-and-b2b/onboarding/configuring-customers"
             ]
           },
@@ -95,17 +90,12 @@
         "pages": [
           "ramps/index",
           "ramps/terminology",
+          "ramps/onboarding/implementation-overview",
           "ramps/quickstart",
-          {
-            "group": "Getting Started",
-            "pages": [
-              "ramps/onboarding/implementation-overview",
-              "ramps/onboarding/platform-configuration"
-            ]
-          },
           {
             "group": "Onboarding",
             "pages": [
+              "ramps/onboarding/platform-configuration",
               "ramps/onboarding/configuring-customers"
             ]
           },
@@ -140,17 +130,12 @@
         "pages": [
           "rewards/index",
           "rewards/terminology",
+          "rewards/developer-guides/implementation-overview",
           "rewards/quickstart",
-          {
-            "group": "Getting Started",
-            "pages": [
-              "rewards/developer-guides/implementation-overview",
-              "rewards/developer-guides/platform-configuration"
-            ]
-          },
           {
             "group": "Onboarding",
             "pages": [
+              "rewards/developer-guides/platform-configuration",
               "rewards/developer-guides/configuring-customers"
             ]
           },
@@ -184,18 +169,12 @@
         "pages": [
           "global-p2p/index",
           "global-p2p/terminology",
-          "global-p2p/country-support",
+          "global-p2p/getting-started/implementation-overview",
           "global-p2p/quickstart",
           {
-            "group": "Getting Started",
+            "group": "Onboarding",
             "pages": [
-              "global-p2p/getting-started/implementation-overview",
-              "global-p2p/getting-started/platform-configuration"
-            ]
-          },
-          {
-            "group": "Onboarding Customers",
-            "pages": [
+              "global-p2p/getting-started/platform-configuration",
               "global-p2p/onboarding-customers/configuring-customers",
               "global-p2p/onboarding-customers/invitations"
             ]
