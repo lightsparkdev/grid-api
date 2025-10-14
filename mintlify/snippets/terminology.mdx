@@ -4,6 +4,28 @@ There are several key entities in the Grid API: **Platform**, **Customers**, **I
 <img src="/images/entities.png" alt="Entity relationships diagram showing platform, customers, internal accounts, external accounts, transactions, and UMA addresses" />
 </Frame>
 
+## Entity Relationships
+
+Understanding how entities relate to each other is key to working effectively with the Grid API:
+
+```
+Platform
++-- Platform Internal Accounts (for settlement/liquidity)
+|   +-- Balance in each supported currency
++-- Customers
+|   +-- KYC/KYB Status
+|   +-- UMA Address (optional)
+|   +-- Platform Customer ID (your system's ID)
+|   +-- Customer Internal Accounts
+|   |   +-- Balance in each currency
+|   +-- External Accounts
+|       +-- Bank accounts (US_ACCOUNT, IBAN_ACCOUNT, etc.)
+|       +-- Crypto wallets (SPARK_WALLET)
++-- Transactions
+    +-- Quotes (pre-transaction rate locks)
+    +-- Transaction records (INCOMING/OUTGOING)
+```
+
 ## Platform
 
 Your **platform** is you! It's the top-level entity that integrates with the Grid API. The platform:

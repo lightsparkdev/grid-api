@@ -1,0 +1,334 @@
+---
+title: "Transaction Lifecycle"
+description: "Follow a payment from creation to settlement"
+---
+
+Understanding the transaction lifecycle helps you build robust payment flows, handle edge cases, and provide accurate status updates to your customers.
+
+## Transaction States
+
+Transactions progress through several states from creation to completion:
+
+```
+PENDING → PROCESSING → COMPLETED
+                    ↓
+                  FAILED
+```
+
+### Status Descriptions
+
+| Status | Description | Next State | Actions Available |
+|--------|-------------|------------|-------------------|
+| **PENDING** | Transaction created, awaiting processing | PROCESSING, FAILED | Monitor status |
+| **PROCESSING** | Payment being routed and settled | COMPLETED, FAILED | Monitor status |
+| **COMPLETED** | Successfully delivered to recipient | Terminal | None (final state) |
+| **FAILED** | Transaction failed, funds refunded if applicable | Terminal | Create new transaction |
+| **REJECTED** | Rejected by recipient or compliance | Terminal | None (final state) |
+| **REFUNDED** | Completed transaction later refunded | Terminal | None (final state) |
+| **EXPIRED** | Quote or payment expired before execution | Terminal | Create new quote |
+
+<Tip>
+**Terminal statuses**: `COMPLETED`, `REJECTED`, `FAILED`, `REFUNDED`, `EXPIRED`
+
+Once a transaction reaches a terminal status, it will not change further.
+</Tip>
+
+## Outgoing Transaction Flow
+
+**Your customer/platform sends funds to an external recipient.**
+
+### Step-by-Step
+
+<Steps>
+  <Step title="Create Quote">
+    Lock in exchange rate and fees:
+
+    ```bash
+    POST /quotes
+
+    {
+      "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},s
+      "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR"},
+      "lockedCurrencySide": "SENDING",
+      "lockedCurrencyAmount": 100000
+    }
+    ```
+
+    **Response:**
+    - Quote ID
+    - Locked exchange rate
+    - Expiration time (1-5 minutes)
+  </Step>
+
+  <Step title="Execute Quote">
+    Initiate the payment:
+
+    ```bash
+    POST /quotes/{quoteId}/execute
+    ```
+
+    **Result:**
+    - Transaction created with status `PENDING`
+    - Source account debited immediately
+    - `OUTGOING_PAYMENT` webhook sent
+  </Step>
+
+  <Step title="Processing">
+    Grid handles:
+    - Currency conversion (if applicable)
+    - Routing to appropriate payment rail
+    - Settlement with destination bank/wallet
+
+    **Status**: `PROCESSING`
+
+    **Webhook**: `OUTGOING_PAYMENT` with updated status
+  </Step>
+
+  <Step title="Completion or Failure">
+    **Success Path:**
+    - Funds delivered to recipient
+    - Status: `COMPLETED`
+    - `settledAt` timestamp populated
+    - Final `OUTGOING_PAYMENT` webhook sent
+
+    **Failure Path:**
+    - Delivery failed (invalid account, etc.)
+    - Status: `FAILED`
+    - `failureReason` populated
+    - Funds automatically refunded to source account
+    - Final `OUTGOING_PAYMENT` webhook sent
+  </Step>
+</Steps>
+
+Most transactions on Grid are completed in seconds.
+
+### Webhook Payloads
+
+**On Creation (PENDING):**
+
+```json
+{
+  "type": "OUTGOING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:...",
+    "status": "PENDING",
+    "type": "OUTGOING",
+    "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
+    "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
+    "createdAt": "2025-10-03T15:00:00Z"
+  }
+}
+```
+
+**On Completion:**
+
+```json
+{
+  "type": "OUTGOING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:...",
+    "status": "COMPLETED",
+    "settledAt": "2025-10-03T15:05:00Z"
+  }
+}
+```
+
+**On Failure:**
+
+```json
+{
+  "type": "OUTGOING_PAYMENT",
+  "transaction": {
+    "id": "Transaction:...",
+    "status": "FAILED",
+    "failureReason": "INVALID_BANK_ACCOUNT"
+  }
+}
+```
+
+## Same-Currency Transfers
+
+For same-currency transfers without quotes:
+
+### Transfer-Out (Internal → External)
+
+```bash
+POST /transfer-out
+
+{
+  "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+  "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "USD"},
+  "amount": 100000
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "Transaction:...",
+  "status": "PENDING",
+  "type": "OUTGOING"
+}
+```
+
+Follows same lifecycle as quote-based outgoing transactions.
+
+### Transfer-In (External → Internal)
+
+```bash
+POST /transfer-in
+
+{
+  "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "USD"},
+  "destination": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+  "amount": 100000
+}
+```
+
+Only works for "pullable" external accounts (Plaid-linked, debit cards, etc.).
+
+## Monitoring Transactions
+
+### Via Webhooks (Recommended)
+
+Subscribe to transaction webhooks for real-time updates:
+
+```javascript
+app.post('/webhooks/grid', async (req, res) => {
+  const {transaction, type} = req.body;
+
+  if (type === 'OUTGOING_PAYMENT') {
+    await updateTransactionStatus(transaction.id, transaction.status);
+
+    if (transaction.status === 'COMPLETED') {
+      await notifyCustomer(transaction.customerId, 'Payment delivered!');
+    } else if (transaction.status === 'FAILED') {
+      await notifyCustomer(transaction.customerId, `Payment failed: ${transaction.failureReason}`);
+    }
+  }
+
+  res.status(200).json({received: true});
+});
+```
+
+### Via Polling (Backup)
+
+Query transaction status periodically:
+
+```bash
+GET /transactions/{transactionId}
+```
+
+**Response:**
+
+```json
+{
+  "id": "Transaction:...",
+  "status": "PROCESSING",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "updatedAt": "2025-10-03T15:02:00Z"
+}
+```
+
+Poll every 5-10 seconds until terminal status reached.
+
+### Listing Transactions
+
+Query all transactions for a customer or date range:
+
+```bash
+GET /transactions?customerId=Customer:abc123&startDate=2025-10-01T00:00:00Z&limit=50
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "Transaction:...",
+      "status": "COMPLETED",
+      "type": "OUTGOING",
+      "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
+      "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
+      "settledAt": "2025-10-03T15:05:00Z"
+    }
+  ],
+  "hasMore": false,
+  "nextCursor": null
+}
+```
+
+Use for reconciliation and reporting.
+
+## Failure Handling
+
+### Common Failure Reasons
+
+| Failure Reason | Description | Recovery |
+|----------------|-------------|----------|
+| `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
+| `QUOTE_EXECUTION_FAILED` | Error executing the quote | Create new quote |
+| `INSUFFICIENT_BALANCE` | Source account lacks funds | Fund account, retry |
+| `TIMEOUT` | Transaction timed out | Retry or contact support |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always use webhooks for status updates">
+    Don't rely solely on polling:
+
+    ```javascript
+    // ✅ Good: Webhook-driven updates
+    app.post('/webhooks/grid', async (req, res) => {
+      await handleTransactionUpdate(req.body.transaction);
+      res.status(200).send();
+    });
+
+    // ❌ Bad: Constant polling
+    setInterval(() => getTransaction(txId), 5000);
+    ```
+  </Accordion>
+
+  <Accordion title="Store transaction IDs for reconciliation">
+    Save transaction IDs to your database:
+
+    ```javascript
+    const transaction = await executeQuote(quoteId);
+    await db.transactions.insert({
+      gridTransactionId: transaction.id,
+      internalPaymentId: paymentId,
+      status: transaction.status,
+      createdAt: new Date()
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Handle idempotency">
+    Use idempotency keys for safe retries:
+
+    ```javascript
+    const idempotencyKey = `payment-${userId}-${Date.now()}`;
+    await createQuote({...params, idempotencyKey});
+    ```
+  </Accordion>
+
+  <Accordion title="Provide clear status messages to users">
+    Translate technical statuses to user-friendly messages:
+
+    ```javascript
+    function getUserMessage(status, failureReason) {
+      if (status === 'PENDING') return 'Payment processing...';
+      if (status === 'PROCESSING') return 'Payment in progress...';
+      if (status === 'COMPLETED') return 'Payment delivered!';
+      if (status === 'FAILED') {
+        if (failureReason === 'INSUFFICIENT_BALANCE') {
+          return 'Insufficient funds. Please add money and try again.';
+        }
+        return 'Payment failed. Please try again or contact support.';
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

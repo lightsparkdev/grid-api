@@ -1,0 +1,130 @@
+---
+title: "Entities & Relationships"
+description: "Understanding Grid's core data model"
+---
+
+import Terminology from '/snippets/terminology.mdx';
+
+<Terminology />
+
+## Platform Configuration
+
+Your **platform configuration** defines global settings for your Grid integration:
+
+- **Webhook endpoint**: URL where Grid sends event notifications
+- **Supported currencies**: Which currencies your platform offers
+- **UMA domain** (optional): Your domain for UMA addresses (e.g., `yourplatform.com`)
+- **Required counterparty fields** (UMA only): Information required from senders for compliance
+
+Platform configuration is managed via the dashboard or by contacting Lightspark support.
+
+## ID Format
+
+All Grid entities use a consistent ID format:
+
+```
+EntityType:UUID
+```
+
+Examples:
+- `Customer:019542f5-b3e7-1d02-0000-000000000001`
+- `InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965`
+- `Transaction:019542f5-b3e7-1d02-0000-000000000030`
+- `Quote:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123`
+
+This format makes IDs self-documenting and easier to debug.
+
+## Platform Customer ID
+
+When creating customers, you can provide your own `platformCustomerId`:
+
+```json
+{
+  "platformCustomerId": "user_12345_from_my_system",
+  "customerType": "INDIVIDUAL",
+  "fullName": "Alice Johnson"
+}
+```
+
+This allows you to:
+- Map Grid customers to your internal user IDs
+- Query transactions by your own customer identifiers
+- Maintain referential integrity between systems
+
+Grid returns both IDs in all customer-related responses:
+```json
+{
+  "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "user_12345_from_my_system"
+}
+```
+
+## Amount Representation
+
+All monetary amounts in Grid are represented in the **smallest currency unit**:
+
+<Tabs>
+  <Tab title="Fiat Currencies">
+    **Cents, pence, centavos, etc.**
+
+    ```json
+    {
+      "amount": 50000,
+      "currency": {
+        "code": "USD",
+        "symbol": "$",
+        "decimals": 2
+      }
+    }
+    ```
+
+    This represents **$500.00** (50000 cents)
+  </Tab>
+
+  <Tab title="Cryptocurrencies">
+    **Satoshis for Bitcoin**
+
+    ```json
+    {
+      "amount": 10000000,
+      "currency": {
+        "code": "BTC",
+        "symbol": "₿",
+        "decimals": 8
+      }
+    }
+    ```
+
+    This represents **0.1 BTC** (10,000,000 satoshis)
+  </Tab>
+</Tabs>
+
+The `decimals` field tells you how many decimal places to use when displaying the amount:
+
+```javascript
+function formatAmount(amount, currency) {
+  const value = amount / Math.pow(10, currency.decimals);
+  return `${currency.symbol}${value.toFixed(currency.decimals)}`;
+}
+
+// formatAmount(50000, {code: "USD", symbol: "$", decimals: 2}) → "$500.00"
+// formatAmount(10000000, {code: "BTC", symbol: "₿", decimals: 8}) → "₿0.10000000"
+```
+
+## Timestamps
+
+All timestamps in Grid use **ISO 8601 format with UTC timezone**:
+
+```json
+{
+  "createdAt": "2025-10-03T15:00:00Z",
+  "settledAt": "2025-10-03T15:30:00Z"
+}
+```
+
+Key timestamp fields:
+- **createdAt**: When the entity was created
+- **updatedAt**: Last modification time
+- **settledAt**: When a transaction completed (transactions only)
+- **expiresAt**: When a quote expires (quotes only)
+

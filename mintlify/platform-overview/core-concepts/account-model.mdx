@@ -1,0 +1,289 @@
+---
+title: "Account Model"
+description: "Internal accounts, external accounts, and how they work together"
+---
+
+import InternalAccounts from '/snippets/internal-accounts.mdx';
+
+Grid uses two types of accounts: **internal accounts** (Grid-managed balances) and **external accounts** (connected bank accounts and wallets). Understanding when to use each type is key to building efficient payment flows.
+
+## Internal Accounts
+
+<InternalAccounts />
+
+## External Accounts
+
+**External accounts** represent bank accounts, crypto wallets, or other payment instruments outside of Grid for on-ramping or off-ramping funds.
+
+### Characteristics
+
+- Represent real-world accounts (bank accounts, crypto wallets)
+- Used as funding sources or payout destinations
+- Subject to verification and compliance screening
+- Have associated beneficiary information
+- Status indicates readiness for use
+
+### Supported Account Types
+
+<Tabs>
+  <Tab title="US Bank Accounts">
+    ```json
+    {
+      "accountType": "US_ACCOUNT",
+      "currency": "USD",
+      "accountNumber": "1234567890",
+      "routingNumber": "110000000",
+      "accountCategory": "CHECKING",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Alice Johnson",
+        "address": {
+          "line1": "123 Main St",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="IBAN (Europe)">
+    ```json
+    {
+      "accountType": "IBAN",
+      "currency": "EUR",
+      "iban": "DE89370400440532013000",
+      "swiftBic": "DEUTDEFF",
+      "bankName": "Deutsche Bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Hans Schmidt"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="PIX (Brazil)">
+    ```json
+    {
+      "accountType": "PIX",
+      "currency": "BRL",
+      "pixKey": "user@example.com",
+      "pixKeyType": "EMAIL",
+      "bankName": "Nubank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Maria Silva",
+        "taxId": "12345678900"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="CLABE (Mexico)">
+    ```json
+    {
+      "accountType": "CLABE",
+      "clabeNumber": "012345678901234567",
+      "bankName": "BBVA Mexico",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Carlos Rodriguez"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="UPI (India)">
+    ```json
+    {
+      "accountType": "UPI",
+      "currency": "INR",
+      "vpa": "user@paytm",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Priya Sharma"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Spark Wallet (Crypto)">
+    ```json
+    {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu",
+      "currency": "BTC"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Creating External Accounts
+
+```bash Creating a US bank account
+curl -X POST https://api.lightspark.com/grid/2025-10-13/customers/external-accounts \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "accountInfo": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "9876543210",
+      "routingNumber": "110000000",
+      "accountCategory": "CHECKING",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Alice Johnson",
+        "address": {
+          "line1": "123 Main St",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "currency": "USD",
+  "status": "PENDING",
+  "accountInfo": {
+    "accountType": "US_ACCOUNT",
+    "accountNumber": "****3210",
+    "routingNumber": "110000000"
+  }
+}
+```
+
+### External Account Status
+
+External accounts progress through verification:
+
+```
+PENDING → ACTIVE
+```
+
+- **PENDING**: Created, undergoing verification/screening
+- **ACTIVE**: Verified, ready for transactions
+- **INACTIVE**: Disabled (can be reactivated)
+- **REJECTED**: Failed verification
+
+You'll receive `ACCOUNT_STATUS` webhooks as status changes.
+
+### Using External Accounts
+
+<Tabs>
+  <Tab title="As Destination (Payout)">
+    Send funds from internal account to external account:
+
+    ```bash
+    POST /transfer-out
+
+    {
+      "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+      "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+      "amount": 100000
+    }
+    ```
+
+    Or via quote for cross-currency:
+
+    ```bash
+    POST /quotes
+
+    {
+      "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+      "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+      "lockedCurrencySide": "SENDING",
+      "lockedCurrencyAmount": 100000
+    }
+    ```
+  </Tab>
+
+  <Tab title="As Source (Funding)">
+    Pull funds from external account to internal account:
+
+    ```bash
+    POST /transfer-in
+
+    {
+      "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+      "destination": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+      "amount": 100000
+    }
+    ```
+
+    Only works for "pullable" external accounts (e.g., linked via Plaid, debit cards).
+  </Tab>
+</Tabs>
+
+---
+
+## Account Combinations
+
+Common patterns for combining internal and external accounts:
+
+### Pattern 1: Prefunded Payouts
+
+**Use case:** Send payouts from customer's prefunded balance
+
+```
+Customer Internal Account (USD) → External Bank Account (EUR)
+```
+
+1. Customer funds internal account via ACH
+2. Create quote: Internal USD → External EUR
+3. Execute quote
+4. Recipient receives EUR in their bank
+
+### Pattern 2: JIT Funded Payouts
+
+**Use case:** On-demand payments without maintaining balance
+
+```
+Customer → Payment Instructions → Internal Account → External Account
+```
+
+1. Create quote with `source: {customerId}`
+2. Grid provides payment instructions
+3. Customer sends funds to instructions
+4. Quote auto-executes when received
+5. Recipient receives payout
+
+### Pattern 3: Platform Rewards
+
+**Use case:** Platform distributes Bitcoin rewards
+
+```
+Platform Internal Account (USD) → Customer External Wallet (BTC)
+```
+
+1. Platform funds its own internal USD account
+2. Create quote: Platform Internal USD → Customer Spark Wallet
+3. Execute with `immediatelyExecute: true`
+4. Customer receives BTC instantly
+
+### Pattern 4: Crypto On-Ramp
+
+**Use case:** Customer buys Bitcoin
+
+```
+Customer External Bank → Customer Internal Account (USD) → Customer External Wallet (BTC)
+```
+
+1. Customer links bank via Plaid
+2. Pull funds to internal USD account
+3. Create quote: Internal USD → External Spark Wallet
+4. Execute quote
+5. BTC delivered to customer's wallet

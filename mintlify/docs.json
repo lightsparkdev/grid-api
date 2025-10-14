@@ -22,6 +22,28 @@
         "pages": ["index"]
       },
       {
+        "tab": "Platform Overview",
+        "pages": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "platform-overview/introduction/what-is-grid",
+              "platform-overview/introduction/faq"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "platform-overview/core-concepts/entities",
+              "platform-overview/core-concepts/quote-system",
+              "platform-overview/core-concepts/account-model",
+              "platform-overview/core-concepts/transaction-lifecycle",
+              "platform-overview/core-concepts/currencies-and-rails"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Payouts & B2B",
         "pages": [
           "payouts-and-b2b/index",
@@ -208,7 +230,7 @@
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
             "group": "Using the API",
