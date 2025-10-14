@@ -29,9 +29,23 @@ Response:
 
 ```json
 {
-  "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-  "currency": "USD",
-  "balance": 1000
+  "data": [
+    {
+      "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "balance": {
+        "amount": 10000,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
+      },
+      "fundingPaymentInstructions": [...],
+      "createdAt": "2025-10-03T12:00:00Z",
+      "updatedAt": "2025-10-03T12:00:00Z"
+    }
+  ]
 }
 ```
 
@@ -107,7 +121,7 @@ Use this when you want to send a fixed dollar amount (e.g., $1.00 reward).
 ```json
 {
   "lockedCurrencySide": "SENDING",
-  "lockedCurrencyAmount": 100  // $1.00 in cents
+  "lockedCurrencyAmount": 100 // $1.00 in cents
 }
 ```
 
@@ -120,14 +134,15 @@ Use this when you want the receiver to receive a specific Bitcoin amount (e.g., 
 ```json
 {
   "lockedCurrencySide": "RECEIVING",
-  "lockedCurrencyAmount": 1000  // 1000 satoshis
+  "lockedCurrencyAmount": 1000 // 1000 satoshis
 }
 ```
 
 Your platform account is debited whatever fiat amount is needed to send that Bitcoin amount.
 
 <Tip>
-For consistent dollar-value rewards, use `SENDING`. For consistent Bitcoin-value rewards, use `RECEIVING`.
+  For consistent dollar-value rewards, use `SENDING`. For consistent
+  Bitcoin-value rewards, use `RECEIVING`.
 </Tip>
 
 ## Execution Options
@@ -150,7 +165,7 @@ Omit `immediatelyExecute` or set it to `false` to review the quote before execut
 
 ```json
 {
-  "immediatelyExecute": false  // or omit this field
+  "immediatelyExecute": false // or omit this field
 }
 ```
 
@@ -164,7 +179,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execut
 ```
 
 <Note>
-Quotes expire after a short time (typically 5 minutes). You must execute before expiration.
+  Quotes expire after a short time (typically 5 minutes). You must execute
+  before expiration.
 </Note>
 
 ## Destination Options
@@ -221,7 +237,8 @@ Then reference it in `/quotes`:
 ```
 
 <Tip>
-Pre-register external accounts for customers who receive regular rewards. This avoids duplicate account creation and improves performance.
+  Pre-register external accounts for customers who receive regular rewards. This
+  avoids duplicate account creation and improves performance.
 </Tip>
 
 ## Tracking Delivery
@@ -315,19 +332,24 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execut
 ## Best Practices
 
 <Check>
-Use `immediatelyExecute: true` for automated, small-dollar rewards where you accept market rates.
+  Use `immediatelyExecute: true` for automated, small-dollar rewards where you
+  accept market rates.
 </Check>
 
 <Check>
-Pre-register external accounts for customers receiving recurring rewards to improve performance.
+  Pre-register external accounts for customers receiving recurring rewards to
+  improve performance.
 </Check>
 
 <Check>
-Set up webhook handlers to track completion status and update your reward records.
+  Set up webhook handlers to track completion status and update your reward
+  records.
 </Check>
 
 <Warning>
-Ensure your platform's internal account has sufficient balance before distributing rewards. Monitor balances via the `/platform/internal-accounts` endpoint or account status webhooks.
+  Ensure your platform's internal account has sufficient balance before
+  distributing rewards. Monitor balances via the `/platform/internal-accounts`
+  endpoint or account status webhooks.
 </Warning>
 
 ## Related Resources
