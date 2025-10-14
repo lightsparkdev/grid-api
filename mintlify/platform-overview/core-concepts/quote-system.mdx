@@ -43,6 +43,9 @@ Quotes ensure that your customers know exactly what they'll pay and what the rec
 
 ### Basic Cross-Currency Quote
 
+This is a basic quote for a cross-currency transfer from an internal account to an external account,
+which were pre-created as described in the [Account Model](/platform-overview/core-concepts/account-model) section.
+
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
@@ -88,15 +91,15 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
     "symbol": "₿",
     "decimals": 8
   },
-  "totalSendingAmount": 100,
-  "totalReceivingAmount": 810,
-  "exchangeRate": 8.1,
-  "feesIncluded": 5,
+  "totalSendingAmount": 100000,
+  "totalReceivingAmount": 829167,
+  "exchangeRate": 0.00000833,
+  "feesIncluded": 500,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
 
-This quote says: Send $1,000 USD, recipient receives €920, fees are $1.50, expires in 5 minutes.
+This quote says: Send $1,000 USD, recipient receives 0.00829167 BTC, fees are $5.00, expires in 5 minutes.
 
 ### Locked Currency Side
 
@@ -152,7 +155,7 @@ Source is an existing internal account with available balance:
 
 ### Just-In-Time (JIT) Funding
 
-Source is the customer ID—Grid provides payment instructions:
+Source is the customer ID or the platform itself — Grid provides payment instructions:
 
 ```json
 {
@@ -166,23 +169,20 @@ Source is the customer ID—Grid provides payment instructions:
 
 ```json
 {
-  "id": "Quote:...",
-  "paymentInstructions": {
-    "reference": "UMA-Q12345-REF",
-    "amount": {
-      "amount": 100000,
-      "currency": {"code": "USD", "decimals": 2}
-    },
-    "destinationAccount": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "9876543210",
-      "routingNumber": "110000000",
-      "beneficiary": {
-        "beneficiaryType": "BUSINESS",
-        "fullName": "Lightspark Grid"
+  "quoteId": "Quote:...",
+  "paymentInstructions": [
+    {
+      "reference": "UMA-Q12345-REF",
+      "instructionsNotes": "Please ensure the reference code is included in the payment memo/description field",
+      "bankAccountInfo": {
+        "accountType": "US_ACCOUNT",
+        "accountNumber": "9876543210",
+        "routingNumber": "110000000",
+        "accountCategory": "CHECKING",
+        "bankName": "Chase Bank"
       }
     }
-  }
+  ]
 }
 ```
 
@@ -192,7 +192,7 @@ Source is the customer ID—Grid provides payment instructions:
 
 ## Executing a Quote
 
-Once a quote is created, execute it before it expires:
+For a prefunded quote or one from a pullable external account source, once a quote is created, execute it before it expires:
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/execute \
@@ -208,6 +208,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
   "status": "PENDING",
   "type": "OUTGOING",
   "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000050"
+  ...
 }
 ```
 
@@ -215,9 +216,8 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
 
 <Tabs>
   <Tab title="Prefunded">
-    - Quote executes **immediately**
     - Transaction created with status `PENDING`
-    - Funds debited from source account
+    - Funds debited from source account immediately
     - Settlement begins right away
   </Tab>
 
@@ -233,67 +233,61 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
 
 For **market rate execution** without quote approval, use the `immediatelyExecute` flag:
 
-```bash
+```bash Immediate quote execution
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "source": {"accountId": "InternalAccount:abc123"},
-    "destination": {"accountId": "ExternalAccount:xyz789"},
+    "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+    "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR"},
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100000,
     "immediatelyExecute": true
   }'
 ```
 
-**Response:**
-
+<Accordion title="Response">
 ```json
 {
-  "quote": {
-    "id": "Quote:...",
-    "status": "EXECUTED"
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "status": "COMPLETED",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "expiresAt": "2025-10-03T15:05:00Z",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
   },
-  "transaction": {
-    "id": "Transaction:...",
-    "status": "PENDING"
-  }
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "EUR"
+  },
+  "sendingCurrency": {
+    "code": "USD",
+    "name": "United States Dollar",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "EUR",
+    "name": "Euro",
+    "symbol": "€",
+    "decimals": 2
+  },
+  "totalSendingAmount": 100000,
+  "totalReceivingAmount": 91540,
+  "exchangeRate": 0.92,
+  "feesIncluded": 500,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
+</Accordion>
 
 - Quote is created and executed in one API call
 - Best for: Rewards distribution, micro-payments, time-sensitive transfers
-- Caution: Customer doesn't see rate before execution
 
-## Quote Expiration
-
-Quotes have limited validity:
-
-| Quote Type | Typical Expiration |
-|------------|-------------------|
-| Cross-currency fiat | 1-5 minutes |
-| Fiat-to-crypto | 1-5 minutes |
-| Crypto-to-fiat | 1-5 minutes |
-| UMA quotes | 15 minutes |
-
-**When a quote expires:**
-- Status changes to `EXPIRED`
-- Cannot be executed
-- Must create a new quote with current rates
-
-**Handling expiration:**
-
-```javascript
-try {
-  await executeQuote(quoteId);
-} catch (error) {
-  if (error.code === 'QUOTE_EXPIRED') {
-    // Create new quote with same parameters
-    const newQuote = await createQuote(originalParams);
-    await executeQuote(newQuote.id);
-  }
-}
-```
+<Warning>
+Customer doesn't see rate before execution. If you want to lock a quote and confirm fees and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
+</Warning>
 
 ## Creating External Accounts in Quotes
 
@@ -331,30 +325,33 @@ All fees are transparently displayed in the quote response:
 
 ```json
 {
-  "fees": {
-    "amount": 150,
-    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
-  },
-  "feeBreakdown": [
-    {
-      "type": "TRANSACTION_FEE",
-      "amount": 100,
-      "currency": {"code": "USD", "decimals": 2}
-    },
-    {
-      "type": "FX_SPREAD",
-      "amount": 50,
-      "currency": {"code": "USD", "decimals": 2}
-    }
-  ]
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "feesIncluded": 500,
+  ... quote response ...
+  "rateDetails": {
+    "counterpartyMultiplier": 1.08,
+    "counterpartyFixedFee": 10,
+    "gridApiMultiplier": 0.925,
+    "gridApiFixedFee": 10,
+    "gridApiVariableFeeRate": 0.003,
+    "gridApiVariableFeeAmount": 30
+  }
 }
 ```
 
+**Rate Details Breakdown:**
+- **`counterpartyMultiplier`**: Exchange rate from mSATs to receiving currency (1.08 = 1 mSAT = 1.08 cents EUR)
+- **`counterpartyFixedFee`**: Fixed fee charged by counterparty (10 cents EUR)
+- **`gridApiMultiplier`**: Exchange rate from sending currency to mSATs including variable fees (0.925 = $1 USD = 0.925 mSATs)
+- **`gridApiFixedFee`**: Fixed fee charged by Grid API (10 cents USD)
+- **`gridApiVariableFeeRate`**: Variable fee rate as percentage (0.003 = 0.3%)
+- **`gridApiVariableFeeAmount`**: Variable fee amount (30 cents USD for $1,000 transaction)
+
 Fees are deducted from the sending amount, so:
 - **Customer sends**: $1,000
-- **Fees**: $1.50
-- **Amount converted**: $998.50
-- **Recipient receives**: €918.82 (at 0.92 rate)
+- **Fees**: $5.00
+- **Amount converted**: $995.00
+- **Recipient receives**: €915.40 (at 0.92 rate)
 
 ## Best Practices
 
