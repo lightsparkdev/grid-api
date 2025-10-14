@@ -47,8 +47,8 @@ Once a transaction reaches a terminal status, it will not change further.
     POST /quotes
 
     {
-      "source": {"accountId": "InternalAccount:abc123"},
-      "destination": {"accountId": "ExternalAccount:xyz789"},
+      "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},s
+      "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR"},
       "lockedCurrencySide": "SENDING",
       "lockedCurrencyAmount": 100000
     }
@@ -100,21 +100,7 @@ Once a transaction reaches a terminal status, it will not change further.
   </Step>
 </Steps>
 
-### Timeline Example
-
-```
-T+0s:    Create quote
-T+30s:   Execute quote → PENDING
-T+2min:  Processing → PROCESSING
-T+5min:  Delivered → COMPLETED
-```
-
-Timing varies by payment rail:
-- **Lightning**: Seconds
-- **RTP/PIX/UPI**: Seconds to minutes
-- **SEPA Instant**: Minutes
-- **ACH**: 1-2 business days
-- **Wire**: Same day
+Most transactions on Grid are completed in seconds.
 
 ### Webhook Payloads
 
@@ -160,189 +146,6 @@ Timing varies by payment rail:
 }
 ```
 
-## Incoming Transaction Flow
-
-**Your customer/platform receives funds from an external sender (UMA-based).**
-
-<Note>
-Incoming transactions are primarily used in Global P2P (UMA) flows. They represent payments sent TO your customers from external platforms.
-</Note>
-
-### Step-by-Step
-
-<Steps>
-  <Step title="Receive Webhook Notification">
-    Grid sends `INCOMING_PAYMENT` webhook with status `PENDING`:
-
-    ```json
-    {
-      "type": "INCOMING_PAYMENT",
-      "transaction": {
-        "id": "Transaction:...",
-        "status": "PENDING",
-        "type": "INCOMING",
-        "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
-        "receivedAmount": {"amount": 100000, "currency": {"code": "USD"}},
-        "senderInfo": {
-          "fullName": "Bob Smith",
-          "email": "bob@example.com"
-        },
-        "customerId": "Customer:...",
-        "destinationUmaAddress": "$alice@yourplatform.com"
-      }
-    }
-    ```
-  </Step>
-
-  <Step title="Review and Approve/Reject">
-    You have **5 seconds** to respond synchronously:
-
-    **Approve:**
-    ```http
-    HTTP/1.1 200 OK
-    ```
-
-    **Reject:**
-    ```http
-    HTTP/1.1 403 Forbidden
-    Content-Type: application/json
-
-    {
-      "reason": "COMPLIANCE_REJECTION",
-      "message": "Customer not eligible for this transaction"
-    }
-    ```
-
-    If you need more time, return 200 OK and use async endpoints:
-    ```bash
-    POST /transactions/{transactionId}/approve
-    # or
-    POST /transactions/{transactionId}/reject
-    ```
-  </Step>
-
-  <Step title="Processing">
-    If approved:
-    - Grid converts currency (if needed)
-    - Delivers to customer's internal account
-    - Status: `PROCESSING`
-
-    If rejected:
-    - Funds returned to sender
-    - Status: `REJECTED`
-  </Step>
-
-  <Step title="Completion">
-    **On Success:**
-    - Customer account credited
-    - Status: `COMPLETED`
-    - Final `INCOMING_PAYMENT` webhook sent
-
-    **On Failure:**
-    - Delivery failed
-    - Status: `FAILED`
-    - Funds returned to sender
-  </Step>
-</Steps>
-
-### Timeline Example
-
-```
-T+0s:    INCOMING_PAYMENT webhook (PENDING)
-T+1s:    Your app approves (200 OK)
-T+5s:    Processing → PROCESSING
-T+10s:   Delivered → COMPLETED
-```
-
-### Approval Patterns
-
-<Tabs>
-  <Tab title="Auto-Approve">
-    Automatically approve all payments:
-
-    ```javascript
-    app.post('/webhooks/grid', async (req, res) => {
-      const {transaction, type} = req.body;
-
-      if (type === 'INCOMING_PAYMENT' && transaction.status === 'PENDING') {
-        // Auto-approve
-        return res.status(200).json({received: true});
-      }
-
-      // Handle other webhooks
-      res.status(200).json({received: true});
-    });
-    ```
-  </Tab>
-
-  <Tab title="Compliance Check">
-    Check sender against watchlists before approving:
-
-    ```javascript
-    app.post('/webhooks/grid', async (req, res) => {
-      const {transaction, type} = req.body;
-
-      if (type === 'INCOMING_PAYMENT' && transaction.status === 'PENDING') {
-        const {senderInfo} = transaction;
-
-        // Quick compliance check (must complete in <5s)
-        const isAllowed = await quickComplianceCheck(senderInfo);
-
-        if (!isAllowed) {
-          return res.status(403).json({
-            reason: 'COMPLIANCE_REJECTION',
-            message: 'Sender failed compliance screening'
-          });
-        }
-
-        return res.status(200).json({received: true});
-      }
-
-      res.status(200).json({received: true});
-    });
-    ```
-  </Tab>
-
-  <Tab title="Async Approval">
-    Queue for manual review:
-
-    ```javascript
-    app.post('/webhooks/grid', async (req, res) => {
-      const {transaction, type} = req.body;
-
-      if (type === 'INCOMING_PAYMENT' && transaction.status === 'PENDING') {
-        // Queue for async review
-        await queueForReview(transaction);
-
-        // Acknowledge receipt (payment still pending)
-        return res.status(200).json({received: true});
-      }
-
-      res.status(200).json({received: true});
-    });
-
-    // Later, after review...
-    async function processReview(transactionId, approved) {
-      if (approved) {
-        await fetch(`${API_BASE}/transactions/${transactionId}/approve`, {
-          method: 'POST',
-          headers: {Authorization: `Basic ${credentials}`}
-        });
-      } else {
-        await fetch(`${API_BASE}/transactions/${transactionId}/reject`, {
-          method: 'POST',
-          headers: {Authorization: `Basic ${credentials}`},
-          body: JSON.stringify({
-            reason: 'MANUAL_REJECTION',
-            message: 'Failed manual review'
-          })
-        });
-      }
-    }
-    ```
-  </Tab>
-</Tabs>
-
 ## Same-Currency Transfers
 
 For same-currency transfers without quotes:
@@ -353,8 +156,8 @@ For same-currency transfers without quotes:
 POST /transfer-out
 
 {
-  "source": {"accountId": "InternalAccount:abc123"},
-  "destination": {"accountId": "ExternalAccount:xyz789"},
+  "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+  "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "USD"},
   "amount": 100000
 }
 ```
@@ -377,13 +180,13 @@ Follows same lifecycle as quote-based outgoing transactions.
 POST /transfer-in
 
 {
-  "source": {"accountId": "ExternalAccount:xyz789"},
-  "destination": {"accountId": "InternalAccount:abc123"},
+  "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "USD"},
+  "destination": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
   "amount": 100000
 }
 ```
 
-Only works for "pullable" external accounts (Plaid-linked, debit cards).
+Only works for "pullable" external accounts (Plaid-linked, debit cards, etc.).
 
 ## Monitoring Transactions
 
@@ -466,23 +269,9 @@ Use for reconciliation and reporting.
 | Failure Reason | Description | Recovery |
 |----------------|-------------|----------|
 | `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
+| `QUOTE_EXECUTION_FAILED` | Error executing the quote | Create new quote |
 | `INSUFFICIENT_BALANCE` | Source account lacks funds | Fund account, retry |
-| `INVALID_BANK_ACCOUNT` | Destination account invalid | Verify account details |
-| `PAYMENT_APPROVAL_TIMED_OUT` | Webhook approval not received in 5s | Improve webhook response time |
-| `OFFRAMP_FAILED` | Failed to deliver to destination | Check destination account status |
 | `TIMEOUT` | Transaction timed out | Retry or contact support |
-
-### Automatic Refunds
-
-For **outgoing transactions**:
-- Source account is debited when transaction is created
-- If transaction fails, funds are **automatically refunded**
-- Refund appears as a separate transaction
-- `REFUNDED` status on original transaction
-
-For **incoming transactions**:
-- Destination account is NOT credited until success
-- If transaction fails, no refund needed (funds never left source)
 
 ## Best Practices
 
