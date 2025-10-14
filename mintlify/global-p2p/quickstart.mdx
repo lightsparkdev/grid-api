@@ -6,8 +6,7 @@ import { remittanceProductName } from '/snippets/variables.mdx'
 
 This quickstart guides you through a regulated FI sending an individual customer payment from the US to a bank account in Mexico using just-in-time funding.
 
-<Steps>
-<Step title="Get API credentials">
+## Get API credentials
   Create a Sandbox API credentialsin the dashboard, then set environment variables for local use.
 
   ```bash
@@ -19,9 +18,7 @@ This quickstart guides you through a regulated FI sending an individual customer
   <Tip>
   Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_API_SECRET"`.
   </Tip>
-</Step>
-
-<Step title="Create a customer">
+## Create a customer
   Register a customer who will send the payment. You can provide your own UMA handle or let the system generate one.
 
   ```bash
@@ -52,9 +49,7 @@ This quickstart guides you through a regulated FI sending an individual customer
     "platformCustomerId": "cust_7b3c5a89d2f1e0"
   }
   ```
-</Step>
-
-<Step title="Create an external receiving bank account (CLABE in MX)">
+## Create an external receiving bank account (CLABE in MX)
   Add a beneficiary account in Mexico using their CLABE. We attach it to the same customer for this example.
 
   ```bash
@@ -114,9 +109,7 @@ This quickstart guides you through a regulated FI sending an individual customer
     }
   }
   ```
-</Step>
-
-<Step title="Create a quote (just‑in‑time funding)">
+## Create a quote (just‑in‑time funding)
   Quote a transfer of 100 USD from the customer to the MXN CLABE account. The quote returns the exchange rate, fees, and `paymentInstructions` to fund in real time.
 
   ```bash
@@ -157,9 +150,7 @@ This quickstart guides you through a regulated FI sending an individual customer
     "status": "PENDING"
   }
   ```
-</Step>
-
-<Step title="Fund the quote (Sandbox simulation)">
+## Fund the quote (Sandbox simulation)
   In production, you would trigger a real‑time push on a local instant rail (e.g., RTP, SPEI, SEPA Instant) to the provided `bankAccountInfo` using the exact `reference`. In Sandbox, you can mock funding using the simulate send endpoint.
 
   ```bash
@@ -182,9 +173,7 @@ This quickstart guides you through a regulated FI sending an individual customer
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
   }
   ```
-</Step>
-
-<Step title="Handle the outgoing payment webhook">
+## Handle the outgoing payment webhook
   Implement a webhook endpoint to receive status updates as the payment moves from pending to completed (or failed). Verify the `X-Grid-Signature` header using the public key provided during onboarding.
 
   Webhook event:
@@ -207,7 +196,4 @@ This quickstart guides you through a regulated FI sending an individual customer
     "type": "OUTGOING_PAYMENT"
   }
   ```
-</Step>
-</Steps>
-
 
