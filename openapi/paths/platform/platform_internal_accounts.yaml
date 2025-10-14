@@ -17,33 +17,33 @@ get:
       schema:
         type: string
   responses:
-    '200':
+    "200":
       description: Successful operation
       content:
         application/json:
           schema:
             type: object
             required:
-              - accounts
+              - data
             properties:
-              accounts:
+              data:
                 type: array
                 description: List of internal accounts matching the filter criteria
                 items:
                   $ref: ../../components/schemas/customers/InternalAccount.yaml
-    '400':
+    "400":
       description: Bad request - Invalid parameters
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error400.yaml
-    '401':
+    "401":
       description: Unauthorized
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
-    '500':
+    "500":
       description: Internal service error
       content:
         application/json:
