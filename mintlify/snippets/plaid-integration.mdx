@@ -115,7 +115,7 @@ print(f"Link token: {link_token}")
 ### Key response fields:
 
 - **`linkToken`**: Use this to initialize Plaid Link in your frontend
-- **`callbackUrl`**: Where to POST the public token after Plaid authentication completes. The URL follows the pattern `https://api.lightspark.com/grid/{version}/plaid/callback/{linkToken}` and can be constructed manually if needed, though we recommend using the provided URL for forward compatibility.
+- **`callbackUrl`**: Where to POST the public token after Plaid authentication completes. The URL follows the pattern `https://api.lightspark.com/grid/{version}/plaid/callback/{linkToken}`. While you can construct this manually, we recommend using the provided URL for forward compatibility.
 - **`expiration`**: Link tokens typically expire after 4 hours
 - **`requestId`**: Unique identifier for debugging purposes
 

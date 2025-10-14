@@ -3,8 +3,8 @@ title: "Quickstart"
 description: "Complete walkthrough for buying Bitcoin and sending it as a reward to an external Spark wallet for self-custody"
 ---
 
-import KycRegulated from '/snippets/kyc/kyc-regulated.mdx';
-import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx';
+import KycRegulated from "/snippets/kyc/kyc-regulated.mdx";
+import KycUnregulated from "/snippets/kyc/kyc-unregulated.mdx";
 
 This guide walks you through the complete process of buying Bitcoin with USD and sending it to a self-custody Spark wallet, from customer onboarding through quote execution.
 
@@ -42,7 +42,7 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accoun
 
 ```json
 {
-  "accounts": [
+  "data": [
     {
       "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
       "balance": {
@@ -76,14 +76,16 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accoun
       "createdAt": "2025-10-03T12:00:00Z",
       "updatedAt": "2025-10-03T12:00:00Z"
     }
-  ],
+  ]
 }
 ```
 
 The `fundingPaymentInstructions` provide the bank account details and reference code needed to fund this internal account via ACH pull from the customer's bank.
 
 <Note>
-  You can also see that there are Spark wallet funding instructions in this example response which can be used to fund the internal account with USDB instantly.
+  You can also see that there are Spark wallet funding instructions in this
+  example response which can be used to fund the internal account with USDB
+  instantly.
 </Note>
 
 ## Step 2: Fund your Internal Account
@@ -91,7 +93,9 @@ The `fundingPaymentInstructions` provide the bank account details and reference 
 You can initiate an ACH transfer from your bank to the account details provided in the funding instructions, making sure to include the reference code `FUND-BTC123` in the transfer memo.
 
 <Note>
-  In sandbox mode, you can use the `/sandbox/internal-accounts/{accountId}/fund` endpoint to simulate receiving funds. In production, actual ACH transfers typically take 1-3 business days to settle.
+  In sandbox mode, you can use the `/sandbox/internal-accounts/{accountId}/fund`
+  endpoint to simulate receiving funds. In production, actual ACH transfers
+  typically take 1-3 business days to settle.
 </Note>
 
 ### Webhook Notification
@@ -180,10 +184,11 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   to new destinations. The external account will be automatically created and then used as the destination for
   the Bitcoin transfer. Its ID in the response can be used directly in future quote creation requests.
 
-  **Immediate Quote Execution (Market Order)**: Note that `immediatelyExecute` is set to `true` in this example.
-  Because we always just want to send $1.00 worth of BTC to users as a reward at the current market rate, we don't
-  need to lock a quote and view the rate details before executing. If you want to lock a quote and confirm fees
-  and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
+**Immediate Quote Execution (Market Order)**: Note that `immediatelyExecute` is set to `true` in this example.
+Because we always just want to send $1.00 worth of BTC to users as a reward at the current market rate, we don't
+need to lock a quote and view the rate details before executing. If you want to lock a quote and confirm fees
+and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
+
 </Note>
 
 ### Response
@@ -223,6 +228,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 ```
 
 The quote shows:
+
 - **Sending**: \$1.00 USD (including $0.05 fee)
 - **Receiving**: 0.0000081 BTC (810 satoshis)
 - **Exchange rate**: 8.1 sats per USD cent (~$123,000 per BTC)
@@ -231,6 +237,7 @@ The quote shows:
 The quote status changes to `PROCESSING` and the Bitcoin transfer is initiated. The external account is created, USD is debited from the internal account, Bitcoin is purchased, and then sent to the Spark wallet address.
 
 You can track the status by:
+
 1. Polling the quote endpoint: `GET /quotes/{quoteId}`
 2. Waiting for a webhook notification
 
@@ -276,7 +283,8 @@ When the Bitcoin transfer completes, you'll receive a webhook notification:
 ```
 
 <Note>
-  Bitcoin transfers to Spark wallets typically complete within seconds, much faster than traditional Bitcoin on-chain transactions.
+  Bitcoin transfers to Spark wallets typically complete within seconds, much
+  faster than traditional Bitcoin on-chain transactions.
 </Note>
 
 ## Summary

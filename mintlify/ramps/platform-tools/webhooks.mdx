@@ -21,17 +21,305 @@ When using Grid for Ramps (fiat ↔ crypto conversion), you'll primarily work wi
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Full Webhooks Guide" href="/platform-overview/platform-features/webhooks">
-    Signature verification, retry policy, and implementation
-  </Card>
-  <Card title="Conversion Flows" href="/ramps/conversion-flows/fiat-crypto-conversion">
-    Learn about fiat-crypto conversion flows
-  </Card>
-  <Card title="Error Handling" href="/platform-overview/platform-features/error-handling">
-    Handle webhook failures gracefully
-  </Card>
-  <Card title="Sandbox Testing" href="/ramps/platform-tools/sandbox-testing">
-    Test webhooks in sandbox
-  </Card>
-</CardGroup>
+## Webhook configuration
+
+Configure your webhook endpoint in the Grid dashboard or via API:
+
+```bash
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "webhookEndpoint": "https://api.yourapp.com/webhooks/grid"
+  }'
+```
+
+<Warning>
+  Your webhook endpoint must be publicly accessible over HTTPS and respond
+  within 30 seconds.
+</Warning>
+
+## Webhook verification
+
+Always verify webhook signatures to ensure authenticity:
+
+### Verification steps
+
+<Steps>
+<Step title="Extract signature header">
+  Get the `X-Grid-Signature` header from the webhook request.
+  
+  ```javascript
+  const signature = req.headers['x-grid-signature'];
+  ```
+</Step>
+
+<Step title="Get public key">
+  Retrieve the Grid public key from your dashboard (provided during onboarding).
+  ```javascript const publicKey = process.env.GRID_PUBLIC_KEY; ```
+</Step>
+
+<Step title="Verify signature">
+  Use the public key to verify the signature against the raw request body.
+  
+  ```javascript
+  const crypto = require('crypto');
+  
+  function verifyWebhookSignature(payload, signature, publicKey) {
+    const verify = crypto.createVerify('SHA256');
+    verify.update(payload);
+    verify.end();
+    
+    return verify.verify(publicKey, signature, 'base64');
+  }
+  
+  // In your webhook handler
+  const rawBody = JSON.stringify(req.body);
+  const isValid = verifyWebhookSignature(rawBody, signature, publicKey);
+  
+  if (!isValid) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  ```
+</Step>
+</Steps>
+
+<Note>
+  The signature is created using secp256r1 (P-256) asymmetric cryptography with
+  SHA-256 hashing.
+</Note>
+
+## Handling ramp webhooks
+
+### On-ramp completion
+
+Handle successful fiat-to-crypto conversions:
+
+```javascript
+app.post("/webhooks/grid", async (req, res) => {
+  // Verify signature
+  if (!verifySignature(req.body, req.headers["x-grid-signature"])) {
+    return res.status(401).end();
+  }
+
+  const { type, transaction } = req.body;
+
+  if (type === "OUTGOING_PAYMENT" && transaction.status === "COMPLETED") {
+    // On-ramp completed (USD → BTC)
+    if (
+      transaction.sentAmount.currency.code === "USD" &&
+      transaction.receivedAmount.currency.code === "BTC"
+    ) {
+      // Update user's transaction history
+      await db.transactions.create({
+        userId: transaction.customerId,
+        type: "ON_RAMP",
+        amountUsd: transaction.sentAmount.amount,
+        amountBtc: transaction.receivedAmount.amount,
+        rate: transaction.exchangeRate,
+        status: "COMPLETED",
+        completedAt: new Date(transaction.settledAt),
+      });
+
+      // Notify user
+      await sendNotification(transaction.customerId, {
+        title: "Bitcoin purchased!",
+        message: `You received ${formatBtc(
+          transaction.receivedAmount.amount
+        )} BTC`,
+      });
+    }
+  }
+
+  res.status(200).json({ received: true });
+});
+```
+
+### Off-ramp completion
+
+Handle successful crypto-to-fiat conversions:
+
+```javascript
+if (type === "OUTGOING_PAYMENT" && transaction.status === "COMPLETED") {
+  // Off-ramp completed (BTC → USD)
+  if (
+    transaction.sentAmount.currency.code === "BTC" &&
+    transaction.receivedAmount.currency.code === "USD"
+  ) {
+    // Update user's balance and transaction history
+    await db.transactions.create({
+      userId: transaction.customerId,
+      type: "OFF_RAMP",
+      amountBtc: transaction.sentAmount.amount,
+      amountUsd: transaction.receivedAmount.amount,
+      rate: transaction.exchangeRate,
+      status: "COMPLETED",
+      bankAccountId: transaction.destination.accountId,
+      completedAt: new Date(transaction.settledAt),
+    });
+
+    // Notify user
+    await sendNotification(transaction.customerId, {
+      title: "Cash out completed!",
+      message: `$${formatUsd(
+        transaction.receivedAmount.amount
+      )} sent to your bank account`,
+    });
+  }
+}
+```
+
+### Balance updates
+
+Track crypto deposits for off-ramp liquidity:
+
+```javascript
+if (type === "ACCOUNT_STATUS") {
+  const { accountId, newBalance, oldBalance } = req.body;
+
+  // Crypto deposit detected
+  if (
+    newBalance.currency.code === "BTC" &&
+    newBalance.amount > oldBalance.amount
+  ) {
+    const depositAmount = newBalance.amount - oldBalance.amount;
+
+    // Record deposit
+    await db.deposits.create({
+      accountId,
+      currency: "BTC",
+      amount: depositAmount,
+      newBalance: newBalance.amount,
+    });
+
+    // Check if user has pending off-ramp
+    const pendingOffRamp = await db.offRamps.findPending(accountId);
+    if (pendingOffRamp && newBalance.amount >= pendingOffRamp.requiredAmount) {
+      // Auto-execute pending off-ramp
+      await executeOffRamp(pendingOffRamp.id);
+    }
+  }
+}
+```
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Process webhooks idempotently">
+  Handle duplicate webhooks gracefully using webhook IDs:
+  
+  ```javascript
+  const { webhookId } = req.body;
+  
+  // Check if already processed
+  const existing = await db.webhooks.findUnique({ where: { webhookId } });
+  if (existing) {
+    return res.status(200).json({ received: true });
+  }
+  
+  // Process webhook
+  await processRampWebhook(req.body);
+  
+  // Record webhook ID
+  await db.webhooks.create({
+    data: { webhookId, processedAt: new Date() }
+  });
+  ```
+</Accordion>
+
+<Accordion title="Use transaction IDs for deduplication">
+  Transaction IDs are unique identifiers for conversions:
+  
+  ```javascript
+  const { transaction } = req.body;
+  
+  // Upsert transaction (handles duplicates)
+  await db.transactions.upsert({
+    where: { gridTransactionId: transaction.id },
+    update: { status: transaction.status },
+    create: {
+      gridTransactionId: transaction.id,
+      customerId: transaction.customerId,
+      status: transaction.status,
+      // ... other fields
+    },
+  });
+  ```
+</Accordion>
+
+<Accordion title="Implement retry logic">
+  Grid retries failed webhooks with exponential backoff. Ensure your endpoint can handle retries:
+  
+  ```javascript
+  app.post('/webhooks/grid', async (req, res) => {
+    try {
+      await processWebhook(req.body);
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      
+      // Return 5xx for retryable errors
+      if (error.retryable) {
+        res.status(503).json({ error: 'Temporary failure' });
+      } else {
+        // Return 200 for non-retryable to prevent retries
+        res.status(200).json({ error: error.message });
+      }
+    }
+  });
+  ```
+</Accordion>
+
+<Accordion title="Monitor webhook health">
+  Track webhook delivery and processing:
+  
+  ```javascript
+  // Log webhook metrics
+  await metrics.increment('webhooks.received', {
+    type: req.body.type,
+    status: req.body.transaction?.status,
+  });
+  
+  // Track processing time
+  const start = Date.now();
+  await processWebhook(req.body);
+  const duration = Date.now() - start;
+  
+  await metrics.histogram('webhooks.processing_time', duration, {
+    type: req.body.type,
+  });
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Testing webhooks
+
+Test webhook handling using the test endpoint:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/webhooks/test' \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET"
+```
+
+This sends a test webhook to your configured endpoint:
+
+```json
+{
+  "test": true,
+  "timestamp": "2025-10-03T14:32:00Z",
+  "webhookId": "Webhook:test001",
+  "type": "TEST"
+}
+```
+
+<Check>
+  Verify your endpoint receives the test webhook and responds with a 200 status
+  code.
+</Check>
+
+## Next steps
+
+- [Sandbox Testing](/ramps/platform-tools/sandbox-testing) - Test ramp flows end-to-end
+- [Platform Configuration](/ramps/onboarding/platform-configuration) - Configure webhook endpoint
+- [Fiat-to-Crypto Conversion](/ramps/conversion-flows/fiat-crypto-conversion) - Implement conversion flows
+- [API Reference](/api-reference) - Complete webhook documentation
