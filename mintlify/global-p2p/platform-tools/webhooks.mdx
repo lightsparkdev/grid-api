@@ -1,10 +1,43 @@
 ---
 title: "Webhooks"
-description: "Security best practices for webhook verification"
+description: "Configure webhooks to receive real-time updates about P2P payments"
 ---
 
-import Webhooks from '/snippets/webhooks.mdx';
+Webhooks enable real-time notifications for transaction status changes, account updates, and customer events. All webhook functionality is shared across Grid use cases.
 
-<Webhooks />
+For complete webhook documentation, see the Platform Overview section:
 
+<Card title="Webhooks Documentation" icon="webhook" href="/platform-overview/platform-features/webhooks">
+  Complete guide to webhooks including signature verification, event types, and implementation examples
+</Card>
 
+## Global P2P-Specific Webhook Events
+
+When using Grid for Global P2P, you'll work with these webhook types:
+
+- **INCOMING_PAYMENT**: Notifies you of incoming payments that require approval (must respond within 5 seconds with approval/rejection)
+- **OUTGOING_PAYMENT**: Notifies you when sent payments complete or fail
+- **INVITATION_CLAIMED**: Alerts when pay-by-link invitations are claimed
+- **ACCOUNT_STATUS**: Updates when external accounts are verified
+- **KYC_STATUS**: Updates when customer KYC verification completes
+
+<Warning>
+**INCOMING_PAYMENT** webhooks with status `PENDING` require a response within 5 seconds to approve or reject the payment. See the full webhooks guide for implementation details.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Full Webhooks Guide" href="/platform-overview/platform-features/webhooks">
+    Signature verification, retry policy, and approval flows
+  </Card>
+  <Card title="Receiving Payments" href="/global-p2p/sending-receiving-payments/receiving-payments">
+    Learn about incoming payment approval
+  </Card>
+  <Card title="Reconciliation" href="/global-p2p/sending-receiving-payments/reconciliation">
+    Use webhooks for payment reconciliation
+  </Card>
+  <Card title="Sandbox Testing" href="/global-p2p/platform-tools/sandbox-testing">
+    Test webhook approval flows
+  </Card>
+</CardGroup>

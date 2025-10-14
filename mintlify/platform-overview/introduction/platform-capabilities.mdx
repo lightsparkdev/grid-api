@@ -1,0 +1,247 @@
+---
+title: "Platform Capabilities"
+---
+
+The Grid API enables a wide range of payment and financial services capabilities. Whether you're building a neobank, remittance service, rewards platform, or B2B payment solution, Grid provides the infrastructure you need.
+
+## Payment Capabilities
+
+### Cross-Border Payments
+
+Send payments across 50+ countries with automatic currency conversion and routing. Grid handles FX conversion, selects the optimal payment rail, and settles funds in the recipient's local currency.
+
+**Key Features:**
+- Locked exchange rates valid for 1-5 minutes
+- Support for both prefunded and just-in-time funding models
+- Automatic rail selection (ACH, SEPA, PIX, Faster Payments, etc.)
+- Real-time status tracking via webhooks
+- Transparent fee structure
+
+**Common Use Cases:**
+- International payroll
+- Vendor payments
+- Cross-border marketplaces
+- Freelancer payments
+
+### Same-Currency Transfers
+
+Move money between accounts in the same currency without currency conversion. Ideal for domestic transfers, account funding, and withdrawals.
+
+**Key Features:**
+- Instant transfers between internal accounts
+- Push/pull to external bank accounts
+- No FX fees
+- Simple API with no quote required
+
+**Common Use Cases:**
+- Wallet funding
+- Withdrawals to bank accounts
+- Internal ledger transfers
+- Account-to-account moves
+
+### Fiat-to-Crypto Conversion
+
+Convert fiat currency to Bitcoin or stablecoins with instant delivery to self-custody wallets or Grid-managed accounts.
+
+**Key Features:**
+- On-ramp: Bank account → Crypto
+- Support for BTC, USDC, USDT, and more
+- Lightning Network for instant Bitcoin delivery
+- Self-custody wallet support (Spark wallets)
+- Just-in-time funding with payment instructions
+
+**Common Use Cases:**
+- Crypto purchase platforms
+- DeFi on-ramps
+- Bitcoin rewards
+- Trading platform funding
+
+### Crypto-to-Fiat Conversion
+
+Convert Bitcoin or stablecoins to fiat and deliver to bank accounts worldwide.
+
+**Key Features:**
+- Off-ramp: Crypto → Bank account
+- Prefunded model from customer internal accounts
+- Lightning Network for instant Bitcoin receipt
+- Automatic conversion and delivery to local banking rails
+
+**Common Use Cases:**
+- Crypto cashout services
+- DeFi off-ramps
+- Merchant settlement in fiat
+- Portfolio liquidation
+
+## Customer Management
+
+### Onboarding
+
+Grid supports two customer onboarding models:
+
+<Tabs>
+  <Tab title="Regulated Platforms">
+    For regulated financial institutions that perform their own KYC/KYB:
+
+    - Create customers directly via API
+    - Provide customer information you've already collected
+    - Instant customer approval
+    - You maintain compliance responsibility
+  </Tab>
+  <Tab title="Unregulated Platforms">
+    For platforms without financial services licenses:
+
+    - Grid provides hosted KYC/KYB flows
+    - Customers complete verification via Grid-hosted pages
+    - Grid handles compliance screening
+    - Webhook notification on approval/rejection
+  </Tab>
+</Tabs>
+
+Both models support:
+- Individual and business customers
+- UMA address assignment
+- Multiple currencies per customer
+- Customer-level account management
+
+### Account Linking
+
+Connect customer bank accounts and crypto wallets for funding and withdrawals:
+
+**Bank Account Linking:**
+- Plaid integration for instant bank account connection (US)
+- Manual account entry with beneficiary verification
+- Support for checking and savings accounts
+- Multi-currency account support
+
+**Crypto Wallet Linking:**
+- Spark wallet addresses
+- Lightning Network addresses
+- Layer 1 Bitcoin addresses
+- Stablecoin wallet addresses
+
+## UMA-Based Payments
+
+Grid fully implements the UMA protocol for human-readable payment addresses and cross-platform interoperability.
+
+### Sending UMA Payments
+
+Look up recipient UMA addresses and send payments across different platforms:
+
+1. **Receiver lookup**: Resolve `$alice@otherplatform.com` to get payment details
+2. **Required fields**: Grid returns what information is required (name, address, etc.)
+3. **Compliance exchange**: Send sender information for recipient platform screening
+4. **Quote & execute**: Get locked rate and execute payment
+
+### Receiving UMA Payments
+
+Expose your customers' UMA addresses to receive payments from any UMA-compatible platform:
+
+1. **Webhook notification**: Receive `INCOMING_PAYMENT` webhook with sender info
+2. **Compliance review**: Review counterparty information automatically or manually
+3. **Approve/reject**: Respond with approval or rejection within 5 seconds
+4. **Automatic settlement**: Funds delivered to customer account in their preferred currency
+
+### Invitation System
+
+Acquire new customers through pay-by-link invitations:
+
+- Create invitation links with pre-filled payment amounts
+- Share via email, SMS, or social media
+- Customers sign up and receive payment instantly
+- Track invitation claims via webhooks
+
+## Reconciliation & Reporting
+
+### Webhook-Based Reconciliation
+
+Receive real-time notifications for all payment state changes:
+
+- **Transaction status updates**: PENDING → COMPLETED or FAILED
+- **Internal account funding**: ACH deposits, wire receipts, crypto deposits
+- **External account status**: Account verification, screening results
+- **KYC status changes**: Customer approval/rejection
+
+### Query-Based Reconciliation
+
+Poll for transaction status when needed:
+
+- List transactions with filters (customer, date range, status)
+- Get detailed transaction information
+- Query internal account balances
+- Review external account states
+
+### Idempotency
+
+All critical operations support idempotency keys for safe retries:
+
+- Create customers, quotes, and transactions with unique IDs
+- Safely retry failed requests without duplicates
+- Reconcile by checking idempotency key matches
+
+## Testing & Development
+
+### Sandbox Environment
+
+Full-featured sandbox environment for development:
+
+- All API endpoints work identically to production
+- Instant settlement simulation
+- Test scenarios via special account patterns
+- Webhook testing and debugging
+- No real money movement
+
+### Special Test Patterns
+
+Control sandbox behavior with magic account numbers:
+
+- Account ending in `002`: Insufficient funds
+- Account ending in `003`: Account closed/invalid
+- Account ending in `004`: Transfer rejected
+- Account ending in `005`: Timeout (pending → failed after 30s)
+
+### Developer Tools
+
+- **Postman collection**: Pre-built API requests
+- **UMA test wallet**: Test UMA payment flows
+- **Dashboard logs**: Detailed request/response inspection
+- **Webhook replay**: Retry webhook delivery for testing
+
+## Enterprise Features
+
+### High Availability
+
+- 99.9% uptime SLA
+- Redundant infrastructure across multiple regions
+- Automatic failover
+- Rate limiting with burst tolerance
+
+### Scalability
+
+- Handle thousands of transactions per second
+- Batch operations support
+- Async webhook processing
+- Optimized for high-volume use cases
+
+### White-Label Support
+
+- Custom domain configuration for UMA addresses
+- Branded KYC flows (coming soon)
+- Custom webhook URLs per environment
+- API-first design for full integration control
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="FAQ" href="/platform-overview/introduction/faq">
+    Common questions and answers
+  </Card>
+  <Card title="Core Concepts" href="/platform-overview/core-concepts/entities">
+    Learn about Grid's data model
+  </Card>
+  <Card title="Webhooks" href="/platform-overview/platform-features/webhooks">
+    Understand real-time event notifications
+  </Card>
+  <Card title="Sandbox Testing" href="/platform-overview/platform-features/sandbox-testing">
+    Start testing your integration
+  </Card>
+</CardGroup>

@@ -1,7 +1,37 @@
 ---
 title: "Webhooks"
+description: "Configure webhooks to receive real-time updates about reward distributions"
 ---
 
-import Webhooks from '/snippets/webhooks.mdx';
+Webhooks enable real-time notifications for transaction status changes, account updates, and customer events. All webhook functionality is shared across Grid use cases.
 
-<Webhooks />
+For complete webhook documentation, see the Platform Overview section:
+
+<Card title="Webhooks Documentation" icon="webhook" href="/platform-overview/platform-features/webhooks">
+  Complete guide to webhooks including signature verification, event types, and implementation examples
+</Card>
+
+## Rewards-Specific Webhook Events
+
+When using Grid for Rewards & Cashback, you'll primarily work with these webhook types:
+
+- **OUTGOING_PAYMENT**: Notifies you when Bitcoin rewards are delivered to customer wallets
+- **ACCOUNT_STATUS**: Alerts when customer Spark wallets are verified
+- **KYC_STATUS**: Updates when customer KYC verification completes (for hosted KYC flows)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Full Webhooks Guide" href="/platform-overview/platform-features/webhooks">
+    Signature verification, retry policy, and implementation
+  </Card>
+  <Card title="Distributing Rewards" href="/rewards/developer-guides/distributing-rewards">
+    Learn about reward distribution flows
+  </Card>
+  <Card title="Error Handling" href="/platform-overview/platform-features/error-handling">
+    Handle webhook failures gracefully
+  </Card>
+  <Card title="Sandbox Testing" href="/rewards/platform-tools/sandbox-testing">
+    Test webhooks in sandbox
+  </Card>
+</CardGroup>

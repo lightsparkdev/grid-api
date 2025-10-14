@@ -1,7 +1,37 @@
 ---
 title: "Webhooks"
+description: "Configure webhooks to receive real-time updates about your payments"
 ---
 
-import Webhooks from '/snippets/webhooks.mdx';
+Webhooks enable real-time notifications for transaction status changes, account updates, and customer events. All webhook functionality is shared across Grid use cases.
 
-<Webhooks />
+For complete webhook documentation, see the Platform Overview section:
+
+<Card title="Webhooks Documentation" icon="webhook" href="/platform-overview/platform-features/webhooks">
+  Complete guide to webhooks including signature verification, event types, and implementation examples
+</Card>
+
+## Payouts-Specific Webhook Events
+
+When using Grid for Payouts & B2B, you'll primarily work with these webhook types:
+
+- **OUTGOING_PAYMENT**: Notifies you when payout status changes (`PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`)
+- **ACCOUNT_STATUS**: Alerts when external bank accounts are verified or rejected
+- **KYC_STATUS**: Updates when customer KYC verification completes (for hosted KYC flows)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Full Webhooks Guide" href="/platform-overview/platform-features/webhooks">
+    Signature verification, retry policy, and implementation
+  </Card>
+  <Card title="Reconciliation" href="/payouts-and-b2b/payment-flow/reconciliation">
+    Use webhooks for payment reconciliation
+  </Card>
+  <Card title="Error Handling" href="/payouts-and-b2b/payment-flow/error-handling">
+    Handle webhook failures gracefully
+  </Card>
+  <Card title="Sandbox Testing" href="/payouts-and-b2b/platform-tools/sandbox-testing">
+    Test webhooks in sandbox
+  </Card>
+</CardGroup>
