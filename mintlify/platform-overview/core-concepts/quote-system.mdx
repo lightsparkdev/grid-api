@@ -1,0 +1,430 @@
+---
+title: "Quote System"
+description: "How exchange rates, pricing, and payment execution work"
+---
+
+Quotes are Grid's mechanism for providing locked-in exchange rates, transparent fee calculations, and payment instructions. Understanding quotes is essential for all cross-currency or crypto-involved transactions.
+
+## What is a Quote?
+
+A **quote** locks in:
+- An exchange rate between two currencies
+- Total fees for the transaction
+- Exact amounts to be sent and received
+- Payment instructions (if JIT funding is needed)
+- An expiration time (typically 1-5 minutes, up to 15 minutes depending on the payment type)
+
+Quotes ensure that your customers know exactly what they'll pay and what the recipient will receive before committing to a transaction.
+
+## When Do You Need a Quote?
+
+<Tabs>
+  <Tab title="Quotes Required">
+    Use quotes for:
+    - **Cross-currency transfers** (USD → EUR, BRL → MXN)
+    - **Fiat-to-crypto conversion** (USD → BTC)
+    - **Crypto-to-fiat conversion** (BTC → USD)
+    - **UMA payments** (always require quotes)
+    - **JIT funded payments** (need payment instructions)
+
+    These scenarios involve currency conversion, exchange rate risk, or complex routing.
+  </Tab>
+
+  <Tab title="Quotes Optional">
+    For same-currency transfers, use simpler endpoints:
+    - `POST /transfer-out` - Send from internal to external account (same currency)
+    - `POST /transfer-in` - Pull from external to internal account (same currency)
+
+    No quote needed because there's no currency conversion.
+  </Tab>
+</Tabs>
+
+## Creating a Quote
+
+### Basic Cross-Currency Quote
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "accountId": "InternalAccount:abc123"
+    },
+    "destination": {
+      "accountId": "ExternalAccount:xyz789"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 100000
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000050",
+  "source": {
+    "accountId": "InternalAccount:abc123",
+    "currency": "USD"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:xyz789",
+    "currency": "EUR"
+  },
+  "sendingAmount": {
+    "amount": 100000,
+    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
+  },
+  "receivingAmount": {
+    "amount": 92000,
+    "currency": {"code": "EUR", "symbol": "€", "decimals": 2}
+  },
+  "exchangeRate": 0.92,
+  "fees": {
+    "amount": 150,
+    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
+  },
+  "expiresAt": "2025-10-03T15:05:00Z",
+  "status": "PENDING"
+}
+```
+
+This quote says: Send $1,000 USD, recipient receives €920, fees are $1.50, expires in 5 minutes.
+
+### Locked Currency Side
+
+You can lock either the **sending** or **receiving** amount:
+
+<Tabs>
+  <Tab title="Lock Sending Amount">
+    **Use when:** Customer knows exactly how much they want to send
+
+    ```json
+    {
+      "lockedCurrencySide": "SENDING",
+      "lockedCurrencyAmount": 100000
+    }
+    ```
+
+    Grid calculates what the recipient will receive based on current exchange rates.
+  </Tab>
+
+  <Tab title="Lock Receiving Amount">
+    **Use when:** Recipient must receive an exact amount (e.g., invoice payment)
+
+    ```json
+    {
+      "lockedCurrencySide": "RECEIVING",
+      "lockedCurrencyAmount": 92000
+    }
+    ```
+
+    Grid calculates how much the sender must send to ensure recipient gets exactly €920.
+  </Tab>
+</Tabs>
+
+## Funding Models
+
+Grid supports two funding models for quotes:
+
+### Prefunded (From Internal Account)
+
+Source is an existing internal account with available balance:
+
+```json
+{
+  "source": {
+    "accountId": "InternalAccount:abc123"
+  }
+}
+```
+
+- Funds are debited immediately when quote is executed
+- No payment instructions needed
+- Best for: Customers with pre-loaded balances
+
+### Just-In-Time (JIT) Funding
+
+Source is the customer ID—Grid provides payment instructions:
+
+```json
+{
+  "source": {
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+  }
+}
+```
+
+**Quote response includes payment instructions:**
+
+```json
+{
+  "id": "Quote:...",
+  "paymentInstructions": {
+    "reference": "UMA-Q12345-REF",
+    "amount": {
+      "amount": 100000,
+      "currency": {"code": "USD", "decimals": 2}
+    },
+    "destinationAccount": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "9876543210",
+      "routingNumber": "110000000",
+      "beneficiary": {
+        "beneficiaryType": "BUSINESS",
+        "fullName": "Lightspark Grid"
+      }
+    }
+  }
+}
+```
+
+- Customer sends funds to provided account with reference
+- Quote executes automatically when Grid receives payment
+- Best for: On-demand payments without maintaining balances
+
+## Executing a Quote
+
+Once a quote is created, execute it before it expires:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/execute \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json"
+```
+
+**Response:**
+
+```json
+{
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000060",
+  "status": "PENDING",
+  "type": "OUTGOING",
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000050"
+}
+```
+
+### Execution Timing
+
+<Tabs>
+  <Tab title="Prefunded">
+    - Quote executes **immediately**
+    - Transaction created with status `PENDING`
+    - Funds debited from source account
+    - Settlement begins right away
+  </Tab>
+
+  <Tab title="JIT Funded">
+    - Quote waits for payment receipt
+    - Once Grid receives payment with correct reference
+    - Quote executes automatically
+    - Transaction created and settlement begins
+  </Tab>
+</Tabs>
+
+## Immediate Execution
+
+For **market rate execution** without quote approval, use the `immediatelyExecute` flag:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {"accountId": "InternalAccount:abc123"},
+    "destination": {"accountId": "ExternalAccount:xyz789"},
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 100000,
+    "immediatelyExecute": true
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "quote": {
+    "id": "Quote:...",
+    "status": "EXECUTED"
+  },
+  "transaction": {
+    "id": "Transaction:...",
+    "status": "PENDING"
+  }
+}
+```
+
+- Quote is created and executed in one API call
+- Best for: Rewards distribution, micro-payments, time-sensitive transfers
+- Caution: Customer doesn't see rate before execution
+
+## Quote Expiration
+
+Quotes have limited validity:
+
+| Quote Type | Typical Expiration |
+|------------|-------------------|
+| Cross-currency fiat | 1-5 minutes |
+| Fiat-to-crypto | 1-5 minutes |
+| Crypto-to-fiat | 1-5 minutes |
+| UMA quotes | 15 minutes |
+
+**When a quote expires:**
+- Status changes to `EXPIRED`
+- Cannot be executed
+- Must create a new quote with current rates
+
+**Handling expiration:**
+
+```javascript
+try {
+  await executeQuote(quoteId);
+} catch (error) {
+  if (error.code === 'QUOTE_EXPIRED') {
+    // Create new quote with same parameters
+    const newQuote = await createQuote(originalParams);
+    await executeQuote(newQuote.id);
+  }
+}
+```
+
+## Creating External Accounts in Quotes
+
+You can create an external account inline when creating a quote:
+
+```json
+{
+  "source": {
+    "accountId": "InternalAccount:abc123"
+  },
+  "destination": {
+    "externalAccountDetails": {
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "EUR",
+      "accountInfo": {
+        "accountType": "IBAN_ACCOUNT",
+        "iban": "DE89370400440532013000",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Alice Smith"
+        }
+      }
+    }
+  },
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 100000
+}
+```
+
+This is useful for one-time recipients or when you don't want to manage external accounts separately.
+
+## Fees
+
+All fees are transparently displayed in the quote response:
+
+```json
+{
+  "fees": {
+    "amount": 150,
+    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
+  },
+  "feeBreakdown": [
+    {
+      "type": "TRANSACTION_FEE",
+      "amount": 100,
+      "currency": {"code": "USD", "decimals": 2}
+    },
+    {
+      "type": "FX_SPREAD",
+      "amount": 50,
+      "currency": {"code": "USD", "decimals": 2}
+    }
+  ]
+}
+```
+
+Fees are deducted from the sending amount, so:
+- **Customer sends**: $1,000
+- **Fees**: $1.50
+- **Amount converted**: $998.50
+- **Recipient receives**: €918.82 (at 0.92 rate)
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always show the quote to customers before executing">
+    Let customers review the exchange rate, fees, and final amounts before committing:
+
+    ```javascript
+    // ✅ Good: Show quote details, await confirmation
+    const quote = await createQuote(params);
+    showQuoteToUser(quote);
+    if (await userConfirms()) {
+      await executeQuote(quote.id);
+    }
+
+    // ❌ Bad: Immediate execution without review (unless micro-payments/rewards)
+    await createQuote({...params, immediatelyExecute: true});
+    ```
+  </Accordion>
+
+  <Accordion title="Handle expiration gracefully">
+    Store quote parameters so you can recreate expired quotes:
+
+    ```javascript
+    const quoteParams = {
+      source: {accountId: customerAccount},
+      destination: {accountId: recipientAccount},
+      lockedCurrencySide: 'SENDING',
+      lockedCurrencyAmount: amount
+    };
+
+    let quote = await createQuote(quoteParams);
+
+    // Later, if expired...
+    try {
+      await executeQuote(quote.id);
+    } catch (error) {
+      if (error.code === 'QUOTE_EXPIRED') {
+        quote = await createQuote(quoteParams); // Recreate with fresh rate
+        await executeQuote(quote.id);
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Monitor quote status via webhooks">
+    Subscribe to quote-related webhooks:
+
+    ```javascript
+    app.post('/webhooks/grid', (req, res) => {
+      const {transaction, type} = req.body;
+
+      if (type === 'OUTGOING_PAYMENT' && transaction.quoteId) {
+        // Quote was executed, transaction created
+        updateCustomerUI(transaction);
+      }
+
+      res.status(200).send();
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Account Model" href="/platform-overview/core-concepts/account-model">
+    Learn about internal and external accounts
+  </Card>
+  <Card title="Transaction Lifecycle" href="/platform-overview/core-concepts/transaction-lifecycle">
+    Follow a payment from quote to settlement
+  </Card>
+  <Card title="Payouts Quickstart" href="/payouts-and-b2b/quickstart">
+    Try creating and executing a quote
+  </Card>
+  <Card title="Error Handling" href="/platform-overview/platform-features/error-handling">
+    Handle quote expiration and other errors
+  </Card>
+</CardGroup>

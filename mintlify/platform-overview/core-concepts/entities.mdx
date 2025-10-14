@@ -1,0 +1,223 @@
+---
+title: "Entities & Relationships"
+description: "Understanding Grid's core data model"
+---
+
+import Terminology from '/snippets/terminology.mdx';
+
+<Terminology />
+
+## Platform Configuration
+
+Your **platform configuration** defines global settings for your Grid integration:
+
+- **Webhook endpoint**: URL where Grid sends event notifications
+- **Supported currencies**: Which currencies your platform offers
+- **UMA domain** (optional): Your domain for UMA addresses (e.g., `yourplatform.com`)
+- **Required counterparty fields** (UMA only): Information required from senders for compliance
+
+Platform configuration is managed via the dashboard or by contacting Lightspark support.
+
+## Entity Relationships
+
+Understanding how entities relate to each other is key to working effectively with the Grid API:
+
+```
+Platform
+├── Platform Internal Accounts (for settlement/liquidity)
+│   └── Balance in each supported currency
+├── Customers
+│   ├── KYC/KYB Status
+│   ├── UMA Address (optional)
+│   ├── Platform Customer ID (your system's ID)
+│   ├── Customer Internal Accounts
+│   │   └── Balance in each currency
+│   └── External Accounts
+│       ├── Bank accounts (US_ACCOUNT, IBAN_ACCOUNT, etc.)
+│       └── Crypto wallets (SPARK_WALLET)
+└── Transactions
+    ├── Quotes (pre-transaction rate locks)
+    └── Transaction records (INCOMING/OUTGOING)
+```
+
+### Ownership Model
+
+**Internal Accounts** can be owned by:
+- **Platform**: Used for settlement, liquidity management, or distributing rewards
+- **Customers**: Belong to specific customers for holding their funds
+
+**External Accounts** are always associated with either:
+- A specific **Customer**: For customer-owned bank accounts or wallets
+- The **Platform**: For platform-owned settlement accounts
+
+**Transactions** reference:
+- A **Customer** (for customer-initiated payments)
+- OR a **Platform Internal Account** (for platform-initiated payments like rewards)
+
+## ID Format
+
+All Grid entities use a consistent ID format:
+
+```
+EntityType:UUID
+```
+
+Examples:
+- `Customer:019542f5-b3e7-1d02-0000-000000000001`
+- `InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965`
+- `Transaction:019542f5-b3e7-1d02-0000-000000000030`
+- `Quote:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123`
+
+This format makes IDs self-documenting and easier to debug.
+
+## Platform Customer ID
+
+When creating customers, you can provide your own `platformCustomerId`:
+
+```json
+{
+  "platformCustomerId": "user_12345_from_my_system",
+  "customerType": "INDIVIDUAL",
+  "fullName": "Alice Johnson"
+}
+```
+
+This allows you to:
+- Map Grid customers to your internal user IDs
+- Query transactions by your own customer identifiers
+- Maintain referential integrity between systems
+
+Grid returns both IDs in all customer-related responses:
+```json
+{
+  "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "user_12345_from_my_system"
+}
+```
+
+## Account Status Lifecycle
+
+### Internal Accounts
+
+Internal accounts have simple statuses:
+- **ACTIVE**: Ready to send and receive funds
+- **INACTIVE**: Cannot be used for transactions
+
+### External Accounts
+
+External accounts progress through a more complex lifecycle:
+
+```
+PENDING → ACTIVE → INACTIVE
+```
+
+- **PENDING**: Account created, undergoing verification/screening
+- **ACTIVE**: Verified and ready for use
+- **INACTIVE**: Disabled (compliance issue, customer request, etc.)
+
+Accounts can also be:
+- **REJECTED**: Failed verification or screening
+
+You'll receive `ACCOUNT_STATUS` webhooks as accounts transition between states.
+
+## Transaction Types
+
+From your platform's perspective, transactions are either:
+
+**OUTGOING**
+- Your customer/platform is sending funds
+- Source: Internal account (yours)
+- Destination: External account, internal account, or UMA address
+
+**INCOMING**
+- Your customer/platform is receiving funds
+- Source: External sender (could be UMA address)
+- Destination: Internal account (yours)
+
+The same underlying transfer appears as OUTGOING on one platform and INCOMING on another when crossing platform boundaries.
+
+## Amount Representation
+
+All monetary amounts in Grid are represented in the **smallest currency unit**:
+
+<Tabs>
+  <Tab title="Fiat Currencies">
+    **Cents, pence, centavos, etc.**
+
+    ```json
+    {
+      "amount": 50000,
+      "currency": {
+        "code": "USD",
+        "symbol": "$",
+        "decimals": 2
+      }
+    }
+    ```
+
+    This represents **$500.00** (50000 cents)
+  </Tab>
+
+  <Tab title="Cryptocurrencies">
+    **Satoshis for Bitcoin**
+
+    ```json
+    {
+      "amount": 10000000,
+      "currency": {
+        "code": "BTC",
+        "symbol": "₿",
+        "decimals": 8
+      }
+    }
+    ```
+
+    This represents **0.1 BTC** (10,000,000 satoshis)
+  </Tab>
+</Tabs>
+
+The `decimals` field tells you how many decimal places to use when displaying the amount:
+
+```javascript
+function formatAmount(amount, currency) {
+  const value = amount / Math.pow(10, currency.decimals);
+  return `${currency.symbol}${value.toFixed(currency.decimals)}`;
+}
+
+// formatAmount(50000, {code: "USD", symbol: "$", decimals: 2}) → "$500.00"
+// formatAmount(10000000, {code: "BTC", symbol: "₿", decimals: 8}) → "₿0.10000000"
+```
+
+## Timestamps
+
+All timestamps in Grid use **ISO 8601 format with UTC timezone**:
+
+```json
+{
+  "createdAt": "2025-10-03T15:00:00Z",
+  "settledAt": "2025-10-03T15:30:00Z"
+}
+```
+
+Key timestamp fields:
+- **createdAt**: When the entity was created
+- **updatedAt**: Last modification time
+- **settledAt**: When a transaction completed (transactions only)
+- **expiresAt**: When a quote expires (quotes only)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quote System" href="/platform-overview/core-concepts/quote-system">
+    Learn how exchange rates and pricing work
+  </Card>
+  <Card title="Account Model" href="/platform-overview/core-concepts/account-model">
+    Understand internal vs external accounts
+  </Card>
+  <Card title="Transaction Lifecycle" href="/platform-overview/core-concepts/transaction-lifecycle">
+    Follow a payment from creation to settlement
+  </Card>
+  <Card title="Currencies & Rails" href="/platform-overview/core-concepts/currencies-and-rails">
+    See supported currencies and payment methods
+  </Card>
+</CardGroup>
