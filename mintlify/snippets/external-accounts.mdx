@@ -8,188 +8,12 @@ External accounts are bank accounts, cryptocurrency wallets, or payment destinat
   Platform accounts are managed at the organization level.
 </Info>
 
-## How it works
-
-1. **Register account** with required details (beneficiary info for customer accounts, bank details for all)
-2. **Wait for verification** (account moves to `ACTIVE` status)
-3. **Send payments** using the account as a destination in transfers or quotes
-4. **Track status** via webhooks and transaction queries
-
-## Prerequisites
-
-**For customer external accounts:**
-
-- Active Grid API credentials
-- At least one customer created
-- Valid bank account or wallet information
-- Beneficiary information (individual or business)
-
-**For platform external accounts:**
-
-- Active Grid API credentials
-- Valid bank account or wallet information for your organization
-
-## Supported account types
+## Create external accounts by region or wallet
 
 <Tabs>
 <Tab title="United States">
 **ACH, Wire, RTP**
 
-```json
-{
-  "accountType": "US_ACCOUNT",
-  "accountNumber": "123456789",
-  "routingNumber": "021000021",
-  "accountCategory": "CHECKING",
-  "bankName": "Chase Bank",
-  "beneficiary": {
-    "beneficiaryType": "INDIVIDUAL",
-    "fullName": "John Doe",
-    "birthDate": "1990-01-15",
-    "nationality": "US",
-    "address": {
-      "line1": "123 Main Street",
-      "city": "San Francisco",
-      "state": "CA",
-      "postalCode": "94105",
-      "country": "US"
-    }
-  }
-}
-```
-
-<Note>
-  Category must be `CHECKING` or `SAVINGS`. Routing number must be 9 digits.
-</Note>
-</Tab>
-
-<Tab title="Mexico">
-**CLABE/SPEI**
-
-```json
-{
-  "accountType": "CLABE",
-  "clabeNumber": "123456789012345678",
-  "bankName": "BBVA Mexico",
-  "beneficiary": {
-    "beneficiaryType": "INDIVIDUAL",
-    "fullName": "María García",
-    "birthDate": "1985-03-15",
-    "nationality": "MX",
-    "address": {
-      "line1": "Av. Reforma 123",
-      "city": "Ciudad de México",
-      "state": "CDMX",
-      "postalCode": "06600",
-      "country": "MX"
-    }
-  }
-}
-```
-
-</Tab>
-
-<Tab title="Brazil">
-**PIX**
-
-```json
-{
-  "accountType": "PIX",
-  "pixKey": "user@email.com",
-  "pixKeyType": "EMAIL",
-  "bankName": "Nubank",
-  "beneficiary": {
-    "beneficiaryType": "INDIVIDUAL",
-    "fullName": "João Silva",
-    "birthDate": "1988-07-22",
-    "nationality": "BR",
-    "address": {
-      "line1": "Rua das Flores 456",
-      "city": "São Paulo",
-      "state": "SP",
-      "postalCode": "01234-567",
-      "country": "BR"
-    }
-  }
-}
-```
-
-<Tip>Key types: `CPF`, `CNPJ`, `EMAIL`, `PHONE`, or `RANDOM`</Tip>
-</Tab>
-
-<Tab title="Europe">
-**IBAN/SEPA**
-
-```json
-{
-  "accountType": "IBAN",
-  "iban": "DE89370400440532013000",
-  "swiftBic": "DEUTDEFF",
-  "bankName": "Deutsche Bank",
-  "beneficiary": {
-    "beneficiaryType": "INDIVIDUAL",
-    "fullName": "Hans Schmidt",
-    "birthDate": "1982-11-08",
-    "nationality": "DE",
-    "address": {
-      "line1": "Hauptstraße 789",
-      "city": "Berlin",
-      "state": "Berlin",
-      "postalCode": "10115",
-      "country": "DE"
-    }
-  }
-}
-```
-
-</Tab>
-
-<Tab title="India">
-**UPI**
-
-```json
-{
-  "accountType": "UPI",
-  "vpa": "user@okbank",
-  "beneficiary": {
-    "beneficiaryType": "INDIVIDUAL",
-    "fullName": "Priya Sharma",
-    "birthDate": "1991-05-14",
-    "nationality": "IN",
-    "address": {
-      "line1": "123 MG Road",
-      "city": "Mumbai",
-      "state": "Maharashtra",
-      "postalCode": "400001",
-      "country": "IN"
-    }
-  }
-}
-```
-
-</Tab>
-
-<Tab title="Cryptocurrency">
-**Bitcoin Lightning (Spark Wallet)**
-
-```json
-{
-  "accountType": "SPARK_WALLET",
-  "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-}
-```
-
-<Note>
-  Spark wallets don't require beneficiary information as they are self-custody wallets.
-</Note>
-</Tab>
-</Tabs>
-
-## Creating customer external accounts
-
-Add an external account for a specific customer:
-
-<CodeGroup>
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
   -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
@@ -220,97 +44,170 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }'
 ```
 
-```javascript Node.js
-const response = await fetch(
-  "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts",
-  {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(
-        `${apiTokenId}:${apiSecret}`
-      ).toString("base64")}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      currency: "USD",
-      platformAccountId: "user_123_primary_bank",
-      accountInfo: {
-        accountType: "US_ACCOUNT",
-        accountNumber: "123456789",
-        routingNumber: "021000021",
-        accountCategory: "CHECKING",
-        bankName: "Chase Bank",
-        beneficiary: {
-          beneficiaryType: "INDIVIDUAL",
-          fullName: "John Doe",
-          birthDate: "1990-01-15",
-          nationality: "US",
-          address: {
-            line1: "123 Main Street",
-            city: "San Francisco",
-            state: "CA",
-            postalCode: "94105",
-            country: "US"
-          }
+<Note>
+  Category must be `CHECKING` or `SAVINGS`. Routing number must be 9 digits.
+</Note>
+</Tab>
+
+<Tab title="Mexico">
+**CLABE/SPEI**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "MXN",
+    "platformAccountId": "mx_beneficiary_001",
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "123456789012345678",
+      "bankName": "BBVA Mexico",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "María García",
+        "birthDate": "1985-03-15",
+        "nationality": "MX",
+        "address": {
+          "line1": "Av. Reforma 123",
+          "city": "Ciudad de México",
+          "state": "CDMX",
+          "postalCode": "06600",
+          "country": "MX"
         }
       }
-    }),
-  }
-);
-
-const externalAccount = await response.json();
-console.log("External account created:", externalAccount.id);
-```
-
-```python Python
-import requests
-import base64
-import json
-
-credentials = base64.b64encode(
-    f"{api_token_id}:{api_secret}".encode()
-).decode()
-
-response = requests.post(
-    'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts',
-    headers={
-        'Authorization': f'Basic {credentials}',
-        'Content-Type': 'application/json'
-    },
-    json={
-        'customerId': 'Customer:019542f5-b3e7-1d02-0000-000000000001',
-        'currency': 'USD',
-        'platformAccountId': 'user_123_primary_bank',
-        'accountInfo': {
-            'accountType': 'US_ACCOUNT',
-            'accountNumber': '123456789',
-            'routingNumber': '021000021',
-            'accountCategory': 'CHECKING',
-            'bankName': 'Chase Bank',
-            'beneficiary': {
-                'beneficiaryType': 'INDIVIDUAL',
-                'fullName': 'John Doe',
-                'birthDate': '1990-01-15',
-                'nationality': 'US',
-                'address': {
-                    'line1': '123 Main Street',
-                    'city': 'San Francisco',
-                    'state': 'CA',
-                    'postalCode': '94105',
-                    'country': 'US'
-                }
-            }
-        }
     }
-)
-
-external_account = response.json()
-print(f"External account created: {external_account['id']}")
+  }'
 ```
 
-</CodeGroup>
+</Tab>
 
-**Response:**
+<Tab title="Brazil">
+**PIX**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "BRL",
+    "platformAccountId": "br_pix_001",
+    "accountInfo": {
+      "accountType": "PIX",
+      "pixKey": "user@email.com",
+      "pixKeyType": "EMAIL",
+      "bankName": "Nubank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "João Silva",
+        "birthDate": "1988-07-22",
+        "nationality": "BR",
+        "address": {
+          "line1": "Rua das Flores 456",
+          "city": "São Paulo",
+          "state": "SP",
+          "postalCode": "01234-567",
+          "country": "BR"
+        }
+      }
+    }
+  }'
+```
+
+<Tip>Key types: `CPF`, `CNPJ`, `EMAIL`, `PHONE`, or `RANDOM`</Tip>
+</Tab>
+
+<Tab title="Europe">
+**IBAN/SEPA**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "EUR",
+    "platformAccountId": "eu_iban_001",
+    "accountInfo": {
+      "accountType": "IBAN",
+      "iban": "DE89370400440532013000",
+      "swiftBic": "DEUTDEFF",
+      "bankName": "Deutsche Bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Hans Schmidt",
+        "birthDate": "1982-11-08",
+        "nationality": "DE",
+        "address": {
+          "line1": "Hauptstraße 789",
+          "city": "Berlin",
+          "state": "Berlin",
+          "postalCode": "10115",
+          "country": "DE"
+        }
+      }
+    }
+  }'
+```
+
+</Tab>
+
+<Tab title="India">
+**UPI**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "INR",
+    "platformAccountId": "in_upi_001",
+    "accountInfo": {
+      "accountType": "UPI",
+      "vpa": "user@okbank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Priya Sharma",
+        "birthDate": "1991-05-14",
+        "nationality": "IN",
+        "address": {
+          "line1": "123 MG Road",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "postalCode": "400001",
+          "country": "IN"
+        }
+      }
+    }
+  }'
+```
+
+</Tab>
+
+<Tab title="Cryptocurrency">
+**Bitcoin Lightning (Spark Wallet)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "BTC",
+    "platformAccountId": "btc_spark_001",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+    }
+  }'
+```
+
+<Note>
+  Spark wallets don't require beneficiary information as they are self-custody wallets.
+</Note>
+</Tab>
+</Tabs>
+<Tip>Use `platformAccountId` to tie your internal id with the external account.</Tip>
+
+**Sample Response:**
 
 ```json
 {
@@ -375,22 +272,8 @@ For business accounts, include business information:
 }
 ```
 
-### Platform account IDs
-
-Link external accounts to your internal system using `platformAccountId`:
-
-```json
-{
-  "currency": "USD",
-  "platformAccountId": "user_123_primary_bank",
-  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-  ...
-}
-```
-
-<Tip>Use `platformAccountId` for easier reconciliation with your database.</Tip>
-
 ## Account status
+Beneficiary data may be reviewed for risk and compliance.  Only `ACTIVE` accounts can receive payments.  Updates to account data may trigger account re-review.
 
 | Status         | Description                         |
 | -------------- | ----------------------------------- |
@@ -398,8 +281,6 @@ Link external accounts to your internal system using `platformAccountId`:
 | `ACTIVE`       | Verified and ready for transactions |
 | `UNDER_REVIEW` | Additional review required          |
 | `INACTIVE`     | Disabled, cannot be used            |
-
-<Warning>Only `ACTIVE` accounts can receive payments.</Warning>
 
 ## Listing external accounts
 
@@ -421,55 +302,8 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/external-accoun
 
 <Info>
   Platform external accounts are used for platform-wide operations like
-  receiving funds from external sources.
+  depositing funds from external sources.
 </Info>
-
-## Using external accounts in payments
-
-### Same-currency transfers
-
-Use `/transfer-out` for transfers without currency exchange:
-
-```bash
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "source": { accountId: "InternalAccount:a12dcbd6..." },
-    "destination": { accountId: "ExternalAccount:e85dcbd6..." },
-    "amount": 50000, // $500.00 in cents
-  }'
-```
-
-### Cross-currency transfers
-
-For currency exchange, create and execute a quote:
-
-```bash Create quote
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "source": { accountId: "InternalAccount:a12dcbd6..." },
-    "destination": { accountId: "ExternalAccount:e85dcbd6...", currency: "MXN" },
-    "lockedCurrencySide": "RECEIVING",
-    "lockedCurrencyAmount": 1000000, // 10,000 MXN
-  }'
-```
-
-```bash Execute quote
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
-```
-
-### Lookup receiver details
-
-Check supported currencies and rates before creating a quote:
-
-```bash
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/receiver/external-account/ExternalAccount:e85dcbd6...?customerId=Customer:019542f5...' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
-```
 
 ## Best practices
 
@@ -514,18 +348,6 @@ function displaySafely(account) {
     status: account.status,
   };
 }
-```
-
-</Accordion>
-
-<Accordion title="Use platformAccountId">
-Link to your internal database for easier reconciliation:
-
-```javascript
-const account = await createExternalAccount({
-  platformAccountId: `db_account_${yourDatabaseId}`,
-  ...
-});
 ```
 
 </Accordion>

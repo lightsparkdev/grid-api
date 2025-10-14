@@ -61,7 +61,7 @@ To register a new customer directly, use the `POST /customers` endpoint (regulat
 
 ```bash
 curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "platformCustomerId": "9f84e0c2a72c4fa",
@@ -119,7 +119,7 @@ The Grid API validates these requirements and will return an error if they are n
 
 ```bash
 curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "umaAddress": "$acme.corp@mycompany.com",
@@ -156,7 +156,7 @@ Unregulated institutions should initiate a hosted KYC/KYB flow. Generate a link 
 
 ```bash
 curl -sS -G "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   --data-urlencode "platformCustomerId=9f84e0c2a72c4fa" \
   --data-urlencode "redirectUri=https://app.example.com/onboarding/completed"
 ```
@@ -186,14 +186,14 @@ You can retrieve customer information using either the Grid-assigned customer ID
 
 ```bash
 curl -sS -X GET "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET"
 ```
 
 or list customers with a filter:
 
 ```bash
 curl -sS -G "https://api.lightspark.com/grid/2025-10-13/customers" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   --data-urlencode "umaAddress={umaAddress}" \
   --data-urlencode "platformCustomerId={platformCustomerId}" \
   --data-urlencode "customerType={customerType}" \
@@ -211,7 +211,7 @@ Use PATCH to update customer information:
 
 ```bash
 curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "bankAccountInfo": {
@@ -253,7 +253,7 @@ For large-scale customer imports, you can upload a CSV file containing customer 
 
 ```bash
 curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers/bulk/csv" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -F "file=@customers.csv"
 ```
 
@@ -282,7 +282,7 @@ You can track the job status through:
 
 ```bash
 curl -sS -X GET "https://api.lightspark.com/grid/2025-10-13/customers/bulk/jobs/{jobId}" \
-  -u "$GRID_API_KEY:$GRID_API_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET"
 ```
 
 Example job status response:

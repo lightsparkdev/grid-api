@@ -39,7 +39,7 @@ For personal conversions and consumer wallets.
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "platformCustomerId": "user_12345",
@@ -60,7 +60,7 @@ For corporate conversions and business accounts.
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
-  -u "$GRID_API_KEY:$GRID_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "platformCustomerId": "biz_67890",
