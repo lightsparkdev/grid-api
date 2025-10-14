@@ -9,125 +9,6 @@ Grid supports a wide range of fiat currencies and cryptocurrencies, with automat
 
 ## Supported Currencies
 
-### Fiat Currencies
-
-| Currency | Code | Symbol | Decimals | Regions |
-|----------|------|--------|----------|---------|
-| US Dollar | USD | $ | 2 | United States |
-| Euro | EUR | € | 2 | European Union |
-| British Pound | GBP | £ | 2 | United Kingdom |
-| Brazilian Real | BRL | R$ | 2 | Brazil |
-| Mexican Peso | MXN | $ | 2 | Mexico |
-| Indian Rupee | INR | ₹ | 2 | India |
-
-### Cryptocurrencies
-
-| Currency | Code | Symbol | Decimals | Rails |
-|----------|------|--------|----------|-------|
-| Bitcoin | BTC | ₿ | 8 | Lightning, Layer 1 |
-| Stablecoins | USDC, USDT | $ | 2-8 | Various blockchains |
-| BTKN Tokens | BTKN | - | Varies | Spark Network |
-
-## Payment Rails
-
-Grid automatically selects the optimal payment rail for each transaction based on currency, destination country, and amount.
-
-### Fiat Rails
-
-<Tabs>
-  <Tab title="United States">
-    **ACH (Automated Clearing House)**
-    - Speed: 1-2 business days
-    - Cost: Low
-    - Use: Bank-to-bank transfers
-    - Limits: Up to $1M per transaction
-
-    **RTP (Real-Time Payments)**
-    - Speed: Seconds
-    - Cost: Low
-    - Use: Instant bank transfers
-    - Limits: Up to $1M per transaction
-
-    **Wire Transfer**
-    - Speed: Same business day
-    - Cost: Higher
-    - Use: Large amounts, urgent payments
-    - Limits: Very high ($10M+)
-  </Tab>
-
-  <Tab title="European Union">
-    **SEPA Instant**
-    - Speed: Seconds to minutes
-    - Cost: Low
-    - Use: Instant EUR transfers within EU
-    - Limits: €100,000 per transaction
-
-    **SEPA Credit Transfer**
-    - Speed: 1 business day
-    - Cost: Very low
-    - Use: Standard EUR transfers
-    - Limits: No formal limit
-  </Tab>
-
-  <Tab title="United Kingdom">
-    **Faster Payments**
-    - Speed: Seconds to minutes
-    - Cost: Low
-    - Use: Instant GBP transfers
-    - Limits: £1M per transaction
-  </Tab>
-
-  <Tab title="Brazil">
-    **PIX**
-    - Speed: Seconds
-    - Cost: Very low
-    - Use: Instant BRL transfers
-    - Available: 24/7/365
-    - Limits: Varies by bank
-  </Tab>
-
-  <Tab title="Mexico">
-    **SPEI**
-    - Speed: Seconds to minutes
-    - Cost: Low
-    - Use: Instant MXN transfers
-    - Available: 24/7
-    - Limits: Varies by bank
-  </Tab>
-
-  <Tab title="India">
-    **UPI (Unified Payments Interface)**
-    - Speed: Seconds
-    - Cost: Very low
-    - Use: Instant INR transfers
-    - Available: 24/7
-    - Limits: ₹1,00,000 per transaction
-  </Tab>
-</Tabs>
-
-### Crypto Rails
-
-**Lightning Network**
-- Speed: Seconds
-- Cost: Very low (satoshis)
-- Use: Instant Bitcoin transfers
-- Best for: Micro-payments, real-time settlement
-- Capacity: Up to ~0.1 BTC per channel
-
-**Bitcoin Layer 1**
-- Speed: 10-60 minutes (confirmation dependent)
-- Cost: Variable (network fees)
-- Use: Large Bitcoin transfers, self-custody
-- Best for: Security-critical, large amounts
-
-**Stablecoin Networks**
-- Speed: Minutes (depends on blockchain)
-- Cost: Gas fees (varies by network)
-- Use: Fiat-pegged crypto transfers
-- Networks: Ethereum, Polygon, Solana, etc.
-
-## Country & Rail Support
-
 <CountrySupport />
 
 <Note>
@@ -151,8 +32,8 @@ Grid handles currency conversion automatically through the quote system:
 POST /quotes
 
 {
-  "source": {"accountId": "InternalAccount:usd-account"},
-  "destination": {"accountId": "ExternalAccount:eur-account"},
+  "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+  "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "MXN"},
   "lockedCurrencySide": "SENDING",
   "lockedCurrencyAmount": 100000
 }
@@ -160,169 +41,43 @@ POST /quotes
 
 **Response:**
 
+<Accordion title="Response">
 ```json
 {
-  "sendingAmount": {
-    "amount": 100000,
-    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "status": "PROCESSING",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "expiresAt": "2025-10-03T15:05:00Z",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
   },
-  "receivingAmount": {
-    "amount": 92000,
-    "currency": {"code": "EUR", "symbol": "€", "decimals": 2}
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "MXN"
   },
-  "exchangeRate": 0.92,
-  "fees": {
-    "amount": 150,
-    "currency": {"code": "USD", "decimals": 2}
-  }
+  "sendingCurrency": {
+    "code": "USD",
+    "name": "United States Dollar",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "MXN",
+    "name": "Mexican Peso",
+    "symbol": "$",
+    "decimals": 8
+  },
+  "totalSendingAmount": 100,
+  "totalReceivingAmount": 17250,
+  "exchangeRate": 17.25,
+  "feesIncluded": 5,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
+</Accordion>
 
-This shows: Send $1,000 → Receive €920 (at rate 0.92), $1.50 fee.
-
-## Multi-Currency Accounts
-
-Customers can hold balances in multiple currencies simultaneously:
-
-```javascript
-// Create internal accounts for each currency
-const currencies = ['USD', 'EUR', 'GBP', 'BTC'];
-
-for (const currency of currencies) {
-  await fetch(`${API_BASE}/customers/internal-accounts`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      customerId: 'Customer:abc123',
-      currency
-    })
-  });
-}
-```
-
-Each account:
-- Holds balance in one currency
-- Has unique funding instructions
-- Can send/receive in that currency instantly
-- Can convert to other currencies via quotes
-
-## Rail Selection Logic
-
-Grid automatically chooses rails based on:
-
-1. **Currency pair**: USD → EUR routes through FX + SEPA
-2. **Destination country**: EUR to Germany uses SEPA Instant
-3. **Amount**: Large amounts may use wire instead of ACH
-4. **Speed requirements**: Immediate execution prefers instant rails
-5. **Cost optimization**: Balances speed vs cost
-
-You don't control rail selection directly—Grid optimizes for you.
-
-## Currency-Specific Considerations
-
-### Fiat Currencies
-
-**US Dollar (USD)**
-- Most liquid, widely supported
-- Multiple rails available (ACH, RTP, Wire)
-- Best for: US domestic, international as base currency
-
-**Euro (EUR)**
-- Second most common
-- SEPA Instant for fast EU transfers
-- Best for: European markets
-
-**Brazilian Real (BRL)**
-- PIX enables instant 24/7 transfers
-- Popular in Latin America
-- Best for: Brazil domestic
-
-**Mexican Peso (MXN)**
-- SPEI for real-time transfers
-- Growing market
-- Best for: Mexico domestic
-
-**British Pound (GBP)**
-- Faster Payments for instant transfers
-- Best for: UK domestic
-
-**Indian Rupee (INR)**
-- UPI for instant low-cost transfers
-- Massive market
-- Best for: India domestic
-
-### Cryptocurrencies
-
-**Bitcoin (BTC)**
-- Lightning Network for instant micro-payments
-- Layer 1 for larger, secure transfers
-- Volatile pricing—quote locking essential
-
-**Stablecoins (USDC, USDT)**
-- Pegged to USD (1:1 target)
-- Faster than traditional banking
-- Lower volatility than BTC
-
-## Limits & Constraints
-
-### Transaction Limits
-
-| Rail | Minimum | Maximum | Notes |
-|------|---------|---------|-------|
-| ACH | $0.01 | $1,000,000 | Per transaction |
-| RTP | $0.01 | $1,000,000 | Per transaction |
-| Wire | $0.01 | $10,000,000+ | Varies by bank |
-| SEPA Instant | €0.01 | €100,000 | Per transaction |
-| PIX | R$0.01 | Varies | Bank dependent |
-| Lightning | 1 sat | ~0.1 BTC | Channel dependent |
-| Layer 1 BTC | 546 sat | No limit | Network fees apply |
-
-<Note>
-Actual limits may vary based on your platform configuration, customer KYC status, and destination requirements. Contact Lightspark for specific limits.
-</Note>
-
-### Speed vs Cost Tradeoff
-
-| Rail | Speed | Cost | Best For |
-|------|-------|------|----------|
-| Lightning | Instant | Very Low | Micro-payments |
-| RTP/PIX/UPI | Seconds | Low | Real-time needed |
-| SEPA Instant | Minutes | Low | EU instant transfers |
-| ACH | 1-2 days | Very Low | Cost optimization |
-| Wire | Same day | High | Large, urgent |
-
-## Testing in Sandbox
-
-All currencies and rails work in sandbox with instant settlement simulation:
-
-```bash
-# Create sandbox internal account
-POST /customers/internal-accounts
-{
-  "customerId": "Customer:sandbox123",
-  "currency": "EUR"
-}
-
-# Fund instantly
-POST /sandbox/internal-accounts/{accountId}/fund
-{
-  "amount": 100000
-}
-
-# Create EUR → BTC quote
-POST /quotes
-{
-  "source": {"accountId": "InternalAccount:eur-account"},
-  "destination": {"accountId": "ExternalAccount:btc-wallet"},
-  "lockedCurrencySide": "SENDING",
-  "lockedCurrencyAmount": 100000
-}
-```
-
-Sandbox simulates all rails instantly for rapid testing.
+This shows: Send $1,000 → Receive $17,250 (at rate 17.25), $250 fee.
 
 ## Next Steps
 

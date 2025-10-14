@@ -49,10 +49,11 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
-      "accountId": "InternalAccount:abc123"
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "accountId": "ExternalAccount:xyz789"
+      "currency": "BTC",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100000
@@ -63,30 +64,35 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
 
 ```json
 {
-  "id": "Quote:019542f5-b3e7-1d02-0000-000000000050",
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "status": "PROCESSING",
+  "createdAt": "2025-10-03T15:00:00Z",
+  "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:abc123",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
     "currency": "USD"
   },
   "destination": {
-    "accountId": "ExternalAccount:xyz789",
-    "currency": "EUR"
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "BTC"
   },
-  "sendingAmount": {
-    "amount": 100000,
-    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
+  "sendingCurrency": {
+    "code": "USD",
+    "name": "United States Dollar",
+    "symbol": "$",
+    "decimals": 2
   },
-  "receivingAmount": {
-    "amount": 92000,
-    "currency": {"code": "EUR", "symbol": "€", "decimals": 2}
+  "receivingCurrency": {
+    "code": "BTC",
+    "name": "Bitcoin",
+    "symbol": "₿",
+    "decimals": 8
   },
-  "exchangeRate": 0.92,
-  "fees": {
-    "amount": 150,
-    "currency": {"code": "USD", "symbol": "$", "decimals": 2}
-  },
-  "expiresAt": "2025-10-03T15:05:00Z",
-  "status": "PENDING"
+  "totalSendingAmount": 100,
+  "totalReceivingAmount": 810,
+  "exchangeRate": 8.1,
+  "feesIncluded": 5,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
 
@@ -135,7 +141,7 @@ Source is an existing internal account with available balance:
 ```json
 {
   "source": {
-    "accountId": "InternalAccount:abc123"
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   }
 }
 ```

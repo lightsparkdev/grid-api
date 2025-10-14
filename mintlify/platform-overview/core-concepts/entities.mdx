@@ -18,42 +18,6 @@ Your **platform configuration** defines global settings for your Grid integratio
 
 Platform configuration is managed via the dashboard or by contacting Lightspark support.
 
-## Entity Relationships
-
-Understanding how entities relate to each other is key to working effectively with the Grid API:
-
-```
-Platform
-├── Platform Internal Accounts (for settlement/liquidity)
-│   └── Balance in each supported currency
-├── Customers
-│   ├── KYC/KYB Status
-│   ├── UMA Address (optional)
-│   ├── Platform Customer ID (your system's ID)
-│   ├── Customer Internal Accounts
-│   │   └── Balance in each currency
-│   └── External Accounts
-│       ├── Bank accounts (US_ACCOUNT, IBAN_ACCOUNT, etc.)
-│       └── Crypto wallets (SPARK_WALLET)
-└── Transactions
-    ├── Quotes (pre-transaction rate locks)
-    └── Transaction records (INCOMING/OUTGOING)
-```
-
-### Ownership Model
-
-**Internal Accounts** can be owned by:
-- **Platform**: Used for settlement, liquidity management, or distributing rewards
-- **Customers**: Belong to specific customers for holding their funds
-
-**External Accounts** are always associated with either:
-- A specific **Customer**: For customer-owned bank accounts or wallets
-- The **Platform**: For platform-owned settlement accounts
-
-**Transactions** reference:
-- A **Customer** (for customer-initiated payments)
-- OR a **Platform Internal Account** (for platform-initiated payments like rewards)
-
 ## ID Format
 
 All Grid entities use a consistent ID format:
@@ -94,47 +58,6 @@ Grid returns both IDs in all customer-related responses:
   "platformCustomerId": "user_12345_from_my_system"
 }
 ```
-
-## Account Status Lifecycle
-
-### Internal Accounts
-
-Internal accounts have simple statuses:
-- **ACTIVE**: Ready to send and receive funds
-- **INACTIVE**: Cannot be used for transactions
-
-### External Accounts
-
-External accounts progress through a more complex lifecycle:
-
-```
-PENDING → ACTIVE → INACTIVE
-```
-
-- **PENDING**: Account created, undergoing verification/screening
-- **ACTIVE**: Verified and ready for use
-- **INACTIVE**: Disabled (compliance issue, customer request, etc.)
-
-Accounts can also be:
-- **REJECTED**: Failed verification or screening
-
-You'll receive `ACCOUNT_STATUS` webhooks as accounts transition between states.
-
-## Transaction Types
-
-From your platform's perspective, transactions are either:
-
-**OUTGOING**
-- Your customer/platform is sending funds
-- Source: Internal account (yours)
-- Destination: External account, internal account, or UMA address
-
-**INCOMING**
-- Your customer/platform is receiving funds
-- Source: External sender (could be UMA address)
-- Destination: Internal account (yours)
-
-The same underlying transfer appears as OUTGOING on one platform and INCOMING on another when crossing platform boundaries.
 
 ## Amount Representation
 
