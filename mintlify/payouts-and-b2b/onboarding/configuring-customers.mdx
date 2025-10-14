@@ -37,17 +37,17 @@ When creating or updating customers, the `customerType` field must be specified 
 
 You can retrieve customer information using either the Grid-assigned customer ID or your platform's customer ID:
 
-```bash
+<CodeGroup>
+```bash Grid-assigned customer ID
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
   -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-or list customers with a filter:
-
-```bash
+```bash List customers with a filter
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers?platformCustomerId={platformCustomerId}&customerType={customerType}&createdAfter={createdAfter}&createdBefore={createdBefore}&cursor={cursor}&limit={limit}" \
   -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
+</CodeGroup>
 
 Note that this example shows all available filters. You can use any combination of them.
 
@@ -67,19 +67,6 @@ curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}
       "bankName": "Chase Bank"
     }
   }'
-```
-
-Example request body for updating a customer's bank account information:
-
-```json
-{
-  "bankAccountInfo": {
-    "accountType": "US_ACCOUNT",
-    "accountNumber": "123456789",
-    "routingNumber": "987654321",
-    "bankName": "Chase Bank"
-  }
-}
 ```
 
 Note that not all customer information can be updated. Particularly for non-regulated platforms, you cannot update personal information after the customer has been created.
@@ -112,79 +99,79 @@ Common use cases for `platformAccountId`:
 - Maintaining consistency between the Grid API and your platform's account records
 - Facilitating account reconciliation and reporting
 
-### FBO Accounts
+<AccordionGroup>
+  <Accordion title="FBO Accounts">
+    FBO accounts are used when the platform has a single omnibus account that is used to fund all customers. Account details
+    must be provided manually at the platform level. For each customer, during you should simply provide:
 
-FBO accounts are used when the platform has a single omnibus account that is used to fund all customers. Account details
-must be provided manually at the platform level. For each customer, during you should simply provide:
+    ```json
+    "bankAccountInfo": {
+      "accountType": "FBO",
+      "currencyCode": "USD" // or any other currency code supported by the Grid API
+    }
+    ```
 
-```json
-"bankAccountInfo": {
-  "accountType": "FBO",
-  "currencyCode": "USD" // or any other currency code supported by the Grid API
-}
-```
+    <Tip>
+    Please contact us to set up FBO account for a specific currency.
+    </Tip>
+  </Accordion>
+  <Accordion title="Mexico: CLABE">
+    ```json
+    {
+      "accountType": "CLABE",
+      "clabeNumber": "123456789012345678",
+      "bankName": "Banco de México",
+      "platformAccountId": "banco_mx_primary_5678"
+    }
+    ```
+  </Accordion>
+  <Accordion title="United States: ACH (Account and Routing Number)">
+    ```json
+    {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "123456789",
+      "routingNumber": "987654321",
+      "accountCategory": "CHECKING",
+      "bankName": "Chase Bank",
+      "platformAccountId": "chase_checking_1234"
+    }
+    ```
+  </Accordion>
+   
+  <Accordion title="Brazil PIX">
+    ```json
+    {
+      "accountType": "PIX",
+      "pixKey": "12345678901",
+      "pixKeyType": "CPF",
+      "platformAccountId": "pix_main_9012"
+    }
+    ```
 
-<Tip>
-Please contact us to set up FBO account for a specific currency.
-</Tip>
+    PIX key types can be one of: `CPF`, `CNPJ`, `PHONE`, `EMAIL`, or `RANDOM`.
+  </Accordion>
 
-### Mexico: CLABE
+  <Accordion title="India: UPI (Unified Payments Interface)">
+    ```json
+    {
+      "accountType": "UPI",
+      "vpa": "somecustomer@okbank",
+      "platformAccountId": "upi_primary_1234"
+    }
+    ```
+  </Accordion>
 
-```json
-{
-  "accountType": "CLABE",
-  "clabeNumber": "123456789012345678",
-  "bankName": "Banco de México",
-  "platformAccountId": "banco_mx_primary_5678"
-}
-```
-
-### United States: ACH (Account and Routing Number)
-
-```json
-{
-  "accountType": "US_ACCOUNT",
-  "accountNumber": "123456789",
-  "routingNumber": "987654321",
-  "accountCategory": "CHECKING",
-  "bankName": "Chase Bank",
-  "platformAccountId": "chase_checking_1234"
-}
-```
-
-### Brazil: PIX
-
-```json
-{
-  "accountType": "PIX",
-  "pixKey": "12345678901",
-  "pixKeyType": "CPF",
-  "platformAccountId": "pix_main_9012"
-}
-```
-
-PIX key types can be one of: `CPF`, `CNPJ`, `PHONE`, `EMAIL`, or `RANDOM`.
-
-### India: UPI (Unified Payments Interface)
-
-```json
-{
-  "accountType": "UPI",
-  "vpa": "somecustomer@okbank",
-  "platformAccountId": "upi_primary_1234"
-}
-```
-
-### International: IBAN
-
-```json
-{
-  "accountType": "IBAN",
-  "iban": "DE89370400440532013000",
-  "bankName": "Deutsche Bank",
-  "platformAccountId": "deutsche_primary_3456"
-}
-```
+  <Accordion title="International: IBAN">
+    ```json
+    {
+      "accountType": "IBAN",
+      "iban": "DE89370400440532013000",
+      "bankName": "Deutsche Bank",
+      "platformAccountId": "deutsche_primary_3456"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ## Data Validation
 
