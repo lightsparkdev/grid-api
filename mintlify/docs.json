@@ -196,7 +196,7 @@
           {
             "group": "Onboarding Customers",
             "pages": [
-              "global-p2p/onboarding-customers/creating-customers",
+              "global-p2p/onboarding-customers/configuring-customers",
               "global-p2p/onboarding-customers/invitations"
             ]
           },
