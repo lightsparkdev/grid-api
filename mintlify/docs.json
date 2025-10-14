@@ -58,7 +58,7 @@
             ]
           },
           {
-            "group": "Accounts",
+            "group": "Managing Accounts",
             "pages": [
               "payouts-and-b2b/depositing-funds/internal-accounts",
               "payouts-and-b2b/depositing-funds/external-accounts",
@@ -66,7 +66,7 @@
             ]
           },
           {
-            "group": "Payment Flow",
+            "group": "Sending Payments",
             "pages": [
               "payouts-and-b2b/depositing-funds/depositing-funds",
               "payouts-and-b2b/payment-flow/send-payment",
@@ -100,7 +100,7 @@
             ]
           },
           {
-            "group": "Accounts",
+            "group": "Managing Accounts",
             "pages": [
               "ramps/accounts/internal-accounts",
               "ramps/accounts/external-accounts",
@@ -140,7 +140,7 @@
             ]
           },
           {
-            "group": "Accounts",
+            "group": "Managing Accounts",
             "pages": [
               "rewards/developer-guides/internal-accounts",
               "rewards/developer-guides/external-accounts",
@@ -246,7 +246,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
+      "label": "Sign Up",
       "href": "https://lightspark.com/grid#signup"
     }
   },
