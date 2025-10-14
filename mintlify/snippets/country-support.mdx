@@ -1,19 +1,359 @@
-## Fiat
-| Countries | Individual Customer Onboarding (regulated) | Business Customer Onboarding (regulated) | Individual Customer Onboarding (non regulated) | Business Customer Onboarding (non regulated) | Supported Payment Rails |
-|---|:---:|:---:|:---:|:---:|:---:|
-| US | ✅ | ✅ | ✅ | ✅ | ACH, RTP, Wires |
-| MX | ✅ | ✅ | ✅ | ✅ | SPEI |
-| BR | ✅ | ✅ | ✅ | ✅ | PIX |
-| GB | ✅ | ✅ | ✅ | ✅ | Faster Payments |
-| EU | ✅ | ✅ | ✅ | ✅ | SEPA Instant |
-| IN | ✅ | ✅ | ✅ | ✅ | UPI |
+## Supported Countries & Payment Rails
+### Description: Payment rail capabilities by country
+We support Bitcoin and Stablecoins worldwide, below is a list of contries and rails supported. 
+<table>
+  <thead>
+    <tr>
+      <th>Country</th>
+      <th>ISO Code</th>
+      <th>Payment Rails</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>🇦🇹 Austria</td>
+      <td>AT</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇧🇪 Belgium</td>
+      <td>BE</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇧🇯 Benin</td>
+      <td>BJ</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇼 Botswana</td>
+      <td>BW</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇷 Brazil</td>
+      <td>BR</td>
+      <td><code>PIX</code></td>
+    </tr>
+    <tr>
+      <td>🇧🇬 Bulgaria</td>
+      <td>BG</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇧🇫 Burkina Faso</td>
+      <td>BF</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇲 Cameroon</td>
+      <td>CM</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇦 Canada</td>
+      <td>CA</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇳 China</td>
+      <td>CN</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇷 Costa Rica</td>
+      <td>CR</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇭🇷 Croatia</td>
+      <td>HR</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇨🇾 Cyprus</td>
+      <td>CY</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇨🇿 Czech Republic</td>
+      <td>CZ</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇩🇰 Denmark</td>
+      <td>DK</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇨🇩 DR Congo</td>
+      <td>CD</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇪🇪 Estonia</td>
+      <td>EE</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇫🇮 Finland</td>
+      <td>FI</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇫🇷 France</td>
+      <td>FR</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇩🇪 Germany</td>
+      <td>DE</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇬🇭 Ghana</td>
+      <td>GH</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇬🇷 Greece</td>
+      <td>GR</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇭🇰 Hong Kong</td>
+      <td>HK</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇭🇺 Hungary</td>
+      <td>HU</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇮🇸 Iceland</td>
+      <td>IS</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇮🇳 India</td>
+      <td>IN</td>
+      <td><code>UPI</code> <code>IMPS</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇩 Indonesia</td>
+      <td>ID</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇮🇪 Ireland</td>
+      <td>IE</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇮🇹 Italy</td>
+      <td>IT</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇨🇮 Ivory Coast</td>
+      <td>CI</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇰🇪 Kenya</td>
+      <td>KE</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇱🇻 Latvia</td>
+      <td>LV</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇱🇮 Liechtenstein</td>
+      <td>LI</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇱🇹 Lithuania</td>
+      <td>LT</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇱🇺 Luxembourg</td>
+      <td>LU</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇲🇼 Malawi</td>
+      <td>MW</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇾 Malaysia</td>
+      <td>MY</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇱 Mali</td>
+      <td>ML</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇲🇹 Malta</td>
+      <td>MT</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇲🇽 Mexico</td>
+      <td>MX</td>
+      <td><code>SPEI</code></td>
+    </tr>
+    <tr>
+      <td>🇳🇱 Netherlands</td>
+      <td>NL</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇳🇬 Nigeria</td>
+      <td>NG</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇳🇴 Norway</td>
+      <td>NO</td>
+      <td><code>SEPA</code></td>
+    </tr>
+    <tr>
+      <td>🇵🇭 Philippines</td>
+      <td>PH</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇵🇱 Poland</td>
+      <td>PL</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇵🇹 Portugal</td>
+      <td>PT</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇷🇴 Romania</td>
+      <td>RO</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇸🇳 Senegal</td>
+      <td>SN</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇬 Singapore</td>
+      <td>SG</td>
+      <td><code>PayNow</code> <code>FAST</code><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇰 Slovakia</td>
+      <td>SK</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇸🇮 Slovenia</td>
+      <td>SI</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇿🇦 South Africa</td>
+      <td>ZA</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇰🇷 South Korea</td>
+      <td>KR</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇪🇸 Spain</td>
+      <td>ES</td>
+      <td><code>SEPA</code> </td>
+    </tr>
+    <tr>
+      <td>🇱🇰 Sri Lanka</td>
+      <td>LK</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇸🇪 Sweden</td>
+      <td>SE</td>
+      <td><code>SEPA</code></td>
+    </tr>
+    <tr>
+      <td>🇨🇭 Switzerland</td>
+      <td>CH</td>
+      <td><code>SEPA</code></td>
+    </tr>
+    <tr>
+      <td>🇹🇿 Tanzania</td>
+      <td>TZ</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇹🇭 Thailand</td>
+      <td>TH</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇹🇬 Togo</td>
+      <td>TG</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇺🇬 Uganda</td>
+      <td>UG</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇬🇧 United Kingdom</td>
+      <td>GB</td>
+      <td><code>Faster Payments</code><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇺🇸 United States</td>
+      <td>US</td>
+      <td><code>ACH</code> <code>Wire Transfer</code> <code>RTP</code> <code>FedNow</code></td>
+    </tr>
+    <tr>
+      <td>🇻🇳 Vietnam</td>
+      <td>VN</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+    <tr>
+      <td>🇿🇲 Zambia</td>
+      <td>ZM</td>
+      <td><code>Bank Transfer</code></td>
+    </tr>
+  </tbody>
+</table>
 
-## Crypto
-| Countries | Individual Customer Onboarding (regulated) | Business Customer Onboarding (regulated) | Individual Customer Onboarding (non regulated) | Business Customer Onboarding (non regulated) | Cryptocurrencies | Supported Rails |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| US | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| EU | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| GB | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| MX | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| BR | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
-| IN | ✅ | ✅ | ✅ | ✅ | BTC, Stablecoins, BTKN Tokens| Spark, Lightning, L1 |
+Regional Summary
+<CardGroup cols={4}>
+  <Card title="Europe" icon="landmark">
+    **26 countries**
+Primary: SEPA/SEPA Instant
+  </Card>
+  <Card title="Africa" icon="globe">
+    **15 countries**
+Primary: Bank Transfer 
+  </Card>
+  <Card title="Asia-Pacific" icon="earth-asia">
+    **11 countries**
+Various instant payment systems
+  </Card>
+  <Card title="Americas" icon="earth-americas">
+    **4 countries**
+PIX, SPEI, ACH, FedNow
+  </Card>
+</CardGroup>
