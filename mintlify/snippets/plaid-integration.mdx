@@ -245,8 +245,31 @@ app.post('/api/plaid/exchange-token', async (req, res) => {
 
 ```json
 {
-  "message": "External account creation initiated. You will receive a webhook notification when complete.",
-  "requestId": "req_def456ghi789"
+  "id": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "PENDING",
+  "platformAccountId": "user_123_primary_bank",
+  "currency": "USD",
+  "accountInfo": {
+    "accountType": "US_ACCOUNT",
+    "accountNumber": "123456789",
+    "routingNumber": "021000021",
+    "accountCategory": "CHECKING",
+    "bankName": "Chase Bank",
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "John Doe",
+      "birthDate": "1990-01-15",
+      "nationality": "US",
+      "address": {
+        "line1": "123 Main Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "postalCode": "94105",
+        "country": "US"
+      }
+    }
+  }
 }
 ```
 
