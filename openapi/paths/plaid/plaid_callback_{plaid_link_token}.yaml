@@ -33,12 +33,11 @@ post:
   responses:
     '202':
       description: |
-        Public token accepted and external account creation initiated.
-        The platform will receive a webhook notification when the external account is ready.
+        A pending external account resource will be created and returned while the Grid API asynchronously processes the Plaid public token.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/plaid/PlaidCallbackResponse.yaml
+            $ref:  ../../components/schemas/external_accounts/ExternalAccount.yaml
     '400':
       description: Bad request - Invalid public token or link token
       content:
