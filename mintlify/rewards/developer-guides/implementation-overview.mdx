@@ -30,12 +30,11 @@ For Bitcoin rewards, maintaining a prefunded USD balance allows you to instantly
 
 ## Onboarding customers
 
-Onboard customers who will receive Bitcoin rewards. There are two patterns:
-
-- Regulated platforms can directly create customers by providing minimal KYC data via API
-- Unregulated entities should request a KYC link and embed the hosted KYC flow; once completed, the customer can receive rewards
-
-You'll need to persist the Grid customer IDs for use in reward distribution flows.
+For rewards, the only entity who needs to be KYB'd is the entity paying for the reward. This can be you, the platform, or
+your business customers that want to pay out rewards to their end users.
+All you need in order to pay out a reward is the wallet address.
+No need to collect extra personal information or go through the full hosted KYC flow for end users!
+To generate a spark wallet, you can use a tool like [Privy](https://privy.io) or the Spark SDK directly.
 
 ## External account creation
 
