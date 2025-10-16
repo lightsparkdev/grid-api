@@ -2,6 +2,7 @@
 title: "Lightspark Grid"
 mode: "custom"
 ---
+
 export const GridLogo = () => {
   return (
     <>
@@ -45,27 +46,35 @@ export const HeroCard = ({ title, description, href, icon, whiteIcon }) => {
   <div className="flex flex-col items-center gap-[48px]">
     <div className="flex items-center title">
       <GridLogo />
-        <span className="pl-[19px] text-[32px] sm:text-[48px] lg:text-[64px] leading-none inline-flex items-center h-8 sm:h-10 lg:h-12 py-0 tracking-tight">
-          Grid
-        </span>
+      <span className="pl-[19px] text-[32px] sm:text-[48px] lg:text-[64px] leading-none inline-flex items-center h-8 sm:h-10 lg:h-12 py-0 tracking-tight">
+        Grid
+      </span>
     </div>
     <div className="flex justify-center subtext">
       <p>
-        <span className="highlight">Commands for money.</span> One API to
-        send, receive, and settle value globally—fiat, stablecoins, or Bitcoin.
-        Always real time, always low cost, built on an open network.
+        <span className="highlight">Commands for money.</span> One API to send,
+        receive, and settle value globally. Fiat, stablecoins, or BTC. Always
+        real time, always low-cost, built on Bitcoin.
       </p>
     </div>
     <div className="flex justify-center">
-      <button className="call-to-action" onClick={() => window.location.href = "/platform-overview/introduction/what-is-grid"}>Get started</button>
+      <button
+        className="call-to-action"
+        onClick={() =>
+          (window.location.href =
+            "/platform-overview/introduction/what-is-grid")
+        }
+      >
+        Get started
+      </button>
     </div>
   </div>
 </div>
 <div className="flex usecase w-full justify-center items-center">
   <div className="section mx-auto">
     <div>
-    <h2 className="highlight">Build with Lightspark Grid</h2>
-    <h2>Choose your use case</h2>
+      <h2 className="highlight">Build with Lightspark Grid</h2>
+      <h2>Choose your use case</h2>
     </div>
     <div className="flex flex-col">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
@@ -99,9 +108,9 @@ export const HeroCard = ({ title, description, href, icon, whiteIcon }) => {
 </div>
 <div className="flex usecase w-full justify-center items-center">
   <div className="section mx-auto">
-  <div>
-    <h2 className="highlight">Resources</h2>
-    <h2>Explore, test, and integrate</h2>
+    <div>
+      <h2 className="highlight">Resources</h2>
+      <h2>Explore, test, and integrate</h2>
     </div>
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
