@@ -27,7 +27,8 @@ With {rewardsProductName}, you can send instant Bitcoin rewards to your **users'
     Your platform's internal account is pre-funded with fiat currency (e.g., USD) via standard payment rails like ACH push.
   </Step>
   <Step title="Customer Onboarding">
-    Your user is onboarded via a secure, hosted KYC flow to meet compliance requirements before they can receive a reward.
+    For rewards, the only entity who needs to be KYB'd is the entity paying for the reward. This can be you, the platform, or
+    your business customers that want to pay out rewards to their end users.
   </Step>
   <Step title="Quote & Execution">
     You execute a single API call to create a quote, instantly convert a specific USD amount to BTC at the current market rate, and transfer the Bitcoin to the user's wallet address.
@@ -51,9 +52,14 @@ Users interact with {rewardsProductName} through two main interfaces:
 
 ### Onboarding Customers
 
-<Info>
-{rewardsProductName} has two customer onboarding options—one for non-regulated entities where Lightspark handles the KYC/KYB process via a hosted flow, and one for regulated entities where you handle the KYC/KYB process and can create users directly via the API.
-</Info>
+For reward with Grid, the only entity who needs to be KYB'd is the entity paying for the reward. This can be you, the platform, or
+your business customers that want to pay out rewards to their end users.
+All you need in order to pay out a reward is the wallet address.
+No need to collect extra personal information or go through the full hosted KYC flow for end users!
+To generate a spark wallet, you can use a tool like [Privy](https://privy.io) or the Spark SDK directly.
+
+If you do have business customers that want to pay out rewards to their end users, you can onboard that business customer
+via the hosted KYB link flow.
 
 ### Funding Your Platform Account
 

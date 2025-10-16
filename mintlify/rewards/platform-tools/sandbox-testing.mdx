@@ -137,9 +137,9 @@ failure test patterns relevant for bank accounts:
 
 ## Testing Customer Onboarding
 
-### Sandbox KYC Flow
+### Sandbox KYB Flow
 
-In sandbox, the KYC onboarding process is simplified to always use the `/customers` endpoint instead of the KYC link flow.
+In sandbox, the KYB onboarding process is simplified to always use the `/customers` endpoint instead of the KYB link flow.
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
@@ -154,7 +154,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   }'
 ```
 
-In sandbox, customers are automatically approved. In production, KYC verification may take several minutes.
+In sandbox, customers are automatically approved. In production, KYB verification may take several minutes.
 
 ## Testing Insufficient Balance
 
@@ -317,7 +317,7 @@ While sandbox closely mimics production, there are some differences:
 
 - **Instant settlement**: All Bitcoin transfers complete instantly (success cases) or fail immediately (error cases), except timeout scenarios (005)
 - **Uses Regtest funds**: Spark bitcoin funds are regtest funds so that they're compatible with real regtest spark wallets.
-- **Simplified KYC**: KYC processes are simulated and complete instantly with automatic approval
+- **Simplified KYB**: KYB processes are simulated and complete instantly with automatic approval
 - **Fixed exchange rates**: Currency conversion rates may not reflect real-time market rates
 
 <Warning>
