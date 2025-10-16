@@ -135,8 +135,7 @@
           {
             "group": "Onboarding",
             "pages": [
-              "rewards/developer-guides/platform-configuration",
-              "rewards/developer-guides/configuring-customers"
+              "rewards/developer-guides/platform-configuration"
             ]
           },
           {

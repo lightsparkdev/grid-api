@@ -3,9 +3,6 @@ title: "Quickstart"
 description: "Complete walkthrough for buying Bitcoin and sending it as a reward to an external Spark wallet for self-custody"
 ---
 
-import KycRegulated from "/snippets/kyc/kyc-regulated.mdx";
-import KycUnregulated from "/snippets/kyc/kyc-unregulated.mdx";
-
 This guide walks you through the complete process of buying Bitcoin with USD and sending it to a self-custody Spark wallet, from customer onboarding through quote execution.
 
 ## Prerequisites
@@ -23,7 +20,7 @@ The process consists of the following steps:
 
 1. **List platform internal accounts** to find your platform's USD funding instructions
 2. **Fund your internal account** via ACH push and receive a webhook notification
-3. **Create a customer** using the hosted KYC/KYB link flow
+3. **Generate a spark wallet** for your customer, or let them connect their own
 4. **Execute a quote** to complete the Bitcoin purchase and transfer a reward to the user's own Spark wallet.
 
 ## Step 1: List your platform's internal accounts
@@ -133,18 +130,10 @@ The internal account now has a balance of $2,000.00 (200000 cents). You can use 
 
 ## Step 3: Customer Onboarding
 
-If your platform is a regulated financial institution that already has a KYC/KYB process in place,
-you can create a customer directly via the API. However, if your platform is not regulated, you must use the hosted KYC/KYB
-link flow to onboard your customers.
-
-<Tabs>
-  <Tab title="Regulated Platforms">
-    <KycRegulated />
-  </Tab>
-  <Tab title="Unregulated Platforms">
-    <KycUnregulated />
-  </Tab>
-</Tabs>
+This guide assumes you have a Spark wallet address for your customer who will receive the Bitcoin reward.
+For rewards, the only entity who needs to be KYB'd is the entity paying for the reward - in this case, you, the platform!
+All you need in order to pay out a reward is the wallet address. No need to go through the full hosted KYC flow
+for this use case! To generate a spark wallet, you can use a tool like [Privy](https://privy.io) or the Spark SDK directly.
 
 ## Step 4: Create and Execute a Quote to the Customer's Spark Wallet
 
@@ -163,7 +152,6 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
     },
     "destination": {
       "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
         "currency": "BTC",
         "accountInfo": {
           "accountType": "SPARK_WALLET",
@@ -269,7 +257,6 @@ When the Bitcoin transfer completes, you'll receive a webhook notification:
         "decimals": 8
       }
     },
-    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "settledAt": "2025-10-03T15:01:45Z",
     "createdAt": "2025-10-03T15:00:00Z",
     "description": "Bitcoin purchase for self-custody",
@@ -293,7 +280,7 @@ You've successfully completed a Bitcoin purchase and transfer to a self-custody 
 
 1. ✅ Listed internal accounts and obtained USD funding instructions
 2. ✅ Funded the internal account with USD via ACH
-3. ✅ Created a customer via hosted KYC flow
+3. ✅ Generated a Spark wallet for the customer
 4. ✅ Created and executed a quote to purchase Bitcoin and send to the Spark wallet
 
 The customer now has 810 Satoshis in their self-custody Spark wallet!
