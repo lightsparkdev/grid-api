@@ -6,7 +6,19 @@ description: "Send your first cross-border payment"
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx';
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx';
 
-This quickstart covers an example of sending a prefunded cross-border payout for a business customer on an unregulated platform. 
+This quickstart covers an example of sending a prefunded cross-border payout for a business customer on an unregulated platform.
+
+## Understanding Entity Mapping for B2B Payouts
+
+In this guide, the entities map as follows:
+
+| Entity Type | Who They Are | In This Example |
+|------------|--------------|----------------|
+| **Platform** | Your payouts platform | Your company providing AP automation |
+| **Customer** | Business sending payments | Your client company (e.g., Acme Corp) |
+| **External Account** | Vendors receiving payments | Maria Garcia (freelance contractor in Mexico) |
+
+**Flow**: Your customer (a business) funds their internal account → uses your platform to send payments → to their vendors' external bank accounts.
 
 ## Get API credentials
   Create Sandbox API credentials in the dashboard, then set environment variables for local use.

@@ -4,29 +4,9 @@ There are several key entities in the Grid API: **Platform**, **Customers**, **I
 <img src="/images/entities.png" alt="Entity relationships diagram showing platform, customers, internal accounts, external accounts, transactions, and UMA addresses" />
 </Frame>
 
-## Entity Relationships
+## Businesses, People, and Accounts
 
-Understanding how entities relate to each other is key to working effectively with the Grid API:
-
-```
-Platform
-+-- Platform Internal Accounts (for settlement/liquidity)
-|   +-- Balance in each supported currency
-+-- Customers
-|   +-- KYC/KYB Status
-|   +-- UMA Address (optional)
-|   +-- Platform Customer ID (your system's ID)
-|   +-- Customer Internal Accounts
-|   |   +-- Balance in each currency
-|   +-- External Accounts
-|       +-- Bank accounts (US_ACCOUNT, IBAN_ACCOUNT, etc.)
-|       +-- Crypto wallets (SPARK_WALLET)
-+-- Transactions
-    +-- Quotes (pre-transaction rate locks)
-    +-- Transaction records (INCOMING/OUTGOING)
-```
-
-## Platform
+### Platform
 
 Your **platform** is you! It's the top-level entity that integrates with the Grid API. The platform:
 
@@ -36,7 +16,7 @@ Your **platform** is you! It's the top-level entity that integrates with the Gri
 - Can hold platform-owned internal accounts for settlement and liquidity management
 - Acts as the integration point between your application and the open Money Grid
 
-## Customers
+### Customers
 
 **Customers** are your end users who send and receive payments through your platform. Each customer:
 
@@ -46,7 +26,7 @@ Your **platform** is you! It's the top-level entity that integrates with the Gri
 - May have associated internal accounts and external accounts
 - May have a unique **UMA address** (e.g., `$john.doe@yourdomain.com`). If you don't assign an UMA address when creating a customer, they will be assigned a system-generated one.
 
-## Internal Accounts
+### Internal Accounts
 
 **Internal accounts** are Grid-managed accounts that hold balances in specific currencies. They can belong to either:
 
@@ -59,7 +39,7 @@ Internal accounts:
 - Are used as sources or destinations for transactions instantly 24/7/365
 - Track available balance for sending payments or receiving funds
 
-## External Accounts
+### External Accounts
 
 **External accounts** are traditional bank accounts, crypto wallets, or other payment instruments connected to customers
 for on-ramping or off-ramping funds. Each external account:
@@ -72,7 +52,53 @@ for on-ramping or off-ramping funds. Each external account:
 - For pullable sources like debit cards or ACH pulls, an external account can be used as a source for transfers-in to
   fund internal accounts or to fund cross-border transfers via quotes.
 
-## Quotes
+## Entity Examples by Use Case
+
+Understanding how entities map to your specific use case helps clarify your integration architecture. Here are common examples:
+
+### B2B Payouts Platform (e.g., Bill.com, Routable)
+
+| Entity Type | Who They Are | Example |
+|------------|--------------|---------|
+| **Platform** | The payouts platform itself | Your company providing AP automation |
+| **Customer** | Businesses sending payments to vendors | Acme Corp (your client company) |
+| **External Account** | Vendors/suppliers receiving payments | Office supply vendor, freelance contractor |
+
+**Flow**: Acme Corp (customer) uses your platform to pay their vendor invoices → funds move from Acme's internal account → to vendor's external bank account
+
+### Direct Rewards Platform (Platform-Funded Model)
+
+| Entity Type | Who They Are | Example |
+|------------|--------------|---------|
+| **Platform** | The app paying rewards directly to users | Your cashback app |
+| **Customer** | (Not used in this model) | N/A |
+| **External Account** | End users' crypto wallets receiving rewards | Sarah's self-custody Bitcoin wallet |
+
+**Flow**: Your platform sends micro-payouts directly from platform internal accounts → to users' external crypto wallets at scale. Common for cashback apps where the platform earns affiliate commissions and shares them with users.
+
+### White-Label Rewards Platform (Customer-Funded Model)
+
+| Entity Type | Who They Are | Example |
+|------------|--------------|---------|
+| **Platform** | The rewards infrastructure provider | Your white-label rewards API |
+| **Customer** | Brands or merchants running reward campaigns | Nike, Starbucks |
+| **External Account** | End users' crypto wallets receiving rewards | Sarah's self-custody Bitcoin wallet |
+
+**Flow**: Nike (customer) funds their internal account → your platform sends rewards on their behalf → to users' external crypto wallets. Common for brand loyalty programs where merchants manage their own reward budgets.
+
+### Remittance/P2P App (e.g., Wise, Remitly)
+
+| Entity Type | Who They Are | Example |
+|------------|--------------|---------|
+| **Platform** | The remittance service | Your money transfer app |
+| **Customer** | Both sender and recipient of funds | Maria (sender in US), Juan (recipient in Mexico) |
+| **External Account** | Bank accounts for funding/receiving | Maria's US bank (funding), Juan's Mexican bank (receiving funds) |
+
+**Flow**: Maria (customer) funds transfer from her external account → to Juan (also a customer) → who receives funds in his external bank account. Alternatively, Maria could send to Juan's UMA address directly.
+
+## Transactions and Addressing Entities
+
+### Quotes
 
 **Quotes** provide locked-in exchange rates and payment instructions for transfers. A quote:
 
@@ -83,7 +109,7 @@ for on-ramping or off-ramping funds. Each external account:
 - Must be executed before it expires
 - Creates a transaction when executed
 
-## Transactions
+### Transactions
 
 **Transactions** represent completed or in-progress payment transfers. Each transaction:
 
@@ -98,7 +124,7 @@ Transactions are created when:
 - A quote is executed (either incoming or outgoing)
 - A same currency transfer is initiated (transfer-in or transfer-out)
 
-## UMA Addresses (optional)
+### UMA Addresses (optional)
 
 **UMA addresses** are human-readable payment identifiers that follow the format `$username@domain.com`. They:
 
@@ -107,5 +133,3 @@ Transactions are created when:
 - Support currency negotiation and cross-border transfers
 - Work similar to email addresses but for payments
 - Are an optional UX improvement for some use cases. Use of UMA addresses is not required in order to use the Grid API.
-
-
