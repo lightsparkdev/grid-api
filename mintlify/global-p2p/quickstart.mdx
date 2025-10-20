@@ -6,6 +6,18 @@ import { remittanceProductName } from '/snippets/variables.mdx'
 
 This quickstart guides you through a regulated FI sending an individual customer payment from the US to a bank account in Mexico using just-in-time funding.
 
+## Understanding Entity Mapping for Remittances
+
+In this guide, the entities map as follows:
+
+| Entity Type | Who They Are | In This Example |
+|------------|--------------|----------------|
+| **Platform** | Your remittance service | Your money transfer app |
+| **Customer** | Both sender and recipient | Alice (sender in US), Carlos (recipient in Mexico) |
+| **External Account** | Bank accounts for funding/receiving | Alice's US bank (funding), Carlos's Mexican bank (receiving funds) |
+
+**Flow**: Alice (customer) funds a transfer from her external account → to Carlos (also a customer) → who receives funds in his external bank account. Alternatively, Alice could send directly to Carlos's UMA address if he has one.
+
 ## Get API credentials
   Create a Sandbox API credentialsin the dashboard, then set environment variables for local use.
 

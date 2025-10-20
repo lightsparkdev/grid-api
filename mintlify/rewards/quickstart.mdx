@@ -5,6 +5,22 @@ description: "Complete walkthrough for buying Bitcoin and sending it as a reward
 
 This guide walks you through the complete process of buying Bitcoin with USD and sending it to a self-custody Spark wallet, from customer onboarding through quote execution.
 
+## Understanding Entity Mapping for Rewards
+
+In this guide, the entities map as follows (platform-funded model):
+
+| Entity Type | Who They Are | In This Example |
+|------------|--------------|----------------|
+| **Platform** | Your rewards app paying rewards directly | Your cashback/rewards platform |
+| **Customer** | (Not used in this model) | N/A |
+| **External Account** | Users' crypto wallets receiving rewards | User's self-custody Spark wallet |
+
+**Flow**: Your platform funds its internal account → sends Bitcoin micro-payouts directly → to users' external crypto wallets at scale. This is common for cashback apps where you earn affiliate commissions and share them with users.
+
+<Note>
+For white-label reward programs where brands like Nike or Starbucks fund their own reward campaigns, those brands would be created as **Customers** who manage their own reward budgets.
+</Note>
+
 ## Prerequisites
 
 Before starting this guide, ensure you have:
