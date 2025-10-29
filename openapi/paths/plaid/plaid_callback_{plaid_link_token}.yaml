@@ -37,7 +37,7 @@ post:
       content:
         application/json:
           schema:
-            $ref:  ../../components/schemas/external_accounts/ExternalAccount.yaml
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
     '400':
       description: Bad request - Invalid public token or link token
       content:

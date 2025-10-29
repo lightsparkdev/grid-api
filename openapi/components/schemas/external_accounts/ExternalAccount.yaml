@@ -4,7 +4,6 @@ allOf:
       - id
       - status
       - currency
-      - accountInfo
     properties:
       id:
         type: string
