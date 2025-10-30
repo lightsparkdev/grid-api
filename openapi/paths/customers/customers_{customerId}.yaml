@@ -61,9 +61,9 @@ patch:
       application/json:
         schema:
           oneOf:
-            - title: Individual cCstomer Update
+            - title: Update Individual Customer
               $ref: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-            - title: Business Customer Update
+            - title: Update Business Customer
               $ref: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
           discriminator:
             propertyName: customerType
