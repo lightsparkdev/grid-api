@@ -1,4 +1,6 @@
 type: object
+required:
+  - customerType
 properties:
   customerType:
     type: string

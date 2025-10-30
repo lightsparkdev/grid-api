@@ -14,51 +14,36 @@ post:
       application/json:
         schema:
           oneOf:
-            - title: Individual Customer
+            - title: New Individual Customer
               allOf:
                 - $ref: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
                 - type: object
                   required:
                     - platformCustomerId
-                    - customerType
                   properties:
                     platformCustomerId:
                       type: string
                       description: Platform-specific customer identifier
                       example: 9f84e0c2a72c4fa
-                    customerType:
-                      type: string
-                      enum: [INDIVIDUAL]
-                      description: Customer type
                     kycUrl:
                       type: string
                       description: A KYC URL to be shared with your individual customer if KYC needs to be completed
                       example: "https://example.com/kyc"
-            - title: Business Customer
+            - title: New Business Customer
               allOf:
                 - $ref: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
                 - type: object
                   required:
                     - platformCustomerId
-                    - customerType
                   properties:
                     platformCustomerId:
                       type: string
                       description: Platform-specific customer identifier
                       example: 9f84e0c2a72c4fa
-                    customerType:
-                      type: string
-                      enum: [BUSINESS]
-                      description: Customer type
                     kycUrl:
                       type: string
                       description: A KYC URL to be shared with your business customer if KYC needs to be completed
                       example: "https://example.com/kyc"
-          discriminator:
-            propertyName: customerType
-            mapping:
-              INDIVIDUAL: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-              BUSINESS: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
         examples:
           individualCustomerWithUmaAddress:
             summary: Create individual customer with UMA address, including deposit bank account information.
