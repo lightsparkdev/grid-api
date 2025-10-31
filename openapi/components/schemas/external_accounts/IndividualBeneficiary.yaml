@@ -3,7 +3,12 @@ required:
   - fullName
   - birthDate
   - nationality
+  - beneficiaryType
 properties:
+  beneficiaryType:
+    type: string
+    enum: [INDIVIDUAL]
+    example: INDIVIDUAL
   fullName:
     type: string
     description: Individual's full name

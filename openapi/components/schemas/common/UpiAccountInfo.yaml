@@ -4,8 +4,8 @@ required:
   - vpa
 properties:
   accountType:
-    allOf:
-      - $ref: ./BankAccountType.yaml
+    type: string
+    enum: [UPI]
     example: UPI
   vpa:
     type: string

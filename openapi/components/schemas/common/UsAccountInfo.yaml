@@ -6,8 +6,8 @@ required:
   - accountCategory
 properties:
   accountType:
-    allOf:
-      - $ref: ./BankAccountType.yaml
+    type: string
+    enum: [US_ACCOUNT]
     example: US_ACCOUNT
   accountNumber:
     type: string

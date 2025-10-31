@@ -4498,17 +4498,6 @@ components:
         - MANUALLY_REJECTED
       description: The current KYC status of a customer
       example: APPROVED
-    BankAccountType:
-      type: string
-      enum:
-        - CLABE
-        - US_ACCOUNT
-        - PIX
-        - IBAN
-        - FBO
-        - UPI
-        - SPARK_WALLET
-      description: Type of bank account information
     UsAccountInfo:
       type: object
       required:
@@ -4518,8 +4507,9 @@ components:
         - accountCategory
       properties:
         accountType:
-          allOf:
-            - $ref: '#/components/schemas/BankAccountType'
+          type: string
+          enum:
+            - US_ACCOUNT
           example: US_ACCOUNT
         accountNumber:
           type: string
@@ -4551,8 +4541,9 @@ components:
         - bankName
       properties:
         accountType:
-          allOf:
-            - $ref: '#/components/schemas/BankAccountType'
+          type: string
+          enum:
+            - CLABE
           example: CLABE
         clabeNumber:
           type: string
@@ -4610,8 +4601,9 @@ components:
         - pixKeyType
       properties:
         accountType:
-          allOf:
-            - $ref: '#/components/schemas/BankAccountType'
+          type: string
+          enum:
+            - PIX
           example: PIX
         pixKey:
           type: string
@@ -4643,8 +4635,9 @@ components:
         - bankName
       properties:
         accountType:
-          allOf:
-            - $ref: '#/components/schemas/BankAccountType'
+          type: string
+          enum:
+            - IBAN
           example: IBAN
         iban:
           type: string
@@ -4666,17 +4659,25 @@ components:
       allOf:
         - $ref: '#/components/schemas/IbanAccountInfo'
         - $ref: '#/components/schemas/BankAccountBase'
+    FboAccountInfo:
+      type: object
+      required:
+        - accountType
+        - currencyCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - FBO
+          example: FBO
+        currencyCode:
+          type: string
+          description: Three-letter currency code (ISO 4217)
+          example: USD
     CustomerFboAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BankAccountBase'
-        - type: object
-          required:
-            - currencyCode
-          properties:
-            currencyCode:
-              type: string
-              description: Three-letter currency code (ISO 4217)
-              example: USD
+        - $ref: '#/components/schemas/FboAccountInfo'
     UpiAccountInfo:
       type: object
       required:
@@ -4684,8 +4685,9 @@ components:
         - vpa
       properties:
         accountType:
-          allOf:
-            - $ref: '#/components/schemas/BankAccountType'
+          type: string
+          enum:
+            - UPI
           example: UPI
         vpa:
           type: string
@@ -4702,8 +4704,9 @@ components:
         - address
       properties:
         accountType:
-          allOf:
-            - $ref: '#/components/schemas/BankAccountType'
+          type: string
+          enum:
+            - SPARK_WALLET
           example: SPARK_WALLET
         address:
           type: string
@@ -4993,6 +4996,17 @@ components:
           type: string
           description: Invoice for the payment
           example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+    BankAccountType:
+      type: string
+      enum:
+        - CLABE
+        - US_ACCOUNT
+        - PIX
+        - IBAN
+        - FBO
+        - UPI
+        - SPARK_WALLET
+      description: Type of bank account information
     PaymentInstructions:
       type: object
       required:
@@ -5081,7 +5095,13 @@ components:
         - fullName
         - birthDate
         - nationality
+        - beneficiaryType
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+          example: INDIVIDUAL
         fullName:
           type: string
           description: Individual's full name
@@ -5101,7 +5121,13 @@ components:
       type: object
       required:
         - legalName
+        - beneficiaryType
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+          example: BUSINESS
         legalName:
           type: string
           description: Legal name of the business
@@ -5130,26 +5156,8 @@ components:
               example: US_ACCOUNT
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - INDIVIDUAL
-                          example: INDIVIDUAL
-                - title: Business Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - BUSINESS
-                          example: BUSINESS
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5169,26 +5177,8 @@ components:
               example: CLABE
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - INDIVIDUAL
-                          example: INDIVIDUAL
-                - title: Business Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - BUSINESS
-                          example: BUSINESS
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5208,26 +5198,8 @@ components:
               example: PIX
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - INDIVIDUAL
-                          example: INDIVIDUAL
-                - title: Business Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - BUSINESS
-                          example: BUSINESS
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5247,26 +5219,8 @@ components:
               example: IBAN
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - INDIVIDUAL
-                          example: INDIVIDUAL
-                - title: Business Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - BUSINESS
-                          example: BUSINESS
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5286,26 +5240,8 @@ components:
               example: UPI
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - INDIVIDUAL
-                          example: INDIVIDUAL
-                - title: Business Beneficiary
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessBeneficiary'
-                    - type: object
-                      properties:
-                        beneficiaryType:
-                          type: string
-                          enum:
-                            - BUSINESS
-                          example: BUSINESS
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:

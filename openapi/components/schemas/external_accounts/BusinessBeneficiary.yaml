@@ -1,7 +1,12 @@
 type: object
 required:
   - legalName
+  - beneficiaryType
 properties:
+  beneficiaryType:
+    type: string
+    enum: [BUSINESS]
+    example: BUSINESS
   legalName:
     type: string
     description: Legal name of the business
