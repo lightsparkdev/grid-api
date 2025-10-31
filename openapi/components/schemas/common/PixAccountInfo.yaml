@@ -5,8 +5,8 @@ required:
   - pixKeyType
 properties:
   accountType:
-    allOf:
-      - $ref: ./BankAccountType.yaml
+    type: string
+    enum: [PIX]
     example: PIX
   pixKey:
     type: string

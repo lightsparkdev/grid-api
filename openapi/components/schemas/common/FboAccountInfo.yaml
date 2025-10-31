@@ -4,8 +4,8 @@ required:
   - currencyCode
 properties:
   accountType:
-    allOf:
-      - $ref: ./BankAccountType.yaml
+    type: string
+    enum: [FBO]
     example: FBO
   currencyCode:
     type: string

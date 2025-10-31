@@ -10,24 +10,8 @@ allOf:
         example: UPI
       beneficiary:
         oneOf:
-          - title: Individual Beneficiary
-            allOf:
-              - $ref: ./IndividualBeneficiary.yaml
-              - type: object
-                properties:
-                  beneficiaryType:
-                    type: string
-                    enum: [INDIVIDUAL]
-                    example: INDIVIDUAL
-          - title: Business Beneficiary
-            allOf:
-              - $ref: ./BusinessBeneficiary.yaml
-              - type: object
-                properties:
-                  beneficiaryType:
-                    type: string
-                    enum: [BUSINESS]
-                    example: BUSINESS
+          - $ref: ./IndividualBeneficiary.yaml
+          - $ref: ./BusinessBeneficiary.yaml
         discriminator:
           propertyName: beneficiaryType
           mapping:

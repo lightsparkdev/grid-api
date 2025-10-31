@@ -4,8 +4,8 @@ required:
   - address
 properties:
   accountType:
-    allOf:
-      - $ref: ./BankAccountType.yaml
+    type: string
+    enum: [SPARK_WALLET]
     example: SPARK_WALLET
   address:
     type: string

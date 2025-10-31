@@ -5,8 +5,8 @@ required:
   - bankName
 properties:
   accountType:
-    allOf:
-      - $ref: ./BankAccountType.yaml
+    type: string
+    enum: [IBAN]
     example: IBAN
   iban:
     type: string
