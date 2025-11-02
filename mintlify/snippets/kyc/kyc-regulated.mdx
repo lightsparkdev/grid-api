@@ -33,33 +33,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
       "state": "WA",
       "postalCode": "98101",
       "country": "US"
-    },
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123450000",
-      "routingNumber": "000123456",
-      "accountCategory": "CHECKING",
-      "bankName": "Chase Bank"
     }
   }'
-```
-
-The API allows creating a customer with minimal PII.
-
-Here is an example of a customer creation request body `bankAccountInfo` is always required:
-
-```json
-{
-  "platformCustomerId": "9f84e0c2a72c4fa",
-  "customerType": "INDIVIDUAL",
-  "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123450000",
-      "routingNumber": "000123456",
-      "accountCategory": "CHECKING",
-      "bankName": "Chase Bank"
-    }
-}
 ```
 
 The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for customer creation itself, but become necessary based on currency and UMA provider requirements if using UMA.
@@ -79,11 +54,6 @@ The examples below show a more comprehensive set of data. Not all fields are str
         "state": "Ciudad de México",
         "postalCode": "06600",
         "country": "MX"
-      },
-      "bankAccountInfo": {
-        "accountType": "CLABE",
-        "clabeNumber": "123456789012345678",
-        "bankName": "Banco de México"
       }
     }
     ```
@@ -106,13 +76,6 @@ The examples below show a more comprehensive set of data. Not all fields are str
         "state": "NY",
         "postalCode": "10001",
         "country": "US"
-      },
-      "bankAccountInfo": {
-        "accountType": "US_ACCOUNT",
-        "accountNumber": "123456789",
-        "routingNumber": "987654321",
-        "accountCategory": "CHECKING",
-        "bankName": "Chase Bank"
       }
     }
     ```

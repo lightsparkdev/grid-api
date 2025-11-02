@@ -27,8 +27,6 @@ properties:
         example: EIN-987654321
   address:
     $ref: ../common/Address.yaml
-  bankAccountInfo:
-    $ref: ./CustomerBankAccountInfo.yaml
   beneficialOwners:
     type: array
     items:

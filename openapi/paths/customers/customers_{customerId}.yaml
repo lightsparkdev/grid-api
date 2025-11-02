@@ -83,13 +83,6 @@ patch:
                 state: CA
                 postalCode: '94103'
                 country: US
-              bankAccountInfo:
-                accountType: US_ACCOUNT
-                accountNumber: '11122233344'
-                routingNumber: '111222333'
-                accountCategory: CHECKING
-                bankName: Wells Fargo
-                platformAccountId: wf_checking_9012
           businessUpdate:
             summary: Update business customer example
             value:
@@ -104,13 +97,6 @@ patch:
                 state: CA
                 postalCode: '94304'
                 country: US
-              bankAccountInfo:
-                accountType: US_ACCOUNT
-                accountNumber: '55566677788'
-                routingNumber: '555666777'
-                accountCategory: CHECKING
-                bankName: JP Morgan Chase
-                platformAccountId: chase_business_3456
   responses:
     '200':
       description: Customer updated successfully

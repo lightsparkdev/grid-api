@@ -201,13 +201,6 @@ paths:
                     state: WA
                     postalCode: '98101'
                     country: US
-                  bankAccountInfo:
-                    accountType: US_ACCOUNT
-                    accountNumber: '12345678901'
-                    routingNumber: '123456789'
-                    accountCategory: CHECKING
-                    bankName: Chase Bank
-                    platformAccountId: chase_primary_1234
               individualCustomerWithoutUmaAddress:
                 summary: Create individual customer without UMA address (will be generated)
                 value:
@@ -498,13 +491,6 @@ paths:
                     state: CA
                     postalCode: '94103'
                     country: US
-                  bankAccountInfo:
-                    accountType: US_ACCOUNT
-                    accountNumber: '11122233344'
-                    routingNumber: '111222333'
-                    accountCategory: CHECKING
-                    bankName: Wells Fargo
-                    platformAccountId: wf_checking_9012
               businessUpdate:
                 summary: Update business customer example
                 value:
@@ -519,13 +505,6 @@ paths:
                     state: CA
                     postalCode: '94304'
                     country: US
-                  bankAccountInfo:
-                    accountType: US_ACCOUNT
-                    accountNumber: '55566677788'
-                    routingNumber: '555666777'
-                    accountCategory: CHECKING
-                    bankName: JP Morgan Chase
-                    platformAccountId: chase_business_3456
       responses:
         '200':
           description: Customer updated successfully
@@ -2387,9 +2366,6 @@ paths:
         - state: State/Province/Region
         - postalCode: Postal/ZIP code
         - country: Country code (ISO 3166-1 alpha-2)
-        - accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN)
-        - accountNumber: Bank account number
-        - bankName: Name of the bank
 
         Required columns for business customers:
         - businessLegalName: Legal name of the business
@@ -2398,9 +2374,6 @@ paths:
         - state: State/Province/Region
         - postalCode: Postal/ZIP code
         - country: Country code (ISO 3166-1 alpha-2)
-        - accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN)
-        - accountNumber: Bank account number
-        - bankName: Name of the bank
 
         Optional columns for all customers:
         - addressLine2: Street address line 2
@@ -2414,30 +2387,11 @@ paths:
         - businessRegistrationNumber: Business registration number
         - businessTaxId: Tax identification number
 
-        Additional required columns based on account type:
-
-        For US_ACCOUNT:
-        - routingNumber: ACH routing number (9 digits)
-        - accountCategory: Either "CHECKING" or "SAVINGS"
-
-        For CLABE:
-        - clabeNumber: 18-digit CLABE number
-
-        For PIX:
-        - pixKey: PIX key value
-        - pixKeyType: Type of PIX key (CPF, CNPJ, EMAIL, PHONE, RANDOM)
-
-        For IBAN:
-        - iban: International Bank Account Number
-        - swiftBic: SWIFT/BIC code (8 or 11 characters)
-
-        See the CustomerBankAccountInfo and CustomerInfo schemas for more details on the required and optional fields.
-
         ### Example CSV
         ```csv
-        umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory
-        john.doe@uma.domain.com,customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase Bank,chase_primary_1234,,222888888,SAVINGS
-        acme@uma.domain.com,biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US,US_ACCOUNT,987654321,Bank of America,boa_business_5678,Acme Corp,121212121,CHECKING
+        umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,platformAccountId,businessLegalName
+        john.doe@uma.domain.com,customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US
+        acme@uma.domain.com,biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US
         ```
 
         The upload process is asynchronous and will return a job ID that can be used to track progress.
@@ -4498,250 +4452,6 @@ components:
         - MANUALLY_REJECTED
       description: The current KYC status of a customer
       example: APPROVED
-    UsAccountInfo:
-      type: object
-      required:
-        - accountType
-        - accountNumber
-        - routingNumber
-        - accountCategory
-      properties:
-        accountType:
-          type: string
-          enum:
-            - US_ACCOUNT
-          example: US_ACCOUNT
-        accountNumber:
-          type: string
-          description: US bank account number
-          example: '123456789'
-        routingNumber:
-          type: string
-          description: ACH routing number (9 digits)
-          example: '987654321'
-          minLength: 9
-          maxLength: 9
-          pattern: ^[0-9]{9}$
-        accountCategory:
-          type: string
-          enum:
-            - CHECKING
-            - SAVINGS
-          description: Type of account (checking or savings)
-          example: CHECKING
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Chase Bank
-    ClabeAccountInfo:
-      type: object
-      required:
-        - accountType
-        - clabeNumber
-        - bankName
-      properties:
-        accountType:
-          type: string
-          enum:
-            - CLABE
-          example: CLABE
-        clabeNumber:
-          type: string
-          description: 18-digit CLABE number (Mexican banking standard)
-          example: '123456789012345678'
-          minLength: 18
-          maxLength: 18
-          pattern: ^[0-9]{18}$
-        bankName:
-          type: string
-          description: Name of the bank
-          example: BBVA Mexico
-    BankAccountBase:
-      type: object
-      properties:
-        currency:
-          type: string
-          description: The ISO 4217 currency code or ISO 24165 code
-          example: USD
-        platformAccountId:
-          type: string
-          description: |
-            Platform-specific identifier for this bank account. This optional field allows platforms
-            to link bank accounts to their internal account systems. The value can be any string
-            that helps identify the account in your system (e.g. database IDs, custom references, etc.).
-
-            This field is particularly useful when:
-            - Tracking multiple bank accounts for the same customer
-            - Linking accounts to internal accounting systems
-            - Maintaining consistency between Grid and your platform's account records
-          example: acc_123456789
-          discriminator:
-            propertyName: accountType
-            mapping:
-              CLABE: '#/components/schemas/CustomerClabeAccountInfo'
-              US_ACCOUNT: '#/components/schemas/CustomerUsAccountInfo'
-              PIX: '#/components/schemas/CustomerPixAccountInfo'
-              IBAN: '#/components/schemas/CustomerIbanAccountInfo'
-              FBO: '#/components/schemas/CustomerFboAccountInfo'
-              UPI: '#/components/schemas/CustomerUpiAccountInfo'
-              SPARK_WALLET: '#/components/schemas/CustomerSparkWalletInfo'
-    CustomerClabeAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/ClabeAccountInfo'
-        - $ref: '#/components/schemas/BankAccountBase'
-    CustomerUsAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/UsAccountInfo'
-        - $ref: '#/components/schemas/BankAccountBase'
-    PixAccountInfo:
-      type: object
-      required:
-        - accountType
-        - pixKey
-        - pixKeyType
-      properties:
-        accountType:
-          type: string
-          enum:
-            - PIX
-          example: PIX
-        pixKey:
-          type: string
-          description: PIX key for Brazilian instant payments
-          example: '55119876543210'
-        pixKeyType:
-          type: string
-          enum:
-            - CPF
-            - CNPJ
-            - EMAIL
-            - PHONE
-            - RANDOM
-          description: Type of PIX key being used
-          example: PHONE
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Nubank
-    CustomerPixAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/PixAccountInfo'
-        - $ref: '#/components/schemas/BankAccountBase'
-    IbanAccountInfo:
-      type: object
-      required:
-        - accountType
-        - iban
-        - bankName
-      properties:
-        accountType:
-          type: string
-          enum:
-            - IBAN
-          example: IBAN
-        iban:
-          type: string
-          description: International Bank Account Number
-          example: DE89370400440532013000
-          minLength: 15
-          maxLength: 34
-        swiftBic:
-          type: string
-          description: SWIFT/BIC code (8 or 11 characters)
-          example: DEUTDEFF
-          minLength: 8
-          maxLength: 11
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Deutsche Bank
-    CustomerIbanAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/IbanAccountInfo'
-        - $ref: '#/components/schemas/BankAccountBase'
-    FboAccountInfo:
-      type: object
-      required:
-        - accountType
-        - currencyCode
-      properties:
-        accountType:
-          type: string
-          enum:
-            - FBO
-          example: FBO
-        currencyCode:
-          type: string
-          description: Three-letter currency code (ISO 4217)
-          example: USD
-    CustomerFboAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BankAccountBase'
-        - $ref: '#/components/schemas/FboAccountInfo'
-    UpiAccountInfo:
-      type: object
-      required:
-        - accountType
-        - vpa
-      properties:
-        accountType:
-          type: string
-          enum:
-            - UPI
-          example: UPI
-        vpa:
-          type: string
-          description: Virtual Payment Address for UPI payments
-          example: somecustomers@okbank
-    CustomerUpiAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/UpiAccountInfo'
-        - $ref: '#/components/schemas/BankAccountBase'
-    SparkWalletInfo:
-      type: object
-      required:
-        - accountType
-        - address
-      properties:
-        accountType:
-          type: string
-          enum:
-            - SPARK_WALLET
-          example: SPARK_WALLET
-        address:
-          type: string
-          description: Spark wallet address
-          example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
-    CustomerSparkWalletInfo:
-      allOf:
-        - $ref: '#/components/schemas/SparkWalletInfo'
-        - $ref: '#/components/schemas/BankAccountBase'
-    CustomerBankAccountInfo:
-      oneOf:
-        - title: US Bank Account
-          $ref: '#/components/schemas/CustomerUsAccountInfo'
-        - title: CLABE Account
-          $ref: '#/components/schemas/CustomerClabeAccountInfo'
-        - title: PIX Account
-          $ref: '#/components/schemas/CustomerPixAccountInfo'
-        - title: IBAN Account
-          $ref: '#/components/schemas/CustomerIbanAccountInfo'
-        - title: FBO Account
-          $ref: '#/components/schemas/CustomerFboAccountInfo'
-        - title: UPI Account
-          $ref: '#/components/schemas/CustomerUpiAccountInfo'
-        - title: Spark Wallet
-          $ref: '#/components/schemas/CustomerSparkWalletInfo'
-      discriminator:
-        propertyName: accountType
-        mapping:
-          US_ACCOUNT: '#/components/schemas/CustomerUsAccountInfo'
-          CLABE: '#/components/schemas/CustomerClabeAccountInfo'
-          PIX: '#/components/schemas/CustomerPixAccountInfo'
-          IBAN: '#/components/schemas/CustomerIbanAccountInfo'
-          FBO: '#/components/schemas/CustomerFboAccountInfo'
-          UPI: '#/components/schemas/CustomerUpiAccountInfo'
-          SPARK_WALLET: '#/components/schemas/CustomerSparkWalletInfo'
     IndividualCustomerUpdate:
       type: object
       required:
@@ -4774,12 +4484,6 @@ components:
             If provided during customer update, the UMA address will be updated to the provided value. This is an optional
             identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
-        bankAccountInfo:
-          $ref: '#/components/schemas/CustomerBankAccountInfo'
-          description: |
-            Optional bank account information for a default receiving account where incoming payments will be deposited.
-            This field should only be used by platforms that are regulated financial institutions and can directly
-            receive incoming funds. Other platforms should add external accounts instead.
     BusinessCustomerUpdate:
       type: object
       required:
@@ -4811,8 +4515,6 @@ components:
               example: EIN-987654321
         address:
           $ref: '#/components/schemas/Address'
-        bankAccountInfo:
-          $ref: '#/components/schemas/CustomerBankAccountInfo'
         beneficialOwners:
           type: array
           items:
@@ -4951,14 +4653,107 @@ components:
           FBO: '#/components/schemas/PaymentFboAccountInfo'
           UPI: '#/components/schemas/PaymentUpiAccountInfo'
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
+    UsAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - routingNumber
+        - accountCategory
+      properties:
+        accountType:
+          type: string
+          enum:
+            - US_ACCOUNT
+          example: US_ACCOUNT
+        accountNumber:
+          type: string
+          description: US bank account number
+          example: '123456789'
+        routingNumber:
+          type: string
+          description: ACH routing number (9 digits)
+          example: '987654321'
+          minLength: 9
+          maxLength: 9
+          pattern: ^[0-9]{9}$
+        accountCategory:
+          type: string
+          enum:
+            - CHECKING
+            - SAVINGS
+          description: Type of account (checking or savings)
+          example: CHECKING
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Chase Bank
     PaymentUsAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentBankAccountInfo'
         - $ref: '#/components/schemas/UsAccountInfo'
+    PixAccountInfo:
+      type: object
+      required:
+        - accountType
+        - pixKey
+        - pixKeyType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PIX
+          example: PIX
+        pixKey:
+          type: string
+          description: PIX key for Brazilian instant payments
+          example: '55119876543210'
+        pixKeyType:
+          type: string
+          enum:
+            - CPF
+            - CNPJ
+            - EMAIL
+            - PHONE
+            - RANDOM
+          description: Type of PIX key being used
+          example: PHONE
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Nubank
     PaymentPixAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentBankAccountInfo'
         - $ref: '#/components/schemas/PixAccountInfo'
+    IbanAccountInfo:
+      type: object
+      required:
+        - accountType
+        - iban
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - IBAN
+          example: IBAN
+        iban:
+          type: string
+          description: International Bank Account Number
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+        swiftBic:
+          type: string
+          description: SWIFT/BIC code (8 or 11 characters)
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Deutsche Bank
     PaymentIbanAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentBankAccountInfo'
@@ -4983,10 +4778,40 @@ components:
                 - GET
               description: The HTTP method to use for confirming the payment
               example: POST
+    UpiAccountInfo:
+      type: object
+      required:
+        - accountType
+        - vpa
+      properties:
+        accountType:
+          type: string
+          enum:
+            - UPI
+          example: UPI
+        vpa:
+          type: string
+          description: Virtual Payment Address for UPI payments
+          example: somecustomers@okbank
     PaymentUpiAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentBankAccountInfo'
         - $ref: '#/components/schemas/UpiAccountInfo'
+    SparkWalletInfo:
+      type: object
+      required:
+        - accountType
+        - address
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SPARK_WALLET
+          example: SPARK_WALLET
+        address:
+          type: string
+          description: Spark wallet address
+          example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
     PaymentSparkWalletInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentBankAccountInfo'
@@ -5007,6 +4832,29 @@ components:
         - UPI
         - SPARK_WALLET
       description: Type of bank account information
+    ClabeAccountInfo:
+      type: object
+      required:
+        - accountType
+        - clabeNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - CLABE
+          example: CLABE
+        clabeNumber:
+          type: string
+          description: 18-digit CLABE number (Mexican banking standard)
+          example: '123456789012345678'
+          minLength: 18
+          maxLength: 18
+          pattern: ^[0-9]{18}$
+        bankName:
+          type: string
+          description: Name of the bank
+          example: BBVA Mexico
     PaymentInstructions:
       type: object
       required:
@@ -5311,6 +5159,10 @@ components:
               type: string
               description: The ISO 4217 currency code
               example: USD
+            defaultUmaDepositAccount:
+              type: boolean
+              description: Whether this account is the default UMA deposit account for the customer. If true, incoming UMA payments to this customer's UMA address will be automatically deposited into this account instead of the primary internal account. False if not provided. Note that at most, one external account can be set as the default UMA deposit account for a customer. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
+              example: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfo'
     ExternalAccountCreateRequest:
@@ -5328,6 +5180,10 @@ components:
               type: string
               description: The ISO 4217 currency code
               example: USD
+            defaultUmaDepositAccount:
+              type: boolean
+              description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
+              default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfo'
     PlaidLinkTokenRequest:

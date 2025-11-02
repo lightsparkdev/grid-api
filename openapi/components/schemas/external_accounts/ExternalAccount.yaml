@@ -26,5 +26,13 @@ allOf:
         type: string
         description: The ISO 4217 currency code
         example: USD
+      defaultUmaDepositAccount:
+        type: boolean
+        description: >-
+          Whether this account is the default UMA deposit account for the customer. If true, incoming UMA payments
+          to this customer's UMA address will be automatically deposited into this account instead of the primary internal account.
+          False if not provided. Note that at most, one external account can be set as the default UMA deposit account for a customer.
+          If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
+        example: false
       accountInfo:
         $ref: ./ExternalAccountInfo.yaml

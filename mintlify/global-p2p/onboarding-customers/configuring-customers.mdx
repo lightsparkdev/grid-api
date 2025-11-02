@@ -94,11 +94,6 @@ Typically bank account information is provided separately via internal and exter
     "state": "Ciudad de México",
     "postalCode": "06600",
     "country": "MX"
-  },
-  "bankAccountInfo": {
-    "accountType": "CLABE",
-    "clabeNumber": "123456789012345678",
-    "bankName": "Banco de México"
   }
 }
 ```
@@ -137,13 +132,6 @@ curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
       "state": "NY",
       "postalCode": "10001",
       "country": "US"
-    },
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123456789",
-      "routingNumber": "987654321",
-      "accountCategory": "CHECKING",
-      "bankName": "Chase Bank"
     }
   }'
 ```
@@ -204,32 +192,6 @@ curl -sS -G "https://api.lightspark.com/grid/2025-10-13/customers" \
 ```
 
 Note that this example shows all available filters. You can use any combination of them.
-
-### Updating customer information
-
-Use PATCH to update customer information:
-
-```bash
-curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
-  -u "$GRID_CLIENT_ID:$GRID_API_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123456789",
-      "routingNumber": "987654321",
-      "bankName": "Chase Bank"
-    }
-  }'
-```
-<Tip>
-Common use cases for `platformAccountId`:
-
-- Tracking multiple bank accounts and UMA addresses for the same customer
-- Linking accounts to internal accounting systems
-- Maintaining consistency between the Grid API and your platform's account records
-- Facilitating account reconciliation and reporting
-</Tip>
 
 ## Data validation
 

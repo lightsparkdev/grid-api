@@ -28,9 +28,3 @@ properties:
       If provided during customer update, the UMA address will be updated to the provided value. This is an optional
       identifier to route payments to the customer.
     example: $john.doe@uma.domain.com
-  bankAccountInfo:
-    $ref: ./CustomerBankAccountInfo.yaml
-    description: |
-      Optional bank account information for a default receiving account where incoming payments will be deposited.
-      This field should only be used by platforms that are regulated financial institutions and can directly
-      receive incoming funds. Other platforms should add external accounts instead.

@@ -1,3 +1,0 @@
-allOf:
-  - $ref: ../common/ClabeAccountInfo.yaml
-  - $ref: ./BankAccountBase.yaml

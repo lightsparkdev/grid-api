@@ -51,26 +51,6 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers?platformCustom
 
 Note that this example shows all available filters. You can use any combination of them.
 
-### Updating Customer Information
-
-To update customer information:
-
-```bash
-curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123456789",
-      "routingNumber": "987654321",
-      "bankName": "Chase Bank"
-    }
-  }'
-```
-
-Note that not all customer information can be updated. Particularly for non-regulated platforms, you cannot update personal information after the customer has been created.
-
 ## Bank Account Information
 
 The API supports various bank account formats based on country and funding type. There are two types of funding
