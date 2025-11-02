@@ -4653,7 +4653,7 @@ components:
         - accountType
       properties:
         accountType:
-          $ref: '#/components/schemas/BankAccountType'
+          $ref: '#/components/schemas/BankAccountOrWalletType'
       discriminator:
         propertyName: accountType
         mapping:
@@ -4664,6 +4664,7 @@ components:
           FBO: '#/components/schemas/PaymentFboAccountInfo'
           UPI: '#/components/schemas/PaymentUpiAccountInfo'
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
+          LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
     UsAccountInfo:
       type: object
       required:
@@ -4832,7 +4833,17 @@ components:
           type: string
           description: Invoice for the payment
           example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-    BankAccountType:
+    PaymentLightningInvoiceInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentBankAccountInfo'
+      required:
+        - invoice
+      properties:
+        invoice:
+          type: string
+          description: Invoice for the payment
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+    BankAccountOrWalletType:
       type: string
       enum:
         - CLABE
@@ -4842,7 +4853,8 @@ components:
         - FBO
         - UPI
         - SPARK_WALLET
-      description: Type of bank account information
+        - LIGHTNING
+      description: Type of account or wallet information
     ClabeAccountInfo:
       type: object
       required:
@@ -4870,7 +4882,7 @@ components:
       type: object
       required:
         - reference
-        - bankAccountInfo
+        - accountInfo
       properties:
         reference:
           type: string
@@ -4880,7 +4892,7 @@ components:
           type: string
           description: Additional human-readable instructions for making the payment
           example: Please ensure the reference code is included in the payment memo/description field
-        bankAccountInfo:
+        accountInfo:
           oneOf:
             - title: CLABE Account
               $ref: '#/components/schemas/PaymentClabeAccountInfo'
@@ -4896,6 +4908,8 @@ components:
               $ref: '#/components/schemas/PaymentUpiAccountInfo'
             - title: Spark Wallet
               $ref: '#/components/schemas/PaymentSparkWalletInfo'
+            - title: Lightning Invoice
+              $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -4906,6 +4920,7 @@ components:
               FBO: '#/components/schemas/PaymentFboAccountInfo'
               UPI: '#/components/schemas/PaymentUpiAccountInfo'
               SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
+              LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
     InternalAccount:
       type: object
       required:
@@ -5118,6 +5133,45 @@ components:
               enum:
                 - SPARK_WALLET
               example: SPARK_WALLET
+    LightningExternalAccountInfo:
+      allOf:
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - LIGHTNING
+              example: LIGHTNING
+        - oneOf:
+            - title: Lightning Invoice
+              type: object
+              required:
+                - invoice
+              properties:
+                invoice:
+                  type: string
+                  description: 1-time use lightning bolt11 invoice payout destination
+                  example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+            - title: Lightning - Bolt12 Offer
+              type: object
+              required:
+                - bolt12
+              properties:
+                bolt12:
+                  type: string
+                  description: A bolt12 offer which can be reused as a payment destination
+                  example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+            - title: Lightning Address
+              type: object
+              required:
+                - lightningAddress
+              properties:
+                lightningAddress:
+                  type: string
+                  description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
+                  example: john.doe@lightningwallet.com
     ExternalAccountInfo:
       oneOf:
         - title: US Account
@@ -5132,6 +5186,8 @@ components:
           $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
+        - title: Lightning
+          $ref: '#/components/schemas/LightningExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -5141,6 +5197,7 @@ components:
           IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
+          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object

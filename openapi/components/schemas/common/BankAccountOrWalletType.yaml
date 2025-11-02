@@ -7,4 +7,5 @@ enum:
   - FBO
   - UPI
   - SPARK_WALLET
-description: Type of bank account information
+  - LIGHTNING
+description: Type of account or wallet information

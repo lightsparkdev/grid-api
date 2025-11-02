@@ -11,6 +11,8 @@ oneOf:
     $ref: ./UpiAccountExternalAccountInfo.yaml
   - title: Spark Wallet
     $ref: ./SparkWalletExternalAccountInfo.yaml
+  - title: Lightning
+    $ref: ./LightningExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -20,3 +22,4 @@ discriminator:
     IBAN: ./IbanAccountExternalAccountInfo.yaml
     UPI: ./UpiAccountExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
+    LIGHTNING: ./LightningExternalAccountInfo.yaml
