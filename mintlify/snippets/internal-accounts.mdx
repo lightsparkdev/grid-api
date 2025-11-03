@@ -60,7 +60,7 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
         {
           "reference": "FUND-ABC123",
           "instructionsNotes": "Include the reference code in your ACH transfer memo",
-          "bankAccountInfo": {
+          "accountInfo": {
             "accountType": "US_ACCOUNT",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
@@ -114,7 +114,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     {
       "reference": "FUND-ABC123",
       "instructionsNotes": "Include the reference code in your ACH transfer memo",
-      "bankAccountInfo": {
+      "accountInfo": {
         "accountType": "US_ACCOUNT",
         "accountNumber": "9876543210",
         "routingNumber": "021000021",
@@ -125,7 +125,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     ```
 
     <Tip>
-      Each internal account has unique banking details in the `bankAccountInfo`
+      Each internal account has unique banking details in the `accountInfo`
       field, which ensures deposits are automatically credited to the correct
       account.
     </Tip>
@@ -138,7 +138,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     {
       "reference": "FUND-EUR789",
       "instructionsNotes": "Include reference in SEPA transfer description",
-      "bankAccountInfo": {
+      "accountInfo": {
         "accountType": "IBAN",
         "iban": "DE89370400440532013000",
         "swiftBic": "DEUTDEFF",
@@ -156,7 +156,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     {
       "invoice": "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs",
       "instructionsNotes": "Use the invoice when making Spark payment",
-      "bankAccountInfo": {
+      "accountInfo": {
         "accountType": "SPARK_WALLET",
         "asset": "USDB",
         "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
@@ -220,7 +220,7 @@ Parse the `fundingPaymentInstructions` array and select the appropriate instruct
 
 ```javascript
 const instructions = account.fundingPaymentInstructions[0];
-const bankInfo = instructions.bankAccountInfo;
+const bankInfo = instructions.accountInfo;
 ```
 
 </Step>
