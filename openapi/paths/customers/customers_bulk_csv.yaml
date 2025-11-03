@@ -37,12 +37,6 @@ post:
 
     - country: Country code (ISO 3166-1 alpha-2)
 
-    - accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN)
-
-    - accountNumber: Bank account number
-
-    - bankName: Name of the bank
-
 
     Required columns for business customers:
 
@@ -57,12 +51,6 @@ post:
     - postalCode: Postal/ZIP code
 
     - country: Country code (ISO 3166-1 alpha-2)
-
-    - accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN)
-
-    - accountNumber: Bank account number
-
-    - bankName: Name of the bank
 
 
     Optional columns for all customers:
@@ -86,52 +74,17 @@ post:
     - businessTaxId: Tax identification number
 
 
-    Additional required columns based on account type:
-
-
-    For US_ACCOUNT:
-
-    - routingNumber: ACH routing number (9 digits)
-
-    - accountCategory: Either "CHECKING" or "SAVINGS"
-
-
-    For CLABE:
-
-    - clabeNumber: 18-digit CLABE number
-
-
-    For PIX:
-
-    - pixKey: PIX key value
-
-    - pixKeyType: Type of PIX key (CPF, CNPJ, EMAIL, PHONE, RANDOM)
-
-
-    For IBAN:
-
-    - iban: International Bank Account Number
-
-    - swiftBic: SWIFT/BIC code (8 or 11 characters)
-
-
-    See the CustomerBankAccountInfo and CustomerInfo schemas for more details on the
-    required and optional fields.
-
-
     ### Example CSV
 
     ```csv
 
-    umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory
+    umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,platformAccountId,businessLegalName
 
     john.doe@uma.domain.com,customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main
-    St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase
-    Bank,chase_primary_1234,,222888888,SAVINGS
+    St,San Francisco,CA,94105,US
 
     acme@uma.domain.com,biz456,BUSINESS,,,400 Commerce
-    Way,Austin,TX,78701,US,US_ACCOUNT,987654321,Bank of
-    America,boa_business_5678,Acme Corp,121212121,CHECKING
+    Way,Austin,TX,78701,US
 
     ```
 

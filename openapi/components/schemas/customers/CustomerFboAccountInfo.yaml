@@ -1,3 +1,0 @@
-allOf:
-  - $ref: ./BankAccountBase.yaml
-  - $ref: ../common/FboAccountInfo.yaml
