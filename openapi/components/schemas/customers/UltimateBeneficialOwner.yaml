@@ -12,6 +12,15 @@ properties:
     format: email
     description: Email address of the individual
     example: example@test.com
+  phoneNumber:
+    type: string
+    description: Phone number of the individual in E.164 format
+    example: +5555555555
+    pattern: '^\+[1-9]\d{1,14}$'
+  taxId:
+    type: string
+    description: Tax identification number of the individual. This could be a Social Security Number (SSN) for US individuals, Tax Identification Number (TIN) for non-US individuals, or a Passport Number.
+    example: EIN-987654321
   birthDate:
     type: string
     format: date
@@ -26,16 +35,18 @@ properties:
   individualType:
     type: string
     enum:
-      - OFFICER
-      - BENEFICIAL_OWNER
+      - DIRECTOR
       - CONTROL_PERSON
-      - AUTHORIZED_PERSON
+      - BUSINESS_POINT_OF_CONTACT
+      - TRUSTEE
+      - SETTLOR
+      - GENERAL_PARTNER
     description: Type of individual in the corporation
-    example: BENEFICIAL_OWNER
+    example: DIRECTOR
   percentageOwnership:
     type: number
     description: Percent of ownership when individual type is beneficial owner
-    example: 10
+    example: 25
   title:
     type: string
     description: Title at company
