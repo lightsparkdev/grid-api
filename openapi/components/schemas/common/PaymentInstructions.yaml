@@ -1,7 +1,7 @@
 type: object
 required:
   - reference
-  - bankAccountInfo
+  - accountOrWalletInfo
 properties:
   reference:
     type: string
@@ -15,7 +15,7 @@ properties:
     example: >-
       Please ensure the reference code is included in the payment
       memo/description field
-  bankAccountInfo:
+  accountOrWalletInfo:
     oneOf:
       - title: CLABE Account
         $ref: ../common/PaymentClabeAccountInfo.yaml
@@ -31,6 +31,8 @@ properties:
         $ref: ../common/PaymentUpiAccountInfo.yaml
       - title: Spark Wallet
         $ref: ../common/PaymentSparkWalletInfo.yaml
+      - title: Lightning Invoice
+        $ref: ../common/PaymentLightningInvoiceInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
@@ -41,3 +43,4 @@ properties:
         FBO: ../common/PaymentFboAccountInfo.yaml
         UPI: ../common/PaymentUpiAccountInfo.yaml
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
+        LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml

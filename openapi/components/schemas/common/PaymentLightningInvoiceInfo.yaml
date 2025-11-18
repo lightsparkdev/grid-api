@@ -1,6 +1,7 @@
 allOf:
   - $ref: ./PaymentAccountOrWalletInfo.yaml
-  - $ref: ./SparkWalletInfo.yaml
+required:
+  - invoice
 properties:
   invoice:
     type: string

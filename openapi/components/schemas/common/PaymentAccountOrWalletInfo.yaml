@@ -3,7 +3,7 @@ required:
   - accountType
 properties:
   accountType:
-    $ref: ./BankAccountType.yaml
+    $ref: ./BankAccountOrWalletType.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -14,3 +14,4 @@ discriminator:
     FBO: ./PaymentFboAccountInfo.yaml
     UPI: ./PaymentUpiAccountInfo.yaml
     SPARK_WALLET: ./PaymentSparkWalletInfo.yaml
+    LIGHTNING: ./PaymentLightningInvoiceInfo.yaml
