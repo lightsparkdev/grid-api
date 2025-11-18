@@ -149,16 +149,25 @@ In this guide, the entities map as follows:
     "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
     "exchangeRate": 16.85,
     "fees": { "amount": 50, "currency": { "code": "USD", "decimals": 2 } },
-    "paymentInstructions": {
-      "reference": "UMA-Q12345-REF",
-      "bankAccountInfo": {
-        "accountType": "US_ACCOUNT",
-        "accountNumber": "987654321",
-        "routingNumber": "123456789",
-        "accountCategory": "CHECKING",
-        "bankName": "Example Bank"
+    "paymentInstructions": [
+      {
+        "accountOrWalletInfo": {
+          "reference": "UMA-Q12345-REF",
+          "accountType": "US_ACCOUNT",
+          "accountNumber": "987654321",
+          "routingNumber": "123456789",
+          "accountCategory": "CHECKING",
+          "bankName": "Example Bank"
+        }
+      },
+      {
+        "accountOrWalletInfo": {
+          "accountType": "SOLANA_WALLET",
+          "assetType": "USDC",
+          "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
+        }
       }
-    },
+    ],
     "status": "PENDING"
   }
   ```

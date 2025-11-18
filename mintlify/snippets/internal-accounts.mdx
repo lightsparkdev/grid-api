@@ -58,14 +58,21 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
       },
       "fundingPaymentInstructions": [
         {
-          "reference": "FUND-ABC123",
           "instructionsNotes": "Include the reference code in your ACH transfer memo",
           "accountOrWalletInfo": {
+            "reference": "FUND-ABC123",
             "accountType": "US_ACCOUNT",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
             "accountHolderName": "Lightspark Payments FBO John Doe",
             "bankName": "JP Morgan Chase"
+          }
+        },
+        {
+          "accountOrWalletInfo": {
+            "accountType": "SOLANA_WALLET",
+            "assetType": "USDC",
+            "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
           }
         }
       ],
@@ -112,10 +119,10 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
 
     ```json
     {
-      "reference": "FUND-ABC123",
       "instructionsNotes": "Include the reference code in your ACH transfer memo",
       "accountOrWalletInfo": {
         "accountType": "US_ACCOUNT",
+        "reference": "FUND-ABC123",
         "accountNumber": "9876543210",
         "routingNumber": "021000021",
         "accountHolderName": "Lightspark Payments FBO John Doe",
@@ -136,10 +143,10 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
 
     ```json
     {
-      "reference": "FUND-EUR789",
       "instructionsNotes": "Include reference in SEPA transfer description",
       "accountOrWalletInfo": {
         "accountType": "IBAN",
+        "reference": "FUND-EUR789",
         "iban": "DE89370400440532013000",
         "swiftBic": "DEUTDEFF",
         "accountHolderName": "Lightspark Payments FBO Maria Garcia",
@@ -160,6 +167,20 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "accountType": "SPARK_WALLET",
         "asset": "USDB",
         "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Solana Stablecoin Funding">
+    For Solana wallet accounts, instructions use Solana wallet addresses:
+
+    ```json
+    {
+      "accountOrWalletInfo": {
+        "accountType": "SOLANA_WALLET",
+        "assetType": "USDC",
+        "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
       }
     }
     ```

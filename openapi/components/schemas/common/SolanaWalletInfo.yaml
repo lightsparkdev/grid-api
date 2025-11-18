@@ -10,4 +10,4 @@ properties:
   address:
     type: string
     description: Solana wallet address
-    example: '0x1234567890123456789012345678901234567890'
+    example: '4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg'
