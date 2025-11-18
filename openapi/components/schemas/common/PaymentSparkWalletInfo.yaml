@@ -1,7 +1,15 @@
 allOf:
   - $ref: ./PaymentAccountOrWalletInfo.yaml
   - $ref: ./SparkWalletInfo.yaml
+required:
+  - assetType
 properties:
+  assetType:
+    type: string
+    description: Type of asset
+    enum:
+      - BTC
+      - USDB
   invoice:
     type: string
     description: Invoice for the payment

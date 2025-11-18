@@ -4858,7 +4858,15 @@ components:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+      required:
+        - assetType
       properties:
+        assetType:
+          type: string
+          description: Type of asset
+          enum:
+            - BTC
+            - USDB
         invoice:
           type: string
           description: Invoice for the payment
