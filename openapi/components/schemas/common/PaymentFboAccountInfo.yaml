@@ -1,5 +1,5 @@
 allOf:
-  - $ref: ./PaymentBankAccountInfo.yaml
+  - $ref: ./PaymentAccountOrWalletInfo.yaml
   - type: object
     required:
       - paymentUrl
