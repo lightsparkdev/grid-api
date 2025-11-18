@@ -3504,13 +3504,17 @@ webhooks:
                     exchangeRate: 0.92
                     quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
                     paymentInstructions:
-                      reference: UMA-Q12345-REF
-                      bankAccountInfo:
-                        accountType: US_ACCOUNT
-                        accountNumber: 987654321
-                        routingNumber: 123456789
-                        accountCategory: CHECKING
-                        bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          reference: UMA-Q12345-REF
+                          accountType: US_ACCOUNT
+                          accountNumber: 987654321
+                          routingNumber: 123456789
+                          accountCategory: CHECKING
+                          bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          accountType: SOLANA_WALLET
+                          assetType: USDC
+                          address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
                   timestamp: '2025-08-15T14:32:00Z'
                   webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
                   type: OUTGOING_PAYMENT
@@ -3535,13 +3539,17 @@ webhooks:
                     createdAt: '2025-08-15T14:25:18Z'
                     quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
                     paymentInstructions:
-                      reference: UMA-Q12345-REF
-                      bankAccountInfo:
-                        accountType: US_ACCOUNT
-                        accountNumber: 987654321
-                        routingNumber: 123456789
-                        accountCategory: CHECKING
-                        bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          reference: UMA-Q12345-REF
+                          accountType: US_ACCOUNT
+                          accountNumber: 987654321
+                          routingNumber: 123456789
+                          accountCategory: CHECKING
+                          bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          accountType: SOLANA_WALLET
+                          assetType: USDC
+                          address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
                   timestamp: '2025-08-15T14:32:00Z'
                   webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
                   type: OUTGOING_PAYMENT
@@ -4879,7 +4887,7 @@ components:
         address:
           type: string
           description: Solana wallet address
-          example: '0x1234567890123456789012345678901234567890'
+          example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
     PaymentSolanaWalletInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
