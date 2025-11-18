@@ -1,0 +1,13 @@
+type: object
+required:
+  - accountType
+  - address
+properties:
+  accountType:
+    type: string
+    enum: [SOLANA_WALLET]
+    example: SOLANA_WALLET
+  address:
+    type: string
+    description: Solana wallet address
+    example: '0x1234567890123456789012345678901234567890'

@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ../common/SolanaWalletInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [SOLANA_WALLET]
+        example: SOLANA_WALLET
