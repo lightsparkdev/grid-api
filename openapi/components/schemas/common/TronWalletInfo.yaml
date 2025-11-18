@@ -1,0 +1,13 @@
+type: object
+required:
+  - accountType
+  - address
+properties:
+  accountType:
+    type: string
+    enum: [TRON_WALLET]
+    example: TRON_WALLET
+  address:
+    type: string
+    description: Tron wallet address
+    example: 'TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL'

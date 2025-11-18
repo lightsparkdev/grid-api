@@ -16,3 +16,4 @@ discriminator:
     SPARK_WALLET: ./PaymentSparkWalletInfo.yaml
     LIGHTNING: ./PaymentLightningInvoiceInfo.yaml
     SOLANA_WALLET: ./PaymentSolanaWalletInfo.yaml
+    TRON_WALLET: ./PaymentTronWalletInfo.yaml

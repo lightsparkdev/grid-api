@@ -157,7 +157,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
   </Accordion>
 
   <Accordion title="Spark Stablecoin Funding">
-    For stablecoin accounts, instructions use Spark wallet addresses:
+    For stablecoin accounts, using a Spark wallet as the funding source:
 
     ```json
     {
@@ -173,7 +173,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
   </Accordion>
 
   <Accordion title="Solana Stablecoin Funding">
-    For Solana wallet accounts, instructions use Solana wallet addresses:
+    For Solana wallet accounts, using a Solana wallet as the funding source:
 
     ```json
     {
@@ -181,6 +181,20 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "accountType": "SOLANA_WALLET",
         "assetType": "USDC",
         "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Tron Stablecoin Funding">
+    For Tron wallet accounts, using a Tron wallet as the funding source:
+
+    ```json
+    {
+      "accountOrWalletInfo": {
+        "accountType": "TRON_WALLET",
+        "assetType": "USDT",
+        "address": "TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL"
       }
     }
     ```
