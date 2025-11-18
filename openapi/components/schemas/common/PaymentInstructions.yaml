@@ -1,7 +1,7 @@
 type: object
 required:
   - reference
-  - accountInfo
+  - accountOrWalletInfo
 properties:
   reference:
     type: string
@@ -15,7 +15,7 @@ properties:
     example: >-
       Please ensure the reference code is included in the payment
       memo/description field
-  accountInfo:
+  accountOrWalletInfo:
     oneOf:
       - title: CLABE Account
         $ref: ../common/PaymentClabeAccountInfo.yaml

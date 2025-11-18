@@ -100,7 +100,7 @@ const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
   "paymentInstructions": [
     {
       "reference": "UMA-Q12345-REF",
-      "accountInfo": {
+      "accountOrWalletInfo": {
         "accountNumber": "1234567890",
         "routingNumber": "021000021",
         "bankName": "Grid Settlement Bank"
@@ -118,9 +118,9 @@ function displayPaymentInstructions(quote) {
 
   return {
     amount: `$${(quote.totalSendingAmount / 100).toFixed(2)}`,
-    bankName: instructions.accountInfo.bankName,
-    accountNumber: instructions.accountInfo.accountNumber,
-    routingNumber: instructions.accountInfo.routingNumber,
+    bankName: instructions.accountOrWalletInfo.bankName,
+    accountNumber: instructions.accountOrWalletInfo.accountNumber,
+    routingNumber: instructions.accountOrWalletInfo.routingNumber,
     referenceCode: instructions.reference, // User must include this
     expiresAt: quote.expiresAt,
     willReceive: `${quote.receivingAmount / 100000000} BTC`,
