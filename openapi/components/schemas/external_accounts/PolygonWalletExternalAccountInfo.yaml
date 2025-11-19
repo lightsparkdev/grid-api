@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ../common/PolygonWalletInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [POLYGON_WALLET]
+        example: POLYGON_WALLET

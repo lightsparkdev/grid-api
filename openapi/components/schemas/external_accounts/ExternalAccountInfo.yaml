@@ -17,6 +17,8 @@ oneOf:
     $ref: ./SolanaWalletExternalAccountInfo.yaml
   - title: Tron Wallet
     $ref: ./TronWalletExternalAccountInfo.yaml
+  - title: Polygon Wallet
+    $ref: ./PolygonWalletExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -29,3 +31,4 @@ discriminator:
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
+    POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml

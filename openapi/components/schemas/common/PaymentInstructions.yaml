@@ -30,6 +30,8 @@ properties:
         $ref: ../common/PaymentSolanaWalletInfo.yaml
       - title: Tron Wallet
         $ref: ../common/PaymentTronWalletInfo.yaml
+      - title: Polygon Wallet
+        $ref: ../common/PaymentPolygonWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
@@ -43,3 +45,4 @@ properties:
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
         SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml
         TRON_WALLET: ../common/PaymentTronWalletInfo.yaml
+        POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
