@@ -17,3 +17,4 @@ discriminator:
     LIGHTNING: ./PaymentLightningInvoiceInfo.yaml
     SOLANA_WALLET: ./PaymentSolanaWalletInfo.yaml
     TRON_WALLET: ./PaymentTronWalletInfo.yaml
+    POLYGON_WALLET: ./PaymentPolygonWalletInfo.yaml

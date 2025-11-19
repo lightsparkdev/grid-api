@@ -4681,6 +4681,8 @@ components:
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
           LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
           SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
+          TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
+          POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
     UsAccountInfo:
       type: object
       required:
@@ -4907,6 +4909,56 @@ components:
           enum:
             - USDC
             - USDT
+    TronWalletInfo:
+      type: object
+      required:
+        - accountType
+        - address
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TRON_WALLET
+          example: TRON_WALLET
+        address:
+          type: string
+          description: Tron wallet address
+          example: TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL
+    PaymentTronWalletInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/TronWalletInfo'
+      properties:
+        assetType:
+          type: string
+          description: Type of asset
+          enum:
+            - USDT
+    PolygonWalletInfo:
+      type: object
+      required:
+        - accountType
+        - address
+      properties:
+        accountType:
+          type: string
+          enum:
+            - POLYGON_WALLET
+          example: POLYGON_WALLET
+        address:
+          type: string
+          description: Polygon eth wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentPolygonWalletInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/PolygonWalletInfo'
+      properties:
+        assetType:
+          type: string
+          description: Type of asset
+          enum:
+            - USDC
     BankAccountOrWalletType:
       type: string
       enum:
@@ -4919,6 +4971,8 @@ components:
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
+        - TRON_WALLET
+        - POLYGON_WALLET
       description: Type of account or wallet information
     ClabeAccountInfo:
       type: object
@@ -4972,6 +5026,10 @@ components:
               $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - title: Solana Wallet
               $ref: '#/components/schemas/PaymentSolanaWalletInfo'
+            - title: Tron Wallet
+              $ref: '#/components/schemas/PaymentTronWalletInfo'
+            - title: Polygon Wallet
+              $ref: '#/components/schemas/PaymentPolygonWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -4984,6 +5042,8 @@ components:
               SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
               LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
+              TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
+              POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
     InternalAccount:
       type: object
       required:
@@ -5247,6 +5307,30 @@ components:
               enum:
                 - SOLANA_WALLET
               example: SOLANA_WALLET
+    TronWalletExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/TronWalletInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - TRON_WALLET
+              example: TRON_WALLET
+    PolygonWalletExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PolygonWalletInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - POLYGON_WALLET
+              example: POLYGON_WALLET
     ExternalAccountInfo:
       oneOf:
         - title: US Account
@@ -5265,6 +5349,10 @@ components:
           $ref: '#/components/schemas/LightningExternalAccountInfo'
         - title: Solana Wallet
           $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
+        - title: Tron Wallet
+          $ref: '#/components/schemas/TronWalletExternalAccountInfo'
+        - title: Polygon Wallet
+          $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -5276,6 +5364,8 @@ components:
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
+          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
+          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
