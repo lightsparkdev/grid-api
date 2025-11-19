@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ../common/BaseWalletInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [BASE_WALLET]
+        example: BASE_WALLET

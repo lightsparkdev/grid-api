@@ -11,4 +11,5 @@ enum:
   - SOLANA_WALLET
   - TRON_WALLET
   - POLYGON_WALLET
+  - BASE_WALLET
 description: Type of account or wallet information
