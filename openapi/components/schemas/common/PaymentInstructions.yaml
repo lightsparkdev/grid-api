@@ -28,6 +28,8 @@ properties:
         $ref: ../common/PaymentLightningInvoiceInfo.yaml
       - title: Solana Wallet
         $ref: ../common/PaymentSolanaWalletInfo.yaml
+      - title: Tron Wallet
+        $ref: ../common/PaymentTronWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
@@ -40,3 +42,4 @@ properties:
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
         SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml
+        TRON_WALLET: ../common/PaymentTronWalletInfo.yaml

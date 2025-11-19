@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ../common/TronWalletInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [TRON_WALLET]
+        example: TRON_WALLET
