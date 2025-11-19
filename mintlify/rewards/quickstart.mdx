@@ -69,21 +69,30 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accoun
       },
       "fundingPaymentInstructions": [
         {
-          "reference": "FUND-BTC123",
           "instructionsNotes": "Include the reference code in your ACH transfer memo",
           "accountOrWalletInfo": {
             "accountType": "US_ACCOUNT",
+            "reference": "FUND-BTC123",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
             "accountHolderName": "Lightspark Payments FBO John Doe",
             "bankName": "JP Morgan Chase"
           }
         },
+        { 
+          "accountOrWalletInfo": {
+            "accountType": "SPARK_WALLET",
+            "assetType": "USDB",
+            "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu",
+            "invoice": "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
+          }
+        },
         {
-          "accountType": "SPARK_WALLET",
-          "asset": "USDB",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu",
-          "invoice": "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
+          "accountOrWalletInfo": {
+            "accountType": "SOLANA_WALLET",
+            "assetType": "USDC",
+            "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
+          }
         }
       ],
       "createdAt": "2025-10-03T12:00:00Z",

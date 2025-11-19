@@ -13,6 +13,8 @@ oneOf:
     $ref: ./SparkWalletExternalAccountInfo.yaml
   - title: Lightning
     $ref: ./LightningExternalAccountInfo.yaml
+  - title: Solana Wallet
+    $ref: ./SolanaWalletExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -23,3 +25,4 @@ discriminator:
     UPI: ./UpiAccountExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
+    SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml

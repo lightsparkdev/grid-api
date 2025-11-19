@@ -172,14 +172,21 @@ Source is the customer ID or the platform itself — Grid provides payment instr
   "quoteId": "Quote:...",
   "paymentInstructions": [
     {
-      "reference": "UMA-Q12345-REF",
       "instructionsNotes": "Please ensure the reference code is included in the payment memo/description field",
       "accountOrWalletInfo": {
+        "reference": "UMA-Q12345-REF",
         "accountType": "US_ACCOUNT",
         "accountNumber": "9876543210",
         "routingNumber": "110000000",
         "accountCategory": "CHECKING",
         "bankName": "Chase Bank"
+      }
+    },
+    {
+      "accountOrWalletInfo": {
+        "accountType": "SOLANA_WALLET",
+        "assetType": "USDC",
+        "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
       }
     }
   ]

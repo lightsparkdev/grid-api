@@ -8,4 +8,5 @@ enum:
   - UPI
   - SPARK_WALLET
   - LIGHTNING
+  - SOLANA_WALLET
 description: Type of account or wallet information

@@ -1,14 +1,7 @@
 type: object
 required:
-  - reference
   - accountOrWalletInfo
 properties:
-  reference:
-    type: string
-    description: >-
-      Unique reference code that must be included with the payment to properly
-      credit it
-    example: UMA-Q12345-REF
   instructionsNotes:
     type: string
     description: Additional human-readable instructions for making the payment
@@ -33,6 +26,8 @@ properties:
         $ref: ../common/PaymentSparkWalletInfo.yaml
       - title: Lightning Invoice
         $ref: ../common/PaymentLightningInvoiceInfo.yaml
+      - title: Solana Wallet
+        $ref: ../common/PaymentSolanaWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
@@ -44,3 +39,4 @@ properties:
         UPI: ../common/PaymentUpiAccountInfo.yaml
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
+        SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml

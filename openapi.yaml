@@ -3504,13 +3504,17 @@ webhooks:
                     exchangeRate: 0.92
                     quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
                     paymentInstructions:
-                      reference: UMA-Q12345-REF
-                      bankAccountInfo:
-                        accountType: US_ACCOUNT
-                        accountNumber: 987654321
-                        routingNumber: 123456789
-                        accountCategory: CHECKING
-                        bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          reference: UMA-Q12345-REF
+                          accountType: US_ACCOUNT
+                          accountNumber: 987654321
+                          routingNumber: 123456789
+                          accountCategory: CHECKING
+                          bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          accountType: SOLANA_WALLET
+                          assetType: USDC
+                          address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
                   timestamp: '2025-08-15T14:32:00Z'
                   webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
                   type: OUTGOING_PAYMENT
@@ -3535,13 +3539,17 @@ webhooks:
                     createdAt: '2025-08-15T14:25:18Z'
                     quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
                     paymentInstructions:
-                      reference: UMA-Q12345-REF
-                      bankAccountInfo:
-                        accountType: US_ACCOUNT
-                        accountNumber: 987654321
-                        routingNumber: 123456789
-                        accountCategory: CHECKING
-                        bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          reference: UMA-Q12345-REF
+                          accountType: US_ACCOUNT
+                          accountNumber: 987654321
+                          routingNumber: 123456789
+                          accountCategory: CHECKING
+                          bankName: Chase Bank
+                      - accountOrWalletInfo:
+                          accountType: SOLANA_WALLET
+                          assetType: USDC
+                          address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
                   timestamp: '2025-08-15T14:32:00Z'
                   webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
                   type: OUTGOING_PAYMENT
@@ -4647,6 +4655,13 @@ components:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
         - $ref: '#/components/schemas/ClabeAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
     PaymentAccountOrWalletInfo:
       type: object
       required:
@@ -4665,6 +4680,7 @@ components:
           UPI: '#/components/schemas/PaymentUpiAccountInfo'
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
           LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
+          SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
     UsAccountInfo:
       type: object
       required:
@@ -4704,6 +4720,13 @@ components:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
         - $ref: '#/components/schemas/UsAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
     PixAccountInfo:
       type: object
       required:
@@ -4770,6 +4793,13 @@ components:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
         - $ref: '#/components/schemas/IbanAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
     PaymentFboAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
@@ -4828,7 +4858,15 @@ components:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+      required:
+        - assetType
       properties:
+        assetType:
+          type: string
+          description: Type of asset
+          enum:
+            - BTC
+            - USDB
         invoice:
           type: string
           description: Invoice for the payment
@@ -4843,6 +4881,32 @@ components:
           type: string
           description: Invoice for the payment
           example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+    SolanaWalletInfo:
+      type: object
+      required:
+        - accountType
+        - address
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SOLANA_WALLET
+          example: SOLANA_WALLET
+        address:
+          type: string
+          description: Solana wallet address
+          example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
+    PaymentSolanaWalletInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/SolanaWalletInfo'
+      properties:
+        assetType:
+          type: string
+          description: Type of asset
+          enum:
+            - USDC
+            - USDT
     BankAccountOrWalletType:
       type: string
       enum:
@@ -4854,6 +4918,7 @@ components:
         - UPI
         - SPARK_WALLET
         - LIGHTNING
+        - SOLANA_WALLET
       description: Type of account or wallet information
     ClabeAccountInfo:
       type: object
@@ -4881,13 +4946,8 @@ components:
     PaymentInstructions:
       type: object
       required:
-        - reference
         - accountOrWalletInfo
       properties:
-        reference:
-          type: string
-          description: Unique reference code that must be included with the payment to properly credit it
-          example: UMA-Q12345-REF
         instructionsNotes:
           type: string
           description: Additional human-readable instructions for making the payment
@@ -4910,6 +4970,8 @@ components:
               $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - title: Lightning Invoice
               $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
+            - title: Solana Wallet
+              $ref: '#/components/schemas/PaymentSolanaWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -4921,6 +4983,7 @@ components:
               UPI: '#/components/schemas/PaymentUpiAccountInfo'
               SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
               LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
+              SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
     InternalAccount:
       type: object
       required:
@@ -5172,6 +5235,18 @@ components:
                   type: string
                   description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
                   example: john.doe@lightningwallet.com
+    SolanaWalletExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SolanaWalletInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - SOLANA_WALLET
+              example: SOLANA_WALLET
     ExternalAccountInfo:
       oneOf:
         - title: US Account
@@ -5188,6 +5263,8 @@ components:
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
           $ref: '#/components/schemas/LightningExternalAccountInfo'
+        - title: Solana Wallet
+          $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -5198,6 +5275,7 @@ components:
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
+          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
