@@ -1,0 +1,13 @@
+type: object
+required:
+  - accountType
+  - address
+properties:
+  accountType:
+    type: string
+    enum: [BASE_WALLET]
+    example: BASE_WALLET
+  address:
+    type: string
+    description: Base eth wallet address
+    example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'

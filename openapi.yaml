@@ -4973,6 +4973,7 @@ components:
         - SOLANA_WALLET
         - TRON_WALLET
         - POLYGON_WALLET
+        - BASE_WALLET
       description: Type of account or wallet information
     ClabeAccountInfo:
       type: object
@@ -4997,6 +4998,31 @@ components:
           type: string
           description: Name of the bank
           example: BBVA Mexico
+    BaseWalletInfo:
+      type: object
+      required:
+        - accountType
+        - address
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BASE_WALLET
+          example: BASE_WALLET
+        address:
+          type: string
+          description: Base eth wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentBaseWalletInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/BaseWalletInfo'
+      properties:
+        assetType:
+          type: string
+          description: Type of asset
+          enum:
+            - USDC
     PaymentInstructions:
       type: object
       required:
@@ -5030,6 +5056,8 @@ components:
               $ref: '#/components/schemas/PaymentTronWalletInfo'
             - title: Polygon Wallet
               $ref: '#/components/schemas/PaymentPolygonWalletInfo'
+            - title: Base Wallet
+              $ref: '#/components/schemas/PaymentBaseWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -5044,6 +5072,7 @@ components:
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
+              BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
     InternalAccount:
       type: object
       required:
@@ -5331,6 +5360,18 @@ components:
               enum:
                 - POLYGON_WALLET
               example: POLYGON_WALLET
+    BaseWalletExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseWalletInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - BASE_WALLET
+              example: BASE_WALLET
     ExternalAccountInfo:
       oneOf:
         - title: US Account
@@ -5353,6 +5394,8 @@ components:
           $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - title: Polygon Wallet
           $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - title: Base Wallet
+          $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -5366,6 +5409,7 @@ components:
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
