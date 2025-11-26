@@ -22,6 +22,7 @@ properties:
         type: object
         required:
           - accountId
+          - currency
         properties:
           accountId:
             type: string
@@ -36,7 +37,6 @@ properties:
         type: object
         required:
           - umaAddress
-          - currency
         properties:
           umaAddress:
             type: string
@@ -53,6 +53,7 @@ properties:
         type: object
         required:
           - accountId
+          - currency
         properties:
           accountId:
             type: string
