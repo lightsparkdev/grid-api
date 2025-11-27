@@ -5839,8 +5839,19 @@ components:
               description: ID of the original transaction that this transaction is retrying, if applicable
               example: Transaction:019542f5-b3e7-1d02-0000-000000000003
             paymentInstructions:
-              $ref: '#/components/schemas/PaymentInstructions'
-              description: Contains the reference code, banking details, and instructions needed to complete the payment
+              type: array
+              description: Payment instructions for executing the payment.
+              items:
+                $ref: '#/components/schemas/PaymentInstructions'
+              example:
+                - accountType: US_ACCOUNT
+                  accountNumber: '1234567890'
+                  routingNumber: '021000021'
+                  bankName: Chase Bank
+                  referenceCode: REF123456
+                - accountType: SPARK_WALLET
+                  address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                  invoice: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
             refund:
               $ref: '#/components/schemas/Refund'
               description: The refund if transaction was refunded.
