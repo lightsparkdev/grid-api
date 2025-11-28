@@ -245,14 +245,18 @@ Response:
     "FULL_NAME": "Jane Receiver",
     "BIRTH_DATE": "1990-01-01"
   },
-  "paymentInstructions": {
-    "reference": "UMA-Q12345-REF",
-    "bankAccountInfo": {
-      "accountType": "CLABE",
-      "clabeNumber": "123456789012345678",
-      "bankName": "BBVA Mexico"
+  "paymentInstructions": [
+    {
+      "instructionsNotes": "Include reference code in transfer memo",
+      "accountOrWalletInfo": {
+        "accountType": "US_ACCOUNT",
+        "accountNumber": "1234567890",
+        "routingNumber": "021000021",
+        "bankName": "Chase Bank",
+        "referenceCode": "REF123456"
+      }
     }
-  }
+  ]
 }
 ```
 
@@ -294,14 +298,16 @@ Response:
     "FULL_NAME": "Jane Receiver",
     "BIRTH_DATE": "1990-01-01"
   },
-  "paymentInstructions": {
-    "reference": "UMA-Q12345-REF",
-    "bankAccountInfo": {
-      "accountType": "CLABE",
-      "clabeNumber": "123456789012345678",
-      "bankName": "BBVA Mexico"
+  "paymentInstructions": [{
+    "instructionsNotes": "Include reference code in transfer memo",
+    "accountOrWalletInfo": {
+      "accountType": "US_ACCOUNT",
+      "accountNumber": "1234567890",
+      "routingNumber": "021000021",
+      "bankName": "Chase Bank",
+      "referenceCode": "REF123456"
     }
-  },
+  }],
   "status": "COMPLETED",
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005"
 }
