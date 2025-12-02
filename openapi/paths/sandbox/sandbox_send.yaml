@@ -17,14 +17,14 @@ post:
         schema:
           type: object
           required:
-            - reference
+            - quoteId
             - currencyCode
             - currencyAmount
           properties:
-            reference:
+            quoteId:
               type: string
-              description: The unique reference code that was in the payment instructions
-              example: UMA-Q12345-REF
+              description: The unique identifier of the quote
+              example: Quote:019542f5-b3e7-1d02-0000-000000000006
             currencyCode:
               type: string
               description: Currency code for the funds to be sent
@@ -63,7 +63,7 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error403.yaml
     '404':
-      description: Reference not found
+      description: Quote not found
       content:
         application/json:
           schema:

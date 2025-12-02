@@ -2752,14 +2752,14 @@ paths:
             schema:
               type: object
               required:
-                - reference
+                - quoteId
                 - currencyCode
                 - currencyAmount
               properties:
-                reference:
+                quoteId:
                   type: string
-                  description: The unique reference code that was in the payment instructions
-                  example: UMA-Q12345-REF
+                  description: The unique identifier of the quote
+                  example: Quote:019542f5-b3e7-1d02-0000-000000000006
                 currencyCode:
                   type: string
                   description: Currency code for the funds to be sent
@@ -2796,7 +2796,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error403'
         '404':
-          description: Reference not found
+          description: Quote not found
           content:
             application/json:
               schema:
@@ -5562,6 +5562,7 @@ components:
               type: object
               required:
                 - accountId
+                - currency
               properties:
                 accountId:
                   type: string
@@ -5576,7 +5577,6 @@ components:
               type: object
               required:
                 - umaAddress
-                - currency
               properties:
                 umaAddress:
                   type: string
@@ -5593,6 +5593,7 @@ components:
               type: object
               required:
                 - accountId
+                - currency
               properties:
                 accountId:
                   type: string
