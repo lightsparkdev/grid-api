@@ -20,6 +20,7 @@ post:
             - reference
             - currencyCode
             - currencyAmount
+            - quoteId
           properties:
             reference:
               type: string
@@ -37,6 +38,10 @@ post:
                 cents)
               exclusiveMinimum: 0
               example: 1000
+            quoteId:
+              type: string
+              description: The ID of the quote that was used to trigger this payment
+              example: Quote:019542f5-b3e7-1d02-0000-000000000006
   responses:
     '200':
       description: Funds received successfully
