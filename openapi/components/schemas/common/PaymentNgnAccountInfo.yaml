@@ -1,0 +1,12 @@
+allOf:
+  - $ref: ./PaymentAccountOrWalletInfo.yaml
+  - $ref: ./NgnAccountInfo.yaml
+required:
+    - reference
+properties:
+  reference:
+    type: string
+    description: >-
+      Unique reference code that must be included with the payment to properly
+      credit it
+    example: UMA-Q12345-REF

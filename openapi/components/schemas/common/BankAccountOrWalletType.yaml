@@ -6,6 +6,7 @@ enum:
   - IBAN
   - FBO
   - UPI
+  - NGN_ACCOUNT
   - SPARK_WALLET
   - LIGHTNING
   - SOLANA_WALLET
