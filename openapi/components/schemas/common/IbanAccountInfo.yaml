@@ -2,7 +2,7 @@ type: object
 required:
   - accountType
   - iban
-  - bankName
+  - swiftBic
 properties:
   accountType:
     type: string
@@ -20,7 +20,3 @@ properties:
     example: DEUTDEFF
     minLength: 8
     maxLength: 11
-  bankName:
-    type: string
-    description: Name of the bank
-    example: Deutsche Bank

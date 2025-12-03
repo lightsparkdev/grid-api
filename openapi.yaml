@@ -4757,10 +4757,6 @@ components:
             - RANDOM
           description: Type of PIX key being used
           example: PHONE
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Nubank
     PaymentPixAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
@@ -4770,7 +4766,7 @@ components:
       required:
         - accountType
         - iban
-        - bankName
+        - swiftBic
       properties:
         accountType:
           type: string
@@ -4789,10 +4785,6 @@ components:
           example: DEUTDEFF
           minLength: 8
           maxLength: 11
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Deutsche Bank
     PaymentIbanAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
@@ -5017,7 +5009,6 @@ components:
       required:
         - accountType
         - clabeNumber
-        - bankName
       properties:
         accountType:
           type: string
@@ -5031,10 +5022,6 @@ components:
           minLength: 18
           maxLength: 18
           pattern: ^[0-9]{18}$
-        bankName:
-          type: string
-          description: Name of the bank
-          example: BBVA Mexico
     BaseWalletInfo:
       type: object
       required:
