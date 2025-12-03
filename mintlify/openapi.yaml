@@ -4679,6 +4679,7 @@ components:
           IBAN: '#/components/schemas/PaymentIbanAccountInfo'
           FBO: '#/components/schemas/PaymentFboAccountInfo'
           UPI: '#/components/schemas/PaymentUpiAccountInfo'
+          NGN_ACCOUNT: '#/components/schemas/PaymentNgnAccountInfo'
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
           LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
           SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -4842,6 +4843,40 @@ components:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
         - $ref: '#/components/schemas/UpiAccountInfo'
+    NgnAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - NGN_ACCOUNT
+          example: NGN_ACCOUNT
+        accountNumber:
+          type: string
+          description: Nigerian bank account number
+          example: '0123456789'
+          minLength: 10
+          maxLength: 10
+          pattern: ^[0-9]{10}$
+        bankName:
+          type: string
+          description: Name of the bank
+          example: First Bank of Nigeria
+    PaymentNgnAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/NgnAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
     SparkWalletInfo:
       type: object
       required:
@@ -4969,6 +5004,7 @@ components:
         - IBAN
         - FBO
         - UPI
+        - NGN_ACCOUNT
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
@@ -5175,6 +5211,7 @@ components:
         - type: object
           required:
             - accountType
+            - beneficiary
           properties:
             accountType:
               type: string
@@ -5274,6 +5311,46 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    NgnAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/NgnAccountInfo'
+        - type: object
+          required:
+            - accountType
+            - purposeOfPayment
+            - beneficiary
+          properties:
+            accountType:
+              type: string
+              enum:
+                - NGN_ACCOUNT
+              example: NGN_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+            purposeOfPayment:
+              type: string
+              enum:
+                - GIFT
+                - SELF
+                - GOODS_OR_SERVICES
+                - EDUCATION
+                - HEALTH_OR_MEDICAL
+                - REAL_ESTATE_PURCHASE
+                - LOAN_PAYMENT
+                - TAX_PAYMENT
+                - UTILITY_BILL
+                - DONATION
+                - TRAVEL
+                - OTHER
+              description: Purpose of payment
+              example: GOODS_OR_SERVICES
     SparkWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/SparkWalletInfo'
@@ -5385,6 +5462,8 @@ components:
           $ref: '#/components/schemas/IbanAccountExternalAccountInfo'
         - title: UPI Account
           $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
+        - title: NGN Account
+          $ref: '#/components/schemas/NgnAccountExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
@@ -5405,6 +5484,7 @@ components:
           PIX: '#/components/schemas/PixAccountExternalAccountInfo'
           IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
+          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'

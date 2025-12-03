@@ -3,6 +3,7 @@ allOf:
   - type: object
     required:
       - accountType
+      - beneficiary
     properties:
       accountType:
         type: string

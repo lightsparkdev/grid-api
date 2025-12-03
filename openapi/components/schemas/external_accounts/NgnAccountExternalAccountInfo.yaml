@@ -1,0 +1,38 @@
+allOf:
+  - $ref: ../common/NgnAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+      - purposeOfPayment
+      - beneficiary
+    properties:
+      accountType:
+        type: string
+        enum: [NGN_ACCOUNT]
+        example: NGN_ACCOUNT
+      beneficiary:
+        oneOf:
+          - $ref: ./IndividualBeneficiary.yaml
+          - $ref: ./BusinessBeneficiary.yaml
+        discriminator:
+          propertyName: beneficiaryType
+          mapping:
+            INDIVIDUAL: ./IndividualBeneficiary.yaml
+            BUSINESS: ./BusinessBeneficiary.yaml
+      purposeOfPayment:
+        type: string
+        enum:
+          - GIFT
+          - SELF
+          - GOODS_OR_SERVICES
+          - EDUCATION
+          - HEALTH_OR_MEDICAL
+          - REAL_ESTATE_PURCHASE
+          - LOAN_PAYMENT
+          - TAX_PAYMENT
+          - UTILITY_BILL
+          - DONATION
+          - TRAVEL
+          - OTHER
+        description: Purpose of payment
+        example: GOODS_OR_SERVICES

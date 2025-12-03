@@ -9,6 +9,8 @@ oneOf:
     $ref: ./IbanAccountExternalAccountInfo.yaml
   - title: UPI Account
     $ref: ./UpiAccountExternalAccountInfo.yaml
+  - title: NGN Account
+    $ref: ./NgnAccountExternalAccountInfo.yaml
   - title: Spark Wallet
     $ref: ./SparkWalletExternalAccountInfo.yaml
   - title: Lightning
@@ -29,6 +31,7 @@ discriminator:
     PIX: ./PixAccountExternalAccountInfo.yaml
     IBAN: ./IbanAccountExternalAccountInfo.yaml
     UPI: ./UpiAccountExternalAccountInfo.yaml
+    NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
