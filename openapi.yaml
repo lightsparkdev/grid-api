@@ -5874,6 +5874,13 @@ components:
         - COUNTERPARTY_POST_TX_FAILED
         - TIMEOUT
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    CounterpartyDeliveryStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+      description: The status of the delivery of the payment from the counterparty to the end recipient. This will only be present if the transaction has passed the `COMPLETED` status.
     OutgoingTransaction:
       allOf:
         - $ref: '#/components/schemas/Transaction'
@@ -5930,6 +5937,9 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+            counterpartyDeliveryStatus:
+              $ref: '#/components/schemas/CounterpartyDeliveryStatus'
+              description: Status of the delivery of the payment. This will only be present if the transaction has passed the `COMPLETED` status.
     TransactionStatus:
       type: string
       enum:

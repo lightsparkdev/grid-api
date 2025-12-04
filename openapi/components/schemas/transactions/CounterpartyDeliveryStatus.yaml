@@ -1,0 +1,8 @@
+type: string
+enum:
+  - PENDING
+  - COMPLETED
+  - FAILED
+description: >-
+  The status of the delivery of the payment from the counterparty to the end recipient.
+  This will only be present if the transaction has passed the `COMPLETED` status.

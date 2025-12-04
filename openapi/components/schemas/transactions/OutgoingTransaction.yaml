@@ -56,3 +56,6 @@ allOf:
       failureReason:
         $ref: ./OutgoingTransactionFailureReason.yaml
         description: If the transaction failed, this field provides the reason for failure.
+      counterpartyDeliveryStatus:
+        $ref: ./CounterpartyDeliveryStatus.yaml
+        description: Status of the delivery of the payment. This will only be present if the transaction has passed the `COMPLETED` status.
