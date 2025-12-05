@@ -35,6 +35,7 @@ post:
                 - type: object
                   required:
                     - platformCustomerId
+                    - businessInfo
                   properties:
                     platformCustomerId:
                       type: string
@@ -44,6 +45,23 @@ post:
                       type: string
                       description: A KYC URL to be shared with your business customer if KYC needs to be completed
                       example: "https://example.com/kyc"
+                    businessInfo:
+                      type: object
+                      required:
+                        - legalName
+                      properties:
+                        legalName:
+                          type: string
+                          description: Legal name of the business
+                          example: Acme Corporation, Inc.
+                        registrationNumber:
+                          type: string
+                          description: Business registration number
+                          example: BRN-123456789
+                        taxId:
+                          type: string
+                          description: Tax identification number
+                          example: EIN-987654321
         examples:
           individualCustomerWithUmaAddress:
             summary: Create individual customer with UMA address, including deposit bank account information.
