@@ -54,7 +54,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/customers/InternalAccount.yaml
+            $ref: ../../components/schemas/transactions/SandboxIncomingTransaction.yaml
     '400':
       description: Bad request
       content:

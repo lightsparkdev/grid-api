@@ -2949,7 +2949,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalAccount'
+                $ref: '#/components/schemas/SandboxIncomingTransaction'
         '400':
           description: Bad request
           content:
@@ -6489,6 +6489,153 @@ components:
         details:
           type: object
           description: Additional error details
+    destination:
+      oneOf:
+        - title: Account Destination
+          type: object
+          required:
+            - accountId
+            - currency
+          properties:
+            accountId:
+              type: string
+              description: Destination account identifier
+              example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            currency:
+              type: string
+              description: Currency code for the destination account
+              example: EUR
+          description: Destination account details
+        - title: UMA Address Destination
+          type: object
+          required:
+            - umaAddress
+          properties:
+            umaAddress:
+              type: string
+              description: UMA address of the recipient
+              example: $receiver@uma.domain.com
+            currency:
+              type: string
+              description: Currency code for the destination
+              example: EUR
+    customerId:
+      type: string
+      description: System ID of the customer (sender for outgoing, recipient for incoming)
+      example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    platformCustomerId:
+      type: string
+      description: Platform-specific ID of the customer (sender for outgoing, recipient for incoming)
+      example: 18d3e5f7b4a9c2
+    settledAt:
+      type: string
+      format: date-time
+      description: When the payment was or will be settled
+      example: '2025-08-15T14:30:00Z'
+    createdAt:
+      type: string
+      format: date-time
+      description: When the transaction was created
+      example: '2025-08-15T14:25:18Z'
+    updatedAt:
+      type: string
+      format: date-time
+      description: When the transaction was last updated
+      example: '2025-08-15T14:30:00Z'
+    description:
+      type: string
+      description: Optional memo or description for the payment
+      example: 'Payment for invoice #1234'
+    counterpartyInformation:
+      type: object
+      description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
+      additionalProperties: true
+      example:
+        FULL_NAME: John Sender
+        BIRTH_DATE: '1985-06-15'
+        NATIONALITY: DE
+    SandboxIncomingTransaction:
+      allOf:
+        - type: object
+          required:
+            - id
+            - status
+            - type
+            - destination
+            - customerId
+            - platformCustomerId
+          properties:
+            id:
+              type: string
+              description: Unique identifier for the transaction
+              example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+            status:
+              $ref: '#/components/schemas/TransactionStatus'
+            type:
+              $ref: '#/components/schemas/TransactionType'
+            source:
+              oneOf:
+                - title: Account Source
+                  type: object
+                  required:
+                    - accountId
+                    - currency
+                  properties:
+                    accountId:
+                      type: string
+                      description: Source account identifier
+                      example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    currency:
+                      type: string
+                      description: Currency code for the source account
+                      example: USD
+                  description: Source account details
+                - title: UMA Address Source
+                  type: object
+                  required:
+                    - umaAddress
+                  properties:
+                    umaAddress:
+                      type: string
+                      description: UMA address of the sender
+                      example: $sender@uma.domain.com
+                    currency:
+                      type: string
+                      description: Currency code for the source
+                      example: USD
+                  description: UMA address source details
+            destination:
+              $ref: '#/components/schemas/destination'
+            customerId:
+              $ref: '#/components/schemas/customerId'
+            platformCustomerId:
+              $ref: '#/components/schemas/platformCustomerId'
+            settledAt:
+              $ref: '#/components/schemas/settledAt'
+            createdAt:
+              $ref: '#/components/schemas/createdAt'
+            updatedAt:
+              $ref: '#/components/schemas/updatedAt'
+            description:
+              $ref: '#/components/schemas/description'
+            counterpartyInformation:
+              $ref: '#/components/schemas/counterpartyInformation'
+        - type: object
+          required:
+            - receivedAmount
+          properties:
+            receivedAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount received in the recipient's currency
+            reconciliationInstructions:
+              $ref: '#/components/schemas/ReconciliationInstructions'
+              description: Included for all transactions except those with "CREATED" status
+            rateDetails:
+              $ref: '#/components/schemas/IncomingRateDetails'
+              description: Details about the rate and fees for the transaction.
+            failureReason:
+              $ref: '#/components/schemas/IncomingTransactionFailureReason'
+              description: If the transaction failed, this field provides the reason for failure.
     UmaProvider:
       type: object
       properties:
