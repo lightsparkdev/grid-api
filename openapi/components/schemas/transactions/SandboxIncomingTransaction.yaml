@@ -1,0 +1,82 @@
+allOf:
+  - type: object
+    required:
+      - id
+      - status
+      - type
+      - destination
+      - customerId
+      - platformCustomerId
+    properties:
+      id:
+        type: string
+        description: Unique identifier for the transaction
+        example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+      status:
+        $ref: ./TransactionStatus.yaml
+      type:
+        $ref: ./TransactionType.yaml
+      source:
+        oneOf:
+          - title: Account Source
+            type: object
+            required:
+              - accountId
+              - currency
+            properties:
+              accountId:
+                type: string
+                description: Source account identifier
+                example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              currency:
+                type: string
+                description: Currency code for the source account
+                example: USD
+            description: Source account details
+          - title: UMA Address Source
+            type: object
+            required:
+              - umaAddress
+            properties:
+              umaAddress:
+                type: string
+                description: UMA address of the sender
+                example: $sender@uma.domain.com
+              currency:
+                type: string
+                description: Currency code for the source
+                example: USD
+            description: UMA address source details
+      destination:
+        $ref: ./Transaction.yaml#/properties/destination
+      customerId:
+        $ref: ./Transaction.yaml#/properties/customerId
+      platformCustomerId:
+        $ref: ./Transaction.yaml#/properties/platformCustomerId
+      settledAt:
+        $ref: ./Transaction.yaml#/properties/settledAt
+      createdAt:
+        $ref: ./Transaction.yaml#/properties/createdAt
+      updatedAt:
+        $ref: ./Transaction.yaml#/properties/updatedAt
+      description:
+        $ref: ./Transaction.yaml#/properties/description
+      counterpartyInformation:
+        $ref: ./Transaction.yaml#/properties/counterpartyInformation
+  - type: object
+    required:
+      - receivedAmount
+    properties:
+      receivedAmount:
+        $ref: ../common/CurrencyAmount.yaml
+        description: Amount received in the recipient's currency
+      reconciliationInstructions:
+        $ref: ../common/ReconciliationInstructions.yaml
+        description: Included for all transactions except those with "CREATED" status
+      rateDetails:
+        $ref: ./IncomingRateDetails.yaml
+        description: Details about the rate and fees for the transaction.
+      failureReason:
+        $ref: ./IncomingTransactionFailureReason.yaml
+        description: If the transaction failed, this field provides the reason for failure.
+
