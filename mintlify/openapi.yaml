@@ -2018,12 +2018,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: accountIdentifier
-          in: query
-          description: Filter by account identifier (either sender or receiver)
-          required: false
-          schema:
-            type: string
         - name: senderAccountIdentifier
           in: query
           description: Filter by sender account identifier
