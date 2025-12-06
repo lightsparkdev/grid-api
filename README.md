@@ -350,6 +350,7 @@ When the payment status changes (to completed or failed), your platform will rec
     "description": "Payment for invoice #1234",
     "exchangeRate": 0.92,
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "counterpartyDeliveryStatus": "PENDING"
   },
   "timestamp": "2023-08-15T14:32:00Z",
   "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
