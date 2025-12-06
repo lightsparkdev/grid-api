@@ -2766,7 +2766,6 @@ paths:
               required:
                 - quoteId
                 - currencyCode
-                - currencyAmount
               properties:
                 quoteId:
                   type: string
@@ -2779,7 +2778,7 @@ paths:
                 currencyAmount:
                   type: integer
                   format: int64
-                  description: The amount to send in the smallest unit of the currency (eg. cents)
+                  description: The amount to send in the smallest unit of the currency (eg. cents). If not provided, the amount will be derived from the quote.
                   exclusiveMinimum: 0
                   example: 1000
       responses:

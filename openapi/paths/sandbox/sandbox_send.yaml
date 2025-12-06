@@ -19,7 +19,6 @@ post:
           required:
             - quoteId
             - currencyCode
-            - currencyAmount
           properties:
             quoteId:
               type: string
@@ -34,7 +33,7 @@ post:
               format: int64
               description: >-
                 The amount to send in the smallest unit of the currency (eg.
-                cents)
+                cents). If not provided, the amount will be derived from the quote.
               exclusiveMinimum: 0
               example: 1000
   responses:
