@@ -17,6 +17,7 @@ oneOf:
     type: object
     required:
       - currency
+      - customerId
     properties:
       customerId:
         type: string
