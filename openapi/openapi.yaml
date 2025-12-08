@@ -68,7 +68,7 @@ components:
 
         If the signature verification succeeds, the webhook is authentic. If
         not, it should be rejected.
-
+ 
 paths:
   /config:
     $ref: paths/platform/config.yaml
