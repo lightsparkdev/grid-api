@@ -1,23 +1,18 @@
 ---
 title: "Configuring Customers"
-description: "Creating and managing customers in the Grid API"
+description: "Creating and managing customers for global P2P payments"
 ---
 import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
+import CustomerTypes from '/snippets/creating-customers/customer-types.mdx'
+import OnboardingModel from '/snippets/creating-customers/onboarding-model.mdx'
+import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
+import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
 
 This guide provides comprehensive information about creating customers in the Grid API, including customer types, onboarding models, registration, and management.
 
-## Onboarding model
+<OnboardingModel />
 
-There are two platform models for regulated and unregulated platforms.
-
-- Regulated institutions: Use your existing compliance processes. Create individual and business customers directly via `POST /customers`. The information you supply is used for beneficiary/counterparty compliance screening.
-- Unregulated institutions: Grid performs KYC/KYB. Generate a hosted KYC/KYB link, redirect your customer to complete verification in their locale, receive a KYC result webhook. While KYC is pending, allow customers to finish account setup but block funding and money movement.
-
-## Customer Types
-
-The Grid API supports both individual and business customers. While the API schema itself makes most Personally Identifiable Information (PII) optional at initial creation, specific fields may become mandatory based on the currencies the customer will transact with.
-
-Your platform's configuration (retrieved via `GET /config`) includes a `supportedCurrencies` array. Each currency object within this array has a `providerRequiredCustomerFields` list. If a customer is intended to use a specific currency, any fields listed for that currency **must** be provided when creating or updating the customer.
+<CustomerTypes />
 
 The base required information for all customers is only:
 
@@ -25,6 +20,18 @@ The base required information for all customers is only:
 - Customer type (`INDIVIDUAL` or `BUSINESS`)
 
 If using sending and receiving to just-in-time UMA addresses, you'll also need to specify the bank account information
+
+## Creating Customers
+
+<AccordionGroup>
+    <Accordion title="Regulated Platforms" icon="">
+        <KycRegulated />
+    </Accordion>
+    <Accordion title="Unregulated Platforms" icon="">
+        <KycUnregulated />
+    </Accordion>
+</AccordionGroup>
+
 
 ### Individual customers
 

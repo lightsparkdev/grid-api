@@ -214,7 +214,6 @@
             "group": "Using the API",
             "pages": [
               "api-reference/environments",
-              "api-reference/terminology",
               "api-reference/authentication"
             ]
           },
