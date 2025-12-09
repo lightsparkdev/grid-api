@@ -1,0 +1,5 @@
+## Customer Types
+
+The Grid API supports both individual and business customers. While the API schema itself makes most Personally Identifiable Information (PII) optional at initial creation, specific fields may become mandatory based on the currencies the customer will transact with.
+
+Your platform’s configuration ( retrieved via `GET /config`) includes a supportedCurrencies array. Each currency object within this array has a providerRequiredCustomerFields list. If a customer is intended to use a specific currency, any fields listed for that currency must be provided when creating or updating the customer.
