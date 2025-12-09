@@ -896,7 +896,7 @@ paths:
         - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
         - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
         - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
-        - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+        - Account numbers ending in **005**: Timeout/delayed failure (stays pending ~30s, then fails)
         - Any other account number: Success (transfers complete normally)
       operationId: createCustomerExternalAccount
       tags:
@@ -1033,7 +1033,7 @@ paths:
         - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
         - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
         - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
-        - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+        - Account numbers ending in **005**: Timeout/delayed failure (stays pending ~30s, then fails)
         - Any other account number: Success (transfers complete normally)
       operationId: createPlatformExternalAccount
       tags:
@@ -1637,7 +1637,7 @@ paths:
         - Account numbers ending in **002**: Insufficient funds (transfer-in will fail)
         - Account numbers ending in **003**: Account closed/invalid (transfers will fail)
         - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
-        - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+        - Account numbers ending in **005**: Timeout/delayed failure (stays pending ~30s, then fails)
         - Any other account number: Success (transfers complete normally)
       operationId: createQuote
       tags:
