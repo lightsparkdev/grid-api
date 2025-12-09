@@ -103,7 +103,7 @@ post:
 
     - Account numbers ending in **004**: Transfer rejected (bank rejects the transfer)
 
-    - Account numbers ending in **009**: Timeout/delayed failure (stays pending ~30s, then fails)
+    - Account numbers ending in **005**: Timeout/delayed failure (stays pending ~30s, then fails)
 
     - Any other account number: Success (transfers complete normally)
   operationId: createCustomerExternalAccount
