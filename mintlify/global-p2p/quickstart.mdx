@@ -4,7 +4,7 @@ description: "Send your first cross-border payment"
 ---
 import { remittanceProductName } from '/snippets/variables.mdx'
 
-This quickstart guides you through a regulated FI sending an individual customer payment from the US to a bank account in Mexico using just-in-time funding.
+This quickstart guides you through a regulated FI sending an individual customer payment from the US to a bank account in Mexico using USDC just-in-time funding.
 
 ## Understanding Entity Mapping for Remittances
 
@@ -130,8 +130,8 @@ In this guide, the entities map as follows:
     -H "Content-Type: application/json" \
     -d '{
       "source": {
-        "umaAddress": "$alice@yourapp.example",
-        "currency": "USD"
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "currency": "USDC"
       },
       "destination": {
         "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
@@ -151,28 +151,25 @@ In this guide, the entities map as follows:
     "fees": { "amount": 50, "currency": { "code": "USD", "decimals": 2 } },
     "paymentInstructions": [
       {
-        "accountOrWalletInfo": {
-          "reference": "UMA-Q12345-REF",
-          "accountType": "US_ACCOUNT",
-          "accountNumber": "987654321",
-          "routingNumber": "123456789",
-          "accountCategory": "CHECKING",
-          "bankName": "Example Bank"
-        }
+          "accountOrWalletInfo": {
+              "accountType": "SOLANA_WALLET",
+              "address": "0x1234567890123456789012345678901234567890",
+              "assetType": "USDC"
+          }
       },
       {
-        "accountOrWalletInfo": {
-          "accountType": "SOLANA_WALLET",
-          "assetType": "USDC",
-          "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
-        }
+          "accountOrWalletInfo": {
+              "accountType": "BASE_WALLET",
+              "address": "0x1234567890123456789012345678901234567890",
+              "assetType": "USDC"
+          }
       }
     ],
     "status": "PENDING"
   }
   ```
 ## Fund the quote (Sandbox simulation)
-  In production, you would trigger a real‑time push on a local instant rail (e.g., RTP, SPEI, SEPA Instant) to the provided `bankAccountInfo` using the exact `reference`. In Sandbox, you can mock funding using the simulate send endpoint.
+  In production, you would trigger a payment on one of the supported blockchains to the provided address. In Sandbox, you can mock funding using the simulate send endpoint.
 
   ```bash
   curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
@@ -180,7 +177,7 @@ In this guide, the entities map as follows:
     -H "Content-Type: application/json" \
     -d '{
       "reference": "UMA-Q12345-REF",
-      "currencyCode": "USD",
+      "currencyCode": "USDC",
       "currencyAmount": 10000
     }'
   ```
@@ -208,19 +205,6 @@ In this guide, the entities map as follows:
       "receivedAmount": { "amount": 9706, "currency": { "code": "MXN", "decimals": 2 } },
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
-      "paymentInstructions": [
-        {
-          "instructionsNotes": "Include reference code in transfer memo",
-          "accountOrWalletInfo": {
-            "accountType": "US_ACCOUNT",
-            "accountNumber": "1234567890",
-            "routingNumber": "021000021",
-            "bankName": "Chase Bank",
-            "referenceCode": "REF123456"
-          }
-        },
-      ]
-      }
     },
     "timestamp": "2025-01-15T14:32:00Z",
     "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",

@@ -4910,7 +4910,7 @@ components:
         invoice:
           type: string
           description: Invoice for the payment
-          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+          example: sparkrt1pgss8ter0fhc4c220f3zftmpz49h8wqte8eg3m5zkrraplgc048jucgszg3ssqgjzqqekv73mmh842yj7drsjwh7t7tz5zt8wf5kghm5v4ehggszppjp5s80cg3qjdzc55g2567tn3lj705hdsr577tg8ah795mlnt6807y657qhkmgfkf9w75p4wz3l8vhua85zdn6ryj32zuj0p00pv2l5z4u47mw6h4s
     PaymentLightningInvoiceInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
