@@ -6094,7 +6094,13 @@ components:
               example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
             currency:
               type: string
-              description: Currency code for the source account
+              description: |
+                Currency code for the source account. Supported currencies:
+                  
+                | Type | Currencies |
+                |------|------------|
+                | Fiat | USD, EUR, MXN, BRL |
+                | Crypto | BTC, USDC |
               example: USD
           description: Source account details
         - title: Real-time funding
@@ -6109,7 +6115,13 @@ components:
               example: Customer:019542f5-b3e7-1d02-0000-000000000009
             currency:
               type: string
-              description: Currency code for the source
+              description: |
+                Currency code for the source. Supported currencies:
+
+                | Type | Currencies |
+                |------|------------|
+                | Fiat | USD, EUR, MXN, BRL |
+                | Crypto | BTC, USDC |
               example: USD
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     Quote:
@@ -6282,7 +6294,13 @@ components:
                   example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
                 currency:
                   type: string
-                  description: Currency code for the destination account
+                  description: |
+                    Currency code for the destination account. Supported currencies:
+
+                    | Type | Currencies |
+                    |------|------------|
+                    | Fiat | USD, EUR, MXN, INR, PHP, BRL, GBP, NGN |
+                    | Crypto | BTC, USDC |
                   example: EUR
               description: Destination account details
             - title: UMA Address
@@ -6297,7 +6315,13 @@ components:
                   example: $receiver@uma.domain.com
                 currency:
                   type: string
-                  description: Currency code for the destination
+                  description: |
+                    Currency code for the destination. Supported currencies:
+
+                    | Type | Currencies |
+                    |------|------------|
+                    | Fiat | USD, EUR, MXN, INR, PHP, BRL, GBP, NGN |
+                    | Crypto | BTC, USDC |
                   example: EUR
               description: UMA address destination details
             - title: External Account Details

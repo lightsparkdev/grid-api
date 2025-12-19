@@ -30,7 +30,13 @@ properties:
             example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
           currency:
             type: string
-            description: Currency code for the destination account
+            description: |
+              Currency code for the destination account. Supported currencies:
+
+              | Type | Currencies |
+              |------|------------|
+              | Fiat | USD, EUR, MXN, INR, PHP, BRL, GBP, NGN |
+              | Crypto | BTC, USDC |
             example: EUR
         description: Destination account details
       - title: UMA Address
@@ -45,7 +51,13 @@ properties:
             example: $receiver@uma.domain.com
           currency:
             type: string
-            description: Currency code for the destination
+            description: |
+              Currency code for the destination. Supported currencies:
+
+              | Type | Currencies |
+              |------|------------|
+              | Fiat | USD, EUR, MXN, INR, PHP, BRL, GBP, NGN |
+              | Crypto | BTC, USDC |
             example: EUR
         description: UMA address destination details
       - title: External Account Details
