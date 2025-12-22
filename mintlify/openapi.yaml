@@ -1201,12 +1201,11 @@ paths:
       responses:
         '202':
           description: |
-            Public token accepted and external account creation initiated.
-            The platform will receive a webhook notification when the external account is ready.
+            A pending external account resource will be created and returned while the Grid API asynchronously processes the Plaid public token.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaidCallbackResponse'
+                $ref: '#/components/schemas/ExternalAccount'
         '400':
           description: Bad request - Invalid public token or link token
           content:
@@ -4911,7 +4910,7 @@ components:
         invoice:
           type: string
           description: Invoice for the payment
-          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+          example: sparkrt1pgss8ter0fhc4c220f3zftmpz49h8wqte8eg3m5zkrraplgc048jucgszg3ssqgjzqqekv73mmh842yj7drsjwh7t7tz5zt8wf5kghm5v4ehggszppjp5s80cg3qjdzc55g2567tn3lj705hdsr577tg8ah795mlnt6807y657qhkmgfkf9w75p4wz3l8vhua85zdn6ryj32zuj0p00pv2l5z4u47mw6h4s
     PaymentLightningInvoiceInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
@@ -5608,19 +5607,6 @@ components:
             Optional Plaid account ID if the customer selected a specific account.
             If not provided, the default account will be used.
           example: plaid_account_id_123
-    PlaidCallbackResponse:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: string
-          description: Human-readable message about the processing status
-          example: External account creation initiated. You will receive a webhook notification when complete.
-        requestId:
-          type: string
-          description: A unique identifier for this request, useful for debugging
-          example: req_abc123def456
     Transaction:
       type: object
       required:
@@ -6108,7 +6094,7 @@ components:
               example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
             currency:
               type: string
-              description: Currency code for the source account
+              description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: USD
           description: Source account details
         - title: Real-time funding
@@ -6123,7 +6109,7 @@ components:
               example: Customer:019542f5-b3e7-1d02-0000-000000000009
             currency:
               type: string
-              description: Currency code for the source
+              description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: USD
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     Quote:
@@ -6296,7 +6282,7 @@ components:
                   example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
                 currency:
                   type: string
-                  description: Currency code for the destination account
+                  description: Currency code for the destination account. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
                   example: EUR
               description: Destination account details
             - title: UMA Address
@@ -6311,7 +6297,7 @@ components:
                   example: $receiver@uma.domain.com
                 currency:
                   type: string
-                  description: Currency code for the destination
+                  description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
                   example: EUR
               description: UMA address destination details
             - title: External Account Details

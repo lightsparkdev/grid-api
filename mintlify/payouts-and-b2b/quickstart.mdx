@@ -21,17 +21,18 @@ In this guide, the entities map as follows:
 **Flow**: Your customer (a business) funds their internal account → uses your platform to send payments → to their vendors' external bank accounts.
 
 ## Get API credentials
-  Create Sandbox API credentials in the dashboard, then set environment variables for local use.
+Create Sandbox API credentials in the dashboard, then set environment variables for local use.
 
-  ```bash
-  export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
-  export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
-  export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
-  ```
 
-  <Tip>
-  Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_API_SECRET"`.
-  </Tip>
+```bash
+export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
+export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
+export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
+```
+
+<Tip>
+Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_API_SECRET"`.
+</Tip>
 
 ## Onboard a Customer
 Onboard a customer using the hosted KYC/KYB link flow.
@@ -43,7 +44,7 @@ Onboard a customer using the hosted KYC/KYB link flow.
   </Note>
   ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link?redirectUri=https://yourapp.com/onboarding-complete&platformCustomerId=019542f5-b3e7-1d02-0000-000000000001" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 **Response:**
 
@@ -86,7 +87,7 @@ Once the customer is created, internal accounts will automatically be created on
 
 ```bash
 curl -X GET "https://api.lightspark.com/grid/2025-10-13/internal-account?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USD" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 **Response:**
@@ -148,7 +149,7 @@ making sure to include the reference code `FUND-ABC123` in the transfer memo if 
 ```bash
 # Sandbox: fund internal account directly
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965/fund" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "currencyCode": "USD",
@@ -194,7 +195,7 @@ Mexican CLABE account as the external account.
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
@@ -254,7 +255,7 @@ Create a quote to lock in the exchange rate, fees, and get the  transfer details
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "LookupRequest:019542f5-b3e7-1d02-0000-000000000009", # ID from the lookup step
@@ -328,7 +329,7 @@ Execute the quote to initiate the transfer from the internal account to the exte
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 **Response:**

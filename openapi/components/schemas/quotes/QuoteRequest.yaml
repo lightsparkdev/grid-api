@@ -30,7 +30,10 @@ properties:
             example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
           currency:
             type: string
-            description: Currency code for the destination account
+            description: >-
+              Currency code for the destination account. See
+              [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
+              for the full list of supported fiat and crypto currencies.
             example: EUR
         description: Destination account details
       - title: UMA Address
@@ -45,7 +48,10 @@ properties:
             example: $receiver@uma.domain.com
           currency:
             type: string
-            description: Currency code for the destination
+            description: >-
+              Currency code for the destination. See
+              [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
+              for the full list of supported fiat and crypto currencies.
             example: EUR
         description: UMA address destination details
       - title: External Account Details
