@@ -1,0 +1,196 @@
+get:
+  summary: Get available destination types
+  description: >
+    Retrieve available destination types for sending payments, including the required fields
+    for each destination type and estimated exchange rates from a specified sending currency.
+    
+    This endpoint provides enough information to render a form in the UI to collect the necessary
+    data from the sender for each destination type. Each destination type includes field definitions
+    with schemas including type and validation formats.
+    
+    Returns a list of destination type configurations. Each destination type and currency pair
+    is unique in the list, but the same destination type may appear multiple times with different
+    receiving currencies.
+  operationId: getDestinationTypes
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: sendingCurrency
+      in: query
+      description: >
+        The currency code (ISO 4217) that will be sent from. Required to calculate
+        estimated exchange rates for each destination type.
+      required: true
+      schema:
+        type: string
+        example: USD
+    - name: destinationType
+      in: query
+      description: >
+        Optional filter to return only a specific destination type. If not provided,
+        all available destination types will be returned.
+      required: false
+      schema:
+        $ref: ../../../components/schemas/common/BankAccountOrWalletType.yaml
+      example: US_ACCOUNT
+    - name: receivingCurrency
+      in: query
+      description: >
+        Optional filter to return only destination types that support the specified
+        receiving currency code (ISO 4217). If not provided, all supported currencies
+        will be returned.
+      required: false
+      schema:
+        type: string
+      example: EUR
+  responses:
+    '200':
+      description: Successful response
+      content:
+        application/json:
+          schema:
+            type: array
+            description: >
+              List of destination type configurations. Each destination type and currency
+              pair is unique, but the same destination type may appear multiple times with
+              different receiving currencies.
+            items:
+              $ref: ../../../components/schemas/receiver/DestinationTypeInfo.yaml
+            example:
+              - destinationType: US_ACCOUNT
+                requiredPayeeDataFields:
+                  - name: accountNumber
+                    type: string
+                    description: US bank account number
+                    required: true
+                    example: '123456789'
+                  - name: routingNumber
+                    type: string
+                    description: ACH routing number (9 digits)
+                    required: true
+                    pattern: ^[0-9]{9}$
+                    minLength: 9
+                    maxLength: 9
+                    example: '987654321'
+                  - name: accountCategory
+                    type: string
+                    description: Type of account (checking or savings)
+                    required: true
+                    enum:
+                      - CHECKING
+                      - SAVINGS
+                    example: CHECKING
+                  - name: bankName
+                    type: string
+                    description: Name of the bank
+                    required: false
+                    example: Chase Bank
+                requiredPayerDataFields:
+                  - name: FULL_NAME
+                    mandatory: true
+                  - name: COUNTRY_OF_RESIDENCE
+                    mandatory: true
+                estimatedExchangeRate: 1.0
+                receivingCurrency:
+                  code: USD
+                  name: United States Dollar
+                  symbol: $
+                  decimals: 2
+                minAmount: 100
+                maxAmount: 1000000
+              - destinationType: IBAN
+                requiredPayeeDataFields:
+                  - name: iban
+                    type: string
+                    description: International Bank Account Number
+                    required: true
+                    minLength: 15
+                    maxLength: 34
+                    example: DE89370400440532013000
+                  - name: swiftBic
+                    type: string
+                    description: SWIFT/BIC code (8 or 11 characters)
+                    required: true
+                    minLength: 8
+                    maxLength: 11
+                    example: DEUTDEFF
+                requiredPayerDataFields:
+                  - name: FULL_NAME
+                    mandatory: true
+                  - name: BIRTH_DATE
+                    mandatory: true
+                  - name: NATIONALITY
+                    mandatory: false
+                estimatedExchangeRate: 0.92
+                receivingCurrency:
+                  code: EUR
+                  name: Euro
+                  symbol: €
+                  decimals: 2
+                minAmount: 1
+                maxAmount: 1000000
+              - destinationType: SPARK_WALLET
+                requiredPayeeDataFields:
+                  - name: address
+                    type: string
+                    description: Spark wallet address
+                    required: true
+                    example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                  - name: assetType
+                    type: string
+                    description: Type of asset
+                    required: true
+                    enum:
+                      - BTC
+                      - USDB
+                    example: BTC
+                requiredPayerDataFields:
+                  - name: FULL_NAME
+                    mandatory: true
+                estimatedExchangeRate: 0.000023
+                receivingCurrency:
+                  code: BTC
+                  name: Bitcoin
+                  symbol: ₿
+                  decimals: 8
+                minAmount: 1000
+                maxAmount: 100000000
+              - destinationType: SPARK_WALLET
+                requiredPayeeDataFields:
+                  - name: address
+                    type: string
+                    description: Spark wallet address
+                    required: true
+                    example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                requiredPayerDataFields:
+                  - name: FULL_NAME
+                    mandatory: true
+                estimatedExchangeRate: 1.0
+                receivingCurrency:
+                  code: USDC
+                  name: USD Coin
+                  symbol: $
+                  decimals: 6
+                minAmount: 100
+                maxAmount: 1000000
+    '400':
+      description: Bad request - Missing or invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml
+
