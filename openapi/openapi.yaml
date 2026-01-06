@@ -100,6 +100,8 @@ paths:
     $ref: paths/receiver/external-account/receiver_external-account_{accountId}.yaml
   /receiver/destination-identifier:
     $ref: paths/receiver/destination-identifier/receiver_destination-identifier.yaml
+  /receiver/destination-types:
+    $ref: paths/receiver/destination_types/receiver_destination_types.yaml
   /quotes/{quoteId}:
     $ref: paths/quotes/quotes_{quoteId}.yaml
   /quotes:

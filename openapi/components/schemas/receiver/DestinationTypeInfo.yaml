@@ -1,0 +1,57 @@
+type: object
+required:
+  - destinationType
+  - requiredPayeeDataFields
+  - estimatedExchangeRate
+  - receivingCurrency
+  - minAmount
+  - maxAmount
+properties:
+  destinationType:
+    $ref: ../common/BankAccountOrWalletType.yaml
+    description: The destination type identifier
+  requiredPayeeDataFields:
+    type: array
+    description: >
+      Array of field definitions required to send to this destination type.
+      Each field includes schema information (type, validation patterns, etc.)
+      sufficient to render a form in the UI.
+    items:
+      $ref: ../receiver/DestinationFieldDefinition.yaml
+  requiredPayerDataFields:
+    type: array
+    description: >-
+      Fields required about the payer in order to send to this destination type.
+      These can either be pulled from the sending customer data model, or provided
+      during the quote request.
+    items:
+      $ref: ../common/CounterpartyFieldDefinition.yaml
+  estimatedExchangeRate:
+    type: number
+    format: double
+    description: >
+      Estimated exchange rate from the sending currency to the receiving currency
+      for this destination type. This is not a locked rate and is subject to change
+      when calling the quotes endpoint.
+    exclusiveMinimum: 0
+    example: 1.08
+  receivingCurrency:
+    $ref: ../common/Currency.yaml
+    description: The currency that will be received at this destination type
+  minAmount:
+    type: integer
+    format: int64
+    description: >
+      Minimum amount that can be sent to this destination type in the smallest
+      unit of the sending currency (e.g. cents).
+    exclusiveMinimum: 0
+    example: 100
+  maxAmount:
+    type: integer
+    format: int64
+    description: >
+      Maximum amount that can be sent to this destination type in the smallest
+      unit of the sending currency (e.g. cents).
+    exclusiveMinimum: 0
+    example: 1000000
+
