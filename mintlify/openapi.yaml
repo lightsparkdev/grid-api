@@ -4405,7 +4405,7 @@ components:
         phoneNumber:
           type: string
           description: Phone number of the individual in E.164 format
-          example: 5555555555
+          example: '+5555555555'
           pattern: ^\+[1-9]\d{1,14}$
         taxId:
           type: string
