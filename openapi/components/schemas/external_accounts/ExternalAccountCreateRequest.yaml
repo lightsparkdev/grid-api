@@ -1,4 +1,4 @@
-allOf:
+  allOf:
   - type: object
     required:
       - currency

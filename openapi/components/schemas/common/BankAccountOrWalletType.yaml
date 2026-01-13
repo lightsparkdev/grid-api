@@ -7,6 +7,7 @@ enum:
   - FBO
   - UPI
   - NGN_ACCOUNT
+  - SWIFT_ACCOUNT
   - SPARK_WALLET
   - LIGHTNING
   - SOLANA_WALLET

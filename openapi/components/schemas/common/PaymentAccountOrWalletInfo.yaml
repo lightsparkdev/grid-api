@@ -14,6 +14,7 @@ discriminator:
     FBO: ./PaymentFboAccountInfo.yaml
     UPI: ./PaymentUpiAccountInfo.yaml
     NGN_ACCOUNT: ./PaymentNgnAccountInfo.yaml
+    SWIFT_ACCOUNT: ./PaymentSwiftAccountInfo.yaml
     SPARK_WALLET: ./PaymentSparkWalletInfo.yaml
     LIGHTNING: ./PaymentLightningInvoiceInfo.yaml
     SOLANA_WALLET: ./PaymentSolanaWalletInfo.yaml

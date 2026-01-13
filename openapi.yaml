@@ -4690,6 +4690,7 @@ components:
           FBO: '#/components/schemas/PaymentFboAccountInfo'
           UPI: '#/components/schemas/PaymentUpiAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/PaymentNgnAccountInfo'
+          SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
           LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
           SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -4879,6 +4880,43 @@ components:
           type: string
           description: Unique reference code that must be included with the payment to properly credit it
           example: UMA-Q12345-REF
+    SwiftAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SWIFT_ACCOUNT
+          example: SWIFT_ACCOUNT
+        accountNumber:
+          type: string
+          description: Bank account number
+          example: '1234567890'
+        swiftBic:
+          type: string
+          description: SWIFT/BIC code (8 or 11 characters). Recommended for international transfers.
+          example: DBSASG2X
+          minLength: 8
+          maxLength: 11
+        bankName:
+          type: string
+          description: Name of the bank
+          example: DBS Bank
+    PaymentSwiftAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/SwiftAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
     SparkWalletInfo:
       type: object
       required:
@@ -5013,6 +5051,7 @@ components:
         - FBO
         - UPI
         - NGN_ACCOUNT
+        - SWIFT_ACCOUNT
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
@@ -5354,6 +5393,27 @@ components:
                 - OTHER
               description: Purpose of payment
               example: GOODS_OR_SERVICES
+    SwiftAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SwiftAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - SWIFT_ACCOUNT
+              example: SWIFT_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     SparkWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/SparkWalletInfo'
@@ -5467,6 +5527,8 @@ components:
           $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
         - title: NGN Account
           $ref: '#/components/schemas/NgnAccountExternalAccountInfo'
+        - title: SWIFT Account
+          $ref: '#/components/schemas/SwiftAccountExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
@@ -5488,6 +5550,7 @@ components:
           IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
+          SWIFT_ACCOUNT: '#/components/schemas/SwiftAccountExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
