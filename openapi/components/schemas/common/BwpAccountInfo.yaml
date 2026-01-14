@@ -1,0 +1,32 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - branchCode
+properties:
+  accountType:
+    type: string
+    enum: [BWP_ACCOUNT]
+    example: BWP_ACCOUNT
+  accountNumber:
+    type: string
+    description: Botswana bank account number
+    example: '1234567890'
+    minLength: 8
+    maxLength: 16
+  branchCode:
+    type: string
+    description: Branch code (6 digits)
+    example: '123456'
+    minLength: 6
+    maxLength: 6
+  swiftBic:
+    type: string
+    description: SWIFT/BIC code
+    example: FIABORPX
+    minLength: 8
+    maxLength: 11
+  bankName:
+    type: string
+    description: Name of the bank
+    example: First National Bank Botswana

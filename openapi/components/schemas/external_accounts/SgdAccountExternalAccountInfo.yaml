@@ -1,0 +1,19 @@
+allOf:
+  - $ref: ../common/SgdAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [SGD_ACCOUNT]
+        example: SGD_ACCOUNT
+      beneficiary:
+        oneOf:
+          - $ref: ./IndividualBeneficiary.yaml
+          - $ref: ./BusinessBeneficiary.yaml
+        discriminator:
+          propertyName: beneficiaryType
+          mapping:
+            INDIVIDUAL: ./IndividualBeneficiary.yaml
+            BUSINESS: ./BusinessBeneficiary.yaml

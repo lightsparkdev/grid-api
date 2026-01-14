@@ -1,0 +1,26 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - bankCode
+properties:
+  accountType:
+    type: string
+    enum: [IDR_ACCOUNT]
+    example: IDR_ACCOUNT
+  accountNumber:
+    type: string
+    description: Indonesian bank account number
+    example: '1234567890'
+    minLength: 10
+    maxLength: 16
+  bankCode:
+    type: string
+    description: Bank code (3-4 digits)
+    example: '014'
+    minLength: 3
+    maxLength: 4
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Bank Central Asia

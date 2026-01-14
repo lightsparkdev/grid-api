@@ -14,6 +14,16 @@ discriminator:
     FBO: ./PaymentFboAccountInfo.yaml
     UPI: ./PaymentUpiAccountInfo.yaml
     NGN_ACCOUNT: ./PaymentNgnAccountInfo.yaml
+    GBP_ACCOUNT: ./PaymentGbpAccountInfo.yaml
+    CAD_ACCOUNT: ./PaymentCadAccountInfo.yaml
+    HKD_ACCOUNT: ./PaymentHkdAccountInfo.yaml
+    IDR_ACCOUNT: ./PaymentIdrAccountInfo.yaml
+    MYR_ACCOUNT: ./PaymentMyrAccountInfo.yaml
+    PHP_ACCOUNT: ./PaymentPhpAccountInfo.yaml
+    SGD_ACCOUNT: ./PaymentSgdAccountInfo.yaml
+    THB_ACCOUNT: ./PaymentThbAccountInfo.yaml
+    VND_ACCOUNT: ./PaymentVndAccountInfo.yaml
+    BWP_ACCOUNT: ./PaymentBwpAccountInfo.yaml
     SPARK_WALLET: ./PaymentSparkWalletInfo.yaml
     LIGHTNING: ./PaymentLightningInvoiceInfo.yaml
     SOLANA_WALLET: ./PaymentSolanaWalletInfo.yaml

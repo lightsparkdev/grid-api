@@ -4690,6 +4690,16 @@ components:
           FBO: '#/components/schemas/PaymentFboAccountInfo'
           UPI: '#/components/schemas/PaymentUpiAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/PaymentNgnAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/PaymentGbpAccountInfo'
+          CAD_ACCOUNT: '#/components/schemas/PaymentCadAccountInfo'
+          HKD_ACCOUNT: '#/components/schemas/PaymentHkdAccountInfo'
+          IDR_ACCOUNT: '#/components/schemas/PaymentIdrAccountInfo'
+          MYR_ACCOUNT: '#/components/schemas/PaymentMyrAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PaymentPhpAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/PaymentSgdAccountInfo'
+          THB_ACCOUNT: '#/components/schemas/PaymentThbAccountInfo'
+          VND_ACCOUNT: '#/components/schemas/PaymentVndAccountInfo'
+          BWP_ACCOUNT: '#/components/schemas/PaymentBwpAccountInfo'
           SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
           LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
           SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -4884,6 +4894,410 @@ components:
           type: string
           description: Unique reference code that must be included with the payment to properly credit it
           example: UMA-Q12345-REF
+    GbpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - sortCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GBP_ACCOUNT
+          example: GBP_ACCOUNT
+        accountNumber:
+          type: string
+          description: UK bank account number (8 digits)
+          example: '12345678'
+          minLength: 8
+          maxLength: 8
+          pattern: ^[0-9]{8}$
+        sortCode:
+          type: string
+          description: UK sort code (6 digits, typically formatted as XX-XX-XX)
+          example: '123456'
+          minLength: 6
+          maxLength: 6
+          pattern: ^[0-9]{6}$
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Barclays Bank
+    PaymentGbpAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/GbpAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    CadAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - transitNumber
+        - institutionNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - CAD_ACCOUNT
+          example: CAD_ACCOUNT
+        accountNumber:
+          type: string
+          description: Canadian bank account number (7-12 digits)
+          example: '1234567'
+          minLength: 7
+          maxLength: 12
+        transitNumber:
+          type: string
+          description: Transit number (5 digits) identifying the branch
+          example: '12345'
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        institutionNumber:
+          type: string
+          description: Institution number (3 digits) identifying the bank
+          example: '001'
+          minLength: 3
+          maxLength: 3
+          pattern: ^[0-9]{3}$
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Royal Bank of Canada
+    PaymentCadAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/CadAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    HkdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - HKD_ACCOUNT
+          example: HKD_ACCOUNT
+        accountNumber:
+          type: string
+          description: Hong Kong bank account number (9-12 digits)
+          example: '123456789012'
+          minLength: 9
+          maxLength: 12
+        bankCode:
+          type: string
+          description: Bank code (3 digits)
+          example: '004'
+          minLength: 3
+          maxLength: 3
+          pattern: ^[0-9]{3}$
+        bankName:
+          type: string
+          description: Name of the bank
+          example: HSBC Hong Kong
+    PaymentHkdAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/HkdAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    IdrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - IDR_ACCOUNT
+          example: IDR_ACCOUNT
+        accountNumber:
+          type: string
+          description: Indonesian bank account number
+          example: '1234567890'
+          minLength: 10
+          maxLength: 16
+        bankCode:
+          type: string
+          description: Bank code (3-4 digits)
+          example: '014'
+          minLength: 3
+          maxLength: 4
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Bank Central Asia
+    PaymentIdrAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/IdrAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    MyrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - MYR_ACCOUNT
+          example: MYR_ACCOUNT
+        accountNumber:
+          type: string
+          description: Malaysian bank account number
+          example: '1234567890'
+          minLength: 10
+          maxLength: 17
+        bankCode:
+          type: string
+          description: Bank code (e.g., SWIFT BIC or local bank code)
+          example: MABORB2X
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Maybank
+    PaymentMyrAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/MyrAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    PhpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PHP_ACCOUNT
+          example: PHP_ACCOUNT
+        accountNumber:
+          type: string
+          description: Philippine bank account number
+          example: '1234567890'
+          minLength: 10
+          maxLength: 16
+        bankCode:
+          type: string
+          description: Bank code (SWIFT BIC or InstaPay/PESONet bank code)
+          example: BABORPH2
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Bank of the Philippine Islands
+    PaymentPhpAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/PhpAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    SgdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SGD_ACCOUNT
+          example: SGD_ACCOUNT
+        accountNumber:
+          type: string
+          description: Singapore bank account number
+          example: '1234567890'
+          minLength: 9
+          maxLength: 14
+        bankCode:
+          type: string
+          description: Bank code (4 digits) or SWIFT BIC
+          example: '7339'
+        branchCode:
+          type: string
+          description: Branch code (3 digits)
+          example: '001'
+          minLength: 3
+          maxLength: 3
+        bankName:
+          type: string
+          description: Name of the bank
+          example: DBS Bank
+    PaymentSgdAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/SgdAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    ThbAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - THB_ACCOUNT
+          example: THB_ACCOUNT
+        accountNumber:
+          type: string
+          description: Thai bank account number (10-12 digits)
+          example: '1234567890'
+          minLength: 10
+          maxLength: 12
+        bankCode:
+          type: string
+          description: Bank code (3 digits) or SWIFT BIC
+          example: '002'
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Bangkok Bank
+    PaymentThbAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/ThbAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    VndAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - VND_ACCOUNT
+          example: VND_ACCOUNT
+        accountNumber:
+          type: string
+          description: Vietnamese bank account number
+          example: '1234567890123'
+          minLength: 9
+          maxLength: 19
+        bankCode:
+          type: string
+          description: Bank code or SWIFT BIC
+          example: BFTV
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Vietcombank
+    PaymentVndAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/VndAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
+    BwpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - branchCode
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BWP_ACCOUNT
+          example: BWP_ACCOUNT
+        accountNumber:
+          type: string
+          description: Botswana bank account number
+          example: '1234567890'
+          minLength: 8
+          maxLength: 16
+        branchCode:
+          type: string
+          description: Branch code (6 digits)
+          example: '123456'
+          minLength: 6
+          maxLength: 6
+        swiftBic:
+          type: string
+          description: SWIFT/BIC code
+          example: FIABORPX
+          minLength: 8
+          maxLength: 11
+        bankName:
+          type: string
+          description: Name of the bank
+          example: First National Bank Botswana
+    PaymentBwpAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
+        - $ref: '#/components/schemas/BwpAccountInfo'
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to properly credit it
+          example: UMA-Q12345-REF
     SparkWalletInfo:
       type: object
       required:
@@ -5018,6 +5432,16 @@ components:
         - FBO
         - UPI
         - NGN_ACCOUNT
+        - GBP_ACCOUNT
+        - CAD_ACCOUNT
+        - HKD_ACCOUNT
+        - IDR_ACCOUNT
+        - MYR_ACCOUNT
+        - PHP_ACCOUNT
+        - SGD_ACCOUNT
+        - THB_ACCOUNT
+        - VND_ACCOUNT
+        - BWP_ACCOUNT
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
@@ -5359,6 +5783,216 @@ components:
                 - OTHER
               description: Purpose of payment
               example: GOODS_OR_SERVICES
+    GbpAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/GbpAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - GBP_ACCOUNT
+              example: GBP_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CadAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/CadAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - CAD_ACCOUNT
+              example: CAD_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HkdAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/HkdAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - HKD_ACCOUNT
+              example: HKD_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    IdrAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/IdrAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - IDR_ACCOUNT
+              example: IDR_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MyrAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/MyrAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - MYR_ACCOUNT
+              example: MYR_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PhpAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PhpAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - PHP_ACCOUNT
+              example: PHP_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    SgdAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SgdAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - SGD_ACCOUNT
+              example: SGD_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ThbAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ThbAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - THB_ACCOUNT
+              example: THB_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    VndAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/VndAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - VND_ACCOUNT
+              example: VND_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BwpAccountExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BwpAccountInfo'
+        - type: object
+          required:
+            - accountType
+          properties:
+            accountType:
+              type: string
+              enum:
+                - BWP_ACCOUNT
+              example: BWP_ACCOUNT
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/IndividualBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     SparkWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/SparkWalletInfo'
@@ -5472,6 +6106,26 @@ components:
           $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
         - title: NGN Account
           $ref: '#/components/schemas/NgnAccountExternalAccountInfo'
+        - title: GBP Account
+          $ref: '#/components/schemas/GbpAccountExternalAccountInfo'
+        - title: CAD Account
+          $ref: '#/components/schemas/CadAccountExternalAccountInfo'
+        - title: HKD Account
+          $ref: '#/components/schemas/HkdAccountExternalAccountInfo'
+        - title: IDR Account
+          $ref: '#/components/schemas/IdrAccountExternalAccountInfo'
+        - title: MYR Account
+          $ref: '#/components/schemas/MyrAccountExternalAccountInfo'
+        - title: PHP Account
+          $ref: '#/components/schemas/PhpAccountExternalAccountInfo'
+        - title: SGD Account
+          $ref: '#/components/schemas/SgdAccountExternalAccountInfo'
+        - title: THB Account
+          $ref: '#/components/schemas/ThbAccountExternalAccountInfo'
+        - title: VND Account
+          $ref: '#/components/schemas/VndAccountExternalAccountInfo'
+        - title: BWP Account
+          $ref: '#/components/schemas/BwpAccountExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
@@ -5493,6 +6147,16 @@ components:
           IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
+          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
+          HKD_ACCOUNT: '#/components/schemas/HkdAccountExternalAccountInfo'
+          IDR_ACCOUNT: '#/components/schemas/IdrAccountExternalAccountInfo'
+          MYR_ACCOUNT: '#/components/schemas/MyrAccountExternalAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
+          THB_ACCOUNT: '#/components/schemas/ThbAccountExternalAccountInfo'
+          VND_ACCOUNT: '#/components/schemas/VndAccountExternalAccountInfo'
+          BWP_ACCOUNT: '#/components/schemas/BwpAccountExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'

@@ -1,0 +1,28 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - sortCode
+properties:
+  accountType:
+    type: string
+    enum: [GBP_ACCOUNT]
+    example: GBP_ACCOUNT
+  accountNumber:
+    type: string
+    description: UK bank account number (8 digits)
+    example: '12345678'
+    minLength: 8
+    maxLength: 8
+    pattern: ^[0-9]{8}$
+  sortCode:
+    type: string
+    description: UK sort code (6 digits, typically formatted as XX-XX-XX)
+    example: '123456'
+    minLength: 6
+    maxLength: 6
+    pattern: ^[0-9]{6}$
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Barclays Bank
