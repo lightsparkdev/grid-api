@@ -11,6 +11,26 @@ oneOf:
     $ref: ./UpiAccountExternalAccountInfo.yaml
   - title: NGN Account
     $ref: ./NgnAccountExternalAccountInfo.yaml
+  - title: GBP Account
+    $ref: ./GbpAccountExternalAccountInfo.yaml
+  - title: CAD Account
+    $ref: ./CadAccountExternalAccountInfo.yaml
+  - title: HKD Account
+    $ref: ./HkdAccountExternalAccountInfo.yaml
+  - title: IDR Account
+    $ref: ./IdrAccountExternalAccountInfo.yaml
+  - title: MYR Account
+    $ref: ./MyrAccountExternalAccountInfo.yaml
+  - title: PHP Account
+    $ref: ./PhpAccountExternalAccountInfo.yaml
+  - title: SGD Account
+    $ref: ./SgdAccountExternalAccountInfo.yaml
+  - title: THB Account
+    $ref: ./ThbAccountExternalAccountInfo.yaml
+  - title: VND Account
+    $ref: ./VndAccountExternalAccountInfo.yaml
+  - title: BWP Account
+    $ref: ./BwpAccountExternalAccountInfo.yaml
   - title: Spark Wallet
     $ref: ./SparkWalletExternalAccountInfo.yaml
   - title: Lightning
@@ -32,6 +52,16 @@ discriminator:
     IBAN: ./IbanAccountExternalAccountInfo.yaml
     UPI: ./UpiAccountExternalAccountInfo.yaml
     NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
+    GBP_ACCOUNT: ./GbpAccountExternalAccountInfo.yaml
+    CAD_ACCOUNT: ./CadAccountExternalAccountInfo.yaml
+    HKD_ACCOUNT: ./HkdAccountExternalAccountInfo.yaml
+    IDR_ACCOUNT: ./IdrAccountExternalAccountInfo.yaml
+    MYR_ACCOUNT: ./MyrAccountExternalAccountInfo.yaml
+    PHP_ACCOUNT: ./PhpAccountExternalAccountInfo.yaml
+    SGD_ACCOUNT: ./SgdAccountExternalAccountInfo.yaml
+    THB_ACCOUNT: ./ThbAccountExternalAccountInfo.yaml
+    VND_ACCOUNT: ./VndAccountExternalAccountInfo.yaml
+    BWP_ACCOUNT: ./BwpAccountExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml

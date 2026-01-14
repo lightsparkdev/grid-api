@@ -1,0 +1,19 @@
+allOf:
+  - $ref: ../common/VndAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+    properties:
+      accountType:
+        type: string
+        enum: [VND_ACCOUNT]
+        example: VND_ACCOUNT
+      beneficiary:
+        oneOf:
+          - $ref: ./IndividualBeneficiary.yaml
+          - $ref: ./BusinessBeneficiary.yaml
+        discriminator:
+          propertyName: beneficiaryType
+          mapping:
+            INDIVIDUAL: ./IndividualBeneficiary.yaml
+            BUSINESS: ./BusinessBeneficiary.yaml

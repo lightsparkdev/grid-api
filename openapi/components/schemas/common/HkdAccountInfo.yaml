@@ -1,0 +1,27 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - bankCode
+properties:
+  accountType:
+    type: string
+    enum: [HKD_ACCOUNT]
+    example: HKD_ACCOUNT
+  accountNumber:
+    type: string
+    description: Hong Kong bank account number (9-12 digits)
+    example: '123456789012'
+    minLength: 9
+    maxLength: 12
+  bankCode:
+    type: string
+    description: Bank code (3 digits)
+    example: '004'
+    minLength: 3
+    maxLength: 3
+    pattern: ^[0-9]{3}$
+  bankName:
+    type: string
+    description: Name of the bank
+    example: HSBC Hong Kong

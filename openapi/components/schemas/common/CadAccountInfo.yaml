@@ -1,0 +1,35 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - transitNumber
+  - institutionNumber
+properties:
+  accountType:
+    type: string
+    enum: [CAD_ACCOUNT]
+    example: CAD_ACCOUNT
+  accountNumber:
+    type: string
+    description: Canadian bank account number (7-12 digits)
+    example: '1234567'
+    minLength: 7
+    maxLength: 12
+  transitNumber:
+    type: string
+    description: Transit number (5 digits) identifying the branch
+    example: '12345'
+    minLength: 5
+    maxLength: 5
+    pattern: ^[0-9]{5}$
+  institutionNumber:
+    type: string
+    description: Institution number (3 digits) identifying the bank
+    example: '001'
+    minLength: 3
+    maxLength: 3
+    pattern: ^[0-9]{3}$
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Royal Bank of Canada

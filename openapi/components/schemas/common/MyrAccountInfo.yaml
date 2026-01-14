@@ -1,0 +1,24 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - bankCode
+properties:
+  accountType:
+    type: string
+    enum: [MYR_ACCOUNT]
+    example: MYR_ACCOUNT
+  accountNumber:
+    type: string
+    description: Malaysian bank account number
+    example: '1234567890'
+    minLength: 10
+    maxLength: 17
+  bankCode:
+    type: string
+    description: Bank code (e.g., SWIFT BIC or local bank code)
+    example: MABORB2X
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Maybank
