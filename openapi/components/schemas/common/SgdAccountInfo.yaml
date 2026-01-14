@@ -1,0 +1,30 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - bankCode
+properties:
+  accountType:
+    type: string
+    enum: [SGD_ACCOUNT]
+    example: SGD_ACCOUNT
+  accountNumber:
+    type: string
+    description: Singapore bank account number
+    example: '1234567890'
+    minLength: 9
+    maxLength: 14
+  bankCode:
+    type: string
+    description: Bank code (4 digits) or SWIFT BIC
+    example: '7339'
+  branchCode:
+    type: string
+    description: Branch code (3 digits)
+    example: '001'
+    minLength: 3
+    maxLength: 3
+  bankName:
+    type: string
+    description: Name of the bank
+    example: DBS Bank

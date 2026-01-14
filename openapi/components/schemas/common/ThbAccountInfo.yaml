@@ -1,0 +1,24 @@
+type: object
+required:
+  - accountType
+  - accountNumber
+  - bankCode
+properties:
+  accountType:
+    type: string
+    enum: [THB_ACCOUNT]
+    example: THB_ACCOUNT
+  accountNumber:
+    type: string
+    description: Thai bank account number (10-12 digits)
+    example: '1234567890'
+    minLength: 10
+    maxLength: 12
+  bankCode:
+    type: string
+    description: Bank code (3 digits) or SWIFT BIC
+    example: '002'
+  bankName:
+    type: string
+    description: Name of the bank
+    example: Bangkok Bank
