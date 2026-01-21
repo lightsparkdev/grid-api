@@ -1,3 +1,93 @@
+/* ===========================================
+   Global Font Configuration
+   =========================================== */
+
+/* Apply Suisse Intl everywhere with single-story 'a' (salt) */
+html,
+body,
+*,
+*::before,
+*::after {
+  font-family: "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* Page titles and headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+[class*="title"],
+[class*="Title"],
+[class*="heading"],
+[class*="Heading"],
+article h1,
+article h2,
+article h3,
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-feature-settings: "salt" on !important;
+  font-weight: 500 !important;
+}
+
+/* Bold text uses Medium weight */
+strong,
+b,
+th {
+  font-weight: 500 !important;
+}
+
+/* Button text uses Book weight (450) */
+button,
+[role="button"],
+.btn,
+input[type="submit"],
+input[type="button"],
+a.button {
+  font-weight: 450 !important;
+}
+
+/* Navigation and sidebar */
+nav,
+nav *,
+aside,
+aside *,
+[class*="sidebar"],
+[class*="Sidebar"],
+[class*="nav"],
+[class*="Nav"],
+[class*="menu"],
+[class*="Menu"] {
+  font-family: "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* Code blocks use Suisse Intl Mono with single-story 'a' */
+code,
+pre,
+kbd,
+samp,
+.prose code,
+pre code,
+[class*="language-"],
+[class*="code"],
+[class*="Code"],
+.mono,
+code[class*="language-"],
+pre[class*="language-"] {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* ===========================================
+   Existing Styles
+   =========================================== */
+
 html.light .hero {
   background: #f0f0ee;
   background-image: radial-gradient(
@@ -76,10 +166,9 @@ html.dark .hero-card {
   align-items: center;
   gap: 4px;
   border-radius: 4px;
-  font-feature-settings: "salt" on;
   font-size: 16px;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 450; /* Book weight for buttons */
   line-height: 24px;
 }
 
@@ -90,7 +179,6 @@ html.dark .hero-card {
   padding-right: 16px;
   margin-bottom: 32px;
   gap: 32px;
-  font-family: "Suisse Intl";
 }
 
 @media (min-width: 640px) {
@@ -149,7 +237,6 @@ html.dark .hero-card {
   align-items: flex-start;
   gap: 32px;
   align-self: stretch;
-  font-family: "Suisse Intl";
 }
 
 @media (min-width: 640px) {
