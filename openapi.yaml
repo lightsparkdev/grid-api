@@ -4747,6 +4747,7 @@ components:
         - accountType
         - pixKey
         - pixKeyType
+        - taxId
       properties:
         accountType:
           type: string
@@ -4767,6 +4768,10 @@ components:
             - RANDOM
           description: Type of PIX key being used
           example: PHONE
+        taxId:
+          type: string
+          description: Tax ID of the account holder
+          example: '1234567890'
     PaymentPixAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PaymentAccountOrWalletInfo'
