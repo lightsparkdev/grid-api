@@ -4,8 +4,7 @@ allOf:
       - accountType
     properties:
       accountType:
-        type: string
-        enum: [LIGHTNING]
+        const: LIGHTNING
         example: LIGHTNING
   - oneOf:
       - title: Lightning Invoice

@@ -5,8 +5,7 @@ required:
   - invoice
 properties:
   accountType:
-    type: string
-    enum: [LIGHTNING]
+    const: LIGHTNING
     example: LIGHTNING
   invoice:
     type: string

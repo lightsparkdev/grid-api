@@ -5,8 +5,7 @@ allOf:
       - accountType
     properties:
       accountType:
-        type: string
-        enum: [CLABE]
+        const: CLABE
         example: CLABE
       beneficiary:
         oneOf:

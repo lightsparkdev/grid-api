@@ -4,8 +4,7 @@ required:
   - currencyCode
 properties:
   accountType:
-    type: string
-    enum: [FBO]
+    const: FBO
     example: FBO
   currencyCode:
     type: string

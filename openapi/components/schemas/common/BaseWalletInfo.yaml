@@ -4,8 +4,7 @@ required:
   - address
 properties:
   accountType:
-    type: string
-    enum: [BASE_WALLET]
+    const: BASE_WALLET
     example: BASE_WALLET
   address:
     type: string

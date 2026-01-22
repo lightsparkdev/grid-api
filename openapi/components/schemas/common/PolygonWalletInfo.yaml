@@ -4,8 +4,7 @@ required:
   - address
 properties:
   accountType:
-    type: string
-    enum: [POLYGON_WALLET]
+    const: POLYGON_WALLET
     example: POLYGON_WALLET
   address:
     type: string

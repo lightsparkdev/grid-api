@@ -1,5 +1,4 @@
 allOf:
-  - $ref: ./PaymentAccountOrWalletInfo.yaml
   - $ref: ./UsAccountInfo.yaml
 required:
     - reference
