@@ -109,7 +109,7 @@ private constructor(
      * If the signature verification succeeds, the webhook is authentic. If not, it should be
      * rejected.
      */
-    val webhookSignature: String,
+    val webhookSignature: String?,
 ) {
 
     init {
@@ -139,7 +139,6 @@ private constructor(
          * .httpClient()
          * .username()
          * .password()
-         * .webhookSignature()
          * ```
          */
         fun builder() = Builder()
@@ -307,7 +306,7 @@ private constructor(
          * If the signature verification succeeds, the webhook is authentic. If not, it should be
          * rejected.
          */
-        fun webhookSignature(webhookSignature: String) = apply {
+        fun webhookSignature(webhookSignature: String?) = apply {
             this.webhookSignature = webhookSignature
         }
 
@@ -402,7 +401,7 @@ private constructor(
          * |------------------|-----------------------|------------------------|--------|----------------------------------------------|
          * |`username`        |`grid.username`        |`GRID_USERNAME`         |true    |-                                             |
          * |`password`        |`grid.password`        |`GRID_PASSWORD`         |true    |-                                             |
-         * |`webhookSignature`|`grid.webhookSignature`|`GRID_WEBHOOK_SIGNATURE`|true    |-                                             |
+         * |`webhookSignature`|`grid.webhookSignature`|`GRID_WEBHOOK_SIGNATURE`|false   |-                                             |
          * |`baseUrl`         |`grid.baseUrl`         |`GRID_BASE_URL`         |true    |`"https://api.lightspark.com/grid/2025-10-13"`|
          *
          * System properties take precedence over environment variables.
@@ -431,7 +430,6 @@ private constructor(
          * .httpClient()
          * .username()
          * .password()
-         * .webhookSignature()
          * ```
          *
          * @throws IllegalStateException if any required field is unset.
@@ -441,7 +439,6 @@ private constructor(
             val sleeper = sleeper ?: PhantomReachableSleeper(DefaultSleeper())
             val username = checkRequired("username", username)
             val password = checkRequired("password", password)
-            val webhookSignature = checkRequired("webhookSignature", webhookSignature)
 
             val headers = Headers.builder()
             val queryParams = QueryParams.builder()
@@ -463,7 +460,7 @@ private constructor(
                     }
                 }
             }
-            webhookSignature.let {
+            webhookSignature?.let {
                 if (!it.isEmpty()) {
                     headers.put("X-Grid-Signature", it)
                 }

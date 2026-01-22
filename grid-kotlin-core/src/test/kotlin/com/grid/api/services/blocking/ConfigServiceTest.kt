@@ -24,7 +24,6 @@ internal class ConfigServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val configService = client.config()
 
@@ -41,7 +40,6 @@ internal class ConfigServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val configService = client.config()
 

@@ -55,7 +55,6 @@ internal class ErrorHandlingTest {
                 .baseUrl(wmRuntimeInfo.httpBaseUrl)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
     }
 

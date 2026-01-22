@@ -20,7 +20,6 @@ internal class InternalAccountServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val internalAccountServiceAsync = client.sandbox().internalAccounts()
 

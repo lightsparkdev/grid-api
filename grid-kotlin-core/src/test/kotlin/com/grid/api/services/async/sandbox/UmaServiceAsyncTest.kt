@@ -20,7 +20,6 @@ internal class UmaServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val umaServiceAsync = client.sandbox().uma()
 

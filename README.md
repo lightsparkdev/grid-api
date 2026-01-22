@@ -68,7 +68,6 @@ import com.grid.api.client.okhttp.GridOkHttpClient
 val client: GridClient = GridOkHttpClient.builder()
     .username("My Username")
     .password("My Password")
-    .webhookSignature("My Webhook Signature")
     .build()
 ```
 
@@ -92,7 +91,7 @@ See this table for the available options:
 | ------------------ | ----------------------- | ------------------------ | -------- | ---------------------------------------------- |
 | `username`         | `grid.username`         | `GRID_USERNAME`          | true     | -                                              |
 | `password`         | `grid.password`         | `GRID_PASSWORD`          | true     | -                                              |
-| `webhookSignature` | `grid.webhookSignature` | `GRID_WEBHOOK_SIGNATURE` | true     | -                                              |
+| `webhookSignature` | `grid.webhookSignature` | `GRID_WEBHOOK_SIGNATURE` | false    | -                                              |
 | `baseUrl`          | `grid.baseUrl`          | `GRID_BASE_URL`          | true     | `"https://api.lightspark.com/grid/2025-10-13"` |
 
 System properties take precedence over environment variables.

@@ -23,7 +23,6 @@ internal class ClientOptionsTest {
                 .httpClient(httpClient)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         verify(httpClient, never()).close()
 

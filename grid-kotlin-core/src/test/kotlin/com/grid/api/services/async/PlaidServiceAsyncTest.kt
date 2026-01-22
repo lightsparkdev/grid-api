@@ -21,7 +21,6 @@ internal class PlaidServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val plaidServiceAsync = client.plaid()
 
@@ -43,7 +42,6 @@ internal class PlaidServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val plaidServiceAsync = client.plaid()
 

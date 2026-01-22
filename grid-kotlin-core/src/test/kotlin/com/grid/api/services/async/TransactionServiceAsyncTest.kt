@@ -26,7 +26,6 @@ internal class TransactionServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val transactionServiceAsync = client.transactions()
 
@@ -43,7 +42,6 @@ internal class TransactionServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val transactionServiceAsync = client.transactions()
 
@@ -76,7 +74,6 @@ internal class TransactionServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val transactionServiceAsync = client.transactions()
 
@@ -103,7 +100,6 @@ internal class TransactionServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val transactionServiceAsync = client.transactions()
 

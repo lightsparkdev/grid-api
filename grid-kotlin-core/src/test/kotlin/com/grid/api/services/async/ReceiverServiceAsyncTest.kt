@@ -21,7 +21,6 @@ internal class ReceiverServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val receiverServiceAsync = client.receiver()
 
@@ -45,7 +44,6 @@ internal class ReceiverServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val receiverServiceAsync = client.receiver()
 

@@ -23,7 +23,6 @@ internal class TokenServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenServiceAsync = client.tokens()
 
@@ -46,7 +45,6 @@ internal class TokenServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenServiceAsync = client.tokens()
 
@@ -63,7 +61,6 @@ internal class TokenServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenServiceAsync = client.tokens()
 
@@ -91,7 +88,6 @@ internal class TokenServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenServiceAsync = client.tokens()
 

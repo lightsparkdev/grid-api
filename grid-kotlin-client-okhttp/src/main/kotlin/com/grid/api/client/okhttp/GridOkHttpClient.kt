@@ -208,7 +208,7 @@ class GridOkHttpClient private constructor() {
          * If the signature verification succeeds, the webhook is authentic. If not, it should be
          * rejected.
          */
-        fun webhookSignature(webhookSignature: String) = apply {
+        fun webhookSignature(webhookSignature: String?) = apply {
             clientOptions.webhookSignature(webhookSignature)
         }
 

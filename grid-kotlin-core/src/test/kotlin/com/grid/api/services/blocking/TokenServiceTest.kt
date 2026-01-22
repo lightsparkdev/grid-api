@@ -23,7 +23,6 @@ internal class TokenServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenService = client.tokens()
 
@@ -46,7 +45,6 @@ internal class TokenServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenService = client.tokens()
 
@@ -63,7 +61,6 @@ internal class TokenServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenService = client.tokens()
 
@@ -91,7 +88,6 @@ internal class TokenServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val tokenService = client.tokens()
 

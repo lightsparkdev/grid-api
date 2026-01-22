@@ -29,7 +29,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 
@@ -71,7 +70,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 
@@ -88,7 +86,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 
@@ -129,7 +126,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 
@@ -160,7 +156,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 
@@ -177,7 +172,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 
@@ -200,7 +194,6 @@ internal class CustomerServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val customerServiceAsync = client.customers()
 

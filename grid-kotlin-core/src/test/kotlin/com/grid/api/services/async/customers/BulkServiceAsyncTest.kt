@@ -20,7 +20,6 @@ internal class BulkServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val bulkServiceAsync = client.customers().bulk()
 
@@ -37,7 +36,6 @@ internal class BulkServiceAsyncTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val bulkServiceAsync = client.customers().bulk()
 

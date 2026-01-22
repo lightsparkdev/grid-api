@@ -20,7 +20,6 @@ internal class SandboxServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val sandboxService = client.sandbox()
 

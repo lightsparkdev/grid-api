@@ -22,7 +22,6 @@ internal class InvitationServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val invitationService = client.invitations()
 
@@ -47,7 +46,6 @@ internal class InvitationServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val invitationService = client.invitations()
 
@@ -64,7 +62,6 @@ internal class InvitationServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val invitationService = client.invitations()
 
@@ -81,7 +78,6 @@ internal class InvitationServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val invitationService = client.invitations()
 

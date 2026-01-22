@@ -19,7 +19,6 @@ internal class WebhookServiceTest {
                 .baseUrl(TestServerExtension.BASE_URL)
                 .username("My Username")
                 .password("My Password")
-                .webhookSignature("My Webhook Signature")
                 .build()
         val webhookService = client.webhooks()
 

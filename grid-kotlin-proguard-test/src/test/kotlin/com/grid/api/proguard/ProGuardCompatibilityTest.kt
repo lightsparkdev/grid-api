@@ -55,11 +55,7 @@ internal class ProGuardCompatibilityTest {
     @Test
     fun client() {
         val client =
-            GridOkHttpClient.builder()
-                .username("My Username")
-                .password("My Password")
-                .webhookSignature("My Webhook Signature")
-                .build()
+            GridOkHttpClient.builder().username("My Username").password("My Password").build()
 
         assertThat(client).isNotNull()
         assertThat(client.config()).isNotNull()
