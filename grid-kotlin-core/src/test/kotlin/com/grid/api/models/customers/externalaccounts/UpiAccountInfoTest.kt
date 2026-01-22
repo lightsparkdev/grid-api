@@ -11,24 +11,15 @@ internal class UpiAccountInfoTest {
 
     @Test
     fun create() {
-        val upiAccountInfo =
-            UpiAccountInfo.builder()
-                .accountType(UpiAccountInfo.AccountType.UPI)
-                .vpa("somecustomers@okbank")
-                .build()
+        val upiAccountInfo = UpiAccountInfo.builder().vpa("somecustomers@okbank").build()
 
-        assertThat(upiAccountInfo.accountType()).isEqualTo(UpiAccountInfo.AccountType.UPI)
         assertThat(upiAccountInfo.vpa()).isEqualTo("somecustomers@okbank")
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val upiAccountInfo =
-            UpiAccountInfo.builder()
-                .accountType(UpiAccountInfo.AccountType.UPI)
-                .vpa("somecustomers@okbank")
-                .build()
+        val upiAccountInfo = UpiAccountInfo.builder().vpa("somecustomers@okbank").build()
 
         val roundtrippedUpiAccountInfo =
             jsonMapper.readValue(

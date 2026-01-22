@@ -22,7 +22,6 @@ internal class ExternalAccountCreateParamsTest {
                         ExternalAccountInfo.UsAccount.builder()
                             .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                             .accountNumber("12345678901")
-                            .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                             .routingNumber("123456789")
                             .bankName("Chase Bank")
                             .beneficiary(
@@ -66,7 +65,6 @@ internal class ExternalAccountCreateParamsTest {
                             ExternalAccountInfo.UsAccount.builder()
                                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                                 .accountNumber("12345678901")
-                                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                                 .routingNumber("123456789")
                                 .bankName("Chase Bank")
                                 .beneficiary(
@@ -108,7 +106,6 @@ internal class ExternalAccountCreateParamsTest {
                         ExternalAccountInfo.UsAccount.builder()
                             .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                             .accountNumber("12345678901")
-                            .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                             .routingNumber("123456789")
                             .bankName("Chase Bank")
                             .beneficiary(
@@ -151,7 +148,6 @@ internal class ExternalAccountCreateParamsTest {
                             ExternalAccountInfo.UsAccount.builder()
                                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                                 .accountNumber("12345678901")
-                                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                                 .routingNumber("123456789")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
@@ -179,7 +175,6 @@ internal class ExternalAccountCreateParamsTest {
                         ExternalAccountInfo.UsAccount.builder()
                             .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                             .accountNumber("12345678901")
-                            .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                             .routingNumber("123456789")
                             .beneficiary(
                                 IndividualBeneficiary.builder()

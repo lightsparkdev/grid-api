@@ -13,13 +13,11 @@ internal class PixAccountInfoTest {
     fun create() {
         val pixAccountInfo =
             PixAccountInfo.builder()
-                .accountType(PixAccountInfo.AccountType.PIX)
                 .pixKey("55119876543210")
                 .pixKeyType(PixAccountInfo.PixKeyType.PHONE)
                 .taxId("1234567890")
                 .build()
 
-        assertThat(pixAccountInfo.accountType()).isEqualTo(PixAccountInfo.AccountType.PIX)
         assertThat(pixAccountInfo.pixKey()).isEqualTo("55119876543210")
         assertThat(pixAccountInfo.pixKeyType()).isEqualTo(PixAccountInfo.PixKeyType.PHONE)
         assertThat(pixAccountInfo.taxId()).isEqualTo("1234567890")
@@ -30,7 +28,6 @@ internal class PixAccountInfoTest {
         val jsonMapper = jsonMapper()
         val pixAccountInfo =
             PixAccountInfo.builder()
-                .accountType(PixAccountInfo.AccountType.PIX)
                 .pixKey("55119876543210")
                 .pixKeyType(PixAccountInfo.PixKeyType.PHONE)
                 .taxId("1234567890")

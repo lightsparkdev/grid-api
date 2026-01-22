@@ -26,7 +26,6 @@ internal class ExternalAccountListResponseTest {
                             ExternalAccountInfo.UsAccount.builder()
                                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                                 .accountNumber("123456789")
-                                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                                 .routingNumber("987654321")
                                 .bankName("Chase Bank")
                                 .beneficiary(
@@ -68,7 +67,6 @@ internal class ExternalAccountListResponseTest {
                         ExternalAccountInfo.UsAccount.builder()
                             .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                             .accountNumber("123456789")
-                            .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                             .routingNumber("987654321")
                             .bankName("Chase Bank")
                             .beneficiary(
@@ -114,7 +112,6 @@ internal class ExternalAccountListResponseTest {
                             ExternalAccountInfo.UsAccount.builder()
                                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                                 .accountNumber("123456789")
-                                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                                 .routingNumber("987654321")
                                 .bankName("Chase Bank")
                                 .beneficiary(

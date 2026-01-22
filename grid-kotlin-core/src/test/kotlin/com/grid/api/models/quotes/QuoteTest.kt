@@ -55,9 +55,7 @@ internal class QuoteTest {
                 .addPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
-                                .builder()
-                                .accountType(PaymentAccountOrWalletInfo.AccountType.CLABE)
+                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -70,9 +68,7 @@ internal class QuoteTest {
                 .addPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
-                                .builder()
-                                .accountType(PaymentAccountOrWalletInfo.AccountType.CLABE)
+                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -145,8 +141,7 @@ internal class QuoteTest {
             .containsExactly(
                 PaymentInstructions.builder()
                     .accountOrWalletInfo(
-                        PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo.builder()
-                            .accountType(PaymentAccountOrWalletInfo.AccountType.CLABE)
+                        PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
                             .clabeNumber("123456789012345678")
                             .reference("UMA-Q12345-REF")
                             .build()
@@ -157,8 +152,7 @@ internal class QuoteTest {
                     .build(),
                 PaymentInstructions.builder()
                     .accountOrWalletInfo(
-                        PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo.builder()
-                            .accountType(PaymentAccountOrWalletInfo.AccountType.CLABE)
+                        PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
                             .clabeNumber("123456789012345678")
                             .reference("UMA-Q12345-REF")
                             .build()
@@ -227,9 +221,7 @@ internal class QuoteTest {
                 .addPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
-                                .builder()
-                                .accountType(PaymentAccountOrWalletInfo.AccountType.CLABE)
+                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -242,9 +234,7 @@ internal class QuoteTest {
                 .addPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
-                                .builder()
-                                .accountType(PaymentAccountOrWalletInfo.AccountType.CLABE)
+                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()

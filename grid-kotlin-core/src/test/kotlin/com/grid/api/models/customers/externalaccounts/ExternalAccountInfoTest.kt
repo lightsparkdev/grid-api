@@ -22,7 +22,6 @@ internal class ExternalAccountInfoTest {
             ExternalAccountInfo.UsAccount.builder()
                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                 .accountNumber("123456789")
-                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                 .routingNumber("987654321")
                 .bankName("Chase Bank")
                 .beneficiary(
@@ -69,7 +68,6 @@ internal class ExternalAccountInfoTest {
                 ExternalAccountInfo.UsAccount.builder()
                     .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                     .accountNumber("123456789")
-                    .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                     .routingNumber("987654321")
                     .bankName("Chase Bank")
                     .beneficiary(
@@ -106,7 +104,6 @@ internal class ExternalAccountInfoTest {
     fun ofClabe() {
         val clabe =
             ExternalAccountInfo.Clabe.builder()
-                .accountType(ClabeAccountInfo.AccountType.CLABE)
                 .clabeNumber("123456789012345678")
                 .beneficiary(
                     IndividualBeneficiary.builder()
@@ -150,7 +147,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofClabe(
                 ExternalAccountInfo.Clabe.builder()
-                    .accountType(ClabeAccountInfo.AccountType.CLABE)
                     .clabeNumber("123456789012345678")
                     .beneficiary(
                         IndividualBeneficiary.builder()
@@ -186,7 +182,6 @@ internal class ExternalAccountInfoTest {
     fun ofPix() {
         val pix =
             ExternalAccountInfo.Pix.builder()
-                .accountType(PixAccountInfo.AccountType.PIX)
                 .pixKey("55119876543210")
                 .pixKeyType(PixAccountInfo.PixKeyType.PHONE)
                 .taxId("1234567890")
@@ -232,7 +227,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofPix(
                 ExternalAccountInfo.Pix.builder()
-                    .accountType(PixAccountInfo.AccountType.PIX)
                     .pixKey("55119876543210")
                     .pixKeyType(PixAccountInfo.PixKeyType.PHONE)
                     .taxId("1234567890")
@@ -270,7 +264,6 @@ internal class ExternalAccountInfoTest {
     fun ofIban() {
         val iban =
             ExternalAccountInfo.Iban.builder()
-                .accountType(IbanAccountInfo.AccountType.IBAN)
                 .iban("DE89370400440532013000")
                 .swiftBic("DEUTDEFF")
                 .beneficiary(
@@ -315,7 +308,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofIban(
                 ExternalAccountInfo.Iban.builder()
-                    .accountType(IbanAccountInfo.AccountType.IBAN)
                     .iban("DE89370400440532013000")
                     .swiftBic("DEUTDEFF")
                     .beneficiary(
@@ -352,7 +344,6 @@ internal class ExternalAccountInfoTest {
     fun ofUpi() {
         val upi =
             ExternalAccountInfo.Upi.builder()
-                .accountType(UpiAccountInfo.AccountType.UPI)
                 .vpa("somecustomers@okbank")
                 .beneficiary(
                     IndividualBeneficiary.builder()
@@ -396,7 +387,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofUpi(
                 ExternalAccountInfo.Upi.builder()
-                    .accountType(UpiAccountInfo.AccountType.UPI)
                     .vpa("somecustomers@okbank")
                     .beneficiary(
                         IndividualBeneficiary.builder()
@@ -516,7 +506,6 @@ internal class ExternalAccountInfoTest {
     fun ofSparkWallet() {
         val sparkWallet =
             ExternalAccountInfo.SparkWallet.builder()
-                .accountType(SparkWalletInfo.AccountType.SPARK_WALLET)
                 .address("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
                 .build()
 
@@ -542,7 +531,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofSparkWallet(
                 ExternalAccountInfo.SparkWallet.builder()
-                    .accountType(SparkWalletInfo.AccountType.SPARK_WALLET)
                     .address("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
                     .build()
             )
@@ -620,7 +608,6 @@ internal class ExternalAccountInfoTest {
     fun ofSolanaWallet() {
         val solanaWallet =
             ExternalAccountInfo.SolanaWallet.builder()
-                .accountType(SolanaWalletInfo.AccountType.SOLANA_WALLET)
                 .address("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
                 .build()
 
@@ -646,7 +633,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofSolanaWallet(
                 ExternalAccountInfo.SolanaWallet.builder()
-                    .accountType(SolanaWalletInfo.AccountType.SOLANA_WALLET)
                     .address("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
                     .build()
             )
@@ -664,7 +650,6 @@ internal class ExternalAccountInfoTest {
     fun ofTronWallet() {
         val tronWallet =
             ExternalAccountInfo.TronWallet.builder()
-                .accountType(TronWalletInfo.AccountType.TRON_WALLET)
                 .address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
                 .build()
 
@@ -690,7 +675,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofTronWallet(
                 ExternalAccountInfo.TronWallet.builder()
-                    .accountType(TronWalletInfo.AccountType.TRON_WALLET)
                     .address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
                     .build()
             )
@@ -708,7 +692,6 @@ internal class ExternalAccountInfoTest {
     fun ofPolygonWallet() {
         val polygonWallet =
             ExternalAccountInfo.PolygonWallet.builder()
-                .accountType(PolygonWalletInfo.AccountType.POLYGON_WALLET)
                 .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                 .build()
 
@@ -734,7 +717,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofPolygonWallet(
                 ExternalAccountInfo.PolygonWallet.builder()
-                    .accountType(PolygonWalletInfo.AccountType.POLYGON_WALLET)
                     .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                     .build()
             )
@@ -752,7 +734,6 @@ internal class ExternalAccountInfoTest {
     fun ofBaseWallet() {
         val baseWallet =
             ExternalAccountInfo.BaseWallet.builder()
-                .accountType(BaseWalletInfo.AccountType.BASE_WALLET)
                 .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                 .build()
 
@@ -778,7 +759,6 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo =
             ExternalAccountInfo.ofBaseWallet(
                 ExternalAccountInfo.BaseWallet.builder()
-                    .accountType(BaseWalletInfo.AccountType.BASE_WALLET)
                     .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                     .build()
             )

@@ -15,7 +15,6 @@ internal class UsAccountInfoTest {
             UsAccountInfo.builder()
                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                 .accountNumber("123456789")
-                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                 .routingNumber("987654321")
                 .bankName("Chase Bank")
                 .build()
@@ -23,7 +22,6 @@ internal class UsAccountInfoTest {
         assertThat(usAccountInfo.accountCategory())
             .isEqualTo(UsAccountInfo.AccountCategory.CHECKING)
         assertThat(usAccountInfo.accountNumber()).isEqualTo("123456789")
-        assertThat(usAccountInfo.accountType()).isEqualTo(UsAccountInfo.AccountType.US_ACCOUNT)
         assertThat(usAccountInfo.routingNumber()).isEqualTo("987654321")
         assertThat(usAccountInfo.bankName()).isEqualTo("Chase Bank")
     }
@@ -35,7 +33,6 @@ internal class UsAccountInfoTest {
             UsAccountInfo.builder()
                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                 .accountNumber("123456789")
-                .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
                 .routingNumber("987654321")
                 .bankName("Chase Bank")
                 .build()

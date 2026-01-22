@@ -13,12 +13,9 @@ internal class SparkWalletInfoTest {
     fun create() {
         val sparkWalletInfo =
             SparkWalletInfo.builder()
-                .accountType(SparkWalletInfo.AccountType.SPARK_WALLET)
                 .address("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
                 .build()
 
-        assertThat(sparkWalletInfo.accountType())
-            .isEqualTo(SparkWalletInfo.AccountType.SPARK_WALLET)
         assertThat(sparkWalletInfo.address())
             .isEqualTo("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
     }
@@ -28,7 +25,6 @@ internal class SparkWalletInfoTest {
         val jsonMapper = jsonMapper()
         val sparkWalletInfo =
             SparkWalletInfo.builder()
-                .accountType(SparkWalletInfo.AccountType.SPARK_WALLET)
                 .address("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
                 .build()
 

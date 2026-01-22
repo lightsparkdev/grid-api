@@ -464,7 +464,7 @@ private constructor(
     private constructor(
         private val accountCategory: JsonField<UsAccountInfo.AccountCategory>,
         private val accountNumber: JsonField<String>,
-        private val accountType: JsonField<UsAccountInfo.AccountType>,
+        private val accountType: JsonValue,
         private val routingNumber: JsonField<String>,
         private val bankName: JsonField<String>,
         private val beneficiary: JsonField<Beneficiary>,
@@ -479,9 +479,7 @@ private constructor(
             @JsonProperty("accountNumber")
             @ExcludeMissing
             accountNumber: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<UsAccountInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("routingNumber")
             @ExcludeMissing
             routingNumber: JsonField<String> = JsonMissing.of(),
@@ -528,10 +526,15 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("US_ACCOUNT")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): UsAccountInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * ACH routing number (9 digits)
@@ -574,15 +577,6 @@ private constructor(
         @JsonProperty("accountNumber")
         @ExcludeMissing
         fun _accountNumber(): JsonField<String> = accountNumber
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<UsAccountInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [routingNumber].
@@ -631,7 +625,6 @@ private constructor(
              * ```kotlin
              * .accountCategory()
              * .accountNumber()
-             * .accountType()
              * .routingNumber()
              * .beneficiary()
              * ```
@@ -644,7 +637,7 @@ private constructor(
 
             private var accountCategory: JsonField<UsAccountInfo.AccountCategory>? = null
             private var accountNumber: JsonField<String>? = null
-            private var accountType: JsonField<UsAccountInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("US_ACCOUNT")
             private var routingNumber: JsonField<String>? = null
             private var bankName: JsonField<String> = JsonMissing.of()
             private var beneficiary: JsonField<Beneficiary>? = null
@@ -689,19 +682,19 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            fun accountType(accountType: UsAccountInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [UsAccountInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("US_ACCOUNT")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<UsAccountInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** ACH routing number (9 digits) */
             fun routingNumber(routingNumber: String) = routingNumber(JsonField.of(routingNumber))
@@ -795,7 +788,6 @@ private constructor(
              * ```kotlin
              * .accountCategory()
              * .accountNumber()
-             * .accountType()
              * .routingNumber()
              * .beneficiary()
              * ```
@@ -806,7 +798,7 @@ private constructor(
                 UsAccount(
                     checkRequired("accountCategory", accountCategory),
                     checkRequired("accountNumber", accountNumber),
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("routingNumber", routingNumber),
                     bankName,
                     checkRequired("beneficiary", beneficiary),
@@ -823,7 +815,11 @@ private constructor(
 
             accountCategory().validate()
             accountNumber()
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("US_ACCOUNT")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             routingNumber()
             bankName()
             beneficiary().validate()
@@ -847,7 +843,7 @@ private constructor(
         internal fun validity(): Int =
             (accountCategory.asKnown()?.validity() ?: 0) +
                 (if (accountNumber.asKnown() == null) 0 else 1) +
-                (accountType.asKnown()?.validity() ?: 0) +
+                accountType.let { if (it == JsonValue.from("US_ACCOUNT")) 1 else 0 } +
                 (if (routingNumber.asKnown() == null) 0 else 1) +
                 (if (bankName.asKnown() == null) 0 else 1) +
                 (beneficiary.asKnown()?.validity() ?: 0)
@@ -1182,7 +1178,7 @@ private constructor(
     class Clabe
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<ClabeAccountInfo.AccountType>,
+        private val accountType: JsonValue,
         private val clabeNumber: JsonField<String>,
         private val beneficiary: JsonField<Beneficiary>,
         private val additionalProperties: MutableMap<String, JsonValue>,
@@ -1190,9 +1186,7 @@ private constructor(
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<ClabeAccountInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("clabeNumber")
             @ExcludeMissing
             clabeNumber: JsonField<String> = JsonMissing.of(),
@@ -1205,10 +1199,15 @@ private constructor(
             ClabeAccountInfo.builder().accountType(accountType).clabeNumber(clabeNumber).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("CLABE")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): ClabeAccountInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * 18-digit CLABE number (Mexican banking standard)
@@ -1223,15 +1222,6 @@ private constructor(
          *   server responded with an unexpected value).
          */
         fun beneficiary(): Beneficiary? = beneficiary.getNullable("beneficiary")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<ClabeAccountInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [clabeNumber].
@@ -1270,7 +1260,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .clabeNumber()
              * ```
              */
@@ -1280,7 +1269,7 @@ private constructor(
         /** A builder for [Clabe]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<ClabeAccountInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("CLABE")
             private var clabeNumber: JsonField<String>? = null
             private var beneficiary: JsonField<Beneficiary> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
@@ -1292,19 +1281,19 @@ private constructor(
                 additionalProperties = clabe.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: ClabeAccountInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [ClabeAccountInfo.AccountType] value instead. This method is primarily for setting
-             * the field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("CLABE")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<ClabeAccountInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** 18-digit CLABE number (Mexican banking standard) */
             fun clabeNumber(clabeNumber: String) = clabeNumber(JsonField.of(clabeNumber))
@@ -1384,7 +1373,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .clabeNumber()
              * ```
              *
@@ -1392,7 +1380,7 @@ private constructor(
              */
             fun build(): Clabe =
                 Clabe(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("clabeNumber", clabeNumber),
                     beneficiary,
                     additionalProperties.toMutableMap(),
@@ -1406,7 +1394,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("CLABE")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             clabeNumber()
             beneficiary()?.validate()
             validated = true
@@ -1427,7 +1419,7 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) +
+            accountType.let { if (it == JsonValue.from("CLABE")) 1 else 0 } +
                 (if (clabeNumber.asKnown() == null) 0 else 1) +
                 (beneficiary.asKnown()?.validity() ?: 0)
 
@@ -1750,7 +1742,7 @@ private constructor(
     class Pix
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<PixAccountInfo.AccountType>,
+        private val accountType: JsonValue,
         private val pixKey: JsonField<String>,
         private val pixKeyType: JsonField<PixAccountInfo.PixKeyType>,
         private val taxId: JsonField<String>,
@@ -1760,9 +1752,7 @@ private constructor(
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<PixAccountInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("pixKey") @ExcludeMissing pixKey: JsonField<String> = JsonMissing.of(),
             @JsonProperty("pixKeyType")
             @ExcludeMissing
@@ -1782,10 +1772,15 @@ private constructor(
                 .build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("PIX")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): PixAccountInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * PIX key for Brazilian instant payments
@@ -1816,15 +1811,6 @@ private constructor(
          *   server responded with an unexpected value).
          */
         fun beneficiary(): Beneficiary? = beneficiary.getNullable("beneficiary")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<PixAccountInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [pixKey].
@@ -1877,7 +1863,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .pixKey()
              * .pixKeyType()
              * .taxId()
@@ -1889,7 +1874,7 @@ private constructor(
         /** A builder for [Pix]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<PixAccountInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("PIX")
             private var pixKey: JsonField<String>? = null
             private var pixKeyType: JsonField<PixAccountInfo.PixKeyType>? = null
             private var taxId: JsonField<String>? = null
@@ -1905,19 +1890,19 @@ private constructor(
                 additionalProperties = pix.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: PixAccountInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [PixAccountInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("PIX")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<PixAccountInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** PIX key for Brazilian instant payments */
             fun pixKey(pixKey: String) = pixKey(JsonField.of(pixKey))
@@ -2022,7 +2007,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .pixKey()
              * .pixKeyType()
              * .taxId()
@@ -2032,7 +2016,7 @@ private constructor(
              */
             fun build(): Pix =
                 Pix(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("pixKey", pixKey),
                     checkRequired("pixKeyType", pixKeyType),
                     checkRequired("taxId", taxId),
@@ -2048,7 +2032,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("PIX")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             pixKey()
             pixKeyType().validate()
             taxId()
@@ -2071,7 +2059,7 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) +
+            accountType.let { if (it == JsonValue.from("PIX")) 1 else 0 } +
                 (if (pixKey.asKnown() == null) 0 else 1) +
                 (pixKeyType.asKnown()?.validity() ?: 0) +
                 (if (taxId.asKnown() == null) 0 else 1) +
@@ -2398,7 +2386,7 @@ private constructor(
     class Iban
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<IbanAccountInfo.AccountType>,
+        private val accountType: JsonValue,
         private val iban: JsonField<String>,
         private val swiftBic: JsonField<String>,
         private val beneficiary: JsonField<Beneficiary>,
@@ -2407,9 +2395,7 @@ private constructor(
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<IbanAccountInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("iban") @ExcludeMissing iban: JsonField<String> = JsonMissing.of(),
             @JsonProperty("swiftBic")
             @ExcludeMissing
@@ -2423,10 +2409,15 @@ private constructor(
             IbanAccountInfo.builder().accountType(accountType).iban(iban).swiftBic(swiftBic).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("IBAN")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): IbanAccountInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * International Bank Account Number
@@ -2449,15 +2440,6 @@ private constructor(
          *   server responded with an unexpected value).
          */
         fun beneficiary(): Beneficiary? = beneficiary.getNullable("beneficiary")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<IbanAccountInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [iban].
@@ -2501,7 +2483,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .iban()
              * .swiftBic()
              * ```
@@ -2512,7 +2493,7 @@ private constructor(
         /** A builder for [Iban]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<IbanAccountInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("IBAN")
             private var iban: JsonField<String>? = null
             private var swiftBic: JsonField<String>? = null
             private var beneficiary: JsonField<Beneficiary> = JsonMissing.of()
@@ -2526,19 +2507,19 @@ private constructor(
                 additionalProperties = iban.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: IbanAccountInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [IbanAccountInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("IBAN")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<IbanAccountInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** International Bank Account Number */
             fun iban(iban: String) = iban(JsonField.of(iban))
@@ -2628,7 +2609,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .iban()
              * .swiftBic()
              * ```
@@ -2637,7 +2617,7 @@ private constructor(
              */
             fun build(): Iban =
                 Iban(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("iban", iban),
                     checkRequired("swiftBic", swiftBic),
                     beneficiary,
@@ -2652,7 +2632,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("IBAN")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             iban()
             swiftBic()
             beneficiary()?.validate()
@@ -2674,7 +2658,7 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) +
+            accountType.let { if (it == JsonValue.from("IBAN")) 1 else 0 } +
                 (if (iban.asKnown() == null) 0 else 1) +
                 (if (swiftBic.asKnown() == null) 0 else 1) +
                 (beneficiary.asKnown()?.validity() ?: 0)
@@ -2999,7 +2983,7 @@ private constructor(
     class Upi
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<UpiAccountInfo.AccountType>,
+        private val accountType: JsonValue,
         private val vpa: JsonField<String>,
         private val beneficiary: JsonField<Beneficiary>,
         private val additionalProperties: MutableMap<String, JsonValue>,
@@ -3007,9 +2991,7 @@ private constructor(
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<UpiAccountInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("vpa") @ExcludeMissing vpa: JsonField<String> = JsonMissing.of(),
             @JsonProperty("beneficiary")
             @ExcludeMissing
@@ -3020,10 +3002,15 @@ private constructor(
             UpiAccountInfo.builder().accountType(accountType).vpa(vpa).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("UPI")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): UpiAccountInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * Virtual Payment Address for UPI payments
@@ -3038,15 +3025,6 @@ private constructor(
          *   server responded with an unexpected value).
          */
         fun beneficiary(): Beneficiary? = beneficiary.getNullable("beneficiary")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<UpiAccountInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [vpa].
@@ -3083,7 +3061,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .vpa()
              * ```
              */
@@ -3093,7 +3070,7 @@ private constructor(
         /** A builder for [Upi]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<UpiAccountInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("UPI")
             private var vpa: JsonField<String>? = null
             private var beneficiary: JsonField<Beneficiary> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
@@ -3105,19 +3082,19 @@ private constructor(
                 additionalProperties = upi.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: UpiAccountInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [UpiAccountInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("UPI")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<UpiAccountInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** Virtual Payment Address for UPI payments */
             fun vpa(vpa: String) = vpa(JsonField.of(vpa))
@@ -3195,7 +3172,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .vpa()
              * ```
              *
@@ -3203,7 +3179,7 @@ private constructor(
              */
             fun build(): Upi =
                 Upi(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("vpa", vpa),
                     beneficiary,
                     additionalProperties.toMutableMap(),
@@ -3217,7 +3193,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("UPI")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             vpa()
             beneficiary()?.validate()
             validated = true
@@ -3238,7 +3218,7 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) +
+            accountType.let { if (it == JsonValue.from("UPI")) 1 else 0 } +
                 (if (vpa.asKnown() == null) 0 else 1) +
                 (beneficiary.asKnown()?.validity() ?: 0)
 
@@ -4292,16 +4272,14 @@ private constructor(
     class SparkWallet
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<SparkWalletInfo.AccountType>,
+        private val accountType: JsonValue,
         private val address: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<SparkWalletInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("address") @ExcludeMissing address: JsonField<String> = JsonMissing.of(),
         ) : this(accountType, address, mutableMapOf())
 
@@ -4309,10 +4287,15 @@ private constructor(
             SparkWalletInfo.builder().accountType(accountType).address(address).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("SPARK_WALLET")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): SparkWalletInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * Spark wallet address
@@ -4321,15 +4304,6 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun address(): String = address.getRequired("address")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<SparkWalletInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [address].
@@ -4357,7 +4331,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              */
@@ -4367,7 +4340,7 @@ private constructor(
         /** A builder for [SparkWallet]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<SparkWalletInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("SPARK_WALLET")
             private var address: JsonField<String>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
@@ -4377,19 +4350,19 @@ private constructor(
                 additionalProperties = sparkWallet.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: SparkWalletInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [SparkWalletInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("SPARK_WALLET")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<SparkWalletInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** Spark wallet address */
             fun address(address: String) = address(JsonField.of(address))
@@ -4429,7 +4402,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              *
@@ -4437,7 +4409,7 @@ private constructor(
              */
             fun build(): SparkWallet =
                 SparkWallet(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("address", address),
                     additionalProperties.toMutableMap(),
                 )
@@ -4450,7 +4422,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("SPARK_WALLET")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             address()
             validated = true
         }
@@ -4470,7 +4446,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
+            accountType.let { if (it == JsonValue.from("SPARK_WALLET")) 1 else 0 } +
+                (if (address.asKnown() == null) 0 else 1)
 
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
@@ -5824,16 +5801,14 @@ private constructor(
     class SolanaWallet
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<SolanaWalletInfo.AccountType>,
+        private val accountType: JsonValue,
         private val address: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<SolanaWalletInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("address") @ExcludeMissing address: JsonField<String> = JsonMissing.of(),
         ) : this(accountType, address, mutableMapOf())
 
@@ -5841,10 +5816,15 @@ private constructor(
             SolanaWalletInfo.builder().accountType(accountType).address(address).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("SOLANA_WALLET")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): SolanaWalletInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * Solana wallet address
@@ -5853,15 +5833,6 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun address(): String = address.getRequired("address")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<SolanaWalletInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [address].
@@ -5889,7 +5860,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              */
@@ -5899,7 +5869,7 @@ private constructor(
         /** A builder for [SolanaWallet]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<SolanaWalletInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("SOLANA_WALLET")
             private var address: JsonField<String>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
@@ -5909,19 +5879,19 @@ private constructor(
                 additionalProperties = solanaWallet.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: SolanaWalletInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [SolanaWalletInfo.AccountType] value instead. This method is primarily for setting
-             * the field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("SOLANA_WALLET")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<SolanaWalletInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** Solana wallet address */
             fun address(address: String) = address(JsonField.of(address))
@@ -5961,7 +5931,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              *
@@ -5969,7 +5938,7 @@ private constructor(
              */
             fun build(): SolanaWallet =
                 SolanaWallet(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("address", address),
                     additionalProperties.toMutableMap(),
                 )
@@ -5982,7 +5951,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("SOLANA_WALLET")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             address()
             validated = true
         }
@@ -6002,7 +5975,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
+            accountType.let { if (it == JsonValue.from("SOLANA_WALLET")) 1 else 0 } +
+                (if (address.asKnown() == null) 0 else 1)
 
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
@@ -6151,16 +6125,14 @@ private constructor(
     class TronWallet
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<TronWalletInfo.AccountType>,
+        private val accountType: JsonValue,
         private val address: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<TronWalletInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("address") @ExcludeMissing address: JsonField<String> = JsonMissing.of(),
         ) : this(accountType, address, mutableMapOf())
 
@@ -6168,10 +6140,15 @@ private constructor(
             TronWalletInfo.builder().accountType(accountType).address(address).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("TRON_WALLET")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): TronWalletInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * Tron wallet address
@@ -6180,15 +6157,6 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun address(): String = address.getRequired("address")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<TronWalletInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [address].
@@ -6216,7 +6184,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              */
@@ -6226,7 +6193,7 @@ private constructor(
         /** A builder for [TronWallet]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<TronWalletInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("TRON_WALLET")
             private var address: JsonField<String>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
@@ -6236,19 +6203,19 @@ private constructor(
                 additionalProperties = tronWallet.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: TronWalletInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [TronWalletInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("TRON_WALLET")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<TronWalletInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** Tron wallet address */
             fun address(address: String) = address(JsonField.of(address))
@@ -6288,7 +6255,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              *
@@ -6296,7 +6262,7 @@ private constructor(
              */
             fun build(): TronWallet =
                 TronWallet(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("address", address),
                     additionalProperties.toMutableMap(),
                 )
@@ -6309,7 +6275,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("TRON_WALLET")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             address()
             validated = true
         }
@@ -6329,7 +6299,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
+            accountType.let { if (it == JsonValue.from("TRON_WALLET")) 1 else 0 } +
+                (if (address.asKnown() == null) 0 else 1)
 
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
@@ -6478,16 +6449,14 @@ private constructor(
     class PolygonWallet
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<PolygonWalletInfo.AccountType>,
+        private val accountType: JsonValue,
         private val address: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<PolygonWalletInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("address") @ExcludeMissing address: JsonField<String> = JsonMissing.of(),
         ) : this(accountType, address, mutableMapOf())
 
@@ -6495,10 +6464,15 @@ private constructor(
             PolygonWalletInfo.builder().accountType(accountType).address(address).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("POLYGON_WALLET")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): PolygonWalletInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * Polygon eth wallet address
@@ -6507,15 +6481,6 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun address(): String = address.getRequired("address")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<PolygonWalletInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [address].
@@ -6543,7 +6508,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              */
@@ -6553,7 +6517,7 @@ private constructor(
         /** A builder for [PolygonWallet]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<PolygonWalletInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("POLYGON_WALLET")
             private var address: JsonField<String>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
@@ -6563,19 +6527,19 @@ private constructor(
                 additionalProperties = polygonWallet.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: PolygonWalletInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [PolygonWalletInfo.AccountType] value instead. This method is primarily for setting
-             * the field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("POLYGON_WALLET")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<PolygonWalletInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** Polygon eth wallet address */
             fun address(address: String) = address(JsonField.of(address))
@@ -6615,7 +6579,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              *
@@ -6623,7 +6586,7 @@ private constructor(
              */
             fun build(): PolygonWallet =
                 PolygonWallet(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("address", address),
                     additionalProperties.toMutableMap(),
                 )
@@ -6636,7 +6599,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("POLYGON_WALLET")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             address()
             validated = true
         }
@@ -6656,7 +6623,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
+            accountType.let { if (it == JsonValue.from("POLYGON_WALLET")) 1 else 0 } +
+                (if (address.asKnown() == null) 0 else 1)
 
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
@@ -6805,16 +6773,14 @@ private constructor(
     class BaseWallet
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val accountType: JsonField<BaseWalletInfo.AccountType>,
+        private val accountType: JsonValue,
         private val address: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            accountType: JsonField<BaseWalletInfo.AccountType> = JsonMissing.of(),
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
             @JsonProperty("address") @ExcludeMissing address: JsonField<String> = JsonMissing.of(),
         ) : this(accountType, address, mutableMapOf())
 
@@ -6822,10 +6788,15 @@ private constructor(
             BaseWalletInfo.builder().accountType(accountType).address(address).build()
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("BASE_WALLET")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
          */
-        fun accountType(): BaseWalletInfo.AccountType = accountType.getRequired("accountType")
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
         /**
          * Base eth wallet address
@@ -6834,15 +6805,6 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun address(): String = address.getRequired("address")
-
-        /**
-         * Returns the raw JSON value of [accountType].
-         *
-         * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountType")
-        @ExcludeMissing
-        fun _accountType(): JsonField<BaseWalletInfo.AccountType> = accountType
 
         /**
          * Returns the raw JSON value of [address].
@@ -6870,7 +6832,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              */
@@ -6880,7 +6841,7 @@ private constructor(
         /** A builder for [BaseWallet]. */
         class Builder internal constructor() {
 
-            private var accountType: JsonField<BaseWalletInfo.AccountType>? = null
+            private var accountType: JsonValue = JsonValue.from("BASE_WALLET")
             private var address: JsonField<String>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
@@ -6890,19 +6851,19 @@ private constructor(
                 additionalProperties = baseWallet.additionalProperties.toMutableMap()
             }
 
-            fun accountType(accountType: BaseWalletInfo.AccountType) =
-                accountType(JsonField.of(accountType))
-
             /**
-             * Sets [Builder.accountType] to an arbitrary JSON value.
+             * Sets the field to an arbitrary JSON value.
              *
-             * You should usually call [Builder.accountType] with a well-typed
-             * [BaseWalletInfo.AccountType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("BASE_WALLET")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
              */
-            fun accountType(accountType: JsonField<BaseWalletInfo.AccountType>) = apply {
-                this.accountType = accountType
-            }
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
             /** Base eth wallet address */
             fun address(address: String) = address(JsonField.of(address))
@@ -6942,7 +6903,6 @@ private constructor(
              *
              * The following fields are required:
              * ```kotlin
-             * .accountType()
              * .address()
              * ```
              *
@@ -6950,7 +6910,7 @@ private constructor(
              */
             fun build(): BaseWallet =
                 BaseWallet(
-                    checkRequired("accountType", accountType),
+                    accountType,
                     checkRequired("address", address),
                     additionalProperties.toMutableMap(),
                 )
@@ -6963,7 +6923,11 @@ private constructor(
                 return@apply
             }
 
-            accountType().validate()
+            _accountType().let {
+                if (it != JsonValue.from("BASE_WALLET")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
+                }
+            }
             address()
             validated = true
         }
@@ -6983,7 +6947,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
+            accountType.let { if (it == JsonValue.from("BASE_WALLET")) 1 else 0 } +
+                (if (address.asKnown() == null) 0 else 1)
 
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {

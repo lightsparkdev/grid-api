@@ -12,12 +12,8 @@ internal class TronWalletInfoTest {
     @Test
     fun create() {
         val tronWalletInfo =
-            TronWalletInfo.builder()
-                .accountType(TronWalletInfo.AccountType.TRON_WALLET)
-                .address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
-                .build()
+            TronWalletInfo.builder().address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL").build()
 
-        assertThat(tronWalletInfo.accountType()).isEqualTo(TronWalletInfo.AccountType.TRON_WALLET)
         assertThat(tronWalletInfo.address()).isEqualTo("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
     }
 
@@ -25,10 +21,7 @@ internal class TronWalletInfoTest {
     fun roundtrip() {
         val jsonMapper = jsonMapper()
         val tronWalletInfo =
-            TronWalletInfo.builder()
-                .accountType(TronWalletInfo.AccountType.TRON_WALLET)
-                .address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
-                .build()
+            TronWalletInfo.builder().address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL").build()
 
         val roundtrippedTronWalletInfo =
             jsonMapper.readValue(
