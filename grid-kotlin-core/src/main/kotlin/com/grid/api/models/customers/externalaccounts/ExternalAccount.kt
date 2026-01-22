@@ -257,6 +257,17 @@ private constructor(
         fun accountInfo(clabe: ExternalAccountInfo.Clabe) =
             accountInfo(ExternalAccountInfo.ofClabe(clabe))
 
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.Clabe.builder()
+         *     .clabeNumber(clabeNumber)
+         *     .build()
+         * ```
+         */
+        fun clabeAccountInfo(clabeNumber: String) =
+            accountInfo(ExternalAccountInfo.Clabe.builder().clabeNumber(clabeNumber).build())
+
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofPix(pix)`. */
         fun accountInfo(pix: ExternalAccountInfo.Pix) = accountInfo(ExternalAccountInfo.ofPix(pix))
 
@@ -266,6 +277,17 @@ private constructor(
 
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofUpi(upi)`. */
         fun accountInfo(upi: ExternalAccountInfo.Upi) = accountInfo(ExternalAccountInfo.ofUpi(upi))
+
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.Upi.builder()
+         *     .vpa(vpa)
+         *     .build()
+         * ```
+         */
+        fun upiAccountInfo(vpa: String) =
+            accountInfo(ExternalAccountInfo.Upi.builder().vpa(vpa).build())
 
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofNgnAccount(ngnAccount)`. */
         fun accountInfo(ngnAccount: ExternalAccountInfo.NgnAccount) =
@@ -277,6 +299,17 @@ private constructor(
         fun accountInfo(sparkWallet: ExternalAccountInfo.SparkWallet) =
             accountInfo(ExternalAccountInfo.ofSparkWallet(sparkWallet))
 
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.SparkWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun sparkWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfo.SparkWallet.builder().address(address).build())
+
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofLightning(lightning)`. */
         fun accountInfo(lightning: ExternalAccountInfo.LightningExternalAccountInfo) =
             accountInfo(ExternalAccountInfo.ofLightning(lightning))
@@ -287,9 +320,31 @@ private constructor(
         fun accountInfo(solanaWallet: ExternalAccountInfo.SolanaWallet) =
             accountInfo(ExternalAccountInfo.ofSolanaWallet(solanaWallet))
 
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.SolanaWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun solanaWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfo.SolanaWallet.builder().address(address).build())
+
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofTronWallet(tronWallet)`. */
         fun accountInfo(tronWallet: ExternalAccountInfo.TronWallet) =
             accountInfo(ExternalAccountInfo.ofTronWallet(tronWallet))
+
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.TronWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun tronWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfo.TronWallet.builder().address(address).build())
 
         /**
          * Alias for calling [accountInfo] with
@@ -298,9 +353,31 @@ private constructor(
         fun accountInfo(polygonWallet: ExternalAccountInfo.PolygonWallet) =
             accountInfo(ExternalAccountInfo.ofPolygonWallet(polygonWallet))
 
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.PolygonWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun polygonWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfo.PolygonWallet.builder().address(address).build())
+
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofBaseWallet(baseWallet)`. */
         fun accountInfo(baseWallet: ExternalAccountInfo.BaseWallet) =
             accountInfo(ExternalAccountInfo.ofBaseWallet(baseWallet))
+
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfo.BaseWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun baseWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfo.BaseWallet.builder().address(address).build())
 
         /** The ISO 4217 currency code */
         fun currency(currency: String) = currency(JsonField.of(currency))
