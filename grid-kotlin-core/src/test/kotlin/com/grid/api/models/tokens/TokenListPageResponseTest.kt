@@ -8,12 +8,12 @@ import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class TokenListResponseTest {
+internal class TokenListPageResponseTest {
 
     @Test
     fun create() {
-        val tokenListResponse =
-            TokenListResponse.builder()
+        val tokenListPageResponse =
+            TokenListPageResponse.builder()
                 .addData(
                     ApiToken.builder()
                         .id("Token:019542f5-b3e7-1d02-0000-000000000001")
@@ -30,7 +30,7 @@ internal class TokenListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        assertThat(tokenListResponse.data())
+        assertThat(tokenListPageResponse.data())
             .containsExactly(
                 ApiToken.builder()
                     .id("Token:019542f5-b3e7-1d02-0000-000000000001")
@@ -42,16 +42,16 @@ internal class TokenListResponseTest {
                     .clientSecret("ed0ad25881e234cc28fb2dec0a4fe64e4172")
                     .build()
             )
-        assertThat(tokenListResponse.hasMore()).isEqualTo(true)
-        assertThat(tokenListResponse.nextCursor()).isEqualTo("nextCursor")
-        assertThat(tokenListResponse.totalCount()).isEqualTo(0L)
+        assertThat(tokenListPageResponse.hasMore()).isEqualTo(true)
+        assertThat(tokenListPageResponse.nextCursor()).isEqualTo("nextCursor")
+        assertThat(tokenListPageResponse.totalCount()).isEqualTo(0L)
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val tokenListResponse =
-            TokenListResponse.builder()
+        val tokenListPageResponse =
+            TokenListPageResponse.builder()
                 .addData(
                     ApiToken.builder()
                         .id("Token:019542f5-b3e7-1d02-0000-000000000001")
@@ -68,12 +68,12 @@ internal class TokenListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        val roundtrippedTokenListResponse =
+        val roundtrippedTokenListPageResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(tokenListResponse),
-                jacksonTypeRef<TokenListResponse>(),
+                jsonMapper.writeValueAsString(tokenListPageResponse),
+                jacksonTypeRef<TokenListPageResponse>(),
             )
 
-        assertThat(roundtrippedTokenListResponse).isEqualTo(tokenListResponse)
+        assertThat(roundtrippedTokenListPageResponse).isEqualTo(tokenListPageResponse)
     }
 }

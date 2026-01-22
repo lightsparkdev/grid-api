@@ -8,8 +8,8 @@ import com.grid.api.core.RequestOptions
 import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.transactions.IncomingTransaction
 import com.grid.api.models.transactions.TransactionApproveParams
+import com.grid.api.models.transactions.TransactionListPage
 import com.grid.api.models.transactions.TransactionListParams
-import com.grid.api.models.transactions.TransactionListResponse
 import com.grid.api.models.transactions.TransactionRejectParams
 import com.grid.api.models.transactions.TransactionRetrieveParams
 import com.grid.api.models.transferin.Transaction
@@ -54,10 +54,10 @@ interface TransactionService {
     fun list(
         params: TransactionListParams = TransactionListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): TransactionListResponse
+    ): TransactionListPage
 
     /** @see list */
-    fun list(requestOptions: RequestOptions): TransactionListResponse =
+    fun list(requestOptions: RequestOptions): TransactionListPage =
         list(TransactionListParams.none(), requestOptions)
 
     /**
@@ -151,11 +151,11 @@ interface TransactionService {
         fun list(
             params: TransactionListParams = TransactionListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<TransactionListResponse>
+        ): HttpResponseFor<TransactionListPage>
 
         /** @see list */
         @MustBeClosed
-        fun list(requestOptions: RequestOptions): HttpResponseFor<TransactionListResponse> =
+        fun list(requestOptions: RequestOptions): HttpResponseFor<TransactionListPage> =
             list(TransactionListParams.none(), requestOptions)
 
         /**

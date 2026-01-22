@@ -10,8 +10,8 @@ import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.tokens.ApiToken
 import com.grid.api.models.tokens.TokenCreateParams
 import com.grid.api.models.tokens.TokenDeleteParams
+import com.grid.api.models.tokens.TokenListPageAsync
 import com.grid.api.models.tokens.TokenListParams
-import com.grid.api.models.tokens.TokenListResponse
 import com.grid.api.models.tokens.TokenRetrieveParams
 
 interface TokenServiceAsync {
@@ -58,10 +58,10 @@ interface TokenServiceAsync {
     suspend fun list(
         params: TokenListParams = TokenListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): TokenListResponse
+    ): TokenListPageAsync
 
     /** @see list */
-    suspend fun list(requestOptions: RequestOptions): TokenListResponse =
+    suspend fun list(requestOptions: RequestOptions): TokenListPageAsync =
         list(TokenListParams.none(), requestOptions)
 
     /** Delete an API token by their system-generated ID */
@@ -137,11 +137,11 @@ interface TokenServiceAsync {
         suspend fun list(
             params: TokenListParams = TokenListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<TokenListResponse>
+        ): HttpResponseFor<TokenListPageAsync>
 
         /** @see list */
         @MustBeClosed
-        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<TokenListResponse> =
+        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<TokenListPageAsync> =
             list(TokenListParams.none(), requestOptions)
 
         /**

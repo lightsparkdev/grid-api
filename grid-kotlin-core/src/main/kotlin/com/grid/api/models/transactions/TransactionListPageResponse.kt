@@ -18,7 +18,7 @@ import com.grid.api.models.transferin.Transaction
 import java.util.Collections
 import java.util.Objects
 
-class TransactionListResponse
+class TransactionListPageResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
     private val data: JsonField<List<Transaction>>,
@@ -113,7 +113,7 @@ private constructor(
     companion object {
 
         /**
-         * Returns a mutable builder for constructing an instance of [TransactionListResponse].
+         * Returns a mutable builder for constructing an instance of [TransactionListPageResponse].
          *
          * The following fields are required:
          * ```kotlin
@@ -124,7 +124,7 @@ private constructor(
         fun builder() = Builder()
     }
 
-    /** A builder for [TransactionListResponse]. */
+    /** A builder for [TransactionListPageResponse]. */
     class Builder internal constructor() {
 
         private var data: JsonField<MutableList<Transaction>>? = null
@@ -133,12 +133,12 @@ private constructor(
         private var totalCount: JsonField<Long> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-        internal fun from(transactionListResponse: TransactionListResponse) = apply {
-            data = transactionListResponse.data.map { it.toMutableList() }
-            hasMore = transactionListResponse.hasMore
-            nextCursor = transactionListResponse.nextCursor
-            totalCount = transactionListResponse.totalCount
-            additionalProperties = transactionListResponse.additionalProperties.toMutableMap()
+        internal fun from(transactionListPageResponse: TransactionListPageResponse) = apply {
+            data = transactionListPageResponse.data.map { it.toMutableList() }
+            hasMore = transactionListPageResponse.hasMore
+            nextCursor = transactionListPageResponse.nextCursor
+            totalCount = transactionListPageResponse.totalCount
+            additionalProperties = transactionListPageResponse.additionalProperties.toMutableMap()
         }
 
         /** List of transactions matching the criteria */
@@ -221,7 +221,7 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [TransactionListResponse].
+         * Returns an immutable instance of [TransactionListPageResponse].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          *
@@ -233,8 +233,8 @@ private constructor(
          *
          * @throws IllegalStateException if any required field is unset.
          */
-        fun build(): TransactionListResponse =
-            TransactionListResponse(
+        fun build(): TransactionListPageResponse =
+            TransactionListPageResponse(
                 checkRequired("data", data).map { it.toImmutable() },
                 checkRequired("hasMore", hasMore),
                 nextCursor,
@@ -245,7 +245,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): TransactionListResponse = apply {
+    fun validate(): TransactionListPageResponse = apply {
         if (validated) {
             return@apply
         }
@@ -281,7 +281,7 @@ private constructor(
             return true
         }
 
-        return other is TransactionListResponse &&
+        return other is TransactionListPageResponse &&
             data == other.data &&
             hasMore == other.hasMore &&
             nextCursor == other.nextCursor &&
@@ -296,5 +296,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "TransactionListResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
+        "TransactionListPageResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
 }

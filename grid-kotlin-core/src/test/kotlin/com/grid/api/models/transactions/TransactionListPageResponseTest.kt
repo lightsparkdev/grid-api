@@ -10,12 +10,12 @@ import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class TransactionListResponseTest {
+internal class TransactionListPageResponseTest {
 
     @Test
     fun create() {
-        val transactionListResponse =
-            TransactionListResponse.builder()
+        val transactionListPageResponse =
+            TransactionListPageResponse.builder()
                 .addData(
                     Transaction.builder()
                         .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
@@ -47,7 +47,7 @@ internal class TransactionListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        assertThat(transactionListResponse.data())
+        assertThat(transactionListPageResponse.data())
             .containsExactly(
                 Transaction.builder()
                     .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
@@ -74,16 +74,16 @@ internal class TransactionListResponseTest {
                     .updatedAt(OffsetDateTime.parse("2025-08-15T14:30:00Z"))
                     .build()
             )
-        assertThat(transactionListResponse.hasMore()).isEqualTo(true)
-        assertThat(transactionListResponse.nextCursor()).isEqualTo("nextCursor")
-        assertThat(transactionListResponse.totalCount()).isEqualTo(0L)
+        assertThat(transactionListPageResponse.hasMore()).isEqualTo(true)
+        assertThat(transactionListPageResponse.nextCursor()).isEqualTo("nextCursor")
+        assertThat(transactionListPageResponse.totalCount()).isEqualTo(0L)
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val transactionListResponse =
-            TransactionListResponse.builder()
+        val transactionListPageResponse =
+            TransactionListPageResponse.builder()
                 .addData(
                     Transaction.builder()
                         .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
@@ -115,12 +115,12 @@ internal class TransactionListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        val roundtrippedTransactionListResponse =
+        val roundtrippedTransactionListPageResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(transactionListResponse),
-                jacksonTypeRef<TransactionListResponse>(),
+                jsonMapper.writeValueAsString(transactionListPageResponse),
+                jacksonTypeRef<TransactionListPageResponse>(),
             )
 
-        assertThat(roundtrippedTransactionListResponse).isEqualTo(transactionListResponse)
+        assertThat(roundtrippedTransactionListPageResponse).isEqualTo(transactionListPageResponse)
     }
 }

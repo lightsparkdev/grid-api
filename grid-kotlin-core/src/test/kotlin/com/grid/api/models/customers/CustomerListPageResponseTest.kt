@@ -1,0 +1,124 @@
+// File generated from our OpenAPI spec by Stainless.
+
+package com.grid.api.models.customers
+
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
+import com.grid.api.core.jsonMapper
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+
+internal class CustomerListPageResponseTest {
+
+    @Test
+    fun create() {
+        val customerListPageResponse =
+            CustomerListPageResponse.builder()
+                .addData(
+                    IndividualCustomer.builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
+                        .umaAddress("\$john.doe@uma.domain.com")
+                        .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                        .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                        .isDeleted(false)
+                        .kycStatus(Customer.KycStatus.APPROVED)
+                        .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                        .address(
+                            Address.builder()
+                                .country("US")
+                                .line1("123 Main Street")
+                                .postalCode("94105")
+                                .city("San Francisco")
+                                .line2("Apt 4B")
+                                .state("CA")
+                                .build()
+                        )
+                        .birthDate(LocalDate.parse("1990-01-15"))
+                        .fullName("John Michael Doe")
+                        .nationality("US")
+                        .build()
+                )
+                .hasMore(true)
+                .nextCursor("nextCursor")
+                .totalCount(0L)
+                .build()
+
+        assertThat(customerListPageResponse.data())
+            .containsExactly(
+                CustomerListResponse.ofIndividualCustomer(
+                    IndividualCustomer.builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
+                        .umaAddress("\$john.doe@uma.domain.com")
+                        .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                        .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                        .isDeleted(false)
+                        .kycStatus(Customer.KycStatus.APPROVED)
+                        .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                        .address(
+                            Address.builder()
+                                .country("US")
+                                .line1("123 Main Street")
+                                .postalCode("94105")
+                                .city("San Francisco")
+                                .line2("Apt 4B")
+                                .state("CA")
+                                .build()
+                        )
+                        .birthDate(LocalDate.parse("1990-01-15"))
+                        .fullName("John Michael Doe")
+                        .nationality("US")
+                        .build()
+                )
+            )
+        assertThat(customerListPageResponse.hasMore()).isEqualTo(true)
+        assertThat(customerListPageResponse.nextCursor()).isEqualTo("nextCursor")
+        assertThat(customerListPageResponse.totalCount()).isEqualTo(0L)
+    }
+
+    @Test
+    fun roundtrip() {
+        val jsonMapper = jsonMapper()
+        val customerListPageResponse =
+            CustomerListPageResponse.builder()
+                .addData(
+                    IndividualCustomer.builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
+                        .umaAddress("\$john.doe@uma.domain.com")
+                        .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                        .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                        .isDeleted(false)
+                        .kycStatus(Customer.KycStatus.APPROVED)
+                        .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                        .address(
+                            Address.builder()
+                                .country("US")
+                                .line1("123 Main Street")
+                                .postalCode("94105")
+                                .city("San Francisco")
+                                .line2("Apt 4B")
+                                .state("CA")
+                                .build()
+                        )
+                        .birthDate(LocalDate.parse("1990-01-15"))
+                        .fullName("John Michael Doe")
+                        .nationality("US")
+                        .build()
+                )
+                .hasMore(true)
+                .nextCursor("nextCursor")
+                .totalCount(0L)
+                .build()
+
+        val roundtrippedCustomerListPageResponse =
+            jsonMapper.readValue(
+                jsonMapper.writeValueAsString(customerListPageResponse),
+                jacksonTypeRef<CustomerListPageResponse>(),
+            )
+
+        assertThat(roundtrippedCustomerListPageResponse).isEqualTo(customerListPageResponse)
+    }
+}

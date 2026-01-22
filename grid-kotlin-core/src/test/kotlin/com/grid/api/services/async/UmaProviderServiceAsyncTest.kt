@@ -4,7 +4,6 @@ package com.grid.api.services.async
 
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
-import com.grid.api.models.umaproviders.UmaProviderListParams
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -23,18 +22,8 @@ internal class UmaProviderServiceAsyncTest {
                 .build()
         val umaProviderServiceAsync = client.umaProviders()
 
-        val umaProviders =
-            umaProviderServiceAsync.list(
-                UmaProviderListParams.builder()
-                    .countryCode("US")
-                    .currencyCode("USD")
-                    .cursor("cursor")
-                    .hasBlockedProviders(true)
-                    .limit(1L)
-                    .sortOrder(UmaProviderListParams.SortOrder.ASC)
-                    .build()
-            )
+        val page = umaProviderServiceAsync.list()
 
-        umaProviders.validate()
+        page.response().validate()
     }
 }

@@ -6,11 +6,7 @@ import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.JsonValue
 import com.grid.api.models.transactions.TransactionApproveParams
-import com.grid.api.models.transactions.TransactionListParams
 import com.grid.api.models.transactions.TransactionRejectParams
-import com.grid.api.models.transactions.TransactionStatus
-import com.grid.api.models.transactions.TransactionType
-import java.time.OffsetDateTime
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -45,25 +41,9 @@ internal class TransactionServiceTest {
                 .build()
         val transactionService = client.transactions()
 
-        val transactions =
-            transactionService.list(
-                TransactionListParams.builder()
-                    .cursor("cursor")
-                    .customerId("customerId")
-                    .endDate(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .limit(1L)
-                    .platformCustomerId("platformCustomerId")
-                    .receiverAccountIdentifier("receiverAccountIdentifier")
-                    .reference("reference")
-                    .senderAccountIdentifier("senderAccountIdentifier")
-                    .sortOrder(TransactionListParams.SortOrder.ASC)
-                    .startDate(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .status(TransactionStatus.CREATED)
-                    .type(TransactionType.INCOMING)
-                    .build()
-            )
+        val page = transactionService.list()
 
-        transactions.validate()
+        page.response().validate()
     }
 
     @Disabled("Prism tests are disabled")

@@ -12,10 +12,10 @@ import com.grid.api.models.customers.CustomerDeleteParams
 import com.grid.api.models.customers.CustomerDeleteResponse
 import com.grid.api.models.customers.CustomerGetKycLinkParams
 import com.grid.api.models.customers.CustomerGetKycLinkResponse
+import com.grid.api.models.customers.CustomerListInternalAccountsPage
 import com.grid.api.models.customers.CustomerListInternalAccountsParams
-import com.grid.api.models.customers.CustomerListInternalAccountsResponse
+import com.grid.api.models.customers.CustomerListPage
 import com.grid.api.models.customers.CustomerListParams
-import com.grid.api.models.customers.CustomerListResponse
 import com.grid.api.models.customers.CustomerRetrieveParams
 import com.grid.api.models.customers.CustomerRetrieveResponse
 import com.grid.api.models.customers.CustomerUpdateParams
@@ -88,10 +88,10 @@ interface CustomerService {
     fun list(
         params: CustomerListParams = CustomerListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): CustomerListResponse
+    ): CustomerListPage
 
     /** @see list */
-    fun list(requestOptions: RequestOptions): CustomerListResponse =
+    fun list(requestOptions: RequestOptions): CustomerListPage =
         list(CustomerListParams.none(), requestOptions)
 
     /** Delete a customer by their system-generated ID */
@@ -129,10 +129,10 @@ interface CustomerService {
     fun listInternalAccounts(
         params: CustomerListInternalAccountsParams = CustomerListInternalAccountsParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): CustomerListInternalAccountsResponse
+    ): CustomerListInternalAccountsPage
 
     /** @see listInternalAccounts */
-    fun listInternalAccounts(requestOptions: RequestOptions): CustomerListInternalAccountsResponse =
+    fun listInternalAccounts(requestOptions: RequestOptions): CustomerListInternalAccountsPage =
         listInternalAccounts(CustomerListInternalAccountsParams.none(), requestOptions)
 
     /** A view of [CustomerService] that provides access to raw HTTP responses for each method. */
@@ -213,11 +213,11 @@ interface CustomerService {
         fun list(
             params: CustomerListParams = CustomerListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<CustomerListResponse>
+        ): HttpResponseFor<CustomerListPage>
 
         /** @see list */
         @MustBeClosed
-        fun list(requestOptions: RequestOptions): HttpResponseFor<CustomerListResponse> =
+        fun list(requestOptions: RequestOptions): HttpResponseFor<CustomerListPage> =
             list(CustomerListParams.none(), requestOptions)
 
         /**
@@ -265,13 +265,13 @@ interface CustomerService {
         fun listInternalAccounts(
             params: CustomerListInternalAccountsParams = CustomerListInternalAccountsParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<CustomerListInternalAccountsResponse>
+        ): HttpResponseFor<CustomerListInternalAccountsPage>
 
         /** @see listInternalAccounts */
         @MustBeClosed
         fun listInternalAccounts(
             requestOptions: RequestOptions
-        ): HttpResponseFor<CustomerListInternalAccountsResponse> =
+        ): HttpResponseFor<CustomerListInternalAccountsPage> =
             listInternalAccounts(CustomerListInternalAccountsParams.none(), requestOptions)
     }
 }

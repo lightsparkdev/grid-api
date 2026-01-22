@@ -6,8 +6,8 @@ import com.google.errorprone.annotations.MustBeClosed
 import com.grid.api.core.ClientOptions
 import com.grid.api.core.RequestOptions
 import com.grid.api.core.http.HttpResponseFor
+import com.grid.api.models.umaproviders.UmaProviderListPageAsync
 import com.grid.api.models.umaproviders.UmaProviderListParams
-import com.grid.api.models.umaproviders.UmaProviderListResponse
 
 interface UmaProviderServiceAsync {
 
@@ -33,10 +33,10 @@ interface UmaProviderServiceAsync {
     suspend fun list(
         params: UmaProviderListParams = UmaProviderListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): UmaProviderListResponse
+    ): UmaProviderListPageAsync
 
     /** @see list */
-    suspend fun list(requestOptions: RequestOptions): UmaProviderListResponse =
+    suspend fun list(requestOptions: RequestOptions): UmaProviderListPageAsync =
         list(UmaProviderListParams.none(), requestOptions)
 
     /**
@@ -62,11 +62,13 @@ interface UmaProviderServiceAsync {
         suspend fun list(
             params: UmaProviderListParams = UmaProviderListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<UmaProviderListResponse>
+        ): HttpResponseFor<UmaProviderListPageAsync>
 
         /** @see list */
         @MustBeClosed
-        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<UmaProviderListResponse> =
+        suspend fun list(
+            requestOptions: RequestOptions
+        ): HttpResponseFor<UmaProviderListPageAsync> =
             list(UmaProviderListParams.none(), requestOptions)
     }
 }

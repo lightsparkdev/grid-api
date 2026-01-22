@@ -12,12 +12,12 @@ import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class CustomerListInternalAccountsResponseTest {
+internal class CustomerListInternalAccountsPageResponseTest {
 
     @Test
     fun create() {
-        val customerListInternalAccountsResponse =
-            CustomerListInternalAccountsResponse.builder()
+        val customerListInternalAccountsPageResponse =
+            CustomerListInternalAccountsPageResponse.builder()
                 .addData(
                     InternalAccount.builder()
                         .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -57,7 +57,7 @@ internal class CustomerListInternalAccountsResponseTest {
                 .totalCount(0L)
                 .build()
 
-        assertThat(customerListInternalAccountsResponse.data())
+        assertThat(customerListInternalAccountsPageResponse.data())
             .containsExactly(
                 InternalAccount.builder()
                     .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -92,16 +92,16 @@ internal class CustomerListInternalAccountsResponseTest {
                     .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                     .build()
             )
-        assertThat(customerListInternalAccountsResponse.hasMore()).isEqualTo(true)
-        assertThat(customerListInternalAccountsResponse.nextCursor()).isEqualTo("nextCursor")
-        assertThat(customerListInternalAccountsResponse.totalCount()).isEqualTo(0L)
+        assertThat(customerListInternalAccountsPageResponse.hasMore()).isEqualTo(true)
+        assertThat(customerListInternalAccountsPageResponse.nextCursor()).isEqualTo("nextCursor")
+        assertThat(customerListInternalAccountsPageResponse.totalCount()).isEqualTo(0L)
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val customerListInternalAccountsResponse =
-            CustomerListInternalAccountsResponse.builder()
+        val customerListInternalAccountsPageResponse =
+            CustomerListInternalAccountsPageResponse.builder()
                 .addData(
                     InternalAccount.builder()
                         .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -141,13 +141,13 @@ internal class CustomerListInternalAccountsResponseTest {
                 .totalCount(0L)
                 .build()
 
-        val roundtrippedCustomerListInternalAccountsResponse =
+        val roundtrippedCustomerListInternalAccountsPageResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customerListInternalAccountsResponse),
-                jacksonTypeRef<CustomerListInternalAccountsResponse>(),
+                jsonMapper.writeValueAsString(customerListInternalAccountsPageResponse),
+                jacksonTypeRef<CustomerListInternalAccountsPageResponse>(),
             )
 
-        assertThat(roundtrippedCustomerListInternalAccountsResponse)
-            .isEqualTo(customerListInternalAccountsResponse)
+        assertThat(roundtrippedCustomerListInternalAccountsPageResponse)
+            .isEqualTo(customerListInternalAccountsPageResponse)
     }
 }

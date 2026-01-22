@@ -7,7 +7,6 @@ import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreate
 import com.grid.api.models.customers.externalaccounts.ExternalAccountInfo
-import com.grid.api.models.customers.externalaccounts.ExternalAccountListParams
 import com.grid.api.models.customers.externalaccounts.IndividualBeneficiary
 import com.grid.api.models.customers.externalaccounts.UsAccountInfo
 import java.time.LocalDate
@@ -78,16 +77,8 @@ internal class ExternalAccountServiceTest {
                 .build()
         val externalAccountService = client.customers().externalAccounts()
 
-        val externalAccounts =
-            externalAccountService.list(
-                ExternalAccountListParams.builder()
-                    .currency("currency")
-                    .cursor("cursor")
-                    .customerId("customerId")
-                    .limit(1L)
-                    .build()
-            )
+        val page = externalAccountService.list()
 
-        externalAccounts.validate()
+        page.response().validate()
     }
 }

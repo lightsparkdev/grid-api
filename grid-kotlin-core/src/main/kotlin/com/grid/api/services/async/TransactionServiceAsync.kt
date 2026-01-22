@@ -8,8 +8,8 @@ import com.grid.api.core.RequestOptions
 import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.transactions.IncomingTransaction
 import com.grid.api.models.transactions.TransactionApproveParams
+import com.grid.api.models.transactions.TransactionListPageAsync
 import com.grid.api.models.transactions.TransactionListParams
-import com.grid.api.models.transactions.TransactionListResponse
 import com.grid.api.models.transactions.TransactionRejectParams
 import com.grid.api.models.transactions.TransactionRetrieveParams
 import com.grid.api.models.transferin.Transaction
@@ -54,10 +54,10 @@ interface TransactionServiceAsync {
     suspend fun list(
         params: TransactionListParams = TransactionListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): TransactionListResponse
+    ): TransactionListPageAsync
 
     /** @see list */
-    suspend fun list(requestOptions: RequestOptions): TransactionListResponse =
+    suspend fun list(requestOptions: RequestOptions): TransactionListPageAsync =
         list(TransactionListParams.none(), requestOptions)
 
     /**
@@ -154,11 +154,13 @@ interface TransactionServiceAsync {
         suspend fun list(
             params: TransactionListParams = TransactionListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<TransactionListResponse>
+        ): HttpResponseFor<TransactionListPageAsync>
 
         /** @see list */
         @MustBeClosed
-        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<TransactionListResponse> =
+        suspend fun list(
+            requestOptions: RequestOptions
+        ): HttpResponseFor<TransactionListPageAsync> =
             list(TransactionListParams.none(), requestOptions)
 
         /**

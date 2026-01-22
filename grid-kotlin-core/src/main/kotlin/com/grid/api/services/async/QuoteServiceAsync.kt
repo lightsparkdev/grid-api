@@ -9,8 +9,8 @@ import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.quotes.Quote
 import com.grid.api.models.quotes.QuoteCreateParams
 import com.grid.api.models.quotes.QuoteExecuteParams
+import com.grid.api.models.quotes.QuoteListPageAsync
 import com.grid.api.models.quotes.QuoteListParams
-import com.grid.api.models.quotes.QuoteListResponse
 import com.grid.api.models.quotes.QuoteRetrieveParams
 import com.grid.api.models.quotes.QuoteRetryParams
 
@@ -93,10 +93,10 @@ interface QuoteServiceAsync {
     suspend fun list(
         params: QuoteListParams = QuoteListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): QuoteListResponse
+    ): QuoteListPageAsync
 
     /** @see list */
-    suspend fun list(requestOptions: RequestOptions): QuoteListResponse =
+    suspend fun list(requestOptions: RequestOptions): QuoteListPageAsync =
         list(QuoteListParams.none(), requestOptions)
 
     /**
@@ -204,11 +204,11 @@ interface QuoteServiceAsync {
         suspend fun list(
             params: QuoteListParams = QuoteListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<QuoteListResponse>
+        ): HttpResponseFor<QuoteListPageAsync>
 
         /** @see list */
         @MustBeClosed
-        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<QuoteListResponse> =
+        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<QuoteListPageAsync> =
             list(QuoteListParams.none(), requestOptions)
 
         /**

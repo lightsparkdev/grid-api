@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless.
 
-package com.grid.api.models.tokens
+package com.grid.api.models.quotes
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
@@ -17,10 +17,10 @@ import com.grid.api.errors.GridInvalidDataException
 import java.util.Collections
 import java.util.Objects
 
-class TokenListResponse
+class QuoteListPageResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val data: JsonField<List<ApiToken>>,
+    private val data: JsonField<List<Quote>>,
     private val hasMore: JsonField<Boolean>,
     private val nextCursor: JsonField<String>,
     private val totalCount: JsonField<Long>,
@@ -29,7 +29,7 @@ private constructor(
 
     @JsonCreator
     private constructor(
-        @JsonProperty("data") @ExcludeMissing data: JsonField<List<ApiToken>> = JsonMissing.of(),
+        @JsonProperty("data") @ExcludeMissing data: JsonField<List<Quote>> = JsonMissing.of(),
         @JsonProperty("hasMore") @ExcludeMissing hasMore: JsonField<Boolean> = JsonMissing.of(),
         @JsonProperty("nextCursor")
         @ExcludeMissing
@@ -38,12 +38,12 @@ private constructor(
     ) : this(data, hasMore, nextCursor, totalCount, mutableMapOf())
 
     /**
-     * List of tokens matching the filter criteria
+     * List of quotes matching the criteria
      *
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    fun data(): List<ApiToken> = data.getRequired("data")
+    fun data(): List<Quote> = data.getRequired("data")
 
     /**
      * Indicates if more results are available beyond this page
@@ -62,7 +62,7 @@ private constructor(
     fun nextCursor(): String? = nextCursor.getNullable("nextCursor")
 
     /**
-     * Total number of tokens matching the criteria (excluding pagination)
+     * Total number of quotes matching the criteria (excluding pagination)
      *
      * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
      *   responded with an unexpected value).
@@ -74,7 +74,7 @@ private constructor(
      *
      * Unlike [data], this method doesn't throw if the JSON field has an unexpected type.
      */
-    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<ApiToken>> = data
+    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<Quote>> = data
 
     /**
      * Returns the raw JSON value of [hasMore].
@@ -112,7 +112,7 @@ private constructor(
     companion object {
 
         /**
-         * Returns a mutable builder for constructing an instance of [TokenListResponse].
+         * Returns a mutable builder for constructing an instance of [QuoteListPageResponse].
          *
          * The following fields are required:
          * ```kotlin
@@ -123,43 +123,43 @@ private constructor(
         fun builder() = Builder()
     }
 
-    /** A builder for [TokenListResponse]. */
+    /** A builder for [QuoteListPageResponse]. */
     class Builder internal constructor() {
 
-        private var data: JsonField<MutableList<ApiToken>>? = null
+        private var data: JsonField<MutableList<Quote>>? = null
         private var hasMore: JsonField<Boolean>? = null
         private var nextCursor: JsonField<String> = JsonMissing.of()
         private var totalCount: JsonField<Long> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-        internal fun from(tokenListResponse: TokenListResponse) = apply {
-            data = tokenListResponse.data.map { it.toMutableList() }
-            hasMore = tokenListResponse.hasMore
-            nextCursor = tokenListResponse.nextCursor
-            totalCount = tokenListResponse.totalCount
-            additionalProperties = tokenListResponse.additionalProperties.toMutableMap()
+        internal fun from(quoteListPageResponse: QuoteListPageResponse) = apply {
+            data = quoteListPageResponse.data.map { it.toMutableList() }
+            hasMore = quoteListPageResponse.hasMore
+            nextCursor = quoteListPageResponse.nextCursor
+            totalCount = quoteListPageResponse.totalCount
+            additionalProperties = quoteListPageResponse.additionalProperties.toMutableMap()
         }
 
-        /** List of tokens matching the filter criteria */
-        fun data(data: List<ApiToken>) = data(JsonField.of(data))
+        /** List of quotes matching the criteria */
+        fun data(data: List<Quote>) = data(JsonField.of(data))
 
         /**
          * Sets [Builder.data] to an arbitrary JSON value.
          *
-         * You should usually call [Builder.data] with a well-typed `List<ApiToken>` value instead.
+         * You should usually call [Builder.data] with a well-typed `List<Quote>` value instead.
          * This method is primarily for setting the field to an undocumented or not yet supported
          * value.
          */
-        fun data(data: JsonField<List<ApiToken>>) = apply {
+        fun data(data: JsonField<List<Quote>>) = apply {
             this.data = data.map { it.toMutableList() }
         }
 
         /**
-         * Adds a single [ApiToken] to [Builder.data].
+         * Adds a single [Quote] to [Builder.data].
          *
          * @throws IllegalStateException if the field was previously set to a non-list.
          */
-        fun addData(data: ApiToken) = apply {
+        fun addData(data: Quote) = apply {
             this.data =
                 (this.data ?: JsonField.of(mutableListOf())).also {
                     checkKnown("data", it).add(data)
@@ -189,7 +189,7 @@ private constructor(
          */
         fun nextCursor(nextCursor: JsonField<String>) = apply { this.nextCursor = nextCursor }
 
-        /** Total number of tokens matching the criteria (excluding pagination) */
+        /** Total number of quotes matching the criteria (excluding pagination) */
         fun totalCount(totalCount: Long) = totalCount(JsonField.of(totalCount))
 
         /**
@@ -220,7 +220,7 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [TokenListResponse].
+         * Returns an immutable instance of [QuoteListPageResponse].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          *
@@ -232,8 +232,8 @@ private constructor(
          *
          * @throws IllegalStateException if any required field is unset.
          */
-        fun build(): TokenListResponse =
-            TokenListResponse(
+        fun build(): QuoteListPageResponse =
+            QuoteListPageResponse(
                 checkRequired("data", data).map { it.toImmutable() },
                 checkRequired("hasMore", hasMore),
                 nextCursor,
@@ -244,7 +244,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): TokenListResponse = apply {
+    fun validate(): QuoteListPageResponse = apply {
         if (validated) {
             return@apply
         }
@@ -280,7 +280,7 @@ private constructor(
             return true
         }
 
-        return other is TokenListResponse &&
+        return other is QuoteListPageResponse &&
             data == other.data &&
             hasMore == other.hasMore &&
             nextCursor == other.nextCursor &&
@@ -295,5 +295,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "TokenListResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
+        "QuoteListPageResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
 }

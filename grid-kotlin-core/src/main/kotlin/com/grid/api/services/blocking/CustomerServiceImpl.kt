@@ -22,10 +22,12 @@ import com.grid.api.models.customers.CustomerDeleteParams
 import com.grid.api.models.customers.CustomerDeleteResponse
 import com.grid.api.models.customers.CustomerGetKycLinkParams
 import com.grid.api.models.customers.CustomerGetKycLinkResponse
+import com.grid.api.models.customers.CustomerListInternalAccountsPage
+import com.grid.api.models.customers.CustomerListInternalAccountsPageResponse
 import com.grid.api.models.customers.CustomerListInternalAccountsParams
-import com.grid.api.models.customers.CustomerListInternalAccountsResponse
+import com.grid.api.models.customers.CustomerListPage
+import com.grid.api.models.customers.CustomerListPageResponse
 import com.grid.api.models.customers.CustomerListParams
-import com.grid.api.models.customers.CustomerListResponse
 import com.grid.api.models.customers.CustomerRetrieveParams
 import com.grid.api.models.customers.CustomerRetrieveResponse
 import com.grid.api.models.customers.CustomerUpdateParams
@@ -81,7 +83,7 @@ class CustomerServiceImpl internal constructor(private val clientOptions: Client
     override fun list(
         params: CustomerListParams,
         requestOptions: RequestOptions,
-    ): CustomerListResponse =
+    ): CustomerListPage =
         // get /customers
         withRawResponse().list(params, requestOptions).parse()
 
@@ -102,7 +104,7 @@ class CustomerServiceImpl internal constructor(private val clientOptions: Client
     override fun listInternalAccounts(
         params: CustomerListInternalAccountsParams,
         requestOptions: RequestOptions,
-    ): CustomerListInternalAccountsResponse =
+    ): CustomerListInternalAccountsPage =
         // get /customers/internal-accounts
         withRawResponse().listInternalAccounts(params, requestOptions).parse()
 
@@ -220,13 +222,13 @@ class CustomerServiceImpl internal constructor(private val clientOptions: Client
             }
         }
 
-        private val listHandler: Handler<CustomerListResponse> =
-            jsonHandler<CustomerListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<CustomerListPageResponse> =
+            jsonHandler<CustomerListPageResponse>(clientOptions.jsonMapper)
 
         override fun list(
             params: CustomerListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<CustomerListResponse> {
+        ): HttpResponseFor<CustomerListPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -243,6 +245,13 @@ class CustomerServiceImpl internal constructor(private val clientOptions: Client
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        CustomerListPage.builder()
+                            .service(CustomerServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }
@@ -305,13 +314,13 @@ class CustomerServiceImpl internal constructor(private val clientOptions: Client
             }
         }
 
-        private val listInternalAccountsHandler: Handler<CustomerListInternalAccountsResponse> =
-            jsonHandler<CustomerListInternalAccountsResponse>(clientOptions.jsonMapper)
+        private val listInternalAccountsHandler: Handler<CustomerListInternalAccountsPageResponse> =
+            jsonHandler<CustomerListInternalAccountsPageResponse>(clientOptions.jsonMapper)
 
         override fun listInternalAccounts(
             params: CustomerListInternalAccountsParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<CustomerListInternalAccountsResponse> {
+        ): HttpResponseFor<CustomerListInternalAccountsPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -328,6 +337,13 @@ class CustomerServiceImpl internal constructor(private val clientOptions: Client
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        CustomerListInternalAccountsPage.builder()
+                            .service(CustomerServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

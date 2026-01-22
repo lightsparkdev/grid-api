@@ -18,7 +18,7 @@ import com.grid.api.models.sandbox.internalaccounts.InternalAccount
 import java.util.Collections
 import java.util.Objects
 
-class CustomerListInternalAccountsResponse
+class CustomerListInternalAccountsPageResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
     private val data: JsonField<List<InternalAccount>>,
@@ -116,7 +116,7 @@ private constructor(
 
         /**
          * Returns a mutable builder for constructing an instance of
-         * [CustomerListInternalAccountsResponse].
+         * [CustomerListInternalAccountsPageResponse].
          *
          * The following fields are required:
          * ```kotlin
@@ -127,7 +127,7 @@ private constructor(
         fun builder() = Builder()
     }
 
-    /** A builder for [CustomerListInternalAccountsResponse]. */
+    /** A builder for [CustomerListInternalAccountsPageResponse]. */
     class Builder internal constructor() {
 
         private var data: JsonField<MutableList<InternalAccount>>? = null
@@ -137,14 +137,14 @@ private constructor(
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
         internal fun from(
-            customerListInternalAccountsResponse: CustomerListInternalAccountsResponse
+            customerListInternalAccountsPageResponse: CustomerListInternalAccountsPageResponse
         ) = apply {
-            data = customerListInternalAccountsResponse.data.map { it.toMutableList() }
-            hasMore = customerListInternalAccountsResponse.hasMore
-            nextCursor = customerListInternalAccountsResponse.nextCursor
-            totalCount = customerListInternalAccountsResponse.totalCount
+            data = customerListInternalAccountsPageResponse.data.map { it.toMutableList() }
+            hasMore = customerListInternalAccountsPageResponse.hasMore
+            nextCursor = customerListInternalAccountsPageResponse.nextCursor
+            totalCount = customerListInternalAccountsPageResponse.totalCount
             additionalProperties =
-                customerListInternalAccountsResponse.additionalProperties.toMutableMap()
+                customerListInternalAccountsPageResponse.additionalProperties.toMutableMap()
         }
 
         /** List of internal accounts matching the filter criteria */
@@ -227,7 +227,7 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [CustomerListInternalAccountsResponse].
+         * Returns an immutable instance of [CustomerListInternalAccountsPageResponse].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          *
@@ -239,8 +239,8 @@ private constructor(
          *
          * @throws IllegalStateException if any required field is unset.
          */
-        fun build(): CustomerListInternalAccountsResponse =
-            CustomerListInternalAccountsResponse(
+        fun build(): CustomerListInternalAccountsPageResponse =
+            CustomerListInternalAccountsPageResponse(
                 checkRequired("data", data).map { it.toImmutable() },
                 checkRequired("hasMore", hasMore),
                 nextCursor,
@@ -251,7 +251,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): CustomerListInternalAccountsResponse = apply {
+    fun validate(): CustomerListInternalAccountsPageResponse = apply {
         if (validated) {
             return@apply
         }
@@ -287,7 +287,7 @@ private constructor(
             return true
         }
 
-        return other is CustomerListInternalAccountsResponse &&
+        return other is CustomerListInternalAccountsPageResponse &&
             data == other.data &&
             hasMore == other.hasMore &&
             nextCursor == other.nextCursor &&
@@ -302,5 +302,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "CustomerListInternalAccountsResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
+        "CustomerListInternalAccountsPageResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
 }

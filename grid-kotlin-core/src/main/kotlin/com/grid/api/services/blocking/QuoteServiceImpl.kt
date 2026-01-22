@@ -19,8 +19,9 @@ import com.grid.api.core.prepare
 import com.grid.api.models.quotes.Quote
 import com.grid.api.models.quotes.QuoteCreateParams
 import com.grid.api.models.quotes.QuoteExecuteParams
+import com.grid.api.models.quotes.QuoteListPage
+import com.grid.api.models.quotes.QuoteListPageResponse
 import com.grid.api.models.quotes.QuoteListParams
-import com.grid.api.models.quotes.QuoteListResponse
 import com.grid.api.models.quotes.QuoteRetrieveParams
 import com.grid.api.models.quotes.QuoteRetryParams
 
@@ -44,7 +45,7 @@ class QuoteServiceImpl internal constructor(private val clientOptions: ClientOpt
         // get /quotes/{quoteId}
         withRawResponse().retrieve(params, requestOptions).parse()
 
-    override fun list(params: QuoteListParams, requestOptions: RequestOptions): QuoteListResponse =
+    override fun list(params: QuoteListParams, requestOptions: RequestOptions): QuoteListPage =
         // get /quotes
         withRawResponse().list(params, requestOptions).parse()
 
@@ -123,13 +124,13 @@ class QuoteServiceImpl internal constructor(private val clientOptions: ClientOpt
             }
         }
 
-        private val listHandler: Handler<QuoteListResponse> =
-            jsonHandler<QuoteListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<QuoteListPageResponse> =
+            jsonHandler<QuoteListPageResponse>(clientOptions.jsonMapper)
 
         override fun list(
             params: QuoteListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<QuoteListResponse> {
+        ): HttpResponseFor<QuoteListPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -146,6 +147,13 @@ class QuoteServiceImpl internal constructor(private val clientOptions: ClientOpt
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        QuoteListPage.builder()
+                            .service(QuoteServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

@@ -18,8 +18,9 @@ import com.grid.api.core.http.parseable
 import com.grid.api.core.prepare
 import com.grid.api.models.transactions.IncomingTransaction
 import com.grid.api.models.transactions.TransactionApproveParams
+import com.grid.api.models.transactions.TransactionListPage
+import com.grid.api.models.transactions.TransactionListPageResponse
 import com.grid.api.models.transactions.TransactionListParams
-import com.grid.api.models.transactions.TransactionListResponse
 import com.grid.api.models.transactions.TransactionRejectParams
 import com.grid.api.models.transactions.TransactionRetrieveParams
 import com.grid.api.models.transferin.Transaction
@@ -46,7 +47,7 @@ class TransactionServiceImpl internal constructor(private val clientOptions: Cli
     override fun list(
         params: TransactionListParams,
         requestOptions: RequestOptions,
-    ): TransactionListResponse =
+    ): TransactionListPage =
         // get /transactions
         withRawResponse().list(params, requestOptions).parse()
 
@@ -107,13 +108,13 @@ class TransactionServiceImpl internal constructor(private val clientOptions: Cli
             }
         }
 
-        private val listHandler: Handler<TransactionListResponse> =
-            jsonHandler<TransactionListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<TransactionListPageResponse> =
+            jsonHandler<TransactionListPageResponse>(clientOptions.jsonMapper)
 
         override fun list(
             params: TransactionListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<TransactionListResponse> {
+        ): HttpResponseFor<TransactionListPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -130,6 +131,13 @@ class TransactionServiceImpl internal constructor(private val clientOptions: Cli
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        TransactionListPage.builder()
+                            .service(TransactionServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

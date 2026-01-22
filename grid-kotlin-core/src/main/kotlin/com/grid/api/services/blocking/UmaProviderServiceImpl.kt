@@ -14,8 +14,9 @@ import com.grid.api.core.http.HttpResponse.Handler
 import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.core.http.parseable
 import com.grid.api.core.prepare
+import com.grid.api.models.umaproviders.UmaProviderListPage
+import com.grid.api.models.umaproviders.UmaProviderListPageResponse
 import com.grid.api.models.umaproviders.UmaProviderListParams
-import com.grid.api.models.umaproviders.UmaProviderListResponse
 
 class UmaProviderServiceImpl internal constructor(private val clientOptions: ClientOptions) :
     UmaProviderService {
@@ -32,7 +33,7 @@ class UmaProviderServiceImpl internal constructor(private val clientOptions: Cli
     override fun list(
         params: UmaProviderListParams,
         requestOptions: RequestOptions,
-    ): UmaProviderListResponse =
+    ): UmaProviderListPage =
         // get /uma-providers
         withRawResponse().list(params, requestOptions).parse()
 
@@ -49,13 +50,13 @@ class UmaProviderServiceImpl internal constructor(private val clientOptions: Cli
                 clientOptions.toBuilder().apply(modifier).build()
             )
 
-        private val listHandler: Handler<UmaProviderListResponse> =
-            jsonHandler<UmaProviderListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<UmaProviderListPageResponse> =
+            jsonHandler<UmaProviderListPageResponse>(clientOptions.jsonMapper)
 
         override fun list(
             params: UmaProviderListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<UmaProviderListResponse> {
+        ): HttpResponseFor<UmaProviderListPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -72,6 +73,13 @@ class UmaProviderServiceImpl internal constructor(private val clientOptions: Cli
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        UmaProviderListPage.builder()
+                            .service(UmaProviderServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

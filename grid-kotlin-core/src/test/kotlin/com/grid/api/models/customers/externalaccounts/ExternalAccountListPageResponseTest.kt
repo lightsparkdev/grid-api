@@ -9,12 +9,12 @@ import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class ExternalAccountListResponseTest {
+internal class ExternalAccountListPageResponseTest {
 
     @Test
     fun create() {
-        val externalAccountListResponse =
-            ExternalAccountListResponse.builder()
+        val externalAccountListPageResponse =
+            ExternalAccountListPageResponse.builder()
                 .addData(
                     ExternalAccount.builder()
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
@@ -55,7 +55,7 @@ internal class ExternalAccountListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        assertThat(externalAccountListResponse.data())
+        assertThat(externalAccountListPageResponse.data())
             .containsExactly(
                 ExternalAccount.builder()
                     .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
@@ -91,16 +91,16 @@ internal class ExternalAccountListResponseTest {
                     .platformAccountId("acc_123456789")
                     .build()
             )
-        assertThat(externalAccountListResponse.hasMore()).isEqualTo(true)
-        assertThat(externalAccountListResponse.nextCursor()).isEqualTo("nextCursor")
-        assertThat(externalAccountListResponse.totalCount()).isEqualTo(0L)
+        assertThat(externalAccountListPageResponse.hasMore()).isEqualTo(true)
+        assertThat(externalAccountListPageResponse.nextCursor()).isEqualTo("nextCursor")
+        assertThat(externalAccountListPageResponse.totalCount()).isEqualTo(0L)
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val externalAccountListResponse =
-            ExternalAccountListResponse.builder()
+        val externalAccountListPageResponse =
+            ExternalAccountListPageResponse.builder()
                 .addData(
                     ExternalAccount.builder()
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
@@ -141,12 +141,13 @@ internal class ExternalAccountListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        val roundtrippedExternalAccountListResponse =
+        val roundtrippedExternalAccountListPageResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(externalAccountListResponse),
-                jacksonTypeRef<ExternalAccountListResponse>(),
+                jsonMapper.writeValueAsString(externalAccountListPageResponse),
+                jacksonTypeRef<ExternalAccountListPageResponse>(),
             )
 
-        assertThat(roundtrippedExternalAccountListResponse).isEqualTo(externalAccountListResponse)
+        assertThat(roundtrippedExternalAccountListPageResponse)
+            .isEqualTo(externalAccountListPageResponse)
     }
 }

@@ -274,6 +274,59 @@ The SDK throws custom unchecked exception types:
 
 - [`GridException`](grid-kotlin-core/src/main/kotlin/com/grid/api/errors/GridException.kt): Base class for all exceptions. Most errors will result in one of the previously mentioned ones, but completely generic errors may be thrown using the base class.
 
+## Pagination
+
+The SDK defines methods that return a paginated lists of results. It provides convenient ways to access the results either one page at a time or item-by-item across all pages.
+
+### Auto-pagination
+
+To iterate through all results across all pages, use the `autoPager()` method, which automatically fetches more pages as needed.
+
+When using the synchronous client, the method returns a [`Sequence`](https://kotlinlang.org/docs/sequences.html)
+
+```kotlin
+import com.grid.api.models.customers.CustomerListPage
+
+val page: CustomerListPage = client.customers().list()
+page.autoPager()
+    .take(50)
+    .forEach { customer -> println(customer) }
+```
+
+When using the asynchronous client, the method returns a [`Flow`](https://kotlinlang.org/docs/flow.html):
+
+```kotlin
+import com.grid.api.models.customers.CustomerListPageAsync
+
+val page: CustomerListPageAsync = client.async().customers().list()
+page.autoPager()
+    .take(50)
+    .forEach { customer -> println(customer) }
+```
+
+### Manual pagination
+
+To access individual page items and manually request the next page, use the `items()`,
+`hasNextPage()`, and `nextPage()` methods:
+
+```kotlin
+import com.grid.api.models.customers.CustomerListPage
+import com.grid.api.models.customers.CustomerListResponse
+
+val page: CustomerListPage = client.customers().list()
+while (true) {
+    for (customer in page.items()) {
+        println(customer)
+    }
+
+    if (!page.hasNextPage()) {
+        break
+    }
+
+    page = page.nextPage()
+}
+```
+
 ## Logging
 
 The SDK uses the standard [OkHttp logging interceptor](https://github.com/square/okhttp/tree/master/okhttp-logging-interceptor).

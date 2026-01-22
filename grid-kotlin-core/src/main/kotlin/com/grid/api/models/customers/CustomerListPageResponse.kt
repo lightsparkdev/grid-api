@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless.
 
-package com.grid.api.models.customers.externalaccounts
+package com.grid.api.models.customers
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
@@ -17,10 +17,10 @@ import com.grid.api.errors.GridInvalidDataException
 import java.util.Collections
 import java.util.Objects
 
-class ExternalAccountListResponse
+class CustomerListPageResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val data: JsonField<List<ExternalAccount>>,
+    private val data: JsonField<List<CustomerListResponse>>,
     private val hasMore: JsonField<Boolean>,
     private val nextCursor: JsonField<String>,
     private val totalCount: JsonField<Long>,
@@ -31,7 +31,7 @@ private constructor(
     private constructor(
         @JsonProperty("data")
         @ExcludeMissing
-        data: JsonField<List<ExternalAccount>> = JsonMissing.of(),
+        data: JsonField<List<CustomerListResponse>> = JsonMissing.of(),
         @JsonProperty("hasMore") @ExcludeMissing hasMore: JsonField<Boolean> = JsonMissing.of(),
         @JsonProperty("nextCursor")
         @ExcludeMissing
@@ -40,12 +40,12 @@ private constructor(
     ) : this(data, hasMore, nextCursor, totalCount, mutableMapOf())
 
     /**
-     * List of external accounts matching the filter criteria
+     * List of customers matching the filter criteria
      *
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    fun data(): List<ExternalAccount> = data.getRequired("data")
+    fun data(): List<CustomerListResponse> = data.getRequired("data")
 
     /**
      * Indicates if more results are available beyond this page
@@ -64,7 +64,7 @@ private constructor(
     fun nextCursor(): String? = nextCursor.getNullable("nextCursor")
 
     /**
-     * Total number of external accounts matching the criteria (excluding pagination)
+     * Total number of customers matching the criteria (excluding pagination)
      *
      * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
      *   responded with an unexpected value).
@@ -76,7 +76,7 @@ private constructor(
      *
      * Unlike [data], this method doesn't throw if the JSON field has an unexpected type.
      */
-    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<ExternalAccount>> = data
+    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<CustomerListResponse>> = data
 
     /**
      * Returns the raw JSON value of [hasMore].
@@ -114,7 +114,7 @@ private constructor(
     companion object {
 
         /**
-         * Returns a mutable builder for constructing an instance of [ExternalAccountListResponse].
+         * Returns a mutable builder for constructing an instance of [CustomerListPageResponse].
          *
          * The following fields are required:
          * ```kotlin
@@ -125,48 +125,62 @@ private constructor(
         fun builder() = Builder()
     }
 
-    /** A builder for [ExternalAccountListResponse]. */
+    /** A builder for [CustomerListPageResponse]. */
     class Builder internal constructor() {
 
-        private var data: JsonField<MutableList<ExternalAccount>>? = null
+        private var data: JsonField<MutableList<CustomerListResponse>>? = null
         private var hasMore: JsonField<Boolean>? = null
         private var nextCursor: JsonField<String> = JsonMissing.of()
         private var totalCount: JsonField<Long> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-        internal fun from(externalAccountListResponse: ExternalAccountListResponse) = apply {
-            data = externalAccountListResponse.data.map { it.toMutableList() }
-            hasMore = externalAccountListResponse.hasMore
-            nextCursor = externalAccountListResponse.nextCursor
-            totalCount = externalAccountListResponse.totalCount
-            additionalProperties = externalAccountListResponse.additionalProperties.toMutableMap()
+        internal fun from(customerListPageResponse: CustomerListPageResponse) = apply {
+            data = customerListPageResponse.data.map { it.toMutableList() }
+            hasMore = customerListPageResponse.hasMore
+            nextCursor = customerListPageResponse.nextCursor
+            totalCount = customerListPageResponse.totalCount
+            additionalProperties = customerListPageResponse.additionalProperties.toMutableMap()
         }
 
-        /** List of external accounts matching the filter criteria */
-        fun data(data: List<ExternalAccount>) = data(JsonField.of(data))
+        /** List of customers matching the filter criteria */
+        fun data(data: List<CustomerListResponse>) = data(JsonField.of(data))
 
         /**
          * Sets [Builder.data] to an arbitrary JSON value.
          *
-         * You should usually call [Builder.data] with a well-typed `List<ExternalAccount>` value
-         * instead. This method is primarily for setting the field to an undocumented or not yet
-         * supported value.
+         * You should usually call [Builder.data] with a well-typed `List<CustomerListResponse>`
+         * value instead. This method is primarily for setting the field to an undocumented or not
+         * yet supported value.
          */
-        fun data(data: JsonField<List<ExternalAccount>>) = apply {
+        fun data(data: JsonField<List<CustomerListResponse>>) = apply {
             this.data = data.map { it.toMutableList() }
         }
 
         /**
-         * Adds a single [ExternalAccount] to [Builder.data].
+         * Adds a single [CustomerListResponse] to [Builder.data].
          *
          * @throws IllegalStateException if the field was previously set to a non-list.
          */
-        fun addData(data: ExternalAccount) = apply {
+        fun addData(data: CustomerListResponse) = apply {
             this.data =
                 (this.data ?: JsonField.of(mutableListOf())).also {
                     checkKnown("data", it).add(data)
                 }
         }
+
+        /**
+         * Alias for calling [addData] with
+         * `CustomerListResponse.ofIndividualCustomer(individualCustomer)`.
+         */
+        fun addData(individualCustomer: IndividualCustomer) =
+            addData(CustomerListResponse.ofIndividualCustomer(individualCustomer))
+
+        /**
+         * Alias for calling [addData] with
+         * `CustomerListResponse.ofBusinessCustomer(businessCustomer)`.
+         */
+        fun addData(businessCustomer: BusinessCustomer) =
+            addData(CustomerListResponse.ofBusinessCustomer(businessCustomer))
 
         /** Indicates if more results are available beyond this page */
         fun hasMore(hasMore: Boolean) = hasMore(JsonField.of(hasMore))
@@ -191,7 +205,7 @@ private constructor(
          */
         fun nextCursor(nextCursor: JsonField<String>) = apply { this.nextCursor = nextCursor }
 
-        /** Total number of external accounts matching the criteria (excluding pagination) */
+        /** Total number of customers matching the criteria (excluding pagination) */
         fun totalCount(totalCount: Long) = totalCount(JsonField.of(totalCount))
 
         /**
@@ -222,7 +236,7 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [ExternalAccountListResponse].
+         * Returns an immutable instance of [CustomerListPageResponse].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          *
@@ -234,8 +248,8 @@ private constructor(
          *
          * @throws IllegalStateException if any required field is unset.
          */
-        fun build(): ExternalAccountListResponse =
-            ExternalAccountListResponse(
+        fun build(): CustomerListPageResponse =
+            CustomerListPageResponse(
                 checkRequired("data", data).map { it.toImmutable() },
                 checkRequired("hasMore", hasMore),
                 nextCursor,
@@ -246,7 +260,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): ExternalAccountListResponse = apply {
+    fun validate(): CustomerListPageResponse = apply {
         if (validated) {
             return@apply
         }
@@ -282,7 +296,7 @@ private constructor(
             return true
         }
 
-        return other is ExternalAccountListResponse &&
+        return other is CustomerListPageResponse &&
             data == other.data &&
             hasMore == other.hasMore &&
             nextCursor == other.nextCursor &&
@@ -297,5 +311,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "ExternalAccountListResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
+        "CustomerListPageResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
 }

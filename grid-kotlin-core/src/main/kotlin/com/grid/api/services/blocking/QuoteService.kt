@@ -9,8 +9,8 @@ import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.quotes.Quote
 import com.grid.api.models.quotes.QuoteCreateParams
 import com.grid.api.models.quotes.QuoteExecuteParams
+import com.grid.api.models.quotes.QuoteListPage
 import com.grid.api.models.quotes.QuoteListParams
-import com.grid.api.models.quotes.QuoteListResponse
 import com.grid.api.models.quotes.QuoteRetrieveParams
 import com.grid.api.models.quotes.QuoteRetryParams
 
@@ -93,10 +93,10 @@ interface QuoteService {
     fun list(
         params: QuoteListParams = QuoteListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): QuoteListResponse
+    ): QuoteListPage
 
     /** @see list */
-    fun list(requestOptions: RequestOptions): QuoteListResponse =
+    fun list(requestOptions: RequestOptions): QuoteListPage =
         list(QuoteListParams.none(), requestOptions)
 
     /**
@@ -200,11 +200,11 @@ interface QuoteService {
         fun list(
             params: QuoteListParams = QuoteListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<QuoteListResponse>
+        ): HttpResponseFor<QuoteListPage>
 
         /** @see list */
         @MustBeClosed
-        fun list(requestOptions: RequestOptions): HttpResponseFor<QuoteListResponse> =
+        fun list(requestOptions: RequestOptions): HttpResponseFor<QuoteListPage> =
             list(QuoteListParams.none(), requestOptions)
 
         /**

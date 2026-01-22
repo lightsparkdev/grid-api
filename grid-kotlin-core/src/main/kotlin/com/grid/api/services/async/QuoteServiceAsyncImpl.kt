@@ -19,8 +19,9 @@ import com.grid.api.core.prepareAsync
 import com.grid.api.models.quotes.Quote
 import com.grid.api.models.quotes.QuoteCreateParams
 import com.grid.api.models.quotes.QuoteExecuteParams
+import com.grid.api.models.quotes.QuoteListPageAsync
+import com.grid.api.models.quotes.QuoteListPageResponse
 import com.grid.api.models.quotes.QuoteListParams
-import com.grid.api.models.quotes.QuoteListResponse
 import com.grid.api.models.quotes.QuoteRetrieveParams
 import com.grid.api.models.quotes.QuoteRetryParams
 
@@ -50,7 +51,7 @@ class QuoteServiceAsyncImpl internal constructor(private val clientOptions: Clie
     override suspend fun list(
         params: QuoteListParams,
         requestOptions: RequestOptions,
-    ): QuoteListResponse =
+    ): QuoteListPageAsync =
         // get /quotes
         withRawResponse().list(params, requestOptions).parse()
 
@@ -134,13 +135,13 @@ class QuoteServiceAsyncImpl internal constructor(private val clientOptions: Clie
             }
         }
 
-        private val listHandler: Handler<QuoteListResponse> =
-            jsonHandler<QuoteListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<QuoteListPageResponse> =
+            jsonHandler<QuoteListPageResponse>(clientOptions.jsonMapper)
 
         override suspend fun list(
             params: QuoteListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<QuoteListResponse> {
+        ): HttpResponseFor<QuoteListPageAsync> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -157,6 +158,13 @@ class QuoteServiceAsyncImpl internal constructor(private val clientOptions: Clie
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        QuoteListPageAsync.builder()
+                            .service(QuoteServiceAsyncImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

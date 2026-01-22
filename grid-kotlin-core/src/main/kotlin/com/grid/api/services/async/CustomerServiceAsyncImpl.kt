@@ -22,10 +22,12 @@ import com.grid.api.models.customers.CustomerDeleteParams
 import com.grid.api.models.customers.CustomerDeleteResponse
 import com.grid.api.models.customers.CustomerGetKycLinkParams
 import com.grid.api.models.customers.CustomerGetKycLinkResponse
+import com.grid.api.models.customers.CustomerListInternalAccountsPageAsync
+import com.grid.api.models.customers.CustomerListInternalAccountsPageResponse
 import com.grid.api.models.customers.CustomerListInternalAccountsParams
-import com.grid.api.models.customers.CustomerListInternalAccountsResponse
+import com.grid.api.models.customers.CustomerListPageAsync
+import com.grid.api.models.customers.CustomerListPageResponse
 import com.grid.api.models.customers.CustomerListParams
-import com.grid.api.models.customers.CustomerListResponse
 import com.grid.api.models.customers.CustomerRetrieveParams
 import com.grid.api.models.customers.CustomerRetrieveResponse
 import com.grid.api.models.customers.CustomerUpdateParams
@@ -81,7 +83,7 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
     override suspend fun list(
         params: CustomerListParams,
         requestOptions: RequestOptions,
-    ): CustomerListResponse =
+    ): CustomerListPageAsync =
         // get /customers
         withRawResponse().list(params, requestOptions).parse()
 
@@ -102,7 +104,7 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
     override suspend fun listInternalAccounts(
         params: CustomerListInternalAccountsParams,
         requestOptions: RequestOptions,
-    ): CustomerListInternalAccountsResponse =
+    ): CustomerListInternalAccountsPageAsync =
         // get /customers/internal-accounts
         withRawResponse().listInternalAccounts(params, requestOptions).parse()
 
@@ -221,13 +223,13 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
             }
         }
 
-        private val listHandler: Handler<CustomerListResponse> =
-            jsonHandler<CustomerListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<CustomerListPageResponse> =
+            jsonHandler<CustomerListPageResponse>(clientOptions.jsonMapper)
 
         override suspend fun list(
             params: CustomerListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<CustomerListResponse> {
+        ): HttpResponseFor<CustomerListPageAsync> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -244,6 +246,13 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        CustomerListPageAsync.builder()
+                            .service(CustomerServiceAsyncImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }
@@ -306,13 +315,13 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
             }
         }
 
-        private val listInternalAccountsHandler: Handler<CustomerListInternalAccountsResponse> =
-            jsonHandler<CustomerListInternalAccountsResponse>(clientOptions.jsonMapper)
+        private val listInternalAccountsHandler: Handler<CustomerListInternalAccountsPageResponse> =
+            jsonHandler<CustomerListInternalAccountsPageResponse>(clientOptions.jsonMapper)
 
         override suspend fun listInternalAccounts(
             params: CustomerListInternalAccountsParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<CustomerListInternalAccountsResponse> {
+        ): HttpResponseFor<CustomerListInternalAccountsPageAsync> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -329,6 +338,13 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        CustomerListInternalAccountsPageAsync.builder()
+                            .service(CustomerServiceAsyncImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

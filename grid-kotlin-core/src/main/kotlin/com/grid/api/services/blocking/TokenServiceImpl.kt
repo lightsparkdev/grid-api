@@ -20,8 +20,9 @@ import com.grid.api.core.prepare
 import com.grid.api.models.tokens.ApiToken
 import com.grid.api.models.tokens.TokenCreateParams
 import com.grid.api.models.tokens.TokenDeleteParams
+import com.grid.api.models.tokens.TokenListPage
+import com.grid.api.models.tokens.TokenListPageResponse
 import com.grid.api.models.tokens.TokenListParams
-import com.grid.api.models.tokens.TokenListResponse
 import com.grid.api.models.tokens.TokenRetrieveParams
 
 class TokenServiceImpl internal constructor(private val clientOptions: ClientOptions) :
@@ -44,7 +45,7 @@ class TokenServiceImpl internal constructor(private val clientOptions: ClientOpt
         // get /tokens/{tokenId}
         withRawResponse().retrieve(params, requestOptions).parse()
 
-    override fun list(params: TokenListParams, requestOptions: RequestOptions): TokenListResponse =
+    override fun list(params: TokenListParams, requestOptions: RequestOptions): TokenListPage =
         // get /tokens
         withRawResponse().list(params, requestOptions).parse()
 
@@ -122,13 +123,13 @@ class TokenServiceImpl internal constructor(private val clientOptions: ClientOpt
             }
         }
 
-        private val listHandler: Handler<TokenListResponse> =
-            jsonHandler<TokenListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<TokenListPageResponse> =
+            jsonHandler<TokenListPageResponse>(clientOptions.jsonMapper)
 
         override fun list(
             params: TokenListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<TokenListResponse> {
+        ): HttpResponseFor<TokenListPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -145,6 +146,13 @@ class TokenServiceImpl internal constructor(private val clientOptions: ClientOpt
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        TokenListPage.builder()
+                            .service(TokenServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

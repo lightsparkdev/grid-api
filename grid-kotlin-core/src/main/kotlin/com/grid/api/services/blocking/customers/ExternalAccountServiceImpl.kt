@@ -17,8 +17,9 @@ import com.grid.api.core.http.parseable
 import com.grid.api.core.prepare
 import com.grid.api.models.customers.externalaccounts.ExternalAccount
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreateParams
+import com.grid.api.models.customers.externalaccounts.ExternalAccountListPage
+import com.grid.api.models.customers.externalaccounts.ExternalAccountListPageResponse
 import com.grid.api.models.customers.externalaccounts.ExternalAccountListParams
-import com.grid.api.models.customers.externalaccounts.ExternalAccountListResponse
 
 class ExternalAccountServiceImpl internal constructor(private val clientOptions: ClientOptions) :
     ExternalAccountService {
@@ -42,7 +43,7 @@ class ExternalAccountServiceImpl internal constructor(private val clientOptions:
     override fun list(
         params: ExternalAccountListParams,
         requestOptions: RequestOptions,
-    ): ExternalAccountListResponse =
+    ): ExternalAccountListPage =
         // get /customers/external-accounts
         withRawResponse().list(params, requestOptions).parse()
 
@@ -87,13 +88,13 @@ class ExternalAccountServiceImpl internal constructor(private val clientOptions:
             }
         }
 
-        private val listHandler: Handler<ExternalAccountListResponse> =
-            jsonHandler<ExternalAccountListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<ExternalAccountListPageResponse> =
+            jsonHandler<ExternalAccountListPageResponse>(clientOptions.jsonMapper)
 
         override fun list(
             params: ExternalAccountListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<ExternalAccountListResponse> {
+        ): HttpResponseFor<ExternalAccountListPage> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -110,6 +111,13 @@ class ExternalAccountServiceImpl internal constructor(private val clientOptions:
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        ExternalAccountListPage.builder()
+                            .service(ExternalAccountServiceImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

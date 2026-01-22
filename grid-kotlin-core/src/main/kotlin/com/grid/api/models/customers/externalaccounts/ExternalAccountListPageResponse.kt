@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless.
 
-package com.grid.api.models.quotes
+package com.grid.api.models.customers.externalaccounts
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
@@ -17,10 +17,10 @@ import com.grid.api.errors.GridInvalidDataException
 import java.util.Collections
 import java.util.Objects
 
-class QuoteListResponse
+class ExternalAccountListPageResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val data: JsonField<List<Quote>>,
+    private val data: JsonField<List<ExternalAccount>>,
     private val hasMore: JsonField<Boolean>,
     private val nextCursor: JsonField<String>,
     private val totalCount: JsonField<Long>,
@@ -29,7 +29,9 @@ private constructor(
 
     @JsonCreator
     private constructor(
-        @JsonProperty("data") @ExcludeMissing data: JsonField<List<Quote>> = JsonMissing.of(),
+        @JsonProperty("data")
+        @ExcludeMissing
+        data: JsonField<List<ExternalAccount>> = JsonMissing.of(),
         @JsonProperty("hasMore") @ExcludeMissing hasMore: JsonField<Boolean> = JsonMissing.of(),
         @JsonProperty("nextCursor")
         @ExcludeMissing
@@ -38,12 +40,12 @@ private constructor(
     ) : this(data, hasMore, nextCursor, totalCount, mutableMapOf())
 
     /**
-     * List of quotes matching the criteria
+     * List of external accounts matching the filter criteria
      *
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    fun data(): List<Quote> = data.getRequired("data")
+    fun data(): List<ExternalAccount> = data.getRequired("data")
 
     /**
      * Indicates if more results are available beyond this page
@@ -62,7 +64,7 @@ private constructor(
     fun nextCursor(): String? = nextCursor.getNullable("nextCursor")
 
     /**
-     * Total number of quotes matching the criteria (excluding pagination)
+     * Total number of external accounts matching the criteria (excluding pagination)
      *
      * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
      *   responded with an unexpected value).
@@ -74,7 +76,7 @@ private constructor(
      *
      * Unlike [data], this method doesn't throw if the JSON field has an unexpected type.
      */
-    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<Quote>> = data
+    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<ExternalAccount>> = data
 
     /**
      * Returns the raw JSON value of [hasMore].
@@ -112,7 +114,8 @@ private constructor(
     companion object {
 
         /**
-         * Returns a mutable builder for constructing an instance of [QuoteListResponse].
+         * Returns a mutable builder for constructing an instance of
+         * [ExternalAccountListPageResponse].
          *
          * The following fields are required:
          * ```kotlin
@@ -123,43 +126,45 @@ private constructor(
         fun builder() = Builder()
     }
 
-    /** A builder for [QuoteListResponse]. */
+    /** A builder for [ExternalAccountListPageResponse]. */
     class Builder internal constructor() {
 
-        private var data: JsonField<MutableList<Quote>>? = null
+        private var data: JsonField<MutableList<ExternalAccount>>? = null
         private var hasMore: JsonField<Boolean>? = null
         private var nextCursor: JsonField<String> = JsonMissing.of()
         private var totalCount: JsonField<Long> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-        internal fun from(quoteListResponse: QuoteListResponse) = apply {
-            data = quoteListResponse.data.map { it.toMutableList() }
-            hasMore = quoteListResponse.hasMore
-            nextCursor = quoteListResponse.nextCursor
-            totalCount = quoteListResponse.totalCount
-            additionalProperties = quoteListResponse.additionalProperties.toMutableMap()
-        }
+        internal fun from(externalAccountListPageResponse: ExternalAccountListPageResponse) =
+            apply {
+                data = externalAccountListPageResponse.data.map { it.toMutableList() }
+                hasMore = externalAccountListPageResponse.hasMore
+                nextCursor = externalAccountListPageResponse.nextCursor
+                totalCount = externalAccountListPageResponse.totalCount
+                additionalProperties =
+                    externalAccountListPageResponse.additionalProperties.toMutableMap()
+            }
 
-        /** List of quotes matching the criteria */
-        fun data(data: List<Quote>) = data(JsonField.of(data))
+        /** List of external accounts matching the filter criteria */
+        fun data(data: List<ExternalAccount>) = data(JsonField.of(data))
 
         /**
          * Sets [Builder.data] to an arbitrary JSON value.
          *
-         * You should usually call [Builder.data] with a well-typed `List<Quote>` value instead.
-         * This method is primarily for setting the field to an undocumented or not yet supported
-         * value.
+         * You should usually call [Builder.data] with a well-typed `List<ExternalAccount>` value
+         * instead. This method is primarily for setting the field to an undocumented or not yet
+         * supported value.
          */
-        fun data(data: JsonField<List<Quote>>) = apply {
+        fun data(data: JsonField<List<ExternalAccount>>) = apply {
             this.data = data.map { it.toMutableList() }
         }
 
         /**
-         * Adds a single [Quote] to [Builder.data].
+         * Adds a single [ExternalAccount] to [Builder.data].
          *
          * @throws IllegalStateException if the field was previously set to a non-list.
          */
-        fun addData(data: Quote) = apply {
+        fun addData(data: ExternalAccount) = apply {
             this.data =
                 (this.data ?: JsonField.of(mutableListOf())).also {
                     checkKnown("data", it).add(data)
@@ -189,7 +194,7 @@ private constructor(
          */
         fun nextCursor(nextCursor: JsonField<String>) = apply { this.nextCursor = nextCursor }
 
-        /** Total number of quotes matching the criteria (excluding pagination) */
+        /** Total number of external accounts matching the criteria (excluding pagination) */
         fun totalCount(totalCount: Long) = totalCount(JsonField.of(totalCount))
 
         /**
@@ -220,7 +225,7 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [QuoteListResponse].
+         * Returns an immutable instance of [ExternalAccountListPageResponse].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          *
@@ -232,8 +237,8 @@ private constructor(
          *
          * @throws IllegalStateException if any required field is unset.
          */
-        fun build(): QuoteListResponse =
-            QuoteListResponse(
+        fun build(): ExternalAccountListPageResponse =
+            ExternalAccountListPageResponse(
                 checkRequired("data", data).map { it.toImmutable() },
                 checkRequired("hasMore", hasMore),
                 nextCursor,
@@ -244,7 +249,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): QuoteListResponse = apply {
+    fun validate(): ExternalAccountListPageResponse = apply {
         if (validated) {
             return@apply
         }
@@ -280,7 +285,7 @@ private constructor(
             return true
         }
 
-        return other is QuoteListResponse &&
+        return other is ExternalAccountListPageResponse &&
             data == other.data &&
             hasMore == other.hasMore &&
             nextCursor == other.nextCursor &&
@@ -295,5 +300,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "QuoteListResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
+        "ExternalAccountListPageResponse{data=$data, hasMore=$hasMore, nextCursor=$nextCursor, totalCount=$totalCount, additionalProperties=$additionalProperties}"
 }

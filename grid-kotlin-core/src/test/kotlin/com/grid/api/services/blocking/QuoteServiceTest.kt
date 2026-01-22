@@ -6,10 +6,8 @@ import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.JsonValue
 import com.grid.api.models.quotes.QuoteCreateParams
-import com.grid.api.models.quotes.QuoteListParams
 import com.grid.api.models.quotes.QuoteRetryParams
 import com.grid.api.models.quotes.QuoteSource
-import java.time.OffsetDateTime
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -87,23 +85,9 @@ internal class QuoteServiceTest {
                 .build()
         val quoteService = client.quotes()
 
-        val quotes =
-            quoteService.list(
-                QuoteListParams.builder()
-                    .createdAfter(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .createdBefore(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .cursor("cursor")
-                    .customerId("customerId")
-                    .limit(1L)
-                    .receivingAccountId("receivingAccountId")
-                    .receivingUmaAddress("receivingUmaAddress")
-                    .sendingAccountId("sendingAccountId")
-                    .sendingUmaAddress("sendingUmaAddress")
-                    .status(QuoteListParams.Status.PENDING)
-                    .build()
-            )
+        val page = quoteService.list()
 
-        quotes.validate()
+        page.response().validate()
     }
 
     @Disabled("Prism tests are disabled")

@@ -8,12 +8,12 @@ import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class QuoteListResponseTest {
+internal class QuoteListPageResponseTest {
 
     @Test
     fun create() {
-        val quoteListResponse =
-            QuoteListResponse.builder()
+        val quoteListPageResponse =
+            QuoteListPageResponse.builder()
                 .addData(
                     Quote.builder()
                         .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
@@ -97,7 +97,7 @@ internal class QuoteListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        assertThat(quoteListResponse.data())
+        assertThat(quoteListPageResponse.data())
             .containsExactly(
                 Quote.builder()
                     .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
@@ -176,16 +176,16 @@ internal class QuoteListResponseTest {
                     )
                     .build()
             )
-        assertThat(quoteListResponse.hasMore()).isEqualTo(true)
-        assertThat(quoteListResponse.nextCursor()).isEqualTo("nextCursor")
-        assertThat(quoteListResponse.totalCount()).isEqualTo(0L)
+        assertThat(quoteListPageResponse.hasMore()).isEqualTo(true)
+        assertThat(quoteListPageResponse.nextCursor()).isEqualTo("nextCursor")
+        assertThat(quoteListPageResponse.totalCount()).isEqualTo(0L)
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val quoteListResponse =
-            QuoteListResponse.builder()
+        val quoteListPageResponse =
+            QuoteListPageResponse.builder()
                 .addData(
                     Quote.builder()
                         .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
@@ -269,12 +269,12 @@ internal class QuoteListResponseTest {
                 .totalCount(0L)
                 .build()
 
-        val roundtrippedQuoteListResponse =
+        val roundtrippedQuoteListPageResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(quoteListResponse),
-                jacksonTypeRef<QuoteListResponse>(),
+                jsonMapper.writeValueAsString(quoteListPageResponse),
+                jacksonTypeRef<QuoteListPageResponse>(),
             )
 
-        assertThat(roundtrippedQuoteListResponse).isEqualTo(quoteListResponse)
+        assertThat(roundtrippedQuoteListPageResponse).isEqualTo(quoteListPageResponse)
     }
 }

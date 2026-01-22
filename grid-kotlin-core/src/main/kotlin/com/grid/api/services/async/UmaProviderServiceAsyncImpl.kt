@@ -14,8 +14,9 @@ import com.grid.api.core.http.HttpResponse.Handler
 import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.core.http.parseable
 import com.grid.api.core.prepareAsync
+import com.grid.api.models.umaproviders.UmaProviderListPageAsync
+import com.grid.api.models.umaproviders.UmaProviderListPageResponse
 import com.grid.api.models.umaproviders.UmaProviderListParams
-import com.grid.api.models.umaproviders.UmaProviderListResponse
 
 class UmaProviderServiceAsyncImpl internal constructor(private val clientOptions: ClientOptions) :
     UmaProviderServiceAsync {
@@ -32,7 +33,7 @@ class UmaProviderServiceAsyncImpl internal constructor(private val clientOptions
     override suspend fun list(
         params: UmaProviderListParams,
         requestOptions: RequestOptions,
-    ): UmaProviderListResponse =
+    ): UmaProviderListPageAsync =
         // get /uma-providers
         withRawResponse().list(params, requestOptions).parse()
 
@@ -49,13 +50,13 @@ class UmaProviderServiceAsyncImpl internal constructor(private val clientOptions
                 clientOptions.toBuilder().apply(modifier).build()
             )
 
-        private val listHandler: Handler<UmaProviderListResponse> =
-            jsonHandler<UmaProviderListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<UmaProviderListPageResponse> =
+            jsonHandler<UmaProviderListPageResponse>(clientOptions.jsonMapper)
 
         override suspend fun list(
             params: UmaProviderListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<UmaProviderListResponse> {
+        ): HttpResponseFor<UmaProviderListPageAsync> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -72,6 +73,13 @@ class UmaProviderServiceAsyncImpl internal constructor(private val clientOptions
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        UmaProviderListPageAsync.builder()
+                            .service(UmaProviderServiceAsyncImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

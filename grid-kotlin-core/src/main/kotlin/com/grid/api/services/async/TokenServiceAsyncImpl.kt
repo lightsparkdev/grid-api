@@ -20,8 +20,9 @@ import com.grid.api.core.prepareAsync
 import com.grid.api.models.tokens.ApiToken
 import com.grid.api.models.tokens.TokenCreateParams
 import com.grid.api.models.tokens.TokenDeleteParams
+import com.grid.api.models.tokens.TokenListPageAsync
+import com.grid.api.models.tokens.TokenListPageResponse
 import com.grid.api.models.tokens.TokenListParams
-import com.grid.api.models.tokens.TokenListResponse
 import com.grid.api.models.tokens.TokenRetrieveParams
 
 class TokenServiceAsyncImpl internal constructor(private val clientOptions: ClientOptions) :
@@ -53,7 +54,7 @@ class TokenServiceAsyncImpl internal constructor(private val clientOptions: Clie
     override suspend fun list(
         params: TokenListParams,
         requestOptions: RequestOptions,
-    ): TokenListResponse =
+    ): TokenListPageAsync =
         // get /tokens
         withRawResponse().list(params, requestOptions).parse()
 
@@ -133,13 +134,13 @@ class TokenServiceAsyncImpl internal constructor(private val clientOptions: Clie
             }
         }
 
-        private val listHandler: Handler<TokenListResponse> =
-            jsonHandler<TokenListResponse>(clientOptions.jsonMapper)
+        private val listHandler: Handler<TokenListPageResponse> =
+            jsonHandler<TokenListPageResponse>(clientOptions.jsonMapper)
 
         override suspend fun list(
             params: TokenListParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<TokenListResponse> {
+        ): HttpResponseFor<TokenListPageAsync> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -156,6 +157,13 @@ class TokenServiceAsyncImpl internal constructor(private val clientOptions: Clie
                         if (requestOptions.responseValidation!!) {
                             it.validate()
                         }
+                    }
+                    .let {
+                        TokenListPageAsync.builder()
+                            .service(TokenServiceAsyncImpl(clientOptions))
+                            .params(params)
+                            .response(it)
+                            .build()
                     }
             }
         }

@@ -9,8 +9,8 @@ import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.customers.externalaccounts.ExternalAccount
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreate
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreateParams
+import com.grid.api.models.customers.externalaccounts.ExternalAccountListPage
 import com.grid.api.models.customers.externalaccounts.ExternalAccountListParams
-import com.grid.api.models.customers.externalaccounts.ExternalAccountListResponse
 
 interface ExternalAccountService {
 
@@ -67,10 +67,10 @@ interface ExternalAccountService {
     fun list(
         params: ExternalAccountListParams = ExternalAccountListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): ExternalAccountListResponse
+    ): ExternalAccountListPage
 
     /** @see list */
-    fun list(requestOptions: RequestOptions): ExternalAccountListResponse =
+    fun list(requestOptions: RequestOptions): ExternalAccountListPage =
         list(ExternalAccountListParams.none(), requestOptions)
 
     /**
@@ -119,11 +119,11 @@ interface ExternalAccountService {
         fun list(
             params: ExternalAccountListParams = ExternalAccountListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<ExternalAccountListResponse>
+        ): HttpResponseFor<ExternalAccountListPage>
 
         /** @see list */
         @MustBeClosed
-        fun list(requestOptions: RequestOptions): HttpResponseFor<ExternalAccountListResponse> =
+        fun list(requestOptions: RequestOptions): HttpResponseFor<ExternalAccountListPage> =
             list(ExternalAccountListParams.none(), requestOptions)
     }
 }

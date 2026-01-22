@@ -7,13 +7,9 @@ import com.grid.api.client.okhttp.GridOkHttpClientAsync
 import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.CustomerCreateParams
 import com.grid.api.models.customers.CustomerGetKycLinkParams
-import com.grid.api.models.customers.CustomerListInternalAccountsParams
-import com.grid.api.models.customers.CustomerListParams
-import com.grid.api.models.customers.CustomerType
 import com.grid.api.models.customers.CustomerUpdateParams
 import com.grid.api.models.customers.IndividualCustomerUpdate
 import java.time.LocalDate
-import java.time.OffsetDateTime
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -127,23 +123,9 @@ internal class CustomerServiceAsyncTest {
                 .build()
         val customerServiceAsync = client.customers()
 
-        val customers =
-            customerServiceAsync.list(
-                CustomerListParams.builder()
-                    .createdAfter(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .createdBefore(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .cursor("cursor")
-                    .customerType(CustomerType.INDIVIDUAL)
-                    .isIncludingDeleted(true)
-                    .limit(1L)
-                    .platformCustomerId("platformCustomerId")
-                    .umaAddress("umaAddress")
-                    .updatedAfter(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .updatedBefore(OffsetDateTime.parse("2019-12-27T18:11:19.117Z"))
-                    .build()
-            )
+        val page = customerServiceAsync.list()
 
-        customers.validate()
+        page.response().validate()
     }
 
     @Disabled("Prism tests are disabled")
@@ -195,16 +177,8 @@ internal class CustomerServiceAsyncTest {
                 .build()
         val customerServiceAsync = client.customers()
 
-        val response =
-            customerServiceAsync.listInternalAccounts(
-                CustomerListInternalAccountsParams.builder()
-                    .currency("currency")
-                    .cursor("cursor")
-                    .customerId("customerId")
-                    .limit(1L)
-                    .build()
-            )
+        val page = customerServiceAsync.listInternalAccounts()
 
-        response.validate()
+        page.response().validate()
     }
 }

@@ -12,10 +12,10 @@ import com.grid.api.models.customers.CustomerDeleteParams
 import com.grid.api.models.customers.CustomerDeleteResponse
 import com.grid.api.models.customers.CustomerGetKycLinkParams
 import com.grid.api.models.customers.CustomerGetKycLinkResponse
+import com.grid.api.models.customers.CustomerListInternalAccountsPageAsync
 import com.grid.api.models.customers.CustomerListInternalAccountsParams
-import com.grid.api.models.customers.CustomerListInternalAccountsResponse
+import com.grid.api.models.customers.CustomerListPageAsync
 import com.grid.api.models.customers.CustomerListParams
-import com.grid.api.models.customers.CustomerListResponse
 import com.grid.api.models.customers.CustomerRetrieveParams
 import com.grid.api.models.customers.CustomerRetrieveResponse
 import com.grid.api.models.customers.CustomerUpdateParams
@@ -91,10 +91,10 @@ interface CustomerServiceAsync {
     suspend fun list(
         params: CustomerListParams = CustomerListParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): CustomerListResponse
+    ): CustomerListPageAsync
 
     /** @see list */
-    suspend fun list(requestOptions: RequestOptions): CustomerListResponse =
+    suspend fun list(requestOptions: RequestOptions): CustomerListPageAsync =
         list(CustomerListParams.none(), requestOptions)
 
     /** Delete a customer by their system-generated ID */
@@ -132,12 +132,12 @@ interface CustomerServiceAsync {
     suspend fun listInternalAccounts(
         params: CustomerListInternalAccountsParams = CustomerListInternalAccountsParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): CustomerListInternalAccountsResponse
+    ): CustomerListInternalAccountsPageAsync
 
     /** @see listInternalAccounts */
     suspend fun listInternalAccounts(
         requestOptions: RequestOptions
-    ): CustomerListInternalAccountsResponse =
+    ): CustomerListInternalAccountsPageAsync =
         listInternalAccounts(CustomerListInternalAccountsParams.none(), requestOptions)
 
     /**
@@ -222,11 +222,11 @@ interface CustomerServiceAsync {
         suspend fun list(
             params: CustomerListParams = CustomerListParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<CustomerListResponse>
+        ): HttpResponseFor<CustomerListPageAsync>
 
         /** @see list */
         @MustBeClosed
-        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<CustomerListResponse> =
+        suspend fun list(requestOptions: RequestOptions): HttpResponseFor<CustomerListPageAsync> =
             list(CustomerListParams.none(), requestOptions)
 
         /**
@@ -274,13 +274,13 @@ interface CustomerServiceAsync {
         suspend fun listInternalAccounts(
             params: CustomerListInternalAccountsParams = CustomerListInternalAccountsParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<CustomerListInternalAccountsResponse>
+        ): HttpResponseFor<CustomerListInternalAccountsPageAsync>
 
         /** @see listInternalAccounts */
         @MustBeClosed
         suspend fun listInternalAccounts(
             requestOptions: RequestOptions
-        ): HttpResponseFor<CustomerListInternalAccountsResponse> =
+        ): HttpResponseFor<CustomerListInternalAccountsPageAsync> =
             listInternalAccounts(CustomerListInternalAccountsParams.none(), requestOptions)
     }
 }
