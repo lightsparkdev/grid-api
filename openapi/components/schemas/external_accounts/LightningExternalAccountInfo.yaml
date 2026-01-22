@@ -10,8 +10,12 @@ allOf:
       - title: Lightning Invoice
         type: object
         required:
+          - destinationType
           - invoice
         properties:
+          destinationType:
+            const: INVOICE
+            example: INVOICE
           invoice:
             type: string
             description: 1-time use lightning bolt11 invoice payout destination
@@ -19,8 +23,12 @@ allOf:
       - title: Lightning - Bolt12 Offer
         type: object
         required:
+          - destinationType
           - bolt12
         properties:
+          destinationType:
+            const: BOLT12
+            example: BOLT12
           bolt12:
             type: string
             description: A bolt12 offer which can be reused as a payment destination
@@ -28,9 +36,15 @@ allOf:
       - title: Lightning Address
         type: object
         required:
+          - destinationType
           - lightningAddress
         properties:
+          destinationType:
+            const: LIGHTNING_ADDRESS
+            example: LIGHTNING_ADDRESS
           lightningAddress:
             type: string
             description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
             example: john.doe@lightningwallet.com
+    discriminator:
+      propertyName: destinationType
