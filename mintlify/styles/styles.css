@@ -268,24 +268,20 @@ html.dark .hero-card {
 
 .footer {
   display: flex;
-  width: 100%;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  padding: 0 16px;
 }
 
 @media (min-width: 640px) {
   .footer {
     gap: 20px;
-    padding: 0 32px;
   }
 }
 
 @media (min-width: 1024px) {
   .footer {
     gap: 24px;
-    padding: 0 120px;
   }
 }
 
