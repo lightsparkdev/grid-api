@@ -1,3 +1,77 @@
+/* ===========================================
+   Custom Font Styles for Suisse Intl
+   
+   Note: Base fonts (body/heading) are configured 
+   in docs.json using Mintlify's fonts config.
+   This CSS handles additional customizations.
+   =========================================== */
+
+/* Global: Enable single-story 'a' (stylistic alternates) */
+* {
+  font-feature-settings: "salt" on;
+  text-shadow: none;
+}
+
+/* Headings & Bold: Use Medium weight (500), normal tracking */
+h1, h2, h3, h4, h5, h6,
+strong, b, th,
+.sidebar-group-header,
+.eyebrow,
+.font-semibold,
+[data-component-part="step-title"],
+[data-component-part="tab-button"] {
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
+
+/* Navigation tabs, navbar links & CTA button: Medium weight */
+.nav-tabs-item,
+.navbar-link a,
+#topbar-cta-button, #topbar-cta-button *,
+#page-context-menu-button, #page-context-menu-button *,
+#pagination a, #pagination a * {
+  font-weight: 500 !important;
+  text-shadow: none !important;
+}
+
+/* Active sidebar item only: Medium weight (has text-primary class) */
+a[class*="text-primary"]:not(.nav-tabs-item),
+a[class*="text-primary"]:not(.nav-tabs-item) *,
+button[class*="text-primary"],
+button[class*="text-primary"] * {
+  font-weight: 500 !important;
+}
+
+/* Code: Use Suisse Intl Mono */
+code, pre, kbd, samp, .font-mono {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* API field names: Mono Bold */
+[data-component-part="field-name"] {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-weight: 700 !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* Homepage: Headings use Regular weight (400) */
+.hero h1, .hero h2, .hero h3,
+.hero .title, .hero .highlight,
+.usecase h2, .usecase .highlight,
+.hero-card h3, .card-content h3 {
+  font-weight: 400 !important;
+}
+
+/* Hero title letter-spacing */
+.hero .title span {
+  letter-spacing: -1.2px !important;
+}
+
+/* ===========================================
+   Existing Styles
+   =========================================== */
+
 html.light .hero {
   background: #f0f0ee;
   background-image: radial-gradient(
@@ -76,10 +150,9 @@ html.dark .hero-card {
   align-items: center;
   gap: 4px;
   border-radius: 4px;
-  font-feature-settings: "salt" on;
   font-size: 16px;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 500; /* Medium weight for buttons */
   line-height: 24px;
 }
 
@@ -90,7 +163,6 @@ html.dark .hero-card {
   padding-right: 16px;
   margin-bottom: 32px;
   gap: 32px;
-  font-family: "Suisse Intl";
 }
 
 @media (min-width: 640px) {
@@ -149,7 +221,6 @@ html.dark .hero-card {
   align-items: flex-start;
   gap: 32px;
   align-self: stretch;
-  font-family: "Suisse Intl";
 }
 
 @media (min-width: 640px) {
@@ -197,18 +268,14 @@ html.dark .hero-card {
 
 .footer {
   display: flex;
-  width: 100%;
-  max-width: 1200px;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  padding: 0 16px;
 }
 
 @media (min-width: 640px) {
   .footer {
     gap: 20px;
-    padding: 0;
   }
 }
 
