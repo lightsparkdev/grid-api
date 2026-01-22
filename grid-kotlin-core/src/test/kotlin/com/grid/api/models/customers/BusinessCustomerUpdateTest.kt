@@ -14,7 +14,6 @@ internal class BusinessCustomerUpdateTest {
     fun create() {
         val businessCustomerUpdate =
             BusinessCustomerUpdate.builder()
-                .customerType(BusinessCustomerUpdate.CustomerType.BUSINESS)
                 .address(
                     Address.builder()
                         .country("US")
@@ -58,8 +57,6 @@ internal class BusinessCustomerUpdateTest {
                 .umaAddress("\$acme@uma.domain.com")
                 .build()
 
-        assertThat(businessCustomerUpdate.customerType())
-            .isEqualTo(BusinessCustomerUpdate.CustomerType.BUSINESS)
         assertThat(businessCustomerUpdate.address())
             .isEqualTo(
                 Address.builder()
@@ -111,7 +108,6 @@ internal class BusinessCustomerUpdateTest {
         val jsonMapper = jsonMapper()
         val businessCustomerUpdate =
             BusinessCustomerUpdate.builder()
-                .customerType(BusinessCustomerUpdate.CustomerType.BUSINESS)
                 .address(
                     Address.builder()
                         .country("US")

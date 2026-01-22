@@ -399,7 +399,7 @@ private constructor(
         class NewIndividualCustomer
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
-            private val customerType: JsonField<IndividualCustomerUpdate.CustomerType>,
+            private val customerType: JsonValue,
             private val address: JsonField<Address>,
             private val birthDate: JsonField<LocalDate>,
             private val fullName: JsonField<String>,
@@ -414,7 +414,7 @@ private constructor(
             private constructor(
                 @JsonProperty("customerType")
                 @ExcludeMissing
-                customerType: JsonField<IndividualCustomerUpdate.CustomerType> = JsonMissing.of(),
+                customerType: JsonValue = JsonMissing.of(),
                 @JsonProperty("address")
                 @ExcludeMissing
                 address: JsonField<Address> = JsonMissing.of(),
@@ -459,12 +459,17 @@ private constructor(
             /**
              * Customer type
              *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
+             * Expected to always return the following:
+             * ```kotlin
+             * JsonValue.from("INDIVIDUAL")
+             * ```
+             *
+             * However, this method can be useful for debugging and logging (e.g. if the server
+             * responded with an unexpected value).
              */
-            fun customerType(): IndividualCustomerUpdate.CustomerType =
-                customerType.getRequired("customerType")
+            @JsonProperty("customerType")
+            @ExcludeMissing
+            fun _customerType(): JsonValue = customerType
 
             /**
              * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
@@ -523,16 +528,6 @@ private constructor(
              *   the server responded with an unexpected value).
              */
             fun kycUrl(): String? = kycUrl.getNullable("kycUrl")
-
-            /**
-             * Returns the raw JSON value of [customerType].
-             *
-             * Unlike [customerType], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("customerType")
-            @ExcludeMissing
-            fun _customerType(): JsonField<IndividualCustomerUpdate.CustomerType> = customerType
 
             /**
              * Returns the raw JSON value of [address].
@@ -616,7 +611,6 @@ private constructor(
                  *
                  * The following fields are required:
                  * ```kotlin
-                 * .customerType()
                  * .platformCustomerId()
                  * ```
                  */
@@ -626,7 +620,7 @@ private constructor(
             /** A builder for [NewIndividualCustomer]. */
             class Builder internal constructor() {
 
-                private var customerType: JsonField<IndividualCustomerUpdate.CustomerType>? = null
+                private var customerType: JsonValue = JsonValue.from("INDIVIDUAL")
                 private var address: JsonField<Address> = JsonMissing.of()
                 private var birthDate: JsonField<LocalDate> = JsonMissing.of()
                 private var fullName: JsonField<String> = JsonMissing.of()
@@ -648,21 +642,21 @@ private constructor(
                     additionalProperties = newIndividualCustomer.additionalProperties.toMutableMap()
                 }
 
-                /** Customer type */
-                fun customerType(customerType: IndividualCustomerUpdate.CustomerType) =
-                    customerType(JsonField.of(customerType))
-
                 /**
-                 * Sets [Builder.customerType] to an arbitrary JSON value.
+                 * Sets the field to an arbitrary JSON value.
                  *
-                 * You should usually call [Builder.customerType] with a well-typed
-                 * [IndividualCustomerUpdate.CustomerType] value instead. This method is primarily
-                 * for setting the field to an undocumented or not yet supported value.
+                 * It is usually unnecessary to call this method because the field defaults to the
+                 * following:
+                 * ```kotlin
+                 * JsonValue.from("INDIVIDUAL")
+                 * ```
+                 *
+                 * This method is primarily for setting the field to an undocumented or not yet
+                 * supported value.
                  */
-                fun customerType(customerType: JsonField<IndividualCustomerUpdate.CustomerType>) =
-                    apply {
-                        this.customerType = customerType
-                    }
+                fun customerType(customerType: JsonValue) = apply {
+                    this.customerType = customerType
+                }
 
                 fun address(address: Address) = address(JsonField.of(address))
 
@@ -792,7 +786,6 @@ private constructor(
                  *
                  * The following fields are required:
                  * ```kotlin
-                 * .customerType()
                  * .platformCustomerId()
                  * ```
                  *
@@ -800,7 +793,7 @@ private constructor(
                  */
                 fun build(): NewIndividualCustomer =
                     NewIndividualCustomer(
-                        checkRequired("customerType", customerType),
+                        customerType,
                         address,
                         birthDate,
                         fullName,
@@ -819,7 +812,11 @@ private constructor(
                     return@apply
                 }
 
-                customerType().validate()
+                _customerType().let {
+                    if (it != JsonValue.from("INDIVIDUAL")) {
+                        throw GridInvalidDataException("'customerType' is invalid, received $it")
+                    }
+                }
                 address()?.validate()
                 birthDate()
                 fullName()
@@ -845,7 +842,7 @@ private constructor(
              * Used for best match union deserialization.
              */
             internal fun validity(): Int =
-                (customerType.asKnown()?.validity() ?: 0) +
+                customerType.let { if (it == JsonValue.from("INDIVIDUAL")) 1 else 0 } +
                     (address.asKnown()?.validity() ?: 0) +
                     (if (birthDate.asKnown() == null) 0 else 1) +
                     (if (fullName.asKnown() == null) 0 else 1) +
@@ -894,7 +891,7 @@ private constructor(
         class NewBusinessCustomer
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
-            private val customerType: JsonField<BusinessCustomerUpdate.CustomerType>,
+            private val customerType: JsonValue,
             private val address: JsonField<Address>,
             private val beneficialOwners: JsonField<List<UltimateBeneficialOwner>>,
             private val businessInfo: JsonField<BusinessCustomerUpdate.BusinessInfo>,
@@ -908,7 +905,7 @@ private constructor(
             private constructor(
                 @JsonProperty("customerType")
                 @ExcludeMissing
-                customerType: JsonField<BusinessCustomerUpdate.CustomerType> = JsonMissing.of(),
+                customerType: JsonValue = JsonMissing.of(),
                 @JsonProperty("address")
                 @ExcludeMissing
                 address: JsonField<Address> = JsonMissing.of(),
@@ -948,12 +945,17 @@ private constructor(
             /**
              * Customer type
              *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
+             * Expected to always return the following:
+             * ```kotlin
+             * JsonValue.from("BUSINESS")
+             * ```
+             *
+             * However, this method can be useful for debugging and logging (e.g. if the server
+             * responded with an unexpected value).
              */
-            fun customerType(): BusinessCustomerUpdate.CustomerType =
-                customerType.getRequired("customerType")
+            @JsonProperty("customerType")
+            @ExcludeMissing
+            fun _customerType(): JsonValue = customerType
 
             /**
              * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
@@ -999,16 +1001,6 @@ private constructor(
              *   the server responded with an unexpected value).
              */
             fun kycUrl(): String? = kycUrl.getNullable("kycUrl")
-
-            /**
-             * Returns the raw JSON value of [customerType].
-             *
-             * Unlike [customerType], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("customerType")
-            @ExcludeMissing
-            fun _customerType(): JsonField<BusinessCustomerUpdate.CustomerType> = customerType
 
             /**
              * Returns the raw JSON value of [address].
@@ -1083,7 +1075,6 @@ private constructor(
                  *
                  * The following fields are required:
                  * ```kotlin
-                 * .customerType()
                  * .platformCustomerId()
                  * ```
                  */
@@ -1093,7 +1084,7 @@ private constructor(
             /** A builder for [NewBusinessCustomer]. */
             class Builder internal constructor() {
 
-                private var customerType: JsonField<BusinessCustomerUpdate.CustomerType>? = null
+                private var customerType: JsonValue = JsonValue.from("BUSINESS")
                 private var address: JsonField<Address> = JsonMissing.of()
                 private var beneficialOwners: JsonField<MutableList<UltimateBeneficialOwner>>? =
                     null
@@ -1116,21 +1107,21 @@ private constructor(
                     additionalProperties = newBusinessCustomer.additionalProperties.toMutableMap()
                 }
 
-                /** Customer type */
-                fun customerType(customerType: BusinessCustomerUpdate.CustomerType) =
-                    customerType(JsonField.of(customerType))
-
                 /**
-                 * Sets [Builder.customerType] to an arbitrary JSON value.
+                 * Sets the field to an arbitrary JSON value.
                  *
-                 * You should usually call [Builder.customerType] with a well-typed
-                 * [BusinessCustomerUpdate.CustomerType] value instead. This method is primarily for
-                 * setting the field to an undocumented or not yet supported value.
+                 * It is usually unnecessary to call this method because the field defaults to the
+                 * following:
+                 * ```kotlin
+                 * JsonValue.from("BUSINESS")
+                 * ```
+                 *
+                 * This method is primarily for setting the field to an undocumented or not yet
+                 * supported value.
                  */
-                fun customerType(customerType: JsonField<BusinessCustomerUpdate.CustomerType>) =
-                    apply {
-                        this.customerType = customerType
-                    }
+                fun customerType(customerType: JsonValue) = apply {
+                    this.customerType = customerType
+                }
 
                 fun address(address: Address) = address(JsonField.of(address))
 
@@ -1260,7 +1251,6 @@ private constructor(
                  *
                  * The following fields are required:
                  * ```kotlin
-                 * .customerType()
                  * .platformCustomerId()
                  * ```
                  *
@@ -1268,7 +1258,7 @@ private constructor(
                  */
                 fun build(): NewBusinessCustomer =
                     NewBusinessCustomer(
-                        checkRequired("customerType", customerType),
+                        customerType,
                         address,
                         (beneficialOwners ?: JsonMissing.of()).map { it.toImmutable() },
                         businessInfo,
@@ -1286,7 +1276,11 @@ private constructor(
                     return@apply
                 }
 
-                customerType().validate()
+                _customerType().let {
+                    if (it != JsonValue.from("BUSINESS")) {
+                        throw GridInvalidDataException("'customerType' is invalid, received $it")
+                    }
+                }
                 address()?.validate()
                 beneficialOwners()?.forEach { it.validate() }
                 businessInfo()?.validate()
@@ -1311,7 +1305,7 @@ private constructor(
              * Used for best match union deserialization.
              */
             internal fun validity(): Int =
-                (customerType.asKnown()?.validity() ?: 0) +
+                customerType.let { if (it == JsonValue.from("BUSINESS")) 1 else 0 } +
                     (address.asKnown()?.validity() ?: 0) +
                     (beneficialOwners.asKnown()?.sumOf { it.validity().toInt() } ?: 0) +
                     (businessInfo.asKnown()?.validity() ?: 0) +

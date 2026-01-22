@@ -747,18 +747,12 @@ private constructor(
              * Alias for calling [beneficiary] with the following:
              * ```kotlin
              * BusinessBeneficiary.builder()
-             *     .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
              *     .legalName(legalName)
              *     .build()
              * ```
              */
             fun businessBeneficiary(legalName: String) =
-                beneficiary(
-                    BusinessBeneficiary.builder()
-                        .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
-                        .legalName(legalName)
-                        .build()
-                )
+                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -1211,18 +1205,12 @@ private constructor(
              * Alias for calling [beneficiary] with the following:
              * ```kotlin
              * BusinessBeneficiary.builder()
-             *     .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
              *     .legalName(legalName)
              *     .build()
              * ```
              */
             fun businessBeneficiary(legalName: String) =
-                beneficiary(
-                    BusinessBeneficiary.builder()
-                        .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
-                        .legalName(legalName)
-                        .build()
-                )
+                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -1722,18 +1710,12 @@ private constructor(
              * Alias for calling [beneficiary] with the following:
              * ```kotlin
              * BusinessBeneficiary.builder()
-             *     .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
              *     .legalName(legalName)
              *     .build()
              * ```
              */
             fun businessBeneficiary(legalName: String) =
-                beneficiary(
-                    BusinessBeneficiary.builder()
-                        .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
-                        .legalName(legalName)
-                        .build()
-                )
+                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -2201,18 +2183,12 @@ private constructor(
              * Alias for calling [beneficiary] with the following:
              * ```kotlin
              * BusinessBeneficiary.builder()
-             *     .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
              *     .legalName(legalName)
              *     .build()
              * ```
              */
             fun businessBeneficiary(legalName: String) =
-                beneficiary(
-                    BusinessBeneficiary.builder()
-                        .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
-                        .legalName(legalName)
-                        .build()
-                )
+                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -2641,18 +2617,12 @@ private constructor(
              * Alias for calling [beneficiary] with the following:
              * ```kotlin
              * BusinessBeneficiary.builder()
-             *     .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
              *     .legalName(legalName)
              *     .build()
              * ```
              */
             fun businessBeneficiary(legalName: String) =
-                beneficiary(
-                    BusinessBeneficiary.builder()
-                        .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
-                        .legalName(legalName)
-                        .build()
-                )
+                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -3147,18 +3117,12 @@ private constructor(
              * Alias for calling [beneficiary] with the following:
              * ```kotlin
              * BusinessBeneficiary.builder()
-             *     .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
              *     .legalName(legalName)
              *     .build()
              * ```
              */
             fun businessBeneficiary(legalName: String) =
-                beneficiary(
-                    BusinessBeneficiary.builder()
-                        .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
-                        .legalName(legalName)
-                        .build()
-                )
+                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
 
             /** Purpose of payment */
             fun purposeOfPayment(purposeOfPayment: PurposeOfPayment) =
@@ -4062,6 +4026,7 @@ private constructor(
         class LightningInvoice
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
+            private val destinationType: JsonValue,
             private val invoice: JsonField<String>,
             private val accountType: JsonField<AccountType>,
             private val additionalProperties: MutableMap<String, JsonValue>,
@@ -4069,13 +4034,29 @@ private constructor(
 
             @JsonCreator
             private constructor(
+                @JsonProperty("destinationType")
+                @ExcludeMissing
+                destinationType: JsonValue = JsonMissing.of(),
                 @JsonProperty("invoice")
                 @ExcludeMissing
                 invoice: JsonField<String> = JsonMissing.of(),
                 @JsonProperty("accountType")
                 @ExcludeMissing
                 accountType: JsonField<AccountType> = JsonMissing.of(),
-            ) : this(invoice, accountType, mutableMapOf())
+            ) : this(destinationType, invoice, accountType, mutableMapOf())
+
+            /**
+             * Expected to always return the following:
+             * ```kotlin
+             * JsonValue.from("INVOICE")
+             * ```
+             *
+             * However, this method can be useful for debugging and logging (e.g. if the server
+             * responded with an unexpected value).
+             */
+            @JsonProperty("destinationType")
+            @ExcludeMissing
+            fun _destinationType(): JsonValue = destinationType
 
             /**
              * 1-time use lightning bolt11 invoice payout destination
@@ -4137,14 +4118,32 @@ private constructor(
             /** A builder for [LightningInvoice]. */
             class Builder internal constructor() {
 
+                private var destinationType: JsonValue = JsonValue.from("INVOICE")
                 private var invoice: JsonField<String>? = null
                 private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
                 internal fun from(lightningInvoice: LightningInvoice) = apply {
+                    destinationType = lightningInvoice.destinationType
                     invoice = lightningInvoice.invoice
                     accountType = lightningInvoice.accountType
                     additionalProperties = lightningInvoice.additionalProperties.toMutableMap()
+                }
+
+                /**
+                 * Sets the field to an arbitrary JSON value.
+                 *
+                 * It is usually unnecessary to call this method because the field defaults to the
+                 * following:
+                 * ```kotlin
+                 * JsonValue.from("INVOICE")
+                 * ```
+                 *
+                 * This method is primarily for setting the field to an undocumented or not yet
+                 * supported value.
+                 */
+                fun destinationType(destinationType: JsonValue) = apply {
+                    this.destinationType = destinationType
                 }
 
                 /** 1-time use lightning bolt11 invoice payout destination */
@@ -4208,6 +4207,7 @@ private constructor(
                  */
                 fun build(): LightningInvoice =
                     LightningInvoice(
+                        destinationType,
                         checkRequired("invoice", invoice),
                         accountType,
                         additionalProperties.toMutableMap(),
@@ -4221,6 +4221,11 @@ private constructor(
                     return@apply
                 }
 
+                _destinationType().let {
+                    if (it != JsonValue.from("INVOICE")) {
+                        throw GridInvalidDataException("'destinationType' is invalid, received $it")
+                    }
+                }
                 invoice()
                 accountType()?.validate()
                 validated = true
@@ -4241,7 +4246,9 @@ private constructor(
              * Used for best match union deserialization.
              */
             internal fun validity(): Int =
-                (if (invoice.asKnown() == null) 0 else 1) + (accountType.asKnown()?.validity() ?: 0)
+                destinationType.let { if (it == JsonValue.from("INVOICE")) 1 else 0 } +
+                    (if (invoice.asKnown() == null) 0 else 1) +
+                    (accountType.asKnown()?.validity() ?: 0)
 
             class AccountType
             @JsonCreator
@@ -4373,25 +4380,27 @@ private constructor(
                 }
 
                 return other is LightningInvoice &&
+                    destinationType == other.destinationType &&
                     invoice == other.invoice &&
                     accountType == other.accountType &&
                     additionalProperties == other.additionalProperties
             }
 
             private val hashCode: Int by lazy {
-                Objects.hash(invoice, accountType, additionalProperties)
+                Objects.hash(destinationType, invoice, accountType, additionalProperties)
             }
 
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "LightningInvoice{invoice=$invoice, accountType=$accountType, additionalProperties=$additionalProperties}"
+                "LightningInvoice{destinationType=$destinationType, invoice=$invoice, accountType=$accountType, additionalProperties=$additionalProperties}"
         }
 
         class LightningBolt12Offer
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
             private val bolt12: JsonField<String>,
+            private val destinationType: JsonValue,
             private val accountType: JsonField<AccountType>,
             private val additionalProperties: MutableMap<String, JsonValue>,
         ) {
@@ -4401,10 +4410,13 @@ private constructor(
                 @JsonProperty("bolt12")
                 @ExcludeMissing
                 bolt12: JsonField<String> = JsonMissing.of(),
+                @JsonProperty("destinationType")
+                @ExcludeMissing
+                destinationType: JsonValue = JsonMissing.of(),
                 @JsonProperty("accountType")
                 @ExcludeMissing
                 accountType: JsonField<AccountType> = JsonMissing.of(),
-            ) : this(bolt12, accountType, mutableMapOf())
+            ) : this(bolt12, destinationType, accountType, mutableMapOf())
 
             /**
              * A bolt12 offer which can be reused as a payment destination
@@ -4414,6 +4426,19 @@ private constructor(
              *   value).
              */
             fun bolt12(): String = bolt12.getRequired("bolt12")
+
+            /**
+             * Expected to always return the following:
+             * ```kotlin
+             * JsonValue.from("BOLT12")
+             * ```
+             *
+             * However, this method can be useful for debugging and logging (e.g. if the server
+             * responded with an unexpected value).
+             */
+            @JsonProperty("destinationType")
+            @ExcludeMissing
+            fun _destinationType(): JsonValue = destinationType
 
             /**
              * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
@@ -4467,11 +4492,13 @@ private constructor(
             class Builder internal constructor() {
 
                 private var bolt12: JsonField<String>? = null
+                private var destinationType: JsonValue = JsonValue.from("BOLT12")
                 private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
                 internal fun from(lightningBolt12Offer: LightningBolt12Offer) = apply {
                     bolt12 = lightningBolt12Offer.bolt12
+                    destinationType = lightningBolt12Offer.destinationType
                     accountType = lightningBolt12Offer.accountType
                     additionalProperties = lightningBolt12Offer.additionalProperties.toMutableMap()
                 }
@@ -4487,6 +4514,22 @@ private constructor(
                  * yet supported value.
                  */
                 fun bolt12(bolt12: JsonField<String>) = apply { this.bolt12 = bolt12 }
+
+                /**
+                 * Sets the field to an arbitrary JSON value.
+                 *
+                 * It is usually unnecessary to call this method because the field defaults to the
+                 * following:
+                 * ```kotlin
+                 * JsonValue.from("BOLT12")
+                 * ```
+                 *
+                 * This method is primarily for setting the field to an undocumented or not yet
+                 * supported value.
+                 */
+                fun destinationType(destinationType: JsonValue) = apply {
+                    this.destinationType = destinationType
+                }
 
                 fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
@@ -4538,6 +4581,7 @@ private constructor(
                 fun build(): LightningBolt12Offer =
                     LightningBolt12Offer(
                         checkRequired("bolt12", bolt12),
+                        destinationType,
                         accountType,
                         additionalProperties.toMutableMap(),
                     )
@@ -4551,6 +4595,11 @@ private constructor(
                 }
 
                 bolt12()
+                _destinationType().let {
+                    if (it != JsonValue.from("BOLT12")) {
+                        throw GridInvalidDataException("'destinationType' is invalid, received $it")
+                    }
+                }
                 accountType()?.validate()
                 validated = true
             }
@@ -4570,7 +4619,9 @@ private constructor(
              * Used for best match union deserialization.
              */
             internal fun validity(): Int =
-                (if (bolt12.asKnown() == null) 0 else 1) + (accountType.asKnown()?.validity() ?: 0)
+                (if (bolt12.asKnown() == null) 0 else 1) +
+                    destinationType.let { if (it == JsonValue.from("BOLT12")) 1 else 0 } +
+                    (accountType.asKnown()?.validity() ?: 0)
 
             class AccountType
             @JsonCreator
@@ -4703,23 +4754,25 @@ private constructor(
 
                 return other is LightningBolt12Offer &&
                     bolt12 == other.bolt12 &&
+                    destinationType == other.destinationType &&
                     accountType == other.accountType &&
                     additionalProperties == other.additionalProperties
             }
 
             private val hashCode: Int by lazy {
-                Objects.hash(bolt12, accountType, additionalProperties)
+                Objects.hash(bolt12, destinationType, accountType, additionalProperties)
             }
 
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "LightningBolt12Offer{bolt12=$bolt12, accountType=$accountType, additionalProperties=$additionalProperties}"
+                "LightningBolt12Offer{bolt12=$bolt12, destinationType=$destinationType, accountType=$accountType, additionalProperties=$additionalProperties}"
         }
 
         class LightningAddress
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
+            private val destinationType: JsonValue,
             private val lightningAddress: JsonField<String>,
             private val accountType: JsonField<AccountType>,
             private val additionalProperties: MutableMap<String, JsonValue>,
@@ -4727,13 +4780,29 @@ private constructor(
 
             @JsonCreator
             private constructor(
+                @JsonProperty("destinationType")
+                @ExcludeMissing
+                destinationType: JsonValue = JsonMissing.of(),
                 @JsonProperty("lightningAddress")
                 @ExcludeMissing
                 lightningAddress: JsonField<String> = JsonMissing.of(),
                 @JsonProperty("accountType")
                 @ExcludeMissing
                 accountType: JsonField<AccountType> = JsonMissing.of(),
-            ) : this(lightningAddress, accountType, mutableMapOf())
+            ) : this(destinationType, lightningAddress, accountType, mutableMapOf())
+
+            /**
+             * Expected to always return the following:
+             * ```kotlin
+             * JsonValue.from("LIGHTNING_ADDRESS")
+             * ```
+             *
+             * However, this method can be useful for debugging and logging (e.g. if the server
+             * responded with an unexpected value).
+             */
+            @JsonProperty("destinationType")
+            @ExcludeMissing
+            fun _destinationType(): JsonValue = destinationType
 
             /**
              * A lightning address which can be used as a payment destination. Note that for UMA
@@ -4800,14 +4869,32 @@ private constructor(
             /** A builder for [LightningAddress]. */
             class Builder internal constructor() {
 
+                private var destinationType: JsonValue = JsonValue.from("LIGHTNING_ADDRESS")
                 private var lightningAddress: JsonField<String>? = null
                 private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
                 internal fun from(lightningAddress: LightningAddress) = apply {
+                    destinationType = lightningAddress.destinationType
                     this.lightningAddress = lightningAddress.lightningAddress
                     accountType = lightningAddress.accountType
                     additionalProperties = lightningAddress.additionalProperties.toMutableMap()
+                }
+
+                /**
+                 * Sets the field to an arbitrary JSON value.
+                 *
+                 * It is usually unnecessary to call this method because the field defaults to the
+                 * following:
+                 * ```kotlin
+                 * JsonValue.from("LIGHTNING_ADDRESS")
+                 * ```
+                 *
+                 * This method is primarily for setting the field to an undocumented or not yet
+                 * supported value.
+                 */
+                fun destinationType(destinationType: JsonValue) = apply {
+                    this.destinationType = destinationType
                 }
 
                 /**
@@ -4878,6 +4965,7 @@ private constructor(
                  */
                 fun build(): LightningAddress =
                     LightningAddress(
+                        destinationType,
                         checkRequired("lightningAddress", lightningAddress),
                         accountType,
                         additionalProperties.toMutableMap(),
@@ -4891,6 +4979,11 @@ private constructor(
                     return@apply
                 }
 
+                _destinationType().let {
+                    if (it != JsonValue.from("LIGHTNING_ADDRESS")) {
+                        throw GridInvalidDataException("'destinationType' is invalid, received $it")
+                    }
+                }
                 lightningAddress()
                 accountType()?.validate()
                 validated = true
@@ -4911,7 +5004,8 @@ private constructor(
              * Used for best match union deserialization.
              */
             internal fun validity(): Int =
-                (if (lightningAddress.asKnown() == null) 0 else 1) +
+                destinationType.let { if (it == JsonValue.from("LIGHTNING_ADDRESS")) 1 else 0 } +
+                    (if (lightningAddress.asKnown() == null) 0 else 1) +
                     (accountType.asKnown()?.validity() ?: 0)
 
             class AccountType
@@ -5044,19 +5138,20 @@ private constructor(
                 }
 
                 return other is LightningAddress &&
+                    destinationType == other.destinationType &&
                     lightningAddress == other.lightningAddress &&
                     accountType == other.accountType &&
                     additionalProperties == other.additionalProperties
             }
 
             private val hashCode: Int by lazy {
-                Objects.hash(lightningAddress, accountType, additionalProperties)
+                Objects.hash(destinationType, lightningAddress, accountType, additionalProperties)
             }
 
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "LightningAddress{lightningAddress=$lightningAddress, accountType=$accountType, additionalProperties=$additionalProperties}"
+                "LightningAddress{destinationType=$destinationType, lightningAddress=$lightningAddress, accountType=$accountType, additionalProperties=$additionalProperties}"
         }
     }
 

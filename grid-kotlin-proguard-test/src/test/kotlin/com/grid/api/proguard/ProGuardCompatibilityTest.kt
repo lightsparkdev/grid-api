@@ -128,7 +128,6 @@ internal class ProGuardCompatibilityTest {
                     .customerType(CustomerType.INDIVIDUAL)
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
-                    .alias("\$alice-smith")
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .address(
                         Address.builder()

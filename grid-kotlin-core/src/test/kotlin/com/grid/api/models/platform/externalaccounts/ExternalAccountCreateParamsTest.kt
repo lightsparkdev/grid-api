@@ -26,9 +26,6 @@ internal class ExternalAccountCreateParamsTest {
                             .bankName("Chase Bank")
                             .beneficiary(
                                 IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                    )
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")
@@ -69,9 +66,6 @@ internal class ExternalAccountCreateParamsTest {
                                 .bankName("Chase Bank")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
-                                        .beneficiaryType(
-                                            IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                        )
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Doe")
                                         .nationality("US")
@@ -110,9 +104,6 @@ internal class ExternalAccountCreateParamsTest {
                             .bankName("Chase Bank")
                             .beneficiary(
                                 IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                    )
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")
@@ -151,9 +142,6 @@ internal class ExternalAccountCreateParamsTest {
                                 .routingNumber("123456789")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
-                                        .beneficiaryType(
-                                            IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                        )
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Doe")
                                         .nationality("US")
@@ -178,9 +166,6 @@ internal class ExternalAccountCreateParamsTest {
                             .routingNumber("123456789")
                             .beneficiary(
                                 IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                    )
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")

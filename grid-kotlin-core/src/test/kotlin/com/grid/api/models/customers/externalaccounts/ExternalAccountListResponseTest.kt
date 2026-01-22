@@ -26,9 +26,6 @@ internal class ExternalAccountListResponseTest {
                                 .bankName("Chase Bank")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
-                                        .beneficiaryType(
-                                            IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                        )
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Michael Doe")
                                         .nationality("US")
@@ -70,9 +67,6 @@ internal class ExternalAccountListResponseTest {
                             .bankName("Chase Bank")
                             .beneficiary(
                                 IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                    )
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Michael Doe")
                                     .nationality("US")
@@ -118,9 +112,6 @@ internal class ExternalAccountListResponseTest {
                                 .bankName("Chase Bank")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
-                                        .beneficiaryType(
-                                            IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                                        )
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Michael Doe")
                                         .nationality("US")

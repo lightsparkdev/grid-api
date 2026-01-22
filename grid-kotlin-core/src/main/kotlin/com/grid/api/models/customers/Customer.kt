@@ -24,7 +24,6 @@ private constructor(
     private val platformCustomerId: JsonField<String>,
     private val umaAddress: JsonField<String>,
     private val id: JsonField<String>,
-    private val alias: JsonField<String>,
     private val createdAt: JsonField<OffsetDateTime>,
     private val isDeleted: JsonField<Boolean>,
     private val kycStatus: JsonField<KycStatus>,
@@ -44,7 +43,6 @@ private constructor(
         @ExcludeMissing
         umaAddress: JsonField<String> = JsonMissing.of(),
         @JsonProperty("id") @ExcludeMissing id: JsonField<String> = JsonMissing.of(),
-        @JsonProperty("alias") @ExcludeMissing alias: JsonField<String> = JsonMissing.of(),
         @JsonProperty("createdAt")
         @ExcludeMissing
         createdAt: JsonField<OffsetDateTime> = JsonMissing.of(),
@@ -60,7 +58,6 @@ private constructor(
         platformCustomerId,
         umaAddress,
         id,
-        alias,
         createdAt,
         isDeleted,
         kycStatus,
@@ -100,16 +97,6 @@ private constructor(
      *   responded with an unexpected value).
      */
     fun id(): String? = id.getNullable("id")
-
-    /**
-     * Your public identifier for the customer for example `@alice` or `650-555-1234`. This value
-     * can be used to enable payments to your existing customer public identifiers on the UMA
-     * network.
-     *
-     * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
-     *   responded with an unexpected value).
-     */
-    fun alias(): String? = alias.getNullable("alias")
 
     /**
      * Creation timestamp
@@ -177,13 +164,6 @@ private constructor(
     @JsonProperty("id") @ExcludeMissing fun _id(): JsonField<String> = id
 
     /**
-     * Returns the raw JSON value of [alias].
-     *
-     * Unlike [alias], this method doesn't throw if the JSON field has an unexpected type.
-     */
-    @JsonProperty("alias") @ExcludeMissing fun _alias(): JsonField<String> = alias
-
-    /**
      * Returns the raw JSON value of [createdAt].
      *
      * Unlike [createdAt], this method doesn't throw if the JSON field has an unexpected type.
@@ -249,7 +229,6 @@ private constructor(
         private var platformCustomerId: JsonField<String>? = null
         private var umaAddress: JsonField<String>? = null
         private var id: JsonField<String> = JsonMissing.of()
-        private var alias: JsonField<String> = JsonMissing.of()
         private var createdAt: JsonField<OffsetDateTime> = JsonMissing.of()
         private var isDeleted: JsonField<Boolean> = JsonMissing.of()
         private var kycStatus: JsonField<KycStatus> = JsonMissing.of()
@@ -261,7 +240,6 @@ private constructor(
             platformCustomerId = customer.platformCustomerId
             umaAddress = customer.umaAddress
             id = customer.id
-            alias = customer.alias
             createdAt = customer.createdAt
             isDeleted = customer.isDeleted
             kycStatus = customer.kycStatus
@@ -323,21 +301,6 @@ private constructor(
          * method is primarily for setting the field to an undocumented or not yet supported value.
          */
         fun id(id: JsonField<String>) = apply { this.id = id }
-
-        /**
-         * Your public identifier for the customer for example `@alice` or `650-555-1234`. This
-         * value can be used to enable payments to your existing customer public identifiers on the
-         * UMA network.
-         */
-        fun alias(alias: String) = alias(JsonField.of(alias))
-
-        /**
-         * Sets [Builder.alias] to an arbitrary JSON value.
-         *
-         * You should usually call [Builder.alias] with a well-typed [String] value instead. This
-         * method is primarily for setting the field to an undocumented or not yet supported value.
-         */
-        fun alias(alias: JsonField<String>) = apply { this.alias = alias }
 
         /** Creation timestamp */
         fun createdAt(createdAt: OffsetDateTime) = createdAt(JsonField.of(createdAt))
@@ -426,7 +389,6 @@ private constructor(
                 checkRequired("platformCustomerId", platformCustomerId),
                 checkRequired("umaAddress", umaAddress),
                 id,
-                alias,
                 createdAt,
                 isDeleted,
                 kycStatus,
@@ -446,7 +408,6 @@ private constructor(
         platformCustomerId()
         umaAddress()
         id()
-        alias()
         createdAt()
         isDeleted()
         kycStatus()?.validate()
@@ -472,7 +433,6 @@ private constructor(
             (if (platformCustomerId.asKnown() == null) 0 else 1) +
             (if (umaAddress.asKnown() == null) 0 else 1) +
             (if (id.asKnown() == null) 0 else 1) +
-            (if (alias.asKnown() == null) 0 else 1) +
             (if (createdAt.asKnown() == null) 0 else 1) +
             (if (isDeleted.asKnown() == null) 0 else 1) +
             (kycStatus.asKnown()?.validity() ?: 0) +
@@ -645,7 +605,6 @@ private constructor(
             platformCustomerId == other.platformCustomerId &&
             umaAddress == other.umaAddress &&
             id == other.id &&
-            alias == other.alias &&
             createdAt == other.createdAt &&
             isDeleted == other.isDeleted &&
             kycStatus == other.kycStatus &&
@@ -659,7 +618,6 @@ private constructor(
             platformCustomerId,
             umaAddress,
             id,
-            alias,
             createdAt,
             isDeleted,
             kycStatus,
@@ -671,5 +629,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "Customer{customerType=$customerType, platformCustomerId=$platformCustomerId, umaAddress=$umaAddress, id=$id, alias=$alias, createdAt=$createdAt, isDeleted=$isDeleted, kycStatus=$kycStatus, updatedAt=$updatedAt, additionalProperties=$additionalProperties}"
+        "Customer{customerType=$customerType, platformCustomerId=$platformCustomerId, umaAddress=$umaAddress, id=$id, createdAt=$createdAt, isDeleted=$isDeleted, kycStatus=$kycStatus, updatedAt=$updatedAt, additionalProperties=$additionalProperties}"
 }

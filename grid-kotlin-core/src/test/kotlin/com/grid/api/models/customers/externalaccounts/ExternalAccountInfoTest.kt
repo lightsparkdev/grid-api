@@ -26,7 +26,6 @@ internal class ExternalAccountInfoTest {
                 .bankName("Chase Bank")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
@@ -72,7 +71,6 @@ internal class ExternalAccountInfoTest {
                     .bankName("Chase Bank")
                     .beneficiary(
                         IndividualBeneficiary.builder()
-                            .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")
@@ -107,7 +105,6 @@ internal class ExternalAccountInfoTest {
                 .clabeNumber("123456789012345678")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
@@ -150,7 +147,6 @@ internal class ExternalAccountInfoTest {
                     .clabeNumber("123456789012345678")
                     .beneficiary(
                         IndividualBeneficiary.builder()
-                            .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")
@@ -187,7 +183,6 @@ internal class ExternalAccountInfoTest {
                 .taxId("1234567890")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
@@ -232,7 +227,6 @@ internal class ExternalAccountInfoTest {
                     .taxId("1234567890")
                     .beneficiary(
                         IndividualBeneficiary.builder()
-                            .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")
@@ -268,7 +262,6 @@ internal class ExternalAccountInfoTest {
                 .swiftBic("DEUTDEFF")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
@@ -312,7 +305,6 @@ internal class ExternalAccountInfoTest {
                     .swiftBic("DEUTDEFF")
                     .beneficiary(
                         IndividualBeneficiary.builder()
-                            .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")
@@ -347,7 +339,6 @@ internal class ExternalAccountInfoTest {
                 .vpa("somecustomers@okbank")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
@@ -390,7 +381,6 @@ internal class ExternalAccountInfoTest {
                     .vpa("somecustomers@okbank")
                     .beneficiary(
                         IndividualBeneficiary.builder()
-                            .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")
@@ -426,7 +416,6 @@ internal class ExternalAccountInfoTest {
                 .bankName("First Bank of Nigeria")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
@@ -471,7 +460,6 @@ internal class ExternalAccountInfoTest {
                     .bankName("First Bank of Nigeria")
                     .beneficiary(
                         IndividualBeneficiary.builder()
-                            .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")

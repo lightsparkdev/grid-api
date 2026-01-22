@@ -6,13 +6,11 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.grid.api.core.Enum
 import com.grid.api.core.ExcludeMissing
 import com.grid.api.core.JsonField
 import com.grid.api.core.JsonMissing
 import com.grid.api.core.JsonValue
 import com.grid.api.core.checkKnown
-import com.grid.api.core.checkRequired
 import com.grid.api.core.toImmutable
 import com.grid.api.errors.GridInvalidDataException
 import java.util.Collections
@@ -21,7 +19,7 @@ import java.util.Objects
 class BusinessCustomerUpdate
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val customerType: JsonField<CustomerType>,
+    private val customerType: JsonValue,
     private val address: JsonField<Address>,
     private val beneficialOwners: JsonField<List<UltimateBeneficialOwner>>,
     private val businessInfo: JsonField<BusinessInfo>,
@@ -31,9 +29,7 @@ private constructor(
 
     @JsonCreator
     private constructor(
-        @JsonProperty("customerType")
-        @ExcludeMissing
-        customerType: JsonField<CustomerType> = JsonMissing.of(),
+        @JsonProperty("customerType") @ExcludeMissing customerType: JsonValue = JsonMissing.of(),
         @JsonProperty("address") @ExcludeMissing address: JsonField<Address> = JsonMissing.of(),
         @JsonProperty("beneficialOwners")
         @ExcludeMissing
@@ -47,10 +43,15 @@ private constructor(
     /**
      * Customer type
      *
-     * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
-     *   missing or null (e.g. if the server responded with an unexpected value).
+     * Expected to always return the following:
+     * ```kotlin
+     * JsonValue.from("BUSINESS")
+     * ```
+     *
+     * However, this method can be useful for debugging and logging (e.g. if the server responded
+     * with an unexpected value).
      */
-    fun customerType(): CustomerType = customerType.getRequired("customerType")
+    @JsonProperty("customerType") @ExcludeMissing fun _customerType(): JsonValue = customerType
 
     /**
      * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
@@ -78,15 +79,6 @@ private constructor(
      *   responded with an unexpected value).
      */
     fun umaAddress(): String? = umaAddress.getNullable("umaAddress")
-
-    /**
-     * Returns the raw JSON value of [customerType].
-     *
-     * Unlike [customerType], this method doesn't throw if the JSON field has an unexpected type.
-     */
-    @JsonProperty("customerType")
-    @ExcludeMissing
-    fun _customerType(): JsonField<CustomerType> = customerType
 
     /**
      * Returns the raw JSON value of [address].
@@ -135,21 +127,14 @@ private constructor(
 
     companion object {
 
-        /**
-         * Returns a mutable builder for constructing an instance of [BusinessCustomerUpdate].
-         *
-         * The following fields are required:
-         * ```kotlin
-         * .customerType()
-         * ```
-         */
+        /** Returns a mutable builder for constructing an instance of [BusinessCustomerUpdate]. */
         fun builder() = Builder()
     }
 
     /** A builder for [BusinessCustomerUpdate]. */
     class Builder internal constructor() {
 
-        private var customerType: JsonField<CustomerType>? = null
+        private var customerType: JsonValue = JsonValue.from("BUSINESS")
         private var address: JsonField<Address> = JsonMissing.of()
         private var beneficialOwners: JsonField<MutableList<UltimateBeneficialOwner>>? = null
         private var businessInfo: JsonField<BusinessInfo> = JsonMissing.of()
@@ -165,19 +150,19 @@ private constructor(
             additionalProperties = businessCustomerUpdate.additionalProperties.toMutableMap()
         }
 
-        /** Customer type */
-        fun customerType(customerType: CustomerType) = customerType(JsonField.of(customerType))
-
         /**
-         * Sets [Builder.customerType] to an arbitrary JSON value.
+         * Sets the field to an arbitrary JSON value.
          *
-         * You should usually call [Builder.customerType] with a well-typed [CustomerType] value
-         * instead. This method is primarily for setting the field to an undocumented or not yet
-         * supported value.
+         * It is usually unnecessary to call this method because the field defaults to the
+         * following:
+         * ```kotlin
+         * JsonValue.from("BUSINESS")
+         * ```
+         *
+         * This method is primarily for setting the field to an undocumented or not yet supported
+         * value.
          */
-        fun customerType(customerType: JsonField<CustomerType>) = apply {
-            this.customerType = customerType
-        }
+        fun customerType(customerType: JsonValue) = apply { this.customerType = customerType }
 
         fun address(address: Address) = address(JsonField.of(address))
 
@@ -263,17 +248,10 @@ private constructor(
          * Returns an immutable instance of [BusinessCustomerUpdate].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
-         *
-         * The following fields are required:
-         * ```kotlin
-         * .customerType()
-         * ```
-         *
-         * @throws IllegalStateException if any required field is unset.
          */
         fun build(): BusinessCustomerUpdate =
             BusinessCustomerUpdate(
-                checkRequired("customerType", customerType),
+                customerType,
                 address,
                 (beneficialOwners ?: JsonMissing.of()).map { it.toImmutable() },
                 businessInfo,
@@ -289,7 +267,11 @@ private constructor(
             return@apply
         }
 
-        customerType().validate()
+        _customerType().let {
+            if (it != JsonValue.from("BUSINESS")) {
+                throw GridInvalidDataException("'customerType' is invalid, received $it")
+            }
+        }
         address()?.validate()
         beneficialOwners()?.forEach { it.validate() }
         businessInfo()?.validate()
@@ -311,133 +293,11 @@ private constructor(
      * Used for best match union deserialization.
      */
     internal fun validity(): Int =
-        (customerType.asKnown()?.validity() ?: 0) +
+        customerType.let { if (it == JsonValue.from("BUSINESS")) 1 else 0 } +
             (address.asKnown()?.validity() ?: 0) +
             (beneficialOwners.asKnown()?.sumOf { it.validity().toInt() } ?: 0) +
             (businessInfo.asKnown()?.validity() ?: 0) +
             (if (umaAddress.asKnown() == null) 0 else 1)
-
-    /** Customer type */
-    class CustomerType @JsonCreator private constructor(private val value: JsonField<String>) :
-        Enum {
-
-        /**
-         * Returns this class instance's raw value.
-         *
-         * This is usually only useful if this instance was deserialized from data that doesn't
-         * match any known member, and you want to know that value. For example, if the SDK is on an
-         * older version than the API, then the API may respond with new members that the SDK is
-         * unaware of.
-         */
-        @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-        companion object {
-
-            val BUSINESS = of("BUSINESS")
-
-            fun of(value: String) = CustomerType(JsonField.of(value))
-        }
-
-        /** An enum containing [CustomerType]'s known values. */
-        enum class Known {
-            BUSINESS
-        }
-
-        /**
-         * An enum containing [CustomerType]'s known values, as well as an [_UNKNOWN] member.
-         *
-         * An instance of [CustomerType] can contain an unknown value in a couple of cases:
-         * - It was deserialized from data that doesn't match any known member. For example, if the
-         *   SDK is on an older version than the API, then the API may respond with new members that
-         *   the SDK is unaware of.
-         * - It was constructed with an arbitrary value using the [of] method.
-         */
-        enum class Value {
-            BUSINESS,
-            /**
-             * An enum member indicating that [CustomerType] was instantiated with an unknown value.
-             */
-            _UNKNOWN,
-        }
-
-        /**
-         * Returns an enum member corresponding to this class instance's value, or [Value._UNKNOWN]
-         * if the class was instantiated with an unknown value.
-         *
-         * Use the [known] method instead if you're certain the value is always known or if you want
-         * to throw for the unknown case.
-         */
-        fun value(): Value =
-            when (this) {
-                BUSINESS -> Value.BUSINESS
-                else -> Value._UNKNOWN
-            }
-
-        /**
-         * Returns an enum member corresponding to this class instance's value.
-         *
-         * Use the [value] method instead if you're uncertain the value is always known and don't
-         * want to throw for the unknown case.
-         *
-         * @throws GridInvalidDataException if this class instance's value is a not a known member.
-         */
-        fun known(): Known =
-            when (this) {
-                BUSINESS -> Known.BUSINESS
-                else -> throw GridInvalidDataException("Unknown CustomerType: $value")
-            }
-
-        /**
-         * Returns this class instance's primitive wire representation.
-         *
-         * This differs from the [toString] method because that method is primarily for debugging
-         * and generally doesn't throw.
-         *
-         * @throws GridInvalidDataException if this class instance's value does not have the
-         *   expected primitive type.
-         */
-        fun asString(): String =
-            _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-        private var validated: Boolean = false
-
-        fun validate(): CustomerType = apply {
-            if (validated) {
-                return@apply
-            }
-
-            known()
-            validated = true
-        }
-
-        fun isValid(): Boolean =
-            try {
-                validate()
-                true
-            } catch (e: GridInvalidDataException) {
-                false
-            }
-
-        /**
-         * Returns a score indicating how many valid values are contained in this object
-         * recursively.
-         *
-         * Used for best match union deserialization.
-         */
-        internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-
-            return other is CustomerType && value == other.value
-        }
-
-        override fun hashCode() = value.hashCode()
-
-        override fun toString() = value.toString()
-    }
 
     class BusinessInfo
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)

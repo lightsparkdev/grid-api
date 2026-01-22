@@ -14,7 +14,6 @@ internal class BusinessBeneficiaryTest {
     fun create() {
         val businessBeneficiary =
             BusinessBeneficiary.builder()
-                .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
                 .legalName("Acme Corporation, Inc.")
                 .address(
                     Address.builder()
@@ -30,8 +29,6 @@ internal class BusinessBeneficiaryTest {
                 .taxId("EIN-987654321")
                 .build()
 
-        assertThat(businessBeneficiary.beneficiaryType())
-            .isEqualTo(BusinessBeneficiary.BeneficiaryType.BUSINESS)
         assertThat(businessBeneficiary.legalName()).isEqualTo("Acme Corporation, Inc.")
         assertThat(businessBeneficiary.address())
             .isEqualTo(
@@ -53,7 +50,6 @@ internal class BusinessBeneficiaryTest {
         val jsonMapper = jsonMapper()
         val businessBeneficiary =
             BusinessBeneficiary.builder()
-                .beneficiaryType(BusinessBeneficiary.BeneficiaryType.BUSINESS)
                 .legalName("Acme Corporation, Inc.")
                 .address(
                     Address.builder()

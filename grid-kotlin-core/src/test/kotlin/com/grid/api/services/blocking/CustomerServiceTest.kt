@@ -37,7 +37,6 @@ internal class CustomerServiceTest {
                 CustomerCreateParams.builder()
                     .body(
                         CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                            .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                             .address(
                                 Address.builder()
                                     .country("US")
@@ -95,7 +94,6 @@ internal class CustomerServiceTest {
                     .customerId("customerId")
                     .body(
                         IndividualCustomerUpdate.builder()
-                            .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                             .address(
                                 Address.builder()
                                     .country("US")

@@ -15,7 +15,6 @@ internal class IndividualBeneficiaryTest {
     fun create() {
         val individualBeneficiary =
             IndividualBeneficiary.builder()
-                .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")
@@ -31,8 +30,6 @@ internal class IndividualBeneficiaryTest {
                 )
                 .build()
 
-        assertThat(individualBeneficiary.beneficiaryType())
-            .isEqualTo(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
         assertThat(individualBeneficiary.birthDate()).isEqualTo(LocalDate.parse("1990-01-15"))
         assertThat(individualBeneficiary.fullName()).isEqualTo("John Michael Doe")
         assertThat(individualBeneficiary.nationality()).isEqualTo("US")
@@ -54,7 +51,6 @@ internal class IndividualBeneficiaryTest {
         val jsonMapper = jsonMapper()
         val individualBeneficiary =
             IndividualBeneficiary.builder()
-                .beneficiaryType(IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")

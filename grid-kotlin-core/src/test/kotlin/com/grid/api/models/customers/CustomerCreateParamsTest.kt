@@ -13,7 +13,6 @@ internal class CustomerCreateParamsTest {
         CustomerCreateParams.builder()
             .body(
                 CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                    .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                     .address(
                         Address.builder()
                             .country("US")
@@ -41,7 +40,6 @@ internal class CustomerCreateParamsTest {
             CustomerCreateParams.builder()
                 .body(
                     CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                        .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                         .address(
                             Address.builder()
                                 .country("US")
@@ -68,7 +66,6 @@ internal class CustomerCreateParamsTest {
             .isEqualTo(
                 CustomerCreateParams.Body.ofNewIndividualCustomer(
                     CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                        .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                         .address(
                             Address.builder()
                                 .country("US")
@@ -96,7 +93,6 @@ internal class CustomerCreateParamsTest {
             CustomerCreateParams.builder()
                 .body(
                     CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                        .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                         .platformCustomerId("7b3c5a89d2f1e0")
                         .build()
                 )
@@ -108,7 +104,6 @@ internal class CustomerCreateParamsTest {
             .isEqualTo(
                 CustomerCreateParams.Body.ofNewIndividualCustomer(
                     CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                        .customerType(IndividualCustomerUpdate.CustomerType.INDIVIDUAL)
                         .platformCustomerId("7b3c5a89d2f1e0")
                         .build()
                 )
