@@ -14,6 +14,20 @@
       "dark": "#000000"
     }
   },
+  "fonts": {
+    "heading": {
+      "family": "Suisse Intl",
+      "source": "/fonts/suisse-intl/SuisseIntl-Medium.woff2",
+      "format": "woff2",
+      "weight": 500
+    },
+    "body": {
+      "family": "Suisse Intl",
+      "source": "/fonts/suisse-intl/SuisseIntl-Regular.woff2",
+      "format": "woff2",
+      "weight": 400
+    }
+  },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
