@@ -727,6 +727,7 @@ private constructor(
         override fun toString() = value.toString()
     }
 
+    /** Error information for a failed bulk import entry */
     class Error
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
