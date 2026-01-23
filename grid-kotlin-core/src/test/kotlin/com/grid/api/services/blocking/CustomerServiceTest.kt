@@ -32,7 +32,7 @@ internal class CustomerServiceTest {
             customerService.create(
                 CustomerCreateParams.builder()
                     .body(
-                        CustomerCreateParams.Body.NewIndividualCustomer.builder()
+                        IndividualCustomerUpdate.builder()
                             .address(
                                 Address.builder()
                                     .country("US")
@@ -46,9 +46,8 @@ internal class CustomerServiceTest {
                             .birthDate(LocalDate.parse("1992-03-25"))
                             .fullName("Jane Doe")
                             .nationality("US")
-                            .umaAddress("\$jane.doe@uma.domain.com")
                             .platformCustomerId("7b3c5a89d2f1e0")
-                            .kycUrl("https://example.com/kyc")
+                            .umaAddress("\$jane.doe@uma.domain.com")
                             .build()
                     )
                     .build()
@@ -103,6 +102,7 @@ internal class CustomerServiceTest {
                             .birthDate(LocalDate.parse("1985-06-15"))
                             .fullName("John Smith")
                             .nationality("US")
+                            .platformCustomerId("9f84e0c2a72c4fa")
                             .umaAddress("\$john.doe@uma.domain.com")
                             .build()
                     )

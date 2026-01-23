@@ -27,6 +27,7 @@ internal class IndividualCustomerUpdateTest {
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")
+                .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .build()
 
@@ -44,6 +45,7 @@ internal class IndividualCustomerUpdateTest {
         assertThat(individualCustomerUpdate.birthDate()).isEqualTo(LocalDate.parse("1990-01-15"))
         assertThat(individualCustomerUpdate.fullName()).isEqualTo("John Michael Doe")
         assertThat(individualCustomerUpdate.nationality()).isEqualTo("US")
+        assertThat(individualCustomerUpdate.platformCustomerId()).isEqualTo("9f84e0c2a72c4fa")
         assertThat(individualCustomerUpdate.umaAddress()).isEqualTo("\$john.doe@uma.domain.com")
     }
 
@@ -65,6 +67,7 @@ internal class IndividualCustomerUpdateTest {
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")
+                .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .build()
 

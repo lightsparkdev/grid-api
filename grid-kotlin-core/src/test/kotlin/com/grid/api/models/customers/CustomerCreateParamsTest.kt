@@ -12,7 +12,7 @@ internal class CustomerCreateParamsTest {
     fun create() {
         CustomerCreateParams.builder()
             .body(
-                CustomerCreateParams.Body.NewIndividualCustomer.builder()
+                IndividualCustomerUpdate.builder()
                     .address(
                         Address.builder()
                             .country("US")
@@ -26,9 +26,8 @@ internal class CustomerCreateParamsTest {
                     .birthDate(LocalDate.parse("1992-03-25"))
                     .fullName("Jane Doe")
                     .nationality("US")
-                    .umaAddress("\$jane.doe@uma.domain.com")
                     .platformCustomerId("7b3c5a89d2f1e0")
-                    .kycUrl("https://example.com/kyc")
+                    .umaAddress("\$jane.doe@uma.domain.com")
                     .build()
             )
             .build()
@@ -39,7 +38,7 @@ internal class CustomerCreateParamsTest {
         val params =
             CustomerCreateParams.builder()
                 .body(
-                    CustomerCreateParams.Body.NewIndividualCustomer.builder()
+                    IndividualCustomerUpdate.builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -53,9 +52,8 @@ internal class CustomerCreateParamsTest {
                         .birthDate(LocalDate.parse("1992-03-25"))
                         .fullName("Jane Doe")
                         .nationality("US")
-                        .umaAddress("\$jane.doe@uma.domain.com")
                         .platformCustomerId("7b3c5a89d2f1e0")
-                        .kycUrl("https://example.com/kyc")
+                        .umaAddress("\$jane.doe@uma.domain.com")
                         .build()
                 )
                 .build()
@@ -64,8 +62,8 @@ internal class CustomerCreateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.Body.ofNewIndividualCustomer(
-                    CustomerCreateParams.Body.NewIndividualCustomer.builder()
+                CustomerCreateParams.Body.ofIndividual(
+                    IndividualCustomerUpdate.builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -79,9 +77,8 @@ internal class CustomerCreateParamsTest {
                         .birthDate(LocalDate.parse("1992-03-25"))
                         .fullName("Jane Doe")
                         .nationality("US")
-                        .umaAddress("\$jane.doe@uma.domain.com")
                         .platformCustomerId("7b3c5a89d2f1e0")
-                        .kycUrl("https://example.com/kyc")
+                        .umaAddress("\$jane.doe@uma.domain.com")
                         .build()
                 )
             )
@@ -90,23 +87,13 @@ internal class CustomerCreateParamsTest {
     @Test
     fun bodyWithoutOptionalFields() {
         val params =
-            CustomerCreateParams.builder()
-                .body(
-                    CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                        .platformCustomerId("7b3c5a89d2f1e0")
-                        .build()
-                )
-                .build()
+            CustomerCreateParams.builder().body(IndividualCustomerUpdate.builder().build()).build()
 
         val body = params._body()
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.Body.ofNewIndividualCustomer(
-                    CustomerCreateParams.Body.NewIndividualCustomer.builder()
-                        .platformCustomerId("7b3c5a89d2f1e0")
-                        .build()
-                )
+                CustomerCreateParams.Body.ofIndividual(IndividualCustomerUpdate.builder().build())
             )
     }
 }
