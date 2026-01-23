@@ -933,7 +933,15 @@ private constructor(
              */
             fun code(): String? = code.getNullable("code")
 
-            /** Additional error details */
+            /**
+             * Additional error details
+             *
+             * This arbitrary value can be deserialized into a custom type using the `convert`
+             * method:
+             * ```kotlin
+             * val myObject: MyClass = innerError.details().convert(MyClass::class.java)
+             * ```
+             */
             @JsonProperty("details") @ExcludeMissing fun _details(): JsonValue = details
 
             /**
