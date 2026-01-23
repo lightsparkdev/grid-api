@@ -6,8 +6,8 @@ import com.google.errorprone.annotations.MustBeClosed
 import com.grid.api.core.ClientOptions
 import com.grid.api.core.RequestOptions
 import com.grid.api.core.http.HttpResponseFor
-import com.grid.api.models.platform.PlatformListInternalAccountsParams
-import com.grid.api.models.platform.PlatformListInternalAccountsResponse
+import com.grid.api.models.platform.PlatformInternalAccountsParams
+import com.grid.api.models.platform.PlatformInternalAccountsResponse
 import com.grid.api.services.blocking.platform.ExternalAccountService
 
 interface PlatformService {
@@ -34,14 +34,14 @@ interface PlatformService {
      * currency. They can be used for things like distributing bitcoin rewards to customers, or for
      * other platform-wide purposes.
      */
-    fun listInternalAccounts(
-        params: PlatformListInternalAccountsParams = PlatformListInternalAccountsParams.none(),
+    fun internalAccounts(
+        params: PlatformInternalAccountsParams = PlatformInternalAccountsParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): PlatformListInternalAccountsResponse
+    ): PlatformInternalAccountsResponse
 
-    /** @see listInternalAccounts */
-    fun listInternalAccounts(requestOptions: RequestOptions): PlatformListInternalAccountsResponse =
-        listInternalAccounts(PlatformListInternalAccountsParams.none(), requestOptions)
+    /** @see internalAccounts */
+    fun internalAccounts(requestOptions: RequestOptions): PlatformInternalAccountsResponse =
+        internalAccounts(PlatformInternalAccountsParams.none(), requestOptions)
 
     /** A view of [PlatformService] that provides access to raw HTTP responses for each method. */
     interface WithRawResponse {
@@ -57,19 +57,19 @@ interface PlatformService {
 
         /**
          * Returns a raw HTTP response for `get /platform/internal-accounts`, but is otherwise the
-         * same as [PlatformService.listInternalAccounts].
+         * same as [PlatformService.internalAccounts].
          */
         @MustBeClosed
-        fun listInternalAccounts(
-            params: PlatformListInternalAccountsParams = PlatformListInternalAccountsParams.none(),
+        fun internalAccounts(
+            params: PlatformInternalAccountsParams = PlatformInternalAccountsParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<PlatformListInternalAccountsResponse>
+        ): HttpResponseFor<PlatformInternalAccountsResponse>
 
-        /** @see listInternalAccounts */
+        /** @see internalAccounts */
         @MustBeClosed
-        fun listInternalAccounts(
+        fun internalAccounts(
             requestOptions: RequestOptions
-        ): HttpResponseFor<PlatformListInternalAccountsResponse> =
-            listInternalAccounts(PlatformListInternalAccountsParams.none(), requestOptions)
+        ): HttpResponseFor<PlatformInternalAccountsResponse> =
+            internalAccounts(PlatformInternalAccountsParams.none(), requestOptions)
     }
 }

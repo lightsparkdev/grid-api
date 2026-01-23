@@ -6,16 +6,16 @@ import com.grid.api.core.http.QueryParams
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class PlatformListInternalAccountsParamsTest {
+internal class PlatformInternalAccountsParamsTest {
 
     @Test
     fun create() {
-        PlatformListInternalAccountsParams.builder().currency("currency").build()
+        PlatformInternalAccountsParams.builder().currency("currency").build()
     }
 
     @Test
     fun queryParams() {
-        val params = PlatformListInternalAccountsParams.builder().currency("currency").build()
+        val params = PlatformInternalAccountsParams.builder().currency("currency").build()
 
         val queryParams = params._queryParams()
 
@@ -24,7 +24,7 @@ internal class PlatformListInternalAccountsParamsTest {
 
     @Test
     fun queryParamsWithoutOptionalFields() {
-        val params = PlatformListInternalAccountsParams.builder().build()
+        val params = PlatformInternalAccountsParams.builder().build()
 
         val queryParams = params._queryParams()
 

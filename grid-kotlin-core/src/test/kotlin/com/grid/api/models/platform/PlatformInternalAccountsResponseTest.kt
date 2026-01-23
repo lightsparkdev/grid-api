@@ -12,12 +12,12 @@ import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class PlatformListInternalAccountsResponseTest {
+internal class PlatformInternalAccountsResponseTest {
 
     @Test
     fun create() {
-        val platformListInternalAccountsResponse =
-            PlatformListInternalAccountsResponse.builder()
+        val platformInternalAccountsResponse =
+            PlatformInternalAccountsResponse.builder()
                 .addData(
                     InternalAccount.builder()
                         .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -54,7 +54,7 @@ internal class PlatformListInternalAccountsResponseTest {
                 )
                 .build()
 
-        assertThat(platformListInternalAccountsResponse.data())
+        assertThat(platformInternalAccountsResponse.data())
             .containsExactly(
                 InternalAccount.builder()
                     .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -94,8 +94,8 @@ internal class PlatformListInternalAccountsResponseTest {
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val platformListInternalAccountsResponse =
-            PlatformListInternalAccountsResponse.builder()
+        val platformInternalAccountsResponse =
+            PlatformInternalAccountsResponse.builder()
                 .addData(
                     InternalAccount.builder()
                         .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -132,13 +132,13 @@ internal class PlatformListInternalAccountsResponseTest {
                 )
                 .build()
 
-        val roundtrippedPlatformListInternalAccountsResponse =
+        val roundtrippedPlatformInternalAccountsResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(platformListInternalAccountsResponse),
-                jacksonTypeRef<PlatformListInternalAccountsResponse>(),
+                jsonMapper.writeValueAsString(platformInternalAccountsResponse),
+                jacksonTypeRef<PlatformInternalAccountsResponse>(),
             )
 
-        assertThat(roundtrippedPlatformListInternalAccountsResponse)
-            .isEqualTo(platformListInternalAccountsResponse)
+        assertThat(roundtrippedPlatformInternalAccountsResponse)
+            .isEqualTo(platformInternalAccountsResponse)
     }
 }

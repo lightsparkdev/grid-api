@@ -3823,36 +3823,36 @@ private constructor(
     @JsonSerialize(using = LightningExternalAccountInfo.Serializer::class)
     class LightningExternalAccountInfo
     private constructor(
-        private val invoice: LightningInvoice? = null,
-        private val bolt12Offer: LightningBolt12Offer? = null,
-        private val address: LightningAddress? = null,
+        private val invoice: LightningInvoiceExternalAccountInfo? = null,
+        private val bolt12: LightningBolt12ExternalAccountInfo? = null,
+        private val address: LightningAddressExternalAccountInfo? = null,
         private val _json: JsonValue? = null,
     ) {
 
-        fun invoice(): LightningInvoice? = invoice
+        fun invoice(): LightningInvoiceExternalAccountInfo? = invoice
 
-        fun bolt12Offer(): LightningBolt12Offer? = bolt12Offer
+        fun bolt12(): LightningBolt12ExternalAccountInfo? = bolt12
 
-        fun address(): LightningAddress? = address
+        fun address(): LightningAddressExternalAccountInfo? = address
 
         fun isInvoice(): Boolean = invoice != null
 
-        fun isBolt12Offer(): Boolean = bolt12Offer != null
+        fun isBolt12(): Boolean = bolt12 != null
 
         fun isAddress(): Boolean = address != null
 
-        fun asInvoice(): LightningInvoice = invoice.getOrThrow("invoice")
+        fun asInvoice(): LightningInvoiceExternalAccountInfo = invoice.getOrThrow("invoice")
 
-        fun asBolt12Offer(): LightningBolt12Offer = bolt12Offer.getOrThrow("bolt12Offer")
+        fun asBolt12(): LightningBolt12ExternalAccountInfo = bolt12.getOrThrow("bolt12")
 
-        fun asAddress(): LightningAddress = address.getOrThrow("address")
+        fun asAddress(): LightningAddressExternalAccountInfo = address.getOrThrow("address")
 
         fun _json(): JsonValue? = _json
 
         fun <T> accept(visitor: Visitor<T>): T =
             when {
                 invoice != null -> visitor.visitInvoice(invoice)
-                bolt12Offer != null -> visitor.visitBolt12Offer(bolt12Offer)
+                bolt12 != null -> visitor.visitBolt12(bolt12)
                 address != null -> visitor.visitAddress(address)
                 else -> visitor.unknown(_json)
             }
@@ -3866,15 +3866,15 @@ private constructor(
 
             accept(
                 object : Visitor<Unit> {
-                    override fun visitInvoice(invoice: LightningInvoice) {
+                    override fun visitInvoice(invoice: LightningInvoiceExternalAccountInfo) {
                         invoice.validate()
                     }
 
-                    override fun visitBolt12Offer(bolt12Offer: LightningBolt12Offer) {
-                        bolt12Offer.validate()
+                    override fun visitBolt12(bolt12: LightningBolt12ExternalAccountInfo) {
+                        bolt12.validate()
                     }
 
-                    override fun visitAddress(address: LightningAddress) {
+                    override fun visitAddress(address: LightningAddressExternalAccountInfo) {
                         address.validate()
                     }
                 }
@@ -3899,12 +3899,14 @@ private constructor(
         internal fun validity(): Int =
             accept(
                 object : Visitor<Int> {
-                    override fun visitInvoice(invoice: LightningInvoice) = invoice.validity()
+                    override fun visitInvoice(invoice: LightningInvoiceExternalAccountInfo) =
+                        invoice.validity()
 
-                    override fun visitBolt12Offer(bolt12Offer: LightningBolt12Offer) =
-                        bolt12Offer.validity()
+                    override fun visitBolt12(bolt12: LightningBolt12ExternalAccountInfo) =
+                        bolt12.validity()
 
-                    override fun visitAddress(address: LightningAddress) = address.validity()
+                    override fun visitAddress(address: LightningAddressExternalAccountInfo) =
+                        address.validity()
 
                     override fun unknown(json: JsonValue?) = 0
                 }
@@ -3917,16 +3919,16 @@ private constructor(
 
             return other is LightningExternalAccountInfo &&
                 invoice == other.invoice &&
-                bolt12Offer == other.bolt12Offer &&
+                bolt12 == other.bolt12 &&
                 address == other.address
         }
 
-        override fun hashCode(): Int = Objects.hash(invoice, bolt12Offer, address)
+        override fun hashCode(): Int = Objects.hash(invoice, bolt12, address)
 
         override fun toString(): String =
             when {
                 invoice != null -> "LightningExternalAccountInfo{invoice=$invoice}"
-                bolt12Offer != null -> "LightningExternalAccountInfo{bolt12Offer=$bolt12Offer}"
+                bolt12 != null -> "LightningExternalAccountInfo{bolt12=$bolt12}"
                 address != null -> "LightningExternalAccountInfo{address=$address}"
                 _json != null -> "LightningExternalAccountInfo{_unknown=$_json}"
                 else -> throw IllegalStateException("Invalid LightningExternalAccountInfo")
@@ -3934,13 +3936,13 @@ private constructor(
 
         companion object {
 
-            fun ofInvoice(invoice: LightningInvoice) =
+            fun ofInvoice(invoice: LightningInvoiceExternalAccountInfo) =
                 LightningExternalAccountInfo(invoice = invoice)
 
-            fun ofBolt12Offer(bolt12Offer: LightningBolt12Offer) =
-                LightningExternalAccountInfo(bolt12Offer = bolt12Offer)
+            fun ofBolt12(bolt12: LightningBolt12ExternalAccountInfo) =
+                LightningExternalAccountInfo(bolt12 = bolt12)
 
-            fun ofAddress(address: LightningAddress) =
+            fun ofAddress(address: LightningAddressExternalAccountInfo) =
                 LightningExternalAccountInfo(address = address)
         }
 
@@ -3950,11 +3952,11 @@ private constructor(
          */
         interface Visitor<out T> {
 
-            fun visitInvoice(invoice: LightningInvoice): T
+            fun visitInvoice(invoice: LightningInvoiceExternalAccountInfo): T
 
-            fun visitBolt12Offer(bolt12Offer: LightningBolt12Offer): T
+            fun visitBolt12(bolt12: LightningBolt12ExternalAccountInfo): T
 
-            fun visitAddress(address: LightningAddress): T
+            fun visitAddress(address: LightningAddressExternalAccountInfo): T
 
             /**
              * Maps an unknown variant of [LightningExternalAccountInfo] to a value of type [T].
@@ -3979,15 +3981,21 @@ private constructor(
 
                 val bestMatches =
                     sequenceOf(
-                            tryDeserialize(node, jacksonTypeRef<LightningInvoice>())?.let {
-                                LightningExternalAccountInfo(invoice = it, _json = json)
-                            },
-                            tryDeserialize(node, jacksonTypeRef<LightningBolt12Offer>())?.let {
-                                LightningExternalAccountInfo(bolt12Offer = it, _json = json)
-                            },
-                            tryDeserialize(node, jacksonTypeRef<LightningAddress>())?.let {
-                                LightningExternalAccountInfo(address = it, _json = json)
-                            },
+                            tryDeserialize(
+                                    node,
+                                    jacksonTypeRef<LightningInvoiceExternalAccountInfo>(),
+                                )
+                                ?.let { LightningExternalAccountInfo(invoice = it, _json = json) },
+                            tryDeserialize(
+                                    node,
+                                    jacksonTypeRef<LightningBolt12ExternalAccountInfo>(),
+                                )
+                                ?.let { LightningExternalAccountInfo(bolt12 = it, _json = json) },
+                            tryDeserialize(
+                                    node,
+                                    jacksonTypeRef<LightningAddressExternalAccountInfo>(),
+                                )
+                                ?.let { LightningExternalAccountInfo(address = it, _json = json) },
                         )
                         .filterNotNull()
                         .allMaxBy { it.validity() }
@@ -4015,7 +4023,7 @@ private constructor(
             ) {
                 when {
                     value.invoice != null -> generator.writeObject(value.invoice)
-                    value.bolt12Offer != null -> generator.writeObject(value.bolt12Offer)
+                    value.bolt12 != null -> generator.writeObject(value.bolt12)
                     value.address != null -> generator.writeObject(value.address)
                     value._json != null -> generator.writeObject(value._json)
                     else -> throw IllegalStateException("Invalid LightningExternalAccountInfo")
@@ -4023,7 +4031,7 @@ private constructor(
             }
         }
 
-        class LightningInvoice
+        class LightningInvoiceExternalAccountInfo
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
             private val destinationType: JsonValue,
@@ -4105,7 +4113,8 @@ private constructor(
             companion object {
 
                 /**
-                 * Returns a mutable builder for constructing an instance of [LightningInvoice].
+                 * Returns a mutable builder for constructing an instance of
+                 * [LightningInvoiceExternalAccountInfo].
                  *
                  * The following fields are required:
                  * ```kotlin
@@ -4115,7 +4124,7 @@ private constructor(
                 fun builder() = Builder()
             }
 
-            /** A builder for [LightningInvoice]. */
+            /** A builder for [LightningInvoiceExternalAccountInfo]. */
             class Builder internal constructor() {
 
                 private var destinationType: JsonValue = JsonValue.from("INVOICE")
@@ -4123,11 +4132,14 @@ private constructor(
                 private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-                internal fun from(lightningInvoice: LightningInvoice) = apply {
-                    destinationType = lightningInvoice.destinationType
-                    invoice = lightningInvoice.invoice
-                    accountType = lightningInvoice.accountType
-                    additionalProperties = lightningInvoice.additionalProperties.toMutableMap()
+                internal fun from(
+                    lightningInvoiceExternalAccountInfo: LightningInvoiceExternalAccountInfo
+                ) = apply {
+                    destinationType = lightningInvoiceExternalAccountInfo.destinationType
+                    invoice = lightningInvoiceExternalAccountInfo.invoice
+                    accountType = lightningInvoiceExternalAccountInfo.accountType
+                    additionalProperties =
+                        lightningInvoiceExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
                 /**
@@ -4194,7 +4206,7 @@ private constructor(
                 }
 
                 /**
-                 * Returns an immutable instance of [LightningInvoice].
+                 * Returns an immutable instance of [LightningInvoiceExternalAccountInfo].
                  *
                  * Further updates to this [Builder] will not mutate the returned instance.
                  *
@@ -4205,8 +4217,8 @@ private constructor(
                  *
                  * @throws IllegalStateException if any required field is unset.
                  */
-                fun build(): LightningInvoice =
-                    LightningInvoice(
+                fun build(): LightningInvoiceExternalAccountInfo =
+                    LightningInvoiceExternalAccountInfo(
                         destinationType,
                         checkRequired("invoice", invoice),
                         accountType,
@@ -4216,7 +4228,7 @@ private constructor(
 
             private var validated: Boolean = false
 
-            fun validate(): LightningInvoice = apply {
+            fun validate(): LightningInvoiceExternalAccountInfo = apply {
                 if (validated) {
                     return@apply
                 }
@@ -4379,7 +4391,7 @@ private constructor(
                     return true
                 }
 
-                return other is LightningInvoice &&
+                return other is LightningInvoiceExternalAccountInfo &&
                     destinationType == other.destinationType &&
                     invoice == other.invoice &&
                     accountType == other.accountType &&
@@ -4393,10 +4405,10 @@ private constructor(
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "LightningInvoice{destinationType=$destinationType, invoice=$invoice, accountType=$accountType, additionalProperties=$additionalProperties}"
+                "LightningInvoiceExternalAccountInfo{destinationType=$destinationType, invoice=$invoice, accountType=$accountType, additionalProperties=$additionalProperties}"
         }
 
-        class LightningBolt12Offer
+        class LightningBolt12ExternalAccountInfo
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
             private val bolt12: JsonField<String>,
@@ -4478,7 +4490,8 @@ private constructor(
             companion object {
 
                 /**
-                 * Returns a mutable builder for constructing an instance of [LightningBolt12Offer].
+                 * Returns a mutable builder for constructing an instance of
+                 * [LightningBolt12ExternalAccountInfo].
                  *
                  * The following fields are required:
                  * ```kotlin
@@ -4488,7 +4501,7 @@ private constructor(
                 fun builder() = Builder()
             }
 
-            /** A builder for [LightningBolt12Offer]. */
+            /** A builder for [LightningBolt12ExternalAccountInfo]. */
             class Builder internal constructor() {
 
                 private var bolt12: JsonField<String>? = null
@@ -4496,11 +4509,14 @@ private constructor(
                 private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-                internal fun from(lightningBolt12Offer: LightningBolt12Offer) = apply {
-                    bolt12 = lightningBolt12Offer.bolt12
-                    destinationType = lightningBolt12Offer.destinationType
-                    accountType = lightningBolt12Offer.accountType
-                    additionalProperties = lightningBolt12Offer.additionalProperties.toMutableMap()
+                internal fun from(
+                    lightningBolt12ExternalAccountInfo: LightningBolt12ExternalAccountInfo
+                ) = apply {
+                    bolt12 = lightningBolt12ExternalAccountInfo.bolt12
+                    destinationType = lightningBolt12ExternalAccountInfo.destinationType
+                    accountType = lightningBolt12ExternalAccountInfo.accountType
+                    additionalProperties =
+                        lightningBolt12ExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
                 /** A bolt12 offer which can be reused as a payment destination */
@@ -4567,7 +4583,7 @@ private constructor(
                 }
 
                 /**
-                 * Returns an immutable instance of [LightningBolt12Offer].
+                 * Returns an immutable instance of [LightningBolt12ExternalAccountInfo].
                  *
                  * Further updates to this [Builder] will not mutate the returned instance.
                  *
@@ -4578,8 +4594,8 @@ private constructor(
                  *
                  * @throws IllegalStateException if any required field is unset.
                  */
-                fun build(): LightningBolt12Offer =
-                    LightningBolt12Offer(
+                fun build(): LightningBolt12ExternalAccountInfo =
+                    LightningBolt12ExternalAccountInfo(
                         checkRequired("bolt12", bolt12),
                         destinationType,
                         accountType,
@@ -4589,7 +4605,7 @@ private constructor(
 
             private var validated: Boolean = false
 
-            fun validate(): LightningBolt12Offer = apply {
+            fun validate(): LightningBolt12ExternalAccountInfo = apply {
                 if (validated) {
                     return@apply
                 }
@@ -4752,7 +4768,7 @@ private constructor(
                     return true
                 }
 
-                return other is LightningBolt12Offer &&
+                return other is LightningBolt12ExternalAccountInfo &&
                     bolt12 == other.bolt12 &&
                     destinationType == other.destinationType &&
                     accountType == other.accountType &&
@@ -4766,10 +4782,10 @@ private constructor(
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "LightningBolt12Offer{bolt12=$bolt12, destinationType=$destinationType, accountType=$accountType, additionalProperties=$additionalProperties}"
+                "LightningBolt12ExternalAccountInfo{bolt12=$bolt12, destinationType=$destinationType, accountType=$accountType, additionalProperties=$additionalProperties}"
         }
 
-        class LightningAddress
+        class LightningAddressExternalAccountInfo
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
             private val destinationType: JsonValue,
@@ -4856,7 +4872,8 @@ private constructor(
             companion object {
 
                 /**
-                 * Returns a mutable builder for constructing an instance of [LightningAddress].
+                 * Returns a mutable builder for constructing an instance of
+                 * [LightningAddressExternalAccountInfo].
                  *
                  * The following fields are required:
                  * ```kotlin
@@ -4866,7 +4883,7 @@ private constructor(
                 fun builder() = Builder()
             }
 
-            /** A builder for [LightningAddress]. */
+            /** A builder for [LightningAddressExternalAccountInfo]. */
             class Builder internal constructor() {
 
                 private var destinationType: JsonValue = JsonValue.from("LIGHTNING_ADDRESS")
@@ -4874,11 +4891,14 @@ private constructor(
                 private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-                internal fun from(lightningAddress: LightningAddress) = apply {
-                    destinationType = lightningAddress.destinationType
-                    this.lightningAddress = lightningAddress.lightningAddress
-                    accountType = lightningAddress.accountType
-                    additionalProperties = lightningAddress.additionalProperties.toMutableMap()
+                internal fun from(
+                    lightningAddressExternalAccountInfo: LightningAddressExternalAccountInfo
+                ) = apply {
+                    destinationType = lightningAddressExternalAccountInfo.destinationType
+                    lightningAddress = lightningAddressExternalAccountInfo.lightningAddress
+                    accountType = lightningAddressExternalAccountInfo.accountType
+                    additionalProperties =
+                        lightningAddressExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
                 /**
@@ -4952,7 +4972,7 @@ private constructor(
                 }
 
                 /**
-                 * Returns an immutable instance of [LightningAddress].
+                 * Returns an immutable instance of [LightningAddressExternalAccountInfo].
                  *
                  * Further updates to this [Builder] will not mutate the returned instance.
                  *
@@ -4963,8 +4983,8 @@ private constructor(
                  *
                  * @throws IllegalStateException if any required field is unset.
                  */
-                fun build(): LightningAddress =
-                    LightningAddress(
+                fun build(): LightningAddressExternalAccountInfo =
+                    LightningAddressExternalAccountInfo(
                         destinationType,
                         checkRequired("lightningAddress", lightningAddress),
                         accountType,
@@ -4974,7 +4994,7 @@ private constructor(
 
             private var validated: Boolean = false
 
-            fun validate(): LightningAddress = apply {
+            fun validate(): LightningAddressExternalAccountInfo = apply {
                 if (validated) {
                     return@apply
                 }
@@ -5137,7 +5157,7 @@ private constructor(
                     return true
                 }
 
-                return other is LightningAddress &&
+                return other is LightningAddressExternalAccountInfo &&
                     destinationType == other.destinationType &&
                     lightningAddress == other.lightningAddress &&
                     accountType == other.accountType &&
@@ -5151,7 +5171,7 @@ private constructor(
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "LightningAddress{destinationType=$destinationType, lightningAddress=$lightningAddress, accountType=$accountType, additionalProperties=$additionalProperties}"
+                "LightningAddressExternalAccountInfo{destinationType=$destinationType, lightningAddress=$lightningAddress, accountType=$accountType, additionalProperties=$additionalProperties}"
         }
     }
 

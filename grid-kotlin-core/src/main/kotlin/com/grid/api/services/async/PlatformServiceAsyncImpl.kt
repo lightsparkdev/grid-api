@@ -14,8 +14,8 @@ import com.grid.api.core.http.HttpResponse.Handler
 import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.core.http.parseable
 import com.grid.api.core.prepareAsync
-import com.grid.api.models.platform.PlatformListInternalAccountsParams
-import com.grid.api.models.platform.PlatformListInternalAccountsResponse
+import com.grid.api.models.platform.PlatformInternalAccountsParams
+import com.grid.api.models.platform.PlatformInternalAccountsResponse
 import com.grid.api.services.async.platform.ExternalAccountServiceAsync
 import com.grid.api.services.async.platform.ExternalAccountServiceAsyncImpl
 
@@ -37,12 +37,12 @@ class PlatformServiceAsyncImpl internal constructor(private val clientOptions: C
 
     override fun externalAccounts(): ExternalAccountServiceAsync = externalAccounts
 
-    override suspend fun listInternalAccounts(
-        params: PlatformListInternalAccountsParams,
+    override suspend fun internalAccounts(
+        params: PlatformInternalAccountsParams,
         requestOptions: RequestOptions,
-    ): PlatformListInternalAccountsResponse =
+    ): PlatformInternalAccountsResponse =
         // get /platform/internal-accounts
-        withRawResponse().listInternalAccounts(params, requestOptions).parse()
+        withRawResponse().internalAccounts(params, requestOptions).parse()
 
     class WithRawResponseImpl internal constructor(private val clientOptions: ClientOptions) :
         PlatformServiceAsync.WithRawResponse {
@@ -64,13 +64,13 @@ class PlatformServiceAsyncImpl internal constructor(private val clientOptions: C
         override fun externalAccounts(): ExternalAccountServiceAsync.WithRawResponse =
             externalAccounts
 
-        private val listInternalAccountsHandler: Handler<PlatformListInternalAccountsResponse> =
-            jsonHandler<PlatformListInternalAccountsResponse>(clientOptions.jsonMapper)
+        private val internalAccountsHandler: Handler<PlatformInternalAccountsResponse> =
+            jsonHandler<PlatformInternalAccountsResponse>(clientOptions.jsonMapper)
 
-        override suspend fun listInternalAccounts(
-            params: PlatformListInternalAccountsParams,
+        override suspend fun internalAccounts(
+            params: PlatformInternalAccountsParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<PlatformListInternalAccountsResponse> {
+        ): HttpResponseFor<PlatformInternalAccountsResponse> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.GET)
@@ -82,7 +82,7 @@ class PlatformServiceAsyncImpl internal constructor(private val clientOptions: C
             val response = clientOptions.httpClient.executeAsync(request, requestOptions)
             return errorHandler.handle(response).parseable {
                 response
-                    .use { listInternalAccountsHandler.handle(it) }
+                    .use { internalAccountsHandler.handle(it) }
                     .also {
                         if (requestOptions.responseValidation!!) {
                             it.validate()
