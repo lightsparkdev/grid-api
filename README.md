@@ -36,14 +36,14 @@ This library requires Java 8 or later.
 ```kotlin
 import com.grid.api.client.GridClient
 import com.grid.api.client.okhttp.GridOkHttpClient
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerListPage
+import com.grid.api.models.customers.CustomerListParams
 
 // Configures using the `grid.username`, `grid.password`, `grid.webhookSignature` and `grid.baseUrl` system properties
 // Or configures using the `GRID_USERNAME`, `GRID_PASSWORD`, `GRID_WEBHOOK_SIGNATURE` and `GRID_BASE_URL` environment variables
 val client: GridClient = GridOkHttpClient.fromEnv()
 
-val platformConfig: PlatformConfig = client.config().retrieve()
+val page: CustomerListPage = client.customers().list()
 ```
 
 ## Client configuration
@@ -119,7 +119,7 @@ The `withOptions()` method does not affect the original client or service.
 
 To send a request to the Grid API, build an instance of some `Params` class and pass it to the corresponding client method. When the response is received, it will be deserialized into an instance of a Kotlin class.
 
-For example, `client.config().retrieve(...)` should be called with an instance of `ConfigRetrieveParams`, and it will return an instance of `PlatformConfig`.
+For example, `client.customers().list(...)` should be called with an instance of `CustomerListParams`, and it will return an instance of `CustomerListPage`.
 
 ## Immutability
 
@@ -136,14 +136,14 @@ The default client is synchronous. To switch to asynchronous execution, call the
 ```kotlin
 import com.grid.api.client.GridClient
 import com.grid.api.client.okhttp.GridOkHttpClient
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerListPageAsync
+import com.grid.api.models.customers.CustomerListParams
 
 // Configures using the `grid.username`, `grid.password`, `grid.webhookSignature` and `grid.baseUrl` system properties
 // Or configures using the `GRID_USERNAME`, `GRID_PASSWORD`, `GRID_WEBHOOK_SIGNATURE` and `GRID_BASE_URL` environment variables
 val client: GridClient = GridOkHttpClient.fromEnv()
 
-val platformConfig: PlatformConfig = client.async().config().retrieve()
+val page: CustomerListPageAsync = client.async().customers().list()
 ```
 
 Or create an asynchronous client from the beginning:
@@ -151,14 +151,14 @@ Or create an asynchronous client from the beginning:
 ```kotlin
 import com.grid.api.client.GridClientAsync
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerListPageAsync
+import com.grid.api.models.customers.CustomerListParams
 
 // Configures using the `grid.username`, `grid.password`, `grid.webhookSignature` and `grid.baseUrl` system properties
 // Or configures using the `GRID_USERNAME`, `GRID_PASSWORD`, `GRID_WEBHOOK_SIGNATURE` and `GRID_BASE_URL` environment variables
 val client: GridClientAsync = GridOkHttpClientAsync.fromEnv()
 
-val platformConfig: PlatformConfig = client.config().retrieve()
+val page: CustomerListPageAsync = client.customers().list()
 ```
 
 The asynchronous client supports the same options as the synchronous one, except most methods are [suspending](https://kotlinlang.org/docs/coroutines-guide.html).
@@ -232,21 +232,24 @@ To access this data, prefix any HTTP method call on a client or service with `wi
 ```kotlin
 import com.grid.api.core.http.Headers
 import com.grid.api.core.http.HttpResponseFor
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerCreateParams
+import com.grid.api.models.customers.CustomerCreateResponse
 
-val platformConfig: HttpResponseFor<PlatformConfig> = client.config().withRawResponse().retrieve()
+val params: CustomerCreateParams = CustomerCreateParams.builder()
+    .createCustomerRequest(CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate.builder().build())
+    .build()
+val customer: HttpResponseFor<CustomerCreateResponse> = client.customers().withRawResponse().create(params)
 
-val statusCode: Int = platformConfig.statusCode()
-val headers: Headers = platformConfig.headers()
+val statusCode: Int = customer.statusCode()
+val headers: Headers = customer.headers()
 ```
 
 You can still deserialize the response into an instance of a Kotlin class if needed:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerCreateResponse
 
-val parsedPlatformConfig: PlatformConfig = platformConfig.parse()
+val parsedCustomer: CustomerCreateResponse = customer.parse()
 ```
 
 ## Error handling
@@ -397,9 +400,11 @@ Requests time out after 1 minute by default.
 To set a custom timeout, configure the method call using the `timeout` method:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerCreateResponse
 
-val platformConfig: PlatformConfig = client.config().retrieve(RequestOptions.builder().timeout(Duration.ofSeconds(30)).build())
+val customer: CustomerCreateResponse = client.customers().create(
+  params, RequestOptions.builder().timeout(Duration.ofSeconds(30)).build()
+)
 ```
 
 Or configure the default for all method calls at the client level:
@@ -502,9 +507,9 @@ To set undocumented parameters, call the `putAdditionalHeader`, `putAdditionalQu
 
 ```kotlin
 import com.grid.api.core.JsonValue
-import com.grid.api.models.config.ConfigRetrieveParams
+import com.grid.api.models.customers.CustomerListParams
 
-val params: ConfigRetrieveParams = ConfigRetrieveParams.builder()
+val params: CustomerListParams = CustomerListParams.builder()
     .putAdditionalHeader("Secret-Header", "42")
     .putAdditionalQueryParam("secret_query_param", "42")
     .putAdditionalBodyProperty("secretProperty", JsonValue.from("42"))
@@ -531,9 +536,9 @@ These properties can be accessed on the nested built object later using the `_ad
 To set a documented parameter or property to an undocumented or not yet supported _value_, pass a [`JsonValue`](grid-kotlin-core/src/main/kotlin/com/grid/api/core/Values.kt) object to its setter:
 
 ```kotlin
-import com.grid.api.models.config.ConfigRetrieveParams
+import com.grid.api.models.customers.CustomerListParams
 
-val params: ConfigRetrieveParams = ConfigRetrieveParams.builder().build()
+val params: CustomerListParams = CustomerListParams.builder().build()
 ```
 
 The most straightforward way to create a [`JsonValue`](grid-kotlin-core/src/main/kotlin/com/grid/api/core/Values.kt) is using its `from(...)` method:
@@ -577,10 +582,10 @@ To forcibly omit a required parameter or property, pass [`JsonMissing`](grid-kot
 
 ```kotlin
 import com.grid.api.core.JsonMissing
-import com.grid.api.models.config.ConfigRetrieveParams
+import com.grid.api.models.customers.CustomerListParams
 import com.grid.api.models.customers.CustomerRetrieveParams
 
-val params: ConfigRetrieveParams = CustomerRetrieveParams.builder()
+val params: CustomerListParams = CustomerRetrieveParams.builder()
     .customerId(JsonMissing.of())
     .build()
 ```
@@ -645,9 +650,9 @@ val platformConfig: PlatformConfig = client.config().retrieve(params).validate()
 Or configure the method call to validate the response using the `responseValidation` method:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerListPage
 
-val platformConfig: PlatformConfig = client.config().retrieve(RequestOptions.builder().responseValidation(true).build())
+val page: CustomerListPage = client.customers().list(RequestOptions.builder().responseValidation(true).build())
 ```
 
 Or configure the default for all method calls at the client level:
