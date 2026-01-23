@@ -68,7 +68,18 @@ components:
 
         If the signature verification succeeds, the webhook is authentic. If
         not, it should be rejected.
- 
+  schemas:
+    AllErrors:
+      anyOf:
+        - $ref: components/schemas/errors/Error400.yaml
+        - $ref: components/schemas/errors/Error401.yaml
+        - $ref: components/schemas/errors/Error403.yaml
+        - $ref: components/schemas/errors/Error404.yaml
+        - $ref: components/schemas/errors/Error409.yaml
+        - $ref: components/schemas/errors/Error412.yaml
+        - $ref: components/schemas/errors/Error424.yaml
+        - $ref: components/schemas/errors/Error500.yaml
+        - $ref: components/schemas/errors/Error501.yaml
 paths:
   /config:
     $ref: paths/platform/config.yaml

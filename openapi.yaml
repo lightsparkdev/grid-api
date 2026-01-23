@@ -547,7 +547,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/GridError'
         '500':
           description: Internal service error
           content:
@@ -942,9 +942,9 @@ paths:
               schema:
                 type: object
                 required:
-                  - accounts
+                  - data
                 properties:
-                  accounts:
+                  data:
                     type: array
                     description: List of external accounts matching the filter criteria
                     items:
@@ -3830,6 +3830,17 @@ components:
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
   schemas:
+    AllErrors:
+      anyOf:
+        - $ref: '#/components/schemas/Error400'
+        - $ref: '#/components/schemas/Error401'
+        - $ref: '#/components/schemas/Error403'
+        - $ref: '#/components/schemas/Error404'
+        - $ref: '#/components/schemas/Error409'
+        - $ref: '#/components/schemas/Error412'
+        - $ref: '#/components/schemas/Error424'
+        - $ref: '#/components/schemas/Error500'
+        - $ref: '#/components/schemas/Error501'
     CustomerInfoFieldName:
       type: string
       enum:
@@ -4006,6 +4017,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error500:
       type: object
       required:
@@ -4033,6 +4045,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error400:
       type: object
       required:
@@ -4110,6 +4123,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error501:
       type: object
       required:
@@ -4137,6 +4151,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     CustomerType:
       type: string
       enum:
@@ -4409,6 +4424,13 @@ components:
       type: object
       required:
         - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - INDIVIDUAL
+            - BUSINESS
+          description: Customer type discriminator
       oneOf:
         - $ref: '#/components/schemas/IndividualCustomerUpdate'
         - $ref: '#/components/schemas/BusinessCustomerUpdate'
@@ -4444,6 +4466,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error404:
       type: object
       required:
@@ -4483,8 +4506,10 @@ components:
         details:
           type: object
           description: Additional error details
-    Error:
+          additionalProperties: true
+    GridError:
       type: object
+      title: GridError
       properties:
         code:
           type: string
@@ -4495,10 +4520,18 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     UpdateCustomerRequest:
       type: object
       required:
         - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - INDIVIDUAL
+            - BUSINESS
+          description: Customer type discriminator
       oneOf:
         - $ref: '#/components/schemas/IndividualCustomerUpdate'
         - $ref: '#/components/schemas/BusinessCustomerUpdate'
@@ -4920,6 +4953,10 @@ components:
           type: string
           description: Additional human-readable instructions for making the payment
           example: Please ensure the reference code is included in the payment memo/description field
+        isPlatformAccount:
+          type: boolean
+          description: Indicates whether the account is a platform account or a customer account.
+          example: true
         accountOrWalletInfo:
           oneOf:
             - title: CLABE Account
@@ -5479,6 +5516,45 @@ components:
         mapping:
           INCOMING: '#/components/schemas/IncomingTransaction'
           OUTGOING: '#/components/schemas/OutgoingTransaction'
+    AccountSource:
+      type: object
+      required:
+        - sourceType
+        - accountId
+        - currency
+      properties:
+        sourceType:
+          type: string
+          const: ACCOUNT
+          description: Source type identifier
+        accountId:
+          type: string
+          description: Source account identifier
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        currency:
+          type: string
+          description: Currency code for the source account
+          example: USD
+      description: Source account details
+    UmaAddressSource:
+      type: object
+      required:
+        - sourceType
+        - umaAddress
+      properties:
+        sourceType:
+          type: string
+          const: UMA_ADDRESS
+          description: Source type identifier
+        umaAddress:
+          type: string
+          description: UMA address of the sender
+          example: $sender@uma.domain.com
+        currency:
+          type: string
+          description: Currency code for the source
+          example: USD
+      description: UMA address source details
     ReconciliationInstructions:
       type: object
       required:
@@ -5543,34 +5619,14 @@ components:
             source:
               oneOf:
                 - title: Account Source
-                  type: object
-                  required:
-                    - accountId
-                    - currency
-                  properties:
-                    accountId:
-                      type: string
-                      description: Source account identifier
-                      example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    currency:
-                      type: string
-                      description: Currency code for the source account
-                      example: USD
-                  description: Source account details
+                  $ref: '#/components/schemas/AccountSource'
                 - title: UMA Address Source
-                  type: object
-                  required:
-                    - umaAddress
-                  properties:
-                    umaAddress:
-                      type: string
-                      description: UMA address of the sender
-                      example: $sender@uma.domain.com
-                    currency:
-                      type: string
-                      description: Currency code for the source
-                      example: USD
-                  description: UMA address source details
+                  $ref: '#/components/schemas/UmaAddressSource'
+              discriminator:
+                propertyName: sourceType
+                mapping:
+                  ACCOUNT: '#/components/schemas/AccountSource'
+                  UMA_ADDRESS: '#/components/schemas/UmaAddressSource'
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
               description: Amount received in the recipient's currency
@@ -5672,34 +5728,14 @@ components:
             source:
               oneOf:
                 - title: Account Source
-                  type: object
-                  required:
-                    - accountId
-                    - currency
-                  properties:
-                    accountId:
-                      type: string
-                      description: Source account identifier
-                      example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    currency:
-                      type: string
-                      description: Currency code for the source account
-                      example: USD
-                  description: Source account details
+                  $ref: '#/components/schemas/AccountSource'
                 - title: UMA Address Source
-                  type: object
-                  required:
-                    - umaAddress
-                  properties:
-                    umaAddress:
-                      type: string
-                      description: UMA address of the sender
-                      example: $sender@uma.domain.com
-                    currency:
-                      type: string
-                      description: Currency code for the source
-                      example: USD
-                  description: UMA address source details
+                  $ref: '#/components/schemas/UmaAddressSource'
+              discriminator:
+                propertyName: sourceType
+                mapping:
+                  ACCOUNT: '#/components/schemas/AccountSource'
+                  UMA_ADDRESS: '#/components/schemas/UmaAddressSource'
             sentAmount:
               $ref: '#/components/schemas/CurrencyAmount'
               description: Amount sent in the sender's currency
@@ -5870,6 +5906,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error424:
       type: object
       required:
@@ -5901,6 +5938,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     QuoteAccountSource:
       type: object
       required:
@@ -5915,10 +5953,6 @@ components:
           type: string
           description: Source account identifier
           example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-        currency:
-          type: string
-          description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
-          example: USD
       description: Source account details
     QuoteRealtimeFundingSource:
       type: object
@@ -6104,6 +6138,59 @@ components:
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+    QuoteRequestAccountDestination:
+      type: object
+      required:
+        - destinationType
+        - accountId
+        - currency
+      properties:
+        destinationType:
+          type: string
+          const: ACCOUNT
+          description: Destination type identifier
+        accountId:
+          type: string
+          description: Destination account identifier
+          example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        currency:
+          type: string
+          description: Currency code for the destination account. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
+          example: EUR
+      description: Destination account details
+    QuoteRequestUmaAddressDestination:
+      type: object
+      required:
+        - destinationType
+        - umaAddress
+        - currency
+      properties:
+        destinationType:
+          type: string
+          const: UMA_ADDRESS
+          description: Destination type identifier
+        umaAddress:
+          type: string
+          description: UMA address of the recipient
+          example: $receiver@uma.domain.com
+        currency:
+          type: string
+          description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
+          example: EUR
+      description: UMA address destination details
+    QuoteRequestExternalAccountDetailsDestination:
+      type: object
+      required:
+        - destinationType
+        - externalAccountDetails
+      properties:
+        destinationType:
+          type: string
+          const: EXTERNAL_ACCOUNT_DETAILS
+          description: Destination type identifier
+        externalAccountDetails:
+          $ref: '#/components/schemas/ExternalAccountCreateRequest'
+      description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination. See the external accounts endpoints for test values in sandbox mode.
     QuoteLockSide:
       type: string
       enum:
@@ -6129,43 +6216,17 @@ components:
         destination:
           oneOf:
             - title: Account
-              type: object
-              required:
-                - accountId
-                - currency
-              properties:
-                accountId:
-                  type: string
-                  description: Destination account identifier
-                  example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                currency:
-                  type: string
-                  description: Currency code for the destination account. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
-                  example: EUR
-              description: Destination account details
+              $ref: '#/components/schemas/QuoteRequestAccountDestination'
             - title: UMA Address
-              type: object
-              required:
-                - umaAddress
-                - currency
-              properties:
-                umaAddress:
-                  type: string
-                  description: UMA address of the recipient
-                  example: $receiver@uma.domain.com
-                currency:
-                  type: string
-                  description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
-                  example: EUR
-              description: UMA address destination details
+              $ref: '#/components/schemas/QuoteRequestUmaAddressDestination'
             - title: External Account Details
-              type: object
-              required:
-                - externalAccountDetails
-              properties:
-                externalAccountDetails:
-                  $ref: '#/components/schemas/ExternalAccountCreateRequest'
-              description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination. See the external accounts endpoints for test values in sandbox mode.
+              $ref: '#/components/schemas/QuoteRequestExternalAccountDetailsDestination'
+          discriminator:
+            propertyName: destinationType
+            mapping:
+              ACCOUNT: '#/components/schemas/QuoteRequestAccountDestination'
+              UMA_ADDRESS: '#/components/schemas/QuoteRequestUmaAddressDestination'
+              EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/QuoteRequestExternalAccountDetailsDestination'
         lockedCurrencySide:
           $ref: '#/components/schemas/QuoteLockSide'
         lockedCurrencyAmount:
@@ -6211,6 +6272,18 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    BulkCustomerImportErrorEntry:
+      allOf:
+        - $ref: '#/components/schemas/GridError'
+        - type: object
+          description: Error information for a failed bulk import entry
+          required:
+            - correlationId
+          properties:
+            correlationId:
+              type: string
+              description: Platform customer ID or row number for the failed entry
+              example: biz456
     BulkCustomerImportJob:
       type: object
       required:
@@ -6259,17 +6332,7 @@ components:
           type: array
           description: Detailed error information for failed entries
           items:
-            type: object
-            required:
-              - correlationId
-              - error
-            properties:
-              correlationId:
-                type: string
-                description: Platform customer ID or row number for the failed entry
-                example: biz456
-              error:
-                $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/BulkCustomerImportErrorEntry'
         completedAt:
           type: string
           format: date-time
@@ -6364,6 +6427,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     UmaProvider:
       type: object
       properties:
@@ -6582,7 +6646,7 @@ components:
           description: Information about the recipient, provided by the platform if requested in the webhook via `requestedReceiverCustomerInfoFields` and the payment is approved.
     IncomingPaymentWebhookForbiddenResponse:
       allOf:
-        - $ref: '#/components/schemas/Error'
+        - $ref: '#/components/schemas/GridError'
         - type: object
           properties:
             reason:
@@ -6591,7 +6655,7 @@ components:
               example: RESTRICTED_JURISDICTION
     IncomingPaymentWebhookUnprocessableResponse:
       allOf:
-        - $ref: '#/components/schemas/Error'
+        - $ref: '#/components/schemas/GridError'
         - type: object
           properties:
             requiredFields:

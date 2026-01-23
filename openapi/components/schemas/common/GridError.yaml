@@ -1,4 +1,5 @@
 type: object
+title: GridError
 properties:
   code:
     type: string
@@ -9,3 +10,4 @@ properties:
   details:
     type: object
     description: Additional error details
+    additionalProperties: true

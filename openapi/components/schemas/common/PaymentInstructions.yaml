@@ -8,6 +8,10 @@ properties:
     example: >-
       Please ensure the reference code is included in the payment
       memo/description field
+  isPlatformAccount:
+    type: boolean
+    description: Indicates whether the account is a platform account or a customer account.
+    example: true
   accountOrWalletInfo:
     oneOf:
       - title: CLABE Account

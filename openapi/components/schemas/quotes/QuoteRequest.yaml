@@ -19,53 +19,17 @@ properties:
   destination:
     oneOf:
       - title: Account
-        type: object
-        required:
-          - accountId
-          - currency
-        properties:
-          accountId:
-            type: string
-            description: Destination account identifier
-            example: a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-          currency:
-            type: string
-            description: >-
-              Currency code for the destination account. See
-              [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-              for the full list of supported fiat and crypto currencies.
-            example: EUR
-        description: Destination account details
+        $ref: ./QuoteRequestAccountDestination.yaml
       - title: UMA Address
-        type: object
-        required:
-          - umaAddress
-          - currency
-        properties:
-          umaAddress:
-            type: string
-            description: UMA address of the recipient
-            example: $receiver@uma.domain.com
-          currency:
-            type: string
-            description: >-
-              Currency code for the destination. See
-              [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-              for the full list of supported fiat and crypto currencies.
-            example: EUR
-        description: UMA address destination details
+        $ref: ./QuoteRequestUmaAddressDestination.yaml
       - title: External Account Details
-        type: object
-        required:
-          - externalAccountDetails
-        properties:
-          externalAccountDetails:
-            $ref: ../external_accounts/ExternalAccountCreateRequest.yaml
-        description: >-
-          A convenient destination option which adds the external account and creates
-          the quote in one step rather than first needing to call /external-accounts
-          to add the account. Useful for one-off payments to some destination.
-          See the external accounts endpoints for test values in sandbox mode.
+        $ref: ./QuoteRequestExternalAccountDetailsDestination.yaml
+    discriminator:
+      propertyName: destinationType
+      mapping:
+        ACCOUNT: ./QuoteRequestAccountDestination.yaml
+        UMA_ADDRESS: ./QuoteRequestUmaAddressDestination.yaml
+        EXTERNAL_ACCOUNT_DETAILS: ./QuoteRequestExternalAccountDetailsDestination.yaml
   lockedCurrencySide:
     $ref: ./QuoteLockSide.yaml
   lockedCurrencyAmount:

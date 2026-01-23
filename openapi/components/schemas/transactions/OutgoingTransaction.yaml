@@ -9,34 +9,14 @@ allOf:
       source:
         oneOf:
           - title: Account Source
-            type: object
-            required:
-              - accountId
-              - currency
-            properties:
-              accountId:
-                type: string
-                description: Source account identifier
-                example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-              currency:
-                type: string
-                description: Currency code for the source account
-                example: USD
-            description: Source account details
+            $ref: ./AccountSource.yaml
           - title: UMA Address Source
-            type: object
-            required:
-              - umaAddress
-            properties:
-              umaAddress:
-                type: string
-                description: UMA address of the sender
-                example: $sender@uma.domain.com
-              currency:
-                type: string
-                description: Currency code for the source
-                example: USD
-            description: UMA address source details
+            $ref: ./UmaAddressSource.yaml
+        discriminator:
+          propertyName: sourceType
+          mapping:
+            ACCOUNT: ./AccountSource.yaml
+            UMA_ADDRESS: ./UmaAddressSource.yaml
       sentAmount:
         $ref: ../common/CurrencyAmount.yaml
         description: Amount sent in the sender's currency

@@ -45,17 +45,7 @@ properties:
     type: array
     description: Detailed error information for failed entries
     items:
-      type: object
-      required:
-        - correlationId
-        - error
-      properties:
-        correlationId:
-          type: string
-          description: Platform customer ID or row number for the failed entry
-          example: biz456
-        error:
-          $ref: ../common/Error.yaml
+      $ref: BulkCustomerImportErrorEntry.yaml
   completedAt:
     type: string
     format: date-time

@@ -169,7 +169,7 @@ delete:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/common/Error.yaml
+            $ref: ../../components/schemas/common/GridError.yaml
     '500':
       description: Internal service error
       content:

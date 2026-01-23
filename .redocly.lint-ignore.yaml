@@ -1,6 +1,8 @@
 # This file instructs Redocly's linter to ignore the rules contained for specific parts of your API.
 # See https://redocly.com/docs/cli/ for more information.
 openapi.yaml:
+  no-unused-components:
+    - '#/components/schemas/AllErrors'
   no-invalid-media-type-examples:
     - >-
       #/paths/~1customers~1external-accounts/post/requestBody/content/application~1json/schema

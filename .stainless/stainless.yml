@@ -26,6 +26,12 @@ targets:
     production_repo: null
     publish:
       npm: false
+  kotlin:
+    edition: kotlin.2025-10-08
+    reverse_domain: com.grid.api
+    production_repo: null
+    publish:
+      maven: false
 
 # `environments` are a map of the name of the environment (e.g. "sandbox",
 # "production") to the corresponding url to use.
@@ -68,10 +74,14 @@ resources:
       individual_customer_update: '#/components/schemas/IndividualCustomerUpdate'
       business_customer_update: '#/components/schemas/BusinessCustomerUpdate'
     methods:
-      create: post /customers
+      create:
+        endpoint: post /customers
+        body_param_name: CreateCustomerRequest
       list: get /customers
       retrieve: get /customers/{customerId}
-      update: patch /customers/{customerId}
+      update:
+        endpoint: patch /customers/{customerId}
+        body_param_name: UpdateCustomerRequest
       delete: delete /customers/{customerId}
       get_kyc_link: get /customers/kyc-link
       list_internal_accounts: get /customers/internal-accounts
@@ -105,11 +115,15 @@ resources:
 
   platform:
     methods:
-      list_internal_accounts: get /platform/internal-accounts
+      list_internal_accounts:
+        endpoint: get /platform/internal-accounts
+        paginated: false
     subresources:
       external_accounts:
         methods:
-          list: get /platform/external-accounts
+          list:
+            endpoint: get /platform/external-accounts
+            paginated: false
           create: post /platform/external-accounts
 
   plaid:
@@ -221,8 +235,7 @@ client_settings:
       auth:
         security_scheme: BasicAuth
         role: username
-      description: API token authentication using format `<api token id>:<api client
-        secret>`
+      description: API token authentication using format `<api token id>:<api client secret>`
       read_env: GRID_USERNAME
     password:
       type: string
@@ -230,12 +243,11 @@ client_settings:
       auth:
         security_scheme: BasicAuth
         role: password
-      description: API token authentication using format `<api token id>:<api client
-        secret>`
+      description: API token authentication using format `<api token id>:<api client secret>`
       read_env: GRID_PASSWORD
     webhook_signature:
       type: string
-      nullable: false
+      nullable: true
       auth:
         security_scheme: WebhookSignature
       description: |
@@ -263,3 +275,53 @@ readme:
       type: request
       endpoint: get /config
       params: {}
+    pagination:
+      type: request
+      endpoint: get /customers
+      params: {}
+
+pagination:
+  - name: default_pagination
+    type: cursor
+    request:
+      cursor:
+        type: string
+        x-stainless-pagination-property:
+          purpose: next_cursor_param
+    response:
+      data:
+        type: array
+        items:
+          type: object
+      nextCursor:
+        type: string
+        x-stainless-pagination-property:
+          purpose: next_cursor_field
+      hasMore:
+        type: boolean
+        x-stainless-pagination-property:
+          purpose: has_next_page
+      totalCount:
+        type: integer
+
+openapi:
+  code_samples: mintlify
+  transformations:
+    - command: splitSchemasByEnumProperty
+      reason: Split error schemas with multiple enum values into distinct ones
+      args:
+        unionPath: AllErrors
+        enumProperty: code
+
+errors:
+  union:
+    source: AllErrors
+    discriminator: code
+    status_property: status
+
+codeflow:
+  detect_breaking_changes: true
+diagnostics:
+  ignored:
+    Schema/ObjectHasNoProperties:
+      - pagination.0.response.data.items
