@@ -727,12 +727,13 @@ private constructor(
         override fun toString() = value.toString()
     }
 
-    /** Error information for a failed bulk import entry */
     class Error
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
         private val correlationId: JsonField<String>,
-        private val error: JsonField<InnerError>,
+        private val code: JsonField<String>,
+        private val details: JsonValue,
+        private val message: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
@@ -741,8 +742,10 @@ private constructor(
             @JsonProperty("correlationId")
             @ExcludeMissing
             correlationId: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("error") @ExcludeMissing error: JsonField<InnerError> = JsonMissing.of(),
-        ) : this(correlationId, error, mutableMapOf())
+            @JsonProperty("code") @ExcludeMissing code: JsonField<String> = JsonMissing.of(),
+            @JsonProperty("details") @ExcludeMissing details: JsonValue = JsonMissing.of(),
+            @JsonProperty("message") @ExcludeMissing message: JsonField<String> = JsonMissing.of(),
+        ) : this(correlationId, code, details, message, mutableMapOf())
 
         /**
          * Platform customer ID or row number for the failed entry
@@ -753,10 +756,30 @@ private constructor(
         fun correlationId(): String = correlationId.getRequired("correlationId")
 
         /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         * Error code
+         *
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
          */
-        fun error(): InnerError = error.getRequired("error")
+        fun code(): String? = code.getNullable("code")
+
+        /**
+         * Additional error details
+         *
+         * This arbitrary value can be deserialized into a custom type using the `convert` method:
+         * ```kotlin
+         * val myObject: MyClass = error.details().convert(MyClass::class.java)
+         * ```
+         */
+        @JsonProperty("details") @ExcludeMissing fun _details(): JsonValue = details
+
+        /**
+         * Error message
+         *
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
+         */
+        fun message(): String? = message.getNullable("message")
 
         /**
          * Returns the raw JSON value of [correlationId].
@@ -769,11 +792,18 @@ private constructor(
         fun _correlationId(): JsonField<String> = correlationId
 
         /**
-         * Returns the raw JSON value of [error].
+         * Returns the raw JSON value of [code].
          *
-         * Unlike [error], this method doesn't throw if the JSON field has an unexpected type.
+         * Unlike [code], this method doesn't throw if the JSON field has an unexpected type.
          */
-        @JsonProperty("error") @ExcludeMissing fun _error(): JsonField<InnerError> = error
+        @JsonProperty("code") @ExcludeMissing fun _code(): JsonField<String> = code
+
+        /**
+         * Returns the raw JSON value of [message].
+         *
+         * Unlike [message], this method doesn't throw if the JSON field has an unexpected type.
+         */
+        @JsonProperty("message") @ExcludeMissing fun _message(): JsonField<String> = message
 
         @JsonAnySetter
         private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -795,7 +825,6 @@ private constructor(
              * The following fields are required:
              * ```kotlin
              * .correlationId()
-             * .error()
              * ```
              */
             fun builder() = Builder()
@@ -805,12 +834,16 @@ private constructor(
         class Builder internal constructor() {
 
             private var correlationId: JsonField<String>? = null
-            private var error: JsonField<InnerError>? = null
+            private var code: JsonField<String> = JsonMissing.of()
+            private var details: JsonValue = JsonMissing.of()
+            private var message: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
             internal fun from(error: Error) = apply {
                 correlationId = error.correlationId
-                this.error = error.error
+                code = error.code
+                details = error.details
+                message = error.message
                 additionalProperties = error.additionalProperties.toMutableMap()
             }
 
@@ -828,16 +861,32 @@ private constructor(
                 this.correlationId = correlationId
             }
 
-            fun error(error: InnerError) = error(JsonField.of(error))
+            /** Error code */
+            fun code(code: String) = code(JsonField.of(code))
 
             /**
-             * Sets [Builder.error] to an arbitrary JSON value.
+             * Sets [Builder.code] to an arbitrary JSON value.
              *
-             * You should usually call [Builder.error] with a well-typed [InnerError] value instead.
+             * You should usually call [Builder.code] with a well-typed [String] value instead. This
+             * method is primarily for setting the field to an undocumented or not yet supported
+             * value.
+             */
+            fun code(code: JsonField<String>) = apply { this.code = code }
+
+            /** Additional error details */
+            fun details(details: JsonValue) = apply { this.details = details }
+
+            /** Error message */
+            fun message(message: String) = message(JsonField.of(message))
+
+            /**
+             * Sets [Builder.message] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.message] with a well-typed [String] value instead.
              * This method is primarily for setting the field to an undocumented or not yet
              * supported value.
              */
-            fun error(error: JsonField<InnerError>) = apply { this.error = error }
+            fun message(message: JsonField<String>) = apply { this.message = message }
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -866,7 +915,6 @@ private constructor(
              * The following fields are required:
              * ```kotlin
              * .correlationId()
-             * .error()
              * ```
              *
              * @throws IllegalStateException if any required field is unset.
@@ -874,7 +922,9 @@ private constructor(
             fun build(): Error =
                 Error(
                     checkRequired("correlationId", correlationId),
-                    checkRequired("error", error),
+                    code,
+                    details,
+                    message,
                     additionalProperties.toMutableMap(),
                 )
         }
@@ -887,7 +937,8 @@ private constructor(
             }
 
             correlationId()
-            error().validate()
+            code()
+            message()
             validated = true
         }
 
@@ -906,208 +957,9 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (if (correlationId.asKnown() == null) 0 else 1) + (error.asKnown()?.validity() ?: 0)
-
-        class InnerError
-        @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-        private constructor(
-            private val code: JsonField<String>,
-            private val details: JsonValue,
-            private val message: JsonField<String>,
-            private val additionalProperties: MutableMap<String, JsonValue>,
-        ) {
-
-            @JsonCreator
-            private constructor(
-                @JsonProperty("code") @ExcludeMissing code: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("details") @ExcludeMissing details: JsonValue = JsonMissing.of(),
-                @JsonProperty("message")
-                @ExcludeMissing
-                message: JsonField<String> = JsonMissing.of(),
-            ) : this(code, details, message, mutableMapOf())
-
-            /**
-             * Error code
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
-             *   the server responded with an unexpected value).
-             */
-            fun code(): String? = code.getNullable("code")
-
-            /**
-             * Additional error details
-             *
-             * This arbitrary value can be deserialized into a custom type using the `convert`
-             * method:
-             * ```kotlin
-             * val myObject: MyClass = innerError.details().convert(MyClass::class.java)
-             * ```
-             */
-            @JsonProperty("details") @ExcludeMissing fun _details(): JsonValue = details
-
-            /**
-             * Error message
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
-             *   the server responded with an unexpected value).
-             */
-            fun message(): String? = message.getNullable("message")
-
-            /**
-             * Returns the raw JSON value of [code].
-             *
-             * Unlike [code], this method doesn't throw if the JSON field has an unexpected type.
-             */
-            @JsonProperty("code") @ExcludeMissing fun _code(): JsonField<String> = code
-
-            /**
-             * Returns the raw JSON value of [message].
-             *
-             * Unlike [message], this method doesn't throw if the JSON field has an unexpected type.
-             */
-            @JsonProperty("message") @ExcludeMissing fun _message(): JsonField<String> = message
-
-            @JsonAnySetter
-            private fun putAdditionalProperty(key: String, value: JsonValue) {
-                additionalProperties.put(key, value)
-            }
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> =
-                Collections.unmodifiableMap(additionalProperties)
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /** Returns a mutable builder for constructing an instance of [InnerError]. */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [InnerError]. */
-            class Builder internal constructor() {
-
-                private var code: JsonField<String> = JsonMissing.of()
-                private var details: JsonValue = JsonMissing.of()
-                private var message: JsonField<String> = JsonMissing.of()
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(innerError: InnerError) = apply {
-                    code = innerError.code
-                    details = innerError.details
-                    message = innerError.message
-                    additionalProperties = innerError.additionalProperties.toMutableMap()
-                }
-
-                /** Error code */
-                fun code(code: String) = code(JsonField.of(code))
-
-                /**
-                 * Sets [Builder.code] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.code] with a well-typed [String] value instead.
-                 * This method is primarily for setting the field to an undocumented or not yet
-                 * supported value.
-                 */
-                fun code(code: JsonField<String>) = apply { this.code = code }
-
-                /** Additional error details */
-                fun details(details: JsonValue) = apply { this.details = details }
-
-                /** Error message */
-                fun message(message: String) = message(JsonField.of(message))
-
-                /**
-                 * Sets [Builder.message] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.message] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun message(message: JsonField<String>) = apply { this.message = message }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [InnerError].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 */
-                fun build(): InnerError =
-                    InnerError(code, details, message, additionalProperties.toMutableMap())
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): InnerError = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                code()
-                message()
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                (if (code.asKnown() == null) 0 else 1) + (if (message.asKnown() == null) 0 else 1)
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is InnerError &&
-                    code == other.code &&
-                    details == other.details &&
-                    message == other.message &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy {
-                Objects.hash(code, details, message, additionalProperties)
-            }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "InnerError{code=$code, details=$details, message=$message, additionalProperties=$additionalProperties}"
-        }
+            (if (correlationId.asKnown() == null) 0 else 1) +
+                (if (code.asKnown() == null) 0 else 1) +
+                (if (message.asKnown() == null) 0 else 1)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) {
@@ -1116,18 +968,20 @@ private constructor(
 
             return other is Error &&
                 correlationId == other.correlationId &&
-                error == other.error &&
+                code == other.code &&
+                details == other.details &&
+                message == other.message &&
                 additionalProperties == other.additionalProperties
         }
 
         private val hashCode: Int by lazy {
-            Objects.hash(correlationId, error, additionalProperties)
+            Objects.hash(correlationId, code, details, message, additionalProperties)
         }
 
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "Error{correlationId=$correlationId, error=$error, additionalProperties=$additionalProperties}"
+            "Error{correlationId=$correlationId, code=$code, details=$details, message=$message, additionalProperties=$additionalProperties}"
     }
 
     override fun equals(other: Any?): Boolean {

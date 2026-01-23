@@ -29,13 +29,9 @@ internal class BulkGetJobStatusResponseTest {
                 .addError(
                     BulkGetJobStatusResponse.Error.builder()
                         .correlationId("biz456")
-                        .error(
-                            BulkGetJobStatusResponse.Error.InnerError.builder()
-                                .code("code")
-                                .details(JsonValue.from(mapOf<String, Any>()))
-                                .message("message")
-                                .build()
-                        )
+                        .code("code")
+                        .details(JsonValue.from(mapOf<String, Any>()))
+                        .message("message")
                         .build()
                 )
                 .build()
@@ -59,13 +55,9 @@ internal class BulkGetJobStatusResponseTest {
             .containsExactly(
                 BulkGetJobStatusResponse.Error.builder()
                     .correlationId("biz456")
-                    .error(
-                        BulkGetJobStatusResponse.Error.InnerError.builder()
-                            .code("code")
-                            .details(JsonValue.from(mapOf<String, Any>()))
-                            .message("message")
-                            .build()
-                    )
+                    .code("code")
+                    .details(JsonValue.from(mapOf<String, Any>()))
+                    .message("message")
                     .build()
             )
     }
@@ -89,13 +81,9 @@ internal class BulkGetJobStatusResponseTest {
                 .addError(
                     BulkGetJobStatusResponse.Error.builder()
                         .correlationId("biz456")
-                        .error(
-                            BulkGetJobStatusResponse.Error.InnerError.builder()
-                                .code("code")
-                                .details(JsonValue.from(mapOf<String, Any>()))
-                                .message("message")
-                                .build()
-                        )
+                        .code("code")
+                        .details(JsonValue.from(mapOf<String, Any>()))
+                        .message("message")
                         .build()
                 )
                 .build()

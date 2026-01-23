@@ -21,16 +21,16 @@ import java.util.Objects
 class ExternalAccountListResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val accounts: JsonField<List<ExternalAccount>>,
+    private val data: JsonField<List<ExternalAccount>>,
     private val additionalProperties: MutableMap<String, JsonValue>,
 ) {
 
     @JsonCreator
     private constructor(
-        @JsonProperty("accounts")
+        @JsonProperty("data")
         @ExcludeMissing
-        accounts: JsonField<List<ExternalAccount>> = JsonMissing.of()
-    ) : this(accounts, mutableMapOf())
+        data: JsonField<List<ExternalAccount>> = JsonMissing.of()
+    ) : this(data, mutableMapOf())
 
     /**
      * List of external accounts matching the filter criteria
@@ -38,16 +38,14 @@ private constructor(
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    fun accounts(): List<ExternalAccount> = accounts.getRequired("accounts")
+    fun data(): List<ExternalAccount> = data.getRequired("data")
 
     /**
-     * Returns the raw JSON value of [accounts].
+     * Returns the raw JSON value of [data].
      *
-     * Unlike [accounts], this method doesn't throw if the JSON field has an unexpected type.
+     * Unlike [data], this method doesn't throw if the JSON field has an unexpected type.
      */
-    @JsonProperty("accounts")
-    @ExcludeMissing
-    fun _accounts(): JsonField<List<ExternalAccount>> = accounts
+    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<ExternalAccount>> = data
 
     @JsonAnySetter
     private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -68,7 +66,7 @@ private constructor(
          *
          * The following fields are required:
          * ```kotlin
-         * .accounts()
+         * .data()
          * ```
          */
         fun builder() = Builder()
@@ -77,37 +75,37 @@ private constructor(
     /** A builder for [ExternalAccountListResponse]. */
     class Builder internal constructor() {
 
-        private var accounts: JsonField<MutableList<ExternalAccount>>? = null
+        private var data: JsonField<MutableList<ExternalAccount>>? = null
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
         internal fun from(externalAccountListResponse: ExternalAccountListResponse) = apply {
-            accounts = externalAccountListResponse.accounts.map { it.toMutableList() }
+            data = externalAccountListResponse.data.map { it.toMutableList() }
             additionalProperties = externalAccountListResponse.additionalProperties.toMutableMap()
         }
 
         /** List of external accounts matching the filter criteria */
-        fun accounts(accounts: List<ExternalAccount>) = accounts(JsonField.of(accounts))
+        fun data(data: List<ExternalAccount>) = data(JsonField.of(data))
 
         /**
-         * Sets [Builder.accounts] to an arbitrary JSON value.
+         * Sets [Builder.data] to an arbitrary JSON value.
          *
-         * You should usually call [Builder.accounts] with a well-typed `List<ExternalAccount>`
-         * value instead. This method is primarily for setting the field to an undocumented or not
-         * yet supported value.
+         * You should usually call [Builder.data] with a well-typed `List<ExternalAccount>` value
+         * instead. This method is primarily for setting the field to an undocumented or not yet
+         * supported value.
          */
-        fun accounts(accounts: JsonField<List<ExternalAccount>>) = apply {
-            this.accounts = accounts.map { it.toMutableList() }
+        fun data(data: JsonField<List<ExternalAccount>>) = apply {
+            this.data = data.map { it.toMutableList() }
         }
 
         /**
-         * Adds a single [ExternalAccount] to [accounts].
+         * Adds a single [ExternalAccount] to [Builder.data].
          *
          * @throws IllegalStateException if the field was previously set to a non-list.
          */
-        fun addAccount(account: ExternalAccount) = apply {
-            accounts =
-                (accounts ?: JsonField.of(mutableListOf())).also {
-                    checkKnown("accounts", it).add(account)
+        fun addData(data: ExternalAccount) = apply {
+            this.data =
+                (this.data ?: JsonField.of(mutableListOf())).also {
+                    checkKnown("data", it).add(data)
                 }
         }
 
@@ -137,14 +135,14 @@ private constructor(
          *
          * The following fields are required:
          * ```kotlin
-         * .accounts()
+         * .data()
          * ```
          *
          * @throws IllegalStateException if any required field is unset.
          */
         fun build(): ExternalAccountListResponse =
             ExternalAccountListResponse(
-                checkRequired("accounts", accounts).map { it.toImmutable() },
+                checkRequired("data", data).map { it.toImmutable() },
                 additionalProperties.toMutableMap(),
             )
     }
@@ -156,7 +154,7 @@ private constructor(
             return@apply
         }
 
-        accounts().forEach { it.validate() }
+        data().forEach { it.validate() }
         validated = true
     }
 
@@ -173,7 +171,7 @@ private constructor(
      *
      * Used for best match union deserialization.
      */
-    internal fun validity(): Int = (accounts.asKnown()?.sumOf { it.validity().toInt() } ?: 0)
+    internal fun validity(): Int = (data.asKnown()?.sumOf { it.validity().toInt() } ?: 0)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -181,14 +179,14 @@ private constructor(
         }
 
         return other is ExternalAccountListResponse &&
-            accounts == other.accounts &&
+            data == other.data &&
             additionalProperties == other.additionalProperties
     }
 
-    private val hashCode: Int by lazy { Objects.hash(accounts, additionalProperties) }
+    private val hashCode: Int by lazy { Objects.hash(data, additionalProperties) }
 
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "ExternalAccountListResponse{accounts=$accounts, additionalProperties=$additionalProperties}"
+        "ExternalAccountListResponse{data=$data, additionalProperties=$additionalProperties}"
 }

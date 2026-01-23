@@ -19,7 +19,7 @@ internal class ExternalAccountListResponseTest {
     fun create() {
         val externalAccountListResponse =
             ExternalAccountListResponse.builder()
-                .addAccount(
+                .addData(
                     ExternalAccount.builder()
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .accountInfo(
@@ -56,7 +56,7 @@ internal class ExternalAccountListResponseTest {
                 )
                 .build()
 
-        assertThat(externalAccountListResponse.accounts())
+        assertThat(externalAccountListResponse.data())
             .containsExactly(
                 ExternalAccount.builder()
                     .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
@@ -99,7 +99,7 @@ internal class ExternalAccountListResponseTest {
         val jsonMapper = jsonMapper()
         val externalAccountListResponse =
             ExternalAccountListResponse.builder()
-                .addAccount(
+                .addData(
                     ExternalAccount.builder()
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .accountInfo(
