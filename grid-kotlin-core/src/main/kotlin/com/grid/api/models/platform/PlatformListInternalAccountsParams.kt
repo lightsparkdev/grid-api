@@ -15,7 +15,7 @@ import java.util.Objects
  * currency. They can be used for things like distributing bitcoin rewards to customers, or for
  * other platform-wide purposes.
  */
-class PlatformInternalAccountsParams
+class PlatformListInternalAccountsParams
 private constructor(
     private val currency: String?,
     private val additionalHeaders: Headers,
@@ -35,27 +35,29 @@ private constructor(
 
     companion object {
 
-        fun none(): PlatformInternalAccountsParams = builder().build()
+        fun none(): PlatformListInternalAccountsParams = builder().build()
 
         /**
          * Returns a mutable builder for constructing an instance of
-         * [PlatformInternalAccountsParams].
+         * [PlatformListInternalAccountsParams].
          */
         fun builder() = Builder()
     }
 
-    /** A builder for [PlatformInternalAccountsParams]. */
+    /** A builder for [PlatformListInternalAccountsParams]. */
     class Builder internal constructor() {
 
         private var currency: String? = null
         private var additionalHeaders: Headers.Builder = Headers.builder()
         private var additionalQueryParams: QueryParams.Builder = QueryParams.builder()
 
-        internal fun from(platformInternalAccountsParams: PlatformInternalAccountsParams) = apply {
-            currency = platformInternalAccountsParams.currency
-            additionalHeaders = platformInternalAccountsParams.additionalHeaders.toBuilder()
-            additionalQueryParams = platformInternalAccountsParams.additionalQueryParams.toBuilder()
-        }
+        internal fun from(platformListInternalAccountsParams: PlatformListInternalAccountsParams) =
+            apply {
+                currency = platformListInternalAccountsParams.currency
+                additionalHeaders = platformListInternalAccountsParams.additionalHeaders.toBuilder()
+                additionalQueryParams =
+                    platformListInternalAccountsParams.additionalQueryParams.toBuilder()
+            }
 
         /** Filter by currency code */
         fun currency(currency: String?) = apply { this.currency = currency }
@@ -159,12 +161,12 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [PlatformInternalAccountsParams].
+         * Returns an immutable instance of [PlatformListInternalAccountsParams].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          */
-        fun build(): PlatformInternalAccountsParams =
-            PlatformInternalAccountsParams(
+        fun build(): PlatformListInternalAccountsParams =
+            PlatformListInternalAccountsParams(
                 currency,
                 additionalHeaders.build(),
                 additionalQueryParams.build(),
@@ -186,7 +188,7 @@ private constructor(
             return true
         }
 
-        return other is PlatformInternalAccountsParams &&
+        return other is PlatformListInternalAccountsParams &&
             currency == other.currency &&
             additionalHeaders == other.additionalHeaders &&
             additionalQueryParams == other.additionalQueryParams
@@ -195,5 +197,5 @@ private constructor(
     override fun hashCode(): Int = Objects.hash(currency, additionalHeaders, additionalQueryParams)
 
     override fun toString() =
-        "PlatformInternalAccountsParams{currency=$currency, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
+        "PlatformListInternalAccountsParams{currency=$currency, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
 }

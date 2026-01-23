@@ -4,7 +4,7 @@ package com.grid.api.services.async
 
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
-import com.grid.api.models.platform.PlatformInternalAccountsParams
+import com.grid.api.models.platform.PlatformListInternalAccountsParams
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -14,7 +14,7 @@ internal class PlatformServiceAsyncTest {
 
     @Disabled("Prism tests are disabled")
     @Test
-    suspend fun internalAccounts() {
+    suspend fun listInternalAccounts() {
         val client =
             GridOkHttpClientAsync.builder()
                 .baseUrl(TestServerExtension.BASE_URL)
@@ -24,8 +24,8 @@ internal class PlatformServiceAsyncTest {
         val platformServiceAsync = client.platform()
 
         val response =
-            platformServiceAsync.internalAccounts(
-                PlatformInternalAccountsParams.builder().currency("currency").build()
+            platformServiceAsync.listInternalAccounts(
+                PlatformListInternalAccountsParams.builder().currency("currency").build()
             )
 
         response.validate()

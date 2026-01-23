@@ -12,12 +12,12 @@ import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class PlatformInternalAccountsResponseTest {
+internal class PlatformListInternalAccountsResponseTest {
 
     @Test
     fun create() {
-        val platformInternalAccountsResponse =
-            PlatformInternalAccountsResponse.builder()
+        val platformListInternalAccountsResponse =
+            PlatformListInternalAccountsResponse.builder()
                 .addData(
                     InternalAccount.builder()
                         .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -54,7 +54,7 @@ internal class PlatformInternalAccountsResponseTest {
                 )
                 .build()
 
-        assertThat(platformInternalAccountsResponse.data())
+        assertThat(platformListInternalAccountsResponse.data())
             .containsExactly(
                 InternalAccount.builder()
                     .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -94,8 +94,8 @@ internal class PlatformInternalAccountsResponseTest {
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val platformInternalAccountsResponse =
-            PlatformInternalAccountsResponse.builder()
+        val platformListInternalAccountsResponse =
+            PlatformListInternalAccountsResponse.builder()
                 .addData(
                     InternalAccount.builder()
                         .id("InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
@@ -132,13 +132,13 @@ internal class PlatformInternalAccountsResponseTest {
                 )
                 .build()
 
-        val roundtrippedPlatformInternalAccountsResponse =
+        val roundtrippedPlatformListInternalAccountsResponse =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(platformInternalAccountsResponse),
-                jacksonTypeRef<PlatformInternalAccountsResponse>(),
+                jsonMapper.writeValueAsString(platformListInternalAccountsResponse),
+                jacksonTypeRef<PlatformListInternalAccountsResponse>(),
             )
 
-        assertThat(roundtrippedPlatformInternalAccountsResponse)
-            .isEqualTo(platformInternalAccountsResponse)
+        assertThat(roundtrippedPlatformListInternalAccountsResponse)
+            .isEqualTo(platformListInternalAccountsResponse)
     }
 }

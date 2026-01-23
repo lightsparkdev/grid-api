@@ -6,8 +6,8 @@ import com.google.errorprone.annotations.MustBeClosed
 import com.grid.api.core.ClientOptions
 import com.grid.api.core.RequestOptions
 import com.grid.api.core.http.HttpResponseFor
-import com.grid.api.models.platform.PlatformInternalAccountsParams
-import com.grid.api.models.platform.PlatformInternalAccountsResponse
+import com.grid.api.models.platform.PlatformListInternalAccountsParams
+import com.grid.api.models.platform.PlatformListInternalAccountsResponse
 import com.grid.api.services.async.platform.ExternalAccountServiceAsync
 
 interface PlatformServiceAsync {
@@ -34,14 +34,16 @@ interface PlatformServiceAsync {
      * currency. They can be used for things like distributing bitcoin rewards to customers, or for
      * other platform-wide purposes.
      */
-    suspend fun internalAccounts(
-        params: PlatformInternalAccountsParams = PlatformInternalAccountsParams.none(),
+    suspend fun listInternalAccounts(
+        params: PlatformListInternalAccountsParams = PlatformListInternalAccountsParams.none(),
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): PlatformInternalAccountsResponse
+    ): PlatformListInternalAccountsResponse
 
-    /** @see internalAccounts */
-    suspend fun internalAccounts(requestOptions: RequestOptions): PlatformInternalAccountsResponse =
-        internalAccounts(PlatformInternalAccountsParams.none(), requestOptions)
+    /** @see listInternalAccounts */
+    suspend fun listInternalAccounts(
+        requestOptions: RequestOptions
+    ): PlatformListInternalAccountsResponse =
+        listInternalAccounts(PlatformListInternalAccountsParams.none(), requestOptions)
 
     /**
      * A view of [PlatformServiceAsync] that provides access to raw HTTP responses for each method.
@@ -61,19 +63,19 @@ interface PlatformServiceAsync {
 
         /**
          * Returns a raw HTTP response for `get /platform/internal-accounts`, but is otherwise the
-         * same as [PlatformServiceAsync.internalAccounts].
+         * same as [PlatformServiceAsync.listInternalAccounts].
          */
         @MustBeClosed
-        suspend fun internalAccounts(
-            params: PlatformInternalAccountsParams = PlatformInternalAccountsParams.none(),
+        suspend fun listInternalAccounts(
+            params: PlatformListInternalAccountsParams = PlatformListInternalAccountsParams.none(),
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<PlatformInternalAccountsResponse>
+        ): HttpResponseFor<PlatformListInternalAccountsResponse>
 
-        /** @see internalAccounts */
+        /** @see listInternalAccounts */
         @MustBeClosed
-        suspend fun internalAccounts(
+        suspend fun listInternalAccounts(
             requestOptions: RequestOptions
-        ): HttpResponseFor<PlatformInternalAccountsResponse> =
-            internalAccounts(PlatformInternalAccountsParams.none(), requestOptions)
+        ): HttpResponseFor<PlatformListInternalAccountsResponse> =
+            listInternalAccounts(PlatformListInternalAccountsParams.none(), requestOptions)
     }
 }

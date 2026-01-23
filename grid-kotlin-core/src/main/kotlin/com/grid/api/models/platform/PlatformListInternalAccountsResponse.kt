@@ -18,7 +18,7 @@ import com.grid.api.models.sandbox.internalaccounts.InternalAccount
 import java.util.Collections
 import java.util.Objects
 
-class PlatformInternalAccountsResponse
+class PlatformListInternalAccountsResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
     private val data: JsonField<List<InternalAccount>>,
@@ -63,7 +63,7 @@ private constructor(
 
         /**
          * Returns a mutable builder for constructing an instance of
-         * [PlatformInternalAccountsResponse].
+         * [PlatformListInternalAccountsResponse].
          *
          * The following fields are required:
          * ```kotlin
@@ -73,18 +73,19 @@ private constructor(
         fun builder() = Builder()
     }
 
-    /** A builder for [PlatformInternalAccountsResponse]. */
+    /** A builder for [PlatformListInternalAccountsResponse]. */
     class Builder internal constructor() {
 
         private var data: JsonField<MutableList<InternalAccount>>? = null
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-        internal fun from(platformInternalAccountsResponse: PlatformInternalAccountsResponse) =
-            apply {
-                data = platformInternalAccountsResponse.data.map { it.toMutableList() }
-                additionalProperties =
-                    platformInternalAccountsResponse.additionalProperties.toMutableMap()
-            }
+        internal fun from(
+            platformListInternalAccountsResponse: PlatformListInternalAccountsResponse
+        ) = apply {
+            data = platformListInternalAccountsResponse.data.map { it.toMutableList() }
+            additionalProperties =
+                platformListInternalAccountsResponse.additionalProperties.toMutableMap()
+        }
 
         /** List of internal accounts matching the filter criteria */
         fun data(data: List<InternalAccount>) = data(JsonField.of(data))
@@ -132,7 +133,7 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [PlatformInternalAccountsResponse].
+         * Returns an immutable instance of [PlatformListInternalAccountsResponse].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          *
@@ -143,8 +144,8 @@ private constructor(
          *
          * @throws IllegalStateException if any required field is unset.
          */
-        fun build(): PlatformInternalAccountsResponse =
-            PlatformInternalAccountsResponse(
+        fun build(): PlatformListInternalAccountsResponse =
+            PlatformListInternalAccountsResponse(
                 checkRequired("data", data).map { it.toImmutable() },
                 additionalProperties.toMutableMap(),
             )
@@ -152,7 +153,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): PlatformInternalAccountsResponse = apply {
+    fun validate(): PlatformListInternalAccountsResponse = apply {
         if (validated) {
             return@apply
         }
@@ -181,7 +182,7 @@ private constructor(
             return true
         }
 
-        return other is PlatformInternalAccountsResponse &&
+        return other is PlatformListInternalAccountsResponse &&
             data == other.data &&
             additionalProperties == other.additionalProperties
     }
@@ -191,5 +192,5 @@ private constructor(
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "PlatformInternalAccountsResponse{data=$data, additionalProperties=$additionalProperties}"
+        "PlatformListInternalAccountsResponse{data=$data, additionalProperties=$additionalProperties}"
 }
