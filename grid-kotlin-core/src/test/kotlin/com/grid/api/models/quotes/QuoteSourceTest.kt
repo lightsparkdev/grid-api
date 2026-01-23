@@ -25,7 +25,7 @@ internal class QuoteSourceTest {
         val quoteSource = QuoteSource.ofAccount(account)
 
         assertThat(quoteSource.account()).isEqualTo(account)
-        assertThat(quoteSource.realTimeFunding()).isNull()
+        assertThat(quoteSource.realtimeFunding()).isNull()
     }
 
     @Test
@@ -49,25 +49,25 @@ internal class QuoteSourceTest {
     }
 
     @Test
-    fun ofRealTimeFunding() {
-        val realTimeFunding =
-            QuoteSource.RealTimeFunding.builder()
+    fun ofRealtimeFunding() {
+        val realtimeFunding =
+            QuoteSource.RealtimeFunding.builder()
                 .currency("USD")
                 .customerId("Customer:019542f5-b3e7-1d02-0000-000000000009")
                 .build()
 
-        val quoteSource = QuoteSource.ofRealTimeFunding(realTimeFunding)
+        val quoteSource = QuoteSource.ofRealtimeFunding(realtimeFunding)
 
         assertThat(quoteSource.account()).isNull()
-        assertThat(quoteSource.realTimeFunding()).isEqualTo(realTimeFunding)
+        assertThat(quoteSource.realtimeFunding()).isEqualTo(realtimeFunding)
     }
 
     @Test
-    fun ofRealTimeFundingRoundtrip() {
+    fun ofRealtimeFundingRoundtrip() {
         val jsonMapper = jsonMapper()
         val quoteSource =
-            QuoteSource.ofRealTimeFunding(
-                QuoteSource.RealTimeFunding.builder()
+            QuoteSource.ofRealtimeFunding(
+                QuoteSource.RealtimeFunding.builder()
                     .currency("USD")
                     .customerId("Customer:019542f5-b3e7-1d02-0000-000000000009")
                     .build()

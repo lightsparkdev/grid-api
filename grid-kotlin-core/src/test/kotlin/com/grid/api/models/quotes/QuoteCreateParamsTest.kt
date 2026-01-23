@@ -114,11 +114,7 @@ internal class QuoteCreateParamsTest {
                 )
                 .lockedCurrencyAmount(10000L)
                 .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
-                .source(
-                    QuoteSource.Account.builder()
-                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                        .build()
-                )
+                .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                 .build()
 
         val body = params._body()

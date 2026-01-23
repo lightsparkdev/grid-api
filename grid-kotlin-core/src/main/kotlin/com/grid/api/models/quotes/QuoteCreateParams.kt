@@ -347,9 +347,19 @@ private constructor(
         /** Alias for calling [source] with `QuoteSource.ofAccount(account)`. */
         fun source(account: QuoteSource.Account) = apply { body.source(account) }
 
-        /** Alias for calling [source] with `QuoteSource.ofRealTimeFunding(realTimeFunding)`. */
-        fun source(realTimeFunding: QuoteSource.RealTimeFunding) = apply {
-            body.source(realTimeFunding)
+        /**
+         * Alias for calling [source] with the following:
+         * ```kotlin
+         * QuoteSource.Account.builder()
+         *     .accountId(accountId)
+         *     .build()
+         * ```
+         */
+        fun accountSource(accountId: String) = apply { body.accountSource(accountId) }
+
+        /** Alias for calling [source] with `QuoteSource.ofRealtimeFunding(realtimeFunding)`. */
+        fun source(realtimeFunding: QuoteSource.RealtimeFunding) = apply {
+            body.source(realtimeFunding)
         }
 
         /** Optional description/memo for the transfer */
@@ -912,9 +922,20 @@ private constructor(
             /** Alias for calling [source] with `QuoteSource.ofAccount(account)`. */
             fun source(account: QuoteSource.Account) = source(QuoteSource.ofAccount(account))
 
-            /** Alias for calling [source] with `QuoteSource.ofRealTimeFunding(realTimeFunding)`. */
-            fun source(realTimeFunding: QuoteSource.RealTimeFunding) =
-                source(QuoteSource.ofRealTimeFunding(realTimeFunding))
+            /**
+             * Alias for calling [source] with the following:
+             * ```kotlin
+             * QuoteSource.Account.builder()
+             *     .accountId(accountId)
+             *     .build()
+             * ```
+             */
+            fun accountSource(accountId: String) =
+                source(QuoteSource.Account.builder().accountId(accountId).build())
+
+            /** Alias for calling [source] with `QuoteSource.ofRealtimeFunding(realtimeFunding)`. */
+            fun source(realtimeFunding: QuoteSource.RealtimeFunding) =
+                source(QuoteSource.ofRealtimeFunding(realtimeFunding))
 
             /** Optional description/memo for the transfer */
             fun description(description: String) = description(JsonField.of(description))

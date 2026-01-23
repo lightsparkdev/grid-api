@@ -18,7 +18,7 @@ internal class QuoteListPageResponseTest {
                     Quote.builder()
                         .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
                         .destination(
-                            Quote.Destination.AccountDestination.builder()
+                            Quote.Destination.Account.builder()
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                                 .currency("EUR")
                                 .build()
@@ -102,7 +102,7 @@ internal class QuoteListPageResponseTest {
                 Quote.builder()
                     .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
                     .destination(
-                        Quote.Destination.AccountDestination.builder()
+                        Quote.Destination.Account.builder()
                             .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                             .currency("EUR")
                             .build()
@@ -190,7 +190,7 @@ internal class QuoteListPageResponseTest {
                     Quote.builder()
                         .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
                         .destination(
-                            Quote.Destination.AccountDestination.builder()
+                            Quote.Destination.Account.builder()
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                                 .currency("EUR")
                                 .build()
