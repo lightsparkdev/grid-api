@@ -20,7 +20,6 @@ import com.grid.api.core.ExcludeMissing
 import com.grid.api.core.JsonField
 import com.grid.api.core.JsonMissing
 import com.grid.api.core.JsonValue
-import com.grid.api.core.allMaxBy
 import com.grid.api.core.checkRequired
 import com.grid.api.core.getOrThrow
 import com.grid.api.errors.GridInvalidDataException
@@ -38,7 +37,7 @@ private constructor(
     private val upi: Upi? = null,
     private val ngnAccount: NgnAccount? = null,
     private val sparkWallet: SparkWallet? = null,
-    private val lightning: LightningExternalAccountInfo? = null,
+    private val lightning: Lightning? = null,
     private val solanaWallet: SolanaWallet? = null,
     private val tronWallet: TronWallet? = null,
     private val polygonWallet: PolygonWallet? = null,
@@ -60,7 +59,7 @@ private constructor(
 
     fun sparkWallet(): SparkWallet? = sparkWallet
 
-    fun lightning(): LightningExternalAccountInfo? = lightning
+    fun lightning(): Lightning? = lightning
 
     fun solanaWallet(): SolanaWallet? = solanaWallet
 
@@ -108,7 +107,7 @@ private constructor(
 
     fun asSparkWallet(): SparkWallet = sparkWallet.getOrThrow("sparkWallet")
 
-    fun asLightning(): LightningExternalAccountInfo = lightning.getOrThrow("lightning")
+    fun asLightning(): Lightning = lightning.getOrThrow("lightning")
 
     fun asSolanaWallet(): SolanaWallet = solanaWallet.getOrThrow("solanaWallet")
 
@@ -174,7 +173,7 @@ private constructor(
                     sparkWallet.validate()
                 }
 
-                override fun visitLightning(lightning: LightningExternalAccountInfo) {
+                override fun visitLightning(lightning: Lightning) {
                     lightning.validate()
                 }
 
@@ -228,8 +227,7 @@ private constructor(
 
                 override fun visitSparkWallet(sparkWallet: SparkWallet) = sparkWallet.validity()
 
-                override fun visitLightning(lightning: LightningExternalAccountInfo) =
-                    lightning.validity()
+                override fun visitLightning(lightning: Lightning) = lightning.validity()
 
                 override fun visitSolanaWallet(solanaWallet: SolanaWallet) = solanaWallet.validity()
 
@@ -314,8 +312,7 @@ private constructor(
 
         fun ofSparkWallet(sparkWallet: SparkWallet) = ExternalAccountInfo(sparkWallet = sparkWallet)
 
-        fun ofLightning(lightning: LightningExternalAccountInfo) =
-            ExternalAccountInfo(lightning = lightning)
+        fun ofLightning(lightning: Lightning) = ExternalAccountInfo(lightning = lightning)
 
         fun ofSolanaWallet(solanaWallet: SolanaWallet) =
             ExternalAccountInfo(solanaWallet = solanaWallet)
@@ -348,7 +345,7 @@ private constructor(
 
         fun visitSparkWallet(sparkWallet: SparkWallet): T
 
-        fun visitLightning(lightning: LightningExternalAccountInfo): T
+        fun visitLightning(lightning: Lightning): T
 
         fun visitSolanaWallet(solanaWallet: SolanaWallet): T
 
@@ -378,58 +375,72 @@ private constructor(
 
         override fun ObjectCodec.deserialize(node: JsonNode): ExternalAccountInfo {
             val json = JsonValue.fromJsonNode(node)
+            val accountType = json.asObject()?.get("accountType")?.asString()
 
-            val bestMatches =
-                sequenceOf(
-                        tryDeserialize(node, jacksonTypeRef<UsAccount>())?.let {
-                            ExternalAccountInfo(usAccount = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<Clabe>())?.let {
-                            ExternalAccountInfo(clabe = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<Pix>())?.let {
-                            ExternalAccountInfo(pix = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<Iban>())?.let {
-                            ExternalAccountInfo(iban = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<Upi>())?.let {
-                            ExternalAccountInfo(upi = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<NgnAccount>())?.let {
-                            ExternalAccountInfo(ngnAccount = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<SparkWallet>())?.let {
-                            ExternalAccountInfo(sparkWallet = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<LightningExternalAccountInfo>())?.let {
-                            ExternalAccountInfo(lightning = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<SolanaWallet>())?.let {
-                            ExternalAccountInfo(solanaWallet = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<TronWallet>())?.let {
-                            ExternalAccountInfo(tronWallet = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<PolygonWallet>())?.let {
-                            ExternalAccountInfo(polygonWallet = it, _json = json)
-                        },
-                        tryDeserialize(node, jacksonTypeRef<BaseWallet>())?.let {
-                            ExternalAccountInfo(baseWallet = it, _json = json)
-                        },
-                    )
-                    .filterNotNull()
-                    .allMaxBy { it.validity() }
-                    .toList()
-            return when (bestMatches.size) {
-                // This can happen if what we're deserializing is completely incompatible with all
-                // the possible variants (e.g. deserializing from boolean).
-                0 -> ExternalAccountInfo(_json = json)
-                1 -> bestMatches.single()
-                // If there's more than one match with the highest validity, then use the first
-                // completely valid match, or simply the first match if none are completely valid.
-                else -> bestMatches.firstOrNull { it.isValid() } ?: bestMatches.first()
+            when (accountType) {
+                "US_ACCOUNT" -> {
+                    return tryDeserialize(node, jacksonTypeRef<UsAccount>())?.let {
+                        ExternalAccountInfo(usAccount = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "CLABE" -> {
+                    return tryDeserialize(node, jacksonTypeRef<Clabe>())?.let {
+                        ExternalAccountInfo(clabe = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "PIX" -> {
+                    return tryDeserialize(node, jacksonTypeRef<Pix>())?.let {
+                        ExternalAccountInfo(pix = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "IBAN" -> {
+                    return tryDeserialize(node, jacksonTypeRef<Iban>())?.let {
+                        ExternalAccountInfo(iban = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "UPI" -> {
+                    return tryDeserialize(node, jacksonTypeRef<Upi>())?.let {
+                        ExternalAccountInfo(upi = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "NGN_ACCOUNT" -> {
+                    return tryDeserialize(node, jacksonTypeRef<NgnAccount>())?.let {
+                        ExternalAccountInfo(ngnAccount = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "SPARK_WALLET" -> {
+                    return tryDeserialize(node, jacksonTypeRef<SparkWallet>())?.let {
+                        ExternalAccountInfo(sparkWallet = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "LIGHTNING" -> {
+                    return tryDeserialize(node, jacksonTypeRef<Lightning>())?.let {
+                        ExternalAccountInfo(lightning = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "SOLANA_WALLET" -> {
+                    return tryDeserialize(node, jacksonTypeRef<SolanaWallet>())?.let {
+                        ExternalAccountInfo(solanaWallet = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "TRON_WALLET" -> {
+                    return tryDeserialize(node, jacksonTypeRef<TronWallet>())?.let {
+                        ExternalAccountInfo(tronWallet = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "POLYGON_WALLET" -> {
+                    return tryDeserialize(node, jacksonTypeRef<PolygonWallet>())?.let {
+                        ExternalAccountInfo(polygonWallet = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
+                "BASE_WALLET" -> {
+                    return tryDeserialize(node, jacksonTypeRef<BaseWallet>())?.let {
+                        ExternalAccountInfo(baseWallet = it, _json = json)
+                    } ?: ExternalAccountInfo(_json = json)
+                }
             }
+
+            return ExternalAccountInfo(_json = json)
         }
     }
 
@@ -3819,66 +3830,228 @@ private constructor(
             "SparkWallet{accountType=$accountType, address=$address, additionalProperties=$additionalProperties}"
     }
 
-    @JsonDeserialize(using = LightningExternalAccountInfo.Deserializer::class)
-    @JsonSerialize(using = LightningExternalAccountInfo.Serializer::class)
-    class LightningExternalAccountInfo
+    class Lightning
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val invoice: LightningInvoiceExternalAccountInfo? = null,
-        private val bolt12: LightningBolt12ExternalAccountInfo? = null,
-        private val address: LightningAddressExternalAccountInfo? = null,
-        private val _json: JsonValue? = null,
+        private val accountType: JsonValue,
+        private val bolt12: JsonField<String>,
+        private val invoice: JsonField<String>,
+        private val lightningAddress: JsonField<String>,
+        private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
-        fun invoice(): LightningInvoiceExternalAccountInfo? = invoice
+        @JsonCreator
+        private constructor(
+            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
+            @JsonProperty("bolt12") @ExcludeMissing bolt12: JsonField<String> = JsonMissing.of(),
+            @JsonProperty("invoice") @ExcludeMissing invoice: JsonField<String> = JsonMissing.of(),
+            @JsonProperty("lightningAddress")
+            @ExcludeMissing
+            lightningAddress: JsonField<String> = JsonMissing.of(),
+        ) : this(accountType, bolt12, invoice, lightningAddress, mutableMapOf())
 
-        fun bolt12(): LightningBolt12ExternalAccountInfo? = bolt12
+        /**
+         * Expected to always return the following:
+         * ```kotlin
+         * JsonValue.from("LIGHTNING")
+         * ```
+         *
+         * However, this method can be useful for debugging and logging (e.g. if the server
+         * responded with an unexpected value).
+         */
+        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
-        fun address(): LightningAddressExternalAccountInfo? = address
+        /**
+         * A bolt12 offer which can be reused as a payment destination
+         *
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
+         */
+        fun bolt12(): String? = bolt12.getNullable("bolt12")
 
-        fun isInvoice(): Boolean = invoice != null
+        /**
+         * 1-time use lightning bolt11 invoice payout destination
+         *
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
+         */
+        fun invoice(): String? = invoice.getNullable("invoice")
 
-        fun isBolt12(): Boolean = bolt12 != null
+        /**
+         * A lightning address which can be used as a payment destination. Note that for UMA
+         * addresses, no external account is needed. You can use the UMA address directly as a
+         * destination.
+         *
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
+         */
+        fun lightningAddress(): String? = lightningAddress.getNullable("lightningAddress")
 
-        fun isAddress(): Boolean = address != null
+        /**
+         * Returns the raw JSON value of [bolt12].
+         *
+         * Unlike [bolt12], this method doesn't throw if the JSON field has an unexpected type.
+         */
+        @JsonProperty("bolt12") @ExcludeMissing fun _bolt12(): JsonField<String> = bolt12
 
-        fun asInvoice(): LightningInvoiceExternalAccountInfo = invoice.getOrThrow("invoice")
+        /**
+         * Returns the raw JSON value of [invoice].
+         *
+         * Unlike [invoice], this method doesn't throw if the JSON field has an unexpected type.
+         */
+        @JsonProperty("invoice") @ExcludeMissing fun _invoice(): JsonField<String> = invoice
 
-        fun asBolt12(): LightningBolt12ExternalAccountInfo = bolt12.getOrThrow("bolt12")
+        /**
+         * Returns the raw JSON value of [lightningAddress].
+         *
+         * Unlike [lightningAddress], this method doesn't throw if the JSON field has an unexpected
+         * type.
+         */
+        @JsonProperty("lightningAddress")
+        @ExcludeMissing
+        fun _lightningAddress(): JsonField<String> = lightningAddress
 
-        fun asAddress(): LightningAddressExternalAccountInfo = address.getOrThrow("address")
+        @JsonAnySetter
+        private fun putAdditionalProperty(key: String, value: JsonValue) {
+            additionalProperties.put(key, value)
+        }
 
-        fun _json(): JsonValue? = _json
+        @JsonAnyGetter
+        @ExcludeMissing
+        fun _additionalProperties(): Map<String, JsonValue> =
+            Collections.unmodifiableMap(additionalProperties)
 
-        fun <T> accept(visitor: Visitor<T>): T =
-            when {
-                invoice != null -> visitor.visitInvoice(invoice)
-                bolt12 != null -> visitor.visitBolt12(bolt12)
-                address != null -> visitor.visitAddress(address)
-                else -> visitor.unknown(_json)
+        fun toBuilder() = Builder().from(this)
+
+        companion object {
+
+            /** Returns a mutable builder for constructing an instance of [Lightning]. */
+            fun builder() = Builder()
+        }
+
+        /** A builder for [Lightning]. */
+        class Builder internal constructor() {
+
+            private var accountType: JsonValue = JsonValue.from("LIGHTNING")
+            private var bolt12: JsonField<String> = JsonMissing.of()
+            private var invoice: JsonField<String> = JsonMissing.of()
+            private var lightningAddress: JsonField<String> = JsonMissing.of()
+            private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
+
+            internal fun from(lightning: Lightning) = apply {
+                accountType = lightning.accountType
+                bolt12 = lightning.bolt12
+                invoice = lightning.invoice
+                lightningAddress = lightning.lightningAddress
+                additionalProperties = lightning.additionalProperties.toMutableMap()
             }
+
+            /**
+             * Sets the field to an arbitrary JSON value.
+             *
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("LIGHTNING")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
+
+            /** A bolt12 offer which can be reused as a payment destination */
+            fun bolt12(bolt12: String) = bolt12(JsonField.of(bolt12))
+
+            /**
+             * Sets [Builder.bolt12] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.bolt12] with a well-typed [String] value instead.
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun bolt12(bolt12: JsonField<String>) = apply { this.bolt12 = bolt12 }
+
+            /** 1-time use lightning bolt11 invoice payout destination */
+            fun invoice(invoice: String) = invoice(JsonField.of(invoice))
+
+            /**
+             * Sets [Builder.invoice] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.invoice] with a well-typed [String] value instead.
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun invoice(invoice: JsonField<String>) = apply { this.invoice = invoice }
+
+            /**
+             * A lightning address which can be used as a payment destination. Note that for UMA
+             * addresses, no external account is needed. You can use the UMA address directly as a
+             * destination.
+             */
+            fun lightningAddress(lightningAddress: String) =
+                lightningAddress(JsonField.of(lightningAddress))
+
+            /**
+             * Sets [Builder.lightningAddress] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.lightningAddress] with a well-typed [String] value
+             * instead. This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun lightningAddress(lightningAddress: JsonField<String>) = apply {
+                this.lightningAddress = lightningAddress
+            }
+
+            fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
+                this.additionalProperties.clear()
+                putAllAdditionalProperties(additionalProperties)
+            }
+
+            fun putAdditionalProperty(key: String, value: JsonValue) = apply {
+                additionalProperties.put(key, value)
+            }
+
+            fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
+                this.additionalProperties.putAll(additionalProperties)
+            }
+
+            fun removeAdditionalProperty(key: String) = apply { additionalProperties.remove(key) }
+
+            fun removeAllAdditionalProperties(keys: Set<String>) = apply {
+                keys.forEach(::removeAdditionalProperty)
+            }
+
+            /**
+             * Returns an immutable instance of [Lightning].
+             *
+             * Further updates to this [Builder] will not mutate the returned instance.
+             */
+            fun build(): Lightning =
+                Lightning(
+                    accountType,
+                    bolt12,
+                    invoice,
+                    lightningAddress,
+                    additionalProperties.toMutableMap(),
+                )
+        }
 
         private var validated: Boolean = false
 
-        fun validate(): LightningExternalAccountInfo = apply {
+        fun validate(): Lightning = apply {
             if (validated) {
                 return@apply
             }
 
-            accept(
-                object : Visitor<Unit> {
-                    override fun visitInvoice(invoice: LightningInvoiceExternalAccountInfo) {
-                        invoice.validate()
-                    }
-
-                    override fun visitBolt12(bolt12: LightningBolt12ExternalAccountInfo) {
-                        bolt12.validate()
-                    }
-
-                    override fun visitAddress(address: LightningAddressExternalAccountInfo) {
-                        address.validate()
-                    }
+            _accountType().let {
+                if (it != JsonValue.from("LIGHTNING")) {
+                    throw GridInvalidDataException("'accountType' is invalid, received $it")
                 }
-            )
+            }
+            bolt12()
+            invoice()
+            lightningAddress()
             validated = true
         }
 
@@ -3897,1282 +4070,32 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            accept(
-                object : Visitor<Int> {
-                    override fun visitInvoice(invoice: LightningInvoiceExternalAccountInfo) =
-                        invoice.validity()
-
-                    override fun visitBolt12(bolt12: LightningBolt12ExternalAccountInfo) =
-                        bolt12.validity()
-
-                    override fun visitAddress(address: LightningAddressExternalAccountInfo) =
-                        address.validity()
-
-                    override fun unknown(json: JsonValue?) = 0
-                }
-            )
+            accountType.let { if (it == JsonValue.from("LIGHTNING")) 1 else 0 } +
+                (if (bolt12.asKnown() == null) 0 else 1) +
+                (if (invoice.asKnown() == null) 0 else 1) +
+                (if (lightningAddress.asKnown() == null) 0 else 1)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) {
                 return true
             }
 
-            return other is LightningExternalAccountInfo &&
-                invoice == other.invoice &&
+            return other is Lightning &&
+                accountType == other.accountType &&
                 bolt12 == other.bolt12 &&
-                address == other.address
+                invoice == other.invoice &&
+                lightningAddress == other.lightningAddress &&
+                additionalProperties == other.additionalProperties
         }
 
-        override fun hashCode(): Int = Objects.hash(invoice, bolt12, address)
-
-        override fun toString(): String =
-            when {
-                invoice != null -> "LightningExternalAccountInfo{invoice=$invoice}"
-                bolt12 != null -> "LightningExternalAccountInfo{bolt12=$bolt12}"
-                address != null -> "LightningExternalAccountInfo{address=$address}"
-                _json != null -> "LightningExternalAccountInfo{_unknown=$_json}"
-                else -> throw IllegalStateException("Invalid LightningExternalAccountInfo")
-            }
-
-        companion object {
-
-            fun ofInvoice(invoice: LightningInvoiceExternalAccountInfo) =
-                LightningExternalAccountInfo(invoice = invoice)
-
-            fun ofBolt12(bolt12: LightningBolt12ExternalAccountInfo) =
-                LightningExternalAccountInfo(bolt12 = bolt12)
-
-            fun ofAddress(address: LightningAddressExternalAccountInfo) =
-                LightningExternalAccountInfo(address = address)
+        private val hashCode: Int by lazy {
+            Objects.hash(accountType, bolt12, invoice, lightningAddress, additionalProperties)
         }
 
-        /**
-         * An interface that defines how to map each variant of [LightningExternalAccountInfo] to a
-         * value of type [T].
-         */
-        interface Visitor<out T> {
+        override fun hashCode(): Int = hashCode
 
-            fun visitInvoice(invoice: LightningInvoiceExternalAccountInfo): T
-
-            fun visitBolt12(bolt12: LightningBolt12ExternalAccountInfo): T
-
-            fun visitAddress(address: LightningAddressExternalAccountInfo): T
-
-            /**
-             * Maps an unknown variant of [LightningExternalAccountInfo] to a value of type [T].
-             *
-             * An instance of [LightningExternalAccountInfo] can contain an unknown variant if it
-             * was deserialized from data that doesn't match any known variant. For example, if the
-             * SDK is on an older version than the API, then the API may respond with new variants
-             * that the SDK is unaware of.
-             *
-             * @throws GridInvalidDataException in the default implementation.
-             */
-            fun unknown(json: JsonValue?): T {
-                throw GridInvalidDataException("Unknown LightningExternalAccountInfo: $json")
-            }
-        }
-
-        internal class Deserializer :
-            BaseDeserializer<LightningExternalAccountInfo>(LightningExternalAccountInfo::class) {
-
-            override fun ObjectCodec.deserialize(node: JsonNode): LightningExternalAccountInfo {
-                val json = JsonValue.fromJsonNode(node)
-
-                val bestMatches =
-                    sequenceOf(
-                            tryDeserialize(
-                                    node,
-                                    jacksonTypeRef<LightningInvoiceExternalAccountInfo>(),
-                                )
-                                ?.let { LightningExternalAccountInfo(invoice = it, _json = json) },
-                            tryDeserialize(
-                                    node,
-                                    jacksonTypeRef<LightningBolt12ExternalAccountInfo>(),
-                                )
-                                ?.let { LightningExternalAccountInfo(bolt12 = it, _json = json) },
-                            tryDeserialize(
-                                    node,
-                                    jacksonTypeRef<LightningAddressExternalAccountInfo>(),
-                                )
-                                ?.let { LightningExternalAccountInfo(address = it, _json = json) },
-                        )
-                        .filterNotNull()
-                        .allMaxBy { it.validity() }
-                        .toList()
-                return when (bestMatches.size) {
-                    // This can happen if what we're deserializing is completely incompatible with
-                    // all the possible variants (e.g. deserializing from boolean).
-                    0 -> LightningExternalAccountInfo(_json = json)
-                    1 -> bestMatches.single()
-                    // If there's more than one match with the highest validity, then use the first
-                    // completely valid match, or simply the first match if none are completely
-                    // valid.
-                    else -> bestMatches.firstOrNull { it.isValid() } ?: bestMatches.first()
-                }
-            }
-        }
-
-        internal class Serializer :
-            BaseSerializer<LightningExternalAccountInfo>(LightningExternalAccountInfo::class) {
-
-            override fun serialize(
-                value: LightningExternalAccountInfo,
-                generator: JsonGenerator,
-                provider: SerializerProvider,
-            ) {
-                when {
-                    value.invoice != null -> generator.writeObject(value.invoice)
-                    value.bolt12 != null -> generator.writeObject(value.bolt12)
-                    value.address != null -> generator.writeObject(value.address)
-                    value._json != null -> generator.writeObject(value._json)
-                    else -> throw IllegalStateException("Invalid LightningExternalAccountInfo")
-                }
-            }
-        }
-
-        class LightningInvoiceExternalAccountInfo
-        @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-        private constructor(
-            private val destinationType: JsonValue,
-            private val invoice: JsonField<String>,
-            private val accountType: JsonField<AccountType>,
-            private val additionalProperties: MutableMap<String, JsonValue>,
-        ) {
-
-            @JsonCreator
-            private constructor(
-                @JsonProperty("destinationType")
-                @ExcludeMissing
-                destinationType: JsonValue = JsonMissing.of(),
-                @JsonProperty("invoice")
-                @ExcludeMissing
-                invoice: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("accountType")
-                @ExcludeMissing
-                accountType: JsonField<AccountType> = JsonMissing.of(),
-            ) : this(destinationType, invoice, accountType, mutableMapOf())
-
-            /**
-             * Expected to always return the following:
-             * ```kotlin
-             * JsonValue.from("INVOICE")
-             * ```
-             *
-             * However, this method can be useful for debugging and logging (e.g. if the server
-             * responded with an unexpected value).
-             */
-            @JsonProperty("destinationType")
-            @ExcludeMissing
-            fun _destinationType(): JsonValue = destinationType
-
-            /**
-             * 1-time use lightning bolt11 invoice payout destination
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun invoice(): String = invoice.getRequired("invoice")
-
-            /**
-             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
-             *   the server responded with an unexpected value).
-             */
-            fun accountType(): AccountType? = accountType.getNullable("accountType")
-
-            /**
-             * Returns the raw JSON value of [invoice].
-             *
-             * Unlike [invoice], this method doesn't throw if the JSON field has an unexpected type.
-             */
-            @JsonProperty("invoice") @ExcludeMissing fun _invoice(): JsonField<String> = invoice
-
-            /**
-             * Returns the raw JSON value of [accountType].
-             *
-             * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            fun _accountType(): JsonField<AccountType> = accountType
-
-            @JsonAnySetter
-            private fun putAdditionalProperty(key: String, value: JsonValue) {
-                additionalProperties.put(key, value)
-            }
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> =
-                Collections.unmodifiableMap(additionalProperties)
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /**
-                 * Returns a mutable builder for constructing an instance of
-                 * [LightningInvoiceExternalAccountInfo].
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .invoice()
-                 * ```
-                 */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [LightningInvoiceExternalAccountInfo]. */
-            class Builder internal constructor() {
-
-                private var destinationType: JsonValue = JsonValue.from("INVOICE")
-                private var invoice: JsonField<String>? = null
-                private var accountType: JsonField<AccountType> = JsonMissing.of()
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(
-                    lightningInvoiceExternalAccountInfo: LightningInvoiceExternalAccountInfo
-                ) = apply {
-                    destinationType = lightningInvoiceExternalAccountInfo.destinationType
-                    invoice = lightningInvoiceExternalAccountInfo.invoice
-                    accountType = lightningInvoiceExternalAccountInfo.accountType
-                    additionalProperties =
-                        lightningInvoiceExternalAccountInfo.additionalProperties.toMutableMap()
-                }
-
-                /**
-                 * Sets the field to an arbitrary JSON value.
-                 *
-                 * It is usually unnecessary to call this method because the field defaults to the
-                 * following:
-                 * ```kotlin
-                 * JsonValue.from("INVOICE")
-                 * ```
-                 *
-                 * This method is primarily for setting the field to an undocumented or not yet
-                 * supported value.
-                 */
-                fun destinationType(destinationType: JsonValue) = apply {
-                    this.destinationType = destinationType
-                }
-
-                /** 1-time use lightning bolt11 invoice payout destination */
-                fun invoice(invoice: String) = invoice(JsonField.of(invoice))
-
-                /**
-                 * Sets [Builder.invoice] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.invoice] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun invoice(invoice: JsonField<String>) = apply { this.invoice = invoice }
-
-                fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
-
-                /**
-                 * Sets [Builder.accountType] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.accountType] with a well-typed [AccountType]
-                 * value instead. This method is primarily for setting the field to an undocumented
-                 * or not yet supported value.
-                 */
-                fun accountType(accountType: JsonField<AccountType>) = apply {
-                    this.accountType = accountType
-                }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [LightningInvoiceExternalAccountInfo].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .invoice()
-                 * ```
-                 *
-                 * @throws IllegalStateException if any required field is unset.
-                 */
-                fun build(): LightningInvoiceExternalAccountInfo =
-                    LightningInvoiceExternalAccountInfo(
-                        destinationType,
-                        checkRequired("invoice", invoice),
-                        accountType,
-                        additionalProperties.toMutableMap(),
-                    )
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): LightningInvoiceExternalAccountInfo = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                _destinationType().let {
-                    if (it != JsonValue.from("INVOICE")) {
-                        throw GridInvalidDataException("'destinationType' is invalid, received $it")
-                    }
-                }
-                invoice()
-                accountType()?.validate()
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                destinationType.let { if (it == JsonValue.from("INVOICE")) 1 else 0 } +
-                    (if (invoice.asKnown() == null) 0 else 1) +
-                    (accountType.asKnown()?.validity() ?: 0)
-
-            class AccountType
-            @JsonCreator
-            private constructor(private val value: JsonField<String>) : Enum {
-
-                /**
-                 * Returns this class instance's raw value.
-                 *
-                 * This is usually only useful if this instance was deserialized from data that
-                 * doesn't match any known member, and you want to know that value. For example, if
-                 * the SDK is on an older version than the API, then the API may respond with new
-                 * members that the SDK is unaware of.
-                 */
-                @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-                companion object {
-
-                    val LIGHTNING = of("LIGHTNING")
-
-                    fun of(value: String) = AccountType(JsonField.of(value))
-                }
-
-                /** An enum containing [AccountType]'s known values. */
-                enum class Known {
-                    LIGHTNING
-                }
-
-                /**
-                 * An enum containing [AccountType]'s known values, as well as an [_UNKNOWN] member.
-                 *
-                 * An instance of [AccountType] can contain an unknown value in a couple of cases:
-                 * - It was deserialized from data that doesn't match any known member. For example,
-                 *   if the SDK is on an older version than the API, then the API may respond with
-                 *   new members that the SDK is unaware of.
-                 * - It was constructed with an arbitrary value using the [of] method.
-                 */
-                enum class Value {
-                    LIGHTNING,
-                    /**
-                     * An enum member indicating that [AccountType] was instantiated with an unknown
-                     * value.
-                     */
-                    _UNKNOWN,
-                }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value, or
-                 * [Value._UNKNOWN] if the class was instantiated with an unknown value.
-                 *
-                 * Use the [known] method instead if you're certain the value is always known or if
-                 * you want to throw for the unknown case.
-                 */
-                fun value(): Value =
-                    when (this) {
-                        LIGHTNING -> Value.LIGHTNING
-                        else -> Value._UNKNOWN
-                    }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value.
-                 *
-                 * Use the [value] method instead if you're uncertain the value is always known and
-                 * don't want to throw for the unknown case.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value is a not a known
-                 *   member.
-                 */
-                fun known(): Known =
-                    when (this) {
-                        LIGHTNING -> Known.LIGHTNING
-                        else -> throw GridInvalidDataException("Unknown AccountType: $value")
-                    }
-
-                /**
-                 * Returns this class instance's primitive wire representation.
-                 *
-                 * This differs from the [toString] method because that method is primarily for
-                 * debugging and generally doesn't throw.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value does not have the
-                 *   expected primitive type.
-                 */
-                fun asString(): String =
-                    _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-                private var validated: Boolean = false
-
-                fun validate(): AccountType = apply {
-                    if (validated) {
-                        return@apply
-                    }
-
-                    known()
-                    validated = true
-                }
-
-                fun isValid(): Boolean =
-                    try {
-                        validate()
-                        true
-                    } catch (e: GridInvalidDataException) {
-                        false
-                    }
-
-                /**
-                 * Returns a score indicating how many valid values are contained in this object
-                 * recursively.
-                 *
-                 * Used for best match union deserialization.
-                 */
-                internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-                override fun equals(other: Any?): Boolean {
-                    if (this === other) {
-                        return true
-                    }
-
-                    return other is AccountType && value == other.value
-                }
-
-                override fun hashCode() = value.hashCode()
-
-                override fun toString() = value.toString()
-            }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is LightningInvoiceExternalAccountInfo &&
-                    destinationType == other.destinationType &&
-                    invoice == other.invoice &&
-                    accountType == other.accountType &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy {
-                Objects.hash(destinationType, invoice, accountType, additionalProperties)
-            }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "LightningInvoiceExternalAccountInfo{destinationType=$destinationType, invoice=$invoice, accountType=$accountType, additionalProperties=$additionalProperties}"
-        }
-
-        class LightningBolt12ExternalAccountInfo
-        @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-        private constructor(
-            private val bolt12: JsonField<String>,
-            private val destinationType: JsonValue,
-            private val accountType: JsonField<AccountType>,
-            private val additionalProperties: MutableMap<String, JsonValue>,
-        ) {
-
-            @JsonCreator
-            private constructor(
-                @JsonProperty("bolt12")
-                @ExcludeMissing
-                bolt12: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("destinationType")
-                @ExcludeMissing
-                destinationType: JsonValue = JsonMissing.of(),
-                @JsonProperty("accountType")
-                @ExcludeMissing
-                accountType: JsonField<AccountType> = JsonMissing.of(),
-            ) : this(bolt12, destinationType, accountType, mutableMapOf())
-
-            /**
-             * A bolt12 offer which can be reused as a payment destination
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun bolt12(): String = bolt12.getRequired("bolt12")
-
-            /**
-             * Expected to always return the following:
-             * ```kotlin
-             * JsonValue.from("BOLT12")
-             * ```
-             *
-             * However, this method can be useful for debugging and logging (e.g. if the server
-             * responded with an unexpected value).
-             */
-            @JsonProperty("destinationType")
-            @ExcludeMissing
-            fun _destinationType(): JsonValue = destinationType
-
-            /**
-             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
-             *   the server responded with an unexpected value).
-             */
-            fun accountType(): AccountType? = accountType.getNullable("accountType")
-
-            /**
-             * Returns the raw JSON value of [bolt12].
-             *
-             * Unlike [bolt12], this method doesn't throw if the JSON field has an unexpected type.
-             */
-            @JsonProperty("bolt12") @ExcludeMissing fun _bolt12(): JsonField<String> = bolt12
-
-            /**
-             * Returns the raw JSON value of [accountType].
-             *
-             * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            fun _accountType(): JsonField<AccountType> = accountType
-
-            @JsonAnySetter
-            private fun putAdditionalProperty(key: String, value: JsonValue) {
-                additionalProperties.put(key, value)
-            }
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> =
-                Collections.unmodifiableMap(additionalProperties)
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /**
-                 * Returns a mutable builder for constructing an instance of
-                 * [LightningBolt12ExternalAccountInfo].
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .bolt12()
-                 * ```
-                 */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [LightningBolt12ExternalAccountInfo]. */
-            class Builder internal constructor() {
-
-                private var bolt12: JsonField<String>? = null
-                private var destinationType: JsonValue = JsonValue.from("BOLT12")
-                private var accountType: JsonField<AccountType> = JsonMissing.of()
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(
-                    lightningBolt12ExternalAccountInfo: LightningBolt12ExternalAccountInfo
-                ) = apply {
-                    bolt12 = lightningBolt12ExternalAccountInfo.bolt12
-                    destinationType = lightningBolt12ExternalAccountInfo.destinationType
-                    accountType = lightningBolt12ExternalAccountInfo.accountType
-                    additionalProperties =
-                        lightningBolt12ExternalAccountInfo.additionalProperties.toMutableMap()
-                }
-
-                /** A bolt12 offer which can be reused as a payment destination */
-                fun bolt12(bolt12: String) = bolt12(JsonField.of(bolt12))
-
-                /**
-                 * Sets [Builder.bolt12] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.bolt12] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun bolt12(bolt12: JsonField<String>) = apply { this.bolt12 = bolt12 }
-
-                /**
-                 * Sets the field to an arbitrary JSON value.
-                 *
-                 * It is usually unnecessary to call this method because the field defaults to the
-                 * following:
-                 * ```kotlin
-                 * JsonValue.from("BOLT12")
-                 * ```
-                 *
-                 * This method is primarily for setting the field to an undocumented or not yet
-                 * supported value.
-                 */
-                fun destinationType(destinationType: JsonValue) = apply {
-                    this.destinationType = destinationType
-                }
-
-                fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
-
-                /**
-                 * Sets [Builder.accountType] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.accountType] with a well-typed [AccountType]
-                 * value instead. This method is primarily for setting the field to an undocumented
-                 * or not yet supported value.
-                 */
-                fun accountType(accountType: JsonField<AccountType>) = apply {
-                    this.accountType = accountType
-                }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [LightningBolt12ExternalAccountInfo].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .bolt12()
-                 * ```
-                 *
-                 * @throws IllegalStateException if any required field is unset.
-                 */
-                fun build(): LightningBolt12ExternalAccountInfo =
-                    LightningBolt12ExternalAccountInfo(
-                        checkRequired("bolt12", bolt12),
-                        destinationType,
-                        accountType,
-                        additionalProperties.toMutableMap(),
-                    )
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): LightningBolt12ExternalAccountInfo = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                bolt12()
-                _destinationType().let {
-                    if (it != JsonValue.from("BOLT12")) {
-                        throw GridInvalidDataException("'destinationType' is invalid, received $it")
-                    }
-                }
-                accountType()?.validate()
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                (if (bolt12.asKnown() == null) 0 else 1) +
-                    destinationType.let { if (it == JsonValue.from("BOLT12")) 1 else 0 } +
-                    (accountType.asKnown()?.validity() ?: 0)
-
-            class AccountType
-            @JsonCreator
-            private constructor(private val value: JsonField<String>) : Enum {
-
-                /**
-                 * Returns this class instance's raw value.
-                 *
-                 * This is usually only useful if this instance was deserialized from data that
-                 * doesn't match any known member, and you want to know that value. For example, if
-                 * the SDK is on an older version than the API, then the API may respond with new
-                 * members that the SDK is unaware of.
-                 */
-                @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-                companion object {
-
-                    val LIGHTNING = of("LIGHTNING")
-
-                    fun of(value: String) = AccountType(JsonField.of(value))
-                }
-
-                /** An enum containing [AccountType]'s known values. */
-                enum class Known {
-                    LIGHTNING
-                }
-
-                /**
-                 * An enum containing [AccountType]'s known values, as well as an [_UNKNOWN] member.
-                 *
-                 * An instance of [AccountType] can contain an unknown value in a couple of cases:
-                 * - It was deserialized from data that doesn't match any known member. For example,
-                 *   if the SDK is on an older version than the API, then the API may respond with
-                 *   new members that the SDK is unaware of.
-                 * - It was constructed with an arbitrary value using the [of] method.
-                 */
-                enum class Value {
-                    LIGHTNING,
-                    /**
-                     * An enum member indicating that [AccountType] was instantiated with an unknown
-                     * value.
-                     */
-                    _UNKNOWN,
-                }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value, or
-                 * [Value._UNKNOWN] if the class was instantiated with an unknown value.
-                 *
-                 * Use the [known] method instead if you're certain the value is always known or if
-                 * you want to throw for the unknown case.
-                 */
-                fun value(): Value =
-                    when (this) {
-                        LIGHTNING -> Value.LIGHTNING
-                        else -> Value._UNKNOWN
-                    }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value.
-                 *
-                 * Use the [value] method instead if you're uncertain the value is always known and
-                 * don't want to throw for the unknown case.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value is a not a known
-                 *   member.
-                 */
-                fun known(): Known =
-                    when (this) {
-                        LIGHTNING -> Known.LIGHTNING
-                        else -> throw GridInvalidDataException("Unknown AccountType: $value")
-                    }
-
-                /**
-                 * Returns this class instance's primitive wire representation.
-                 *
-                 * This differs from the [toString] method because that method is primarily for
-                 * debugging and generally doesn't throw.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value does not have the
-                 *   expected primitive type.
-                 */
-                fun asString(): String =
-                    _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-                private var validated: Boolean = false
-
-                fun validate(): AccountType = apply {
-                    if (validated) {
-                        return@apply
-                    }
-
-                    known()
-                    validated = true
-                }
-
-                fun isValid(): Boolean =
-                    try {
-                        validate()
-                        true
-                    } catch (e: GridInvalidDataException) {
-                        false
-                    }
-
-                /**
-                 * Returns a score indicating how many valid values are contained in this object
-                 * recursively.
-                 *
-                 * Used for best match union deserialization.
-                 */
-                internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-                override fun equals(other: Any?): Boolean {
-                    if (this === other) {
-                        return true
-                    }
-
-                    return other is AccountType && value == other.value
-                }
-
-                override fun hashCode() = value.hashCode()
-
-                override fun toString() = value.toString()
-            }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is LightningBolt12ExternalAccountInfo &&
-                    bolt12 == other.bolt12 &&
-                    destinationType == other.destinationType &&
-                    accountType == other.accountType &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy {
-                Objects.hash(bolt12, destinationType, accountType, additionalProperties)
-            }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "LightningBolt12ExternalAccountInfo{bolt12=$bolt12, destinationType=$destinationType, accountType=$accountType, additionalProperties=$additionalProperties}"
-        }
-
-        class LightningAddressExternalAccountInfo
-        @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-        private constructor(
-            private val destinationType: JsonValue,
-            private val lightningAddress: JsonField<String>,
-            private val accountType: JsonField<AccountType>,
-            private val additionalProperties: MutableMap<String, JsonValue>,
-        ) {
-
-            @JsonCreator
-            private constructor(
-                @JsonProperty("destinationType")
-                @ExcludeMissing
-                destinationType: JsonValue = JsonMissing.of(),
-                @JsonProperty("lightningAddress")
-                @ExcludeMissing
-                lightningAddress: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("accountType")
-                @ExcludeMissing
-                accountType: JsonField<AccountType> = JsonMissing.of(),
-            ) : this(destinationType, lightningAddress, accountType, mutableMapOf())
-
-            /**
-             * Expected to always return the following:
-             * ```kotlin
-             * JsonValue.from("LIGHTNING_ADDRESS")
-             * ```
-             *
-             * However, this method can be useful for debugging and logging (e.g. if the server
-             * responded with an unexpected value).
-             */
-            @JsonProperty("destinationType")
-            @ExcludeMissing
-            fun _destinationType(): JsonValue = destinationType
-
-            /**
-             * A lightning address which can be used as a payment destination. Note that for UMA
-             * addresses, no external account is needed. You can use the UMA address directly as a
-             * destination.
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun lightningAddress(): String = lightningAddress.getRequired("lightningAddress")
-
-            /**
-             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
-             *   the server responded with an unexpected value).
-             */
-            fun accountType(): AccountType? = accountType.getNullable("accountType")
-
-            /**
-             * Returns the raw JSON value of [lightningAddress].
-             *
-             * Unlike [lightningAddress], this method doesn't throw if the JSON field has an
-             * unexpected type.
-             */
-            @JsonProperty("lightningAddress")
-            @ExcludeMissing
-            fun _lightningAddress(): JsonField<String> = lightningAddress
-
-            /**
-             * Returns the raw JSON value of [accountType].
-             *
-             * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            fun _accountType(): JsonField<AccountType> = accountType
-
-            @JsonAnySetter
-            private fun putAdditionalProperty(key: String, value: JsonValue) {
-                additionalProperties.put(key, value)
-            }
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> =
-                Collections.unmodifiableMap(additionalProperties)
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /**
-                 * Returns a mutable builder for constructing an instance of
-                 * [LightningAddressExternalAccountInfo].
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .lightningAddress()
-                 * ```
-                 */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [LightningAddressExternalAccountInfo]. */
-            class Builder internal constructor() {
-
-                private var destinationType: JsonValue = JsonValue.from("LIGHTNING_ADDRESS")
-                private var lightningAddress: JsonField<String>? = null
-                private var accountType: JsonField<AccountType> = JsonMissing.of()
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(
-                    lightningAddressExternalAccountInfo: LightningAddressExternalAccountInfo
-                ) = apply {
-                    destinationType = lightningAddressExternalAccountInfo.destinationType
-                    lightningAddress = lightningAddressExternalAccountInfo.lightningAddress
-                    accountType = lightningAddressExternalAccountInfo.accountType
-                    additionalProperties =
-                        lightningAddressExternalAccountInfo.additionalProperties.toMutableMap()
-                }
-
-                /**
-                 * Sets the field to an arbitrary JSON value.
-                 *
-                 * It is usually unnecessary to call this method because the field defaults to the
-                 * following:
-                 * ```kotlin
-                 * JsonValue.from("LIGHTNING_ADDRESS")
-                 * ```
-                 *
-                 * This method is primarily for setting the field to an undocumented or not yet
-                 * supported value.
-                 */
-                fun destinationType(destinationType: JsonValue) = apply {
-                    this.destinationType = destinationType
-                }
-
-                /**
-                 * A lightning address which can be used as a payment destination. Note that for UMA
-                 * addresses, no external account is needed. You can use the UMA address directly as
-                 * a destination.
-                 */
-                fun lightningAddress(lightningAddress: String) =
-                    lightningAddress(JsonField.of(lightningAddress))
-
-                /**
-                 * Sets [Builder.lightningAddress] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.lightningAddress] with a well-typed [String]
-                 * value instead. This method is primarily for setting the field to an undocumented
-                 * or not yet supported value.
-                 */
-                fun lightningAddress(lightningAddress: JsonField<String>) = apply {
-                    this.lightningAddress = lightningAddress
-                }
-
-                fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
-
-                /**
-                 * Sets [Builder.accountType] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.accountType] with a well-typed [AccountType]
-                 * value instead. This method is primarily for setting the field to an undocumented
-                 * or not yet supported value.
-                 */
-                fun accountType(accountType: JsonField<AccountType>) = apply {
-                    this.accountType = accountType
-                }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [LightningAddressExternalAccountInfo].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .lightningAddress()
-                 * ```
-                 *
-                 * @throws IllegalStateException if any required field is unset.
-                 */
-                fun build(): LightningAddressExternalAccountInfo =
-                    LightningAddressExternalAccountInfo(
-                        destinationType,
-                        checkRequired("lightningAddress", lightningAddress),
-                        accountType,
-                        additionalProperties.toMutableMap(),
-                    )
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): LightningAddressExternalAccountInfo = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                _destinationType().let {
-                    if (it != JsonValue.from("LIGHTNING_ADDRESS")) {
-                        throw GridInvalidDataException("'destinationType' is invalid, received $it")
-                    }
-                }
-                lightningAddress()
-                accountType()?.validate()
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                destinationType.let { if (it == JsonValue.from("LIGHTNING_ADDRESS")) 1 else 0 } +
-                    (if (lightningAddress.asKnown() == null) 0 else 1) +
-                    (accountType.asKnown()?.validity() ?: 0)
-
-            class AccountType
-            @JsonCreator
-            private constructor(private val value: JsonField<String>) : Enum {
-
-                /**
-                 * Returns this class instance's raw value.
-                 *
-                 * This is usually only useful if this instance was deserialized from data that
-                 * doesn't match any known member, and you want to know that value. For example, if
-                 * the SDK is on an older version than the API, then the API may respond with new
-                 * members that the SDK is unaware of.
-                 */
-                @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-                companion object {
-
-                    val LIGHTNING = of("LIGHTNING")
-
-                    fun of(value: String) = AccountType(JsonField.of(value))
-                }
-
-                /** An enum containing [AccountType]'s known values. */
-                enum class Known {
-                    LIGHTNING
-                }
-
-                /**
-                 * An enum containing [AccountType]'s known values, as well as an [_UNKNOWN] member.
-                 *
-                 * An instance of [AccountType] can contain an unknown value in a couple of cases:
-                 * - It was deserialized from data that doesn't match any known member. For example,
-                 *   if the SDK is on an older version than the API, then the API may respond with
-                 *   new members that the SDK is unaware of.
-                 * - It was constructed with an arbitrary value using the [of] method.
-                 */
-                enum class Value {
-                    LIGHTNING,
-                    /**
-                     * An enum member indicating that [AccountType] was instantiated with an unknown
-                     * value.
-                     */
-                    _UNKNOWN,
-                }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value, or
-                 * [Value._UNKNOWN] if the class was instantiated with an unknown value.
-                 *
-                 * Use the [known] method instead if you're certain the value is always known or if
-                 * you want to throw for the unknown case.
-                 */
-                fun value(): Value =
-                    when (this) {
-                        LIGHTNING -> Value.LIGHTNING
-                        else -> Value._UNKNOWN
-                    }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value.
-                 *
-                 * Use the [value] method instead if you're uncertain the value is always known and
-                 * don't want to throw for the unknown case.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value is a not a known
-                 *   member.
-                 */
-                fun known(): Known =
-                    when (this) {
-                        LIGHTNING -> Known.LIGHTNING
-                        else -> throw GridInvalidDataException("Unknown AccountType: $value")
-                    }
-
-                /**
-                 * Returns this class instance's primitive wire representation.
-                 *
-                 * This differs from the [toString] method because that method is primarily for
-                 * debugging and generally doesn't throw.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value does not have the
-                 *   expected primitive type.
-                 */
-                fun asString(): String =
-                    _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-                private var validated: Boolean = false
-
-                fun validate(): AccountType = apply {
-                    if (validated) {
-                        return@apply
-                    }
-
-                    known()
-                    validated = true
-                }
-
-                fun isValid(): Boolean =
-                    try {
-                        validate()
-                        true
-                    } catch (e: GridInvalidDataException) {
-                        false
-                    }
-
-                /**
-                 * Returns a score indicating how many valid values are contained in this object
-                 * recursively.
-                 *
-                 * Used for best match union deserialization.
-                 */
-                internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-                override fun equals(other: Any?): Boolean {
-                    if (this === other) {
-                        return true
-                    }
-
-                    return other is AccountType && value == other.value
-                }
-
-                override fun hashCode() = value.hashCode()
-
-                override fun toString() = value.toString()
-            }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is LightningAddressExternalAccountInfo &&
-                    destinationType == other.destinationType &&
-                    lightningAddress == other.lightningAddress &&
-                    accountType == other.accountType &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy {
-                Objects.hash(destinationType, lightningAddress, accountType, additionalProperties)
-            }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "LightningAddressExternalAccountInfo{destinationType=$destinationType, lightningAddress=$lightningAddress, accountType=$accountType, additionalProperties=$additionalProperties}"
-        }
+        override fun toString() =
+            "Lightning{accountType=$accountType, bolt12=$bolt12, invoice=$invoice, lightningAddress=$lightningAddress, additionalProperties=$additionalProperties}"
     }
 
     class SolanaWallet

@@ -311,7 +311,7 @@ private constructor(
             accountInfo(ExternalAccountInfo.SparkWallet.builder().address(address).build())
 
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofLightning(lightning)`. */
-        fun accountInfo(lightning: ExternalAccountInfo.LightningExternalAccountInfo) =
+        fun accountInfo(lightning: ExternalAccountInfo.Lightning) =
             accountInfo(ExternalAccountInfo.ofLightning(lightning))
 
         /**
