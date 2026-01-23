@@ -732,7 +732,7 @@ private constructor(
     private constructor(
         private val correlationId: JsonField<String>,
         private val code: JsonField<String>,
-        private val details: JsonValue,
+        private val details: JsonField<Details>,
         private val message: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
@@ -743,7 +743,7 @@ private constructor(
             @ExcludeMissing
             correlationId: JsonField<String> = JsonMissing.of(),
             @JsonProperty("code") @ExcludeMissing code: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("details") @ExcludeMissing details: JsonValue = JsonMissing.of(),
+            @JsonProperty("details") @ExcludeMissing details: JsonField<Details> = JsonMissing.of(),
             @JsonProperty("message") @ExcludeMissing message: JsonField<String> = JsonMissing.of(),
         ) : this(correlationId, code, details, message, mutableMapOf())
 
@@ -766,12 +766,10 @@ private constructor(
         /**
          * Additional error details
          *
-         * This arbitrary value can be deserialized into a custom type using the `convert` method:
-         * ```kotlin
-         * val myObject: MyClass = error.details().convert(MyClass::class.java)
-         * ```
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
          */
-        @JsonProperty("details") @ExcludeMissing fun _details(): JsonValue = details
+        fun details(): Details? = details.getNullable("details")
 
         /**
          * Error message
@@ -797,6 +795,13 @@ private constructor(
          * Unlike [code], this method doesn't throw if the JSON field has an unexpected type.
          */
         @JsonProperty("code") @ExcludeMissing fun _code(): JsonField<String> = code
+
+        /**
+         * Returns the raw JSON value of [details].
+         *
+         * Unlike [details], this method doesn't throw if the JSON field has an unexpected type.
+         */
+        @JsonProperty("details") @ExcludeMissing fun _details(): JsonField<Details> = details
 
         /**
          * Returns the raw JSON value of [message].
@@ -835,7 +840,7 @@ private constructor(
 
             private var correlationId: JsonField<String>? = null
             private var code: JsonField<String> = JsonMissing.of()
-            private var details: JsonValue = JsonMissing.of()
+            private var details: JsonField<Details> = JsonMissing.of()
             private var message: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
@@ -874,7 +879,16 @@ private constructor(
             fun code(code: JsonField<String>) = apply { this.code = code }
 
             /** Additional error details */
-            fun details(details: JsonValue) = apply { this.details = details }
+            fun details(details: Details) = details(JsonField.of(details))
+
+            /**
+             * Sets [Builder.details] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.details] with a well-typed [Details] value instead.
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun details(details: JsonField<Details>) = apply { this.details = details }
 
             /** Error message */
             fun message(message: String) = message(JsonField.of(message))
@@ -938,6 +952,7 @@ private constructor(
 
             correlationId()
             code()
+            details()?.validate()
             message()
             validated = true
         }
@@ -959,7 +974,109 @@ private constructor(
         internal fun validity(): Int =
             (if (correlationId.asKnown() == null) 0 else 1) +
                 (if (code.asKnown() == null) 0 else 1) +
+                (details.asKnown()?.validity() ?: 0) +
                 (if (message.asKnown() == null) 0 else 1)
+
+        /** Additional error details */
+        class Details
+        @JsonCreator
+        private constructor(
+            @com.fasterxml.jackson.annotation.JsonValue
+            private val additionalProperties: Map<String, JsonValue>
+        ) {
+
+            @JsonAnyGetter
+            @ExcludeMissing
+            fun _additionalProperties(): Map<String, JsonValue> = additionalProperties
+
+            fun toBuilder() = Builder().from(this)
+
+            companion object {
+
+                /** Returns a mutable builder for constructing an instance of [Details]. */
+                fun builder() = Builder()
+            }
+
+            /** A builder for [Details]. */
+            class Builder internal constructor() {
+
+                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
+
+                internal fun from(details: Details) = apply {
+                    additionalProperties = details.additionalProperties.toMutableMap()
+                }
+
+                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
+                    this.additionalProperties.clear()
+                    putAllAdditionalProperties(additionalProperties)
+                }
+
+                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
+                    additionalProperties.put(key, value)
+                }
+
+                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
+                    apply {
+                        this.additionalProperties.putAll(additionalProperties)
+                    }
+
+                fun removeAdditionalProperty(key: String) = apply {
+                    additionalProperties.remove(key)
+                }
+
+                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
+                    keys.forEach(::removeAdditionalProperty)
+                }
+
+                /**
+                 * Returns an immutable instance of [Details].
+                 *
+                 * Further updates to this [Builder] will not mutate the returned instance.
+                 */
+                fun build(): Details = Details(additionalProperties.toImmutable())
+            }
+
+            private var validated: Boolean = false
+
+            fun validate(): Details = apply {
+                if (validated) {
+                    return@apply
+                }
+
+                validated = true
+            }
+
+            fun isValid(): Boolean =
+                try {
+                    validate()
+                    true
+                } catch (e: GridInvalidDataException) {
+                    false
+                }
+
+            /**
+             * Returns a score indicating how many valid values are contained in this object
+             * recursively.
+             *
+             * Used for best match union deserialization.
+             */
+            internal fun validity(): Int =
+                additionalProperties.count { (_, value) -> !value.isNull() && !value.isMissing() }
+
+            override fun equals(other: Any?): Boolean {
+                if (this === other) {
+                    return true
+                }
+
+                return other is Details && additionalProperties == other.additionalProperties
+            }
+
+            private val hashCode: Int by lazy { Objects.hash(additionalProperties) }
+
+            override fun hashCode(): Int = hashCode
+
+            override fun toString() = "Details{additionalProperties=$additionalProperties}"
+        }
 
         override fun equals(other: Any?): Boolean {
             if (this === other) {
