@@ -12,7 +12,7 @@ internal class CustomerCreateParamsTest {
     fun create() {
         CustomerCreateParams.builder()
             .body(
-                IndividualCustomerUpdate.builder()
+                CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
                     .address(
                         Address.builder()
                             .country("US")
@@ -38,7 +38,7 @@ internal class CustomerCreateParamsTest {
         val params =
             CustomerCreateParams.builder()
                 .body(
-                    IndividualCustomerUpdate.builder()
+                    CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -62,8 +62,8 @@ internal class CustomerCreateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.Body.ofIndividual(
-                    IndividualCustomerUpdate.builder()
+                CustomerCreateParams.Body.ofCustomersIndividualCustomerUpdate(
+                    CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -87,13 +87,17 @@ internal class CustomerCreateParamsTest {
     @Test
     fun bodyWithoutOptionalFields() {
         val params =
-            CustomerCreateParams.builder().body(IndividualCustomerUpdate.builder().build()).build()
+            CustomerCreateParams.builder()
+                .body(CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder().build())
+                .build()
 
         val body = params._body()
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.Body.ofIndividual(IndividualCustomerUpdate.builder().build())
+                CustomerCreateParams.Body.ofCustomersIndividualCustomerUpdate(
+                    CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder().build()
+                )
             )
     }
 }

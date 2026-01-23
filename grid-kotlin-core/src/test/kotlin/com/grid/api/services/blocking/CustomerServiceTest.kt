@@ -8,7 +8,6 @@ import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.CustomerCreateParams
 import com.grid.api.models.customers.CustomerGetKycLinkParams
 import com.grid.api.models.customers.CustomerUpdateParams
-import com.grid.api.models.customers.IndividualCustomerUpdate
 import java.time.LocalDate
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -32,7 +31,7 @@ internal class CustomerServiceTest {
             customerService.create(
                 CustomerCreateParams.builder()
                     .body(
-                        IndividualCustomerUpdate.builder()
+                        CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
                             .address(
                                 Address.builder()
                                     .country("US")
@@ -88,7 +87,7 @@ internal class CustomerServiceTest {
                 CustomerUpdateParams.builder()
                     .customerId("customerId")
                     .body(
-                        IndividualCustomerUpdate.builder()
+                        CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
                             .address(
                                 Address.builder()
                                     .country("US")

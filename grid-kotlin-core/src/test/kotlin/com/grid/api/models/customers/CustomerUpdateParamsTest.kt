@@ -13,7 +13,7 @@ internal class CustomerUpdateParamsTest {
         CustomerUpdateParams.builder()
             .customerId("customerId")
             .body(
-                IndividualCustomerUpdate.builder()
+                CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
                     .address(
                         Address.builder()
                             .country("US")
@@ -39,7 +39,7 @@ internal class CustomerUpdateParamsTest {
         val params =
             CustomerUpdateParams.builder()
                 .customerId("customerId")
-                .body(IndividualCustomerUpdate.builder().build())
+                .body(CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder().build())
                 .build()
 
         assertThat(params._pathParam(0)).isEqualTo("customerId")
@@ -53,7 +53,7 @@ internal class CustomerUpdateParamsTest {
             CustomerUpdateParams.builder()
                 .customerId("customerId")
                 .body(
-                    IndividualCustomerUpdate.builder()
+                    CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -77,8 +77,8 @@ internal class CustomerUpdateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerUpdateParams.Body.ofIndividual(
-                    IndividualCustomerUpdate.builder()
+                CustomerUpdateParams.Body.ofCustomersIndividualCustomerUpdate(
+                    CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -104,14 +104,16 @@ internal class CustomerUpdateParamsTest {
         val params =
             CustomerUpdateParams.builder()
                 .customerId("customerId")
-                .body(IndividualCustomerUpdate.builder().build())
+                .body(CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder().build())
                 .build()
 
         val body = params._body()
 
         assertThat(body)
             .isEqualTo(
-                CustomerUpdateParams.Body.ofIndividual(IndividualCustomerUpdate.builder().build())
+                CustomerUpdateParams.Body.ofCustomersIndividualCustomerUpdate(
+                    CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder().build()
+                )
             )
     }
 }
