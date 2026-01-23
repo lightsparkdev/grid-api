@@ -42,45 +42,16 @@ properties:
   source:
     $ref: ./QuoteSource.yaml
   destination:
+    required:
+      - destinationType
     oneOf:
-      - title: Account Destination
-        type: object
-        required:
-          - accountId
-        properties:
-          accountId:
-            type: string
-            description: Destination account identifier
-            example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-          currency:
-            type: string
-            description: Currency code for the destination account
-            example: EUR
-        description: Destination account details
-      - title: UMA Address Destination
-        type: object
-        required:
-          - umaAddress
-        properties:
-          umaAddress:
-            type: string
-            description: UMA address of the recipient
-            example: $receiver@uma.domain.com
-          currency:
-            type: string
-            description: Currency code for the destination
-            example: EUR
-          counterpartyInformation:
-            type: object
-            description: >-
-              Information about the recipient, as required by the platform in their
-              configuration.
-            additionalProperties: true
-            example:
-              FULL_NAME: Jane Receiver
-              BIRTH_DATE: '1990-01-01'
-              NATIONALITY: FR
-        description: UMA address destination details
+      - $ref: ./QuoteAccountDestination.yaml
+      - $ref: ./QuoteUmaAddressDestination.yaml
+    discriminator:
+      propertyName: destinationType
+      mapping:
+        ACCOUNT: ./QuoteAccountDestination.yaml
+        UMA_ADDRESS: ./QuoteUmaAddressDestination.yaml
   sendingCurrency:
     $ref: ../common/Currency.yaml
     description: Currency for the sending amount

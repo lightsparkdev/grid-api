@@ -154,55 +154,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - title: New Individual Customer
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualCustomerUpdate'
-                    - type: object
-                      required:
-                        - platformCustomerId
-                      properties:
-                        platformCustomerId:
-                          type: string
-                          description: Platform-specific customer identifier
-                          example: 9f84e0c2a72c4fa
-                        kycUrl:
-                          type: string
-                          description: A KYC URL to be shared with your individual customer if KYC needs to be completed
-                          example: https://example.com/kyc
-                - title: New Business Customer
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessCustomerUpdate'
-                    - type: object
-                      required:
-                        - platformCustomerId
-                        - businessInfo
-                      properties:
-                        platformCustomerId:
-                          type: string
-                          description: Platform-specific customer identifier
-                          example: 9f84e0c2a72c4fa
-                        kycUrl:
-                          type: string
-                          description: A KYC URL to be shared with your business customer if KYC needs to be completed
-                          example: https://example.com/kyc
-                        businessInfo:
-                          type: object
-                          required:
-                            - legalName
-                          properties:
-                            legalName:
-                              type: string
-                              description: Legal name of the business
-                              example: Acme Corporation, Inc.
-                            registrationNumber:
-                              type: string
-                              description: Business registration number
-                              example: BRN-123456789
-                            taxId:
-                              type: string
-                              description: Tax identification number
-                              example: EIN-987654321
+              $ref: '#/components/schemas/CreateCustomerRequest'
             examples:
               individualCustomerWithUmaAddress:
                 summary: Create individual customer with UMA address, including deposit bank account information.
@@ -486,16 +438,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - title: Update Individual Customer
-                  $ref: '#/components/schemas/IndividualCustomerUpdate'
-                - title: Update Business Customer
-                  $ref: '#/components/schemas/BusinessCustomerUpdate'
-              discriminator:
-                propertyName: customerType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
-                  BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
+              $ref: '#/components/schemas/UpdateCustomerRequest'
             examples:
               individualUpdate:
                 summary: Update individual customer example
@@ -4417,6 +4360,10 @@ components:
           example: US
         address:
           $ref: '#/components/schemas/Address'
+        platformCustomerId:
+          type: string
+          description: Platform-specific customer identifier
+          example: 9f84e0c2a72c4fa
         umaAddress:
           type: string
           description: |
@@ -4458,6 +4405,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UltimateBeneficialOwner'
+    CreateCustomerRequest:
+      type: object
+      required:
+        - customerType
+      oneOf:
+        - $ref: '#/components/schemas/IndividualCustomerUpdate'
+        - $ref: '#/components/schemas/BusinessCustomerUpdate'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
     Error409:
       type: object
       required:
@@ -4536,6 +4495,18 @@ components:
         details:
           type: object
           description: Additional error details
+    UpdateCustomerRequest:
+      type: object
+      required:
+        - customerType
+      oneOf:
+        - $ref: '#/components/schemas/IndividualCustomerUpdate'
+        - $ref: '#/components/schemas/BusinessCustomerUpdate'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
     Currency:
       type: object
       properties:
@@ -5228,56 +5199,25 @@ components:
               const: SPARK_WALLET
               example: SPARK_WALLET
     LightningExternalAccountInfo:
-      allOf:
-        - type: object
-          required:
-            - accountType
-          properties:
-            accountType:
-              const: LIGHTNING
-              example: LIGHTNING
-        - oneOf:
-            - title: Lightning Invoice
-              type: object
-              required:
-                - destinationType
-                - invoice
-              properties:
-                destinationType:
-                  const: INVOICE
-                  example: INVOICE
-                invoice:
-                  type: string
-                  description: 1-time use lightning bolt11 invoice payout destination
-                  example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-            - title: Lightning - Bolt12 Offer
-              type: object
-              required:
-                - destinationType
-                - bolt12
-              properties:
-                destinationType:
-                  const: BOLT12
-                  example: BOLT12
-                bolt12:
-                  type: string
-                  description: A bolt12 offer which can be reused as a payment destination
-                  example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-            - title: Lightning Address
-              type: object
-              required:
-                - destinationType
-                - lightningAddress
-              properties:
-                destinationType:
-                  const: LIGHTNING_ADDRESS
-                  example: LIGHTNING_ADDRESS
-                lightningAddress:
-                  type: string
-                  description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
-                  example: john.doe@lightningwallet.com
-          discriminator:
-            propertyName: destinationType
+      type: object
+      required:
+        - accountType
+      properties:
+        accountType:
+          const: LIGHTNING
+          example: LIGHTNING
+        invoice:
+          type: string
+          description: 1-time use lightning bolt11 invoice payout destination
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+        bolt12:
+          type: string
+          description: A bolt12 offer which can be reused as a payment destination
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+        lightningAddress:
+          type: string
+          description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
+          example: john.doe@lightningwallet.com
     SolanaWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/SolanaWalletInfo'
@@ -5492,34 +5432,13 @@ components:
           $ref: '#/components/schemas/TransactionType'
         destination:
           oneOf:
-            - title: Account Destination
-              type: object
-              required:
-                - accountId
-                - currency
-              properties:
-                accountId:
-                  type: string
-                  description: Destination account identifier
-                  example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                currency:
-                  type: string
-                  description: Currency code for the destination account
-                  example: EUR
-              description: Destination account details
-            - title: UMA Address Destination
-              type: object
-              required:
-                - umaAddress
-              properties:
-                umaAddress:
-                  type: string
-                  description: UMA address of the recipient
-                  example: $receiver@uma.domain.com
-                currency:
-                  type: string
-                  description: Currency code for the destination
-                  example: EUR
+            - $ref: '#/components/schemas/AccountDestination'
+            - $ref: '#/components/schemas/UmaAddressDestination'
+          discriminator:
+            propertyName: destinationType
+            mapping:
+              ACCOUNT: '#/components/schemas/AccountDestination'
+              UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
         customerId:
           type: string
           description: System ID of the customer (sender for outgoing, recipient for incoming)
@@ -5841,6 +5760,45 @@ components:
         - REFUNDED
         - EXPIRED
       description: Status of a payment transaction
+    AccountDestination:
+      type: object
+      required:
+        - destinationType
+        - accountId
+        - currency
+      properties:
+        destinationType:
+          type: string
+          const: ACCOUNT
+          description: Destination type identifier
+        accountId:
+          type: string
+          description: Destination account identifier
+          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        currency:
+          type: string
+          description: Currency code for the destination account
+          example: EUR
+      description: Destination account details
+    UmaAddressDestination:
+      type: object
+      required:
+        - destinationType
+        - umaAddress
+      properties:
+        destinationType:
+          type: string
+          const: UMA_ADDRESS
+          description: Destination type identifier
+        umaAddress:
+          type: string
+          description: UMA address of the recipient
+          example: $receiver@uma.domain.com
+        currency:
+          type: string
+          description: Currency code for the destination
+          example: EUR
+      description: UMA address destination details
     CurrencyPreference:
       type: object
       required:
@@ -5943,37 +5901,102 @@ components:
         details:
           type: object
           description: Additional error details
+    QuoteAccountSource:
+      type: object
+      required:
+        - sourceType
+        - accountId
+      properties:
+        sourceType:
+          type: string
+          const: ACCOUNT
+          description: Source type identifier
+        accountId:
+          type: string
+          description: Source account identifier
+          example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        currency:
+          type: string
+          description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
+          example: USD
+      description: Source account details
+    QuoteRealtimeFundingSource:
+      type: object
+      required:
+        - sourceType
+        - currency
+        - customerId
+      properties:
+        sourceType:
+          type: string
+          const: REALTIME_FUNDING
+          description: Source type identifier
+        customerId:
+          type: string
+          description: Source customer ID. If this transaction is being initiated on behalf of a customer, this is required. If customerId is not provided, the quote will be created on behalf of the platform itself.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000009
+        currency:
+          type: string
+          description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
+          example: USD
+      description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSource:
+      required:
+        - sourceType
       oneOf:
-        - title: Account
+        - $ref: '#/components/schemas/QuoteAccountSource'
+        - $ref: '#/components/schemas/QuoteRealtimeFundingSource'
+      discriminator:
+        propertyName: sourceType
+        mapping:
+          ACCOUNT: '#/components/schemas/QuoteAccountSource'
+          REALTIME_FUNDING: '#/components/schemas/QuoteRealtimeFundingSource'
+    QuoteAccountDestination:
+      type: object
+      required:
+        - destinationType
+        - accountId
+      properties:
+        destinationType:
+          type: string
+          const: ACCOUNT
+          description: Destination type identifier
+        accountId:
+          type: string
+          description: Destination account identifier
+          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        currency:
+          type: string
+          description: Currency code for the destination account
+          example: EUR
+      description: Destination account details
+    QuoteUmaAddressDestination:
+      type: object
+      required:
+        - destinationType
+        - umaAddress
+      properties:
+        destinationType:
+          type: string
+          const: UMA_ADDRESS
+          description: Destination type identifier
+        umaAddress:
+          type: string
+          description: UMA address of the recipient
+          example: $receiver@uma.domain.com
+        currency:
+          type: string
+          description: Currency code for the destination
+          example: EUR
+        counterpartyInformation:
           type: object
-          required:
-            - accountId
-          properties:
-            accountId:
-              type: string
-              description: Source account identifier
-              example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-            currency:
-              type: string
-              description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
-              example: USD
-          description: Source account details
-        - title: Real-time funding
-          type: object
-          required:
-            - currency
-            - customerId
-          properties:
-            customerId:
-              type: string
-              description: Source customer ID. If this transaction is being initiated on behalf of a customer, this is required. If customerId is not provided, the quote will be created on behalf of the platform itself.
-              example: Customer:019542f5-b3e7-1d02-0000-000000000009
-            currency:
-              type: string
-              description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
-              example: USD
-          description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
+          description: Information about the recipient, as required by the platform in their configuration.
+          additionalProperties: true
+          example:
+            FULL_NAME: Jane Receiver
+            BIRTH_DATE: '1990-01-01'
+            NATIONALITY: FR
+      description: UMA address destination details
     Quote:
       type: object
       required:
@@ -6018,43 +6041,16 @@ components:
         source:
           $ref: '#/components/schemas/QuoteSource'
         destination:
+          required:
+            - destinationType
           oneOf:
-            - title: Account Destination
-              type: object
-              required:
-                - accountId
-              properties:
-                accountId:
-                  type: string
-                  description: Destination account identifier
-                  example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                currency:
-                  type: string
-                  description: Currency code for the destination account
-                  example: EUR
-              description: Destination account details
-            - title: UMA Address Destination
-              type: object
-              required:
-                - umaAddress
-              properties:
-                umaAddress:
-                  type: string
-                  description: UMA address of the recipient
-                  example: $receiver@uma.domain.com
-                currency:
-                  type: string
-                  description: Currency code for the destination
-                  example: EUR
-                counterpartyInformation:
-                  type: object
-                  description: Information about the recipient, as required by the platform in their configuration.
-                  additionalProperties: true
-                  example:
-                    FULL_NAME: Jane Receiver
-                    BIRTH_DATE: '1990-01-01'
-                    NATIONALITY: FR
-              description: UMA address destination details
+            - $ref: '#/components/schemas/QuoteAccountDestination'
+            - $ref: '#/components/schemas/QuoteUmaAddressDestination'
+          discriminator:
+            propertyName: destinationType
+            mapping:
+              ACCOUNT: '#/components/schemas/QuoteAccountDestination'
+              UMA_ADDRESS: '#/components/schemas/QuoteUmaAddressDestination'
         sendingCurrency:
           $ref: '#/components/schemas/Currency'
           description: Currency for the sending amount

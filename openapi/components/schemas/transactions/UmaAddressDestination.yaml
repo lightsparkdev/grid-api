@@ -1,0 +1,18 @@
+type: object
+required:
+  - destinationType
+  - umaAddress
+properties:
+  destinationType:
+    type: string
+    const: UMA_ADDRESS
+    description: Destination type identifier
+  umaAddress:
+    type: string
+    description: UMA address of the recipient
+    example: $receiver@uma.domain.com
+  currency:
+    type: string
+    description: Currency code for the destination
+    example: EUR
+description: UMA address destination details

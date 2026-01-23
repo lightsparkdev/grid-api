@@ -1,0 +1,11 @@
+type: object
+required:
+  - customerType
+oneOf:
+  - $ref: ./IndividualCustomerUpdate.yaml
+  - $ref: ./BusinessCustomerUpdate.yaml
+discriminator:
+  propertyName: customerType
+  mapping:
+    INDIVIDUAL: ./IndividualCustomerUpdate.yaml
+    BUSINESS: ./BusinessCustomerUpdate.yaml

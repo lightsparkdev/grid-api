@@ -21,6 +21,10 @@ properties:
     example: US
   address:
     $ref: ../common/Address.yaml
+  platformCustomerId:
+    type: string
+    description: Platform-specific customer identifier
+    example: 9f84e0c2a72c4fa
   umaAddress:
     type: string
     description: |
