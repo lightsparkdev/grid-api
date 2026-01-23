@@ -226,7 +226,6 @@ private constructor(
     private constructor(
         private val accountId: JsonField<String>,
         private val sourceType: JsonValue,
-        private val currency: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
@@ -236,8 +235,7 @@ private constructor(
             @ExcludeMissing
             accountId: JsonField<String> = JsonMissing.of(),
             @JsonProperty("sourceType") @ExcludeMissing sourceType: JsonValue = JsonMissing.of(),
-            @JsonProperty("currency") @ExcludeMissing currency: JsonField<String> = JsonMissing.of(),
-        ) : this(accountId, sourceType, currency, mutableMapOf())
+        ) : this(accountId, sourceType, mutableMapOf())
 
         /**
          * Source account identifier
@@ -261,28 +259,11 @@ private constructor(
         @JsonProperty("sourceType") @ExcludeMissing fun _sourceType(): JsonValue = sourceType
 
         /**
-         * Currency code for the funding source. See
-         * [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-         * for the full list of supported fiat and crypto currencies.
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
-         *   server responded with an unexpected value).
-         */
-        fun currency(): String? = currency.getNullable("currency")
-
-        /**
          * Returns the raw JSON value of [accountId].
          *
          * Unlike [accountId], this method doesn't throw if the JSON field has an unexpected type.
          */
         @JsonProperty("accountId") @ExcludeMissing fun _accountId(): JsonField<String> = accountId
-
-        /**
-         * Returns the raw JSON value of [currency].
-         *
-         * Unlike [currency], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("currency") @ExcludeMissing fun _currency(): JsonField<String> = currency
 
         @JsonAnySetter
         private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -314,13 +295,11 @@ private constructor(
 
             private var accountId: JsonField<String>? = null
             private var sourceType: JsonValue = JsonValue.from("ACCOUNT")
-            private var currency: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
             internal fun from(account: Account) = apply {
                 accountId = account.accountId
                 sourceType = account.sourceType
-                currency = account.currency
                 additionalProperties = account.additionalProperties.toMutableMap()
             }
 
@@ -349,22 +328,6 @@ private constructor(
              * supported value.
              */
             fun sourceType(sourceType: JsonValue) = apply { this.sourceType = sourceType }
-
-            /**
-             * Currency code for the funding source. See
-             * [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-             * for the full list of supported fiat and crypto currencies.
-             */
-            fun currency(currency: String) = currency(JsonField.of(currency))
-
-            /**
-             * Sets [Builder.currency] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.currency] with a well-typed [String] value instead.
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun currency(currency: JsonField<String>) = apply { this.currency = currency }
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -401,7 +364,6 @@ private constructor(
                 Account(
                     checkRequired("accountId", accountId),
                     sourceType,
-                    currency,
                     additionalProperties.toMutableMap(),
                 )
         }
@@ -419,7 +381,6 @@ private constructor(
                     throw GridInvalidDataException("'sourceType' is invalid, received $it")
                 }
             }
-            currency()
             validated = true
         }
 
@@ -439,8 +400,7 @@ private constructor(
          */
         internal fun validity(): Int =
             (if (accountId.asKnown() == null) 0 else 1) +
-                sourceType.let { if (it == JsonValue.from("ACCOUNT")) 1 else 0 } +
-                (if (currency.asKnown() == null) 0 else 1)
+                sourceType.let { if (it == JsonValue.from("ACCOUNT")) 1 else 0 }
 
         override fun equals(other: Any?): Boolean {
             if (this === other) {
@@ -450,18 +410,17 @@ private constructor(
             return other is Account &&
                 accountId == other.accountId &&
                 sourceType == other.sourceType &&
-                currency == other.currency &&
                 additionalProperties == other.additionalProperties
         }
 
         private val hashCode: Int by lazy {
-            Objects.hash(accountId, sourceType, currency, additionalProperties)
+            Objects.hash(accountId, sourceType, additionalProperties)
         }
 
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "Account{accountId=$accountId, sourceType=$sourceType, currency=$currency, additionalProperties=$additionalProperties}"
+            "Account{accountId=$accountId, sourceType=$sourceType, additionalProperties=$additionalProperties}"
     }
 
     /**

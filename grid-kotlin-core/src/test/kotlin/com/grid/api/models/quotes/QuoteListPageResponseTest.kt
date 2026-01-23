@@ -43,12 +43,7 @@ internal class QuoteListPageResponseTest {
                                 .symbol("\$")
                                 .build()
                         )
-                        .source(
-                            QuoteSource.Account.builder()
-                                .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                                .currency("USD")
-                                .build()
-                        )
+                        .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .status(Quote.Status.PENDING)
                         .totalReceivingAmount(1000L)
                         .totalSendingAmount(123010L)
@@ -65,6 +60,7 @@ internal class QuoteListPageResponseTest {
                                 .instructionsNotes(
                                     "Please ensure the reference code is included in the payment memo/description field"
                                 )
+                                .isPlatformAccount(true)
                                 .build()
                         )
                         .addPaymentInstruction(
@@ -78,6 +74,7 @@ internal class QuoteListPageResponseTest {
                                 .instructionsNotes(
                                     "Please ensure the reference code is included in the payment memo/description field"
                                 )
+                                .isPlatformAccount(true)
                                 .build()
                         )
                         .rateDetails(
@@ -127,12 +124,7 @@ internal class QuoteListPageResponseTest {
                             .symbol("\$")
                             .build()
                     )
-                    .source(
-                        QuoteSource.Account.builder()
-                            .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                            .currency("USD")
-                            .build()
-                    )
+                    .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                     .status(Quote.Status.PENDING)
                     .totalReceivingAmount(1000L)
                     .totalSendingAmount(123010L)
@@ -149,6 +141,7 @@ internal class QuoteListPageResponseTest {
                             .instructionsNotes(
                                 "Please ensure the reference code is included in the payment memo/description field"
                             )
+                            .isPlatformAccount(true)
                             .build()
                     )
                     .addPaymentInstruction(
@@ -162,6 +155,7 @@ internal class QuoteListPageResponseTest {
                             .instructionsNotes(
                                 "Please ensure the reference code is included in the payment memo/description field"
                             )
+                            .isPlatformAccount(true)
                             .build()
                     )
                     .rateDetails(
@@ -215,12 +209,7 @@ internal class QuoteListPageResponseTest {
                                 .symbol("\$")
                                 .build()
                         )
-                        .source(
-                            QuoteSource.Account.builder()
-                                .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                                .currency("USD")
-                                .build()
-                        )
+                        .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .status(Quote.Status.PENDING)
                         .totalReceivingAmount(1000L)
                         .totalSendingAmount(123010L)
@@ -237,6 +226,7 @@ internal class QuoteListPageResponseTest {
                                 .instructionsNotes(
                                     "Please ensure the reference code is included in the payment memo/description field"
                                 )
+                                .isPlatformAccount(true)
                                 .build()
                         )
                         .addPaymentInstruction(
@@ -250,6 +240,7 @@ internal class QuoteListPageResponseTest {
                                 .instructionsNotes(
                                     "Please ensure the reference code is included in the payment memo/description field"
                                 )
+                                .isPlatformAccount(true)
                                 .build()
                         )
                         .rateDetails(

@@ -55,6 +55,7 @@ internal class SandboxSendFundsResponseTest {
                         .instructionsNotes(
                             "Please ensure the reference code is included in the payment memo/description field"
                         )
+                        .isPlatformAccount(true)
                         .build()
                 )
                 .addPaymentInstruction(
@@ -68,6 +69,7 @@ internal class SandboxSendFundsResponseTest {
                         .instructionsNotes(
                             "Please ensure the reference code is included in the payment memo/description field"
                         )
+                        .isPlatformAccount(true)
                         .build()
                 )
                 .sentAmount(
@@ -84,7 +86,7 @@ internal class SandboxSendFundsResponseTest {
                         .build()
                 )
                 .source(
-                    SandboxSendFundsResponse.Source.AccountSource.builder()
+                    SandboxSendFundsResponse.Source.Account.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()
@@ -169,6 +171,7 @@ internal class SandboxSendFundsResponseTest {
                     .instructionsNotes(
                         "Please ensure the reference code is included in the payment memo/description field"
                     )
+                    .isPlatformAccount(true)
                     .build(),
                 PaymentInstructions.builder()
                     .accountOrWalletInfo(
@@ -180,6 +183,7 @@ internal class SandboxSendFundsResponseTest {
                     .instructionsNotes(
                         "Please ensure the reference code is included in the payment memo/description field"
                     )
+                    .isPlatformAccount(true)
                     .build(),
             )
         assertThat(sandboxSendFundsResponse.sentAmount())
@@ -199,7 +203,7 @@ internal class SandboxSendFundsResponseTest {
         assertThat(sandboxSendFundsResponse.source())
             .isEqualTo(
                 SandboxSendFundsResponse.Source.ofAccount(
-                    SandboxSendFundsResponse.Source.AccountSource.builder()
+                    SandboxSendFundsResponse.Source.Account.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()
@@ -286,6 +290,7 @@ internal class SandboxSendFundsResponseTest {
                         .instructionsNotes(
                             "Please ensure the reference code is included in the payment memo/description field"
                         )
+                        .isPlatformAccount(true)
                         .build()
                 )
                 .addPaymentInstruction(
@@ -299,6 +304,7 @@ internal class SandboxSendFundsResponseTest {
                         .instructionsNotes(
                             "Please ensure the reference code is included in the payment memo/description field"
                         )
+                        .isPlatformAccount(true)
                         .build()
                 )
                 .sentAmount(
@@ -315,7 +321,7 @@ internal class SandboxSendFundsResponseTest {
                         .build()
                 )
                 .source(
-                    SandboxSendFundsResponse.Source.AccountSource.builder()
+                    SandboxSendFundsResponse.Source.Account.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()

@@ -46,6 +46,7 @@ internal class CustomerListInternalAccountsPageResponseTest {
                                 .instructionsNotes(
                                     "Please ensure the reference code is included in the payment memo/description field"
                                 )
+                                .isPlatformAccount(true)
                                 .build()
                         )
                         .updatedAt(OffsetDateTime.parse("2025-10-03T12:30:00Z"))
@@ -86,6 +87,7 @@ internal class CustomerListInternalAccountsPageResponseTest {
                             .instructionsNotes(
                                 "Please ensure the reference code is included in the payment memo/description field"
                             )
+                            .isPlatformAccount(true)
                             .build()
                     )
                     .updatedAt(OffsetDateTime.parse("2025-10-03T12:30:00Z"))
@@ -130,6 +132,7 @@ internal class CustomerListInternalAccountsPageResponseTest {
                                 .instructionsNotes(
                                     "Please ensure the reference code is included in the payment memo/description field"
                                 )
+                                .isPlatformAccount(true)
                                 .build()
                         )
                         .updatedAt(OffsetDateTime.parse("2025-10-03T12:30:00Z"))

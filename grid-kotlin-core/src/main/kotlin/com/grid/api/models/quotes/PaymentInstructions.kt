@@ -42,6 +42,7 @@ class PaymentInstructions
 private constructor(
     private val accountOrWalletInfo: JsonField<AccountOrWalletInfo>,
     private val instructionsNotes: JsonField<String>,
+    private val isPlatformAccount: JsonField<Boolean>,
     private val additionalProperties: MutableMap<String, JsonValue>,
 ) {
 
@@ -53,7 +54,10 @@ private constructor(
         @JsonProperty("instructionsNotes")
         @ExcludeMissing
         instructionsNotes: JsonField<String> = JsonMissing.of(),
-    ) : this(accountOrWalletInfo, instructionsNotes, mutableMapOf())
+        @JsonProperty("isPlatformAccount")
+        @ExcludeMissing
+        isPlatformAccount: JsonField<Boolean> = JsonMissing.of(),
+    ) : this(accountOrWalletInfo, instructionsNotes, isPlatformAccount, mutableMapOf())
 
     /**
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
@@ -69,6 +73,14 @@ private constructor(
      *   responded with an unexpected value).
      */
     fun instructionsNotes(): String? = instructionsNotes.getNullable("instructionsNotes")
+
+    /**
+     * Indicates whether the account is a platform account or a customer account.
+     *
+     * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
+     *   responded with an unexpected value).
+     */
+    fun isPlatformAccount(): Boolean? = isPlatformAccount.getNullable("isPlatformAccount")
 
     /**
      * Returns the raw JSON value of [accountOrWalletInfo].
@@ -89,6 +101,16 @@ private constructor(
     @JsonProperty("instructionsNotes")
     @ExcludeMissing
     fun _instructionsNotes(): JsonField<String> = instructionsNotes
+
+    /**
+     * Returns the raw JSON value of [isPlatformAccount].
+     *
+     * Unlike [isPlatformAccount], this method doesn't throw if the JSON field has an unexpected
+     * type.
+     */
+    @JsonProperty("isPlatformAccount")
+    @ExcludeMissing
+    fun _isPlatformAccount(): JsonField<Boolean> = isPlatformAccount
 
     @JsonAnySetter
     private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -120,11 +142,13 @@ private constructor(
 
         private var accountOrWalletInfo: JsonField<AccountOrWalletInfo>? = null
         private var instructionsNotes: JsonField<String> = JsonMissing.of()
+        private var isPlatformAccount: JsonField<Boolean> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
         internal fun from(paymentInstructions: PaymentInstructions) = apply {
             accountOrWalletInfo = paymentInstructions.accountOrWalletInfo
             instructionsNotes = paymentInstructions.instructionsNotes
+            isPlatformAccount = paymentInstructions.isPlatformAccount
             additionalProperties = paymentInstructions.additionalProperties.toMutableMap()
         }
 
@@ -285,6 +309,21 @@ private constructor(
             this.instructionsNotes = instructionsNotes
         }
 
+        /** Indicates whether the account is a platform account or a customer account. */
+        fun isPlatformAccount(isPlatformAccount: Boolean) =
+            isPlatformAccount(JsonField.of(isPlatformAccount))
+
+        /**
+         * Sets [Builder.isPlatformAccount] to an arbitrary JSON value.
+         *
+         * You should usually call [Builder.isPlatformAccount] with a well-typed [Boolean] value
+         * instead. This method is primarily for setting the field to an undocumented or not yet
+         * supported value.
+         */
+        fun isPlatformAccount(isPlatformAccount: JsonField<Boolean>) = apply {
+            this.isPlatformAccount = isPlatformAccount
+        }
+
         fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
             this.additionalProperties.clear()
             putAllAdditionalProperties(additionalProperties)
@@ -320,6 +359,7 @@ private constructor(
             PaymentInstructions(
                 checkRequired("accountOrWalletInfo", accountOrWalletInfo),
                 instructionsNotes,
+                isPlatformAccount,
                 additionalProperties.toMutableMap(),
             )
     }
@@ -333,6 +373,7 @@ private constructor(
 
         accountOrWalletInfo().validate()
         instructionsNotes()
+        isPlatformAccount()
         validated = true
     }
 
@@ -351,7 +392,8 @@ private constructor(
      */
     internal fun validity(): Int =
         (accountOrWalletInfo.asKnown()?.validity() ?: 0) +
-            (if (instructionsNotes.asKnown() == null) 0 else 1)
+            (if (instructionsNotes.asKnown() == null) 0 else 1) +
+            (if (isPlatformAccount.asKnown() == null) 0 else 1)
 
     @JsonDeserialize(using = AccountOrWalletInfo.Deserializer::class)
     @JsonSerialize(using = AccountOrWalletInfo.Serializer::class)
@@ -4346,15 +4388,21 @@ private constructor(
         return other is PaymentInstructions &&
             accountOrWalletInfo == other.accountOrWalletInfo &&
             instructionsNotes == other.instructionsNotes &&
+            isPlatformAccount == other.isPlatformAccount &&
             additionalProperties == other.additionalProperties
     }
 
     private val hashCode: Int by lazy {
-        Objects.hash(accountOrWalletInfo, instructionsNotes, additionalProperties)
+        Objects.hash(
+            accountOrWalletInfo,
+            instructionsNotes,
+            isPlatformAccount,
+            additionalProperties,
+        )
     }
 
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "PaymentInstructions{accountOrWalletInfo=$accountOrWalletInfo, instructionsNotes=$instructionsNotes, additionalProperties=$additionalProperties}"
+        "PaymentInstructions{accountOrWalletInfo=$accountOrWalletInfo, instructionsNotes=$instructionsNotes, isPlatformAccount=$isPlatformAccount, additionalProperties=$additionalProperties}"
 }

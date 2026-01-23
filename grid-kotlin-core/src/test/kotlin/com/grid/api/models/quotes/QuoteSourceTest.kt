@@ -19,7 +19,6 @@ internal class QuoteSourceTest {
         val account =
             QuoteSource.Account.builder()
                 .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                .currency("USD")
                 .build()
 
         val quoteSource = QuoteSource.ofAccount(account)
@@ -35,7 +34,6 @@ internal class QuoteSourceTest {
             QuoteSource.ofAccount(
                 QuoteSource.Account.builder()
                     .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                    .currency("USD")
                     .build()
             )
 

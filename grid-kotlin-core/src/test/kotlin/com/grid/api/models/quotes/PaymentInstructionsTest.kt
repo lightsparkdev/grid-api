@@ -22,6 +22,7 @@ internal class PaymentInstructionsTest {
                 .instructionsNotes(
                     "Please ensure the reference code is included in the payment memo/description field"
                 )
+                .isPlatformAccount(true)
                 .build()
 
         assertThat(paymentInstructions.accountOrWalletInfo())
@@ -37,6 +38,7 @@ internal class PaymentInstructionsTest {
             .isEqualTo(
                 "Please ensure the reference code is included in the payment memo/description field"
             )
+        assertThat(paymentInstructions.isPlatformAccount()).isEqualTo(true)
     }
 
     @Test
@@ -53,6 +55,7 @@ internal class PaymentInstructionsTest {
                 .instructionsNotes(
                     "Please ensure the reference code is included in the payment memo/description field"
                 )
+                .isPlatformAccount(true)
                 .build()
 
         val roundtrippedPaymentInstructions =
