@@ -37,14 +37,14 @@ import java.util.Objects
 class CustomerUpdateParams
 private constructor(
     private val customerId: String?,
-    private val body: Body,
+    private val updateCustomerRequest: UpdateCustomerRequest,
     private val additionalHeaders: Headers,
     private val additionalQueryParams: QueryParams,
 ) : Params {
 
     fun customerId(): String? = customerId
 
-    fun body(): Body = body
+    fun updateCustomerRequest(): UpdateCustomerRequest = updateCustomerRequest
 
     /** Additional headers to send with the request. */
     fun _additionalHeaders(): Headers = additionalHeaders
@@ -61,7 +61,7 @@ private constructor(
          *
          * The following fields are required:
          * ```kotlin
-         * .body()
+         * .updateCustomerRequest()
          * ```
          */
         fun builder() = Builder()
@@ -71,34 +71,49 @@ private constructor(
     class Builder internal constructor() {
 
         private var customerId: String? = null
-        private var body: Body? = null
+        private var updateCustomerRequest: UpdateCustomerRequest? = null
         private var additionalHeaders: Headers.Builder = Headers.builder()
         private var additionalQueryParams: QueryParams.Builder = QueryParams.builder()
 
         internal fun from(customerUpdateParams: CustomerUpdateParams) = apply {
             customerId = customerUpdateParams.customerId
-            body = customerUpdateParams.body
+            updateCustomerRequest = customerUpdateParams.updateCustomerRequest
             additionalHeaders = customerUpdateParams.additionalHeaders.toBuilder()
             additionalQueryParams = customerUpdateParams.additionalQueryParams.toBuilder()
         }
 
         fun customerId(customerId: String?) = apply { this.customerId = customerId }
 
-        fun body(body: Body) = apply { this.body = body }
+        fun updateCustomerRequest(updateCustomerRequest: UpdateCustomerRequest) = apply {
+            this.updateCustomerRequest = updateCustomerRequest
+        }
 
         /**
-         * Alias for calling [body] with
-         * `Body.ofCustomersIndividualCustomerUpdate(customersIndividualCustomerUpdate)`.
+         * Alias for calling [updateCustomerRequest] with
+         * `UpdateCustomerRequest.ofCustomersIndividualCustomerUpdate(customersIndividualCustomerUpdate)`.
          */
-        fun body(customersIndividualCustomerUpdate: Body.CustomersIndividualCustomerUpdate) =
-            body(Body.ofCustomersIndividualCustomerUpdate(customersIndividualCustomerUpdate))
+        fun updateCustomerRequest(
+            customersIndividualCustomerUpdate:
+                UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+        ) =
+            updateCustomerRequest(
+                UpdateCustomerRequest.ofCustomersIndividualCustomerUpdate(
+                    customersIndividualCustomerUpdate
+                )
+            )
 
         /**
-         * Alias for calling [body] with
-         * `Body.ofCustomersBusinessCustomerUpdate(customersBusinessCustomerUpdate)`.
+         * Alias for calling [updateCustomerRequest] with
+         * `UpdateCustomerRequest.ofCustomersBusinessCustomerUpdate(customersBusinessCustomerUpdate)`.
          */
-        fun body(customersBusinessCustomerUpdate: Body.CustomersBusinessCustomerUpdate) =
-            body(Body.ofCustomersBusinessCustomerUpdate(customersBusinessCustomerUpdate))
+        fun updateCustomerRequest(
+            customersBusinessCustomerUpdate: UpdateCustomerRequest.CustomersBusinessCustomerUpdate
+        ) =
+            updateCustomerRequest(
+                UpdateCustomerRequest.ofCustomersBusinessCustomerUpdate(
+                    customersBusinessCustomerUpdate
+                )
+            )
 
         fun additionalHeaders(additionalHeaders: Headers) = apply {
             this.additionalHeaders.clear()
@@ -205,7 +220,7 @@ private constructor(
          *
          * The following fields are required:
          * ```kotlin
-         * .body()
+         * .updateCustomerRequest()
          * ```
          *
          * @throws IllegalStateException if any required field is unset.
@@ -213,13 +228,13 @@ private constructor(
         fun build(): CustomerUpdateParams =
             CustomerUpdateParams(
                 customerId,
-                checkRequired("body", body),
+                checkRequired("updateCustomerRequest", updateCustomerRequest),
                 additionalHeaders.build(),
                 additionalQueryParams.build(),
             )
     }
 
-    fun _body(): Body = body
+    fun _body(): UpdateCustomerRequest = updateCustomerRequest
 
     fun _pathParam(index: Int): String =
         when (index) {
@@ -231,9 +246,9 @@ private constructor(
 
     override fun _queryParams(): QueryParams = additionalQueryParams
 
-    @JsonDeserialize(using = Body.Deserializer::class)
-    @JsonSerialize(using = Body.Serializer::class)
-    class Body
+    @JsonDeserialize(using = UpdateCustomerRequest.Deserializer::class)
+    @JsonSerialize(using = UpdateCustomerRequest.Serializer::class)
+    class UpdateCustomerRequest
     private constructor(
         private val customersIndividualCustomerUpdate: CustomersIndividualCustomerUpdate? = null,
         private val customersBusinessCustomerUpdate: CustomersBusinessCustomerUpdate? = null,
@@ -272,7 +287,7 @@ private constructor(
 
         private var validated: Boolean = false
 
-        fun validate(): Body = apply {
+        fun validate(): UpdateCustomerRequest = apply {
             if (validated) {
                 return@apply
             }
@@ -329,7 +344,7 @@ private constructor(
                 return true
             }
 
-            return other is Body &&
+            return other is UpdateCustomerRequest &&
                 customersIndividualCustomerUpdate == other.customersIndividualCustomerUpdate &&
                 customersBusinessCustomerUpdate == other.customersBusinessCustomerUpdate
         }
@@ -340,25 +355,34 @@ private constructor(
         override fun toString(): String =
             when {
                 customersIndividualCustomerUpdate != null ->
-                    "Body{customersIndividualCustomerUpdate=$customersIndividualCustomerUpdate}"
+                    "UpdateCustomerRequest{customersIndividualCustomerUpdate=$customersIndividualCustomerUpdate}"
                 customersBusinessCustomerUpdate != null ->
-                    "Body{customersBusinessCustomerUpdate=$customersBusinessCustomerUpdate}"
-                _json != null -> "Body{_unknown=$_json}"
-                else -> throw IllegalStateException("Invalid Body")
+                    "UpdateCustomerRequest{customersBusinessCustomerUpdate=$customersBusinessCustomerUpdate}"
+                _json != null -> "UpdateCustomerRequest{_unknown=$_json}"
+                else -> throw IllegalStateException("Invalid UpdateCustomerRequest")
             }
 
         companion object {
 
             fun ofCustomersIndividualCustomerUpdate(
                 customersIndividualCustomerUpdate: CustomersIndividualCustomerUpdate
-            ) = Body(customersIndividualCustomerUpdate = customersIndividualCustomerUpdate)
+            ) =
+                UpdateCustomerRequest(
+                    customersIndividualCustomerUpdate = customersIndividualCustomerUpdate
+                )
 
             fun ofCustomersBusinessCustomerUpdate(
                 customersBusinessCustomerUpdate: CustomersBusinessCustomerUpdate
-            ) = Body(customersBusinessCustomerUpdate = customersBusinessCustomerUpdate)
+            ) =
+                UpdateCustomerRequest(
+                    customersBusinessCustomerUpdate = customersBusinessCustomerUpdate
+                )
         }
 
-        /** An interface that defines how to map each variant of [Body] to a value of type [T]. */
+        /**
+         * An interface that defines how to map each variant of [UpdateCustomerRequest] to a value
+         * of type [T].
+         */
         interface Visitor<out T> {
 
             fun visitCustomersIndividualCustomerUpdate(
@@ -370,22 +394,24 @@ private constructor(
             ): T
 
             /**
-             * Maps an unknown variant of [Body] to a value of type [T].
+             * Maps an unknown variant of [UpdateCustomerRequest] to a value of type [T].
              *
-             * An instance of [Body] can contain an unknown variant if it was deserialized from data
-             * that doesn't match any known variant. For example, if the SDK is on an older version
-             * than the API, then the API may respond with new variants that the SDK is unaware of.
+             * An instance of [UpdateCustomerRequest] can contain an unknown variant if it was
+             * deserialized from data that doesn't match any known variant. For example, if the SDK
+             * is on an older version than the API, then the API may respond with new variants that
+             * the SDK is unaware of.
              *
              * @throws GridInvalidDataException in the default implementation.
              */
             fun unknown(json: JsonValue?): T {
-                throw GridInvalidDataException("Unknown Body: $json")
+                throw GridInvalidDataException("Unknown UpdateCustomerRequest: $json")
             }
         }
 
-        internal class Deserializer : BaseDeserializer<Body>(Body::class) {
+        internal class Deserializer :
+            BaseDeserializer<UpdateCustomerRequest>(UpdateCustomerRequest::class) {
 
-            override fun ObjectCodec.deserialize(node: JsonNode): Body {
+            override fun ObjectCodec.deserialize(node: JsonNode): UpdateCustomerRequest {
                 val json = JsonValue.fromJsonNode(node)
 
                 val bestMatches =
@@ -395,10 +421,18 @@ private constructor(
                                     jacksonTypeRef<CustomersIndividualCustomerUpdate>(),
                                 )
                                 ?.let {
-                                    Body(customersIndividualCustomerUpdate = it, _json = json)
+                                    UpdateCustomerRequest(
+                                        customersIndividualCustomerUpdate = it,
+                                        _json = json,
+                                    )
                                 },
                             tryDeserialize(node, jacksonTypeRef<CustomersBusinessCustomerUpdate>())
-                                ?.let { Body(customersBusinessCustomerUpdate = it, _json = json) },
+                                ?.let {
+                                    UpdateCustomerRequest(
+                                        customersBusinessCustomerUpdate = it,
+                                        _json = json,
+                                    )
+                                },
                         )
                         .filterNotNull()
                         .allMaxBy { it.validity() }
@@ -406,7 +440,7 @@ private constructor(
                 return when (bestMatches.size) {
                     // This can happen if what we're deserializing is completely incompatible with
                     // all the possible variants (e.g. deserializing from boolean).
-                    0 -> Body(_json = json)
+                    0 -> UpdateCustomerRequest(_json = json)
                     1 -> bestMatches.single()
                     // If there's more than one match with the highest validity, then use the first
                     // completely valid match, or simply the first match if none are completely
@@ -416,10 +450,11 @@ private constructor(
             }
         }
 
-        internal class Serializer : BaseSerializer<Body>(Body::class) {
+        internal class Serializer :
+            BaseSerializer<UpdateCustomerRequest>(UpdateCustomerRequest::class) {
 
             override fun serialize(
-                value: Body,
+                value: UpdateCustomerRequest,
                 generator: JsonGenerator,
                 provider: SerializerProvider,
             ) {
@@ -429,7 +464,7 @@ private constructor(
                     value.customersBusinessCustomerUpdate != null ->
                         generator.writeObject(value.customersBusinessCustomerUpdate)
                     value._json != null -> generator.writeObject(value._json)
-                    else -> throw IllegalStateException("Invalid Body")
+                    else -> throw IllegalStateException("Invalid UpdateCustomerRequest")
                 }
             }
         }
@@ -1517,14 +1552,14 @@ private constructor(
 
         return other is CustomerUpdateParams &&
             customerId == other.customerId &&
-            body == other.body &&
+            updateCustomerRequest == other.updateCustomerRequest &&
             additionalHeaders == other.additionalHeaders &&
             additionalQueryParams == other.additionalQueryParams
     }
 
     override fun hashCode(): Int =
-        Objects.hash(customerId, body, additionalHeaders, additionalQueryParams)
+        Objects.hash(customerId, updateCustomerRequest, additionalHeaders, additionalQueryParams)
 
     override fun toString() =
-        "CustomerUpdateParams{customerId=$customerId, body=$body, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
+        "CustomerUpdateParams{customerId=$customerId, updateCustomerRequest=$updateCustomerRequest, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
 }

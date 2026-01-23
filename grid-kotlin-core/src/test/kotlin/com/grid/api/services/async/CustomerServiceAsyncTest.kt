@@ -30,8 +30,9 @@ internal class CustomerServiceAsyncTest {
         val customer =
             customerServiceAsync.create(
                 CustomerCreateParams.builder()
-                    .body(
-                        CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
+                    .createCustomerRequest(
+                        CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                            .builder()
                             .address(
                                 Address.builder()
                                     .country("US")
@@ -86,8 +87,9 @@ internal class CustomerServiceAsyncTest {
             customerServiceAsync.update(
                 CustomerUpdateParams.builder()
                     .customerId("customerId")
-                    .body(
-                        CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
+                    .updateCustomerRequest(
+                        CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                            .builder()
                             .address(
                                 Address.builder()
                                     .country("US")

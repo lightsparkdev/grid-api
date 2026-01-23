@@ -11,8 +11,9 @@ internal class CustomerCreateParamsTest {
     @Test
     fun create() {
         CustomerCreateParams.builder()
-            .body(
-                CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
+            .createCustomerRequest(
+                CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                    .builder()
                     .address(
                         Address.builder()
                             .country("US")
@@ -37,8 +38,9 @@ internal class CustomerCreateParamsTest {
     fun body() {
         val params =
             CustomerCreateParams.builder()
-                .body(
-                    CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
+                .createCustomerRequest(
+                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -62,8 +64,9 @@ internal class CustomerCreateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.Body.ofCustomersIndividualCustomerUpdate(
-                    CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder()
+                CustomerCreateParams.CreateCustomerRequest.ofCustomersIndividualCustomerUpdate(
+                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -88,15 +91,21 @@ internal class CustomerCreateParamsTest {
     fun bodyWithoutOptionalFields() {
         val params =
             CustomerCreateParams.builder()
-                .body(CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder().build())
+                .createCustomerRequest(
+                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
+                        .build()
+                )
                 .build()
 
         val body = params._body()
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.Body.ofCustomersIndividualCustomerUpdate(
-                    CustomerCreateParams.Body.CustomersIndividualCustomerUpdate.builder().build()
+                CustomerCreateParams.CreateCustomerRequest.ofCustomersIndividualCustomerUpdate(
+                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
+                        .build()
                 )
             )
     }

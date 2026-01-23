@@ -12,8 +12,9 @@ internal class CustomerUpdateParamsTest {
     fun create() {
         CustomerUpdateParams.builder()
             .customerId("customerId")
-            .body(
-                CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
+            .updateCustomerRequest(
+                CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                    .builder()
                     .address(
                         Address.builder()
                             .country("US")
@@ -39,7 +40,11 @@ internal class CustomerUpdateParamsTest {
         val params =
             CustomerUpdateParams.builder()
                 .customerId("customerId")
-                .body(CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder().build())
+                .updateCustomerRequest(
+                    CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
+                        .build()
+                )
                 .build()
 
         assertThat(params._pathParam(0)).isEqualTo("customerId")
@@ -52,8 +57,9 @@ internal class CustomerUpdateParamsTest {
         val params =
             CustomerUpdateParams.builder()
                 .customerId("customerId")
-                .body(
-                    CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
+                .updateCustomerRequest(
+                    CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -77,8 +83,9 @@ internal class CustomerUpdateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerUpdateParams.Body.ofCustomersIndividualCustomerUpdate(
-                    CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder()
+                CustomerUpdateParams.UpdateCustomerRequest.ofCustomersIndividualCustomerUpdate(
+                    CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
                         .address(
                             Address.builder()
                                 .country("US")
@@ -104,15 +111,21 @@ internal class CustomerUpdateParamsTest {
         val params =
             CustomerUpdateParams.builder()
                 .customerId("customerId")
-                .body(CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder().build())
+                .updateCustomerRequest(
+                    CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
+                        .build()
+                )
                 .build()
 
         val body = params._body()
 
         assertThat(body)
             .isEqualTo(
-                CustomerUpdateParams.Body.ofCustomersIndividualCustomerUpdate(
-                    CustomerUpdateParams.Body.CustomersIndividualCustomerUpdate.builder().build()
+                CustomerUpdateParams.UpdateCustomerRequest.ofCustomersIndividualCustomerUpdate(
+                    CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                        .builder()
+                        .build()
                 )
             )
     }
