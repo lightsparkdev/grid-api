@@ -512,14 +512,25 @@ private constructor(
         }
 
         /** Alias for calling [destination] with `Transaction.Destination.ofAccount(account)`. */
-        fun destination(account: Transaction.Destination.AccountDestination) =
+        fun destination(account: Transaction.Destination.Account) =
             destination(Transaction.Destination.ofAccount(account))
 
         /**
          * Alias for calling [destination] with `Transaction.Destination.ofUmaAddress(umaAddress)`.
          */
-        fun destination(umaAddress: Transaction.Destination.UmaAddressDestination) =
+        fun destination(umaAddress: Transaction.Destination.UmaAddress) =
             destination(Transaction.Destination.ofUmaAddress(umaAddress))
+
+        /**
+         * Alias for calling [destination] with the following:
+         * ```kotlin
+         * Transaction.Destination.UmaAddress.builder()
+         *     .umaAddress(umaAddress)
+         *     .build()
+         * ```
+         */
+        fun umaAddressDestination(umaAddress: String) =
+            destination(Transaction.Destination.UmaAddress.builder().umaAddress(umaAddress).build())
 
         /** Platform-specific ID of the customer (sender for outgoing, recipient for incoming) */
         fun platformCustomerId(platformCustomerId: String) =

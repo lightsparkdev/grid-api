@@ -21,7 +21,7 @@ internal class TransactionListPageResponseTest {
                         .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                         .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                         .destination(
-                            Transaction.Destination.AccountDestination.builder()
+                            Transaction.Destination.Account.builder()
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                                 .currency("EUR")
                                 .build()
@@ -53,7 +53,7 @@ internal class TransactionListPageResponseTest {
                     .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                     .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                     .destination(
-                        Transaction.Destination.AccountDestination.builder()
+                        Transaction.Destination.Account.builder()
                             .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                             .currency("EUR")
                             .build()
@@ -89,7 +89,7 @@ internal class TransactionListPageResponseTest {
                         .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                         .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                         .destination(
-                            Transaction.Destination.AccountDestination.builder()
+                            Transaction.Destination.Account.builder()
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                                 .currency("EUR")
                                 .build()
