@@ -102,8 +102,6 @@ paths:
     $ref: paths/quotes/quotes_{quoteId}.yaml
   /quotes:
     $ref: paths/quotes/quotes.yaml
-  /quotes/{quoteId}/retry:
-    $ref: paths/quotes/quotes_{quoteId}_retry.yaml
   /quotes/{quoteId}/execute:
     $ref: paths/quotes/quotes_{quoteId}_execute.yaml
   /transactions:
