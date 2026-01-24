@@ -1,5 +1,4 @@
-allOf:
-  - $ref: ./PaymentAccountOrWalletInfo.yaml
+type: object
 required:
   - accountType
   - invoice
