@@ -154,7 +154,6 @@ resources:
   quotes:
     models:
       currency: '#/components/schemas/Currency'
-      payment_account_or_wallet_info: '#/components/schemas/PaymentAccountOrWalletInfo'
       payment_instructions: '#/components/schemas/PaymentInstructions'
       outgoing_rate_details: '#/components/schemas/OutgoingRateDetails'
       quote_source: '#/components/schemas/QuoteSource'
@@ -163,7 +162,6 @@ resources:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
       list: get /quotes
-      retry: post /quotes/{quoteId}/retry
       execute: post /quotes/{quoteId}/execute
 
   transactions:
