@@ -28,8 +28,10 @@ import com.grid.api.errors.GridInvalidDataException
 import com.grid.api.models.invitations.CurrencyAmount
 import com.grid.api.models.quotes.OutgoingRateDetails
 import com.grid.api.models.quotes.PaymentInstructions
+import com.grid.api.models.transactions.AccountSource
 import com.grid.api.models.transactions.TransactionStatus
 import com.grid.api.models.transactions.TransactionType
+import com.grid.api.models.transactions.UmaAddressSource
 import com.grid.api.models.transferin.Transaction
 import java.time.OffsetDateTime
 import java.util.Collections
@@ -830,21 +832,21 @@ private constructor(
         fun source(source: JsonField<Source>) = apply { this.source = source }
 
         /** Alias for calling [source] with `Source.ofAccount(account)`. */
-        fun source(account: Source.Account) = source(Source.ofAccount(account))
+        fun source(account: AccountSource) = source(Source.ofAccount(account))
 
         /** Alias for calling [source] with `Source.ofUmaAddress(umaAddress)`. */
-        fun source(umaAddress: Source.UmaAddress) = source(Source.ofUmaAddress(umaAddress))
+        fun source(umaAddress: UmaAddressSource) = source(Source.ofUmaAddress(umaAddress))
 
         /**
          * Alias for calling [source] with the following:
          * ```kotlin
-         * Source.UmaAddress.builder()
+         * UmaAddressSource.builder()
          *     .umaAddress(umaAddress)
          *     .build()
          * ```
          */
         fun umaAddressSource(umaAddress: String) =
-            source(Source.UmaAddress.builder().umaAddress(umaAddress).build())
+            source(UmaAddressSource.builder().umaAddress(umaAddress).build())
 
         /** Number of sending currency units per receiving currency unit. */
         fun exchangeRate(exchangeRate: Double) = exchangeRate(JsonField.of(exchangeRate))
@@ -1095,26 +1097,26 @@ private constructor(
     @JsonSerialize(using = Source.Serializer::class)
     class Source
     private constructor(
-        private val account: Account? = null,
-        private val umaAddress: UmaAddress? = null,
+        private val account: AccountSource? = null,
+        private val umaAddress: UmaAddressSource? = null,
         private val _json: JsonValue? = null,
     ) {
 
         /** Source account details */
-        fun account(): Account? = account
+        fun account(): AccountSource? = account
 
         /** UMA address source details */
-        fun umaAddress(): UmaAddress? = umaAddress
+        fun umaAddress(): UmaAddressSource? = umaAddress
 
         fun isAccount(): Boolean = account != null
 
         fun isUmaAddress(): Boolean = umaAddress != null
 
         /** Source account details */
-        fun asAccount(): Account = account.getOrThrow("account")
+        fun asAccount(): AccountSource = account.getOrThrow("account")
 
         /** UMA address source details */
-        fun asUmaAddress(): UmaAddress = umaAddress.getOrThrow("umaAddress")
+        fun asUmaAddress(): UmaAddressSource = umaAddress.getOrThrow("umaAddress")
 
         fun _json(): JsonValue? = _json
 
@@ -1134,11 +1136,11 @@ private constructor(
 
             accept(
                 object : Visitor<Unit> {
-                    override fun visitAccount(account: Account) {
+                    override fun visitAccount(account: AccountSource) {
                         account.validate()
                     }
 
-                    override fun visitUmaAddress(umaAddress: UmaAddress) {
+                    override fun visitUmaAddress(umaAddress: UmaAddressSource) {
                         umaAddress.validate()
                     }
                 }
@@ -1163,9 +1165,10 @@ private constructor(
         internal fun validity(): Int =
             accept(
                 object : Visitor<Int> {
-                    override fun visitAccount(account: Account) = account.validity()
+                    override fun visitAccount(account: AccountSource) = account.validity()
 
-                    override fun visitUmaAddress(umaAddress: UmaAddress) = umaAddress.validity()
+                    override fun visitUmaAddress(umaAddress: UmaAddressSource) =
+                        umaAddress.validity()
 
                     override fun unknown(json: JsonValue?) = 0
                 }
@@ -1192,20 +1195,20 @@ private constructor(
         companion object {
 
             /** Source account details */
-            fun ofAccount(account: Account) = Source(account = account)
+            fun ofAccount(account: AccountSource) = Source(account = account)
 
             /** UMA address source details */
-            fun ofUmaAddress(umaAddress: UmaAddress) = Source(umaAddress = umaAddress)
+            fun ofUmaAddress(umaAddress: UmaAddressSource) = Source(umaAddress = umaAddress)
         }
 
         /** An interface that defines how to map each variant of [Source] to a value of type [T]. */
         interface Visitor<out T> {
 
             /** Source account details */
-            fun visitAccount(account: Account): T
+            fun visitAccount(account: AccountSource): T
 
             /** UMA address source details */
-            fun visitUmaAddress(umaAddress: UmaAddress): T
+            fun visitUmaAddress(umaAddress: UmaAddressSource): T
 
             /**
              * Maps an unknown variant of [Source] to a value of type [T].
@@ -1230,12 +1233,12 @@ private constructor(
 
                 when (sourceType) {
                     "ACCOUNT" -> {
-                        return tryDeserialize(node, jacksonTypeRef<Account>())?.let {
+                        return tryDeserialize(node, jacksonTypeRef<AccountSource>())?.let {
                             Source(account = it, _json = json)
                         } ?: Source(_json = json)
                     }
                     "UMA_ADDRESS" -> {
-                        return tryDeserialize(node, jacksonTypeRef<UmaAddress>())?.let {
+                        return tryDeserialize(node, jacksonTypeRef<UmaAddressSource>())?.let {
                             Source(umaAddress = it, _json = json)
                         } ?: Source(_json = json)
                     }
@@ -1259,509 +1262,6 @@ private constructor(
                     else -> throw IllegalStateException("Invalid Source")
                 }
             }
-        }
-
-        /** Source account details */
-        class Account
-        @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-        private constructor(
-            private val accountId: JsonField<String>,
-            private val currency: JsonField<String>,
-            private val sourceType: JsonValue,
-            private val additionalProperties: MutableMap<String, JsonValue>,
-        ) {
-
-            @JsonCreator
-            private constructor(
-                @JsonProperty("accountId")
-                @ExcludeMissing
-                accountId: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("currency")
-                @ExcludeMissing
-                currency: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("sourceType") @ExcludeMissing sourceType: JsonValue = JsonMissing.of(),
-            ) : this(accountId, currency, sourceType, mutableMapOf())
-
-            /**
-             * Source account identifier
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun accountId(): String = accountId.getRequired("accountId")
-
-            /**
-             * Currency code for the source account
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun currency(): String = currency.getRequired("currency")
-
-            /**
-             * Source type identifier
-             *
-             * Expected to always return the following:
-             * ```kotlin
-             * JsonValue.from("ACCOUNT")
-             * ```
-             *
-             * However, this method can be useful for debugging and logging (e.g. if the server
-             * responded with an unexpected value).
-             */
-            @JsonProperty("sourceType") @ExcludeMissing fun _sourceType(): JsonValue = sourceType
-
-            /**
-             * Returns the raw JSON value of [accountId].
-             *
-             * Unlike [accountId], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("accountId")
-            @ExcludeMissing
-            fun _accountId(): JsonField<String> = accountId
-
-            /**
-             * Returns the raw JSON value of [currency].
-             *
-             * Unlike [currency], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("currency") @ExcludeMissing fun _currency(): JsonField<String> = currency
-
-            @JsonAnySetter
-            private fun putAdditionalProperty(key: String, value: JsonValue) {
-                additionalProperties.put(key, value)
-            }
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> =
-                Collections.unmodifiableMap(additionalProperties)
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /**
-                 * Returns a mutable builder for constructing an instance of [Account].
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .accountId()
-                 * .currency()
-                 * ```
-                 */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [Account]. */
-            class Builder internal constructor() {
-
-                private var accountId: JsonField<String>? = null
-                private var currency: JsonField<String>? = null
-                private var sourceType: JsonValue = JsonValue.from("ACCOUNT")
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(account: Account) = apply {
-                    accountId = account.accountId
-                    currency = account.currency
-                    sourceType = account.sourceType
-                    additionalProperties = account.additionalProperties.toMutableMap()
-                }
-
-                /** Source account identifier */
-                fun accountId(accountId: String) = accountId(JsonField.of(accountId))
-
-                /**
-                 * Sets [Builder.accountId] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.accountId] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun accountId(accountId: JsonField<String>) = apply { this.accountId = accountId }
-
-                /** Currency code for the source account */
-                fun currency(currency: String) = currency(JsonField.of(currency))
-
-                /**
-                 * Sets [Builder.currency] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.currency] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun currency(currency: JsonField<String>) = apply { this.currency = currency }
-
-                /**
-                 * Sets the field to an arbitrary JSON value.
-                 *
-                 * It is usually unnecessary to call this method because the field defaults to the
-                 * following:
-                 * ```kotlin
-                 * JsonValue.from("ACCOUNT")
-                 * ```
-                 *
-                 * This method is primarily for setting the field to an undocumented or not yet
-                 * supported value.
-                 */
-                fun sourceType(sourceType: JsonValue) = apply { this.sourceType = sourceType }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [Account].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .accountId()
-                 * .currency()
-                 * ```
-                 *
-                 * @throws IllegalStateException if any required field is unset.
-                 */
-                fun build(): Account =
-                    Account(
-                        checkRequired("accountId", accountId),
-                        checkRequired("currency", currency),
-                        sourceType,
-                        additionalProperties.toMutableMap(),
-                    )
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): Account = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                accountId()
-                currency()
-                _sourceType().let {
-                    if (it != JsonValue.from("ACCOUNT")) {
-                        throw GridInvalidDataException("'sourceType' is invalid, received $it")
-                    }
-                }
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                (if (accountId.asKnown() == null) 0 else 1) +
-                    (if (currency.asKnown() == null) 0 else 1) +
-                    sourceType.let { if (it == JsonValue.from("ACCOUNT")) 1 else 0 }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is Account &&
-                    accountId == other.accountId &&
-                    currency == other.currency &&
-                    sourceType == other.sourceType &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy {
-                Objects.hash(accountId, currency, sourceType, additionalProperties)
-            }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "Account{accountId=$accountId, currency=$currency, sourceType=$sourceType, additionalProperties=$additionalProperties}"
-        }
-
-        /** UMA address source details */
-        class UmaAddress
-        @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-        private constructor(
-            private val sourceType: JsonValue,
-            private val umaAddress: JsonField<String>,
-            private val currency: JsonField<String>,
-            private val additionalProperties: MutableMap<String, JsonValue>,
-        ) {
-
-            @JsonCreator
-            private constructor(
-                @JsonProperty("sourceType")
-                @ExcludeMissing
-                sourceType: JsonValue = JsonMissing.of(),
-                @JsonProperty("umaAddress")
-                @ExcludeMissing
-                umaAddress: JsonField<String> = JsonMissing.of(),
-                @JsonProperty("currency")
-                @ExcludeMissing
-                currency: JsonField<String> = JsonMissing.of(),
-            ) : this(sourceType, umaAddress, currency, mutableMapOf())
-
-            /**
-             * Source type identifier
-             *
-             * Expected to always return the following:
-             * ```kotlin
-             * JsonValue.from("UMA_ADDRESS")
-             * ```
-             *
-             * However, this method can be useful for debugging and logging (e.g. if the server
-             * responded with an unexpected value).
-             */
-            @JsonProperty("sourceType") @ExcludeMissing fun _sourceType(): JsonValue = sourceType
-
-            /**
-             * UMA address of the sender
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun umaAddress(): String = umaAddress.getRequired("umaAddress")
-
-            /**
-             * Currency code for the source
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
-             *   the server responded with an unexpected value).
-             */
-            fun currency(): String? = currency.getNullable("currency")
-
-            /**
-             * Returns the raw JSON value of [umaAddress].
-             *
-             * Unlike [umaAddress], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("umaAddress")
-            @ExcludeMissing
-            fun _umaAddress(): JsonField<String> = umaAddress
-
-            /**
-             * Returns the raw JSON value of [currency].
-             *
-             * Unlike [currency], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("currency") @ExcludeMissing fun _currency(): JsonField<String> = currency
-
-            @JsonAnySetter
-            private fun putAdditionalProperty(key: String, value: JsonValue) {
-                additionalProperties.put(key, value)
-            }
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> =
-                Collections.unmodifiableMap(additionalProperties)
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /**
-                 * Returns a mutable builder for constructing an instance of [UmaAddress].
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .umaAddress()
-                 * ```
-                 */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [UmaAddress]. */
-            class Builder internal constructor() {
-
-                private var sourceType: JsonValue = JsonValue.from("UMA_ADDRESS")
-                private var umaAddress: JsonField<String>? = null
-                private var currency: JsonField<String> = JsonMissing.of()
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(umaAddress: UmaAddress) = apply {
-                    sourceType = umaAddress.sourceType
-                    this.umaAddress = umaAddress.umaAddress
-                    currency = umaAddress.currency
-                    additionalProperties = umaAddress.additionalProperties.toMutableMap()
-                }
-
-                /**
-                 * Sets the field to an arbitrary JSON value.
-                 *
-                 * It is usually unnecessary to call this method because the field defaults to the
-                 * following:
-                 * ```kotlin
-                 * JsonValue.from("UMA_ADDRESS")
-                 * ```
-                 *
-                 * This method is primarily for setting the field to an undocumented or not yet
-                 * supported value.
-                 */
-                fun sourceType(sourceType: JsonValue) = apply { this.sourceType = sourceType }
-
-                /** UMA address of the sender */
-                fun umaAddress(umaAddress: String) = umaAddress(JsonField.of(umaAddress))
-
-                /**
-                 * Sets [Builder.umaAddress] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.umaAddress] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun umaAddress(umaAddress: JsonField<String>) = apply {
-                    this.umaAddress = umaAddress
-                }
-
-                /** Currency code for the source */
-                fun currency(currency: String) = currency(JsonField.of(currency))
-
-                /**
-                 * Sets [Builder.currency] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.currency] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun currency(currency: JsonField<String>) = apply { this.currency = currency }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [UmaAddress].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .umaAddress()
-                 * ```
-                 *
-                 * @throws IllegalStateException if any required field is unset.
-                 */
-                fun build(): UmaAddress =
-                    UmaAddress(
-                        sourceType,
-                        checkRequired("umaAddress", umaAddress),
-                        currency,
-                        additionalProperties.toMutableMap(),
-                    )
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): UmaAddress = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                _sourceType().let {
-                    if (it != JsonValue.from("UMA_ADDRESS")) {
-                        throw GridInvalidDataException("'sourceType' is invalid, received $it")
-                    }
-                }
-                umaAddress()
-                currency()
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                sourceType.let { if (it == JsonValue.from("UMA_ADDRESS")) 1 else 0 } +
-                    (if (umaAddress.asKnown() == null) 0 else 1) +
-                    (if (currency.asKnown() == null) 0 else 1)
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is UmaAddress &&
-                    sourceType == other.sourceType &&
-                    umaAddress == other.umaAddress &&
-                    currency == other.currency &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy {
-                Objects.hash(sourceType, umaAddress, currency, additionalProperties)
-            }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "UmaAddress{sourceType=$sourceType, umaAddress=$umaAddress, currency=$currency, additionalProperties=$additionalProperties}"
         }
     }
 

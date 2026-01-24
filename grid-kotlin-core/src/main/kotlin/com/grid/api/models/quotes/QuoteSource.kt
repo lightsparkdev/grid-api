@@ -433,8 +433,8 @@ private constructor(
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
         private val currency: JsonField<String>,
-        private val customerId: JsonField<String>,
         private val sourceType: JsonValue,
+        private val customerId: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
@@ -443,11 +443,11 @@ private constructor(
             @JsonProperty("currency")
             @ExcludeMissing
             currency: JsonField<String> = JsonMissing.of(),
+            @JsonProperty("sourceType") @ExcludeMissing sourceType: JsonValue = JsonMissing.of(),
             @JsonProperty("customerId")
             @ExcludeMissing
             customerId: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("sourceType") @ExcludeMissing sourceType: JsonValue = JsonMissing.of(),
-        ) : this(currency, customerId, sourceType, mutableMapOf())
+        ) : this(currency, sourceType, customerId, mutableMapOf())
 
         /**
          * Currency code for the funding source. See
@@ -458,16 +458,6 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun currency(): String = currency.getRequired("currency")
-
-        /**
-         * Source customer ID. If this transaction is being initiated on behalf of a customer, this
-         * is required. If customerId is not provided, the quote will be created on behalf of the
-         * platform itself.
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun customerId(): String = customerId.getRequired("customerId")
 
         /**
          * Source type identifier
@@ -481,6 +471,16 @@ private constructor(
          * responded with an unexpected value).
          */
         @JsonProperty("sourceType") @ExcludeMissing fun _sourceType(): JsonValue = sourceType
+
+        /**
+         * Source customer ID. If this transaction is being initiated on behalf of a customer, this
+         * is required. If customerId is not provided, the quote will be created on behalf of the
+         * platform itself.
+         *
+         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
+         *   server responded with an unexpected value).
+         */
+        fun customerId(): String? = customerId.getNullable("customerId")
 
         /**
          * Returns the raw JSON value of [currency].
@@ -518,7 +518,6 @@ private constructor(
              * The following fields are required:
              * ```kotlin
              * .currency()
-             * .customerId()
              * ```
              */
             fun builder() = Builder()
@@ -528,14 +527,14 @@ private constructor(
         class Builder internal constructor() {
 
             private var currency: JsonField<String>? = null
-            private var customerId: JsonField<String>? = null
             private var sourceType: JsonValue = JsonValue.from("REALTIME_FUNDING")
+            private var customerId: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
             internal fun from(realtimeFunding: RealtimeFunding) = apply {
                 currency = realtimeFunding.currency
-                customerId = realtimeFunding.customerId
                 sourceType = realtimeFunding.sourceType
+                customerId = realtimeFunding.customerId
                 additionalProperties = realtimeFunding.additionalProperties.toMutableMap()
             }
 
@@ -556,6 +555,20 @@ private constructor(
             fun currency(currency: JsonField<String>) = apply { this.currency = currency }
 
             /**
+             * Sets the field to an arbitrary JSON value.
+             *
+             * It is usually unnecessary to call this method because the field defaults to the
+             * following:
+             * ```kotlin
+             * JsonValue.from("REALTIME_FUNDING")
+             * ```
+             *
+             * This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun sourceType(sourceType: JsonValue) = apply { this.sourceType = sourceType }
+
+            /**
              * Source customer ID. If this transaction is being initiated on behalf of a customer,
              * this is required. If customerId is not provided, the quote will be created on behalf
              * of the platform itself.
@@ -570,20 +583,6 @@ private constructor(
              * supported value.
              */
             fun customerId(customerId: JsonField<String>) = apply { this.customerId = customerId }
-
-            /**
-             * Sets the field to an arbitrary JSON value.
-             *
-             * It is usually unnecessary to call this method because the field defaults to the
-             * following:
-             * ```kotlin
-             * JsonValue.from("REALTIME_FUNDING")
-             * ```
-             *
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun sourceType(sourceType: JsonValue) = apply { this.sourceType = sourceType }
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -612,7 +611,6 @@ private constructor(
              * The following fields are required:
              * ```kotlin
              * .currency()
-             * .customerId()
              * ```
              *
              * @throws IllegalStateException if any required field is unset.
@@ -620,8 +618,8 @@ private constructor(
             fun build(): RealtimeFunding =
                 RealtimeFunding(
                     checkRequired("currency", currency),
-                    checkRequired("customerId", customerId),
                     sourceType,
+                    customerId,
                     additionalProperties.toMutableMap(),
                 )
         }
@@ -634,12 +632,12 @@ private constructor(
             }
 
             currency()
-            customerId()
             _sourceType().let {
                 if (it != JsonValue.from("REALTIME_FUNDING")) {
                     throw GridInvalidDataException("'sourceType' is invalid, received $it")
                 }
             }
+            customerId()
             validated = true
         }
 
@@ -659,8 +657,8 @@ private constructor(
          */
         internal fun validity(): Int =
             (if (currency.asKnown() == null) 0 else 1) +
-                (if (customerId.asKnown() == null) 0 else 1) +
-                sourceType.let { if (it == JsonValue.from("REALTIME_FUNDING")) 1 else 0 }
+                sourceType.let { if (it == JsonValue.from("REALTIME_FUNDING")) 1 else 0 } +
+                (if (customerId.asKnown() == null) 0 else 1)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) {
@@ -669,18 +667,18 @@ private constructor(
 
             return other is RealtimeFunding &&
                 currency == other.currency &&
-                customerId == other.customerId &&
                 sourceType == other.sourceType &&
+                customerId == other.customerId &&
                 additionalProperties == other.additionalProperties
         }
 
         private val hashCode: Int by lazy {
-            Objects.hash(currency, customerId, sourceType, additionalProperties)
+            Objects.hash(currency, sourceType, customerId, additionalProperties)
         }
 
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "RealtimeFunding{currency=$currency, customerId=$customerId, sourceType=$sourceType, additionalProperties=$additionalProperties}"
+            "RealtimeFunding{currency=$currency, sourceType=$sourceType, customerId=$customerId, additionalProperties=$additionalProperties}"
     }
 }

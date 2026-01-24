@@ -68,7 +68,7 @@ internal class IncomingTransactionTest {
                         .build()
                 )
                 .source(
-                    IncomingTransaction.Source.Account.builder()
+                    AccountSource.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()
@@ -140,7 +140,7 @@ internal class IncomingTransactionTest {
         assertThat(incomingTransaction.source())
             .isEqualTo(
                 IncomingTransaction.Source.ofAccount(
-                    IncomingTransaction.Source.Account.builder()
+                    AccountSource.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()
@@ -203,7 +203,7 @@ internal class IncomingTransactionTest {
                         .build()
                 )
                 .source(
-                    IncomingTransaction.Source.Account.builder()
+                    AccountSource.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()

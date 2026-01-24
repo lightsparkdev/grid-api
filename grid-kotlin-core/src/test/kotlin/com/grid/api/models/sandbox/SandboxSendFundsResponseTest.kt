@@ -9,6 +9,7 @@ import com.grid.api.models.invitations.CurrencyAmount
 import com.grid.api.models.quotes.Currency
 import com.grid.api.models.quotes.OutgoingRateDetails
 import com.grid.api.models.quotes.PaymentInstructions
+import com.grid.api.models.transactions.AccountSource
 import com.grid.api.models.transactions.TransactionStatus
 import com.grid.api.models.transactions.TransactionType
 import com.grid.api.models.transferin.Transaction
@@ -86,7 +87,7 @@ internal class SandboxSendFundsResponseTest {
                         .build()
                 )
                 .source(
-                    SandboxSendFundsResponse.Source.Account.builder()
+                    AccountSource.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()
@@ -203,7 +204,7 @@ internal class SandboxSendFundsResponseTest {
         assertThat(sandboxSendFundsResponse.source())
             .isEqualTo(
                 SandboxSendFundsResponse.Source.ofAccount(
-                    SandboxSendFundsResponse.Source.Account.builder()
+                    AccountSource.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()
@@ -321,7 +322,7 @@ internal class SandboxSendFundsResponseTest {
                         .build()
                 )
                 .source(
-                    SandboxSendFundsResponse.Source.Account.builder()
+                    AccountSource.builder()
                         .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .currency("USD")
                         .build()

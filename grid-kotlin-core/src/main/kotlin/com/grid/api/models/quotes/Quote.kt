@@ -633,6 +633,17 @@ private constructor(
         fun source(realtimeFunding: QuoteSource.RealtimeFunding) =
             source(QuoteSource.ofRealtimeFunding(realtimeFunding))
 
+        /**
+         * Alias for calling [source] with the following:
+         * ```kotlin
+         * QuoteSource.RealtimeFunding.builder()
+         *     .currency(currency)
+         *     .build()
+         * ```
+         */
+        fun realtimeFundingSource(currency: String) =
+            source(QuoteSource.RealtimeFunding.builder().currency(currency).build())
+
         /** Current status of the quote */
         fun status(status: Status) = status(JsonField.of(status))
 

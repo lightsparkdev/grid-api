@@ -30,14 +30,14 @@ internal class QuoteServiceTest {
                 QuoteCreateParams.builder()
                     .destination(
                         QuoteCreateParams.Destination.Account.builder()
-                            .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                            .accountId("a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                             .currency("EUR")
                             .build()
                     )
-                    .lockedCurrencyAmount(10000L)
+                    .lockedCurrencyAmount(1000L)
                     .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
-                    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                    .description("Transfer between accounts, either internal or external.")
+                    .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                    .description("Invoice #1234 payment")
                     .immediatelyExecute(false)
                     .lookupId("Lookup:019542f5-b3e7-1d02-0000-000000000009")
                     .senderCustomerInfo(

@@ -290,7 +290,7 @@ private constructor(
             accountInfo(ExternalAccountInfo.Upi.builder().vpa(vpa).build())
 
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofNgnAccount(ngnAccount)`. */
-        fun accountInfo(ngnAccount: ExternalAccountInfo.NgnAccount) =
+        fun accountInfo(ngnAccount: NgnAccountExternalAccountInfo) =
             accountInfo(ExternalAccountInfo.ofNgnAccount(ngnAccount))
 
         /**
@@ -311,7 +311,7 @@ private constructor(
             accountInfo(ExternalAccountInfo.SparkWallet.builder().address(address).build())
 
         /** Alias for calling [accountInfo] with `ExternalAccountInfo.ofLightning(lightning)`. */
-        fun accountInfo(lightning: ExternalAccountInfo.Lightning) =
+        fun accountInfo(lightning: LightningExternalAccountInfo) =
             accountInfo(ExternalAccountInfo.ofLightning(lightning))
 
         /**

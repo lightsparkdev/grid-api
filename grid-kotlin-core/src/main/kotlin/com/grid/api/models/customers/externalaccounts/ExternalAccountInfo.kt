@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.core.BaseDeserializer
 import com.grid.api.core.BaseSerializer
-import com.grid.api.core.Enum
 import com.grid.api.core.ExcludeMissing
 import com.grid.api.core.JsonField
 import com.grid.api.core.JsonMissing
@@ -35,9 +34,9 @@ private constructor(
     private val pix: Pix? = null,
     private val iban: Iban? = null,
     private val upi: Upi? = null,
-    private val ngnAccount: NgnAccount? = null,
+    private val ngnAccount: NgnAccountExternalAccountInfo? = null,
     private val sparkWallet: SparkWallet? = null,
-    private val lightning: Lightning? = null,
+    private val lightning: LightningExternalAccountInfo? = null,
     private val solanaWallet: SolanaWallet? = null,
     private val tronWallet: TronWallet? = null,
     private val polygonWallet: PolygonWallet? = null,
@@ -55,11 +54,11 @@ private constructor(
 
     fun upi(): Upi? = upi
 
-    fun ngnAccount(): NgnAccount? = ngnAccount
+    fun ngnAccount(): NgnAccountExternalAccountInfo? = ngnAccount
 
     fun sparkWallet(): SparkWallet? = sparkWallet
 
-    fun lightning(): Lightning? = lightning
+    fun lightning(): LightningExternalAccountInfo? = lightning
 
     fun solanaWallet(): SolanaWallet? = solanaWallet
 
@@ -103,11 +102,11 @@ private constructor(
 
     fun asUpi(): Upi = upi.getOrThrow("upi")
 
-    fun asNgnAccount(): NgnAccount = ngnAccount.getOrThrow("ngnAccount")
+    fun asNgnAccount(): NgnAccountExternalAccountInfo = ngnAccount.getOrThrow("ngnAccount")
 
     fun asSparkWallet(): SparkWallet = sparkWallet.getOrThrow("sparkWallet")
 
-    fun asLightning(): Lightning = lightning.getOrThrow("lightning")
+    fun asLightning(): LightningExternalAccountInfo = lightning.getOrThrow("lightning")
 
     fun asSolanaWallet(): SolanaWallet = solanaWallet.getOrThrow("solanaWallet")
 
@@ -165,7 +164,7 @@ private constructor(
                     upi.validate()
                 }
 
-                override fun visitNgnAccount(ngnAccount: NgnAccount) {
+                override fun visitNgnAccount(ngnAccount: NgnAccountExternalAccountInfo) {
                     ngnAccount.validate()
                 }
 
@@ -173,7 +172,7 @@ private constructor(
                     sparkWallet.validate()
                 }
 
-                override fun visitLightning(lightning: Lightning) {
+                override fun visitLightning(lightning: LightningExternalAccountInfo) {
                     lightning.validate()
                 }
 
@@ -223,11 +222,13 @@ private constructor(
 
                 override fun visitUpi(upi: Upi) = upi.validity()
 
-                override fun visitNgnAccount(ngnAccount: NgnAccount) = ngnAccount.validity()
+                override fun visitNgnAccount(ngnAccount: NgnAccountExternalAccountInfo) =
+                    ngnAccount.validity()
 
                 override fun visitSparkWallet(sparkWallet: SparkWallet) = sparkWallet.validity()
 
-                override fun visitLightning(lightning: Lightning) = lightning.validity()
+                override fun visitLightning(lightning: LightningExternalAccountInfo) =
+                    lightning.validity()
 
                 override fun visitSolanaWallet(solanaWallet: SolanaWallet) = solanaWallet.validity()
 
@@ -308,11 +309,13 @@ private constructor(
 
         fun ofUpi(upi: Upi) = ExternalAccountInfo(upi = upi)
 
-        fun ofNgnAccount(ngnAccount: NgnAccount) = ExternalAccountInfo(ngnAccount = ngnAccount)
+        fun ofNgnAccount(ngnAccount: NgnAccountExternalAccountInfo) =
+            ExternalAccountInfo(ngnAccount = ngnAccount)
 
         fun ofSparkWallet(sparkWallet: SparkWallet) = ExternalAccountInfo(sparkWallet = sparkWallet)
 
-        fun ofLightning(lightning: Lightning) = ExternalAccountInfo(lightning = lightning)
+        fun ofLightning(lightning: LightningExternalAccountInfo) =
+            ExternalAccountInfo(lightning = lightning)
 
         fun ofSolanaWallet(solanaWallet: SolanaWallet) =
             ExternalAccountInfo(solanaWallet = solanaWallet)
@@ -341,11 +344,11 @@ private constructor(
 
         fun visitUpi(upi: Upi): T
 
-        fun visitNgnAccount(ngnAccount: NgnAccount): T
+        fun visitNgnAccount(ngnAccount: NgnAccountExternalAccountInfo): T
 
         fun visitSparkWallet(sparkWallet: SparkWallet): T
 
-        fun visitLightning(lightning: Lightning): T
+        fun visitLightning(lightning: LightningExternalAccountInfo): T
 
         fun visitSolanaWallet(solanaWallet: SolanaWallet): T
 
@@ -404,9 +407,9 @@ private constructor(
                     } ?: ExternalAccountInfo(_json = json)
                 }
                 "NGN_ACCOUNT" -> {
-                    return tryDeserialize(node, jacksonTypeRef<NgnAccount>())?.let {
-                        ExternalAccountInfo(ngnAccount = it, _json = json)
-                    } ?: ExternalAccountInfo(_json = json)
+                    return tryDeserialize(node, jacksonTypeRef<NgnAccountExternalAccountInfo>())
+                        ?.let { ExternalAccountInfo(ngnAccount = it, _json = json) }
+                        ?: ExternalAccountInfo(_json = json)
                 }
                 "SPARK_WALLET" -> {
                     return tryDeserialize(node, jacksonTypeRef<SparkWallet>())?.let {
@@ -414,9 +417,9 @@ private constructor(
                     } ?: ExternalAccountInfo(_json = json)
                 }
                 "LIGHTNING" -> {
-                    return tryDeserialize(node, jacksonTypeRef<Lightning>())?.let {
-                        ExternalAccountInfo(lightning = it, _json = json)
-                    } ?: ExternalAccountInfo(_json = json)
+                    return tryDeserialize(node, jacksonTypeRef<LightningExternalAccountInfo>())
+                        ?.let { ExternalAccountInfo(lightning = it, _json = json) }
+                        ?: ExternalAccountInfo(_json = json)
                 }
                 "SOLANA_WALLET" -> {
                     return tryDeserialize(node, jacksonTypeRef<SolanaWallet>())?.let {
@@ -2904,731 +2907,6 @@ private constructor(
             "Upi{accountType=$accountType, vpa=$vpa, beneficiary=$beneficiary, additionalProperties=$additionalProperties}"
     }
 
-    class NgnAccount
-    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-    private constructor(
-        private val accountNumber: JsonField<String>,
-        private val accountType: JsonValue,
-        private val bankName: JsonField<String>,
-        private val beneficiary: JsonField<Beneficiary>,
-        private val purposeOfPayment: JsonField<PurposeOfPayment>,
-        private val additionalProperties: MutableMap<String, JsonValue>,
-    ) {
-
-        @JsonCreator
-        private constructor(
-            @JsonProperty("accountNumber")
-            @ExcludeMissing
-            accountNumber: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
-            @JsonProperty("bankName")
-            @ExcludeMissing
-            bankName: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("beneficiary")
-            @ExcludeMissing
-            beneficiary: JsonField<Beneficiary> = JsonMissing.of(),
-            @JsonProperty("purposeOfPayment")
-            @ExcludeMissing
-            purposeOfPayment: JsonField<PurposeOfPayment> = JsonMissing.of(),
-        ) : this(
-            accountNumber,
-            accountType,
-            bankName,
-            beneficiary,
-            purposeOfPayment,
-            mutableMapOf(),
-        )
-
-        /**
-         * Nigerian bank account number
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun accountNumber(): String = accountNumber.getRequired("accountNumber")
-
-        /**
-         * Expected to always return the following:
-         * ```kotlin
-         * JsonValue.from("NGN_ACCOUNT")
-         * ```
-         *
-         * However, this method can be useful for debugging and logging (e.g. if the server
-         * responded with an unexpected value).
-         */
-        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
-
-        /**
-         * Name of the bank
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun bankName(): String = bankName.getRequired("bankName")
-
-        /**
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun beneficiary(): Beneficiary = beneficiary.getRequired("beneficiary")
-
-        /**
-         * Purpose of payment
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun purposeOfPayment(): PurposeOfPayment = purposeOfPayment.getRequired("purposeOfPayment")
-
-        /**
-         * Returns the raw JSON value of [accountNumber].
-         *
-         * Unlike [accountNumber], this method doesn't throw if the JSON field has an unexpected
-         * type.
-         */
-        @JsonProperty("accountNumber")
-        @ExcludeMissing
-        fun _accountNumber(): JsonField<String> = accountNumber
-
-        /**
-         * Returns the raw JSON value of [bankName].
-         *
-         * Unlike [bankName], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("bankName") @ExcludeMissing fun _bankName(): JsonField<String> = bankName
-
-        /**
-         * Returns the raw JSON value of [beneficiary].
-         *
-         * Unlike [beneficiary], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("beneficiary")
-        @ExcludeMissing
-        fun _beneficiary(): JsonField<Beneficiary> = beneficiary
-
-        /**
-         * Returns the raw JSON value of [purposeOfPayment].
-         *
-         * Unlike [purposeOfPayment], this method doesn't throw if the JSON field has an unexpected
-         * type.
-         */
-        @JsonProperty("purposeOfPayment")
-        @ExcludeMissing
-        fun _purposeOfPayment(): JsonField<PurposeOfPayment> = purposeOfPayment
-
-        @JsonAnySetter
-        private fun putAdditionalProperty(key: String, value: JsonValue) {
-            additionalProperties.put(key, value)
-        }
-
-        @JsonAnyGetter
-        @ExcludeMissing
-        fun _additionalProperties(): Map<String, JsonValue> =
-            Collections.unmodifiableMap(additionalProperties)
-
-        fun toBuilder() = Builder().from(this)
-
-        companion object {
-
-            /**
-             * Returns a mutable builder for constructing an instance of [NgnAccount].
-             *
-             * The following fields are required:
-             * ```kotlin
-             * .accountNumber()
-             * .bankName()
-             * .beneficiary()
-             * .purposeOfPayment()
-             * ```
-             */
-            fun builder() = Builder()
-        }
-
-        /** A builder for [NgnAccount]. */
-        class Builder internal constructor() {
-
-            private var accountNumber: JsonField<String>? = null
-            private var accountType: JsonValue = JsonValue.from("NGN_ACCOUNT")
-            private var bankName: JsonField<String>? = null
-            private var beneficiary: JsonField<Beneficiary>? = null
-            private var purposeOfPayment: JsonField<PurposeOfPayment>? = null
-            private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-            internal fun from(ngnAccount: NgnAccount) = apply {
-                accountNumber = ngnAccount.accountNumber
-                accountType = ngnAccount.accountType
-                bankName = ngnAccount.bankName
-                beneficiary = ngnAccount.beneficiary
-                purposeOfPayment = ngnAccount.purposeOfPayment
-                additionalProperties = ngnAccount.additionalProperties.toMutableMap()
-            }
-
-            /** Nigerian bank account number */
-            fun accountNumber(accountNumber: String) = accountNumber(JsonField.of(accountNumber))
-
-            /**
-             * Sets [Builder.accountNumber] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.accountNumber] with a well-typed [String] value
-             * instead. This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun accountNumber(accountNumber: JsonField<String>) = apply {
-                this.accountNumber = accountNumber
-            }
-
-            /**
-             * Sets the field to an arbitrary JSON value.
-             *
-             * It is usually unnecessary to call this method because the field defaults to the
-             * following:
-             * ```kotlin
-             * JsonValue.from("NGN_ACCOUNT")
-             * ```
-             *
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
-
-            /** Name of the bank */
-            fun bankName(bankName: String) = bankName(JsonField.of(bankName))
-
-            /**
-             * Sets [Builder.bankName] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.bankName] with a well-typed [String] value instead.
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun bankName(bankName: JsonField<String>) = apply { this.bankName = bankName }
-
-            fun beneficiary(beneficiary: Beneficiary) = beneficiary(JsonField.of(beneficiary))
-
-            /**
-             * Sets [Builder.beneficiary] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.beneficiary] with a well-typed [Beneficiary] value
-             * instead. This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun beneficiary(beneficiary: JsonField<Beneficiary>) = apply {
-                this.beneficiary = beneficiary
-            }
-
-            /** Alias for calling [beneficiary] with `Beneficiary.ofIndividual(individual)`. */
-            fun beneficiary(individual: IndividualBeneficiary) =
-                beneficiary(Beneficiary.ofIndividual(individual))
-
-            /** Alias for calling [beneficiary] with `Beneficiary.ofBusiness(business)`. */
-            fun beneficiary(business: BusinessBeneficiary) =
-                beneficiary(Beneficiary.ofBusiness(business))
-
-            /**
-             * Alias for calling [beneficiary] with the following:
-             * ```kotlin
-             * BusinessBeneficiary.builder()
-             *     .legalName(legalName)
-             *     .build()
-             * ```
-             */
-            fun businessBeneficiary(legalName: String) =
-                beneficiary(BusinessBeneficiary.builder().legalName(legalName).build())
-
-            /** Purpose of payment */
-            fun purposeOfPayment(purposeOfPayment: PurposeOfPayment) =
-                purposeOfPayment(JsonField.of(purposeOfPayment))
-
-            /**
-             * Sets [Builder.purposeOfPayment] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.purposeOfPayment] with a well-typed
-             * [PurposeOfPayment] value instead. This method is primarily for setting the field to
-             * an undocumented or not yet supported value.
-             */
-            fun purposeOfPayment(purposeOfPayment: JsonField<PurposeOfPayment>) = apply {
-                this.purposeOfPayment = purposeOfPayment
-            }
-
-            fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                this.additionalProperties.clear()
-                putAllAdditionalProperties(additionalProperties)
-            }
-
-            fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                additionalProperties.put(key, value)
-            }
-
-            fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                this.additionalProperties.putAll(additionalProperties)
-            }
-
-            fun removeAdditionalProperty(key: String) = apply { additionalProperties.remove(key) }
-
-            fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                keys.forEach(::removeAdditionalProperty)
-            }
-
-            /**
-             * Returns an immutable instance of [NgnAccount].
-             *
-             * Further updates to this [Builder] will not mutate the returned instance.
-             *
-             * The following fields are required:
-             * ```kotlin
-             * .accountNumber()
-             * .bankName()
-             * .beneficiary()
-             * .purposeOfPayment()
-             * ```
-             *
-             * @throws IllegalStateException if any required field is unset.
-             */
-            fun build(): NgnAccount =
-                NgnAccount(
-                    checkRequired("accountNumber", accountNumber),
-                    accountType,
-                    checkRequired("bankName", bankName),
-                    checkRequired("beneficiary", beneficiary),
-                    checkRequired("purposeOfPayment", purposeOfPayment),
-                    additionalProperties.toMutableMap(),
-                )
-        }
-
-        private var validated: Boolean = false
-
-        fun validate(): NgnAccount = apply {
-            if (validated) {
-                return@apply
-            }
-
-            accountNumber()
-            _accountType().let {
-                if (it != JsonValue.from("NGN_ACCOUNT")) {
-                    throw GridInvalidDataException("'accountType' is invalid, received $it")
-                }
-            }
-            bankName()
-            beneficiary().validate()
-            purposeOfPayment().validate()
-            validated = true
-        }
-
-        fun isValid(): Boolean =
-            try {
-                validate()
-                true
-            } catch (e: GridInvalidDataException) {
-                false
-            }
-
-        /**
-         * Returns a score indicating how many valid values are contained in this object
-         * recursively.
-         *
-         * Used for best match union deserialization.
-         */
-        internal fun validity(): Int =
-            (if (accountNumber.asKnown() == null) 0 else 1) +
-                accountType.let { if (it == JsonValue.from("NGN_ACCOUNT")) 1 else 0 } +
-                (if (bankName.asKnown() == null) 0 else 1) +
-                (beneficiary.asKnown()?.validity() ?: 0) +
-                (purposeOfPayment.asKnown()?.validity() ?: 0)
-
-        @JsonDeserialize(using = Beneficiary.Deserializer::class)
-        @JsonSerialize(using = Beneficiary.Serializer::class)
-        class Beneficiary
-        private constructor(
-            private val individual: IndividualBeneficiary? = null,
-            private val business: BusinessBeneficiary? = null,
-            private val _json: JsonValue? = null,
-        ) {
-
-            fun individual(): IndividualBeneficiary? = individual
-
-            fun business(): BusinessBeneficiary? = business
-
-            fun isIndividual(): Boolean = individual != null
-
-            fun isBusiness(): Boolean = business != null
-
-            fun asIndividual(): IndividualBeneficiary = individual.getOrThrow("individual")
-
-            fun asBusiness(): BusinessBeneficiary = business.getOrThrow("business")
-
-            fun _json(): JsonValue? = _json
-
-            fun <T> accept(visitor: Visitor<T>): T =
-                when {
-                    individual != null -> visitor.visitIndividual(individual)
-                    business != null -> visitor.visitBusiness(business)
-                    else -> visitor.unknown(_json)
-                }
-
-            private var validated: Boolean = false
-
-            fun validate(): Beneficiary = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                accept(
-                    object : Visitor<Unit> {
-                        override fun visitIndividual(individual: IndividualBeneficiary) {
-                            individual.validate()
-                        }
-
-                        override fun visitBusiness(business: BusinessBeneficiary) {
-                            business.validate()
-                        }
-                    }
-                )
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                accept(
-                    object : Visitor<Int> {
-                        override fun visitIndividual(individual: IndividualBeneficiary) =
-                            individual.validity()
-
-                        override fun visitBusiness(business: BusinessBeneficiary) =
-                            business.validity()
-
-                        override fun unknown(json: JsonValue?) = 0
-                    }
-                )
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is Beneficiary &&
-                    individual == other.individual &&
-                    business == other.business
-            }
-
-            override fun hashCode(): Int = Objects.hash(individual, business)
-
-            override fun toString(): String =
-                when {
-                    individual != null -> "Beneficiary{individual=$individual}"
-                    business != null -> "Beneficiary{business=$business}"
-                    _json != null -> "Beneficiary{_unknown=$_json}"
-                    else -> throw IllegalStateException("Invalid Beneficiary")
-                }
-
-            companion object {
-
-                fun ofIndividual(individual: IndividualBeneficiary) =
-                    Beneficiary(individual = individual)
-
-                fun ofBusiness(business: BusinessBeneficiary) = Beneficiary(business = business)
-            }
-
-            /**
-             * An interface that defines how to map each variant of [Beneficiary] to a value of type
-             * [T].
-             */
-            interface Visitor<out T> {
-
-                fun visitIndividual(individual: IndividualBeneficiary): T
-
-                fun visitBusiness(business: BusinessBeneficiary): T
-
-                /**
-                 * Maps an unknown variant of [Beneficiary] to a value of type [T].
-                 *
-                 * An instance of [Beneficiary] can contain an unknown variant if it was
-                 * deserialized from data that doesn't match any known variant. For example, if the
-                 * SDK is on an older version than the API, then the API may respond with new
-                 * variants that the SDK is unaware of.
-                 *
-                 * @throws GridInvalidDataException in the default implementation.
-                 */
-                fun unknown(json: JsonValue?): T {
-                    throw GridInvalidDataException("Unknown Beneficiary: $json")
-                }
-            }
-
-            internal class Deserializer : BaseDeserializer<Beneficiary>(Beneficiary::class) {
-
-                override fun ObjectCodec.deserialize(node: JsonNode): Beneficiary {
-                    val json = JsonValue.fromJsonNode(node)
-                    val beneficiaryType = json.asObject()?.get("beneficiaryType")?.asString()
-
-                    when (beneficiaryType) {
-                        "INDIVIDUAL" -> {
-                            return tryDeserialize(node, jacksonTypeRef<IndividualBeneficiary>())
-                                ?.let { Beneficiary(individual = it, _json = json) }
-                                ?: Beneficiary(_json = json)
-                        }
-                        "BUSINESS" -> {
-                            return tryDeserialize(node, jacksonTypeRef<BusinessBeneficiary>())
-                                ?.let { Beneficiary(business = it, _json = json) }
-                                ?: Beneficiary(_json = json)
-                        }
-                    }
-
-                    return Beneficiary(_json = json)
-                }
-            }
-
-            internal class Serializer : BaseSerializer<Beneficiary>(Beneficiary::class) {
-
-                override fun serialize(
-                    value: Beneficiary,
-                    generator: JsonGenerator,
-                    provider: SerializerProvider,
-                ) {
-                    when {
-                        value.individual != null -> generator.writeObject(value.individual)
-                        value.business != null -> generator.writeObject(value.business)
-                        value._json != null -> generator.writeObject(value._json)
-                        else -> throw IllegalStateException("Invalid Beneficiary")
-                    }
-                }
-            }
-        }
-
-        /** Purpose of payment */
-        class PurposeOfPayment
-        @JsonCreator
-        private constructor(private val value: JsonField<String>) : Enum {
-
-            /**
-             * Returns this class instance's raw value.
-             *
-             * This is usually only useful if this instance was deserialized from data that doesn't
-             * match any known member, and you want to know that value. For example, if the SDK is
-             * on an older version than the API, then the API may respond with new members that the
-             * SDK is unaware of.
-             */
-            @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-            companion object {
-
-                val GIFT = of("GIFT")
-
-                val SELF = of("SELF")
-
-                val GOODS_OR_SERVICES = of("GOODS_OR_SERVICES")
-
-                val EDUCATION = of("EDUCATION")
-
-                val HEALTH_OR_MEDICAL = of("HEALTH_OR_MEDICAL")
-
-                val REAL_ESTATE_PURCHASE = of("REAL_ESTATE_PURCHASE")
-
-                val LOAN_PAYMENT = of("LOAN_PAYMENT")
-
-                val TAX_PAYMENT = of("TAX_PAYMENT")
-
-                val UTILITY_BILL = of("UTILITY_BILL")
-
-                val DONATION = of("DONATION")
-
-                val TRAVEL = of("TRAVEL")
-
-                val OTHER = of("OTHER")
-
-                fun of(value: String) = PurposeOfPayment(JsonField.of(value))
-            }
-
-            /** An enum containing [PurposeOfPayment]'s known values. */
-            enum class Known {
-                GIFT,
-                SELF,
-                GOODS_OR_SERVICES,
-                EDUCATION,
-                HEALTH_OR_MEDICAL,
-                REAL_ESTATE_PURCHASE,
-                LOAN_PAYMENT,
-                TAX_PAYMENT,
-                UTILITY_BILL,
-                DONATION,
-                TRAVEL,
-                OTHER,
-            }
-
-            /**
-             * An enum containing [PurposeOfPayment]'s known values, as well as an [_UNKNOWN]
-             * member.
-             *
-             * An instance of [PurposeOfPayment] can contain an unknown value in a couple of cases:
-             * - It was deserialized from data that doesn't match any known member. For example, if
-             *   the SDK is on an older version than the API, then the API may respond with new
-             *   members that the SDK is unaware of.
-             * - It was constructed with an arbitrary value using the [of] method.
-             */
-            enum class Value {
-                GIFT,
-                SELF,
-                GOODS_OR_SERVICES,
-                EDUCATION,
-                HEALTH_OR_MEDICAL,
-                REAL_ESTATE_PURCHASE,
-                LOAN_PAYMENT,
-                TAX_PAYMENT,
-                UTILITY_BILL,
-                DONATION,
-                TRAVEL,
-                OTHER,
-                /**
-                 * An enum member indicating that [PurposeOfPayment] was instantiated with an
-                 * unknown value.
-                 */
-                _UNKNOWN,
-            }
-
-            /**
-             * Returns an enum member corresponding to this class instance's value, or
-             * [Value._UNKNOWN] if the class was instantiated with an unknown value.
-             *
-             * Use the [known] method instead if you're certain the value is always known or if you
-             * want to throw for the unknown case.
-             */
-            fun value(): Value =
-                when (this) {
-                    GIFT -> Value.GIFT
-                    SELF -> Value.SELF
-                    GOODS_OR_SERVICES -> Value.GOODS_OR_SERVICES
-                    EDUCATION -> Value.EDUCATION
-                    HEALTH_OR_MEDICAL -> Value.HEALTH_OR_MEDICAL
-                    REAL_ESTATE_PURCHASE -> Value.REAL_ESTATE_PURCHASE
-                    LOAN_PAYMENT -> Value.LOAN_PAYMENT
-                    TAX_PAYMENT -> Value.TAX_PAYMENT
-                    UTILITY_BILL -> Value.UTILITY_BILL
-                    DONATION -> Value.DONATION
-                    TRAVEL -> Value.TRAVEL
-                    OTHER -> Value.OTHER
-                    else -> Value._UNKNOWN
-                }
-
-            /**
-             * Returns an enum member corresponding to this class instance's value.
-             *
-             * Use the [value] method instead if you're uncertain the value is always known and
-             * don't want to throw for the unknown case.
-             *
-             * @throws GridInvalidDataException if this class instance's value is a not a known
-             *   member.
-             */
-            fun known(): Known =
-                when (this) {
-                    GIFT -> Known.GIFT
-                    SELF -> Known.SELF
-                    GOODS_OR_SERVICES -> Known.GOODS_OR_SERVICES
-                    EDUCATION -> Known.EDUCATION
-                    HEALTH_OR_MEDICAL -> Known.HEALTH_OR_MEDICAL
-                    REAL_ESTATE_PURCHASE -> Known.REAL_ESTATE_PURCHASE
-                    LOAN_PAYMENT -> Known.LOAN_PAYMENT
-                    TAX_PAYMENT -> Known.TAX_PAYMENT
-                    UTILITY_BILL -> Known.UTILITY_BILL
-                    DONATION -> Known.DONATION
-                    TRAVEL -> Known.TRAVEL
-                    OTHER -> Known.OTHER
-                    else -> throw GridInvalidDataException("Unknown PurposeOfPayment: $value")
-                }
-
-            /**
-             * Returns this class instance's primitive wire representation.
-             *
-             * This differs from the [toString] method because that method is primarily for
-             * debugging and generally doesn't throw.
-             *
-             * @throws GridInvalidDataException if this class instance's value does not have the
-             *   expected primitive type.
-             */
-            fun asString(): String =
-                _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-            private var validated: Boolean = false
-
-            fun validate(): PurposeOfPayment = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                known()
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is PurposeOfPayment && value == other.value
-            }
-
-            override fun hashCode() = value.hashCode()
-
-            override fun toString() = value.toString()
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-
-            return other is NgnAccount &&
-                accountNumber == other.accountNumber &&
-                accountType == other.accountType &&
-                bankName == other.bankName &&
-                beneficiary == other.beneficiary &&
-                purposeOfPayment == other.purposeOfPayment &&
-                additionalProperties == other.additionalProperties
-        }
-
-        private val hashCode: Int by lazy {
-            Objects.hash(
-                accountNumber,
-                accountType,
-                bankName,
-                beneficiary,
-                purposeOfPayment,
-                additionalProperties,
-            )
-        }
-
-        override fun hashCode(): Int = hashCode
-
-        override fun toString() =
-            "NgnAccount{accountNumber=$accountNumber, accountType=$accountType, bankName=$bankName, beneficiary=$beneficiary, purposeOfPayment=$purposeOfPayment, additionalProperties=$additionalProperties}"
-    }
-
     class SparkWallet
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
@@ -3828,274 +3106,6 @@ private constructor(
 
         override fun toString() =
             "SparkWallet{accountType=$accountType, address=$address, additionalProperties=$additionalProperties}"
-    }
-
-    class Lightning
-    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-    private constructor(
-        private val accountType: JsonValue,
-        private val bolt12: JsonField<String>,
-        private val invoice: JsonField<String>,
-        private val lightningAddress: JsonField<String>,
-        private val additionalProperties: MutableMap<String, JsonValue>,
-    ) {
-
-        @JsonCreator
-        private constructor(
-            @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
-            @JsonProperty("bolt12") @ExcludeMissing bolt12: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("invoice") @ExcludeMissing invoice: JsonField<String> = JsonMissing.of(),
-            @JsonProperty("lightningAddress")
-            @ExcludeMissing
-            lightningAddress: JsonField<String> = JsonMissing.of(),
-        ) : this(accountType, bolt12, invoice, lightningAddress, mutableMapOf())
-
-        /**
-         * Expected to always return the following:
-         * ```kotlin
-         * JsonValue.from("LIGHTNING")
-         * ```
-         *
-         * However, this method can be useful for debugging and logging (e.g. if the server
-         * responded with an unexpected value).
-         */
-        @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
-
-        /**
-         * A bolt12 offer which can be reused as a payment destination
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
-         *   server responded with an unexpected value).
-         */
-        fun bolt12(): String? = bolt12.getNullable("bolt12")
-
-        /**
-         * 1-time use lightning bolt11 invoice payout destination
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
-         *   server responded with an unexpected value).
-         */
-        fun invoice(): String? = invoice.getNullable("invoice")
-
-        /**
-         * A lightning address which can be used as a payment destination. Note that for UMA
-         * addresses, no external account is needed. You can use the UMA address directly as a
-         * destination.
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the
-         *   server responded with an unexpected value).
-         */
-        fun lightningAddress(): String? = lightningAddress.getNullable("lightningAddress")
-
-        /**
-         * Returns the raw JSON value of [bolt12].
-         *
-         * Unlike [bolt12], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("bolt12") @ExcludeMissing fun _bolt12(): JsonField<String> = bolt12
-
-        /**
-         * Returns the raw JSON value of [invoice].
-         *
-         * Unlike [invoice], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("invoice") @ExcludeMissing fun _invoice(): JsonField<String> = invoice
-
-        /**
-         * Returns the raw JSON value of [lightningAddress].
-         *
-         * Unlike [lightningAddress], this method doesn't throw if the JSON field has an unexpected
-         * type.
-         */
-        @JsonProperty("lightningAddress")
-        @ExcludeMissing
-        fun _lightningAddress(): JsonField<String> = lightningAddress
-
-        @JsonAnySetter
-        private fun putAdditionalProperty(key: String, value: JsonValue) {
-            additionalProperties.put(key, value)
-        }
-
-        @JsonAnyGetter
-        @ExcludeMissing
-        fun _additionalProperties(): Map<String, JsonValue> =
-            Collections.unmodifiableMap(additionalProperties)
-
-        fun toBuilder() = Builder().from(this)
-
-        companion object {
-
-            /** Returns a mutable builder for constructing an instance of [Lightning]. */
-            fun builder() = Builder()
-        }
-
-        /** A builder for [Lightning]. */
-        class Builder internal constructor() {
-
-            private var accountType: JsonValue = JsonValue.from("LIGHTNING")
-            private var bolt12: JsonField<String> = JsonMissing.of()
-            private var invoice: JsonField<String> = JsonMissing.of()
-            private var lightningAddress: JsonField<String> = JsonMissing.of()
-            private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-            internal fun from(lightning: Lightning) = apply {
-                accountType = lightning.accountType
-                bolt12 = lightning.bolt12
-                invoice = lightning.invoice
-                lightningAddress = lightning.lightningAddress
-                additionalProperties = lightning.additionalProperties.toMutableMap()
-            }
-
-            /**
-             * Sets the field to an arbitrary JSON value.
-             *
-             * It is usually unnecessary to call this method because the field defaults to the
-             * following:
-             * ```kotlin
-             * JsonValue.from("LIGHTNING")
-             * ```
-             *
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
-
-            /** A bolt12 offer which can be reused as a payment destination */
-            fun bolt12(bolt12: String) = bolt12(JsonField.of(bolt12))
-
-            /**
-             * Sets [Builder.bolt12] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.bolt12] with a well-typed [String] value instead.
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun bolt12(bolt12: JsonField<String>) = apply { this.bolt12 = bolt12 }
-
-            /** 1-time use lightning bolt11 invoice payout destination */
-            fun invoice(invoice: String) = invoice(JsonField.of(invoice))
-
-            /**
-             * Sets [Builder.invoice] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.invoice] with a well-typed [String] value instead.
-             * This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun invoice(invoice: JsonField<String>) = apply { this.invoice = invoice }
-
-            /**
-             * A lightning address which can be used as a payment destination. Note that for UMA
-             * addresses, no external account is needed. You can use the UMA address directly as a
-             * destination.
-             */
-            fun lightningAddress(lightningAddress: String) =
-                lightningAddress(JsonField.of(lightningAddress))
-
-            /**
-             * Sets [Builder.lightningAddress] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.lightningAddress] with a well-typed [String] value
-             * instead. This method is primarily for setting the field to an undocumented or not yet
-             * supported value.
-             */
-            fun lightningAddress(lightningAddress: JsonField<String>) = apply {
-                this.lightningAddress = lightningAddress
-            }
-
-            fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                this.additionalProperties.clear()
-                putAllAdditionalProperties(additionalProperties)
-            }
-
-            fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                additionalProperties.put(key, value)
-            }
-
-            fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                this.additionalProperties.putAll(additionalProperties)
-            }
-
-            fun removeAdditionalProperty(key: String) = apply { additionalProperties.remove(key) }
-
-            fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                keys.forEach(::removeAdditionalProperty)
-            }
-
-            /**
-             * Returns an immutable instance of [Lightning].
-             *
-             * Further updates to this [Builder] will not mutate the returned instance.
-             */
-            fun build(): Lightning =
-                Lightning(
-                    accountType,
-                    bolt12,
-                    invoice,
-                    lightningAddress,
-                    additionalProperties.toMutableMap(),
-                )
-        }
-
-        private var validated: Boolean = false
-
-        fun validate(): Lightning = apply {
-            if (validated) {
-                return@apply
-            }
-
-            _accountType().let {
-                if (it != JsonValue.from("LIGHTNING")) {
-                    throw GridInvalidDataException("'accountType' is invalid, received $it")
-                }
-            }
-            bolt12()
-            invoice()
-            lightningAddress()
-            validated = true
-        }
-
-        fun isValid(): Boolean =
-            try {
-                validate()
-                true
-            } catch (e: GridInvalidDataException) {
-                false
-            }
-
-        /**
-         * Returns a score indicating how many valid values are contained in this object
-         * recursively.
-         *
-         * Used for best match union deserialization.
-         */
-        internal fun validity(): Int =
-            accountType.let { if (it == JsonValue.from("LIGHTNING")) 1 else 0 } +
-                (if (bolt12.asKnown() == null) 0 else 1) +
-                (if (invoice.asKnown() == null) 0 else 1) +
-                (if (lightningAddress.asKnown() == null) 0 else 1)
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-
-            return other is Lightning &&
-                accountType == other.accountType &&
-                bolt12 == other.bolt12 &&
-                invoice == other.invoice &&
-                lightningAddress == other.lightningAddress &&
-                additionalProperties == other.additionalProperties
-        }
-
-        private val hashCode: Int by lazy {
-            Objects.hash(accountType, bolt12, invoice, lightningAddress, additionalProperties)
-        }
-
-        override fun hashCode(): Int = hashCode
-
-        override fun toString() =
-            "Lightning{accountType=$accountType, bolt12=$bolt12, invoice=$invoice, lightningAddress=$lightningAddress, additionalProperties=$additionalProperties}"
     }
 
     class SolanaWallet

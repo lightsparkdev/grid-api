@@ -374,6 +374,16 @@ private constructor(
             body.source(realtimeFunding)
         }
 
+        /**
+         * Alias for calling [source] with the following:
+         * ```kotlin
+         * QuoteSource.RealtimeFunding.builder()
+         *     .currency(currency)
+         *     .build()
+         * ```
+         */
+        fun realtimeFundingSource(currency: String) = apply { body.realtimeFundingSource(currency) }
+
         /** Optional description/memo for the transfer */
         fun description(description: String) = apply { body.description(description) }
 
@@ -963,6 +973,17 @@ private constructor(
             /** Alias for calling [source] with `QuoteSource.ofRealtimeFunding(realtimeFunding)`. */
             fun source(realtimeFunding: QuoteSource.RealtimeFunding) =
                 source(QuoteSource.ofRealtimeFunding(realtimeFunding))
+
+            /**
+             * Alias for calling [source] with the following:
+             * ```kotlin
+             * QuoteSource.RealtimeFunding.builder()
+             *     .currency(currency)
+             *     .build()
+             * ```
+             */
+            fun realtimeFundingSource(currency: String) =
+                source(QuoteSource.RealtimeFunding.builder().currency(currency).build())
 
             /** Optional description/memo for the transfer */
             fun description(description: String) = description(JsonField.of(description))

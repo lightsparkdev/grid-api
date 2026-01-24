@@ -411,7 +411,7 @@ internal class ExternalAccountInfoTest {
     @Test
     fun ofNgnAccount() {
         val ngnAccount =
-            ExternalAccountInfo.NgnAccount.builder()
+            NgnAccountExternalAccountInfo.builder()
                 .accountNumber("0123456789")
                 .bankName("First Bank of Nigeria")
                 .beneficiary(
@@ -431,7 +431,7 @@ internal class ExternalAccountInfoTest {
                         )
                         .build()
                 )
-                .purposeOfPayment(ExternalAccountInfo.NgnAccount.PurposeOfPayment.GOODS_OR_SERVICES)
+                .purposeOfPayment(NgnAccountExternalAccountInfo.PurposeOfPayment.GOODS_OR_SERVICES)
                 .build()
 
         val externalAccountInfo = ExternalAccountInfo.ofNgnAccount(ngnAccount)
@@ -455,7 +455,7 @@ internal class ExternalAccountInfoTest {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
             ExternalAccountInfo.ofNgnAccount(
-                ExternalAccountInfo.NgnAccount.builder()
+                NgnAccountExternalAccountInfo.builder()
                     .accountNumber("0123456789")
                     .bankName("First Bank of Nigeria")
                     .beneficiary(
@@ -476,7 +476,7 @@ internal class ExternalAccountInfoTest {
                             .build()
                     )
                     .purposeOfPayment(
-                        ExternalAccountInfo.NgnAccount.PurposeOfPayment.GOODS_OR_SERVICES
+                        NgnAccountExternalAccountInfo.PurposeOfPayment.GOODS_OR_SERVICES
                     )
                     .build()
             )
@@ -535,7 +535,7 @@ internal class ExternalAccountInfoTest {
     @Test
     fun ofLightning() {
         val lightning =
-            ExternalAccountInfo.Lightning.builder()
+            LightningExternalAccountInfo.builder()
                 .bolt12(
                     "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
                 )
@@ -566,7 +566,7 @@ internal class ExternalAccountInfoTest {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
             ExternalAccountInfo.ofLightning(
-                ExternalAccountInfo.Lightning.builder()
+                LightningExternalAccountInfo.builder()
                     .bolt12(
                         "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
                     )
