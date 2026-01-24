@@ -24,9 +24,9 @@ get:
           schema:
             type: object
             required:
-              - accounts
+              - data
             properties:
-              accounts:
+              data:
                 type: array
                 description: List of external accounts matching the filter criteria
                 items:
