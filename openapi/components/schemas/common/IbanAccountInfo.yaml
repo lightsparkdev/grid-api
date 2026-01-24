@@ -5,8 +5,7 @@ required:
   - swiftBic
 properties:
   accountType:
-    type: string
-    enum: [IBAN]
+    const: IBAN
     example: IBAN
   iban:
     type: string

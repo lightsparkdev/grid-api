@@ -7,7 +7,7 @@ required:
 properties:
   beneficiaryType:
     type: string
-    enum: [INDIVIDUAL]
+    const: INDIVIDUAL
     example: INDIVIDUAL
   fullName:
     type: string

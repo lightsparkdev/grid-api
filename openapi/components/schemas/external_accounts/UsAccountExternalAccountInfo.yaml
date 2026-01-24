@@ -6,8 +6,7 @@ allOf:
       - beneficiary
     properties:
       accountType:
-        type: string
-        enum: [US_ACCOUNT]
+        const: US_ACCOUNT
         example: US_ACCOUNT
       beneficiary:
         oneOf:

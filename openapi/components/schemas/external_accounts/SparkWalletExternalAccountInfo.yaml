@@ -5,6 +5,5 @@ allOf:
       - accountType
     properties:
       accountType:
-        type: string
-        enum: [SPARK_WALLET]
+        const: SPARK_WALLET
         example: SPARK_WALLET

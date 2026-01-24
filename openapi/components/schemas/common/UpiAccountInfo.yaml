@@ -4,8 +4,7 @@ required:
   - vpa
 properties:
   accountType:
-    type: string
-    enum: [UPI]
+    const: UPI
     example: UPI
   vpa:
     type: string

@@ -4,8 +4,7 @@ required:
   - clabeNumber
 properties:
   accountType:
-    type: string
-    enum: [CLABE]
+    const: CLABE
     example: CLABE
   clabeNumber:
     type: string

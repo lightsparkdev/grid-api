@@ -4044,8 +4044,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 401
+          const: 401
           type: integer
           description: HTTP status code
         code:
@@ -4072,8 +4071,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 500
+          const: 500
           type: integer
           description: HTTP status code
         code:
@@ -4100,8 +4098,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 400
+          const: 400
           type: integer
           description: HTTP status code
         code:
@@ -4178,8 +4175,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 501
+          const: 501
           type: integer
           description: HTTP status code
         code:
@@ -4436,8 +4432,7 @@ components:
       properties:
         customerType:
           type: string
-          enum:
-            - BUSINESS
+          const: BUSINESS
           description: Customer type
         umaAddress:
           type: string
@@ -4472,8 +4467,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 409
+          const: 409
           type: integer
           description: HTTP status code
         code:
@@ -4500,8 +4494,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 404
+          const: 404
           type: integer
           description: HTTP status code
         code:
@@ -4619,9 +4612,7 @@ components:
         - accountCategory
       properties:
         accountType:
-          type: string
-          enum:
-            - US_ACCOUNT
+          const: US_ACCOUNT
           example: US_ACCOUNT
         accountNumber:
           type: string
@@ -4665,9 +4656,7 @@ components:
         - taxId
       properties:
         accountType:
-          type: string
-          enum:
-            - PIX
+          const: PIX
           example: PIX
         pixKey:
           type: string
@@ -4699,9 +4688,7 @@ components:
         - swiftBic
       properties:
         accountType:
-          type: string
-          enum:
-            - IBAN
+          const: IBAN
           example: IBAN
         iban:
           type: string
@@ -4753,9 +4740,7 @@ components:
         - vpa
       properties:
         accountType:
-          type: string
-          enum:
-            - UPI
+          const: UPI
           example: UPI
         vpa:
           type: string
@@ -4773,9 +4758,7 @@ components:
         - bankName
       properties:
         accountType:
-          type: string
-          enum:
-            - NGN_ACCOUNT
+          const: NGN_ACCOUNT
           example: NGN_ACCOUNT
         accountNumber:
           type: string
@@ -4806,9 +4789,7 @@ components:
         - address
       properties:
         accountType:
-          type: string
-          enum:
-            - SPARK_WALLET
+          const: SPARK_WALLET
           example: SPARK_WALLET
         address:
           type: string
@@ -4854,9 +4835,7 @@ components:
         - address
       properties:
         accountType:
-          type: string
-          enum:
-            - SOLANA_WALLET
+          const: SOLANA_WALLET
           example: SOLANA_WALLET
         address:
           type: string
@@ -4880,9 +4859,7 @@ components:
         - address
       properties:
         accountType:
-          type: string
-          enum:
-            - TRON_WALLET
+          const: TRON_WALLET
           example: TRON_WALLET
         address:
           type: string
@@ -4905,9 +4882,7 @@ components:
         - address
       properties:
         accountType:
-          type: string
-          enum:
-            - POLYGON_WALLET
+          const: POLYGON_WALLET
           example: POLYGON_WALLET
         address:
           type: string
@@ -4947,9 +4922,7 @@ components:
         - clabeNumber
       properties:
         accountType:
-          type: string
-          enum:
-            - CLABE
+          const: CLABE
           example: CLABE
         clabeNumber:
           type: string
@@ -4965,9 +4938,7 @@ components:
         - address
       properties:
         accountType:
-          type: string
-          enum:
-            - BASE_WALLET
+          const: BASE_WALLET
           example: BASE_WALLET
         address:
           type: string
@@ -5085,8 +5056,7 @@ components:
       properties:
         beneficiaryType:
           type: string
-          enum:
-            - INDIVIDUAL
+          const: INDIVIDUAL
           example: INDIVIDUAL
         fullName:
           type: string
@@ -5111,8 +5081,7 @@ components:
       properties:
         beneficiaryType:
           type: string
-          enum:
-            - BUSINESS
+          const: BUSINESS
           example: BUSINESS
         legalName:
           type: string
@@ -5137,9 +5106,7 @@ components:
             - beneficiary
           properties:
             accountType:
-              type: string
-              enum:
-                - US_ACCOUNT
+              const: US_ACCOUNT
               example: US_ACCOUNT
             beneficiary:
               oneOf:
@@ -5158,9 +5125,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - CLABE
+              const: CLABE
               example: CLABE
             beneficiary:
               oneOf:
@@ -5179,9 +5144,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - PIX
+              const: PIX
               example: PIX
             beneficiary:
               oneOf:
@@ -5200,9 +5163,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - IBAN
+              const: IBAN
               example: IBAN
             beneficiary:
               oneOf:
@@ -5221,9 +5182,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - UPI
+              const: UPI
               example: UPI
             beneficiary:
               oneOf:
@@ -5244,9 +5203,7 @@ components:
             - beneficiary
           properties:
             accountType:
-              type: string
-              enum:
-                - NGN_ACCOUNT
+              const: NGN_ACCOUNT
               example: NGN_ACCOUNT
             beneficiary:
               oneOf:
@@ -5282,9 +5239,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - SPARK_WALLET
+              const: SPARK_WALLET
               example: SPARK_WALLET
     LightningExternalAccountInfo:
       allOf:
@@ -5333,9 +5288,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - SOLANA_WALLET
+              const: SOLANA_WALLET
               example: SOLANA_WALLET
     TronWalletExternalAccountInfo:
       allOf:
@@ -5345,9 +5298,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - TRON_WALLET
+              const: TRON_WALLET
               example: TRON_WALLET
     PolygonWalletExternalAccountInfo:
       allOf:
@@ -5357,9 +5308,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - POLYGON_WALLET
+              const: POLYGON_WALLET
               example: POLYGON_WALLET
     BaseWalletExternalAccountInfo:
       allOf:
@@ -5369,9 +5318,7 @@ components:
             - accountType
           properties:
             accountType:
-              type: string
-              enum:
-                - BASE_WALLET
+              const: BASE_WALLET
               example: BASE_WALLET
     ExternalAccountInfo:
       oneOf:
@@ -5951,8 +5898,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 412
+          const: 412
           type: integer
           description: HTTP status code
         code:
@@ -5961,8 +5907,7 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
-          enum:
-            - UNSUPPORTED_UMA_VERSION
+          const: UNSUPPORTED_UMA_VERSION
         message:
           type: string
           description: Error message
@@ -5977,8 +5922,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 424
+          const: 424
           type: integer
           description: HTTP status code
         code:
@@ -6403,8 +6347,7 @@ components:
         - code
       properties:
         status:
-          enum:
-            - 403
+          const: 403
           type: integer
           description: HTTP status code
         code:
@@ -6619,8 +6562,7 @@ components:
               $ref: '#/components/schemas/UmaInvitation'
             type:
               type: string
-              enum:
-                - INVITATION_CLAIMED
+              const: INVITATION_CLAIMED
               description: Type of webhook event
               example: INVITATION_CLAIMED
     KycStatusWebhook:
