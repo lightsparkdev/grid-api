@@ -29,3 +29,6 @@ bin/
 .env
 local.properties
 
+# Figma design tokens (local reference only)
+mintlify/tokens/
+

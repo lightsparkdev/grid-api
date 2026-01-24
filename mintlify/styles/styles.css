@@ -1,3 +1,6 @@
+/* Import design tokens */
+@import "./tokens.css";
+
 /* ===========================================
    Custom Font Styles for Suisse Intl
    
@@ -73,27 +76,27 @@ code, pre, kbd, samp, .font-mono {
    =========================================== */
 
 html.light .hero {
-  background: #f0f0ee;
+  background: var(--ls-gray-100);
   background-image: radial-gradient(
     circle,
-    rgba(0, 0, 0, 0.15) 1px,
+    var(--ls-black-10) 1px,
     transparent 1px
   );
   background-size: 24px 24px;
   background-position: 0 0;
   background-repeat: repeat;
-  border-bottom: 1px solid var(--border-tertiary, rgba(0, 0, 0, 0.1));
-  border-top: 1px solid var(--border-tertiary, rgba(0, 0, 0, 0.1));
+  border-bottom: 1px solid var(--ls-black-10);
+  border-top: 1px solid var(--ls-black-10);
 }
 
 html .hero {
-  background: var(--surface-secondary, #1a1a1a);
-  background-image: radial-gradient(circle, #2b2b2a 1px, transparent 1px);
+  background: var(--ls-gray-950);
+  background-image: radial-gradient(circle, var(--ls-gray-850) 1px, transparent 1px);
   background-size: 24px 24px;
   background-position: 0 0;
   background-repeat: repeat;
-  border-bottom: 1px solid var(--border-tertiary, rgba(255, 255, 255, 0.05));
-  border-top: 1px solid var(--border-tertiary, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--ls-white-04);
+  border-top: 1px solid var(--ls-white-04);
 }
 
 .blue-lines {
@@ -113,43 +116,43 @@ html .hero {
 }
 
 html.light .title {
-  color: #1a1a1a;
+  color: var(--ls-gray-950);
 }
 
 html .title {
-  color: #f8f8f7;
+  color: var(--ls-gray-050);
 }
 
 html.light .usecase {
-  background: #f8f8f7;
+  background: var(--ls-gray-050);
 }
 
 html.light .highlight {
-  color: #1a1a1a;
+  color: var(--ls-gray-950);
 }
 
 html .highlight {
-  color: #f8f8f7;
+  color: var(--ls-gray-050);
 }
 html.light .hero-card {
-  background: var(--surface-base, #fff);
+  background: var(--ls-white);
 }
 
 html.dark .hero-card {
-  background: var(--surface-base, #1a1a1a);
+  background: var(--ls-gray-950);
 }
 
 .hero .call-to-action {
   cursor: pointer;
-  background: #00b3e0;
-  color: var(--gray-050, #f8f8f7);
+  background: var(--ls-sky-500);
+  color: var(--ls-gray-050);
   display: flex;
   height: 40px;
-  padding: var(--spacing-xs, 8px) 16px;
+  padding: 8px 16px;
   justify-content: center;
   align-items: center;
   gap: 4px;
-  border-radius: 4px;
+  border-radius: var(--ls-radius-xs);
   font-size: 16px;
   font-style: normal;
   font-weight: 500; /* Medium weight for buttons */
@@ -190,7 +193,7 @@ html.dark .hero-card {
 .hero .subtext {
   width: 100%;
   max-width: 538px;
-  color: var(--gray-950, #989898);
+  color: var(--ls-gray-400);
   text-align: center;
   font-feature-settings: "salt" on;
   font-size: 18px;
@@ -291,7 +294,7 @@ html.dark .hero-card {
   flex-direction: column;
   align-items: flex-start;
   align-self: stretch;
-  border-radius: 4px;
+  border-radius: var(--ls-radius-xs);
   min-height: 200px;
 }
 
