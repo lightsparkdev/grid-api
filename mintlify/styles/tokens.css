@@ -1,0 +1,90 @@
+/* ===========================================
+   Lightspark Design Tokens
+   
+   Prefixed with "ls-" to avoid collision with
+   Mintlify's built-in CSS variables (--gray-XXX).
+   
+   Values from Figma design system.
+   Spacing uses Tailwind classes (p-4, gap-6, etc.)
+   
+   Note: docs.json uses these same hex values for
+   Mintlify theming (JSON can't reference CSS vars).
+   Keep them in sync when updating colors.
+   =========================================== */
+
+:root {
+  /* Base Colors */
+  --ls-white: #FFFFFF;
+  --ls-black: #000000;
+
+  /* Brand Colors */
+  --ls-blue-800: #004D92;
+  --ls-blue-500: #0091FF;
+  --ls-sky-500: #00B3E0;
+  --ls-teal-500: #44DDB5;
+  --ls-green-600: #11A967;
+  --ls-yellow-600: #E09000;
+  --ls-orange-500: #F77D26;
+  --ls-pink-800: #A90087;
+  --ls-pink-500: #FF21CC;
+
+  /* Gray Scale */
+  --ls-gray-025: #FAFAF9;
+  --ls-gray-050: #F8F8F7;
+  --ls-gray-075: #F4F4F3;
+  --ls-gray-100: #F0F0EE;
+  --ls-gray-150: #EBEBE9;
+  --ls-gray-200: #DEDED9;
+  --ls-gray-300: #C1C0B8;
+  --ls-gray-400: #989898;
+  --ls-gray-500: #7C7C7C;
+  --ls-gray-600: #656565;
+  --ls-gray-700: #464646;
+  --ls-gray-800: #3D3D3D;
+  --ls-gray-850: #333333;
+  --ls-gray-900: #282828;
+  --ls-gray-925: #212121;
+  --ls-gray-950: #1A1A1A;
+  --ls-gray-975: #111111;
+
+  /* Alpha White */
+  --ls-white-02: rgba(255, 255, 255, 0.02);
+  --ls-white-04: rgba(255, 255, 255, 0.04);
+  --ls-white-06: rgba(255, 255, 255, 0.06);
+  --ls-white-10: rgba(255, 255, 255, 0.1);
+  --ls-white-20: rgba(255, 255, 255, 0.2);
+  --ls-white-30: rgba(255, 255, 255, 0.3);
+  --ls-white-40: rgba(255, 255, 255, 0.4);
+  --ls-white-50: rgba(255, 255, 255, 0.5);
+  --ls-white-60: rgba(255, 255, 255, 0.6);
+  --ls-white-70: rgba(255, 255, 255, 0.7);
+  --ls-white-80: rgba(255, 255, 255, 0.8);
+  --ls-white-90: rgba(255, 255, 255, 0.9);
+
+  /* Alpha Black */
+  --ls-black-02: rgba(0, 0, 0, 0.02);
+  --ls-black-04: rgba(0, 0, 0, 0.04);
+  --ls-black-06: rgba(0, 0, 0, 0.06);
+  --ls-black-10: rgba(0, 0, 0, 0.1);
+  --ls-black-20: rgba(0, 0, 0, 0.2);
+  --ls-black-30: rgba(0, 0, 0, 0.3);
+  --ls-black-40: rgba(0, 0, 0, 0.4);
+  --ls-black-50: rgba(0, 0, 0, 0.5);
+  --ls-black-60: rgba(0, 0, 0, 0.6);
+  --ls-black-70: rgba(0, 0, 0, 0.7);
+  --ls-black-80: rgba(0, 0, 0, 0.8);
+  --ls-black-90: rgba(0, 0, 0, 0.9);
+
+  /* Border Radius */
+  --ls-radius-none: 0px;
+  --ls-radius-2xs: 2px;
+  --ls-radius-xs: 4px;
+  --ls-radius-sm: 6px;
+  --ls-radius-md: 8px;
+  --ls-radius-lg: 12px;
+  --ls-radius-xl: 16px;
+  --ls-radius-2xl: 24px;
+  --ls-radius-3xl: 32px;
+  --ls-radius-4xl: 40px;
+  --ls-radius-round: 999px;
+}
