@@ -7,22 +7,16 @@ properties:
   status:
     type: integer
     enum: 
-      - 424
+      - 410
     description: HTTP status code
   code:
     type: string
     description: |
       | Error Code | Description |
       |------------|-------------|
-      | PAYREQ_REQUEST_FAILED | Payment request failed |
-      | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
-      | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
-      | LNURLP_REQUEST_FAILED | LNURLP request failed |
+      | CUSTOMER_DELETED | Customer has been permanently deleted |
     enum:
-      - PAYREQ_REQUEST_FAILED
-      - COUNTERPARTY_PUBKEY_FETCH_ERROR
-      - NO_COMPATIBLE_UMA_VERSION
-      - LNURLP_REQUEST_FAILED
+      - CUSTOMER_DELETED
   message:
     type: string
     description: Error message

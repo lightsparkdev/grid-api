@@ -1,5 +1,5 @@
 allOf:
-  - $ref: ../common/Error.yaml
+  - $ref: ../common/GridError.yaml
   - type: object
     properties:
       reason:
