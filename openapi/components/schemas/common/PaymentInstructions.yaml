@@ -8,6 +8,10 @@ properties:
     example: >-
       Please ensure the reference code is included in the payment
       memo/description field
+  isPlatformAccount:
+    type: boolean
+    description: Indicates whether the account is a platform account or a customer account.
+    example: true
   accountOrWalletInfo:
     oneOf:
       - title: CLABE Account
@@ -18,8 +22,6 @@ properties:
         $ref: ../common/PaymentPixAccountInfo.yaml
       - title: IBAN Account
         $ref: ../common/PaymentIbanAccountInfo.yaml
-      - title: FBO Account
-        $ref: ../common/PaymentFboAccountInfo.yaml
       - title: UPI Account
         $ref: ../common/PaymentUpiAccountInfo.yaml
       - title: Spark Wallet
@@ -41,7 +43,6 @@ properties:
         US_ACCOUNT: ../common/PaymentUsAccountInfo.yaml
         PIX: ../common/PaymentPixAccountInfo.yaml
         IBAN: ../common/PaymentIbanAccountInfo.yaml
-        FBO: ../common/PaymentFboAccountInfo.yaml
         UPI: ../common/PaymentUpiAccountInfo.yaml
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
