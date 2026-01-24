@@ -1,10 +1,13 @@
 allOf:
-  - $ref: ./PaymentAccountOrWalletInfo.yaml
   - type: object
     required:
+      - accountType
       - paymentUrl
       - paymentMethod
     properties:
+      accountType:
+        const: FBO
+        example: FBO
       paymentUrl:
         type: string
         format: uri

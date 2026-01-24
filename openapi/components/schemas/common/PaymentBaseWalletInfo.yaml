@@ -1,9 +1,7 @@
 allOf:
-  - $ref: ./PaymentAccountOrWalletInfo.yaml
   - $ref: ./BaseWalletInfo.yaml
 properties:
   assetType:
     type: string
     description: Type of asset
-    enum:
-      - USDC
+    const: USDC

@@ -1,42 +1,10 @@
+required:
+  - sourceType
 oneOf:
-  - title: Account
-    type: object
-    required:
-      - accountId
-    properties:
-      accountId:
-        type: string
-        description: Source account identifier
-        example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-      currency:
-        type: string
-        description: >-
-          Currency code for the funding source. See
-          [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-          for the full list of supported fiat and crypto currencies.
-        example: USD
-    description: Source account details
-  - title: Real-time funding
-    type: object
-    required:
-      - currency
-      - customerId
-    properties:
-      customerId:
-        type: string
-        description: >-
-          Source customer ID. If this transaction is being initiated on behalf of a customer, this is required.
-          If customerId is not provided, the quote will be created on behalf of the platform itself.
-        example: Customer:019542f5-b3e7-1d02-0000-000000000009
-      currency:
-        type: string
-        description: >-
-          Currency code for the funding source. See
-          [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-          for the full list of supported fiat and crypto currencies.
-        example: USD
-    description: >-
-      Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
-      This will require manual just-in-time funding using `paymentInstructions` in the response.
-      Because quotes expire quickly, this option is only valid for instant payment methods. Do not try
-      to fund a quote with a non-instant payment method (ACH, etc.).
+  - $ref: ./QuoteAccountSource.yaml
+  - $ref: ./QuoteRealtimeFundingSource.yaml
+discriminator:
+  propertyName: sourceType
+  mapping:
+    ACCOUNT: ./QuoteAccountSource.yaml
+    REALTIME_FUNDING: ./QuoteRealtimeFundingSource.yaml

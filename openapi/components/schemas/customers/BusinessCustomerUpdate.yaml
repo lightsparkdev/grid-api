@@ -4,7 +4,7 @@ required:
 properties:
   customerType:
     type: string
-    enum: [BUSINESS]
+    const: BUSINESS
     description: Customer type
   umaAddress:
     type: string

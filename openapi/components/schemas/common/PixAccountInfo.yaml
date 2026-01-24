@@ -6,8 +6,7 @@ required:
   - taxId
 properties:
   accountType:
-    type: string
-    enum: [PIX]
+    const: PIX
     example: PIX
   pixKey:
     type: string

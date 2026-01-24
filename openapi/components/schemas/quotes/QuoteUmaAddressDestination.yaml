@@ -1,0 +1,28 @@
+type: object
+required:
+  - destinationType
+  - umaAddress
+properties:
+  destinationType:
+    type: string
+    const: UMA_ADDRESS
+    description: Destination type identifier
+  umaAddress:
+    type: string
+    description: UMA address of the recipient
+    example: $receiver@uma.domain.com
+  currency:
+    type: string
+    description: Currency code for the destination
+    example: EUR
+  counterpartyInformation:
+    type: object
+    description: >-
+      Information about the recipient, as required by the platform in their
+      configuration.
+    additionalProperties: true
+    example:
+      FULL_NAME: Jane Receiver
+      BIRTH_DATE: '1990-01-01'
+      NATIONALITY: FR
+description: UMA address destination details

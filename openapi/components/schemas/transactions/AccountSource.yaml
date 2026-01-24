@@ -1,0 +1,19 @@
+type: object
+required:
+  - sourceType
+  - accountId
+  - currency
+properties:
+  sourceType:
+    type: string
+    const: ACCOUNT
+    description: Source type identifier
+  accountId:
+    type: string
+    description: Source account identifier
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  currency:
+    type: string
+    description: Currency code for the source account
+    example: USD
+description: Source account details
