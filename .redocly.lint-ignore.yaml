@@ -3,6 +3,9 @@
 openapi.yaml:
   no-unused-components:
     - '#/components/schemas/AllErrors'
+  no-required-schema-properties-undefined:
+    - '#/components/schemas/QuoteSource/required/0'
+    - '#/components/schemas/Quote/properties/destination/required/0'
   no-invalid-media-type-examples:
     - >-
       #/paths/~1customers~1external-accounts/post/requestBody/content/application~1json/schema
