@@ -12,7 +12,6 @@ import com.grid.api.models.quotes.QuoteExecuteParams
 import com.grid.api.models.quotes.QuoteListPageAsync
 import com.grid.api.models.quotes.QuoteListParams
 import com.grid.api.models.quotes.QuoteRetrieveParams
-import com.grid.api.models.quotes.QuoteRetryParams
 
 interface QuoteServiceAsync {
 
@@ -124,30 +123,6 @@ interface QuoteServiceAsync {
     suspend fun execute(quoteId: String, requestOptions: RequestOptions): Quote =
         execute(quoteId, QuoteExecuteParams.none(), requestOptions)
 
-    /**
-     * In the case where a customer is debited but the Lightning payment fails to complete,
-     * integrators can retry the payment using this endpoint.
-     *
-     * Payments retried with this endpoint will debit from the sender and deliver to the recipient
-     * the same amount as the original quote. As the Grid API does not persist customer PII, retries
-     * need to start with a lookup request to retrieve the original quote's recipient counter party
-     * data requirements then pass that sender information in the request body. Before calling this
-     * endpoint, you should reach out to the Lightspark team to investigate the underlying issue. As
-     * part of resolution, they'll update the transaction to the appropriate state. The quote /
-     * transaction to retry must be in a `FAILED` or `REFUNDED` state.
-     */
-    suspend fun retry(
-        quoteId: String,
-        params: QuoteRetryParams,
-        requestOptions: RequestOptions = RequestOptions.none(),
-    ): Quote = retry(params.toBuilder().quoteId(quoteId).build(), requestOptions)
-
-    /** @see retry */
-    suspend fun retry(
-        params: QuoteRetryParams,
-        requestOptions: RequestOptions = RequestOptions.none(),
-    ): Quote
-
     /** A view of [QuoteServiceAsync] that provides access to raw HTTP responses for each method. */
     interface WithRawResponse {
 
@@ -236,24 +211,5 @@ interface QuoteServiceAsync {
             quoteId: String,
             requestOptions: RequestOptions,
         ): HttpResponseFor<Quote> = execute(quoteId, QuoteExecuteParams.none(), requestOptions)
-
-        /**
-         * Returns a raw HTTP response for `post /quotes/{quoteId}/retry`, but is otherwise the same
-         * as [QuoteServiceAsync.retry].
-         */
-        @MustBeClosed
-        suspend fun retry(
-            quoteId: String,
-            params: QuoteRetryParams,
-            requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<Quote> =
-            retry(params.toBuilder().quoteId(quoteId).build(), requestOptions)
-
-        /** @see retry */
-        @MustBeClosed
-        suspend fun retry(
-            params: QuoteRetryParams,
-            requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<Quote>
     }
 }

@@ -23,7 +23,6 @@ import com.grid.api.models.quotes.QuoteListPageAsync
 import com.grid.api.models.quotes.QuoteListPageResponse
 import com.grid.api.models.quotes.QuoteListParams
 import com.grid.api.models.quotes.QuoteRetrieveParams
-import com.grid.api.models.quotes.QuoteRetryParams
 
 class QuoteServiceAsyncImpl internal constructor(private val clientOptions: ClientOptions) :
     QuoteServiceAsync {
@@ -61,10 +60,6 @@ class QuoteServiceAsyncImpl internal constructor(private val clientOptions: Clie
     ): Quote =
         // post /quotes/{quoteId}/execute
         withRawResponse().execute(params, requestOptions).parse()
-
-    override suspend fun retry(params: QuoteRetryParams, requestOptions: RequestOptions): Quote =
-        // post /quotes/{quoteId}/retry
-        withRawResponse().retry(params, requestOptions).parse()
 
     class WithRawResponseImpl internal constructor(private val clientOptions: ClientOptions) :
         QuoteServiceAsync.WithRawResponse {
@@ -191,36 +186,6 @@ class QuoteServiceAsyncImpl internal constructor(private val clientOptions: Clie
             return errorHandler.handle(response).parseable {
                 response
                     .use { executeHandler.handle(it) }
-                    .also {
-                        if (requestOptions.responseValidation!!) {
-                            it.validate()
-                        }
-                    }
-            }
-        }
-
-        private val retryHandler: Handler<Quote> = jsonHandler<Quote>(clientOptions.jsonMapper)
-
-        override suspend fun retry(
-            params: QuoteRetryParams,
-            requestOptions: RequestOptions,
-        ): HttpResponseFor<Quote> {
-            // We check here instead of in the params builder because this can be specified
-            // positionally or in the params class.
-            checkRequired("quoteId", params.quoteId())
-            val request =
-                HttpRequest.builder()
-                    .method(HttpMethod.POST)
-                    .baseUrl(clientOptions.baseUrl())
-                    .addPathSegments("quotes", params._pathParam(0), "retry")
-                    .body(json(clientOptions.jsonMapper, params._body()))
-                    .build()
-                    .prepareAsync(clientOptions, params)
-            val requestOptions = requestOptions.applyDefaults(RequestOptions.from(clientOptions))
-            val response = clientOptions.httpClient.executeAsync(request, requestOptions)
-            return errorHandler.handle(response).parseable {
-                response
-                    .use { retryHandler.handle(it) }
                     .also {
                         if (requestOptions.responseValidation!!) {
                             it.validate()

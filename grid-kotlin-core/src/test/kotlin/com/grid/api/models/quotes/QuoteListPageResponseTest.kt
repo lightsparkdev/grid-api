@@ -63,20 +63,6 @@ internal class QuoteListPageResponseTest {
                                 .isPlatformAccount(true)
                                 .build()
                         )
-                        .addPaymentInstruction(
-                            PaymentInstructions.builder()
-                                .accountOrWalletInfo(
-                                    PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
-                                        .clabeNumber("123456789012345678")
-                                        .reference("UMA-Q12345-REF")
-                                        .build()
-                                )
-                                .instructionsNotes(
-                                    "Please ensure the reference code is included in the payment memo/description field"
-                                )
-                                .isPlatformAccount(true)
-                                .build()
-                        )
                         .rateDetails(
                             OutgoingRateDetails.builder()
                                 .counterpartyFixedFee(10L)
@@ -130,20 +116,6 @@ internal class QuoteListPageResponseTest {
                     .totalSendingAmount(123010L)
                     .transactionId("Transaction:019542f5-b3e7-1d02-0000-000000000005")
                     .originalQuoteId("Quote:019542f5-b3e7-1d02-0000-000000000001")
-                    .addPaymentInstruction(
-                        PaymentInstructions.builder()
-                            .accountOrWalletInfo(
-                                PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
-                                    .clabeNumber("123456789012345678")
-                                    .reference("UMA-Q12345-REF")
-                                    .build()
-                            )
-                            .instructionsNotes(
-                                "Please ensure the reference code is included in the payment memo/description field"
-                            )
-                            .isPlatformAccount(true)
-                            .build()
-                    )
                     .addPaymentInstruction(
                         PaymentInstructions.builder()
                             .accountOrWalletInfo(
@@ -215,20 +187,6 @@ internal class QuoteListPageResponseTest {
                         .totalSendingAmount(123010L)
                         .transactionId("Transaction:019542f5-b3e7-1d02-0000-000000000005")
                         .originalQuoteId("Quote:019542f5-b3e7-1d02-0000-000000000001")
-                        .addPaymentInstruction(
-                            PaymentInstructions.builder()
-                                .accountOrWalletInfo(
-                                    PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
-                                        .clabeNumber("123456789012345678")
-                                        .reference("UMA-Q12345-REF")
-                                        .build()
-                                )
-                                .instructionsNotes(
-                                    "Please ensure the reference code is included in the payment memo/description field"
-                                )
-                                .isPlatformAccount(true)
-                                .build()
-                        )
                         .addPaymentInstruction(
                             PaymentInstructions.builder()
                                 .accountOrWalletInfo(

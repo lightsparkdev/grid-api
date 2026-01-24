@@ -59,20 +59,6 @@ internal class SandboxSendFundsResponseTest {
                         .isPlatformAccount(true)
                         .build()
                 )
-                .addPaymentInstruction(
-                    PaymentInstructions.builder()
-                        .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
-                                .clabeNumber("123456789012345678")
-                                .reference("UMA-Q12345-REF")
-                                .build()
-                        )
-                        .instructionsNotes(
-                            "Please ensure the reference code is included in the payment memo/description field"
-                        )
-                        .isPlatformAccount(true)
-                        .build()
-                )
                 .sentAmount(
                     CurrencyAmount.builder()
                         .amount(12550L)
@@ -173,19 +159,7 @@ internal class SandboxSendFundsResponseTest {
                         "Please ensure the reference code is included in the payment memo/description field"
                     )
                     .isPlatformAccount(true)
-                    .build(),
-                PaymentInstructions.builder()
-                    .accountOrWalletInfo(
-                        PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
-                            .clabeNumber("123456789012345678")
-                            .reference("UMA-Q12345-REF")
-                            .build()
-                    )
-                    .instructionsNotes(
-                        "Please ensure the reference code is included in the payment memo/description field"
-                    )
-                    .isPlatformAccount(true)
-                    .build(),
+                    .build()
             )
         assertThat(sandboxSendFundsResponse.sentAmount())
             .isEqualTo(
@@ -280,20 +254,6 @@ internal class SandboxSendFundsResponseTest {
                 .description("Payment for invoice #1234")
                 .settledAt(OffsetDateTime.parse("2025-08-15T14:30:00Z"))
                 .updatedAt(OffsetDateTime.parse("2025-08-15T14:30:00Z"))
-                .addPaymentInstruction(
-                    PaymentInstructions.builder()
-                        .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
-                                .clabeNumber("123456789012345678")
-                                .reference("UMA-Q12345-REF")
-                                .build()
-                        )
-                        .instructionsNotes(
-                            "Please ensure the reference code is included in the payment memo/description field"
-                        )
-                        .isPlatformAccount(true)
-                        .build()
-                )
                 .addPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(

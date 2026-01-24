@@ -6,7 +6,6 @@ import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.JsonValue
 import com.grid.api.models.quotes.QuoteCreateParams
-import com.grid.api.models.quotes.QuoteRetryParams
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -96,34 +95,6 @@ internal class QuoteServiceTest {
         val quoteService = client.quotes()
 
         val quote = quoteService.execute("Quote:019542f5-b3e7-1d02-0000-000000000001")
-
-        quote.validate()
-    }
-
-    @Disabled("Prism tests are disabled")
-    @Test
-    fun retry() {
-        val client =
-            GridOkHttpClient.builder()
-                .baseUrl(TestServerExtension.BASE_URL)
-                .username("My Username")
-                .password("My Password")
-                .build()
-        val quoteService = client.quotes()
-
-        val quote =
-            quoteService.retry(
-                QuoteRetryParams.builder()
-                    .quoteId("quoteId")
-                    .lookupId("Lookup:019542f5-b3e7-1d02-0000-000000000009")
-                    .senderCustomerInfo(
-                        QuoteRetryParams.SenderCustomerInfo.builder()
-                            .putAdditionalProperty("FULL_NAME", JsonValue.from("bar"))
-                            .putAdditionalProperty("NATIONALITY", JsonValue.from("bar"))
-                            .build()
-                    )
-                    .build()
-            )
 
         quote.validate()
     }

@@ -211,14 +211,21 @@ private constructor(
 
         /**
          * Alias for calling [accountOrWalletInfo] with
-         * `AccountOrWalletInfo.ofPaymentLightningInvoice(paymentLightningInvoice)`.
+         * `AccountOrWalletInfo.ofLightning(lightning)`.
          */
-        fun accountOrWalletInfo(
-            paymentLightningInvoice: AccountOrWalletInfo.PaymentLightningInvoiceInfo
-        ) =
-            accountOrWalletInfo(
-                AccountOrWalletInfo.ofPaymentLightningInvoice(paymentLightningInvoice)
-            )
+        fun accountOrWalletInfo(lightning: AccountOrWalletInfo.Lightning) =
+            accountOrWalletInfo(AccountOrWalletInfo.ofLightning(lightning))
+
+        /**
+         * Alias for calling [accountOrWalletInfo] with the following:
+         * ```kotlin
+         * AccountOrWalletInfo.Lightning.builder()
+         *     .invoice(invoice)
+         *     .build()
+         * ```
+         */
+        fun lightningAccountOrWalletInfo(invoice: String) =
+            accountOrWalletInfo(AccountOrWalletInfo.Lightning.builder().invoice(invoice).build())
 
         /**
          * Alias for calling [accountOrWalletInfo] with
@@ -406,7 +413,7 @@ private constructor(
         private val paymentFboAccount: PaymentFboAccountInfo? = null,
         private val upiAccount: UpiAccountInfo? = null,
         private val sparkWallet: SparkWallet? = null,
-        private val paymentLightningInvoice: PaymentLightningInvoiceInfo? = null,
+        private val lightning: Lightning? = null,
         private val solanaWallet: SolanaWallet? = null,
         private val tronWallet: TronWallet? = null,
         private val polygonWallet: PolygonWallet? = null,
@@ -428,7 +435,7 @@ private constructor(
 
         fun sparkWallet(): SparkWallet? = sparkWallet
 
-        fun paymentLightningInvoice(): PaymentLightningInvoiceInfo? = paymentLightningInvoice
+        fun lightning(): Lightning? = lightning
 
         fun solanaWallet(): SolanaWallet? = solanaWallet
 
@@ -452,7 +459,7 @@ private constructor(
 
         fun isSparkWallet(): Boolean = sparkWallet != null
 
-        fun isPaymentLightningInvoice(): Boolean = paymentLightningInvoice != null
+        fun isLightning(): Boolean = lightning != null
 
         fun isSolanaWallet(): Boolean = solanaWallet != null
 
@@ -477,8 +484,7 @@ private constructor(
 
         fun asSparkWallet(): SparkWallet = sparkWallet.getOrThrow("sparkWallet")
 
-        fun asPaymentLightningInvoice(): PaymentLightningInvoiceInfo =
-            paymentLightningInvoice.getOrThrow("paymentLightningInvoice")
+        fun asLightning(): Lightning = lightning.getOrThrow("lightning")
 
         fun asSolanaWallet(): SolanaWallet = solanaWallet.getOrThrow("solanaWallet")
 
@@ -499,8 +505,7 @@ private constructor(
                 paymentFboAccount != null -> visitor.visitPaymentFboAccount(paymentFboAccount)
                 upiAccount != null -> visitor.visitUpiAccount(upiAccount)
                 sparkWallet != null -> visitor.visitSparkWallet(sparkWallet)
-                paymentLightningInvoice != null ->
-                    visitor.visitPaymentLightningInvoice(paymentLightningInvoice)
+                lightning != null -> visitor.visitLightning(lightning)
                 solanaWallet != null -> visitor.visitSolanaWallet(solanaWallet)
                 tronWallet != null -> visitor.visitTronWallet(tronWallet)
                 polygonWallet != null -> visitor.visitPolygonWallet(polygonWallet)
@@ -545,10 +550,8 @@ private constructor(
                         sparkWallet.validate()
                     }
 
-                    override fun visitPaymentLightningInvoice(
-                        paymentLightningInvoice: PaymentLightningInvoiceInfo
-                    ) {
-                        paymentLightningInvoice.validate()
+                    override fun visitLightning(lightning: Lightning) {
+                        lightning.validate()
                     }
 
                     override fun visitSolanaWallet(solanaWallet: SolanaWallet) {
@@ -603,9 +606,7 @@ private constructor(
 
                     override fun visitSparkWallet(sparkWallet: SparkWallet) = sparkWallet.validity()
 
-                    override fun visitPaymentLightningInvoice(
-                        paymentLightningInvoice: PaymentLightningInvoiceInfo
-                    ) = paymentLightningInvoice.validity()
+                    override fun visitLightning(lightning: Lightning) = lightning.validity()
 
                     override fun visitSolanaWallet(solanaWallet: SolanaWallet) =
                         solanaWallet.validity()
@@ -634,7 +635,7 @@ private constructor(
                 paymentFboAccount == other.paymentFboAccount &&
                 upiAccount == other.upiAccount &&
                 sparkWallet == other.sparkWallet &&
-                paymentLightningInvoice == other.paymentLightningInvoice &&
+                lightning == other.lightning &&
                 solanaWallet == other.solanaWallet &&
                 tronWallet == other.tronWallet &&
                 polygonWallet == other.polygonWallet &&
@@ -650,7 +651,7 @@ private constructor(
                 paymentFboAccount,
                 upiAccount,
                 sparkWallet,
-                paymentLightningInvoice,
+                lightning,
                 solanaWallet,
                 tronWallet,
                 polygonWallet,
@@ -667,8 +668,7 @@ private constructor(
                     "AccountOrWalletInfo{paymentFboAccount=$paymentFboAccount}"
                 upiAccount != null -> "AccountOrWalletInfo{upiAccount=$upiAccount}"
                 sparkWallet != null -> "AccountOrWalletInfo{sparkWallet=$sparkWallet}"
-                paymentLightningInvoice != null ->
-                    "AccountOrWalletInfo{paymentLightningInvoice=$paymentLightningInvoice}"
+                lightning != null -> "AccountOrWalletInfo{lightning=$lightning}"
                 solanaWallet != null -> "AccountOrWalletInfo{solanaWallet=$solanaWallet}"
                 tronWallet != null -> "AccountOrWalletInfo{tronWallet=$tronWallet}"
                 polygonWallet != null -> "AccountOrWalletInfo{polygonWallet=$polygonWallet}"
@@ -697,8 +697,7 @@ private constructor(
             fun ofSparkWallet(sparkWallet: SparkWallet) =
                 AccountOrWalletInfo(sparkWallet = sparkWallet)
 
-            fun ofPaymentLightningInvoice(paymentLightningInvoice: PaymentLightningInvoiceInfo) =
-                AccountOrWalletInfo(paymentLightningInvoice = paymentLightningInvoice)
+            fun ofLightning(lightning: Lightning) = AccountOrWalletInfo(lightning = lightning)
 
             fun ofSolanaWallet(solanaWallet: SolanaWallet) =
                 AccountOrWalletInfo(solanaWallet = solanaWallet)
@@ -731,9 +730,7 @@ private constructor(
 
             fun visitSparkWallet(sparkWallet: SparkWallet): T
 
-            fun visitPaymentLightningInvoice(
-                paymentLightningInvoice: PaymentLightningInvoiceInfo
-            ): T
+            fun visitLightning(lightning: Lightning): T
 
             fun visitSolanaWallet(solanaWallet: SolanaWallet): T
 
@@ -786,6 +783,11 @@ private constructor(
                             AccountOrWalletInfo(sparkWallet = it, _json = json)
                         } ?: AccountOrWalletInfo(_json = json)
                     }
+                    "LIGHTNING" -> {
+                        return tryDeserialize(node, jacksonTypeRef<Lightning>())?.let {
+                            AccountOrWalletInfo(lightning = it, _json = json)
+                        } ?: AccountOrWalletInfo(_json = json)
+                    }
                     "SOLANA_WALLET" -> {
                         return tryDeserialize(node, jacksonTypeRef<SolanaWallet>())?.let {
                             AccountOrWalletInfo(solanaWallet = it, _json = json)
@@ -819,10 +821,6 @@ private constructor(
                             tryDeserialize(node, jacksonTypeRef<UpiAccountInfo>())?.let {
                                 AccountOrWalletInfo(upiAccount = it, _json = json)
                             },
-                            tryDeserialize(node, jacksonTypeRef<PaymentLightningInvoiceInfo>())
-                                ?.let {
-                                    AccountOrWalletInfo(paymentLightningInvoice = it, _json = json)
-                                },
                         )
                         .filterNotNull()
                         .allMaxBy { it.validity() }
@@ -857,8 +855,7 @@ private constructor(
                         generator.writeObject(value.paymentFboAccount)
                     value.upiAccount != null -> generator.writeObject(value.upiAccount)
                     value.sparkWallet != null -> generator.writeObject(value.sparkWallet)
-                    value.paymentLightningInvoice != null ->
-                        generator.writeObject(value.paymentLightningInvoice)
+                    value.lightning != null -> generator.writeObject(value.lightning)
                     value.solanaWallet != null -> generator.writeObject(value.solanaWallet)
                     value.tronWallet != null -> generator.writeObject(value.tronWallet)
                     value.polygonWallet != null -> generator.writeObject(value.polygonWallet)
@@ -2653,10 +2650,10 @@ private constructor(
                 "SparkWallet{accountType=$accountType, address=$address, assetType=$assetType, invoice=$invoice, additionalProperties=$additionalProperties}"
         }
 
-        class PaymentLightningInvoiceInfo
+        class Lightning
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
-            private val accountType: JsonField<PaymentAccountOrWalletInfo.AccountType>,
+            private val accountType: JsonValue,
             private val invoice: JsonField<String>,
             private val additionalProperties: MutableMap<String, JsonValue>,
         ) {
@@ -2665,24 +2662,22 @@ private constructor(
             private constructor(
                 @JsonProperty("accountType")
                 @ExcludeMissing
-                accountType: JsonField<PaymentAccountOrWalletInfo.AccountType> = JsonMissing.of(),
+                accountType: JsonValue = JsonMissing.of(),
                 @JsonProperty("invoice")
                 @ExcludeMissing
                 invoice: JsonField<String> = JsonMissing.of(),
             ) : this(accountType, invoice, mutableMapOf())
 
-            fun toPaymentAccountOrWalletInfo(): PaymentAccountOrWalletInfo =
-                PaymentAccountOrWalletInfo.builder().accountType(accountType).build()
-
             /**
-             * Type of account or wallet information
+             * Expected to always return the following:
+             * ```kotlin
+             * JsonValue.from("LIGHTNING")
+             * ```
              *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
+             * However, this method can be useful for debugging and logging (e.g. if the server
+             * responded with an unexpected value).
              */
-            fun accountType(): PaymentAccountOrWalletInfo.AccountType =
-                accountType.getRequired("accountType")
+            @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
 
             /**
              * Invoice for the payment
@@ -2692,16 +2687,6 @@ private constructor(
              *   value).
              */
             fun invoice(): String = invoice.getRequired("invoice")
-
-            /**
-             * Returns the raw JSON value of [accountType].
-             *
-             * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("accountType")
-            @ExcludeMissing
-            fun _accountType(): JsonField<PaymentAccountOrWalletInfo.AccountType> = accountType
 
             /**
              * Returns the raw JSON value of [invoice].
@@ -2725,48 +2710,42 @@ private constructor(
             companion object {
 
                 /**
-                 * Returns a mutable builder for constructing an instance of
-                 * [PaymentLightningInvoiceInfo].
+                 * Returns a mutable builder for constructing an instance of [Lightning].
                  *
                  * The following fields are required:
                  * ```kotlin
-                 * .accountType()
                  * .invoice()
                  * ```
                  */
                 fun builder() = Builder()
             }
 
-            /** A builder for [PaymentLightningInvoiceInfo]. */
+            /** A builder for [Lightning]. */
             class Builder internal constructor() {
 
-                private var accountType: JsonField<PaymentAccountOrWalletInfo.AccountType>? = null
+                private var accountType: JsonValue = JsonValue.from("LIGHTNING")
                 private var invoice: JsonField<String>? = null
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-                internal fun from(paymentLightningInvoiceInfo: PaymentLightningInvoiceInfo) =
-                    apply {
-                        accountType = paymentLightningInvoiceInfo.accountType
-                        invoice = paymentLightningInvoiceInfo.invoice
-                        additionalProperties =
-                            paymentLightningInvoiceInfo.additionalProperties.toMutableMap()
-                    }
-
-                /** Type of account or wallet information */
-                fun accountType(accountType: PaymentAccountOrWalletInfo.AccountType) =
-                    accountType(JsonField.of(accountType))
+                internal fun from(lightning: Lightning) = apply {
+                    accountType = lightning.accountType
+                    invoice = lightning.invoice
+                    additionalProperties = lightning.additionalProperties.toMutableMap()
+                }
 
                 /**
-                 * Sets [Builder.accountType] to an arbitrary JSON value.
+                 * Sets the field to an arbitrary JSON value.
                  *
-                 * You should usually call [Builder.accountType] with a well-typed
-                 * [PaymentAccountOrWalletInfo.AccountType] value instead. This method is primarily
-                 * for setting the field to an undocumented or not yet supported value.
+                 * It is usually unnecessary to call this method because the field defaults to the
+                 * following:
+                 * ```kotlin
+                 * JsonValue.from("LIGHTNING")
+                 * ```
+                 *
+                 * This method is primarily for setting the field to an undocumented or not yet
+                 * supported value.
                  */
-                fun accountType(accountType: JsonField<PaymentAccountOrWalletInfo.AccountType>) =
-                    apply {
-                        this.accountType = accountType
-                    }
+                fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
 
                 /** Invoice for the payment */
                 fun invoice(invoice: String) = invoice(JsonField.of(invoice))
@@ -2803,21 +2782,20 @@ private constructor(
                 }
 
                 /**
-                 * Returns an immutable instance of [PaymentLightningInvoiceInfo].
+                 * Returns an immutable instance of [Lightning].
                  *
                  * Further updates to this [Builder] will not mutate the returned instance.
                  *
                  * The following fields are required:
                  * ```kotlin
-                 * .accountType()
                  * .invoice()
                  * ```
                  *
                  * @throws IllegalStateException if any required field is unset.
                  */
-                fun build(): PaymentLightningInvoiceInfo =
-                    PaymentLightningInvoiceInfo(
-                        checkRequired("accountType", accountType),
+                fun build(): Lightning =
+                    Lightning(
+                        accountType,
                         checkRequired("invoice", invoice),
                         additionalProperties.toMutableMap(),
                     )
@@ -2825,12 +2803,16 @@ private constructor(
 
             private var validated: Boolean = false
 
-            fun validate(): PaymentLightningInvoiceInfo = apply {
+            fun validate(): Lightning = apply {
                 if (validated) {
                     return@apply
                 }
 
-                accountType().validate()
+                _accountType().let {
+                    if (it != JsonValue.from("LIGHTNING")) {
+                        throw GridInvalidDataException("'accountType' is invalid, received $it")
+                    }
+                }
                 invoice()
                 validated = true
             }
@@ -2850,14 +2832,15 @@ private constructor(
              * Used for best match union deserialization.
              */
             internal fun validity(): Int =
-                (accountType.asKnown()?.validity() ?: 0) + (if (invoice.asKnown() == null) 0 else 1)
+                accountType.let { if (it == JsonValue.from("LIGHTNING")) 1 else 0 } +
+                    (if (invoice.asKnown() == null) 0 else 1)
 
             override fun equals(other: Any?): Boolean {
                 if (this === other) {
                     return true
                 }
 
-                return other is PaymentLightningInvoiceInfo &&
+                return other is Lightning &&
                     accountType == other.accountType &&
                     invoice == other.invoice &&
                     additionalProperties == other.additionalProperties
@@ -2870,7 +2853,7 @@ private constructor(
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "PaymentLightningInvoiceInfo{accountType=$accountType, invoice=$invoice, additionalProperties=$additionalProperties}"
+                "Lightning{accountType=$accountType, invoice=$invoice, additionalProperties=$additionalProperties}"
         }
 
         class SolanaWallet
