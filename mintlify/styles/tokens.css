@@ -18,7 +18,15 @@
   --ls-black: #000000;
 
   /* Brand Colors */
+  --ls-blue-800: #004D92;
+  --ls-blue-500: #0091FF;
   --ls-sky-500: #00B3E0;
+  --ls-teal-500: #44DDB5;
+  --ls-green-600: #11A967;
+  --ls-yellow-600: #E09000;
+  --ls-orange-500: #F77D26;
+  --ls-pink-800: #A90087;
+  --ls-pink-500: #FF21CC;
 
   /* Gray Scale */
   --ls-gray-025: #FAFAF9;
