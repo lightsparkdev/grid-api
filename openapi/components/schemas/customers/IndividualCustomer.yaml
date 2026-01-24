@@ -17,3 +17,5 @@ allOf:
         example: US
       address:
         $ref: ../common/Address.yaml
+      kycStatus:
+        $ref: ./KycKybStatus.yaml

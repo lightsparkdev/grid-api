@@ -1,0 +1,18 @@
+type: object
+required:
+  - customerType
+properties:
+  customerType:
+    type: string
+    enum:
+      - INDIVIDUAL
+      - BUSINESS
+    description: Customer type discriminator
+oneOf:
+  - $ref: ./IndividualCustomerUpdate.yaml
+  - $ref: ./BusinessCustomerUpdate.yaml
+discriminator:
+  propertyName: customerType
+  mapping:
+    INDIVIDUAL: ./IndividualCustomerUpdate.yaml
+    BUSINESS: ./BusinessCustomerUpdate.yaml
