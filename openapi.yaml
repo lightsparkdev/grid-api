@@ -155,50 +155,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateCustomerRequest'
-            examples:
-              individualCustomerWithUmaAddress:
-                summary: Create individual customer with UMA address, including deposit bank account information.
-                value:
-                  umaAddress: $jane.doe@uma.domain.com
-                  platformCustomerId: 7b3c5a89d2f1e0
-                  customerType: INDIVIDUAL
-                  fullName: Jane Doe
-                  birthDate: '1992-03-25'
-                  address:
-                    line1: 123 Pine Street
-                    line2: Unit 501
-                    city: Seattle
-                    state: WA
-                    postalCode: '98101'
-                    country: US
-              individualCustomerWithoutUmaAddress:
-                summary: Create individual customer without UMA address (will be generated)
-                value:
-                  platformCustomerId: 7b3c5a89d2f1e0
-                  customerType: INDIVIDUAL
-                  fullName: John Smith
-                  birthDate: '1985-06-10'
-                  address:
-                    line1: 456 Oak Avenue
-                    city: Portland
-                    state: OR
-                    postalCode: '97201'
-                    country: US
-              businessCustomer:
-                summary: Create business customer example
-                value:
-                  platformCustomerId: 6e4d2c0b8a9f3
-                  customerType: BUSINESS
-                  businessInfo:
-                    legalName: Acme Corporation
-                    registrationNumber: BRN-456789123
-                    taxId: EIN-987123456
-                  address:
-                    line1: 400 Commerce Way
-                    city: Austin
-                    state: TX
-                    postalCode: '78701'
-                    country: US
       responses:
         '201':
           description: Customer created successfully
@@ -439,33 +395,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateCustomerRequest'
-            examples:
-              individualUpdate:
-                summary: Update individual customer example
-                value:
-                  customerType: INDIVIDUAL
-                  fullName: John Smith
-                  birthDate: '1985-06-15'
-                  address:
-                    line1: 456 Market St
-                    city: San Francisco
-                    state: CA
-                    postalCode: '94103'
-                    country: US
-              businessUpdate:
-                summary: Update business customer example
-                value:
-                  customerType: BUSINESS
-                  businessInfo:
-                    legalName: New Tech Solutions LLC
-                    registrationNumber: BRN-987654321
-                    taxId: EIN-123456789
-                  address:
-                    line1: 100 Technology Parkway
-                    city: Palo Alto
-                    state: CA
-                    postalCode: '94304'
-                    country: US
       responses:
         '200':
           description: Customer updated successfully
@@ -1592,47 +1521,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/QuoteRequest'
-            examples:
-              accountToAccount:
-                summary: Account to Account Transfer
-                value:
-                  source:
-                    accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  destination:
-                    accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                    currency: EUR
-                  lockedCurrencySide: SENDING
-                  lockedCurrencyAmount: 10000
-                  description: Transfer between accounts, either internal or external.
-              accountToUma:
-                summary: Account to UMA Address Transfer
-                value:
-                  lookupId: LookupRequest:019542f5-b3e7-1d02-0000-000000000009
-                  source:
-                    accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  destination:
-                    umaAddress: $receiver@uma.domain.com
-                    currency: EUR
-                  lockedCurrencySide: SENDING
-                  lockedCurrencyAmount: 1000
-                  description: 'Payment for invoice #1234'
-              realTimeFundingToSparkWallet:
-                summary: Real-time funding to Spark Wallet as an on-ramp flow. Immediate execution.
-                value:
-                  source:
-                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
-                    currency: USD
-                  destination:
-                    externalAccountDetails:
-                      customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                      currency: BTC
-                      accountInfo:
-                        accountType: SPARK_WALLET
-                        address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
-                  lockedCurrencySide: RECEIVING
-                  lockedCurrencyAmount: 10000
-                  immediatelyExecute: true
-                  description: Bitcoin reward payout!
       responses:
         '201':
           description: |
@@ -4274,7 +4162,7 @@ components:
         phoneNumber:
           type: string
           description: Phone number of the individual in E.164 format
-          example: 5555555555
+          example: '+5555555555'
           pattern: ^\+[1-9]\d{1,14}$
         taxId:
           type: string
@@ -5959,7 +5847,6 @@ components:
       required:
         - sourceType
         - currency
-        - customerId
       properties:
         sourceType:
           type: string

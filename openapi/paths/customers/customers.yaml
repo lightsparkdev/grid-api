@@ -14,50 +14,6 @@ post:
       application/json:
         schema:
           $ref: ../../components/schemas/customers/CreateCustomerRequest.yaml
-        examples:
-          individualCustomerWithUmaAddress:
-            summary: Create individual customer with UMA address, including deposit bank account information.
-            value:
-              umaAddress: $jane.doe@uma.domain.com
-              platformCustomerId: 7b3c5a89d2f1e0
-              customerType: INDIVIDUAL
-              fullName: Jane Doe
-              birthDate: '1992-03-25'
-              address:
-                line1: 123 Pine Street
-                line2: Unit 501
-                city: Seattle
-                state: WA
-                postalCode: '98101'
-                country: US
-          individualCustomerWithoutUmaAddress:
-            summary: Create individual customer without UMA address (will be generated)
-            value:
-              platformCustomerId: 7b3c5a89d2f1e0
-              customerType: INDIVIDUAL
-              fullName: John Smith
-              birthDate: '1985-06-10'
-              address:
-                line1: 456 Oak Avenue
-                city: Portland
-                state: OR
-                postalCode: '97201'
-                country: US
-          businessCustomer:
-            summary: Create business customer example
-            value:
-              platformCustomerId: 6e4d2c0b8a9f3
-              customerType: BUSINESS
-              businessInfo:
-                legalName: Acme Corporation
-                registrationNumber: BRN-456789123
-                taxId: EIN-987123456
-              address:
-                line1: 400 Commerce Way
-                city: Austin
-                state: TX
-                postalCode: '78701'
-                country: US
   responses:
     '201':
       description: Customer created successfully

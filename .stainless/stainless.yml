@@ -105,6 +105,8 @@ resources:
           external_account_info: '#/components/schemas/ExternalAccountInfo'
           external_account: '#/components/schemas/ExternalAccount'
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
+          lightning_external_account_info: "#/components/schemas/LightningExternalAccountInfo"
+          ngn_account_external_account_info: "#/components/schemas/NgnAccountExternalAccountInfo"
         methods:
           list: get /customers/external-accounts
           create: post /customers/external-accounts
@@ -169,6 +171,8 @@ resources:
       transaction_type: '#/components/schemas/TransactionType'
       incoming_transaction: '#/components/schemas/IncomingTransaction'
       transaction_status: '#/components/schemas/TransactionStatus'
+      account_source: "#/components/schemas/AccountSource"
+      uma_address_source: "#/components/schemas/UmaAddressSource"
     methods:
       list: get /transactions
       retrieve: get /transactions/{transactionId}
