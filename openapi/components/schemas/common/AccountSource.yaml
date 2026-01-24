@@ -1,0 +1,18 @@
+type: object
+required:
+  - sourceType
+  - accountId
+properties:
+  sourceType:
+    type: string
+    const: ACCOUNT
+    description: Source type identifier
+  accountId:
+    type: string
+    description: Funding internal account identifier
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  customerId:
+    type: string
+    description: Required when funding from an FBO account to identify the customer on whose behalf the transaction is being initiated.  Otherwise, will default to the customerId of the account owner.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+description: Fund a quote from a prefunded internal account.  After the quote is created, you'll need to call execute to complete the transaction.

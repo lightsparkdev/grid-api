@@ -1,0 +1,14 @@
+type: object
+required:
+  - destinationType
+  - accountId
+properties:
+  destinationType:
+    type: string
+    const: ACCOUNT
+    description: Destination type identifier
+  accountId:
+    type: string
+    description: Destination account identifier
+    example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+description: Destination account details

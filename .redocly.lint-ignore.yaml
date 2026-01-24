@@ -7,3 +7,8 @@ openapi.yaml:
     - >-
       #/paths/~1platform~1external-accounts/post/requestBody/content/application~1json/schema
     - '#/paths/~1quotes/post/requestBody/content/application~1json/schema'
+  # OpenAPI spec recommends required at parent level for discriminator polymorphism
+  # See: https://spec.openapis.org/oas/latest.html#x4-24-8-8-models-with-polymorphism-support-and-a-discriminator-object
+  no-required-schema-properties-undefined:
+    - '#/components/schemas/QuoteSource/required/0'
+    - '#/components/schemas/Quote/properties/destination/required/0'

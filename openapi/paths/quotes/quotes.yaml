@@ -37,47 +37,6 @@ post:
       application/json:
         schema:
           $ref: ../../components/schemas/quotes/QuoteRequest.yaml
-        examples:
-          accountToAccount:
-            summary: Account to Account Transfer
-            value:
-              source:
-                accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-              destination:
-                accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                currency: EUR
-              lockedCurrencySide: SENDING
-              lockedCurrencyAmount: 10000
-              description: 'Transfer between accounts, either internal or external.'
-          accountToUma:
-            summary: Account to UMA Address Transfer
-            value:
-              lookupId: LookupRequest:019542f5-b3e7-1d02-0000-000000000009
-              source:
-                accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-              destination:
-                umaAddress: $receiver@uma.domain.com
-                currency: EUR
-              lockedCurrencySide: SENDING
-              lockedCurrencyAmount: 1000
-              description: 'Payment for invoice #1234'
-          realTimeFundingToSparkWallet:
-            summary: Real-time funding to Spark Wallet as an on-ramp flow. Immediate execution.
-            value:
-              source:
-                customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
-                currency: USD
-              destination:
-                externalAccountDetails:
-                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                  currency: BTC
-                  accountInfo:
-                    accountType: SPARK_WALLET
-                    address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
-              lockedCurrencySide: RECEIVING
-              lockedCurrencyAmount: 10000
-              immediatelyExecute: true
-              description: 'Bitcoin reward payout!'
   responses:
     '201':
       description: |
