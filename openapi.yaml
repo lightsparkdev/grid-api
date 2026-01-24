@@ -476,7 +476,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/GridError'
         '500':
           description: Internal service error
           content:
@@ -3718,6 +3718,17 @@ components:
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
   schemas:
+    AllErrors:
+      anyOf:
+        - $ref: '#/components/schemas/Error400'
+        - $ref: '#/components/schemas/Error401'
+        - $ref: '#/components/schemas/Error403'
+        - $ref: '#/components/schemas/Error404'
+        - $ref: '#/components/schemas/Error409'
+        - $ref: '#/components/schemas/Error412'
+        - $ref: '#/components/schemas/Error424'
+        - $ref: '#/components/schemas/Error500'
+        - $ref: '#/components/schemas/Error501'
     CustomerInfoFieldName:
       type: string
       enum:
@@ -4161,7 +4172,7 @@ components:
         phoneNumber:
           type: string
           description: Phone number of the individual in E.164 format
-          example: 5555555555
+          example: '+5555555555'
           pattern: ^\+[1-9]\d{1,14}$
         taxId:
           type: string
@@ -4384,8 +4395,9 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    Error:
+    GridError:
       type: object
+      title: GridError
       properties:
         code:
           type: string
@@ -4396,6 +4408,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     UpdateCustomerRequest:
       type: object
       required:
@@ -5988,20 +6001,6 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
-    GridError:
-      type: object
-      title: GridError
-      properties:
-        code:
-          type: string
-          description: Error code
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     BulkCustomerImportErrorEntry:
       allOf:
         - $ref: '#/components/schemas/GridError'
