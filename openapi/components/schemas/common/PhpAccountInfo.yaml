@@ -1,0 +1,18 @@
+type: object
+required:
+  - accountType
+  - bankName
+  - accountNumber
+properties:
+  accountType:
+    type: string
+    enum: [PHP_ACCOUNT]
+    example: PHP_ACCOUNT
+  bankName:
+    type: string
+    description: Name of the beneficiary's bank
+    example: BDO Unibank
+  accountNumber:
+    type: string
+    description: Bank account number
+    example: '001234567890'
