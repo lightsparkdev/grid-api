@@ -1,12 +1,11 @@
-allOf:
-  - $ref: ./PaymentAccountOrWalletInfo.yaml
+type: object
 required:
   - accountType
   - invoice
 properties:
   accountType:
     type: string
-    enum: [LIGHTNING]
+    const: LIGHTNING
     example: LIGHTNING
   invoice:
     type: string
