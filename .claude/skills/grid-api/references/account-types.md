@@ -28,6 +28,7 @@ This reference maps countries/regions to their required account types and fields
 
 ### Mexico (CLABE)
 
+**Individual beneficiary:**
 ```bash
 node cli/dist/index.js accounts external create \
   --customer-id <id> \
@@ -40,9 +41,20 @@ node cli/dist/index.js accounts external create \
   --beneficiary-nationality MX
 ```
 
+**Business beneficiary:**
+```bash
+node cli/dist/index.js accounts external create \
+  --customer-id <id> \
+  --currency MXN \
+  --account-type CLABE \
+  --clabe <18-digit-clabe> \
+  --beneficiary-type BUSINESS \
+  --beneficiary-name "Company Legal Name"
+```
+
 Required fields:
 - `clabeNumber`: 18-digit CLABE number (validates with check digit)
-- For individuals: `fullName`, `birthDate`, `nationality`
+- For individuals: `fullName`, `birthDate`, `nationality` (ALL THREE REQUIRED)
 - For businesses: `legalName`
 
 ### Brazil (PIX)
@@ -127,17 +139,29 @@ node cli/dist/index.js accounts external create \
   --currency NGN \
   --account-type NGN_ACCOUNT \
   --account-number "1234567890" \
-  --bank-code "058" \
+  --bank-name "GTBank" \
+  --purpose GOODS_OR_SERVICES \
   --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name"
+  --beneficiary-name "Full Name" \
+  --beneficiary-birth-date "1990-05-15" \
+  --beneficiary-nationality NG
 ```
 
-Common Nigerian bank codes:
-- 058: GTBank
-- 057: Zenith Bank
-- 033: United Bank for Africa
-- 044: Access Bank
-- 011: First Bank of Nigeria
+Required fields:
+- `accountNumber`: 10-digit account number
+- `bankName`: Bank name (e.g., "GTBank", "Zenith Bank", "Access Bank")
+- `purposeOfPayment`: Purpose code (e.g., `GOODS_OR_SERVICES`)
+- For individuals: `fullName`, `birthDate`, `nationality`
+- For businesses: `legalName`
+
+**IMPORTANT**: Use `--bank-name` (NOT `--bank-code`). Use the bank's display name.
+
+Common Nigerian banks:
+- GTBank
+- Zenith Bank
+- United Bank for Africa
+- Access Bank
+- First Bank of Nigeria
 
 ### Crypto Wallets
 
@@ -161,17 +185,18 @@ node cli/dist/index.js accounts external create \
 
 ## Beneficiary Information
 
-### For Individuals
-- `fullName`: Full legal name
-- `birthDate`: Date of birth (YYYY-MM-DD)
-- `nationality`: 2-letter country code
-- `address`: Optional but recommended
+**CRITICAL**: All external accounts require beneficiary information. The required fields depend on the beneficiary type.
 
-### For Businesses
-- `legalName`: Registered business name
-- `registrationNumber`: Business registration number (optional)
-- `taxId`: Tax identification number (optional)
-- `address`: Business address
+### For Individuals (--beneficiary-type INDIVIDUAL)
+**All three fields are REQUIRED:**
+- `--beneficiary-name`: Full legal name
+- `--beneficiary-birth-date`: Date of birth (YYYY-MM-DD format)
+- `--beneficiary-nationality`: 2-letter ISO country code (e.g., NG, MX, IN, US)
+- `--beneficiary-address-*`: Optional but recommended
+
+### For Businesses (--beneficiary-type BUSINESS)
+- `--beneficiary-name`: Registered business/legal name (REQUIRED)
+- `--beneficiary-address-*`: Business address (optional)
 
 ## Sandbox Testing
 

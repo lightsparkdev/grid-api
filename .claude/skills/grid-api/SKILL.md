@@ -88,20 +88,30 @@ node cli/dist/index.js accounts internal list --platform              # Platform
 node cli/dist/index.js accounts external list [--customer-id <id>]
 
 # Create external accounts by country/type:
-# Mexico (CLABE)
+# IMPORTANT: For INDIVIDUAL beneficiaries, ALWAYS include:
+#   --beneficiary-birth-date YYYY-MM-DD --beneficiary-nationality <2-letter-code>
+# For BUSINESS beneficiaries, use --beneficiary-name with the legal business name
+
+# Mexico (CLABE) - Business example
 node cli/dist/index.js accounts external create --customer-id <id> --currency MXN --account-type CLABE --clabe <18-digit-number> --beneficiary-type BUSINESS --beneficiary-name "Company Name"
+
+# Mexico (CLABE) - Individual example
+node cli/dist/index.js accounts external create --customer-id <id> --currency MXN --account-type CLABE --clabe <18-digit-number> --beneficiary-type INDIVIDUAL --beneficiary-name "Full Name" --beneficiary-birth-date 1990-01-15 --beneficiary-nationality MX
 
 # India (UPI)
 node cli/dist/index.js accounts external create --customer-id <id> --currency INR --account-type UPI --upi-id "name@bank" --beneficiary-type INDIVIDUAL --beneficiary-name "Name" --beneficiary-birth-date YYYY-MM-DD --beneficiary-nationality IN
 
-# Nigeria (NGN)
-node cli/dist/index.js accounts external create --customer-id <id> --currency NGN --account-type NGN_ACCOUNT --account-number <10-digit> --bank-name "Bank Name" --purpose GOODS_OR_SERVICES --beneficiary-type INDIVIDUAL --beneficiary-name "Name" --beneficiary-birth-date YYYY-MM-DD --beneficiary-nationality NG
+# Nigeria (NGN) - REQUIRES: --bank-name (NOT --bank-code), --purpose
+node cli/dist/index.js accounts external create --customer-id <id> --currency NGN --account-type NGN_ACCOUNT --account-number <10-digit> --bank-name "GTBank" --purpose GOODS_OR_SERVICES --beneficiary-type INDIVIDUAL --beneficiary-name "Name" --beneficiary-birth-date YYYY-MM-DD --beneficiary-nationality NG
 ```
 
 ### Quotes (Cross-Currency Transfers)
 ```bash
-# Account-funded: Use when funds are already in an internal account
+# Account-funded to UMA: Use when funds are already in an internal account
 node cli/dist/index.js quotes create --source-account <internalAccountId> --dest-uma <address> --amount 10000 --lock-side SENDING
+
+# Account-funded to external account: IMPORTANT - always include --dest-currency
+node cli/dist/index.js quotes create --source-account <internalAccountId> --dest-account <externalAccountId> --dest-currency <currency> --amount 10000 --lock-side SENDING
 
 # Real-time/JIT funded: Use when user will provide funds at execution time via instant payment
 # Returns paymentInstructions for funding. Only use with instant settlement methods.
@@ -112,6 +122,8 @@ node cli/dist/index.js quotes execute <quoteId>
 node cli/dist/index.js quotes list [--status PENDING]
 node cli/dist/index.js quotes get <quoteId>
 ```
+
+**IMPORTANT**: When using `--dest-account`, you MUST also specify `--dest-currency`. This is required even though the external account already has a currency.
 
 ### Same-Currency Transfers
 ```bash
@@ -257,6 +269,25 @@ For questions about the Grid API:
 3. **Handle quote expiration**: Quotes expire in 1-5 minutes; be prepared to create new quotes
 4. **Choose the right flow**: Use prefunded for immediate execution, JIT for crypto/instant rails
 5. **Validate before creating**: Check country-specific requirements to avoid validation errors
+
+## Common Mistakes to Avoid
+
+### External Account Creation
+1. **Missing individual beneficiary fields**: For `--beneficiary-type INDIVIDUAL`, you MUST include:
+   - `--beneficiary-birth-date YYYY-MM-DD`
+   - `--beneficiary-nationality <2-letter-code>`
+
+2. **Wrong option names**:
+   - Use `--bank-name` (NOT `--bank-code`) for Nigerian accounts
+   - Use `--purpose` for Nigerian accounts (required)
+
+3. **Missing country-specific fields**:
+   - Nigeria (NGN_ACCOUNT): Requires `--purpose` (e.g., `GOODS_OR_SERVICES`)
+   - Brazil (PIX): Requires `--pix-key` and `--pix-key-type`
+   - Europe (IBAN): Requires `--swift-bic`
+
+### Quote Creation
+1. **Missing destination currency**: When using `--dest-account`, you MUST also include `--dest-currency <code>`. This is required even though the external account already has a currency associated with it.
 
 ## Error Handling
 
