@@ -4612,6 +4612,7 @@ components:
         - accountCategory
       properties:
         accountType:
+          type: string
           const: US_ACCOUNT
           example: US_ACCOUNT
         accountNumber:
@@ -4656,6 +4657,7 @@ components:
         - taxId
       properties:
         accountType:
+          type: string
           const: PIX
           example: PIX
         pixKey:
@@ -4688,6 +4690,7 @@ components:
         - swiftBic
       properties:
         accountType:
+          type: string
           const: IBAN
           example: IBAN
         iban:
@@ -4740,6 +4743,7 @@ components:
         - vpa
       properties:
         accountType:
+          type: string
           const: UPI
           example: UPI
         vpa:
@@ -4758,6 +4762,7 @@ components:
         - bankName
       properties:
         accountType:
+          type: string
           const: NGN_ACCOUNT
           example: NGN_ACCOUNT
         accountNumber:
@@ -4789,6 +4794,7 @@ components:
         - address
       properties:
         accountType:
+          type: string
           const: SPARK_WALLET
           example: SPARK_WALLET
         address:
@@ -4835,6 +4841,7 @@ components:
         - address
       properties:
         accountType:
+          type: string
           const: SOLANA_WALLET
           example: SOLANA_WALLET
         address:
@@ -4859,6 +4866,7 @@ components:
         - address
       properties:
         accountType:
+          type: string
           const: TRON_WALLET
           example: TRON_WALLET
         address:
@@ -4882,6 +4890,7 @@ components:
         - address
       properties:
         accountType:
+          type: string
           const: POLYGON_WALLET
           example: POLYGON_WALLET
         address:
@@ -4922,6 +4931,7 @@ components:
         - clabeNumber
       properties:
         accountType:
+          type: string
           const: CLABE
           example: CLABE
         clabeNumber:
@@ -4938,6 +4948,7 @@ components:
         - address
       properties:
         accountType:
+          type: string
           const: BASE_WALLET
           example: BASE_WALLET
         address:
@@ -5106,6 +5117,7 @@ components:
             - beneficiary
           properties:
             accountType:
+              type: string
               const: US_ACCOUNT
               example: US_ACCOUNT
             beneficiary:
@@ -5125,6 +5137,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: CLABE
               example: CLABE
             beneficiary:
@@ -5144,6 +5157,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: PIX
               example: PIX
             beneficiary:
@@ -5163,6 +5177,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: IBAN
               example: IBAN
             beneficiary:
@@ -5182,6 +5197,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: UPI
               example: UPI
             beneficiary:
@@ -5203,6 +5219,7 @@ components:
             - beneficiary
           properties:
             accountType:
+              type: string
               const: NGN_ACCOUNT
               example: NGN_ACCOUNT
             beneficiary:
@@ -5239,6 +5256,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: SPARK_WALLET
               example: SPARK_WALLET
     LightningExternalAccountInfo:
@@ -5249,6 +5267,7 @@ components:
         Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must be provided.
       properties:
         accountType:
+          type: string
           const: LIGHTNING
           example: LIGHTNING
         invoice:
@@ -5271,6 +5290,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: SOLANA_WALLET
               example: SOLANA_WALLET
     TronWalletExternalAccountInfo:
@@ -5281,6 +5301,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: TRON_WALLET
               example: TRON_WALLET
     PolygonWalletExternalAccountInfo:
@@ -5291,6 +5312,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: POLYGON_WALLET
               example: POLYGON_WALLET
     BaseWalletExternalAccountInfo:
@@ -5301,6 +5323,7 @@ components:
             - accountType
           properties:
             accountType:
+              type: string
               const: BASE_WALLET
               example: BASE_WALLET
     ExternalAccountInfo:

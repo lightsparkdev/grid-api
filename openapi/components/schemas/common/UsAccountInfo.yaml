@@ -6,6 +6,7 @@ required:
   - accountCategory
 properties:
   accountType:
+    type: string
     const: US_ACCOUNT
     example: US_ACCOUNT
   accountNumber:

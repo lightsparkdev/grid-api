@@ -5,6 +5,7 @@ required:
   - bankName
 properties:
   accountType:
+    type: string
     const: NGN_ACCOUNT
     example: NGN_ACCOUNT
   accountNumber:

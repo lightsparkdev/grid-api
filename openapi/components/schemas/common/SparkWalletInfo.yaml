@@ -4,6 +4,7 @@ required:
   - address
 properties:
   accountType:
+    type: string
     const: SPARK_WALLET
     example: SPARK_WALLET
   address:
