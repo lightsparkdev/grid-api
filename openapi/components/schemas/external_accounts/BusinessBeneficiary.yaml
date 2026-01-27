@@ -5,7 +5,7 @@ required:
 properties:
   beneficiaryType:
     type: string
-    enum: [BUSINESS]
+    const: BUSINESS
     example: BUSINESS
   legalName:
     type: string

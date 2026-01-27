@@ -4,8 +4,7 @@ required:
   - address
 properties:
   accountType:
-    type: string
-    enum: [TRON_WALLET]
+    const: TRON_WALLET
     example: TRON_WALLET
   address:
     type: string

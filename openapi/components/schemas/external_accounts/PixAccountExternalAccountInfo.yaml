@@ -5,8 +5,7 @@ allOf:
       - accountType
     properties:
       accountType:
-        type: string
-        enum: [PIX]
+        const: PIX
         example: PIX
       beneficiary:
         oneOf:

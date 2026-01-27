@@ -5,8 +5,7 @@ required:
   - code
 properties:
   status:
-    enum:
-      - 403
+    const: 403
     type: integer
     description: HTTP status code
   code:
