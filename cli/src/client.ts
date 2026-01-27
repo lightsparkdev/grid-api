@@ -34,7 +34,11 @@ export class GridClient {
     path: string,
     params?: Record<string, string | number | boolean | undefined>
   ): string {
-    const url = new URL(path, this.config.baseUrl);
+    const baseUrl = this.config.baseUrl.endsWith("/")
+      ? this.config.baseUrl
+      : this.config.baseUrl + "/";
+    const fullPath = path.startsWith("/") ? path.slice(1) : path;
+    const url = new URL(fullPath, baseUrl);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {

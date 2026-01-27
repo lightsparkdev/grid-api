@@ -39,4 +39,31 @@ function getClient(options: GlobalOptions): GridClient | null {
 
 export { program, getClient, GridClient, GridConfig };
 
-program.parse(process.argv);
+async function main() {
+  const { registerConfigCommand } = await import("./commands/config");
+  const { registerCustomersCommand } = await import("./commands/customers");
+  const { registerAccountsCommand } = await import("./commands/accounts");
+  const { registerQuotesCommand } = await import("./commands/quotes");
+  const { registerTransactionsCommand } = await import(
+    "./commands/transactions"
+  );
+  const { registerTransfersCommand } = await import("./commands/transfers");
+  const { registerSandboxCommand } = await import("./commands/sandbox");
+  const { registerReceiverCommand } = await import("./commands/receiver");
+
+  registerConfigCommand(program, getClient);
+  registerCustomersCommand(program, getClient);
+  registerAccountsCommand(program, getClient);
+  registerQuotesCommand(program, getClient);
+  registerTransactionsCommand(program, getClient);
+  registerTransfersCommand(program, getClient);
+  registerSandboxCommand(program, getClient);
+  registerReceiverCommand(program, getClient);
+
+  await program.parseAsync(process.argv);
+}
+
+main().catch((err) => {
+  output(formatError(err.message));
+  process.exitCode = 1;
+});
