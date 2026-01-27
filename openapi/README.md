@@ -7,11 +7,13 @@ This readme is a continually evolving document meant to provide API design best 
 3. Make new APIs easy to define
 
 ---
+## OpenAPI schema version
+We use [OpenAPI schema 3.1][(](https://spec.openapis.org/oas/v3.1.0.html)).  Do not define schema in 3.2, it will break client library generation.
 
 ## Design Considerations
 - Imagine you're teaching a customer how to use our API. How might you structure the API to make it easy to explain and understand?
 - Since we don't know exactly how customers will use the API, how might we make it flexible?
-- Can integrators guess how your API  works based on how other features work?
+- Can integrators guess how your API works based on how other features work?
 - When something goes wrong, can the integrator figure out why?
 
 ## Directory Structure
@@ -234,7 +236,7 @@ If an integrator wanted to get all external accounts, they would need to make on
 ### Filtering
 
 - Use query parameters for filtering: `?status=PENDING&customerId=Customer:123`
-- Support comma-separated values for multi-select: `?customerId={id_1},{id_2}`
+- Support duplicated values for multifilter: `?customerId={id_1}&customerId={id_2}`
 - Use ISO 8601 for date filters: `?startDate=2025-01-01T00:00:00Z`
 
 ### Sorting
@@ -260,6 +262,10 @@ discriminator:
     INDIVIDUAL: '#/components/schemas/IndividualCustomer'
     BUSINESS: '#/components/schemas/BusinessCustomer'
 ```
+
+Also:
+- Define the discriminator property as a separate schema with an enum so generated client libraries include an enum class (see `openapi/components/schemas/customers/CustomerType.yaml`, used by `customerType` in `Customer` and `CustomerCreateRequest`).
+- Each discriminated schema must include the discriminator field with a single-value enum, because the OpenAPI generator does not reliably infer it from the discriminator (see `IndividualCustomerFields` included by `IndividualCustomer.yaml` and `IndividualCustomerCreateRequest.yaml`, where `customerType` is `enum: [INDIVIDUAL]`).
 
 ### Composition
 
