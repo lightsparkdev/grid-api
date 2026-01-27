@@ -11,7 +11,7 @@ This readme is a continually evolving document meant to provide API design best 
 ## Design Considerations
 - Imagine you're teaching a customer how to use our API. How might you structure the API to make it easy to explain and understand?
 - Since we don't know exactly how customers will use the API, how might we make it flexible?
-- Can integrators guess how your API  works based on how other features work?
+- Can integrators guess how your API works based on how other features work?
 - When something goes wrong, can the integrator figure out why?
 
 ## Directory Structure
