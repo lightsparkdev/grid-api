@@ -4,6 +4,7 @@ required:
   - clabeNumber
 properties:
   accountType:
+    type: string
     const: CLABE
     example: CLABE
   clabeNumber:

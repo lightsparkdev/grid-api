@@ -5,6 +5,7 @@ allOf:
       - accountType
     properties:
       accountType:
+        type: string
         const: PIX
         example: PIX
       beneficiary:

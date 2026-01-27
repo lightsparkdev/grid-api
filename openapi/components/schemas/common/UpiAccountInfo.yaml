@@ -4,6 +4,7 @@ required:
   - vpa
 properties:
   accountType:
+    type: string
     const: UPI
     example: UPI
   vpa:

@@ -4,6 +4,7 @@ required:
   - address
 properties:
   accountType:
+    type: string
     const: SOLANA_WALLET
     example: SOLANA_WALLET
   address:

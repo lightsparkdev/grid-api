@@ -4,6 +4,7 @@ required:
   - address
 properties:
   accountType:
+    type: string
     const: BASE_WALLET
     example: BASE_WALLET
   address:

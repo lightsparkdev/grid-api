@@ -5,6 +5,7 @@ description: >
   Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must be provided.
 properties:
   accountType:
+    type: string
     const: LIGHTNING
     example: LIGHTNING
   invoice:

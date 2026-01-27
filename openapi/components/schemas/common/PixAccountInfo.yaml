@@ -6,6 +6,7 @@ required:
   - taxId
 properties:
   accountType:
+    type: string
     const: PIX
     example: PIX
   pixKey:

@@ -5,6 +5,7 @@ required:
   - swiftBic
 properties:
   accountType:
+    type: string
     const: IBAN
     example: IBAN
   iban:

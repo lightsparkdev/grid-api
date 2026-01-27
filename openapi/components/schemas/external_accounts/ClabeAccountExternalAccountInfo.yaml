@@ -5,6 +5,7 @@ allOf:
       - accountType
     properties:
       accountType:
+        type: string
         const: CLABE
         example: CLABE
       beneficiary:

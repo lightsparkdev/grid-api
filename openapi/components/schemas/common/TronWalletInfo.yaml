@@ -4,6 +4,7 @@ required:
   - address
 properties:
   accountType:
+    type: string
     const: TRON_WALLET
     example: TRON_WALLET
   address:

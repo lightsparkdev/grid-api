@@ -4,6 +4,7 @@ required:
   - currencyCode
 properties:
   accountType:
+    type: string
     const: FBO
     example: FBO
   currencyCode:

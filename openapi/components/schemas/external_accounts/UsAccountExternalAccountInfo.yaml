@@ -6,6 +6,7 @@ allOf:
       - beneficiary
     properties:
       accountType:
+        type: string
         const: US_ACCOUNT
         example: US_ACCOUNT
       beneficiary:
