@@ -4,6 +4,7 @@ required:
   - invoice
 properties:
   accountType:
+    type: string
     const: LIGHTNING
     example: LIGHTNING
   invoice:
