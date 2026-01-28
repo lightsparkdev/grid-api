@@ -4,6 +4,8 @@ allOf:
     properties:
       address:
         $ref: ../common/Address.yaml
+      kybStatus:
+        $ref: ./KycKybStatus.yaml
       businessInfo:
         type: object
         required:

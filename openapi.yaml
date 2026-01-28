@@ -154,99 +154,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - title: New Individual Customer
-                  allOf:
-                    - $ref: '#/components/schemas/IndividualCustomerUpdate'
-                    - type: object
-                      required:
-                        - platformCustomerId
-                      properties:
-                        platformCustomerId:
-                          type: string
-                          description: Platform-specific customer identifier
-                          example: 9f84e0c2a72c4fa
-                        kycUrl:
-                          type: string
-                          description: A KYC URL to be shared with your individual customer if KYC needs to be completed
-                          example: https://example.com/kyc
-                - title: New Business Customer
-                  allOf:
-                    - $ref: '#/components/schemas/BusinessCustomerUpdate'
-                    - type: object
-                      required:
-                        - platformCustomerId
-                        - businessInfo
-                      properties:
-                        platformCustomerId:
-                          type: string
-                          description: Platform-specific customer identifier
-                          example: 9f84e0c2a72c4fa
-                        kycUrl:
-                          type: string
-                          description: A KYC URL to be shared with your business customer if KYC needs to be completed
-                          example: https://example.com/kyc
-                        businessInfo:
-                          type: object
-                          required:
-                            - legalName
-                          properties:
-                            legalName:
-                              type: string
-                              description: Legal name of the business
-                              example: Acme Corporation, Inc.
-                            registrationNumber:
-                              type: string
-                              description: Business registration number
-                              example: BRN-123456789
-                            taxId:
-                              type: string
-                              description: Tax identification number
-                              example: EIN-987654321
-            examples:
-              individualCustomerWithUmaAddress:
-                summary: Create individual customer with UMA address, including deposit bank account information.
-                value:
-                  umaAddress: $jane.doe@uma.domain.com
-                  platformCustomerId: 7b3c5a89d2f1e0
-                  customerType: INDIVIDUAL
-                  fullName: Jane Doe
-                  birthDate: '1992-03-25'
-                  address:
-                    line1: 123 Pine Street
-                    line2: Unit 501
-                    city: Seattle
-                    state: WA
-                    postalCode: '98101'
-                    country: US
-              individualCustomerWithoutUmaAddress:
-                summary: Create individual customer without UMA address (will be generated)
-                value:
-                  platformCustomerId: 7b3c5a89d2f1e0
-                  customerType: INDIVIDUAL
-                  fullName: John Smith
-                  birthDate: '1985-06-10'
-                  address:
-                    line1: 456 Oak Avenue
-                    city: Portland
-                    state: OR
-                    postalCode: '97201'
-                    country: US
-              businessCustomer:
-                summary: Create business customer example
-                value:
-                  platformCustomerId: 6e4d2c0b8a9f3
-                  customerType: BUSINESS
-                  businessInfo:
-                    legalName: Acme Corporation
-                    registrationNumber: BRN-456789123
-                    taxId: EIN-987123456
-                  address:
-                    line1: 400 Commerce Way
-                    city: Austin
-                    state: TX
-                    postalCode: '78701'
-                    country: US
+              $ref: '#/components/schemas/CreateCustomerRequest'
       responses:
         '201':
           description: Customer created successfully
@@ -486,43 +394,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - title: Update Individual Customer
-                  $ref: '#/components/schemas/IndividualCustomerUpdate'
-                - title: Update Business Customer
-                  $ref: '#/components/schemas/BusinessCustomerUpdate'
-              discriminator:
-                propertyName: customerType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
-                  BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
-            examples:
-              individualUpdate:
-                summary: Update individual customer example
-                value:
-                  customerType: INDIVIDUAL
-                  fullName: John Smith
-                  birthDate: '1985-06-15'
-                  address:
-                    line1: 456 Market St
-                    city: San Francisco
-                    state: CA
-                    postalCode: '94103'
-                    country: US
-              businessUpdate:
-                summary: Update business customer example
-                value:
-                  customerType: BUSINESS
-                  businessInfo:
-                    legalName: New Tech Solutions LLC
-                    registrationNumber: BRN-987654321
-                    taxId: EIN-123456789
-                  address:
-                    line1: 100 Technology Parkway
-                    city: Palo Alto
-                    state: CA
-                    postalCode: '94304'
-                    country: US
+              $ref: '#/components/schemas/UpdateCustomerRequest'
       responses:
         '200':
           description: Customer updated successfully
@@ -4180,11 +4052,11 @@ components:
               example: US
             address:
               $ref: '#/components/schemas/Address'
+            kycStatus:
+              $ref: '#/components/schemas/KycKybStatus'
     Customer:
       type: object
       required:
-        - umaAddress
-        - platformCustomerId
         - customerType
       properties:
         id:
@@ -4198,8 +4070,6 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
-        kycStatus:
-          $ref: '#/components/schemas/KycStatus'
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -4257,6 +4127,18 @@ components:
           type: string
           description: Country code (ISO 3166-1 alpha-2)
           example: US
+    KycKybStatus:
+      type: string
+      enum:
+        - APPROVED
+        - REJECTED
+        - PENDING_REVIEW
+        - EXPIRED
+        - CANCELED
+        - MANUALLY_APPROVED
+        - MANUALLY_REJECTED
+      description: The current KYC status of a customer
+      example: APPROVED
     UltimateBeneficialOwner:
       type: object
       required:
@@ -4318,6 +4200,8 @@ components:
           properties:
             address:
               $ref: '#/components/schemas/Address'
+            kybStatus:
+              $ref: '#/components/schemas/KycKybStatus'
             businessInfo:
               type: object
               required:
@@ -4340,18 +4224,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/UltimateBeneficialOwner'
-    KycStatus:
-      type: string
-      enum:
-        - APPROVED
-        - REJECTED
-        - PENDING_REVIEW
-        - EXPIRED
-        - CANCELED
-        - MANUALLY_APPROVED
-        - MANUALLY_REJECTED
-      description: The current KYC status of a customer
-      example: APPROVED
     IndividualCustomerUpdate:
       type: object
       required:
@@ -4359,8 +4231,7 @@ components:
       properties:
         customerType:
           type: string
-          enum:
-            - INDIVIDUAL
+          const: INDIVIDUAL
           description: Customer type
         fullName:
           type: string
@@ -4377,6 +4248,10 @@ components:
           example: US
         address:
           $ref: '#/components/schemas/Address'
+        platformCustomerId:
+          type: string
+          description: Platform-specific customer identifier
+          example: 9f84e0c2a72c4fa
         umaAddress:
           type: string
           description: |
@@ -4418,6 +4293,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UltimateBeneficialOwner'
+    CreateCustomerRequest:
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - INDIVIDUAL
+            - BUSINESS
+          description: Customer type discriminator
+      oneOf:
+        - $ref: '#/components/schemas/IndividualCustomerUpdate'
+        - $ref: '#/components/schemas/BusinessCustomerUpdate'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
     Error409:
       type: object
       required:
@@ -4496,6 +4390,25 @@ components:
         details:
           type: object
           description: Additional error details
+    UpdateCustomerRequest:
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - INDIVIDUAL
+            - BUSINESS
+          description: Customer type discriminator
+      oneOf:
+        - $ref: '#/components/schemas/IndividualCustomerUpdate'
+        - $ref: '#/components/schemas/BusinessCustomerUpdate'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
     Currency:
       type: object
       properties:
@@ -6428,7 +6341,7 @@ components:
               description: System generated id of the customer
               example: Customer:019542f5-b3e7-1d02-0000-000000000001
             kycStatus:
-              $ref: '#/components/schemas/KycStatus'
+              $ref: '#/components/schemas/KycKybStatus'
     IncomingPaymentWebhookResponse:
       type: object
       properties:

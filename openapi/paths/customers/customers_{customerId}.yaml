@@ -60,43 +60,7 @@ patch:
     content:
       application/json:
         schema:
-          oneOf:
-            - title: Update Individual Customer
-              $ref: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-            - title: Update Business Customer
-              $ref: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
-          discriminator:
-            propertyName: customerType
-            mapping:
-              INDIVIDUAL: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-              BUSINESS: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
-        examples:
-          individualUpdate:
-            summary: Update individual customer example
-            value:
-              customerType: INDIVIDUAL
-              fullName: John Smith
-              birthDate: '1985-06-15'
-              address:
-                line1: 456 Market St
-                city: San Francisco
-                state: CA
-                postalCode: '94103'
-                country: US
-          businessUpdate:
-            summary: Update business customer example
-            value:
-              customerType: BUSINESS
-              businessInfo:
-                legalName: New Tech Solutions LLC
-                registrationNumber: BRN-987654321
-                taxId: EIN-123456789
-              address:
-                line1: 100 Technology Parkway
-                city: Palo Alto
-                state: CA
-                postalCode: '94304'
-                country: US
+          $ref: ../../components/schemas/customers/UpdateCustomerRequest.yaml
   responses:
     '200':
       description: Customer updated successfully
