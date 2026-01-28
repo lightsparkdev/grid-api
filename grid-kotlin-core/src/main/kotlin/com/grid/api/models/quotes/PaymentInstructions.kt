@@ -186,10 +186,10 @@ private constructor(
 
         /**
          * Alias for calling [accountOrWalletInfo] with
-         * `AccountOrWalletInfo.ofUnionMember4(unionMember4)`.
+         * `AccountOrWalletInfo.ofFboAccount(fboAccount)`.
          */
-        fun accountOrWalletInfo(unionMember4: AccountOrWalletInfo.UnionMember4) =
-            accountOrWalletInfo(AccountOrWalletInfo.ofUnionMember4(unionMember4))
+        fun accountOrWalletInfo(fboAccount: AccountOrWalletInfo.FboAccount) =
+            accountOrWalletInfo(AccountOrWalletInfo.ofFboAccount(fboAccount))
 
         /** Alias for calling [accountOrWalletInfo] with `AccountOrWalletInfo.ofUpi(upi)`. */
         fun accountOrWalletInfo(upi: AccountOrWalletInfo.Upi) =
@@ -414,7 +414,7 @@ private constructor(
         private val usAccount: UsAccount? = null,
         private val pix: Pix? = null,
         private val iban: Iban? = null,
-        private val unionMember4: UnionMember4? = null,
+        private val fboAccount: FboAccount? = null,
         private val upi: Upi? = null,
         private val sparkWallet: SparkWallet? = null,
         private val lightning: Lightning? = null,
@@ -433,7 +433,7 @@ private constructor(
 
         fun iban(): Iban? = iban
 
-        fun unionMember4(): UnionMember4? = unionMember4
+        fun fboAccount(): FboAccount? = fboAccount
 
         fun upi(): Upi? = upi
 
@@ -457,7 +457,7 @@ private constructor(
 
         fun isIban(): Boolean = iban != null
 
-        fun isUnionMember4(): Boolean = unionMember4 != null
+        fun isFboAccount(): Boolean = fboAccount != null
 
         fun isUpi(): Boolean = upi != null
 
@@ -481,7 +481,7 @@ private constructor(
 
         fun asIban(): Iban = iban.getOrThrow("iban")
 
-        fun asUnionMember4(): UnionMember4 = unionMember4.getOrThrow("unionMember4")
+        fun asFboAccount(): FboAccount = fboAccount.getOrThrow("fboAccount")
 
         fun asUpi(): Upi = upi.getOrThrow("upi")
 
@@ -505,7 +505,7 @@ private constructor(
                 usAccount != null -> visitor.visitUsAccount(usAccount)
                 pix != null -> visitor.visitPix(pix)
                 iban != null -> visitor.visitIban(iban)
-                unionMember4 != null -> visitor.visitUnionMember4(unionMember4)
+                fboAccount != null -> visitor.visitFboAccount(fboAccount)
                 upi != null -> visitor.visitUpi(upi)
                 sparkWallet != null -> visitor.visitSparkWallet(sparkWallet)
                 lightning != null -> visitor.visitLightning(lightning)
@@ -541,8 +541,8 @@ private constructor(
                         iban.validate()
                     }
 
-                    override fun visitUnionMember4(unionMember4: UnionMember4) {
-                        unionMember4.validate()
+                    override fun visitFboAccount(fboAccount: FboAccount) {
+                        fboAccount.validate()
                     }
 
                     override fun visitUpi(upi: Upi) {
@@ -602,8 +602,7 @@ private constructor(
 
                     override fun visitIban(iban: Iban) = iban.validity()
 
-                    override fun visitUnionMember4(unionMember4: UnionMember4) =
-                        unionMember4.validity()
+                    override fun visitFboAccount(fboAccount: FboAccount) = fboAccount.validity()
 
                     override fun visitUpi(upi: Upi) = upi.validity()
 
@@ -635,7 +634,7 @@ private constructor(
                 usAccount == other.usAccount &&
                 pix == other.pix &&
                 iban == other.iban &&
-                unionMember4 == other.unionMember4 &&
+                fboAccount == other.fboAccount &&
                 upi == other.upi &&
                 sparkWallet == other.sparkWallet &&
                 lightning == other.lightning &&
@@ -651,7 +650,7 @@ private constructor(
                 usAccount,
                 pix,
                 iban,
-                unionMember4,
+                fboAccount,
                 upi,
                 sparkWallet,
                 lightning,
@@ -667,7 +666,7 @@ private constructor(
                 usAccount != null -> "AccountOrWalletInfo{usAccount=$usAccount}"
                 pix != null -> "AccountOrWalletInfo{pix=$pix}"
                 iban != null -> "AccountOrWalletInfo{iban=$iban}"
-                unionMember4 != null -> "AccountOrWalletInfo{unionMember4=$unionMember4}"
+                fboAccount != null -> "AccountOrWalletInfo{fboAccount=$fboAccount}"
                 upi != null -> "AccountOrWalletInfo{upi=$upi}"
                 sparkWallet != null -> "AccountOrWalletInfo{sparkWallet=$sparkWallet}"
                 lightning != null -> "AccountOrWalletInfo{lightning=$lightning}"
@@ -689,8 +688,7 @@ private constructor(
 
             fun ofIban(iban: Iban) = AccountOrWalletInfo(iban = iban)
 
-            fun ofUnionMember4(unionMember4: UnionMember4) =
-                AccountOrWalletInfo(unionMember4 = unionMember4)
+            fun ofFboAccount(fboAccount: FboAccount) = AccountOrWalletInfo(fboAccount = fboAccount)
 
             fun ofUpi(upi: Upi) = AccountOrWalletInfo(upi = upi)
 
@@ -724,7 +722,7 @@ private constructor(
 
             fun visitIban(iban: Iban): T
 
-            fun visitUnionMember4(unionMember4: UnionMember4): T
+            fun visitFboAccount(fboAccount: FboAccount): T
 
             fun visitUpi(upi: Upi): T
 
@@ -820,8 +818,8 @@ private constructor(
                     }
                 }
 
-                return tryDeserialize(node, jacksonTypeRef<UnionMember4>())?.let {
-                    AccountOrWalletInfo(unionMember4 = it, _json = json)
+                return tryDeserialize(node, jacksonTypeRef<FboAccount>())?.let {
+                    AccountOrWalletInfo(fboAccount = it, _json = json)
                 } ?: AccountOrWalletInfo(_json = json)
             }
         }
@@ -839,7 +837,7 @@ private constructor(
                     value.usAccount != null -> generator.writeObject(value.usAccount)
                     value.pix != null -> generator.writeObject(value.pix)
                     value.iban != null -> generator.writeObject(value.iban)
-                    value.unionMember4 != null -> generator.writeObject(value.unionMember4)
+                    value.fboAccount != null -> generator.writeObject(value.fboAccount)
                     value.upi != null -> generator.writeObject(value.upi)
                     value.sparkWallet != null -> generator.writeObject(value.sparkWallet)
                     value.lightning != null -> generator.writeObject(value.lightning)
@@ -2860,12 +2858,10 @@ private constructor(
                 "Iban{accountType=$accountType, iban=$iban, swiftBic=$swiftBic, reference=$reference, additionalProperties=$additionalProperties}"
         }
 
-        class UnionMember4
+        class FboAccount
         @JsonCreator(mode = JsonCreator.Mode.DISABLED)
         private constructor(
             private val accountType: JsonField<AccountType>,
-            private val paymentMethod: JsonField<PaymentMethod>,
-            private val paymentUrl: JsonField<String>,
             private val additionalProperties: MutableMap<String, JsonValue>,
         ) {
 
@@ -2873,39 +2869,14 @@ private constructor(
             private constructor(
                 @JsonProperty("accountType")
                 @ExcludeMissing
-                accountType: JsonField<AccountType> = JsonMissing.of(),
-                @JsonProperty("paymentMethod")
-                @ExcludeMissing
-                paymentMethod: JsonField<PaymentMethod> = JsonMissing.of(),
-                @JsonProperty("paymentUrl")
-                @ExcludeMissing
-                paymentUrl: JsonField<String> = JsonMissing.of(),
-            ) : this(accountType, paymentMethod, paymentUrl, mutableMapOf())
+                accountType: JsonField<AccountType> = JsonMissing.of()
+            ) : this(accountType, mutableMapOf())
 
             /**
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
+             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
+             *   the server responded with an unexpected value).
              */
-            fun accountType(): AccountType = accountType.getRequired("accountType")
-
-            /**
-             * The HTTP method to use for confirming the payment
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun paymentMethod(): PaymentMethod = paymentMethod.getRequired("paymentMethod")
-
-            /**
-             * The URL to make a request to in order to confirm payment
-             *
-             * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-             *   unexpectedly missing or null (e.g. if the server responded with an unexpected
-             *   value).
-             */
-            fun paymentUrl(): String = paymentUrl.getRequired("paymentUrl")
+            fun accountType(): AccountType? = accountType.getNullable("accountType")
 
             /**
              * Returns the raw JSON value of [accountType].
@@ -2916,26 +2887,6 @@ private constructor(
             @JsonProperty("accountType")
             @ExcludeMissing
             fun _accountType(): JsonField<AccountType> = accountType
-
-            /**
-             * Returns the raw JSON value of [paymentMethod].
-             *
-             * Unlike [paymentMethod], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("paymentMethod")
-            @ExcludeMissing
-            fun _paymentMethod(): JsonField<PaymentMethod> = paymentMethod
-
-            /**
-             * Returns the raw JSON value of [paymentUrl].
-             *
-             * Unlike [paymentUrl], this method doesn't throw if the JSON field has an unexpected
-             * type.
-             */
-            @JsonProperty("paymentUrl")
-            @ExcludeMissing
-            fun _paymentUrl(): JsonField<String> = paymentUrl
 
             @JsonAnySetter
             private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -2951,32 +2902,19 @@ private constructor(
 
             companion object {
 
-                /**
-                 * Returns a mutable builder for constructing an instance of [UnionMember4].
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .accountType()
-                 * .paymentMethod()
-                 * .paymentUrl()
-                 * ```
-                 */
+                /** Returns a mutable builder for constructing an instance of [FboAccount]. */
                 fun builder() = Builder()
             }
 
-            /** A builder for [UnionMember4]. */
+            /** A builder for [FboAccount]. */
             class Builder internal constructor() {
 
-                private var accountType: JsonField<AccountType>? = null
-                private var paymentMethod: JsonField<PaymentMethod>? = null
-                private var paymentUrl: JsonField<String>? = null
+                private var accountType: JsonField<AccountType> = JsonMissing.of()
                 private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-                internal fun from(unionMember4: UnionMember4) = apply {
-                    accountType = unionMember4.accountType
-                    paymentMethod = unionMember4.paymentMethod
-                    paymentUrl = unionMember4.paymentUrl
-                    additionalProperties = unionMember4.additionalProperties.toMutableMap()
+                internal fun from(fboAccount: FboAccount) = apply {
+                    accountType = fboAccount.accountType
+                    additionalProperties = fboAccount.additionalProperties.toMutableMap()
                 }
 
                 fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
@@ -2990,35 +2928,6 @@ private constructor(
                  */
                 fun accountType(accountType: JsonField<AccountType>) = apply {
                     this.accountType = accountType
-                }
-
-                /** The HTTP method to use for confirming the payment */
-                fun paymentMethod(paymentMethod: PaymentMethod) =
-                    paymentMethod(JsonField.of(paymentMethod))
-
-                /**
-                 * Sets [Builder.paymentMethod] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.paymentMethod] with a well-typed [PaymentMethod]
-                 * value instead. This method is primarily for setting the field to an undocumented
-                 * or not yet supported value.
-                 */
-                fun paymentMethod(paymentMethod: JsonField<PaymentMethod>) = apply {
-                    this.paymentMethod = paymentMethod
-                }
-
-                /** The URL to make a request to in order to confirm payment */
-                fun paymentUrl(paymentUrl: String) = paymentUrl(JsonField.of(paymentUrl))
-
-                /**
-                 * Sets [Builder.paymentUrl] to an arbitrary JSON value.
-                 *
-                 * You should usually call [Builder.paymentUrl] with a well-typed [String] value
-                 * instead. This method is primarily for setting the field to an undocumented or not
-                 * yet supported value.
-                 */
-                fun paymentUrl(paymentUrl: JsonField<String>) = apply {
-                    this.paymentUrl = paymentUrl
                 }
 
                 fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
@@ -3044,38 +2953,22 @@ private constructor(
                 }
 
                 /**
-                 * Returns an immutable instance of [UnionMember4].
+                 * Returns an immutable instance of [FboAccount].
                  *
                  * Further updates to this [Builder] will not mutate the returned instance.
-                 *
-                 * The following fields are required:
-                 * ```kotlin
-                 * .accountType()
-                 * .paymentMethod()
-                 * .paymentUrl()
-                 * ```
-                 *
-                 * @throws IllegalStateException if any required field is unset.
                  */
-                fun build(): UnionMember4 =
-                    UnionMember4(
-                        checkRequired("accountType", accountType),
-                        checkRequired("paymentMethod", paymentMethod),
-                        checkRequired("paymentUrl", paymentUrl),
-                        additionalProperties.toMutableMap(),
-                    )
+                fun build(): FboAccount =
+                    FboAccount(accountType, additionalProperties.toMutableMap())
             }
 
             private var validated: Boolean = false
 
-            fun validate(): UnionMember4 = apply {
+            fun validate(): FboAccount = apply {
                 if (validated) {
                     return@apply
                 }
 
-                accountType().validate()
-                paymentMethod().validate()
-                paymentUrl()
+                accountType()?.validate()
                 validated = true
             }
 
@@ -3093,10 +2986,7 @@ private constructor(
              *
              * Used for best match union deserialization.
              */
-            internal fun validity(): Int =
-                (accountType.asKnown()?.validity() ?: 0) +
-                    (paymentMethod.asKnown()?.validity() ?: 0) +
-                    (if (paymentUrl.asKnown() == null) 0 else 1)
+            internal fun validity(): Int = (accountType.asKnown()?.validity() ?: 0)
 
             class AccountType
             @JsonCreator
@@ -3136,8 +3026,6 @@ private constructor(
 
                     val BASE_WALLET = of("BASE_WALLET")
 
-                    val FBO = of("FBO")
-
                     fun of(value: String) = AccountType(JsonField.of(value))
                 }
 
@@ -3154,7 +3042,6 @@ private constructor(
                     TRON_WALLET,
                     POLYGON_WALLET,
                     BASE_WALLET,
-                    FBO,
                 }
 
                 /**
@@ -3178,7 +3065,6 @@ private constructor(
                     TRON_WALLET,
                     POLYGON_WALLET,
                     BASE_WALLET,
-                    FBO,
                     /**
                      * An enum member indicating that [AccountType] was instantiated with an unknown
                      * value.
@@ -3206,7 +3092,6 @@ private constructor(
                         TRON_WALLET -> Value.TRON_WALLET
                         POLYGON_WALLET -> Value.POLYGON_WALLET
                         BASE_WALLET -> Value.BASE_WALLET
-                        FBO -> Value.FBO
                         else -> Value._UNKNOWN
                     }
 
@@ -3232,7 +3117,6 @@ private constructor(
                         TRON_WALLET -> Known.TRON_WALLET
                         POLYGON_WALLET -> Known.POLYGON_WALLET
                         BASE_WALLET -> Known.BASE_WALLET
-                        FBO -> Known.FBO
                         else -> throw GridInvalidDataException("Unknown AccountType: $value")
                     }
 
@@ -3288,158 +3172,22 @@ private constructor(
                 override fun toString() = value.toString()
             }
 
-            /** The HTTP method to use for confirming the payment */
-            class PaymentMethod
-            @JsonCreator
-            private constructor(private val value: JsonField<String>) : Enum {
-
-                /**
-                 * Returns this class instance's raw value.
-                 *
-                 * This is usually only useful if this instance was deserialized from data that
-                 * doesn't match any known member, and you want to know that value. For example, if
-                 * the SDK is on an older version than the API, then the API may respond with new
-                 * members that the SDK is unaware of.
-                 */
-                @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-                companion object {
-
-                    val POST = of("POST")
-
-                    val GET = of("GET")
-
-                    fun of(value: String) = PaymentMethod(JsonField.of(value))
-                }
-
-                /** An enum containing [PaymentMethod]'s known values. */
-                enum class Known {
-                    POST,
-                    GET,
-                }
-
-                /**
-                 * An enum containing [PaymentMethod]'s known values, as well as an [_UNKNOWN]
-                 * member.
-                 *
-                 * An instance of [PaymentMethod] can contain an unknown value in a couple of cases:
-                 * - It was deserialized from data that doesn't match any known member. For example,
-                 *   if the SDK is on an older version than the API, then the API may respond with
-                 *   new members that the SDK is unaware of.
-                 * - It was constructed with an arbitrary value using the [of] method.
-                 */
-                enum class Value {
-                    POST,
-                    GET,
-                    /**
-                     * An enum member indicating that [PaymentMethod] was instantiated with an
-                     * unknown value.
-                     */
-                    _UNKNOWN,
-                }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value, or
-                 * [Value._UNKNOWN] if the class was instantiated with an unknown value.
-                 *
-                 * Use the [known] method instead if you're certain the value is always known or if
-                 * you want to throw for the unknown case.
-                 */
-                fun value(): Value =
-                    when (this) {
-                        POST -> Value.POST
-                        GET -> Value.GET
-                        else -> Value._UNKNOWN
-                    }
-
-                /**
-                 * Returns an enum member corresponding to this class instance's value.
-                 *
-                 * Use the [value] method instead if you're uncertain the value is always known and
-                 * don't want to throw for the unknown case.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value is a not a known
-                 *   member.
-                 */
-                fun known(): Known =
-                    when (this) {
-                        POST -> Known.POST
-                        GET -> Known.GET
-                        else -> throw GridInvalidDataException("Unknown PaymentMethod: $value")
-                    }
-
-                /**
-                 * Returns this class instance's primitive wire representation.
-                 *
-                 * This differs from the [toString] method because that method is primarily for
-                 * debugging and generally doesn't throw.
-                 *
-                 * @throws GridInvalidDataException if this class instance's value does not have the
-                 *   expected primitive type.
-                 */
-                fun asString(): String =
-                    _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-                private var validated: Boolean = false
-
-                fun validate(): PaymentMethod = apply {
-                    if (validated) {
-                        return@apply
-                    }
-
-                    known()
-                    validated = true
-                }
-
-                fun isValid(): Boolean =
-                    try {
-                        validate()
-                        true
-                    } catch (e: GridInvalidDataException) {
-                        false
-                    }
-
-                /**
-                 * Returns a score indicating how many valid values are contained in this object
-                 * recursively.
-                 *
-                 * Used for best match union deserialization.
-                 */
-                internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-                override fun equals(other: Any?): Boolean {
-                    if (this === other) {
-                        return true
-                    }
-
-                    return other is PaymentMethod && value == other.value
-                }
-
-                override fun hashCode() = value.hashCode()
-
-                override fun toString() = value.toString()
-            }
-
             override fun equals(other: Any?): Boolean {
                 if (this === other) {
                     return true
                 }
 
-                return other is UnionMember4 &&
+                return other is FboAccount &&
                     accountType == other.accountType &&
-                    paymentMethod == other.paymentMethod &&
-                    paymentUrl == other.paymentUrl &&
                     additionalProperties == other.additionalProperties
             }
 
-            private val hashCode: Int by lazy {
-                Objects.hash(accountType, paymentMethod, paymentUrl, additionalProperties)
-            }
+            private val hashCode: Int by lazy { Objects.hash(accountType, additionalProperties) }
 
             override fun hashCode(): Int = hashCode
 
             override fun toString() =
-                "UnionMember4{accountType=$accountType, paymentMethod=$paymentMethod, paymentUrl=$paymentUrl, additionalProperties=$additionalProperties}"
+                "FboAccount{accountType=$accountType, additionalProperties=$additionalProperties}"
         }
 
         class Upi
