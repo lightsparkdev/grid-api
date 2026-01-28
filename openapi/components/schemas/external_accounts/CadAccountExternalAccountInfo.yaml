@@ -1,0 +1,20 @@
+allOf:
+  - $ref: ../common/CadAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+      - beneficiary
+    properties:
+      accountType:
+        type: string
+        enum: [CAD_ACCOUNT]
+        example: CAD_ACCOUNT
+      beneficiary:
+        oneOf:
+          - $ref: ./IndividualBeneficiary.yaml
+          - $ref: ./BusinessBeneficiary.yaml
+        discriminator:
+          propertyName: beneficiaryType
+          mapping:
+            INDIVIDUAL: ./IndividualBeneficiary.yaml
+            BUSINESS: ./BusinessBeneficiary.yaml

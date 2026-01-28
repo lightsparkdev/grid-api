@@ -1,0 +1,20 @@
+allOf:
+  - $ref: ../common/GbpAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+      - beneficiary
+    properties:
+      accountType:
+        type: string
+        enum: [GBP_ACCOUNT]
+        example: GBP_ACCOUNT
+      beneficiary:
+        oneOf:
+          - $ref: ./IndividualBeneficiary.yaml
+          - $ref: ./BusinessBeneficiary.yaml
+        discriminator:
+          propertyName: beneficiaryType
+          mapping:
+            INDIVIDUAL: ./IndividualBeneficiary.yaml
+            BUSINESS: ./BusinessBeneficiary.yaml
