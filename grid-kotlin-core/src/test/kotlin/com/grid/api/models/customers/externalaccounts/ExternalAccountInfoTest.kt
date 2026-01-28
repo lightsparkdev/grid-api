@@ -46,10 +46,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofUsAccount(usAccount)
 
         assertThat(externalAccountInfo.usAccount()).isEqualTo(usAccount)
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -99,9 +99,9 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofClabe() {
-        val clabe =
-            ExternalAccountInfo.Clabe.builder()
+    fun ofClabeAccount() {
+        val clabeAccount =
+            ExternalAccountInfo.ClabeAccount.builder()
                 .clabeNumber("123456789012345678")
                 .beneficiary(
                     IndividualBeneficiary.builder()
@@ -122,13 +122,13 @@ internal class ExternalAccountInfoTest {
                 )
                 .build()
 
-        val externalAccountInfo = ExternalAccountInfo.ofClabe(clabe)
+        val externalAccountInfo = ExternalAccountInfo.ofClabeAccount(clabeAccount)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isEqualTo(clabe)
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isEqualTo(clabeAccount)
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -139,11 +139,11 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofClabeRoundtrip() {
+    fun ofClabeAccountRoundtrip() {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
-            ExternalAccountInfo.ofClabe(
-                ExternalAccountInfo.Clabe.builder()
+            ExternalAccountInfo.ofClabeAccount(
+                ExternalAccountInfo.ClabeAccount.builder()
                     .clabeNumber("123456789012345678")
                     .beneficiary(
                         IndividualBeneficiary.builder()
@@ -175,9 +175,9 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofPix() {
-        val pix =
-            ExternalAccountInfo.Pix.builder()
+    fun ofPixAccount() {
+        val pixAccount =
+            ExternalAccountInfo.PixAccount.builder()
                 .pixKey("55119876543210")
                 .pixKeyType(PixAccountInfo.PixKeyType.PHONE)
                 .taxId("1234567890")
@@ -200,13 +200,13 @@ internal class ExternalAccountInfoTest {
                 )
                 .build()
 
-        val externalAccountInfo = ExternalAccountInfo.ofPix(pix)
+        val externalAccountInfo = ExternalAccountInfo.ofPixAccount(pixAccount)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isEqualTo(pix)
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isEqualTo(pixAccount)
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -217,11 +217,11 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofPixRoundtrip() {
+    fun ofPixAccountRoundtrip() {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
-            ExternalAccountInfo.ofPix(
-                ExternalAccountInfo.Pix.builder()
+            ExternalAccountInfo.ofPixAccount(
+                ExternalAccountInfo.PixAccount.builder()
                     .pixKey("55119876543210")
                     .pixKeyType(PixAccountInfo.PixKeyType.PHONE)
                     .taxId("1234567890")
@@ -255,9 +255,9 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofIban() {
-        val iban =
-            ExternalAccountInfo.Iban.builder()
+    fun ofIbanAccount() {
+        val ibanAccount =
+            ExternalAccountInfo.IbanAccount.builder()
                 .iban("DE89370400440532013000")
                 .swiftBic("DEUTDEFF")
                 .beneficiary(
@@ -279,13 +279,13 @@ internal class ExternalAccountInfoTest {
                 )
                 .build()
 
-        val externalAccountInfo = ExternalAccountInfo.ofIban(iban)
+        val externalAccountInfo = ExternalAccountInfo.ofIbanAccount(ibanAccount)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isEqualTo(iban)
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isEqualTo(ibanAccount)
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -296,11 +296,11 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofIbanRoundtrip() {
+    fun ofIbanAccountRoundtrip() {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
-            ExternalAccountInfo.ofIban(
-                ExternalAccountInfo.Iban.builder()
+            ExternalAccountInfo.ofIbanAccount(
+                ExternalAccountInfo.IbanAccount.builder()
                     .iban("DE89370400440532013000")
                     .swiftBic("DEUTDEFF")
                     .beneficiary(
@@ -333,9 +333,9 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofUpi() {
-        val upi =
-            ExternalAccountInfo.Upi.builder()
+    fun ofUpiAccount() {
+        val upiAccount =
+            ExternalAccountInfo.UpiAccount.builder()
                 .vpa("somecustomers@okbank")
                 .beneficiary(
                     IndividualBeneficiary.builder()
@@ -356,13 +356,13 @@ internal class ExternalAccountInfoTest {
                 )
                 .build()
 
-        val externalAccountInfo = ExternalAccountInfo.ofUpi(upi)
+        val externalAccountInfo = ExternalAccountInfo.ofUpiAccount(upiAccount)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isEqualTo(upi)
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isEqualTo(upiAccount)
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -373,11 +373,11 @@ internal class ExternalAccountInfoTest {
     }
 
     @Test
-    fun ofUpiRoundtrip() {
+    fun ofUpiAccountRoundtrip() {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
-            ExternalAccountInfo.ofUpi(
-                ExternalAccountInfo.Upi.builder()
+            ExternalAccountInfo.ofUpiAccount(
+                ExternalAccountInfo.UpiAccount.builder()
                     .vpa("somecustomers@okbank")
                     .beneficiary(
                         IndividualBeneficiary.builder()
@@ -411,8 +411,9 @@ internal class ExternalAccountInfoTest {
     @Test
     fun ofNgnAccount() {
         val ngnAccount =
-            NgnAccountExternalAccountInfo.builder()
+            ExternalAccountInfo.NgnAccount.builder()
                 .accountNumber("0123456789")
+                .accountType(JsonValue.from("CLABE"))
                 .bankName("First Bank of Nigeria")
                 .beneficiary(
                     IndividualBeneficiary.builder()
@@ -437,10 +438,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofNgnAccount(ngnAccount)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isEqualTo(ngnAccount)
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -455,8 +456,9 @@ internal class ExternalAccountInfoTest {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
             ExternalAccountInfo.ofNgnAccount(
-                NgnAccountExternalAccountInfo.builder()
+                ExternalAccountInfo.NgnAccount.builder()
                     .accountNumber("0123456789")
+                    .accountType(JsonValue.from("CLABE"))
                     .bankName("First Bank of Nigeria")
                     .beneficiary(
                         IndividualBeneficiary.builder()
@@ -500,10 +502,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofSparkWallet(sparkWallet)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isEqualTo(sparkWallet)
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -535,7 +537,8 @@ internal class ExternalAccountInfoTest {
     @Test
     fun ofLightning() {
         val lightning =
-            LightningExternalAccountInfo.builder()
+            ExternalAccountInfo.Lightning.builder()
+                .accountType(JsonValue.from("CLABE"))
                 .bolt12(
                     "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
                 )
@@ -548,10 +551,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofLightning(lightning)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isEqualTo(lightning)
@@ -566,7 +569,8 @@ internal class ExternalAccountInfoTest {
         val jsonMapper = jsonMapper()
         val externalAccountInfo =
             ExternalAccountInfo.ofLightning(
-                LightningExternalAccountInfo.builder()
+                ExternalAccountInfo.Lightning.builder()
+                    .accountType(JsonValue.from("CLABE"))
                     .bolt12(
                         "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
                     )
@@ -596,10 +600,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofSolanaWallet(solanaWallet)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -638,10 +642,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofTronWallet(tronWallet)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -680,10 +684,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofPolygonWallet(polygonWallet)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
@@ -722,10 +726,10 @@ internal class ExternalAccountInfoTest {
         val externalAccountInfo = ExternalAccountInfo.ofBaseWallet(baseWallet)
 
         assertThat(externalAccountInfo.usAccount()).isNull()
-        assertThat(externalAccountInfo.clabe()).isNull()
-        assertThat(externalAccountInfo.pix()).isNull()
-        assertThat(externalAccountInfo.iban()).isNull()
-        assertThat(externalAccountInfo.upi()).isNull()
+        assertThat(externalAccountInfo.clabeAccount()).isNull()
+        assertThat(externalAccountInfo.pixAccount()).isNull()
+        assertThat(externalAccountInfo.ibanAccount()).isNull()
+        assertThat(externalAccountInfo.upiAccount()).isNull()
         assertThat(externalAccountInfo.ngnAccount()).isNull()
         assertThat(externalAccountInfo.sparkWallet()).isNull()
         assertThat(externalAccountInfo.lightning()).isNull()
