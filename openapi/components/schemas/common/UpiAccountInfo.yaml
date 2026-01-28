@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - vpa
+  - accountType
 properties:
   accountType:
     type: string
-    const: UPI
-    example: UPI
+    enum:
+      - UPI
   vpa:
     type: string
     description: Virtual Payment Address for UPI payments

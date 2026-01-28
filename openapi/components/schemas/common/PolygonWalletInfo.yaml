@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - address
+  - accountType
 properties:
   accountType:
     type: string
-    const: POLYGON_WALLET
-    example: POLYGON_WALLET
+    enum:
+      - POLYGON_WALLET
   address:
     type: string
     description: Polygon eth wallet address

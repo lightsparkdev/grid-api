@@ -4,7 +4,6 @@ enum:
   - US_ACCOUNT
   - PIX
   - IBAN
-  - FBO
   - UPI
   - NGN_ACCOUNT
   - SPARK_WALLET
@@ -13,4 +12,5 @@ enum:
   - TRON_WALLET
   - POLYGON_WALLET
   - BASE_WALLET
-description: Type of account or wallet information
+description: Type of payment account or wallet
+example: US_ACCOUNT

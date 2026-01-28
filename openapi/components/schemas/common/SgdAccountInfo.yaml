@@ -1,14 +1,14 @@
 type: object
 required:
-  - accountType
   - bankName
   - swiftCode
   - accountNumber
+  - accountType
 properties:
   accountType:
     type: string
-    enum: [SGD_ACCOUNT]
-    example: SGD_ACCOUNT
+    enum:
+      - SGD_ACCOUNT
   bankName:
     type: string
     description: Name of the beneficiary's bank

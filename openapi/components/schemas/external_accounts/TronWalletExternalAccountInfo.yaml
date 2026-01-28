@@ -1,10 +1,4 @@
 allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/TronWalletInfo.yaml
-  - type: object
-    required:
-      - accountType
-    properties:
-      accountType:
-        type: string
-        const: TRON_WALLET
-        example: TRON_WALLET
+  

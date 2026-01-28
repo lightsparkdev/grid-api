@@ -1,0 +1,11 @@
+type: object
+required:
+  - sourceType
+properties:
+  sourceType:
+    $ref: ./QuoteSourceType.yaml
+discriminator:
+  propertyName: sourceType
+  mapping:
+    ACCOUNT: ./AccountQuoteSource.yaml
+    REALTIME_FUNDING: ./RealtimeFundingQuoteSource.yaml

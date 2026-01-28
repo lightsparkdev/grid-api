@@ -1,0 +1,6 @@
+type: string
+enum:
+  - ACCOUNT
+  - UMA_ADDRESS
+description: Type of transaction destination
+example: ACCOUNT

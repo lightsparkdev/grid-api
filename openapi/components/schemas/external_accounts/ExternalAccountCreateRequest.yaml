@@ -29,4 +29,4 @@ allOf:
           incoming UMA payments will be deposited into the primary internal account for the customer.
         default: false
       accountInfo:
-        $ref: ./ExternalAccountInfo.yaml
+        $ref: ./ExternalAccountInfoOneOf.yaml

@@ -35,4 +35,4 @@ allOf:
           If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
         example: false
       accountInfo:
-        $ref: ./ExternalAccountInfo.yaml
+        $ref: ./ExternalAccountInfoOneOf.yaml

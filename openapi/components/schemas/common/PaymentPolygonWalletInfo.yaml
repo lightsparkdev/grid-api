@@ -1,7 +1,11 @@
 allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./PolygonWalletInfo.yaml
-properties:
-  assetType:
-    type: string
-    description: Type of asset
-    const: USDC
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum:
+          - USDC
+          

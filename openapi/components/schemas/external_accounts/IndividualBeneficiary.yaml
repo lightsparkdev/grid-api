@@ -1,26 +1,26 @@
-type: object
-required:
-  - fullName
-  - birthDate
-  - nationality
-  - beneficiaryType
-properties:
-  beneficiaryType:
-    type: string
-    const: INDIVIDUAL
-    example: INDIVIDUAL
-  fullName:
-    type: string
-    description: Individual's full name
-    example: John Michael Doe
-  birthDate:
-    type: string
-    format: date
-    description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-    example: '1990-01-15'
-  nationality:
-    type: string
-    description: Country code (ISO 3166-1 alpha-2)
-    example: US
-  address:
-    $ref: ../common/Address.yaml
+allOf:
+  - $ref: ./BaseBeneficiary.yaml
+  - type: object
+    required:
+      - fullName
+      - birthDate
+      - nationality
+      - beneficiaryType
+    properties:
+      beneficiaryType:
+        type: string
+        enum:
+          - INDIVIDUAL
+      fullName:
+        type: string
+        description: Individual's full name
+        example: John Michael Doe
+      birthDate:
+        type: string
+        format: date
+        description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+        example: '1990-01-15'
+      nationality:
+        type: string
+        description: Country code (ISO 3166-1 alpha-2)
+        example: US

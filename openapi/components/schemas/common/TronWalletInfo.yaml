@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - address
+  - accountType
 properties:
   accountType:
     type: string
-    const: TRON_WALLET
-    example: TRON_WALLET
+    enum:
+      - TRON_WALLET
   address:
     type: string
     description: Tron wallet address

@@ -1,0 +1,16 @@
+allOf:
+  - $ref: ./BaseTransactionSource.yaml
+  - type: object
+    required:
+      - umaAddress
+      - sourceType
+    properties:
+      sourceType:
+        type: string
+        enum:
+          - UMA_ADDRESS
+      umaAddress:
+        type: string
+        description: UMA address of the sender
+        example: $sender@uma.domain.com
+    description: UMA address source details

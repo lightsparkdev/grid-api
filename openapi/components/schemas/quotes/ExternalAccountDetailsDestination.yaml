@@ -1,0 +1,18 @@
+allOf:
+  - $ref: ./BaseDestination.yaml
+  - type: object
+    required:
+      - externalAccountDetails
+      - destinationType
+    properties:
+      destinationType:
+        type: string
+        enum:
+          - EXTERNAL_ACCOUNT_DETAILS
+      externalAccountDetails:
+        $ref: ../external_accounts/ExternalAccountCreateRequest.yaml
+    description: >-
+      A convenient destination option which adds the external account and creates
+      the quote in one step rather than first needing to call /external-accounts
+      to add the account. Useful for one-off payments to some destination.
+      See the external accounts endpoints for test values in sandbox mode.

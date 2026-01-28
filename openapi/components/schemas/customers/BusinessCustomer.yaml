@@ -1,7 +1,13 @@
 allOf:
   - $ref: ./Customer.yaml
   - type: object
+    required:
+      - customerType
     properties:
+      customerType:
+        type: string
+        enum:
+          - BUSINESS
       address:
         $ref: ../common/Address.yaml
       businessInfo:
