@@ -1,0 +1,19 @@
+type: object
+required:
+  - sourceType
+  - umaAddress
+  - currency
+properties:
+  sourceType:
+    type: string
+    const: UMA_ADDRESS
+    description: Source type identifier
+  umaAddress:
+    type: string
+    description: UMA address of the sender
+    example: $sender@uma.domain.com
+  currency:
+    type: string
+    description: Currency code for the source
+    example: USD
+description: UMA address source details

@@ -1,0 +1,14 @@
+allOf:
+  - $ref: ../common/UmaAddressDestination.yaml
+  - type: object
+    properties:
+      counterpartyInformation:
+        type: object
+        description: >-
+          Information about the recipient, as required by the platform in their
+          configuration.
+        additionalProperties: true
+        example:
+          FULL_NAME: Jane Receiver
+          BIRTH_DATE: '1990-01-01'
+          NATIONALITY: FR
