@@ -16,6 +16,7 @@ import com.grid.api.models.customers.IndividualCustomer
 import com.grid.api.models.receiver.CounterpartyFieldDefinition
 import com.grid.api.models.transactions.TransactionType
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.javaMethod
 import org.assertj.core.api.Assertions.assertThat
@@ -79,6 +80,8 @@ internal class ProGuardCompatibilityTest {
         val jsonMapper = jsonMapper()
         val platformConfig =
             PlatformConfig.builder()
+                .id("PlatformConfig:019542f5-b3e7-1d02-0000-000000000003")
+                .createdAt(OffsetDateTime.parse("2025-06-15T12:30:45Z"))
                 .isRegulatedFinancialInstitution(false)
                 .proxyUmaSubdomain("platform")
                 .addSupportedCurrency(
@@ -104,9 +107,18 @@ internal class ProGuardCompatibilityTest {
                                     .build(),
                             )
                         )
+                        .addProviderRequiredCounterpartyCustomerField(
+                            CustomerInfoFieldName.FULL_NAME
+                        )
+                        .addProviderRequiredCounterpartyCustomerField(
+                            CustomerInfoFieldName.COUNTRY_OF_RESIDENCE
+                        )
+                        .addProviderRequiredCustomerField(CustomerInfoFieldName.NATIONALITY)
+                        .addProviderRequiredCustomerField(CustomerInfoFieldName.BIRTH_DATE)
                         .build()
                 )
                 .umaDomain("platform.uma.domain")
+                .updatedAt(OffsetDateTime.parse("2025-06-15T12:30:45Z"))
                 .webhookEndpoint("https://api.mycompany.com/webhooks/uma")
                 .build()
 
@@ -128,7 +140,11 @@ internal class ProGuardCompatibilityTest {
                     .customerType(CustomerType.INDIVIDUAL)
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
+                    .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                    .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
+                    .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
                     .address(
                         Address.builder()
                             .country("US")
