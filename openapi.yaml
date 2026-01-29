@@ -769,6 +769,21 @@ paths:
           required: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -778,12 +793,22 @@ paths:
                 type: object
                 required:
                   - data
+                  - hasMore
                 properties:
                   data:
                     type: array
                     description: List of internal accounts matching the filter criteria
                     items:
                       $ref: '#/components/schemas/InternalAccount'
+                  hasMore:
+                    type: boolean
+                    description: Indicates if more results are available beyond this page
+                  nextCursor:
+                    type: string
+                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
+                  totalCount:
+                    type: integer
+                    description: Total number of internal accounts matching the criteria (excluding pagination)
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -991,6 +1016,21 @@ paths:
           required: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -1000,12 +1040,22 @@ paths:
                 type: object
                 required:
                   - data
+                  - hasMore
                 properties:
                   data:
                     type: array
                     description: List of external accounts matching the filter criteria
                     items:
                       $ref: '#/components/schemas/ExternalAccount'
+                  hasMore:
+                    type: boolean
+                    description: Indicates if more results are available beyond this page
+                  nextCursor:
+                    type: string
+                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
+                  totalCount:
+                    type: integer
+                    description: Total number of external accounts matching the criteria (excluding pagination)
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -4762,6 +4812,7 @@ components:
         - invoice
       properties:
         accountType:
+          type: string
           const: LIGHTNING
           example: LIGHTNING
         invoice:
