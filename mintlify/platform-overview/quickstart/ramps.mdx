@@ -1,0 +1,95 @@
+---
+icon: "arrows-rotate"
+title: "On-ramp to crypto"
+description: "Enable users to convert fiat to crypto with Grid's Ramps API."
+---
+
+<Info>
+This quickstart walks you through your first fiat-to-crypto conversion. For detailed implementation, see the full [Ramps documentation](/ramps).
+</Info>
+
+## Overview
+
+Grid's Ramps API enables seamless conversion between fiat and cryptocurrency. In this quickstart, you'll:
+
+1. Set up your platform
+2. Complete user KYC
+3. Link a funding source
+4. Execute a conversion
+
+## Prerequisites
+
+- A Grid API key ([request sandbox access](https://lightspark.com/grid#signup))
+- Basic understanding of REST APIs
+
+## Step 1: Platform Configuration
+
+Configure your platform for ramp operations.
+
+<Card title="Platform Configuration" icon="gear" href="/ramps/onboarding/platform-configuration">
+  Learn how to configure your platform for ramps
+</Card>
+
+## Step 2: User Onboarding & KYC
+
+Create a customer and complete KYC verification.
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/customers \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "kyc_level": "basic"
+  }'
+```
+
+## Step 3: Link Funding Source
+
+Connect a bank account or other funding source.
+
+<CardGroup cols={2}>
+  <Card title="Plaid Integration" icon="link" href="/ramps/accounts/plaid">
+    Link bank accounts via Plaid
+  </Card>
+  <Card title="External Accounts" icon="bank" href="/ramps/accounts/external-accounts">
+    Manual bank account setup
+  </Card>
+</CardGroup>
+
+## Step 4: Execute Conversion
+
+Convert fiat to crypto.
+
+```bash
+# Get a conversion quote
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_currency": "USD",
+    "destination_currency": "BTC",
+    "amount": "100.00"
+  }'
+
+# Execute the conversion
+curl -X POST https://api.lightspark.com/grid/2025-10-13/conversions \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "QUOTE_ID",
+    "destination_wallet": "bc1q..."
+  }'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Full Ramps Guide" icon="book" href="/ramps">
+    Explore the complete Ramps documentation
+  </Card>
+  <Card title="Self-Custody Wallets" icon="key" href="/ramps/conversion-flows/self-custody-wallets">
+    Learn about self-custody wallet support
+  </Card>
+</CardGroup>

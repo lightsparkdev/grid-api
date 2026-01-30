@@ -32,7 +32,6 @@
         "groups": [
           {
             "group": "Overview",
-            "icon": "house",
             "pages": [
               "index",
               "platform-overview/introduction/what-is-grid",
@@ -43,17 +42,15 @@
           },
           {
             "group": "Quickstart",
-            "icon": "bolt",
             "pages": [
-              {"page": "payouts-and-b2b/quickstart", "title": "Send a payout"},
-              {"page": "ramps/quickstart", "title": "On-ramp to crypto"},
-              {"page": "rewards/quickstart", "title": "Send Bitcoin rewards"},
-              {"page": "global-p2p/quickstart", "title": "Send to an UMA address"}
+              "platform-overview/quickstart/payouts",
+              "platform-overview/quickstart/ramps",
+              "platform-overview/quickstart/rewards",
+              "platform-overview/quickstart/p2p"
             ]
           },
           {
             "group": "Core concepts",
-            "icon": "book",
             "pages": [
               "platform-overview/core-concepts/entities",
               "platform-overview/core-concepts/quote-system",
@@ -78,7 +75,6 @@
           },
           {
             "group": "Onboarding",
-            "icon": "user-plus",
             "pages": [
               "payouts-and-b2b/onboarding/platform-configuration",
               "payouts-and-b2b/onboarding/configuring-customers"
@@ -86,7 +82,6 @@
           },
           {
             "group": "Managing Accounts",
-            "icon": "wallet",
             "pages": [
               "payouts-and-b2b/depositing-funds/internal-accounts",
               "payouts-and-b2b/depositing-funds/external-accounts",
@@ -95,7 +90,6 @@
           },
           {
             "group": "Sending Payments",
-            "icon": "paper-plane",
             "pages": [
               "payouts-and-b2b/depositing-funds/depositing-funds",
               "payouts-and-b2b/payment-flow/send-payment",
@@ -106,7 +100,6 @@
           },
           {
             "group": "Platform Tools",
-            "icon": "wrench",
             "pages": [
               "payouts-and-b2b/platform-tools/webhooks",
               "payouts-and-b2b/platform-tools/sandbox-testing",
@@ -128,7 +121,6 @@
           },
           {
             "group": "Onboarding",
-            "icon": "user-plus",
             "pages": [
               "ramps/onboarding/platform-configuration",
               "ramps/onboarding/configuring-customers"
@@ -136,7 +128,6 @@
           },
           {
             "group": "Managing Accounts",
-            "icon": "wallet",
             "pages": [
               "ramps/accounts/internal-accounts",
               "ramps/accounts/external-accounts",
@@ -145,7 +136,6 @@
           },
           {
             "group": "Conversion Flows",
-            "icon": "arrows-rotate",
             "pages": [
               "ramps/accounts/depositing-funds",
               "ramps/conversion-flows/fiat-crypto-conversion",
@@ -154,7 +144,6 @@
           },
           {
             "group": "Platform Tools",
-            "icon": "wrench",
             "pages": [
               "ramps/platform-tools/webhooks",
               "ramps/platform-tools/sandbox-testing",
@@ -176,14 +165,12 @@
           },
           {
             "group": "Onboarding",
-            "icon": "user-plus",
             "pages": [
               "rewards/developer-guides/platform-configuration"
             ]
           },
           {
             "group": "Managing Accounts",
-            "icon": "wallet",
             "pages": [
               "rewards/developer-guides/internal-accounts",
               "rewards/developer-guides/external-accounts",
@@ -192,7 +179,6 @@
           },
           {
             "group": "Distributing Rewards",
-            "icon": "gift",
             "pages": [
               "rewards/developer-guides/distributing-rewards",
               "rewards/developer-guides/listing-transactions"
@@ -200,7 +186,6 @@
           },
           {
             "group": "Platform Tools",
-            "icon": "wrench",
             "pages": [
               "rewards/platform-tools/webhooks",
               "rewards/platform-tools/sandbox-testing",
@@ -222,7 +207,6 @@
           },
           {
             "group": "Onboarding",
-            "icon": "user-plus",
             "pages": [
               "global-p2p/getting-started/platform-configuration",
               "global-p2p/onboarding-customers/configuring-customers",
@@ -231,7 +215,6 @@
           },
           {
             "group": "Managing Accounts",
-            "icon": "wallet",
             "pages": [
               "global-p2p/managing-accounts/internal-accounts",
               "global-p2p/managing-accounts/external-accounts",
@@ -240,7 +223,6 @@
           },
           {
             "group": "Sending & Receiving Payments",
-            "icon": "arrows-left-right",
             "pages": [
               "global-p2p/sending-receiving-payments/depositing-funds",
               "global-p2p/sending-receiving-payments/sending-payments",
@@ -251,7 +233,6 @@
           },
           {
             "group": "Platform Tools",
-            "icon": "wrench",
             "pages": [
               "global-p2p/platform-tools/webhooks",
               "global-p2p/platform-tools/sandbox-testing",
@@ -266,7 +247,6 @@
         "groups": [
           {
             "group": "Using the API",
-            "icon": "key",
             "pages": [
               "api-reference/environments",
               "api-reference/terminology",
@@ -347,8 +327,7 @@
         "crossOrigin": "anonymous"
       },
       { "rel": "stylesheet", "href": "/styles/fonts.css" },
-      { "rel": "stylesheet", "href": "/styles/styles.css" },
-      { "rel": "stylesheet", "href": "/styles/sidebar-icons.css" }
+      { "rel": "stylesheet", "href": "/styles/styles.css" }
     ]
   }
 }
