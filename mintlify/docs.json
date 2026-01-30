@@ -37,18 +37,39 @@
           {
             "group": "Introduction",
             "pages": [
-              "platform-overview/introduction/what-is-grid",
-              "platform-overview/introduction/faq"
+              {
+                "page": "platform-overview/introduction/what-is-grid",
+                "icon": "square-info"
+              },
+              {
+                "page": "platform-overview/introduction/faq",
+                "icon": "circle-question"
+              }
             ]
           },
           {
             "group": "Core Concepts",
             "pages": [
-              "platform-overview/core-concepts/entities",
-              "platform-overview/core-concepts/quote-system",
-              "platform-overview/core-concepts/account-model",
-              "platform-overview/core-concepts/transaction-lifecycle",
-              "platform-overview/core-concepts/currencies-and-rails"
+              {
+                "page": "platform-overview/core-concepts/entities",
+                "icon": "diagram-project"
+              },
+              {
+                "page": "platform-overview/core-concepts/quote-system",
+                "icon": "receipt"
+              },
+              {
+                "page": "platform-overview/core-concepts/account-model",
+                "icon": "wallet"
+              },
+              {
+                "page": "platform-overview/core-concepts/transaction-lifecycle",
+                "icon": "arrows-rotate"
+              },
+              {
+                "page": "platform-overview/core-concepts/currencies-and-rails",
+                "icon": "coins"
+              }
             ]
           }
         ]
