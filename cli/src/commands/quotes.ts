@@ -1,7 +1,15 @@
 import { Command } from "commander";
 import { GridClient, PaginatedResponse } from "../client";
-import { outputResponse } from "../output";
+import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
+import {
+  validateAmount,
+  validateLockSide,
+  validateDate,
+  validateCurrency,
+  validateAll,
+  parseAmount,
+} from "../validation";
 
 interface Quote {
   id: string;
@@ -58,7 +66,7 @@ export function registerQuotesCommand(
       if (!client) return;
 
       const params: Record<string, string | number | undefined> = {
-        limit: parseInt(options.limit),
+        limit: parseInt(options.limit, 10),
         cursor: options.cursor,
         customerId: options.customerId,
         sendingAccountId: options.sendingAccount,
@@ -109,8 +117,28 @@ export function registerQuotesCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      const validations = [
+        validateAmount(options.amount, "amount"),
+        validateLockSide(options.lockSide),
+      ];
+      if (options.sourceCurrency) {
+        validations.push(validateCurrency(options.sourceCurrency, "source-currency"));
+      }
+      if (options.destCurrency) {
+        validations.push(validateCurrency(options.destCurrency, "dest-currency"));
+      }
+      if (options.senderBirthDate) {
+        validations.push(validateDate(options.senderBirthDate, "sender-birth-date"));
+      }
+      const validation = validateAll(validations);
+      if (!validation.valid) {
+        output(formatError(validation.error!));
+        process.exitCode = 1;
+        return;
+      }
+
       const body: Record<string, unknown> = {
-        lockedCurrencyAmount: parseInt(options.amount),
+        lockedCurrencyAmount: parseAmount(options.amount),
         lockedCurrencySide: options.lockSide,
       };
 

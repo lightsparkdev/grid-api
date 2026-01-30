@@ -10,14 +10,21 @@ npm install
 npm run build
 ```
 
-## Configuration
+## Quick Start
 
-The CLI requires API credentials via environment variables:
+Configure your credentials interactively:
+
+```bash
+node cli/dist/index.js configure
+```
+
+This will prompt for your API Token ID and Client Secret, validate them, and save to `~/.grid-credentials`.
+
+Alternatively, set environment variables:
 
 ```bash
 export GRID_API_TOKEN_ID="your-token-id"
 export GRID_API_CLIENT_SECRET="your-client-secret"
-export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"  # optional
 ```
 
 ## Usage
@@ -34,10 +41,37 @@ node cli/dist/index.js <command> [options]
 |--------|-------------|
 | `-c, --config <path>` | Path to credentials file |
 | `-u, --base-url <url>` | Override API base URL |
+| `-f, --format <format>` | Output format: `json` (default) or `table` |
+| `--no-color` | Disable colored output |
 | `-V, --version` | Show version |
 | `-h, --help` | Show help |
 
+### Command Aliases
+
+For convenience, common commands have short aliases:
+
+| Alias | Command |
+|-------|---------|
+| `cust` | `customers` |
+| `tx` | `transactions` |
+| `acct` | `accounts` |
+
+Example: `grid tx list` is equivalent to `grid transactions list`
+
 ## Commands
+
+### Setup
+
+```bash
+# Interactive configuration
+node cli/dist/index.js configure
+
+# Non-interactive configuration
+node cli/dist/index.js configure --token-id <id> --client-secret <secret>
+
+# Skip credential verification
+node cli/dist/index.js configure --no-verify
+```
 
 ### Platform Configuration
 
@@ -85,8 +119,11 @@ node cli/dist/index.js customers kyc-link \
 # Update customer
 node cli/dist/index.js customers update <customerId> --full-name "Jane Doe"
 
-# Delete customer
+# Delete customer (prompts for confirmation)
 node cli/dist/index.js customers delete <customerId>
+
+# Delete customer without confirmation
+node cli/dist/index.js customers delete <customerId> --yes
 ```
 
 ### Accounts
@@ -345,9 +382,35 @@ node cli/dist/index.js quotes create \
 node cli/dist/index.js quotes execute <quoteId>
 ```
 
+## Output Formats
+
+### JSON (default)
+
+```bash
+node cli/dist/index.js customers list
+```
+
+Output includes syntax highlighting when running in a terminal.
+
+### Table
+
+```bash
+node cli/dist/index.js customers list --format table
+```
+
+Displays results in a human-readable table format.
+
+### Disable Colors
+
+```bash
+node cli/dist/index.js customers list --no-color
+```
+
 ## Notes
 
 - All amounts are in the **smallest currency unit** (cents for USD, satoshis for BTC)
 - Quotes expire in 1-5 minutes
 - JIT quotes auto-execute when funds are received (no manual execute needed)
 - Use `--lock-side SENDING` to fix the send amount, `RECEIVING` to fix the receive amount
+- Destructive operations (like delete) require confirmation unless `--yes` is passed
+- Input validation runs before API calls to catch errors early

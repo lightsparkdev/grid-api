@@ -20,9 +20,11 @@ export interface PaginatedResponse<T> {
 
 export class GridClient {
   private config: GridConfig;
+  private timeoutMs: number;
 
-  constructor(config: GridConfig) {
+  constructor(config: GridConfig, timeoutMs: number = 30000) {
     this.config = config;
+    this.timeoutMs = timeoutMs;
   }
 
   private getAuthHeader(): string {
@@ -75,7 +77,12 @@ export class GridClient {
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+      fetchOptions.signal = controller.signal;
+
       const response = await fetch(url, fetchOptions);
+      clearTimeout(timeoutId);
       const contentType = response.headers.get("content-type");
       let data: unknown = null;
 
@@ -101,6 +108,15 @@ export class GridClient {
 
       return { success: true, data: data as T };
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return {
+          success: false,
+          error: {
+            status: 0,
+            message: `Request timed out after ${this.timeoutMs}ms`,
+          },
+        };
+      }
       const message = err instanceof Error ? err.message : "Unknown error";
       return {
         success: false,

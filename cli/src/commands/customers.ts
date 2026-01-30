@@ -2,6 +2,8 @@ import { Command } from "commander";
 import { GridClient, PaginatedResponse } from "../client";
 import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
+import { validateDate, validateCustomerType, validateAll } from "../validation";
+import { confirm } from "../prompt";
 
 interface Customer {
   id: string;
@@ -37,7 +39,7 @@ export function registerCustomersCommand(
       if (!client) return;
 
       const params: Record<string, string | number | undefined> = {
-        limit: parseInt(options.limit),
+        limit: parseInt(options.limit, 10),
         cursor: options.cursor,
         platformCustomerId: options.platformId,
         customerType: options.type,
@@ -83,6 +85,17 @@ export function registerCustomersCommand(
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
+
+      const validations = [validateCustomerType(options.type)];
+      if (options.birthDate) {
+        validations.push(validateDate(options.birthDate, "birth-date"));
+      }
+      const validation = validateAll(validations);
+      if (!validation.valid) {
+        output(formatError(validation.error!));
+        process.exitCode = 1;
+        return;
+      }
 
       const body: Record<string, unknown> = {
         platformCustomerId: options.platformId,
@@ -132,6 +145,15 @@ export function registerCustomersCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      if (options.birthDate) {
+        const validation = validateDate(options.birthDate, "birth-date");
+        if (!validation.valid) {
+          output(formatError(validation.error!));
+          process.exitCode = 1;
+          return;
+        }
+      }
+
       const body: Record<string, unknown> = {};
       if (options.fullName) body.fullName = options.fullName;
       if (options.birthDate) body.birthDate = options.birthDate;
@@ -156,10 +178,21 @@ export function registerCustomersCommand(
   customersCmd
     .command("delete <customerId>")
     .description("Delete a customer")
-    .action(async (customerId: string) => {
+    .option("-y, --yes", "Skip confirmation prompt")
+    .action(async (customerId: string, options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
+
+      if (!options.yes) {
+        const confirmed = await confirm(
+          `Are you sure you want to delete customer ${customerId}? This action cannot be undone.`
+        );
+        if (!confirmed) {
+          console.log("Aborted.");
+          return;
+        }
+      }
 
       const response = await client.delete<void>(`/customers/${customerId}`);
       outputResponse(response);

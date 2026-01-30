@@ -1,7 +1,8 @@
 import { Command } from "commander";
 import { GridClient } from "../client";
-import { outputResponse } from "../output";
+import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
+import { validateAmount, parseAmount } from "../validation";
 
 interface Transaction {
   id: string;
@@ -32,13 +33,22 @@ export function registerTransfersCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      if (options.amount) {
+        const validation = validateAmount(options.amount, "amount");
+        if (!validation.valid) {
+          output(formatError(validation.error!));
+          process.exitCode = 1;
+          return;
+        }
+      }
+
       const body: Record<string, unknown> = {
         source: { accountId: options.source },
         destination: { accountId: options.dest },
       };
 
       if (options.amount) {
-        body.amount = parseInt(options.amount);
+        body.amount = parseAmount(options.amount);
       }
 
       const response = await client.post<Transaction>("/transfer-in", body);
@@ -56,13 +66,22 @@ export function registerTransfersCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      if (options.amount) {
+        const validation = validateAmount(options.amount, "amount");
+        if (!validation.valid) {
+          output(formatError(validation.error!));
+          process.exitCode = 1;
+          return;
+        }
+      }
+
       const body: Record<string, unknown> = {
         source: { accountId: options.source },
         destination: { accountId: options.dest },
       };
 
       if (options.amount) {
-        body.amount = parseInt(options.amount);
+        body.amount = parseAmount(options.amount);
       }
 
       const response = await client.post<Transaction>("/transfer-out", body);
