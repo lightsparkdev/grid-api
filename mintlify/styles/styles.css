@@ -371,6 +371,41 @@ html.dark .hero-card {
 }
 
 /* ===========================================
+   Homepage-specific styles
+   Hide TOC, copy button, and other elements
+   on the landing page for a cleaner look
+   =========================================== */
+
+/* Hide "On this page" table of contents on homepage */
+body.is-homepage #table-of-contents,
+body.is-homepage [class*="table-of-contents"] {
+  display: none !important;
+}
+
+/* Hide "Copy page" button on homepage */
+body.is-homepage #page-context-menu-button,
+body.is-homepage [class*="page-context-menu"] {
+  display: none !important;
+}
+
+/* Hide the eyebrow/breadcrumb on homepage */
+body.is-homepage .eyebrow,
+body.is-homepage [class*="eyebrow"] {
+  display: none !important;
+}
+
+/* Give homepage content full width since TOC is hidden */
+body.is-homepage #content-area {
+  max-width: 100%;
+}
+
+/* Adjust content layout when TOC is hidden */
+body.is-homepage #table-of-contents-layout,
+body.is-homepage [class*="table-of-contents-layout"] {
+  display: none !important;
+}
+
+/* ===========================================
    Capabilities Grid Styling
    =========================================== */
 
