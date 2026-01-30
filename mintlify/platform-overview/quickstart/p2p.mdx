@@ -1,0 +1,84 @@
+---
+icon: "at"
+title: "Send to an UMA address"
+description: "Send payments using Universal Money Addresses with Grid's Global P2P API."
+---
+
+<Info>
+This quickstart walks you through sending to an UMA address. For detailed implementation, see the full [Global P2P documentation](/global-p2p).
+</Info>
+
+## Overview
+
+Grid's Global P2P API enables payments via Universal Money Addresses (UMA). In this quickstart, you'll:
+
+1. Set up your platform
+2. Resolve an UMA address
+3. Send a payment
+
+## Prerequisites
+
+- A Grid API key ([request sandbox access](https://lightspark.com/grid#signup))
+- Basic understanding of REST APIs and UMA
+
+## What is UMA?
+
+Universal Money Address (UMA) is an open standard that enables payments using human-readable addresses like `$alice@example.com`.
+
+## Step 1: Platform Configuration
+
+Configure your platform for Global P2P payments.
+
+<Card title="Platform Configuration" icon="gear" href="/global-p2p/getting-started/platform-configuration">
+  Learn how to configure your platform for P2P
+</Card>
+
+## Step 2: Resolve UMA Address
+
+Look up the recipient's UMA address to get payment details.
+
+```bash
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$alice@example.com" \
+  -H "Authorization: Basic YOUR_API_KEY"
+```
+
+## Step 3: Send Payment
+
+Execute a payment to the resolved UMA address.
+
+```bash
+# Get a quote
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "receiver_uma": "$alice@example.com",
+    "sending_currency": "USD",
+    "amount": "50.00"
+  }'
+
+# Execute the payment
+curl -X POST https://api.lightspark.com/grid/2025-10-13/payments \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "QUOTE_ID"
+  }'
+```
+
+## Testing
+
+<Card title="UMA Test Wallet" icon="wallet" href="/global-p2p/platform-tools/uma-test-wallet">
+  Use the UMA test wallet to test payments in sandbox
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Full P2P Guide" icon="book" href="/global-p2p">
+    Explore the complete Global P2P documentation
+  </Card>
+  <Card title="Receiving Payments" icon="inbox" href="/global-p2p/sending-receiving-payments/receiving-payments">
+    Learn how to receive UMA payments
+  </Card>
+</CardGroup>

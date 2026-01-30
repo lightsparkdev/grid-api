@@ -1,0 +1,94 @@
+---
+icon: "paper-plane"
+title: "Send a payout"
+description: "Get started sending cross-border payments with Grid in minutes."
+---
+
+<Info>
+This quickstart walks you through sending your first payout. For detailed implementation, see the full [Payouts & B2B documentation](/payouts-and-b2b).
+</Info>
+
+## Overview
+
+Grid's Payouts API enables you to send money globally across fiat, stablecoins, and Bitcoin. In this quickstart, you'll:
+
+1. Set up your platform
+2. Create a customer
+3. Configure accounts
+4. Send your first payment
+
+## Prerequisites
+
+- A Grid API key ([request sandbox access](https://lightspark.com/grid#signup))
+- Basic understanding of REST APIs
+
+## Step 1: Platform Configuration
+
+First, configure your platform settings including supported currencies and payment rails.
+
+<Card title="Platform Configuration" icon="gear" href="/payouts-and-b2b/onboarding/platform-configuration">
+  Learn how to configure your platform settings
+</Card>
+
+## Step 2: Create a Customer
+
+Create a customer entity to represent the recipient of your payout.
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/customers \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com"
+  }'
+```
+
+## Step 3: Configure Accounts
+
+Set up internal and external accounts for the customer.
+
+<CardGroup cols={2}>
+  <Card title="Internal Accounts" icon="wallet" href="/payouts-and-b2b/depositing-funds/internal-accounts">
+    Platform-managed accounts for holding funds
+  </Card>
+  <Card title="External Accounts" icon="bank" href="/payouts-and-b2b/depositing-funds/external-accounts">
+    Connect bank accounts for withdrawals
+  </Card>
+</CardGroup>
+
+## Step 4: Send a Payment
+
+Execute your first payout using a quote.
+
+```bash
+# Get a quote
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_currency": "USD",
+    "destination_currency": "MXN",
+    "amount": "100.00"
+  }'
+
+# Execute the payment
+curl -X POST https://api.lightspark.com/grid/2025-10-13/transactions \
+  -H "Authorization: Basic YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "QUOTE_ID",
+    "customer_id": "CUSTOMER_ID"
+  }'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Full Payouts Guide" icon="book" href="/payouts-and-b2b">
+    Explore the complete Payouts & B2B documentation
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/payouts-and-b2b/platform-tools/webhooks">
+    Set up webhooks to track payment status
+  </Card>
+</CardGroup>
