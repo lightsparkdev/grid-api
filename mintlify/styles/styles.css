@@ -382,6 +382,17 @@ body.is-homepage [class*="table-of-contents"] {
   display: none !important;
 }
 
+/* Hide page title on homepage */
+body.is-homepage #page-title {
+  display: none !important;
+}
+
+/* Hide the page context menu (copy button, etc) on homepage */
+body.is-homepage #page-context-menu,
+body.is-homepage #page-context-menu-button {
+  display: none !important;
+}
+
 /* Hide "Copy page" button on homepage */
 body.is-homepage #page-context-menu-button,
 body.is-homepage [class*="page-context-menu"] {
