@@ -1,7 +1,8 @@
 import { Command } from "commander";
 import { GridClient, PaginatedResponse } from "../client";
-import { outputResponse } from "../output";
+import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
+import { validateCurrency, validateDate, validateAll } from "../validation";
 
 interface InternalAccount {
   id: string;
@@ -53,8 +54,17 @@ export function registerAccountsCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      if (options.currency) {
+        const validation = validateCurrency(options.currency, "currency");
+        if (!validation.valid) {
+          output(formatError(validation.error!));
+          process.exitCode = 1;
+          return;
+        }
+      }
+
       const params: Record<string, string | number | undefined> = {
-        limit: parseInt(options.limit),
+        limit: parseInt(options.limit, 10),
         cursor: options.cursor,
         customerId: options.customerId,
         currency: options.currency,
@@ -88,8 +98,17 @@ export function registerAccountsCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      if (options.currency) {
+        const validation = validateCurrency(options.currency, "currency");
+        if (!validation.valid) {
+          output(formatError(validation.error!));
+          process.exitCode = 1;
+          return;
+        }
+      }
+
       const params: Record<string, string | number | undefined> = {
-        limit: parseInt(options.limit),
+        limit: parseInt(options.limit, 10),
         cursor: options.cursor,
         customerId: options.customerId,
         currency: options.currency,
@@ -135,6 +154,17 @@ export function registerAccountsCommand(
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
+
+      const validations = [validateCurrency(options.currency, "currency")];
+      if (options.beneficiaryBirthDate) {
+        validations.push(validateDate(options.beneficiaryBirthDate, "beneficiary-birth-date"));
+      }
+      const validation = validateAll(validations);
+      if (!validation.valid) {
+        output(formatError(validation.error!));
+        process.exitCode = 1;
+        return;
+      }
 
       const accountInfo: Record<string, unknown> = {
         accountType: options.accountType,

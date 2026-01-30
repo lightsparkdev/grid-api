@@ -1,26 +1,41 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import * as fs from "fs";
+import * as path from "path";
 import { loadConfig, GridConfig } from "./config";
 import { GridClient } from "./client";
-import { formatError, output } from "./output";
+import { formatError, output, setOutputFormat, setUseColors, OutputFormat } from "./output";
 
 export interface GlobalOptions {
   config?: string;
   baseUrl?: string;
+  format?: OutputFormat;
+  color?: boolean;
 }
+
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf-8")
+);
 
 const program = new Command();
 
 program
   .name("grid")
   .description("CLI for Grid API - manage global payments")
-  .version("1.0.0")
+  .version(packageJson.version)
   .option("-c, --config <path>", "Path to credentials file")
   .option(
     "-u, --base-url <url>",
     "Base URL for API (default: https://api.lightspark.com/grid/2025-10-13)"
-  );
+  )
+  .option("-f, --format <format>", "Output format: json or table", "json")
+  .option("--no-color", "Disable colored output")
+  .hook("preAction", (thisCommand) => {
+    const opts = thisCommand.opts();
+    if (opts.format) setOutputFormat(opts.format as OutputFormat);
+    if (opts.color === false) setUseColors(false);
+  });
 
 function getClient(options: GlobalOptions): GridClient | null {
   try {
@@ -40,6 +55,7 @@ function getClient(options: GlobalOptions): GridClient | null {
 export { program, getClient, GridClient, GridConfig };
 
 async function main() {
+  const { registerConfigureCommand } = await import("./commands/configure");
   const { registerConfigCommand } = await import("./commands/config");
   const { registerCustomersCommand } = await import("./commands/customers");
   const { registerAccountsCommand } = await import("./commands/accounts");
@@ -51,6 +67,7 @@ async function main() {
   const { registerSandboxCommand } = await import("./commands/sandbox");
   const { registerReceiverCommand } = await import("./commands/receiver");
 
+  registerConfigureCommand(program);
   registerConfigCommand(program, getClient);
   registerCustomersCommand(program, getClient);
   registerAccountsCommand(program, getClient);
@@ -59,6 +76,14 @@ async function main() {
   registerTransfersCommand(program, getClient);
   registerSandboxCommand(program, getClient);
   registerReceiverCommand(program, getClient);
+
+  const customersCmd = program.commands.find(c => c.name() === "customers");
+  const transactionsCmd = program.commands.find(c => c.name() === "transactions");
+  const accountsCmd = program.commands.find(c => c.name() === "accounts");
+
+  if (customersCmd) customersCmd.alias("cust");
+  if (transactionsCmd) transactionsCmd.alias("tx");
+  if (accountsCmd) accountsCmd.alias("acct");
 
   await program.parseAsync(process.argv);
 }

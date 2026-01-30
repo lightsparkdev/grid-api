@@ -46,7 +46,7 @@ export function registerTransactionsCommand(
       if (!client) return;
 
       const params: Record<string, string | number | undefined> = {
-        limit: parseInt(options.limit),
+        limit: parseInt(options.limit, 10),
         cursor: options.cursor,
         customerId: options.customerId,
         platformCustomerId: options.platformCustomerId,

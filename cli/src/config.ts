@@ -19,10 +19,19 @@ function loadCredentialsFile(): Partial<GridConfig> {
   const credentialsPath = getCredentialsPath();
   if (fs.existsSync(credentialsPath)) {
     const content = fs.readFileSync(credentialsPath, "utf-8");
-    return JSON.parse(content);
+    try {
+      return JSON.parse(content);
+    } catch {
+      throw new Error(
+        `Invalid JSON in credentials file: ${credentialsPath}. ` +
+        `Please fix the file or delete it and run 'grid configure'.`
+      );
+    }
   }
   return {};
 }
+
+export { getCredentialsPath };
 
 export function loadConfig(options: {
   configPath?: string;

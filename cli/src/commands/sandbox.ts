@@ -1,7 +1,8 @@
 import { Command } from "commander";
 import { GridClient } from "../client";
-import { outputResponse } from "../output";
+import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
+import { validateAmount, validateCurrency, validateAll, parseAmount } from "../validation";
 
 export function registerSandboxCommand(
   program: Command,
@@ -22,11 +23,22 @@ export function registerSandboxCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      const validations = [validateCurrency(options.currency, "currency")];
+      if (options.amount) {
+        validations.push(validateAmount(options.amount, "amount"));
+      }
+      const validation = validateAll(validations);
+      if (!validation.valid) {
+        output(formatError(validation.error!));
+        process.exitCode = 1;
+        return;
+      }
+
       const body: Record<string, unknown> = {
         quoteId: options.quoteId,
         currencyCode: options.currency,
       };
-      if (options.amount) body.currencyAmount = parseInt(options.amount);
+      if (options.amount) body.currencyAmount = parseAmount(options.amount);
       const response = await client.post<unknown>("/sandbox/send", body);
       outputResponse(response);
     });
@@ -43,9 +55,19 @@ export function registerSandboxCommand(
       const client = getClient(opts);
       if (!client) return;
 
+      const validation = validateAll([
+        validateAmount(options.amount, "amount"),
+        validateCurrency(options.currency, "currency"),
+      ]);
+      if (!validation.valid) {
+        output(formatError(validation.error!));
+        process.exitCode = 1;
+        return;
+      }
+
       const body: Record<string, unknown> = {
         receiverUmaAddress: options.umaAddress,
-        amount: parseInt(options.amount),
+        amount: parseAmount(options.amount),
         currency: options.currency,
       };
       if (options.senderUma) body.senderUmaAddress = options.senderUma;
@@ -63,7 +85,14 @@ export function registerSandboxCommand(
       const client = getClient(opts);
       if (!client) return;
 
-      const body = { amount: parseInt(options.amount) };
+      const validation = validateAmount(options.amount, "amount");
+      if (!validation.valid) {
+        output(formatError(validation.error!));
+        process.exitCode = 1;
+        return;
+      }
+
+      const body = { amount: parseAmount(options.amount) };
       const response = await client.post<unknown>(
         `/sandbox/internal-accounts/${accountId}/fund`,
         body
