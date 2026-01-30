@@ -1,10 +1,4 @@
 allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/BaseWalletInfo.yaml
-  - type: object
-    required:
-      - accountType
-    properties:
-      accountType:
-        type: string
-        const: BASE_WALLET
-        example: BASE_WALLET
+  

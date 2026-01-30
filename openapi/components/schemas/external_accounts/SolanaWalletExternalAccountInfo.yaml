@@ -1,10 +1,4 @@
 allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/SolanaWalletInfo.yaml
-  - type: object
-    required:
-      - accountType
-    properties:
-      accountType:
-        type: string
-        const: SOLANA_WALLET
-        example: SOLANA_WALLET
+  

@@ -1,7 +1,13 @@
 allOf:
   - $ref: ./Customer.yaml
   - type: object
+    required:
+      - customerType
     properties:
+      customerType:
+        type: string
+        enum:
+          - INDIVIDUAL
       fullName:
         type: string
         description: Individual's full name

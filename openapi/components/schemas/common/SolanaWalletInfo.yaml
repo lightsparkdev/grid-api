@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - address
+  - accountType
 properties:
   accountType:
     type: string
-    const: SOLANA_WALLET
-    example: SOLANA_WALLET
+    enum:
+      - SOLANA_WALLET
   address:
     type: string
     description: Solana wallet address

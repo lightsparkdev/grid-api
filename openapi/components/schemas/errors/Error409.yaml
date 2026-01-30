@@ -5,8 +5,9 @@ required:
   - code
 properties:
   status:
-    const: 409
     type: integer
+    enum: 
+      - 409
     description: HTTP status code
   code:
     type: string

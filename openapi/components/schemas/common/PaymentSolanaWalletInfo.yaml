@@ -1,9 +1,11 @@
 allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./SolanaWalletInfo.yaml
-properties:
-  assetType:
-    type: string
-    description: Type of asset
-    enum:
-      - USDC
-      - USDT
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum:
+          - USDC
+          - USDT

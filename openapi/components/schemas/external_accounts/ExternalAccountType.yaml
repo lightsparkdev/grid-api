@@ -1,0 +1,20 @@
+type: string
+enum:
+  - US_ACCOUNT
+  - CLABE
+  - PIX
+  - IBAN
+  - UPI
+  - NGN_ACCOUNT
+  - CAD_ACCOUNT
+  - GBP_ACCOUNT
+  - PHP_ACCOUNT
+  - SGD_ACCOUNT
+  - SPARK_WALLET
+  - LIGHTNING
+  - SOLANA_WALLET
+  - TRON_WALLET
+  - POLYGON_WALLET
+  - BASE_WALLET
+description: Type of external account or wallet
+example: US_ACCOUNT

@@ -5,8 +5,9 @@ required:
   - code
 properties:
   status:
-    const: 412
     type: integer
+    enum: 
+      - 412
     description: HTTP status code
   code:
     type: string
@@ -14,7 +15,7 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
-    const: UNSUPPORTED_UMA_VERSION
+    enum: [UNSUPPORTED_UMA_VERSION]
   message:
     type: string
     description: Error message

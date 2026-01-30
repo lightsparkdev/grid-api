@@ -8,6 +8,6 @@ allOf:
         $ref: ../invitations/UmaInvitation.yaml
       type:
         type: string
-        const: INVITATION_CLAIMED
+        enum: [INVITATION_CLAIMED]
         description: Type of webhook event
         example: INVITATION_CLAIMED

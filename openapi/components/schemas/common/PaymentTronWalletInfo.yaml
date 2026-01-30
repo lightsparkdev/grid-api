@@ -1,7 +1,9 @@
 allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./TronWalletInfo.yaml
-properties:
-  assetType:
-    type: string
-    description: Type of asset
-    const: USDT
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum: [USDT]

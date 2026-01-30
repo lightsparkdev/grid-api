@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - address
+  - accountType
 properties:
   accountType:
     type: string
-    const: SPARK_WALLET
-    example: SPARK_WALLET
+    enum:
+      - SPARK_WALLET
   address:
     type: string
     description: Spark wallet address

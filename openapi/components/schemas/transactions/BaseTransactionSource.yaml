@@ -1,0 +1,15 @@
+type: object
+required:
+  - sourceType
+properties:
+  sourceType:
+    $ref: ./TransactionSourceType.yaml
+  currency:
+    type: string
+    description: Currency code for the source
+    example: USD
+discriminator:
+  propertyName: sourceType
+  mapping:
+    ACCOUNT: ./AccountTransactionSource.yaml
+    UMA_ADDRESS: ./UmaAddressTransactionSource.yaml

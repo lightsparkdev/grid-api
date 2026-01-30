@@ -1,19 +1,9 @@
 allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/ClabeAccountInfo.yaml
   - type: object
     required:
-      - accountType
+      - beneficiary
     properties:
-      accountType:
-        type: string
-        const: CLABE
-        example: CLABE
       beneficiary:
-        oneOf:
-          - $ref: ./IndividualBeneficiary.yaml
-          - $ref: ./BusinessBeneficiary.yaml
-        discriminator:
-          propertyName: beneficiaryType
-          mapping:
-            INDIVIDUAL: ./IndividualBeneficiary.yaml
-            BUSINESS: ./BusinessBeneficiary.yaml
+        $ref: ./BeneficiaryOneOf.yaml

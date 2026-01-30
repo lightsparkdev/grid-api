@@ -1,27 +1,14 @@
-oneOf:
-  - title: Account
-    type: object
-    required:
-      - accountId
-    properties:
-      accountId:
-        type: string
-        description: Source account identifier
-        example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-      currency:
-        type: string
-        description: >-
-          Currency code for the funding source. See
-          [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
-          for the full list of supported fiat and crypto currencies.
-        example: USD
-    description: Source account details
-  - title: Real-time funding
-    type: object
+allOf:
+  - $ref: ./BaseQuoteSource.yaml
+  - type: object
     required:
       - currency
-      - customerId
+      - sourceType
     properties:
+      sourceType:
+        type: string
+        enum:
+          - REALTIME_FUNDING
       customerId:
         type: string
         description: >-
