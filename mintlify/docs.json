@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "palm",
   "name": "Grid API Documentation",
   "description": "The Grid API enables modern financial institutions to easily send and receive global payments.  The following documentation helps developers understand the Grid API and how to integrate with it.",
   "colors": {
@@ -17,14 +17,10 @@
   "fonts": {
     "heading": {
       "family": "Suisse Intl",
-      "source": "/fonts/suisse-intl/SuisseIntl-Medium.woff2",
-      "format": "woff2",
       "weight": 500
     },
     "body": {
       "family": "Suisse Intl",
-      "source": "/fonts/suisse-intl/SuisseIntl-Regular.woff2",
-      "format": "woff2",
       "weight": 400
     }
   },
