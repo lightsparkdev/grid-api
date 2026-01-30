@@ -157,6 +157,35 @@ html.dark .hero-card {
   font-style: normal;
   font-weight: 500; /* Medium weight for buttons */
   line-height: 24px;
+  transition: opacity 0.2s ease;
+}
+
+.hero .call-to-action:hover {
+  opacity: 0.9;
+}
+
+.hero .call-to-action-secondary {
+  cursor: pointer;
+  background: transparent;
+  color: var(--ls-sky-500);
+  border: 1px solid var(--ls-sky-500);
+  display: flex;
+  height: 40px;
+  padding: 8px 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--ls-radius-xs);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.hero .call-to-action-secondary:hover {
+  background: var(--ls-sky-500);
+  color: var(--ls-gray-050);
 }
 
 .hero {
