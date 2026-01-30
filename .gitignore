@@ -29,6 +29,13 @@ bin/
 .env
 local.properties
 
+# Grid CLI credentials
+.grid-credentials
+.claude/settings.local.json
+
+# CLI build output
+cli/dist/
+
 # Figma design tokens (local reference only)
 mintlify/tokens/
 
