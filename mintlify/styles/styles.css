@@ -369,3 +369,469 @@ html.dark .hero-card {
 #footer > div.flex.items-center.justify-between > div > a {
   display: none;
 }
+
+/* ===========================================
+   Capabilities Grid Styling
+   =========================================== */
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .capabilities-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .capabilities-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.capability-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capability-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capability-icon svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+/* Capability icon colors from Figma */
+.capability-icon.send { background: #00B3E0; }
+.capability-icon.receive { background: #F77D26; }
+.capability-icon.convert { background: #11A967; }
+.capability-icon.hold { background: #F77D26; }
+.capability-icon.ramp { background: #CF00A7; }
+.capability-icon.bill { background: #118453; }
+.capability-icon.program { background: #44DDB5; }
+.capability-icon.identify { background: #0072DB; }
+
+.capability-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ls-gray-950);
+}
+
+html.dark .capability-title {
+  color: var(--ls-gray-050);
+}
+
+.capability-desc {
+  font-size: 12px;
+  color: var(--ls-gray-500);
+  line-height: 1.4;
+}
+
+/* ===========================================
+   ProductTiles Component Styling
+   =========================================== */
+
+.product-tiles-container {
+  width: 100%;
+}
+
+.product-tiles-tab {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  background: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+html.dark .product-tiles-tab {
+  background: var(--ls-gray-900);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--ls-gray-050);
+}
+
+.product-tiles-tab:hover {
+  background: var(--ls-gray-100);
+}
+
+html.dark .product-tiles-tab:hover {
+  background: var(--ls-gray-850);
+}
+
+.product-tiles-tab.active {
+  background: var(--ls-gray-950);
+  color: var(--ls-gray-050);
+  border-color: var(--ls-gray-950);
+}
+
+html.dark .product-tiles-tab.active {
+  background: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+  border-color: var(--ls-gray-050);
+}
+
+.product-tiles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .product-tiles-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.product-tiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-tiles-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+  width: 100%;
+}
+
+.product-tiles-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+html.dark .product-tiles-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.product-tiles-item.active {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+html.dark .product-tiles-item.active {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+
+.product-tiles-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.6;
+}
+
+.product-tiles-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-tiles-item-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ls-gray-950);
+}
+
+html.dark .product-tiles-item-title {
+  color: var(--ls-gray-050);
+}
+
+.product-tiles-item-desc {
+  font-size: 13px;
+  color: var(--ls-gray-500);
+  line-height: 1.4;
+}
+
+.product-tiles-chevron {
+  flex-shrink: 0;
+  color: var(--ls-gray-400);
+  margin-left: auto;
+}
+
+.product-tiles-preview {
+  background: var(--ls-gray-100);
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.dark .product-tiles-preview {
+  background: var(--ls-gray-900);
+}
+
+.product-tiles-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-tiles-preview-img.light-only {
+  display: block;
+}
+
+.product-tiles-preview-img.dark-only {
+  display: none;
+}
+
+html.dark .product-tiles-preview-img.light-only {
+  display: none;
+}
+
+html.dark .product-tiles-preview-img.dark-only {
+  display: block;
+}
+
+.product-tiles-preview-placeholder {
+  color: var(--ls-gray-400);
+  font-size: 14px;
+}
+
+/* ===========================================
+   Resources Grid Styling
+   =========================================== */
+
+.resources-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .resources-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .resources-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.resources-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resources-column-title {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ls-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.resources-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ls-gray-950);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+html.dark .resources-link {
+  color: var(--ls-gray-050);
+}
+
+.resources-link:hover {
+  color: var(--ls-sky-500);
+}
+
+.resources-link-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+/* ===========================================
+   Hero Banner Styling
+   =========================================== */
+
+.hero-banner {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.hero-banner-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hero-banner-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hero-banner-text {
+  color: white;
+  font-size: 14px;
+}
+
+.hero-banner-text a {
+  color: var(--ls-sky-400);
+  text-decoration: underline;
+}
+
+.hero-banner-button {
+  padding: 8px 16px;
+  background: white;
+  color: var(--ls-gray-950);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.hero-banner-button:hover {
+  opacity: 0.9;
+}
+
+/* ===========================================
+   Info Cards Styling
+   =========================================== */
+
+.info-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 640px) {
+  .info-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-card {
+  background: var(--ls-gray-050);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html.dark .info-card {
+  background: var(--ls-gray-900);
+}
+
+.info-card-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.info-card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ls-gray-950);
+}
+
+html.dark .info-card-title {
+  color: var(--ls-gray-050);
+}
+
+.info-card-desc {
+  font-size: 14px;
+  color: var(--ls-gray-500);
+  margin-bottom: 8px;
+}
+
+.info-card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-card-link {
+  font-size: 14px;
+  color: var(--ls-sky-500);
+  text-decoration: none;
+}
+
+.info-card-link:hover {
+  text-decoration: underline;
+}
+
+/* ===========================================
+   Trusted By Section
+   =========================================== */
+
+.trusted-by {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 0;
+  flex-wrap: wrap;
+}
+
+.trusted-by-label {
+  font-size: 12px;
+  color: var(--ls-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trusted-by-logos {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.trusted-by-logo {
+  height: 24px;
+  width: auto;
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+html.dark .trusted-by-logo {
+  filter: grayscale(100%) invert(1);
+}

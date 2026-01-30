@@ -1,0 +1,298 @@
+/* ===========================================
+   Sidebar Icons for Individual Items
+   
+   Uses CSS ::before pseudo-elements with mask-image
+   to add icons to sidebar navigation links.
+   =========================================== */
+
+/* Base styles for all sidebar links */
+#navigation-items a[href] {
+  display: flex !important;
+  align-items: center !important;
+}
+
+#navigation-items a[href]::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  opacity: 0.6;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+/* Active item: full opacity */
+#navigation-items a[href].text-primary::before,
+#navigation-items a[href][class*="text-primary"]::before {
+  opacity: 1;
+}
+
+/* ===========================================
+   Overview Section Icons
+   =========================================== */
+
+/* Welcome (index/home) */
+#navigation-items a[href="/"]::before,
+#navigation-items a[href=""]::before {
+  -webkit-mask-image: url('/images/icons/square-info.svg');
+  mask-image: url('/images/icons/square-info.svg');
+}
+
+/* What is Grid? */
+#navigation-items a[href*="what-is-grid"]::before {
+  -webkit-mask-image: url('/images/icons/file-text.svg');
+  mask-image: url('/images/icons/file-text.svg');
+}
+
+/* Capabilities */
+#navigation-items a[href*="/capabilities"]::before {
+  -webkit-mask-image: url('/images/icons/blocks.svg');
+  mask-image: url('/images/icons/blocks.svg');
+}
+
+/* Use Cases */
+#navigation-items a[href*="use-cases"]::before {
+  -webkit-mask-image: url('/images/icons/light-bulb.svg');
+  mask-image: url('/images/icons/light-bulb.svg');
+}
+
+/* FAQ */
+#navigation-items a[href*="/faq"]::before {
+  -webkit-mask-image: url('/images/icons/bubble-question.svg');
+  mask-image: url('/images/icons/bubble-question.svg');
+}
+
+/* ===========================================
+   Quickstart Section Icons
+   =========================================== */
+
+/* Send a payout (payouts quickstart) */
+#navigation-items a[href*="payouts-and-b2b/quickstart"]::before {
+  -webkit-mask-image: url('/images/icons/paper-plane-top-right.svg');
+  mask-image: url('/images/icons/paper-plane-top-right.svg');
+}
+
+/* On-ramp to crypto (ramps quickstart) */
+#navigation-items a[href*="ramps/quickstart"]::before {
+  -webkit-mask-image: url('/images/icons/arrows-repeat-circle.svg');
+  mask-image: url('/images/icons/arrows-repeat-circle.svg');
+}
+
+/* Send Bitcoin rewards (rewards quickstart) */
+#navigation-items a[href*="rewards/quickstart"]::before {
+  -webkit-mask-image: url('/images/icons/gift1.svg');
+  mask-image: url('/images/icons/gift1.svg');
+}
+
+/* Send to an UMA address (global-p2p quickstart) */
+#navigation-items a[href*="global-p2p/quickstart"]::before {
+  -webkit-mask-image: url('/images/icons/at.svg');
+  mask-image: url('/images/icons/at.svg');
+}
+
+/* ===========================================
+   Core Concepts Section Icons
+   =========================================== */
+
+/* Entities & Relationships */
+#navigation-items a[href*="core-concepts/entities"]::before {
+  -webkit-mask-image: url('/images/icons/blocks.svg');
+  mask-image: url('/images/icons/blocks.svg');
+}
+
+/* Quote System */
+#navigation-items a[href*="quote-system"]::before {
+  -webkit-mask-image: url('/images/icons/receipt-check.svg');
+  mask-image: url('/images/icons/receipt-check.svg');
+}
+
+/* Account Model */
+#navigation-items a[href*="account-model"]::before {
+  -webkit-mask-image: url('/images/icons/wallet1.svg');
+  mask-image: url('/images/icons/wallet1.svg');
+}
+
+/* Transaction Lifecycle */
+#navigation-items a[href*="transaction-lifecycle"]::before {
+  -webkit-mask-image: url('/images/icons/arrows-repeat-circle.svg');
+  mask-image: url('/images/icons/arrows-repeat-circle.svg');
+}
+
+/* Currencies & Payment Rails */
+#navigation-items a[href*="currencies-and-rails"]::before {
+  -webkit-mask-image: url('/images/icons/coins.svg');
+  mask-image: url('/images/icons/coins.svg');
+}
+
+/* Configuration */
+#navigation-items a[href*="/configuration"]::before {
+  -webkit-mask-image: url('/images/icons/settings-gear2.svg');
+  mask-image: url('/images/icons/settings-gear2.svg');
+}
+
+/* ===========================================
+   Other Tab Icons (Payouts, Ramps, Rewards, etc.)
+   =========================================== */
+
+/* Index/Overview pages */
+#navigation-items a[href*="/index"]::before {
+  -webkit-mask-image: url('/images/icons/square-info.svg');
+  mask-image: url('/images/icons/square-info.svg');
+}
+
+/* Terminology */
+#navigation-items a[href*="/terminology"]::before {
+  -webkit-mask-image: url('/images/icons/file-text.svg');
+  mask-image: url('/images/icons/file-text.svg');
+}
+
+/* Implementation Overview */
+#navigation-items a[href*="implementation-overview"]::before {
+  -webkit-mask-image: url('/images/icons/file-text.svg');
+  mask-image: url('/images/icons/file-text.svg');
+}
+
+/* Platform Configuration */
+#navigation-items a[href*="platform-configuration"]::before {
+  -webkit-mask-image: url('/images/icons/settings-gear2.svg');
+  mask-image: url('/images/icons/settings-gear2.svg');
+}
+
+/* Configuring Customers */
+#navigation-items a[href*="configuring-customers"]::before {
+  -webkit-mask-image: url('/images/icons/people.svg');
+  mask-image: url('/images/icons/people.svg');
+}
+
+/* Internal Accounts */
+#navigation-items a[href*="internal-accounts"]::before {
+  -webkit-mask-image: url('/images/icons/wallet1.svg');
+  mask-image: url('/images/icons/wallet1.svg');
+}
+
+/* External Accounts */
+#navigation-items a[href*="external-accounts"]::before {
+  -webkit-mask-image: url('/images/icons/bank.svg');
+  mask-image: url('/images/icons/bank.svg');
+}
+
+/* Plaid */
+#navigation-items a[href*="/plaid"]::before {
+  -webkit-mask-image: url('/images/icons/bank.svg');
+  mask-image: url('/images/icons/bank.svg');
+}
+
+/* Depositing Funds */
+#navigation-items a[href*="depositing-funds"]::before {
+  -webkit-mask-image: url('/images/icons/arrow-inbox.svg');
+  mask-image: url('/images/icons/arrow-inbox.svg');
+}
+
+/* Send Payment */
+#navigation-items a[href*="send-payment"]::before {
+  -webkit-mask-image: url('/images/icons/paper-plane-top-right.svg');
+  mask-image: url('/images/icons/paper-plane-top-right.svg');
+}
+
+/* List Transactions */
+#navigation-items a[href*="list-transactions"]::before,
+#navigation-items a[href*="listing-transactions"]::before {
+  -webkit-mask-image: url('/images/icons/file-text.svg');
+  mask-image: url('/images/icons/file-text.svg');
+}
+
+/* Reconciliation */
+#navigation-items a[href*="reconciliation"]::before {
+  -webkit-mask-image: url('/images/icons/checkmark1.svg');
+  mask-image: url('/images/icons/checkmark1.svg');
+}
+
+/* Error Handling */
+#navigation-items a[href*="error-handling"]::before {
+  -webkit-mask-image: url('/images/icons/shield.svg');
+  mask-image: url('/images/icons/shield.svg');
+}
+
+/* Webhooks */
+#navigation-items a[href*="/webhooks"]::before {
+  -webkit-mask-image: url('/images/icons/lightning.svg');
+  mask-image: url('/images/icons/lightning.svg');
+}
+
+/* Sandbox Testing */
+#navigation-items a[href*="sandbox-testing"]::before {
+  -webkit-mask-image: url('/images/icons/hammer.svg');
+  mask-image: url('/images/icons/hammer.svg');
+}
+
+/* Postman Collection */
+#navigation-items a[href*="postman-collection"]::before {
+  -webkit-mask-image: url('/images/icons/code.svg');
+  mask-image: url('/images/icons/code.svg');
+}
+
+/* Fiat Crypto Conversion */
+#navigation-items a[href*="fiat-crypto-conversion"]::before {
+  -webkit-mask-image: url('/images/icons/arrows-repeat-circle.svg');
+  mask-image: url('/images/icons/arrows-repeat-circle.svg');
+}
+
+/* Self Custody Wallets */
+#navigation-items a[href*="self-custody-wallets"]::before {
+  -webkit-mask-image: url('/images/icons/key2.svg');
+  mask-image: url('/images/icons/key2.svg');
+}
+
+/* Distributing Rewards */
+#navigation-items a[href*="distributing-rewards"]::before {
+  -webkit-mask-image: url('/images/icons/gift1.svg');
+  mask-image: url('/images/icons/gift1.svg');
+}
+
+/* Invitations */
+#navigation-items a[href*="/invitations"]::before {
+  -webkit-mask-image: url('/images/icons/paper-plane-top-right.svg');
+  mask-image: url('/images/icons/paper-plane-top-right.svg');
+}
+
+/* Sending Payments */
+#navigation-items a[href*="sending-payments"]::before {
+  -webkit-mask-image: url('/images/icons/paper-plane-top-right.svg');
+  mask-image: url('/images/icons/paper-plane-top-right.svg');
+}
+
+/* Receiving Payments */
+#navigation-items a[href*="receiving-payments"]::before {
+  -webkit-mask-image: url('/images/icons/arrow-inbox.svg');
+  mask-image: url('/images/icons/arrow-inbox.svg');
+}
+
+/* UMA Test Wallet */
+#navigation-items a[href*="uma-test-wallet"]::before {
+  -webkit-mask-image: url('/images/icons/at.svg');
+  mask-image: url('/images/icons/at.svg');
+}
+
+/* ===========================================
+   API Reference Icons
+   =========================================== */
+
+/* Environments */
+#navigation-items a[href*="/environments"]::before {
+  -webkit-mask-image: url('/images/icons/globe.svg');
+  mask-image: url('/images/icons/globe.svg');
+}
+
+/* Authentication */
+#navigation-items a[href*="/authentication"]::before {
+  -webkit-mask-image: url('/images/icons/key2.svg');
+  mask-image: url('/images/icons/key2.svg');
+}
