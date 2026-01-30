@@ -77,41 +77,41 @@
       {
         "tab": "Payouts & B2B",
         "pages": [
-          "payouts-and-b2b/index",
-          "payouts-and-b2b/terminology",
-          "payouts-and-b2b/onboarding/implementation-overview",
-          "payouts-and-b2b/quickstart",
+          {"page": "payouts-and-b2b/index", "icon": "paper-plane"},
+          {"page": "payouts-and-b2b/terminology", "icon": "book"},
+          {"page": "payouts-and-b2b/onboarding/implementation-overview", "icon": "map"},
+          {"page": "payouts-and-b2b/quickstart", "icon": "bolt"},
           {
             "group": "Onboarding",
             "pages": [
-              "payouts-and-b2b/onboarding/platform-configuration",
-              "payouts-and-b2b/onboarding/configuring-customers"
+              {"page": "payouts-and-b2b/onboarding/platform-configuration", "icon": "gear"},
+              {"page": "payouts-and-b2b/onboarding/configuring-customers", "icon": "users"}
             ]
           },
           {
             "group": "Managing Accounts",
             "pages": [
-              "payouts-and-b2b/depositing-funds/internal-accounts",
-              "payouts-and-b2b/depositing-funds/external-accounts",
-              "payouts-and-b2b/depositing-funds/plaid"
+              {"page": "payouts-and-b2b/depositing-funds/internal-accounts", "icon": "wallet"},
+              {"page": "payouts-and-b2b/depositing-funds/external-accounts", "icon": "building-columns"},
+              {"page": "payouts-and-b2b/depositing-funds/plaid", "icon": "link"}
             ]
           },
           {
             "group": "Sending Payments",
             "pages": [
-              "payouts-and-b2b/depositing-funds/depositing-funds",
-              "payouts-and-b2b/payment-flow/send-payment",
-              "payouts-and-b2b/payment-flow/list-transactions",
-              "payouts-and-b2b/payment-flow/reconciliation",
-              "payouts-and-b2b/payment-flow/error-handling"
+              {"page": "payouts-and-b2b/depositing-funds/depositing-funds", "icon": "arrow-down-to-bracket"},
+              {"page": "payouts-and-b2b/payment-flow/send-payment", "icon": "paper-plane"},
+              {"page": "payouts-and-b2b/payment-flow/list-transactions", "icon": "list"},
+              {"page": "payouts-and-b2b/payment-flow/reconciliation", "icon": "scale-balanced"},
+              {"page": "payouts-and-b2b/payment-flow/error-handling", "icon": "triangle-exclamation"}
             ]
           },
           {
             "group": "Platform Tools",
             "pages": [
-              "payouts-and-b2b/platform-tools/webhooks",
-              "payouts-and-b2b/platform-tools/sandbox-testing",
-              "payouts-and-b2b/platform-tools/postman-collection"
+              {"page": "payouts-and-b2b/platform-tools/webhooks", "icon": "webhook"},
+              {"page": "payouts-and-b2b/platform-tools/sandbox-testing", "icon": "flask"},
+              {"page": "payouts-and-b2b/platform-tools/postman-collection", "icon": "cube"}
             ]
           }
         ]
@@ -119,39 +119,39 @@
       {
         "tab": "Ramps",
         "pages": [
-          "ramps/index",
-          "ramps/terminology",
-          "ramps/onboarding/implementation-overview",
-          "ramps/quickstart",
+          {"page": "ramps/index", "icon": "arrows-rotate"},
+          {"page": "ramps/terminology", "icon": "book"},
+          {"page": "ramps/onboarding/implementation-overview", "icon": "map"},
+          {"page": "ramps/quickstart", "icon": "bolt"},
           {
             "group": "Onboarding",
             "pages": [
-              "ramps/onboarding/platform-configuration",
-              "ramps/onboarding/configuring-customers"
+              {"page": "ramps/onboarding/platform-configuration", "icon": "gear"},
+              {"page": "ramps/onboarding/configuring-customers", "icon": "users"}
             ]
           },
           {
             "group": "Managing Accounts",
             "pages": [
-              "ramps/accounts/internal-accounts",
-              "ramps/accounts/external-accounts",
-              "ramps/accounts/plaid"
+              {"page": "ramps/accounts/internal-accounts", "icon": "wallet"},
+              {"page": "ramps/accounts/external-accounts", "icon": "building-columns"},
+              {"page": "ramps/accounts/plaid", "icon": "link"}
             ]
           },
           {
             "group": "Conversion Flows",
             "pages": [
-              "ramps/accounts/depositing-funds",
-              "ramps/conversion-flows/fiat-crypto-conversion",
-              "ramps/conversion-flows/self-custody-wallets"
+              {"page": "ramps/accounts/depositing-funds", "icon": "arrow-down-to-bracket"},
+              {"page": "ramps/conversion-flows/fiat-crypto-conversion", "icon": "right-left"},
+              {"page": "ramps/conversion-flows/self-custody-wallets", "icon": "key"}
             ]
           },
           {
             "group": "Platform Tools",
             "pages": [
-              "ramps/platform-tools/webhooks",
-              "ramps/platform-tools/sandbox-testing",
-              "ramps/platform-tools/postman-collection"
+              {"page": "ramps/platform-tools/webhooks", "icon": "webhook"},
+              {"page": "ramps/platform-tools/sandbox-testing", "icon": "flask"},
+              {"page": "ramps/platform-tools/postman-collection", "icon": "cube"}
             ]
           }
         ]
@@ -159,37 +159,37 @@
       {
         "tab": "Rewards",
         "pages": [
-          "rewards/index",
-          "rewards/terminology",
-          "rewards/developer-guides/implementation-overview",
-          "rewards/quickstart",
+          {"page": "rewards/index", "icon": "gift"},
+          {"page": "rewards/terminology", "icon": "book"},
+          {"page": "rewards/developer-guides/implementation-overview", "icon": "map"},
+          {"page": "rewards/quickstart", "icon": "bolt"},
           {
             "group": "Onboarding",
             "pages": [
-              "rewards/developer-guides/platform-configuration"
+              {"page": "rewards/developer-guides/platform-configuration", "icon": "gear"}
             ]
           },
           {
             "group": "Managing Accounts",
             "pages": [
-              "rewards/developer-guides/internal-accounts",
-              "rewards/developer-guides/external-accounts",
-              "rewards/developer-guides/plaid"
+              {"page": "rewards/developer-guides/internal-accounts", "icon": "wallet"},
+              {"page": "rewards/developer-guides/external-accounts", "icon": "building-columns"},
+              {"page": "rewards/developer-guides/plaid", "icon": "link"}
             ]
           },
           {
             "group": "Distributing Rewards",
             "pages": [
-              "rewards/developer-guides/distributing-rewards",
-              "rewards/developer-guides/listing-transactions"
+              {"page": "rewards/developer-guides/distributing-rewards", "icon": "paper-plane"},
+              {"page": "rewards/developer-guides/listing-transactions", "icon": "list"}
             ]
           },
           {
             "group": "Platform Tools",
             "pages": [
-              "rewards/platform-tools/webhooks",
-              "rewards/platform-tools/sandbox-testing",
-              "rewards/platform-tools/postman-collection"
+              {"page": "rewards/platform-tools/webhooks", "icon": "webhook"},
+              {"page": "rewards/platform-tools/sandbox-testing", "icon": "flask"},
+              {"page": "rewards/platform-tools/postman-collection", "icon": "cube"}
             ]
           }
         ]
@@ -197,43 +197,43 @@
       {
         "tab": "Global P2P",
         "pages": [
-          "global-p2p/index",
-          "global-p2p/terminology",
-          "global-p2p/getting-started/implementation-overview",
-          "global-p2p/quickstart",
+          {"page": "global-p2p/index", "icon": "globe"},
+          {"page": "global-p2p/terminology", "icon": "book"},
+          {"page": "global-p2p/getting-started/implementation-overview", "icon": "map"},
+          {"page": "global-p2p/quickstart", "icon": "bolt"},
           {
             "group": "Onboarding",
             "pages": [
-              "global-p2p/getting-started/platform-configuration",
-              "global-p2p/onboarding-customers/configuring-customers",
-              "global-p2p/onboarding-customers/invitations"
+              {"page": "global-p2p/getting-started/platform-configuration", "icon": "gear"},
+              {"page": "global-p2p/onboarding-customers/configuring-customers", "icon": "users"},
+              {"page": "global-p2p/onboarding-customers/invitations", "icon": "envelope"}
             ]
           },
           {
             "group": "Managing Accounts",
             "pages": [
-              "global-p2p/managing-accounts/internal-accounts",
-              "global-p2p/managing-accounts/external-accounts",
-              "global-p2p/managing-accounts/plaid"
+              {"page": "global-p2p/managing-accounts/internal-accounts", "icon": "wallet"},
+              {"page": "global-p2p/managing-accounts/external-accounts", "icon": "building-columns"},
+              {"page": "global-p2p/managing-accounts/plaid", "icon": "link"}
             ]
           },
           {
             "group": "Sending & Receiving Payments",
             "pages": [
-              "global-p2p/sending-receiving-payments/depositing-funds",
-              "global-p2p/sending-receiving-payments/sending-payments",
-              "global-p2p/sending-receiving-payments/receiving-payments",
-              "global-p2p/sending-receiving-payments/reconciliation",
-              "global-p2p/sending-receiving-payments/error-handling"
+              {"page": "global-p2p/sending-receiving-payments/depositing-funds", "icon": "arrow-down-to-bracket"},
+              {"page": "global-p2p/sending-receiving-payments/sending-payments", "icon": "paper-plane"},
+              {"page": "global-p2p/sending-receiving-payments/receiving-payments", "icon": "arrow-down"},
+              {"page": "global-p2p/sending-receiving-payments/reconciliation", "icon": "scale-balanced"},
+              {"page": "global-p2p/sending-receiving-payments/error-handling", "icon": "triangle-exclamation"}
             ]
           },
           {
             "group": "Platform Tools",
             "pages": [
-              "global-p2p/platform-tools/webhooks",
-              "global-p2p/platform-tools/sandbox-testing",
-              "global-p2p/platform-tools/postman-collection",
-              "global-p2p/platform-tools/uma-test-wallet"
+              {"page": "global-p2p/platform-tools/webhooks", "icon": "webhook"},
+              {"page": "global-p2p/platform-tools/sandbox-testing", "icon": "flask"},
+              {"page": "global-p2p/platform-tools/postman-collection", "icon": "cube"},
+              {"page": "global-p2p/platform-tools/uma-test-wallet", "icon": "at"}
             ]
           }
         ]
@@ -244,9 +244,9 @@
           {
             "group": "Using the API",
             "pages": [
-              "api-reference/environments",
-              "api-reference/terminology",
-              "api-reference/authentication"
+              {"page": "api-reference/environments", "icon": "server"},
+              {"page": "api-reference/terminology", "icon": "book"},
+              {"page": "api-reference/authentication", "icon": "key"}
             ]
           },
           {
