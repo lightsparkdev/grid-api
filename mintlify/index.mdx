@@ -3,163 +3,273 @@ title: "Welcome"
 description: "Build applications that move money globally across fiat, stablecoins, and Bitcoin with a single API."
 ---
 
-<Frame>
-  <img src="/images/home/hero.png" alt="Grid Sandbox" />
-</Frame>
+{/* ProductTiles Component */}
+export const ProductTiles = ({ categories }) => {
+  const [activeCategory, setActiveCategory] = React.useState(categories[0].id);
+  const [activeItem, setActiveItem] = React.useState(categories[0].items[0]?.id);
 
-<CardGroup cols={2}>
-  <Card title="Understand Grid" icon="book-open" href="/platform-overview/introduction/what-is-grid">
-    Learn how Grid works before you integrate
-    
-    - [What is Grid?](/platform-overview/introduction/what-is-grid)
-    - [Capabilities](/platform-overview/capabilities)
-    - [Entities & relationships](/platform-overview/core-concepts/entities)
-  </Card>
-  <Card title="Start building" icon="code" href="/payouts-and-b2b/quickstart">
-    Jump into a quickstart guide
-    
-    - [Send a payout](/payouts-and-b2b/quickstart)
-    - [On-ramp to crypto](/ramps/quickstart)
-    - [Send Bitcoin rewards](/rewards/quickstart)
-  </Card>
-</CardGroup>
+  const currentCategory = categories.find((cat) => cat.id === activeCategory);
+  const currentItem = currentCategory?.items.find((item) => item.id === activeItem);
+
+  return (
+    <div className="product-tiles-container">
+      <div className="flex flex-wrap gap-2 mb-6">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => {
+              setActiveCategory(cat.id);
+              setActiveItem(cat.items[0]?.id);
+            }}
+            className={`product-tiles-tab ${activeCategory === cat.id ? 'active' : ''}`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+      <div className="product-tiles-grid">
+        <div className="product-tiles-list">
+          {currentCategory?.items.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveItem(item.id)}
+              className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
+            >
+              <img src={item.icon} alt="" className="product-tiles-icon" />
+              <div className="product-tiles-item-content">
+                <div className="product-tiles-item-title">{item.title}</div>
+                <div className="product-tiles-item-desc">{item.description}</div>
+              </div>
+              {activeItem === item.id && (
+                <svg className="product-tiles-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="product-tiles-preview">
+          {currentItem?.image ? (
+            <img src={currentItem.image} alt={currentItem.title} className="product-tiles-preview-img" />
+          ) : (
+            <div className="product-tiles-preview-placeholder">Preview</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const gridCategories = [
+  {
+    id: 'payouts',
+    label: 'Payouts',
+    items: [
+      { id: 'gig-workers', title: 'Gig worker payments', description: 'Pay drivers, couriers, and freelancers instantly', icon: '/images/icons/car-front-view.svg', image: '/images/home/payout-preview.png' },
+      { id: 'marketplace', title: 'Marketplace payouts', description: 'Settle with sellers in their local currency', icon: '/images/icons/store4.svg', image: '/images/home/payout-preview.png' },
+      { id: 'suppliers', title: 'Supplier payments', description: 'Pay vendors and suppliers across borders', icon: '/images/icons/shipping.svg', image: '/images/home/payout-preview.png' },
+      { id: 'creators', title: 'Creator earnings', description: 'Distribute revenue to creators worldwide', icon: '/images/icons/multi-media.svg', image: '/images/home/payout-preview.png' }
+    ]
+  },
+  {
+    id: 'ramps',
+    label: 'Ramps',
+    items: [
+      { id: 'on-ramp', title: 'On-ramp', description: 'Convert fiat to crypto for your users', icon: '/images/icons/arrow-inbox.svg', image: '/images/home/payout-preview.png' },
+      { id: 'off-ramp', title: 'Off-ramp', description: 'Convert crypto to fiat instantly', icon: '/images/icons/banknote1.svg', image: '/images/home/payout-preview.png' },
+      { id: 'stablecoin', title: 'Stablecoin bridge', description: 'Bridge between different stablecoin networks', icon: '/images/icons/arrows-repeat-circle.svg', image: '/images/home/payout-preview.png' },
+      { id: 'self-custody', title: 'Self-custody', description: 'Enable users to maintain their own wallets', icon: '/images/icons/wallet1.svg', image: '/images/home/payout-preview.png' }
+    ]
+  },
+  {
+    id: 'rewards',
+    label: 'Rewards',
+    items: [
+      { id: 'cashback', title: 'Cashback', description: 'Reward customers with instant Bitcoin cashback', icon: '/images/icons/gift1.svg', image: '/images/home/payout-preview.png' },
+      { id: 'loyalty', title: 'Loyalty programs', description: 'Build loyalty programs with crypto rewards', icon: '/images/icons/repeat.svg', image: '/images/home/payout-preview.png' },
+      { id: 'referrals', title: 'Referrals', description: 'Incentivize referrals with programmable rewards', icon: '/images/icons/people.svg', image: '/images/home/payout-preview.png' },
+      { id: 'gaming', title: 'Gaming', description: 'Distribute in-game rewards and winnings', icon: '/images/icons/lightning.svg', image: '/images/home/payout-preview.png' }
+    ]
+  },
+  {
+    id: 'global-p2p',
+    label: 'Global P2P',
+    items: [
+      { id: 'remittances', title: 'Remittances', description: 'Send money across borders with low fees', icon: '/images/icons/globe.svg', image: '/images/home/payout-preview.png' },
+      { id: 'bill-pay', title: 'Bill pay', description: 'Enable users to pay bills internationally', icon: '/images/icons/receipt-check.svg', image: '/images/home/payout-preview.png' },
+      { id: 'peer-transfers', title: 'Peer transfers', description: 'Facilitate person-to-person payments globally', icon: '/images/icons/paper-plane-top-right.svg', image: '/images/home/payout-preview.png' },
+      { id: 'uma', title: 'UMA', description: 'Accept payments via Universal Money Addresses', icon: '/images/icons/at.svg', image: '/images/home/payout-preview.png' }
+    ]
+  }
+];
+
+{/* Hero Banner with Sand Dunes Image */}
+<div className="hero-banner">
+  <img src="/images/home/hero-landscape.png" alt="Grid Sandbox" className="hero-banner-image" />
+  <div className="hero-banner-overlay">
+    <span className="hero-banner-text">Ready to test? <a href="/payouts-and-b2b/platform-tools/sandbox-testing">Explore the Grid Sandbox</a></span>
+    <a href="https://lightspark.com/grid#signup" className="hero-banner-button">Request sandbox access</a>
+  </div>
+</div>
+
+{/* Info Cards: Understand Grid & Start Building */}
+<div className="info-cards-grid">
+  <div className="info-card">
+    <svg className="info-card-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="4" fill="#00B3E0" fillOpacity="0.1"/>
+      <path d="M10 12H22M10 16H22M10 20H16" stroke="#00B3E0" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+    <div className="info-card-title">Understand Grid</div>
+    <div className="info-card-desc">Learn how Grid works before you integrate</div>
+    <div className="info-card-links">
+      <a href="/platform-overview/introduction/what-is-grid" className="info-card-link">What is Grid?</a>
+      <a href="/platform-overview/capabilities" className="info-card-link">Capabilities</a>
+      <a href="/platform-overview/core-concepts/entities" className="info-card-link">Entities & relationships</a>
+    </div>
+  </div>
+  <div className="info-card">
+    <svg className="info-card-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="4" fill="#F77D26" fillOpacity="0.1"/>
+      <rect x="10" y="10" width="5" height="5" rx="1" fill="#F77D26"/>
+      <rect x="17" y="10" width="5" height="5" rx="1" fill="#F77D26"/>
+      <rect x="10" y="17" width="5" height="5" rx="1" fill="#F77D26"/>
+      <rect x="17" y="17" width="5" height="5" rx="1" fill="#F77D26"/>
+    </svg>
+    <div className="info-card-title">Start building</div>
+    <div className="info-card-desc">Jump into a quickstart guide</div>
+    <div className="info-card-links">
+      <a href="/payouts-and-b2b/quickstart" className="info-card-link">Send a payout</a>
+      <a href="/ramps/quickstart" className="info-card-link">On-ramp to crypto</a>
+      <a href="/rewards/quickstart" className="info-card-link">Send Bitcoin rewards</a>
+    </div>
+  </div>
+</div>
 
 ## Capabilities
 
-Primitives for moving money.
+<span className="text-gray-500">Primitives for moving money</span>
 
-<CardGroup cols={4}>
-  <Card title="Send" icon="paper-plane" color="#0EA5E9">
-    Move funds to any destination
-  </Card>
-  <Card title="Receive" icon="inbox" color="#F97316">
-    Accept incoming funds
-  </Card>
-  <Card title="Convert" icon="arrows-rotate" color="#10B981">
-    Exchange currencies and assets
-  </Card>
-  <Card title="Hold" icon="wallet" color="#EAB308">
-    Store multi-currency balances
-  </Card>
-  <Card title="Ramp" icon="arrow-right-arrow-left" color="#F43F5E">
-    Bridge fiat and crypto
-  </Card>
-  <Card title="Bill" icon="file-invoice" color="#8B5CF6">
-    Invoice and collect payments
-  </Card>
-  <Card title="Program" icon="code" color="#06B6D4">
-    Create programmable flows
-  </Card>
-  <Card title="Identify" icon="user-check" color="#3B82F6">
-    KYC/KYB verification
-  </Card>
-</CardGroup>
+<div className="capabilities-grid" style={{marginTop: '24px'}}>
+  <div className="capability-card">
+    <div className="capability-icon send">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 2L6 8M12 2L8 12L6 8M12 2L2 6L6 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    </div>
+    <div className="capability-title">Send</div>
+    <div className="capability-desc">Move funds to any destination</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon receive">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2V12M7 12L3 8M7 12L11 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    </div>
+    <div className="capability-title">Receive</div>
+    <div className="capability-desc">Accept incoming funds</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon convert">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 4L3 4M3 4L5 2M3 4L5 6M3 10L11 10M11 10L9 8M11 10L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    </div>
+    <div className="capability-title">Convert</div>
+    <div className="capability-desc">Exchange currencies and assets</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon hold">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5H12M2 9H12M4 2V12M10 2V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    </div>
+    <div className="capability-title">Hold</div>
+    <div className="capability-desc">Store multi-currency balances</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon ramp">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7H12M7 2V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    </div>
+    <div className="capability-title">Ramp</div>
+    <div className="capability-desc">Bridge fiat and crypto</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon bill">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 2V12L7 10L10 12V2H4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    </div>
+    <div className="capability-title">Bill</div>
+    <div className="capability-desc">Invoice and collect payments</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon program">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 5L2 7L4 9M10 5L12 7L10 9M8 3L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    </div>
+    <div className="capability-title">Program</div>
+    <div className="capability-desc">Create programmable flows</div>
+  </div>
+  <div className="capability-card">
+    <div className="capability-icon identify">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M3 12C3 9.79 5.24 8 7 8C8.76 8 11 9.79 11 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    </div>
+    <div className="capability-title">Identify</div>
+    <div className="capability-desc">KYC/KYB verification</div>
+  </div>
+</div>
 
 ## What you can build
 
-Combine primitives, ship products.
+<span className="text-gray-500">Combine primitives, ship products</span>
 
-<Tabs>
-  <Tab title="Payouts">
-    <CardGroup cols={2}>
-      <Card title="Gig worker payments" icon="car" href="/payouts-and-b2b">
-        Pay drivers, couriers, and freelancers instantly
-      </Card>
-      <Card title="Marketplace payouts" icon="store" href="/payouts-and-b2b">
-        Settle with sellers in their local currency
-      </Card>
-      <Card title="Supplier payments" icon="truck" href="/payouts-and-b2b">
-        Pay vendors and suppliers across borders
-      </Card>
-      <Card title="Creator earnings" icon="video" href="/payouts-and-b2b">
-        Distribute revenue to creators worldwide
-      </Card>
-    </CardGroup>
-  </Tab>
-  <Tab title="Ramps">
-    <CardGroup cols={2}>
-      <Card title="On-ramp" icon="arrow-up" href="/ramps">
-        Convert fiat to crypto for your users
-      </Card>
-      <Card title="Off-ramp" icon="arrow-down" href="/ramps">
-        Convert crypto to fiat instantly
-      </Card>
-      <Card title="Stablecoin bridge" icon="bridge" href="/ramps">
-        Bridge between different stablecoin networks
-      </Card>
-      <Card title="Self-custody" icon="key" href="/ramps">
-        Enable users to maintain their own wallets
-      </Card>
-    </CardGroup>
-  </Tab>
-  <Tab title="Rewards">
-    <CardGroup cols={2}>
-      <Card title="Cashback" icon="percent" href="/rewards">
-        Reward customers with instant Bitcoin cashback
-      </Card>
-      <Card title="Loyalty programs" icon="heart" href="/rewards">
-        Build loyalty programs with crypto rewards
-      </Card>
-      <Card title="Referrals" icon="users" href="/rewards">
-        Incentivize referrals with programmable rewards
-      </Card>
-      <Card title="Gaming" icon="gamepad" href="/rewards">
-        Distribute in-game rewards and winnings
-      </Card>
-    </CardGroup>
-  </Tab>
-  <Tab title="Global P2P">
-    <CardGroup cols={2}>
-      <Card title="Remittances" icon="globe" href="/global-p2p">
-        Send money across borders with low fees
-      </Card>
-      <Card title="Bill pay" icon="file-invoice-dollar" href="/global-p2p">
-        Enable users to pay bills internationally
-      </Card>
-      <Card title="Peer transfers" icon="user-group" href="/global-p2p">
-        Facilitate person-to-person payments globally
-      </Card>
-      <Card title="UMA" icon="at" href="/global-p2p">
-        Accept payments via Universal Money Addresses
-      </Card>
-    </CardGroup>
-  </Tab>
-</Tabs>
+<div style={{marginTop: '24px'}}>
+  <ProductTiles categories={gridCategories} />
+</div>
 
-## Trusted by
-
-<Frame>
-  <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12 py-8 opacity-50">
-    <img src="/images/logos/coinbase.svg" alt="Coinbase" className="h-8 lg:h-10 w-auto" />
-    <img src="/images/logos/sofi.svg" alt="SoFi" className="h-8 lg:h-10 w-auto" />
-    <img src="/images/logos/nu.svg" alt="Nu" className="h-8 lg:h-10 w-auto" />
-    <img src="/images/logos/revolut.svg" alt="Revolut" className="h-8 lg:h-10 w-auto" />
-    <img src="/images/logos/bitso.svg" alt="Bitso" className="h-8 lg:h-10 w-auto" />
+{/* Trusted By Section */}
+<div className="trusted-by" style={{marginTop: '48px', marginBottom: '48px'}}>
+  <span className="trusted-by-label">Trusted by</span>
+  <div className="trusted-by-logos">
+    <img src="/images/logos/coinbase.svg" alt="Coinbase" className="trusted-by-logo" />
+    <img src="/images/logos/sofi.svg" alt="SoFi" className="trusted-by-logo" />
+    <img src="/images/logos/nu.svg" alt="Nu" className="trusted-by-logo" />
+    <img src="/images/logos/revolut.svg" alt="Revolut" className="trusted-by-logo" />
+    <img src="/images/logos/bitso.svg" alt="Bitso" className="trusted-by-logo" />
   </div>
-</Frame>
+</div>
 
 ## Resources
 
-<CardGroup cols={3}>
-  <Card title="Grid GitHub repo" icon="github" href="https://github.com/lightsparkdev/grid-api">
-    View the Grid API repository
-  </Card>
-  <Card title="Tools and sandbox" icon="flask" href="/payouts-and-b2b/platform-tools/sandbox-testing">
-    Test payment flows in sandbox
-  </Card>
-  <Card title="Postman collection" icon="cube" href="/payouts-and-b2b/platform-tools/postman-collection">
-    Explore and test Grid endpoints
-  </Card>
-</CardGroup>
-
-<CardGroup cols={3}>
-  <Card title="Contact support" icon="headset" href="mailto:support@lightspark.com">
-    Get help from our team
-  </Card>
-  <Card title="Request sandbox access" icon="key" href="https://lightspark.com/grid#signup">
-    Get started with Grid
-  </Card>
-  <Card title="Talk to sales" icon="comments" href="https://lightspark.com/grid#signup">
-    Discuss your use case
-  </Card>
-</CardGroup>
+<div className="resources-grid" style={{marginTop: '24px'}}>
+  <div className="resources-column">
+    <div className="resources-column-title">Quick links</div>
+    <a href="https://github.com/lightsparkdev/grid-api" className="resources-link">
+      <img src="/images/icons/github.svg" className="resources-link-icon" alt="" />
+      Grid GitHub repo
+    </a>
+    <a href="/payouts-and-b2b/platform-tools/sandbox-testing" className="resources-link">
+      <img src="/images/icons/hammer.svg" className="resources-link-icon" alt="" />
+      Tools and sandbox
+    </a>
+    <a href="/payouts-and-b2b/platform-tools/postman-collection" className="resources-link">
+      <img src="/images/icons/code.svg" className="resources-link-icon" alt="" />
+      Postman collection
+    </a>
+  </div>
+  <div className="resources-column">
+    <div className="resources-column-title">Need help?</div>
+    <a href="mailto:support@lightspark.com" className="resources-link">
+      <img src="/images/icons/bubble-annotation5.svg" className="resources-link-icon" alt="" />
+      Contact support
+    </a>
+    <a href="https://lightspark.com/grid#signup" className="resources-link">
+      <img src="/images/icons/key2.svg" className="resources-link-icon" alt="" />
+      Request sandbox access
+    </a>
+    <a href="https://lightspark.com/grid#signup" className="resources-link">
+      <img src="/images/icons/people.svg" className="resources-link-icon" alt="" />
+      Talk to sales
+    </a>
+  </div>
+  <div className="resources-column">
+    <div className="resources-column-title">Socials</div>
+    <a href="https://x.com/lightspark" className="resources-link">
+      <svg className="resources-link-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.6 1h2.3l-5 5.7 5.9 7.8h-4.6l-3.6-4.7-4.1 4.7H1.2l5.3-6.1L1 1h4.7l3.3 4.3L12.6 1zm-.8 12.1h1.3L4.4 2.3H3L11.8 13.1z"/></svg>
+      X (Twitter)
+    </a>
+    <a href="https://linkedin.com/company/lightspark-group" className="resources-link">
+      <img src="/images/icons/linkedin.svg" className="resources-link-icon" alt="" />
+      LinkedIn
+    </a>
+  </div>
+</div>

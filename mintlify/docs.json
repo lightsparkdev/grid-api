@@ -347,7 +347,8 @@
         "crossOrigin": "anonymous"
       },
       { "rel": "stylesheet", "href": "/styles/fonts.css" },
-      { "rel": "stylesheet", "href": "/styles/styles.css" }
+      { "rel": "stylesheet", "href": "/styles/styles.css" },
+      { "rel": "stylesheet", "href": "/styles/sidebar-icons.css" }
     ]
   }
 }

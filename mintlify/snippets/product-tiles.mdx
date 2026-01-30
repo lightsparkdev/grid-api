@@ -1,0 +1,234 @@
+{/* ProductTiles Component - Adapted from Aspen theme */}
+{/* Creates a tabbed interface with use case list on left and preview image on right */}
+
+export const ProductTiles = ({ categories }) => {
+  const [activeCategory, setActiveCategory] = React.useState(categories[0].id);
+  const [activeItem, setActiveItem] = React.useState(categories[0].items[0]?.id);
+
+  const currentCategory = categories.find((cat) => cat.id === activeCategory);
+  const currentItem = currentCategory?.items.find((item) => item.id === activeItem);
+
+  return (
+    <div className="product-tiles-container">
+      {/* Category tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => {
+              setActiveCategory(cat.id);
+              setActiveItem(cat.items[0]?.id);
+            }}
+            className={`product-tiles-tab ${activeCategory === cat.id ? 'active' : ''}`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content grid: items on left, preview on right */}
+      <div className="product-tiles-grid">
+        {/* Left side: list of items */}
+        <div className="product-tiles-list">
+          {currentCategory?.items.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveItem(item.id)}
+              className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
+            >
+              <img src={item.icon} alt="" className="product-tiles-icon" />
+              <div className="product-tiles-item-content">
+                <div className="product-tiles-item-title">{item.title}</div>
+                <div className="product-tiles-item-desc">{item.description}</div>
+              </div>
+              {activeItem === item.id && (
+                <svg className="product-tiles-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Right side: preview image */}
+        <div className="product-tiles-preview">
+          {currentItem?.image ? (
+            <>
+              <img
+                src={currentItem.image.light || currentItem.image}
+                alt={currentItem.title}
+                className="product-tiles-preview-img light-only"
+              />
+              <img
+                src={currentItem.image.dark || currentItem.image}
+                alt={currentItem.title}
+                className="product-tiles-preview-img dark-only"
+              />
+            </>
+          ) : (
+            <div className="product-tiles-preview-placeholder">
+              Preview
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+{/* Data for Grid docs "What you can build" section */}
+
+export const gridCategories = [
+  {
+    id: 'payouts',
+    label: 'Payouts',
+    items: [
+      {
+        id: 'gig-workers',
+        title: 'Gig worker payments',
+        description: 'Pay drivers, couriers, and freelancers instantly',
+        icon: '/images/icons/car-front-view.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/payouts-and-b2b'
+      },
+      {
+        id: 'marketplace',
+        title: 'Marketplace payouts',
+        description: 'Settle with sellers in their local currency',
+        icon: '/images/icons/store4.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/payouts-and-b2b'
+      },
+      {
+        id: 'suppliers',
+        title: 'Supplier payments',
+        description: 'Pay vendors and suppliers across borders',
+        icon: '/images/icons/shipping.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/payouts-and-b2b'
+      },
+      {
+        id: 'creators',
+        title: 'Creator earnings',
+        description: 'Distribute revenue to creators worldwide',
+        icon: '/images/icons/multi-media.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/payouts-and-b2b'
+      }
+    ]
+  },
+  {
+    id: 'ramps',
+    label: 'Ramps',
+    items: [
+      {
+        id: 'on-ramp',
+        title: 'On-ramp',
+        description: 'Convert fiat to crypto for your users',
+        icon: '/images/icons/arrow-inbox.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/ramps'
+      },
+      {
+        id: 'off-ramp',
+        title: 'Off-ramp',
+        description: 'Convert crypto to fiat instantly',
+        icon: '/images/icons/banknote1.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/ramps'
+      },
+      {
+        id: 'stablecoin',
+        title: 'Stablecoin bridge',
+        description: 'Bridge between different stablecoin networks',
+        icon: '/images/icons/arrows-repeat-circle.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/ramps'
+      },
+      {
+        id: 'self-custody',
+        title: 'Self-custody',
+        description: 'Enable users to maintain their own wallets',
+        icon: '/images/icons/wallet1.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/ramps'
+      }
+    ]
+  },
+  {
+    id: 'rewards',
+    label: 'Rewards',
+    items: [
+      {
+        id: 'cashback',
+        title: 'Cashback',
+        description: 'Reward customers with instant Bitcoin cashback',
+        icon: '/images/icons/gift1.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/rewards'
+      },
+      {
+        id: 'loyalty',
+        title: 'Loyalty programs',
+        description: 'Build loyalty programs with crypto rewards',
+        icon: '/images/icons/repeat.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/rewards'
+      },
+      {
+        id: 'referrals',
+        title: 'Referrals',
+        description: 'Incentivize referrals with programmable rewards',
+        icon: '/images/icons/people.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/rewards'
+      },
+      {
+        id: 'gaming',
+        title: 'Gaming',
+        description: 'Distribute in-game rewards and winnings',
+        icon: '/images/icons/lightning.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/rewards'
+      }
+    ]
+  },
+  {
+    id: 'global-p2p',
+    label: 'Global P2P',
+    items: [
+      {
+        id: 'remittances',
+        title: 'Remittances',
+        description: 'Send money across borders with low fees',
+        icon: '/images/icons/globe.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/global-p2p'
+      },
+      {
+        id: 'bill-pay',
+        title: 'Bill pay',
+        description: 'Enable users to pay bills internationally',
+        icon: '/images/icons/receipt-check.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/global-p2p'
+      },
+      {
+        id: 'peer-transfers',
+        title: 'Peer transfers',
+        description: 'Facilitate person-to-person payments globally',
+        icon: '/images/icons/paper-plane-top-right.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/global-p2p'
+      },
+      {
+        id: 'uma',
+        title: 'UMA',
+        description: 'Accept payments via Universal Money Addresses',
+        icon: '/images/icons/at.svg',
+        image: '/images/home/payout-preview.png',
+        href: '/global-p2p'
+      }
+    ]
+  }
+];
