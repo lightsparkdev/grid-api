@@ -55,14 +55,55 @@ For detailed information, read these reference files in the `references/` direct
 
 ## Configuration
 
-The CLI requires credentials configured via environment variables:
+### Quick Setup (Recommended)
+
+Run the interactive configuration command:
+```bash
+node cli/dist/index.js configure
+```
+
+This will:
+1. Prompt for your API Token ID and Client Secret
+2. Validate the credentials against the API
+3. Save them to `~/.grid-credentials`
+
+### Alternative: Environment Variables
+
+You can also configure via environment variables:
 - `GRID_API_TOKEN_ID` - API token ID
 - `GRID_API_CLIENT_SECRET` - API client secret
 - `GRID_BASE_URL` - Base URL (defaults to `https://api.lightspark.com/grid/2025-10-13`)
 
+### Non-Interactive Setup
+
+```bash
+node cli/dist/index.js configure --token-id <id> --client-secret <secret>
+```
+
 ## CLI Commands
 
 Run all CLI commands from the repo root using: `node cli/dist/index.js <command>`
+
+### Command Aliases
+
+For faster typing, these aliases are available:
+- `customers` → `cust`
+- `transactions` → `tx`
+- `accounts` → `acct`
+
+Example: `node cli/dist/index.js cust list` is equivalent to `node cli/dist/index.js customers list`
+
+### Output Options
+
+By default, all commands output colorized JSON. You can change this:
+
+```bash
+# Table format (human-readable)
+node cli/dist/index.js customers list --format table
+
+# Disable colors (for piping/scripting)
+node cli/dist/index.js customers list --no-color
+```
 
 ### Platform Configuration
 ```bash
@@ -75,6 +116,9 @@ node cli/dist/index.js config update --webhook-endpoint <url>
 node cli/dist/index.js customers list [--limit N]
 node cli/dist/index.js customers get <customerId>
 node cli/dist/index.js customers create --platform-id <id> --type INDIVIDUAL --full-name "Name"
+node cli/dist/index.js customers update <customerId> --full-name "New Name"
+node cli/dist/index.js customers delete <customerId>        # Prompts for confirmation
+node cli/dist/index.js customers delete <customerId> --yes  # Skip confirmation
 node cli/dist/index.js customers kyc-link --customer-id <id> --redirect-url <url>
 ```
 
@@ -268,7 +312,8 @@ For questions about the Grid API:
 2. **Use smallest currency units**: All amounts are in cents/satoshis - use `decimals` field for display
 3. **Handle quote expiration**: Quotes expire in 1-5 minutes; be prepared to create new quotes
 4. **Choose the right flow**: Use prefunded for immediate execution, JIT for crypto/instant rails
-5. **Validate before creating**: Check country-specific requirements to avoid validation errors
+5. **Input validation**: The CLI validates dates (YYYY-MM-DD), amounts, and currencies before making API calls - you'll get clear error messages for invalid input
+6. **Use table format for exploration**: `--format table` makes it easier to scan results interactively
 
 ## Common Mistakes to Avoid
 
