@@ -60,16 +60,7 @@ patch:
     content:
       application/json:
         schema:
-          oneOf:
-            - title: Update Individual Customer
-              $ref: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-            - title: Update Business Customer
-              $ref: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
-          discriminator:
-            propertyName: customerType
-            mapping:
-              INDIVIDUAL: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-              BUSINESS: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
+          $ref: ../../components/schemas/customers/CustomerUpdateRequestOneOf.yaml
         examples:
           individualUpdate:
             summary: Update individual customer example

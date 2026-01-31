@@ -13,7 +13,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/customers/CustomerOneOf.yaml
+          $ref: ../../components/schemas/customers/CustomerCreateRequestOneOf.yaml
   responses:
     '201':
       description: Customer created successfully
