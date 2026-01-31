@@ -247,6 +247,11 @@ html.dark #ask-ai-button:hover {
   margin-left: 0 !important;
 }
 
+/* Navbar link buttons gap */
+#navbar .h-16 nav ul {
+  gap: 8px !important;
+}
+
 #navbar a.link:not(.nav-tabs-item),
 #navbar [class*="navbar"] a,
 .navbar-link {
@@ -291,50 +296,6 @@ html.dark .navbar-link svg {
   color: var(--ls-gray-100) !important;
 }
 
-/* ===========================================
-   Navbar - Mode Toggle (Light/Dark)
-   =========================================== */
-
-#navbar button[aria-label*="theme"],
-#navbar button[aria-label*="mode"],
-#navbar [class*="mode-toggle"],
-#navbar [class*="theme-toggle"],
-button[class*="color-mode"]:not(#sidebar-content button) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 32px !important;
-  height: 32px !important;
-  padding: 0 !important;
-  border-radius: 6px !important;
-  background: transparent !important;
-  border: none !important;
-  cursor: pointer !important;
-  transition: opacity 0.15s ease !important;
-}
-
-#navbar button[aria-label*="theme"]:hover,
-#navbar button[aria-label*="mode"]:hover,
-#navbar [class*="mode-toggle"]:hover,
-#navbar [class*="theme-toggle"]:hover {
-  opacity: 0.7 !important;
-}
-
-#navbar button[aria-label*="theme"] svg,
-#navbar button[aria-label*="mode"] svg,
-#navbar [class*="mode-toggle"] svg,
-#navbar [class*="theme-toggle"] svg {
-  width: 20px !important;
-  height: 20px !important;
-  color: var(--ls-gray-950) !important;
-}
-
-html.dark #navbar button[aria-label*="theme"] svg,
-html.dark #navbar button[aria-label*="mode"] svg,
-html.dark #navbar [class*="mode-toggle"] svg,
-html.dark #navbar [class*="theme-toggle"] svg {
-  color: var(--ls-gray-100) !important;
-}
 
 /* ===========================================
    Navbar - Tabs
@@ -598,25 +559,6 @@ button.absolute.top-5.right-5 {
   display: none !important;
 }
 
-/* Hide sidebar theme toggle */
-#sidebar-content [class*="theme-toggle"],
-#sidebar-content [class*="color-mode"],
-#sidebar-content [class*="dark-mode-toggle"],
-#sidebar-content button[aria-label*="theme"],
-#sidebar-content button[aria-label*="dark mode"],
-#sidebar-content button[aria-label*="light mode"],
-[class*="sidebar"] [class*="footer"],
-[class*="sidebar-footer"],
-#sidebar-content #theme-toggle {
-  display: none !important;
-}
-
-/* Hide sidebar bottom border */
-#sidebar-content > div[class*="border-t"],
-#sidebar-content > div.border-t,
-div[class*="px-7"][class*="py-4"][class*="border-t"] {
-  display: none !important;
-}
 
 /* ===========================================
    Main Content Area
@@ -637,7 +579,58 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   background-color: var(--ls-gray-050) !important;
 }
 
+/* Main content wrapper - remove default padding, let container handle it */
+#content-area {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Content container - set width and centering */
+/* 1072px = 1024px content + 24px padding on each side */
+#content-container {
+  max-width: 1072px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* Prose container - center the content with consistent margins */
+#content-area > article,
+#content-area > div > article,
+.prose {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Table of contents layout - ensure balanced spacing */
+#table-of-contents-layout,
+[class*="table-of-contents-layout"] {
+  padding-right: 24px !important;
+}
+
 /* Hide footer link in main footer */
 #footer > div.flex.items-center.justify-between > div > a {
   display: none;
+}
+
+/* ===========================================
+   Sidebar Footer
+   =========================================== */
+
+/* Sidebar footer section padding */
+#sidebar-content > div:last-of-type {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* Add "(0, 0, 0)" text to the left of sidebar footer */
+#sidebar-content > div:last-of-type::before {
+  content: "(0, 0, 0)";
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  color: var(--ls-gray-400);
+  margin-right: auto;
+  padding-left: 4px;
 }
