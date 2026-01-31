@@ -1,0 +1,643 @@
+/* ===========================================
+   Base Styles
+   
+   Global typography, navbar, sidebar, and 
+   content area styling. Uses design tokens.
+   =========================================== */
+
+/* ===========================================
+   Root Color Overrides
+   Override Mintlify's primary color variables
+   =========================================== */
+
+:root {
+  --primary: var(--ls-gray-950) !important;
+  --text-primary: var(--ls-gray-950) !important;
+  --color-primary: var(--ls-gray-950) !important;
+  --tw-text-opacity: 1;
+}
+
+html.dark {
+  --primary: var(--ls-gray-100) !important;
+  --text-primary: var(--ls-gray-100) !important;
+  --color-primary: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Global Typography
+   
+   Base fonts configured in docs.json.
+   This handles additional customizations.
+   =========================================== */
+
+/* Enable single-story 'a' (stylistic alternates) */
+* {
+  font-feature-settings: "salt" on;
+  text-shadow: none;
+}
+
+/* Headings & Bold: Medium weight (500) */
+h1, h2, h3, h4, h5, h6,
+strong, b, th,
+.sidebar-group-header,
+.eyebrow,
+.font-semibold,
+[data-component-part="step-title"],
+[data-component-part="tab-button"] {
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
+
+/* Navigation tabs & CTA button: Medium weight */
+.nav-tabs-item,
+#topbar-cta-button, #topbar-cta-button *,
+#page-context-menu-button, #page-context-menu-button *,
+#pagination a, #pagination a * {
+  font-weight: 500 !important;
+  text-shadow: none !important;
+}
+
+/* Navbar links: Book weight (450) */
+.navbar-link a,
+#navbar a.link:not(.nav-tabs-item) {
+  font-weight: 450 !important;
+}
+
+/* Code: Suisse Intl Mono */
+code, pre, kbd, samp, .font-mono {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* API field names: Mono Bold */
+[data-component-part="field-name"] {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-weight: 700 !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* ===========================================
+   SVG Icons
+   =========================================== */
+
+/* Non-scaling stroke for all SVGs */
+svg, svg * {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Stroke width for Central Icons */
+svg[class*="icon"] path,
+svg[class*="icon"] line,
+svg[class*="icon"] circle,
+svg[class*="icon"] rect,
+svg[class*="icon"] polyline,
+svg[class*="icon"] polygon {
+  stroke-width: 1.5px;
+}
+
+/* ===========================================
+   Navbar - Top Row
+   Border, padding, and layout
+   =========================================== */
+
+#navbar .h-16,
+#navbar [class*="h-16"] {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+html.dark #navbar .h-16,
+html.dark #navbar [class*="h-16"] {
+  border-bottom: 0.5px solid var(--ls-white-10) !important;
+}
+
+/* Tabs row padding */
+#navbar .h-12,
+#navbar [class*="h-12"] {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+/* ===========================================
+   Navbar - Search Bar
+   =========================================== */
+
+#search-bar-entry {
+  background: var(--ls-gray-050) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: 8px !important;
+  width: 320px !important;
+  height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-500) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+}
+
+#search-bar-entry:hover {
+  border-color: var(--ls-black-20) !important;
+}
+
+#search-bar-entry:hover svg,
+#search-bar-entry:hover > div > span:first-child {
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #search-bar-entry {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--ls-white-10) !important;
+  color: var(--ls-gray-500) !important;
+}
+
+html.dark #search-bar-entry:hover {
+  border-color: var(--ls-white-20) !important;
+}
+
+html.dark #search-bar-entry:hover svg,
+html.dark #search-bar-entry:hover > div > span:first-child {
+  color: var(--ls-gray-100) !important;
+}
+
+#search-bar-entry svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--ls-gray-500) !important;
+  stroke-width: 1.5px !important;
+  transition: color 0.2s ease !important;
+}
+
+#search-bar-entry span {
+  color: var(--ls-gray-500) !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Keyboard shortcut badge */
+#search-bar-entry kbd,
+#search-bar-entry [class*="min-w-"] > span:last-child {
+  background: var(--ls-gray-100) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  color: var(--ls-gray-500) !important;
+  font-family: inherit !important;
+}
+
+html.dark #search-bar-entry kbd,
+html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
+  background: var(--ls-white-10) !important;
+  color: var(--ls-gray-400) !important;
+}
+
+/* ===========================================
+   Navbar - Ask AI Button
+   =========================================== */
+
+[class*="ask-ai"],
+button[aria-label*="AI"],
+[data-component*="ai"],
+#ask-ai-button {
+  background: var(--ls-gray-050) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: 8px !important;
+  height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--ls-gray-500) !important;
+  transition: all 0.2s ease !important;
+}
+
+[class*="ask-ai"]:hover,
+button[aria-label*="AI"]:hover,
+#ask-ai-button:hover {
+  border-color: var(--ls-black-20) !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark [class*="ask-ai"],
+html.dark button[aria-label*="AI"],
+html.dark #ask-ai-button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--ls-white-10) !important;
+}
+
+html.dark [class*="ask-ai"]:hover,
+html.dark button[aria-label*="AI"]:hover,
+html.dark #ask-ai-button:hover {
+  border-color: var(--ls-white-20) !important;
+  color: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Navbar - Links (GitHub, Contact)
+   =========================================== */
+
+#navbar .h-16 [class*="gap-x-"],
+#navbar .h-16 [class*="flex"][class*="items-center"] > *:not(:first-child) {
+  margin-left: 0 !important;
+}
+
+#navbar a.link:not(.nav-tabs-item),
+#navbar [class*="navbar"] a,
+.navbar-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 0 4px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 450 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-950) !important;
+  text-decoration: none !important;
+  transition: opacity 0.15s ease !important;
+  font-feature-settings: "salt" 1 !important;
+}
+
+#navbar a.link:not(.nav-tabs-item):hover,
+#navbar [class*="navbar"] a:hover,
+.navbar-link:hover {
+  opacity: 0.7 !important;
+}
+
+#navbar a.link:not(.nav-tabs-item) svg,
+#navbar [class*="navbar"] a svg,
+.navbar-link svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #navbar a.link:not(.nav-tabs-item),
+html.dark #navbar [class*="navbar"] a,
+html.dark .navbar-link {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark #navbar a.link:not(.nav-tabs-item) svg,
+html.dark #navbar [class*="navbar"] a svg,
+html.dark .navbar-link svg {
+  color: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Navbar - Mode Toggle (Light/Dark)
+   =========================================== */
+
+#navbar button[aria-label*="theme"],
+#navbar button[aria-label*="mode"],
+#navbar [class*="mode-toggle"],
+#navbar [class*="theme-toggle"],
+button[class*="color-mode"]:not(#sidebar-content button) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s ease !important;
+}
+
+#navbar button[aria-label*="theme"]:hover,
+#navbar button[aria-label*="mode"]:hover,
+#navbar [class*="mode-toggle"]:hover,
+#navbar [class*="theme-toggle"]:hover {
+  opacity: 0.7 !important;
+}
+
+#navbar button[aria-label*="theme"] svg,
+#navbar button[aria-label*="mode"] svg,
+#navbar [class*="mode-toggle"] svg,
+#navbar [class*="theme-toggle"] svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #navbar button[aria-label*="theme"] svg,
+html.dark #navbar button[aria-label*="mode"] svg,
+html.dark #navbar [class*="mode-toggle"] svg,
+html.dark #navbar [class*="theme-toggle"] svg {
+  color: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Navbar - Tabs
+   =========================================== */
+
+/* Inactive state */
+.nav-tabs-item,
+a.nav-tabs-item,
+#navbar .nav-tabs-item,
+.nav-tabs-item:not([class*="text-gray-800"]):not([class*="text-gray-200"]) {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Hover state */
+.nav-tabs-item:hover,
+a.nav-tabs-item:hover,
+#navbar .nav-tabs-item:hover {
+  color: var(--ls-gray-950) !important;
+}
+
+/* Active state */
+.nav-tabs-item.text-gray-800,
+.nav-tabs-item[class*="text-gray-800"],
+a.nav-tabs-item.text-gray-800,
+#navbar .nav-tabs-item.text-gray-800,
+.nav-tabs-item[aria-current="page"] {
+  color: var(--ls-gray-950) !important;
+}
+
+/* Active indicator line */
+.nav-tabs-item::after,
+.nav-tabs-item.text-gray-600::after,
+.nav-tabs-item[class*="text-gray-600"]::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+.nav-tabs-item.text-gray-800::after,
+a.nav-tabs-item.text-gray-800::after,
+#navbar .nav-tabs-item.text-gray-800::after,
+.nav-tabs-item[aria-current="page"]::after {
+  background-color: var(--ls-gray-950) !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode tabs */
+html.dark .nav-tabs-item,
+html.dark a.nav-tabs-item,
+html.dark #navbar .nav-tabs-item {
+  color: var(--ls-gray-500) !important;
+}
+
+html.dark .nav-tabs-item:hover,
+html.dark a.nav-tabs-item:hover {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark .nav-tabs-item.text-gray-200,
+html.dark .nav-tabs-item[class*="text-gray-200"],
+html.dark a.nav-tabs-item.text-gray-200,
+html.dark .nav-tabs-item[aria-current="page"] {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark .nav-tabs-item.text-gray-200::after,
+html.dark a.nav-tabs-item.text-gray-200::after,
+html.dark .nav-tabs-item[aria-current="page"]::after {
+  background-color: var(--ls-gray-100) !important;
+  opacity: 1 !important;
+}
+
+html.dark .nav-tabs-item.text-gray-400::after,
+html.dark .nav-tabs-item[class*="text-gray-400"]::after {
+  opacity: 0 !important;
+}
+
+/* Active sidebar item: Medium weight */
+a[class*="text-primary"]:not(.nav-tabs-item),
+a[class*="text-primary"]:not(.nav-tabs-item) *,
+button[class*="text-primary"],
+button[class*="text-primary"] * {
+  font-weight: 500 !important;
+}
+
+/* ===========================================
+   Sidebar
+   =========================================== */
+
+#sidebar-content {
+  background-color: var(--ls-gray-100) !important;
+  border-right: 0.5px solid var(--ls-black-10) !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+#navigation-items {
+  background-color: var(--ls-gray-100) !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+#navigation-items > div.text-sm {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Group containers */
+#navigation-items .mt-6,
+#navigation-items .lg\:mt-8,
+#navigation-items [class*="mt-6"],
+#navigation-items [class*="mt-8"] {
+  margin-top: 0 !important;
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+  position: relative !important;
+}
+
+/* First group */
+#navigation-items > div > div:first-child,
+#navigation-items > div.text-sm > div:first-child,
+#navigation-items .text-sm > div:first-child,
+#navigation-items > .text-sm > div:first-of-type {
+  padding-top: 0 !important;
+  padding-bottom: 24px !important;
+  margin-top: 0 !important;
+}
+
+/* Group dividers */
+#navigation-items .mt-6:not(:first-child)::before,
+#navigation-items .lg\:mt-8:not(:first-child)::before,
+#navigation-items [class*="mt-6"]:not(:first-child)::before,
+#navigation-items [class*="mt-8"]:not(:first-child)::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -24px !important;
+  right: -24px !important;
+  height: 0 !important;
+  border-top: 0.5px solid var(--ls-black-10) !important;
+}
+
+/* Group labels */
+#navigation-items button[class*="group"],
+#navigation-items [data-component-part="group-title"],
+.sidebar-group-header,
+h5#sidebar-title,
+.sidebar-group-header h5,
+#navigation-items h5 {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  color: var(--ls-gray-400) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  margin-bottom: 2px !important;
+}
+
+/* Group header container */
+.sidebar-group-header,
+div.sidebar-group-header,
+#navigation-items .sidebar-group-header {
+  padding: 4px 8px !important;
+  padding-left: 8px !important;
+  margin-left: 0 !important;
+}
+
+/* Nav item list */
+#navigation-items ul,
+#navigation-items [class*="group"] + div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+/* Nav items */
+#navigation-items a,
+#navigation-items li > a {
+  height: 36px !important;
+  padding: 8px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-500) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* Active nav item */
+#navigation-items a[class*="text-primary"],
+#navigation-items a.active,
+#navigation-items a[aria-current="page"] {
+  color: var(--ls-gray-950) !important;
+  font-weight: 500 !important;
+}
+
+/* Hover state */
+#navigation-items a:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Nav item icons */
+#navigation-items a svg,
+#navigation-items a img {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+#navigation-items a svg {
+  color: var(--ls-gray-500) !important;
+}
+
+#navigation-items a img {
+  filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(98%) contrast(87%) !important;
+  opacity: 1 !important;
+}
+
+#navigation-items a svg,
+#navigation-items a svg * {
+  vector-effect: non-scaling-stroke !important;
+  stroke-width: 1.5px !important;
+}
+
+/* Active nav item icons */
+#navigation-items a[class*="text-primary"] svg,
+#navigation-items a.active svg,
+#navigation-items a[aria-current="page"] svg {
+  color: var(--ls-gray-950) !important;
+}
+
+#navigation-items a[class*="text-primary"] img,
+#navigation-items a.active img,
+#navigation-items a[aria-current="page"] img {
+  filter: brightness(0) saturate(100%) invert(7%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(95%) !important;
+}
+
+/* Hide sidebar controls */
+button[class*="sidebar-toggle"],
+button[aria-label*="sidebar"],
+button[aria-label*="Collapse"],
+[class*="sidebar"] button[class*="collapse"],
+[class*="sidebar-collapse"],
+#sidebar-toggle,
+button[class*="toggle-sidebar"],
+#sidebar-content > button.absolute,
+#sidebar-content > button[class*="absolute"],
+button.absolute.top-5.right-5 {
+  display: none !important;
+}
+
+/* Hide sidebar theme toggle */
+#sidebar-content [class*="theme-toggle"],
+#sidebar-content [class*="color-mode"],
+#sidebar-content [class*="dark-mode-toggle"],
+#sidebar-content button[aria-label*="theme"],
+#sidebar-content button[aria-label*="dark mode"],
+#sidebar-content button[aria-label*="light mode"],
+[class*="sidebar"] [class*="footer"],
+[class*="sidebar-footer"],
+#sidebar-content #theme-toggle {
+  display: none !important;
+}
+
+/* Hide sidebar bottom border */
+#sidebar-content > div[class*="border-t"],
+#sidebar-content > div.border-t,
+div[class*="px-7"][class*="py-4"][class*="border-t"] {
+  display: none !important;
+}
+
+/* ===========================================
+   Main Content Area
+   =========================================== */
+
+#content-container,
+#content-area,
+#content,
+[class*="content-container"],
+main[class*="content"],
+div[class*="peer-"][class*="lg:flex"],
+div[class*="is-not-custom"] {
+  background-color: var(--ls-gray-050) !important;
+}
+
+div[class*="lg:flex-1"][class*="lg:min-w-0"],
+div[class*="lg:flex-1"][class*="overflow-x-clip"] {
+  background-color: var(--ls-gray-050) !important;
+}
+
+/* Hide footer link in main footer */
+#footer > div.flex.items-center.justify-between > div > a {
+  display: none;
+}
