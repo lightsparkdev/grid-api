@@ -483,7 +483,7 @@ div.sidebar-group-header,
 /* Nav items */
 #navigation-items a,
 #navigation-items li > a {
-  height: 36px !important;
+  min-height: 36px !important;
   padding: 8px !important;
   border-radius: 8px !important;
   font-size: 14px !important;
@@ -557,6 +557,235 @@ button[class*="toggle-sidebar"],
 #sidebar-content > button[class*="absolute"],
 button.absolute.top-5.right-5 {
   display: none !important;
+}
+
+/* ===========================================
+   API Reference Sidebar - Expandable Groups
+   =========================================== */
+
+/* Force left alignment on sidebar group elements (overrides Palm theme defaults) */
+#navigation-items [class*="mt-6"],
+#navigation-items [class*="mt-8"],
+#navigation-items [class*="lg:mt-"],
+#sidebar-group,
+ul#sidebar-group,
+#sidebar-group *,
+ul#sidebar-group *,
+#navigation-items li.space-y-px,
+#navigation-items li.space-y-px *,
+#navigation-items li[class*="space-y"],
+#navigation-items li[class*="space-y"] * {
+  text-align: left !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+/* Sidebar group container - full width, left aligned */
+#sidebar-group,
+ul#sidebar-group {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+/* List items - full width, block display */
+#sidebar-group > li,
+ul#sidebar-group > li,
+#navigation-items li.space-y-px,
+#navigation-items li[class*="space-y"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  text-align: left !important;
+}
+
+/* Expandable group buttons - full width, left aligned */
+#sidebar-group > li > button,
+ul#sidebar-group > li > button,
+#navigation-items li.space-y-px > button,
+#navigation-items li[class*="space-y"] > button {
+  position: relative !important;
+  min-height: 36px !important;
+  padding: 8px !important;
+  padding-right: 32px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-500) !important;
+  display: block !important;
+  text-align: left !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  justify-content: flex-start !important;
+}
+
+/* Hide the original SVG chevron */
+#sidebar-group > li > button > svg,
+ul#sidebar-group > li > button > svg,
+#navigation-items li.space-y-px > button > svg,
+#navigation-items li[class*="space-y"] > button > svg {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Create new chevron using CSS pseudo-element (Central Icons style) */
+#sidebar-group > li > button::after,
+ul#sidebar-group > li > button::after,
+#navigation-items li.space-y-px > button::after,
+#navigation-items li[class*="space-y"] > button::after {
+  content: "" !important;
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-right: 1.5px solid var(--ls-gray-400) !important;
+  border-bottom: 1.5px solid var(--ls-gray-400) !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+/* Chevron rotation when expanded (points down) */
+#sidebar-group > li > button[aria-expanded="true"]::after,
+ul#sidebar-group > li > button[aria-expanded="true"]::after,
+#navigation-items li.space-y-px > button[aria-expanded="true"]::after,
+#navigation-items li[class*="space-y"] > button[aria-expanded="true"]::after {
+  transform: translateY(-70%) rotate(45deg) !important;
+}
+
+/* Hover state for expandable groups - background only, no color change */
+#sidebar-group > li > button:hover,
+ul#sidebar-group > li > button:hover,
+#navigation-items li.space-y-px > button:hover,
+#navigation-items li[class*="space-y"] > button:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Group buttons stay gray - only active page links get bold/dark styling */
+
+/* Nested items in API reference groups */
+#sidebar-group > li ul,
+ul#sidebar-group > li ul,
+#sidebar-group > li ul li,
+ul#sidebar-group > li ul li {
+  width: 100% !important;
+  display: block !important;
+}
+
+#sidebar-group > li ul a,
+ul#sidebar-group > li ul a,
+#navigation-items li.space-y-px ul a,
+#navigation-items li[class*="space-y"] ul a {
+  font-size: 14px !important;
+  text-align: left !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+/* ===========================================
+   API Reference Sidebar - Group Icons
+   =========================================== */
+
+/* Base icon styles for all API groups */
+#sidebar-group > li[data-title] > button,
+ul#sidebar-group > li[data-title] > button {
+  padding-left: 40px !important;
+}
+
+#sidebar-group > li[data-title] > button::before,
+ul#sidebar-group > li[data-title] > button::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 20px !important;
+  height: 20px !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(98%) contrast(87%) !important;
+  opacity: 1 !important;
+}
+
+/* Platform Configuration - settings gear */
+#sidebar-group > li[data-title="Platform Configuration"] > button::before,
+ul#sidebar-group > li[data-title="Platform Configuration"] > button::before {
+  background-image: url('/images/icons/settings-gear2.svg') !important;
+}
+
+/* Customers - people */
+#sidebar-group > li[data-title="Customers"] > button::before,
+ul#sidebar-group > li[data-title="Customers"] > button::before {
+  background-image: url('/images/icons/people.svg') !important;
+}
+
+/* Internal Accounts - wallet */
+#sidebar-group > li[data-title="Internal Accounts"] > button::before,
+ul#sidebar-group > li[data-title="Internal Accounts"] > button::before {
+  background-image: url('/images/icons/wallet1.svg') !important;
+}
+
+/* External Accounts - bank */
+#sidebar-group > li[data-title="External Accounts"] > button::before,
+ul#sidebar-group > li[data-title="External Accounts"] > button::before {
+  background-image: url('/images/icons/bank.svg') !important;
+}
+
+/* Same-Currency Transfers - repeat arrows */
+#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
+ul#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
+  background-image: url('/images/icons/repeat.svg') !important;
+}
+
+/* Cross-Currency Transfers - coins */
+#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
+ul#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
+  background-image: url('/images/icons/coins.svg') !important;
+}
+
+/* Transactions - receipt */
+#sidebar-group > li[data-title="Transactions"] > button::before,
+ul#sidebar-group > li[data-title="Transactions"] > button::before {
+  background-image: url('/images/icons/receipt-check.svg') !important;
+}
+
+/* Webhooks - code */
+#sidebar-group > li[data-title="Webhooks"] > button::before,
+ul#sidebar-group > li[data-title="Webhooks"] > button::before {
+  background-image: url('/images/icons/code.svg') !important;
+}
+
+/* Invitations - paper plane */
+#sidebar-group > li[data-title="Invitations"] > button::before,
+ul#sidebar-group > li[data-title="Invitations"] > button::before {
+  background-image: url('/images/icons/paper-plane-top-right.svg') !important;
+}
+
+/* Sandbox - blocks */
+#sidebar-group > li[data-title="Sandbox"] > button::before,
+ul#sidebar-group > li[data-title="Sandbox"] > button::before {
+  background-image: url('/images/icons/blocks.svg') !important;
+}
+
+/* Available UMA Providers - at symbol */
+#sidebar-group > li[data-title="Available UMA Providers"] > button::before,
+ul#sidebar-group > li[data-title="Available UMA Providers"] > button::before {
+  background-image: url('/images/icons/at.svg') !important;
+}
+
+/* API Tokens - key */
+#sidebar-group > li[data-title="API Tokens"] > button::before,
+ul#sidebar-group > li[data-title="API Tokens"] > button::before {
+  background-image: url('/images/icons/key2.svg') !important;
 }
 
 
