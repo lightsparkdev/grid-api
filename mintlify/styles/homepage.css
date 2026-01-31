@@ -534,7 +534,6 @@ html.dark .capability-card {
   line-height: 20px;
   color: var(--ls-gray-950);
   font-feature-settings: "salt" 1;
-  padding-top: 2px;
 }
 
 html.dark .capability-title {
