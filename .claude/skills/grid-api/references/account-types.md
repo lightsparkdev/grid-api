@@ -2,6 +2,8 @@
 
 This reference maps countries/regions to their required account types and fields for sending payments via the Grid API.
 
+**Note:** The CLI validates date formats (YYYY-MM-DD) and currency codes before making API calls. Invalid input will return a clear error message without hitting the API.
+
 ## Account Type Summary
 
 | Country/Region | Account Type | Currency | Primary Identifier |

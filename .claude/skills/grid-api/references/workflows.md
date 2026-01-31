@@ -2,6 +2,10 @@
 
 This reference describes common payment workflows using the Grid API CLI.
 
+**Tip:** Use command aliases for faster typing: `cust` (customers), `tx` (transactions), `acct` (accounts).
+
+**Tip:** Add `--format table` to any list command for human-readable output.
+
 ## Workflow 1: Send Payment to UMA Address
 
 Use this when the user wants to send money to a UMA address like `$alice@example.com`.
@@ -20,7 +24,7 @@ This returns:
 
 2. **Check sender's balance**
 ```bash
-node cli/dist/index.js accounts internal list --customer-id <customerId>
+node cli/dist/index.js acct internal list --customer-id <customerId> --format table
 ```
 
 Identify the internal account with sufficient balance.
@@ -54,7 +58,7 @@ node cli/dist/index.js quotes execute Quote:xxx
 
 6. **Monitor the transaction**
 ```bash
-node cli/dist/index.js transactions list --status PROCESSING
+node cli/dist/index.js tx list --status PROCESSING --format table
 ```
 
 ## Workflow 2: Send Payment to International Bank Account
