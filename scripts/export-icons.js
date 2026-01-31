@@ -64,6 +64,13 @@ const ICONS_TO_EXPORT = [
   'IconLock',               // Security/Lock
   'IconLightning',          // Fast/Instant
   'IconBank',               // Bank
+  
+  // API Reference sidebar icons
+  'IconSandbox',            // Sandbox
+  'IconPeopleAdd',          // Invitations
+  'IconArrowExpandHor',     // Same-Currency Transfers
+  'IconArrowLeftRight',     // Cross-Currency Transfers
+  'IconBell',               // Webhooks
 ];
 
 // Icon style configuration (matching design requirements)
