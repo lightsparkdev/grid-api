@@ -154,7 +154,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerOneOf'
+              $ref: '#/components/schemas/CustomerCreateRequestOneOf'
       responses:
         '201':
           description: Customer created successfully
@@ -376,16 +376,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - title: Update Individual Customer
-                  $ref: '#/components/schemas/IndividualCustomerUpdate'
-                - title: Update Business Customer
-                  $ref: '#/components/schemas/BusinessCustomerUpdate'
-              discriminator:
-                propertyName: customerType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdate'
-                  BUSINESS: '#/components/schemas/BusinessCustomerUpdate'
+              $ref: '#/components/schemas/CustomerUpdateRequestOneOf'
             examples:
               individualUpdate:
                 summary: Update individual customer example
@@ -4098,29 +4089,7 @@ components:
     IndividualCustomer:
       allOf:
         - $ref: '#/components/schemas/Customer'
-        - type: object
-          required:
-            - customerType
-          properties:
-            customerType:
-              type: string
-              enum:
-                - INDIVIDUAL
-            fullName:
-              type: string
-              description: Individual's full name
-              example: John Michael Doe
-            birthDate:
-              type: string
-              format: date
-              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-              example: '1990-01-15'
-            nationality:
-              type: string
-              description: Country code (ISO 3166-1 alpha-2)
-              example: US
-            address:
-              $ref: '#/components/schemas/Address'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
     Customer:
       type: object
       required:
@@ -4198,6 +4167,22 @@ components:
           type: string
           description: Country code (ISO 3166-1 alpha-2)
           example: US
+    BusinessInfoUpdate:
+      type: object
+      description: Additional information for business entities
+      properties:
+        legalName:
+          type: string
+          description: Legal name of the business
+          example: Acme Corporation, Inc.
+        registrationNumber:
+          type: string
+          description: Business registration number
+          example: BRN-123456789
+        taxId:
+          type: string
+          description: Tax identification number
+          example: EIN-987654321
     UltimateBeneficialOwner:
       type: object
       required:
@@ -4252,41 +4237,49 @@ components:
           type: string
           description: Title at company
           example: CEO, COO, President
+    BusinessCustomerFields:
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - BUSINESS
+        address:
+          $ref: '#/components/schemas/Address'
+        businessInfo:
+          $ref: '#/components/schemas/BusinessInfoUpdate'
+        beneficialOwners:
+          type: array
+          items:
+            $ref: '#/components/schemas/UltimateBeneficialOwner'
+    BusinessInfo:
+      type: object
+      description: Additional information required for business entities
+      required:
+        - legalName
+      properties:
+        legalName:
+          type: string
+          description: Legal name of the business
+          example: Acme Corporation, Inc.
+        registrationNumber:
+          type: string
+          description: Business registration number
+          example: BRN-123456789
+        taxId:
+          type: string
+          description: Tax identification number
+          example: EIN-987654321
     BusinessCustomer:
       allOf:
         - $ref: '#/components/schemas/Customer'
+        - $ref: '#/components/schemas/BusinessCustomerFields'
         - type: object
-          required:
-            - customerType
           properties:
-            customerType:
-              type: string
-              enum:
-                - BUSINESS
-            address:
-              $ref: '#/components/schemas/Address'
             businessInfo:
-              type: object
-              required:
-                - legalName
-              description: Additional information required for business entities
-              properties:
-                legalName:
-                  type: string
-                  description: Legal name of the business
-                  example: Acme Corporation, Inc.
-                registrationNumber:
-                  type: string
-                  description: Business registration number
-                  example: BRN-123456789
-                taxId:
-                  type: string
-                  description: Tax identification number
-                  example: EIN-987654321
-            beneficialOwners:
-              type: array
-              items:
-                $ref: '#/components/schemas/UltimateBeneficialOwner'
+              $ref: '#/components/schemas/BusinessInfo'
     KycStatus:
       type: string
       enum:
@@ -4299,6 +4292,30 @@ components:
         - MANUALLY_REJECTED
       description: The current KYC status of a customer
       example: APPROVED
+    IndividualCustomerFields:
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: Individual's full name
+          example: John Michael Doe
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+          example: '1990-01-15'
+        nationality:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2)
+          example: US
+        address:
+          $ref: '#/components/schemas/Address'
     CustomerOneOf:
       oneOf:
         - title: Individual Customer
@@ -4310,6 +4327,49 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomer'
           BUSINESS: '#/components/schemas/BusinessCustomer'
+    IndividualCustomerCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/CustomerCreateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
+    CustomerCreateRequest:
+      type: object
+      required:
+        - customerType
+        - platformCustomerId
+      properties:
+        platformCustomerId:
+          type: string
+          description: Platform-specific customer identifier. If not provided, one will be generated by the system.
+          example: 9f84e0c2a72c4fa
+        customerType:
+          $ref: '#/components/schemas/CustomerType'
+        umaAddress:
+          description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
+          example: $john.doe@uma.domain.com
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
+          BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
+    BusinessCustomerCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/CustomerCreateRequest'
+        - $ref: '#/components/schemas/BusinessCustomerFields'
+        - type: object
+          properties:
+            businessInfo:
+              $ref: '#/components/schemas/BusinessInfo'
+    CustomerCreateRequestOneOf:
+      oneOf:
+        - title: Individual Customer Create Request
+          $ref: '#/components/schemas/IndividualCustomerCreateRequest'
+        - title: Business Customer Create Request
+          $ref: '#/components/schemas/BusinessCustomerCreateRequest'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
+          BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
     Error409:
       type: object
       required:
@@ -4390,73 +4450,41 @@ components:
         details:
           type: object
           description: Additional error details
-    IndividualCustomerUpdate:
+    IndividualCustomerUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/CustomerUpdateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
+    CustomerUpdateRequest:
       type: object
       required:
         - customerType
       properties:
         customerType:
-          type: string
-          enum:
-            - INDIVIDUAL
-          description: Customer type
-        fullName:
-          type: string
-          description: Individual's full name
-          example: John Michael Doe
-        birthDate:
-          type: string
-          format: date
-          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-          example: '1990-01-15'
-        nationality:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-          example: US
-        address:
-          $ref: '#/components/schemas/Address'
+          $ref: '#/components/schemas/CustomerType'
         umaAddress:
           type: string
-          description: |
-            Optional UMA address identifier. If not provided during customer creation, one will be generated by the system.
-            If provided during customer update, the UMA address will be updated to the provided value. This is an optional
-            identifier to route payments to the customer.
+          description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
-    BusinessCustomerUpdate:
-      type: object
-      required:
-        - customerType
-      properties:
-        customerType:
-          type: string
-          enum:
-            - BUSINESS
-          description: Customer type
-        umaAddress:
-          type: string
-          description: Optional UMA address identifier. If not provided, will be generated by the system.
-          example: $acme@uma.domain.com
-        businessInfo:
-          type: object
-          properties:
-            legalName:
-              type: string
-              description: Legal name of the business
-              example: Acme Corporation, Inc.
-            registrationNumber:
-              type: string
-              description: Business registration number
-              example: BRN-123456789
-            taxId:
-              type: string
-              description: Tax identification number
-              example: EIN-987654321
-        address:
-          $ref: '#/components/schemas/Address'
-        beneficialOwners:
-          type: array
-          items:
-            $ref: '#/components/schemas/UltimateBeneficialOwner'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    BusinessCustomerUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/CustomerUpdateRequest'
+        - $ref: '#/components/schemas/BusinessCustomerFields'
+    CustomerUpdateRequestOneOf:
+      oneOf:
+        - title: Individual Customer Update Request
+          $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
+        - title: Business Customer Update Request
+          $ref: '#/components/schemas/BusinessCustomerUpdateRequest'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
     Currency:
       type: object
       properties:

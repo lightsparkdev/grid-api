@@ -1,5 +1,5 @@
 allOf:
-  - $ref: ./Customer.yaml
+  - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./BusinessCustomerFields.yaml
   - type: object
     properties:
