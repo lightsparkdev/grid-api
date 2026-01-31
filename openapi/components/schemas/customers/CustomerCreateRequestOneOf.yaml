@@ -1,0 +1,10 @@
+oneOf:
+  - title: Individual Customer Create Request
+    $ref: ./IndividualCustomerCreateRequest.yaml
+  - title: Business Customer Create Request
+    $ref: ./BusinessCustomerCreateRequest.yaml
+discriminator:
+  propertyName: customerType
+  mapping:
+    INDIVIDUAL: ./IndividualCustomerCreateRequest.yaml
+    BUSINESS: ./BusinessCustomerCreateRequest.yaml
