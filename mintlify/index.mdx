@@ -1,8 +1,11 @@
 ---
-title: "Grid Documentation"
+title: ""
 sidebarTitle: "Welcome"
-icon: "/images/icons/square-info.svg"
+icon: "/images/icons/grid-logo.svg"
 mode: "wide"
+seo:
+  title: "Grid Documentation"
+  description: "Build applications that move money globally across fiat, stablecoins, and Bitcoin with a single API."
 ---
 
 {/* ProductTiles Component */}
@@ -67,43 +70,57 @@ export const gridCategories = [
     id: 'payouts',
     label: 'Payouts',
     items: [
-      { id: 'gig-workers', title: 'Gig worker payments', description: 'Pay drivers, couriers, and freelancers instantly', icon: '/images/icons/car-front-view.svg', image: '/images/home/payout-preview.png' },
-      { id: 'marketplace', title: 'Marketplace payouts', description: 'Settle with sellers in their local currency', icon: '/images/icons/store4.svg', image: '/images/home/payout-preview.png' },
-      { id: 'suppliers', title: 'Supplier payments', description: 'Pay vendors and suppliers across borders', icon: '/images/icons/shipping.svg', image: '/images/home/payout-preview.png' },
-      { id: 'creators', title: 'Creator earnings', description: 'Distribute revenue to creators worldwide', icon: '/images/icons/multi-media.svg', image: '/images/home/payout-preview.png' }
+      { id: 'gig-workers', title: 'Gig worker payments', description: 'Pay drivers, couriers, and freelancers instantly', icon: '/images/icons/car-front-view.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'marketplace', title: 'Marketplace payouts', description: 'Settle with sellers in their local currency', icon: '/images/icons/store4.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'suppliers', title: 'Supplier payments', description: 'Pay vendors and suppliers across borders', icon: '/images/icons/shipping.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'creators', title: 'Creator earnings', description: 'Distribute revenue to creators worldwide', icon: '/images/icons/multi-media.svg', image: '/images/home/placeholder-use-case.png' }
     ]
   },
   {
     id: 'ramps',
     label: 'Ramps',
     items: [
-      { id: 'on-ramp', title: 'On-ramp', description: 'Convert fiat to crypto for your users', icon: '/images/icons/arrow-inbox.svg', image: '/images/home/payout-preview.png' },
-      { id: 'off-ramp', title: 'Off-ramp', description: 'Convert crypto to fiat instantly', icon: '/images/icons/banknote1.svg', image: '/images/home/payout-preview.png' },
-      { id: 'stablecoin', title: 'Stablecoin bridge', description: 'Bridge between different stablecoin networks', icon: '/images/icons/arrows-repeat-circle.svg', image: '/images/home/payout-preview.png' },
-      { id: 'self-custody', title: 'Self-custody', description: 'Enable users to maintain their own wallets', icon: '/images/icons/wallet1.svg', image: '/images/home/payout-preview.png' }
+      { id: 'on-ramp', title: 'On-ramp', description: 'Convert fiat to crypto for your users', icon: '/images/icons/arrow-inbox.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'off-ramp', title: 'Off-ramp', description: 'Convert crypto to fiat instantly', icon: '/images/icons/banknote1.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'stablecoin', title: 'Stablecoin bridge', description: 'Bridge between different stablecoin networks', icon: '/images/icons/arrows-repeat-circle.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'self-custody', title: 'Self-custody', description: 'Enable users to maintain their own wallets', icon: '/images/icons/wallet1.svg', image: '/images/home/placeholder-use-case.png' }
     ]
   },
   {
     id: 'rewards',
     label: 'Rewards',
     items: [
-      { id: 'cashback', title: 'Cashback', description: 'Reward customers with instant Bitcoin cashback', icon: '/images/icons/gift1.svg', image: '/images/home/payout-preview.png' },
-      { id: 'loyalty', title: 'Loyalty programs', description: 'Build loyalty programs with crypto rewards', icon: '/images/icons/repeat.svg', image: '/images/home/payout-preview.png' },
-      { id: 'referrals', title: 'Referrals', description: 'Incentivize referrals with programmable rewards', icon: '/images/icons/people.svg', image: '/images/home/payout-preview.png' },
-      { id: 'gaming', title: 'Gaming', description: 'Distribute in-game rewards and winnings', icon: '/images/icons/lightning.svg', image: '/images/home/payout-preview.png' }
+      { id: 'cashback', title: 'Cashback', description: 'Reward customers with instant Bitcoin cashback', icon: '/images/icons/gift1.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'loyalty', title: 'Loyalty programs', description: 'Build loyalty programs with crypto rewards', icon: '/images/icons/repeat.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'referrals', title: 'Referrals', description: 'Incentivize referrals with programmable rewards', icon: '/images/icons/people.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'gaming', title: 'Gaming', description: 'Distribute in-game rewards and winnings', icon: '/images/icons/lightning.svg', image: '/images/home/placeholder-use-case.png' }
     ]
   },
   {
     id: 'global-p2p',
     label: 'Global P2P',
     items: [
-      { id: 'remittances', title: 'Remittances', description: 'Send money across borders with low fees', icon: '/images/icons/globe.svg', image: '/images/home/payout-preview.png' },
-      { id: 'bill-pay', title: 'Bill pay', description: 'Enable users to pay bills internationally', icon: '/images/icons/receipt-check.svg', image: '/images/home/payout-preview.png' },
-      { id: 'peer-transfers', title: 'Peer transfers', description: 'Facilitate person-to-person payments globally', icon: '/images/icons/paper-plane-top-right.svg', image: '/images/home/payout-preview.png' },
-      { id: 'uma', title: 'UMA', description: 'Accept payments via Universal Money Addresses', icon: '/images/icons/at.svg', image: '/images/home/payout-preview.png' }
+      { id: 'remittances', title: 'Remittances', description: 'Send money across borders with low fees', icon: '/images/icons/globe.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'bill-pay', title: 'Bill pay', description: 'Enable users to pay bills internationally', icon: '/images/icons/receipt-check.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'peer-transfers', title: 'Peer transfers', description: 'Facilitate person-to-person payments globally', icon: '/images/icons/paper-plane-top-right.svg', image: '/images/home/placeholder-use-case.png' },
+      { id: 'uma', title: 'UMA', description: 'Accept payments via Universal Money Addresses', icon: '/images/icons/at.svg', image: '/images/home/placeholder-use-case.png' }
     ]
   }
 ];
+
+{/* Wrap all custom content in not-prose for full styling control */}
+<div className="not-prose homepage-content">
+
+{/* Hero Header - Two Column Layout */}
+<div className="hero-header">
+  <div className="hero-header-left">
+    <img src="/logo/grid-logo.svg" alt="Grid" className="hero-logo" />
+    <span className="hero-subtitle">Documentation</span>
+  </div>
+  <div className="hero-header-right">
+    <p className="hero-tagline">Build applications and financial products that move money globally across fiat, stablecoins, and Bitcoin with a single API.</p>
+  </div>
+</div>
 
 {/* Hero Banner with Sand Dunes Image */}
 <div className="hero-banner">
@@ -117,12 +134,11 @@ export const gridCategories = [
 {/* Info Cards: Understand Grid & Start Building */}
 <div className="info-cards-grid">
   <div className="info-card">
-    <svg className="info-card-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="4" fill="#00B3E0" fillOpacity="0.1"/>
-      <path d="M10 12H22M10 16H22M10 20H16" stroke="#00B3E0" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-    <div className="info-card-title">Understand Grid</div>
-    <div className="info-card-desc">Learn how Grid works before you integrate</div>
+    <img src="/images/icons/IconNewspaper2.svg" alt="" className="info-card-icon" />
+    <div className="info-card-content">
+      <div className="info-card-title">Understand Grid</div>
+      <div className="info-card-desc">Learn how Grid works before you integrate</div>
+    </div>
     <div className="info-card-links">
       <a href="/platform-overview/introduction/what-is-grid" className="info-card-link">What is Grid?</a>
       <a href="/platform-overview/capabilities" className="info-card-link">Capabilities</a>
@@ -130,15 +146,11 @@ export const gridCategories = [
     </div>
   </div>
   <div className="info-card">
-    <svg className="info-card-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="4" fill="#F77D26" fillOpacity="0.1"/>
-      <rect x="10" y="10" width="5" height="5" rx="1" fill="#F77D26"/>
-      <rect x="17" y="10" width="5" height="5" rx="1" fill="#F77D26"/>
-      <rect x="10" y="17" width="5" height="5" rx="1" fill="#F77D26"/>
-      <rect x="17" y="17" width="5" height="5" rx="1" fill="#F77D26"/>
-    </svg>
-    <div className="info-card-title">Start building</div>
-    <div className="info-card-desc">Jump into a quickstart guide</div>
+    <img src="/images/icons/grid-icon.svg" alt="" className="info-card-icon" />
+    <div className="info-card-content">
+      <div className="info-card-title">Start building</div>
+      <div className="info-card-desc">Jump into a quickstart guide</div>
+    </div>
     <div className="info-card-links">
       <a href="/payouts-and-b2b/quickstart" className="info-card-link">Send a payout</a>
       <a href="/ramps/quickstart" className="info-card-link">On-ramp to crypto</a>
@@ -147,79 +159,97 @@ export const gridCategories = [
   </div>
 </div>
 
-## Capabilities
+<div className="section-header">
+  <div className="section-header-text">
+    <span className="section-title">Capabilities</span>
+    <span className="section-subtitle">Primitives for moving money</span>
+  </div>
+  <a href="/platform-overview/capabilities" className="section-header-arrow" aria-label="View all capabilities">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10h12M11 5l5 5-5 5"/>
+    </svg>
+  </a>
+</div>
 
-<span className="text-gray-500">Primitives for moving money</span>
-
-<div className="capabilities-grid" style={{marginTop: '24px'}}>
+<div className="capabilities-grid">
   <div className="capability-card">
-    <div className="capability-icon send">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 2L6 8M12 2L8 12L6 8M12 2L2 6L6 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#00B3E0"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Send</div>
     </div>
-    <div className="capability-title">Send</div>
     <div className="capability-desc">Move funds to any destination</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon receive">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2V12M7 12L3 8M7 12L11 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#11A967"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Receive</div>
     </div>
-    <div className="capability-title">Receive</div>
     <div className="capability-desc">Accept incoming funds</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon convert">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 4L3 4M3 4L5 2M3 4L5 6M3 10L11 10M11 10L9 8M11 10L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#FF21CC"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Convert</div>
     </div>
-    <div className="capability-title">Convert</div>
     <div className="capability-desc">Exchange currencies and assets</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon hold">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5H12M2 9H12M4 2V12M10 2V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#F77D26"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Hold</div>
     </div>
-    <div className="capability-title">Hold</div>
     <div className="capability-desc">Store multi-currency balances</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon ramp">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7H12M7 2V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#CF00A7"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Ramp</div>
     </div>
-    <div className="capability-title">Ramp</div>
     <div className="capability-desc">Bridge fiat and crypto</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon bill">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 2V12L7 10L10 12V2H4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#118453"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Bill</div>
     </div>
-    <div className="capability-title">Bill</div>
     <div className="capability-desc">Invoice and collect payments</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon program">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 5L2 7L4 9M10 5L12 7L10 9M8 3L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#44DDB5"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Program</div>
     </div>
-    <div className="capability-title">Program</div>
     <div className="capability-desc">Create programmable flows</div>
   </div>
   <div className="capability-card">
-    <div className="capability-icon identify">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M3 12C3 9.79 5.24 8 7 8C8.76 8 11 9.79 11 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    <div className="capability-header">
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#0072DB"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <div className="capability-title">Identify</div>
     </div>
-    <div className="capability-title">Identify</div>
     <div className="capability-desc">KYC/KYB verification</div>
   </div>
 </div>
 
-## What you can build
+<div className="section-what-you-can-build">
 
-<span className="text-gray-500">Combine primitives, ship products</span>
+<div className="section-header">
+  <div className="section-header-text">
+    <span className="section-title">What you can build</span>
+    <span className="section-subtitle">Combine primitives, ship products</span>
+  </div>
+  <a href="/platform-overview/use-cases" className="section-header-arrow" aria-label="View all use cases">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10h12M11 5l5 5-5 5"/>
+    </svg>
+  </a>
+</div>
 
-<div style={{marginTop: '24px'}}>
-  <ProductTiles categories={gridCategories} />
+<ProductTiles categories={gridCategories} />
+
 </div>
 
 {/* Trusted By Section */}
-<div className="trusted-by" style={{marginTop: '48px', marginBottom: '48px'}}>
+<div className="trusted-by">
   <span className="trusted-by-label">Trusted by</span>
   <div className="trusted-by-logos">
     <img src="/images/logos/coinbase.svg" alt="Coinbase" className="trusted-by-logo" />
@@ -230,48 +260,53 @@ export const gridCategories = [
   </div>
 </div>
 
+{/* Divider Section */}
+<div className="homepage-divider"></div>
+
 ## Resources
 
-<div className="resources-grid" style={{marginTop: '24px'}}>
+<div className="resources-grid">
   <div className="resources-column">
     <div className="resources-column-title">Quick links</div>
     <a href="https://github.com/lightsparkdev/grid-api" className="resources-link">
-      <img src="/images/icons/github.svg" className="resources-link-icon" alt="" />
+      <svg className="resources-link-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 10 4.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.137 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10Z"/></svg>
       Grid GitHub repo
     </a>
     <a href="/payouts-and-b2b/platform-tools/sandbox-testing" className="resources-link">
-      <img src="/images/icons/hammer.svg" className="resources-link-icon" alt="" />
+      <img src="/images/icons/hammer.svg" alt="" className="resources-link-icon" />
       Tools and sandbox
     </a>
     <a href="/payouts-and-b2b/platform-tools/postman-collection" className="resources-link">
-      <img src="/images/icons/code.svg" className="resources-link-icon" alt="" />
+      <img src="/images/icons/IconPostman.svg" alt="" className="resources-link-icon" />
       Postman collection
     </a>
   </div>
   <div className="resources-column">
     <div className="resources-column-title">Need help?</div>
     <a href="mailto:support@lightspark.com" className="resources-link">
-      <img src="/images/icons/bubble-annotation5.svg" className="resources-link-icon" alt="" />
+      <svg className="resources-link-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6.667 7.5h6.666M6.667 10.833h4.166M10 17.5l-2.5-2.5H5a1.667 1.667 0 0 1-1.667-1.667V5.833A1.667 1.667 0 0 1 5 4.167h10a1.667 1.667 0 0 1 1.667 1.666v7.5A1.667 1.667 0 0 1 15 15h-2.5L10 17.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
       Contact support
     </a>
     <a href="https://lightspark.com/grid#signup" className="resources-link">
-      <img src="/images/icons/key2.svg" className="resources-link-icon" alt="" />
+      <svg className="resources-link-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14.167 8.333v-2.5a4.167 4.167 0 1 0-8.334 0v2.5m8.334 0H5.833a1.667 1.667 0 0 0-1.666 1.667v5a1.667 1.667 0 0 0 1.666 1.667h8.334a1.667 1.667 0 0 0 1.666-1.667v-5a1.667 1.667 0 0 0-1.666-1.667Zm-4.167 3.334v1.666" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
       Request sandbox access
     </a>
     <a href="https://lightspark.com/grid#signup" className="resources-link">
-      <img src="/images/icons/people.svg" className="resources-link-icon" alt="" />
+      <svg className="resources-link-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6.667 2.5v1.667M13.333 2.5v1.667M3.333 7.5h13.334M5 4.167h10a1.667 1.667 0 0 1 1.667 1.666v10A1.667 1.667 0 0 1 15 17.5H5a1.667 1.667 0 0 1-1.667-1.667v-10A1.667 1.667 0 0 1 5 4.167Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
       Talk to sales
     </a>
   </div>
   <div className="resources-column">
     <div className="resources-column-title">Socials</div>
     <a href="https://x.com/lightspark" className="resources-link">
-      <svg className="resources-link-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.6 1h2.3l-5 5.7 5.9 7.8h-4.6l-3.6-4.7-4.1 4.7H1.2l5.3-6.1L1 1h4.7l3.3 4.3L12.6 1zm-.8 12.1h1.3L4.4 2.3H3L11.8 13.1z"/></svg>
+      <svg className="resources-link-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M15.75 1.25h2.875l-6.25 7.125L19.625 18.5h-5.75l-4.5-5.875-5.125 5.875H1.375l6.625-7.625L1 1.25h5.875l4.125 5.375L15.75 1.25Zm-1 15.125h1.625L5.5 2.875H3.75L14.75 16.375Z"/></svg>
       X (Twitter)
     </a>
     <a href="https://linkedin.com/company/lightspark-group" className="resources-link">
-      <img src="/images/icons/linkedin.svg" className="resources-link-icon" alt="" />
+      <svg className="resources-link-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M18.52 0H1.477C.66 0 0 .645 0 1.44v17.12C0 19.355.66 20 1.477 20h17.04c.817 0 1.48-.645 1.48-1.44V1.44C20 .645 19.337 0 18.52 0ZM5.934 17.043H2.965V7.496h2.969v9.547ZM4.449 6.195a1.72 1.72 0 1 1 0-3.439 1.72 1.72 0 0 1 0 3.44Zm12.594 10.848h-2.965v-4.64c0-1.106-.018-2.532-1.543-2.532-1.545 0-1.78 1.207-1.78 2.452v4.72H7.792V7.496h2.844v1.305h.041c.396-.75 1.363-1.543 2.804-1.543 3 0 3.558 1.974 3.558 4.543v5.242h.004Z"/></svg>
       LinkedIn
     </a>
   </div>
 </div>
+
+</div>{/* End not-prose homepage-content */}

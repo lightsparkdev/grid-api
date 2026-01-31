@@ -2,6 +2,22 @@
 @import "./tokens.css";
 
 /* ===========================================
+   Override Mintlify's primary color variables
+   =========================================== */
+:root {
+  --primary: #1a1a1a !important;
+  --text-primary: #1a1a1a !important;
+  --color-primary: #1a1a1a !important;
+  --tw-text-opacity: 1;
+}
+
+html.dark {
+  --primary: #f0f0ee !important;
+  --text-primary: #f0f0ee !important;
+  --color-primary: #f0f0ee !important;
+}
+
+/* ===========================================
    Custom Font Styles for Suisse Intl
    
    Note: Base fonts (body/heading) are configured 
@@ -27,14 +43,344 @@ strong, b, th,
   letter-spacing: normal !important;
 }
 
-/* Navigation tabs, navbar links & CTA button: Medium weight */
+/* Navigation tabs & CTA button: Medium weight */
 .nav-tabs-item,
-.navbar-link a,
 #topbar-cta-button, #topbar-cta-button *,
 #page-context-menu-button, #page-context-menu-button *,
 #pagination a, #pagination a * {
   font-weight: 500 !important;
   text-shadow: none !important;
+}
+
+/* Navbar links: Book weight (450) */
+.navbar-link a,
+#navbar a.link:not(.nav-tabs-item) {
+  font-weight: 450 !important;
+}
+
+/* Border between top navbar row (logo/search/buttons) and tabs row */
+#navbar .h-16,
+#navbar [class*="h-16"] {
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+/* Search bar styling */
+#search-bar-entry {
+  background: #F8F8F7 !important;
+  border: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  width: 320px !important;
+  height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: #7c7c7c !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+}
+
+#search-bar-entry:hover {
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Hover state - change icon and text to darker color */
+#search-bar-entry:hover svg {
+  color: #1a1a1a !important;
+}
+
+#search-bar-entry:hover > div > span:first-child {
+  color: #1a1a1a !important;
+}
+
+html.dark #search-bar-entry {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #7c7c7c !important;
+}
+
+html.dark #search-bar-entry:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.dark #search-bar-entry:hover svg,
+html.dark #search-bar-entry:hover > div > span:first-child {
+  color: #f0f0ee !important;
+}
+
+/* Search bar icon */
+#search-bar-entry svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #7c7c7c !important;
+  stroke-width: 1.5px !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Search bar placeholder text */
+#search-bar-entry span {
+  color: #7c7c7c !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Search bar keyboard shortcut badge (⌘K) */
+#search-bar-entry kbd,
+#search-bar-entry [class*="min-w-"] > span:last-child {
+  background: #f0f0ee !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  color: #7c7c7c !important;
+  font-family: inherit !important;
+}
+
+html.dark #search-bar-entry kbd,
+html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #989898 !important;
+}
+
+/* Ask AI button styling (shows in production) */
+[class*="ask-ai"],
+button[aria-label*="AI"],
+[data-component*="ai"],
+#ask-ai-button {
+  background: #F8F8F7 !important;
+  border: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #7c7c7c !important;
+  transition: all 0.2s ease !important;
+}
+
+[class*="ask-ai"]:hover,
+button[aria-label*="AI"]:hover,
+#ask-ai-button:hover {
+  border-color: rgba(0, 0, 0, 0.2) !important;
+  color: #1a1a1a !important;
+}
+
+html.dark [class*="ask-ai"],
+html.dark button[aria-label*="AI"],
+html.dark #ask-ai-button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark [class*="ask-ai"]:hover,
+html.dark button[aria-label*="AI"]:hover,
+html.dark #ask-ai-button:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #f0f0ee !important;
+}
+
+/* ===========================================
+   Navbar Links Styling (GitHub, Contact sales)
+   =========================================== */
+
+/* Navbar links container - 12px gap between items */
+#navbar .h-16 [class*="gap-x-"],
+#navbar .h-16 [class*="flex"][class*="items-center"] > *:not(:first-child) {
+  margin-left: 0 !important;
+}
+
+/* Individual navbar link items */
+#navbar a.link:not(.nav-tabs-item),
+#navbar [class*="navbar"] a,
+.navbar-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 0 4px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 450 !important;
+  line-height: 20px !important;
+  color: #1a1a1a !important;
+  text-decoration: none !important;
+  transition: opacity 0.15s ease !important;
+  font-feature-settings: "salt" 1 !important;
+}
+
+#navbar a.link:not(.nav-tabs-item):hover,
+#navbar [class*="navbar"] a:hover,
+.navbar-link:hover {
+  opacity: 0.7 !important;
+}
+
+/* Navbar link icons */
+#navbar a.link:not(.nav-tabs-item) svg,
+#navbar [class*="navbar"] a svg,
+.navbar-link svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: #1a1a1a !important;
+}
+
+html.dark #navbar a.link:not(.nav-tabs-item),
+html.dark #navbar [class*="navbar"] a,
+html.dark .navbar-link {
+  color: #f0f0ee !important;
+}
+
+html.dark #navbar a.link:not(.nav-tabs-item) svg,
+html.dark #navbar [class*="navbar"] a svg,
+html.dark .navbar-link svg {
+  color: #f0f0ee !important;
+}
+
+/* ===========================================
+   Mode Toggle (Light/Dark) Styling
+   =========================================== */
+
+/* Mode toggle button in navbar */
+#navbar button[aria-label*="theme"],
+#navbar button[aria-label*="mode"],
+#navbar [class*="mode-toggle"],
+#navbar [class*="theme-toggle"],
+button[class*="color-mode"]:not(#sidebar-content button) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s ease !important;
+}
+
+#navbar button[aria-label*="theme"]:hover,
+#navbar button[aria-label*="mode"]:hover,
+#navbar [class*="mode-toggle"]:hover,
+#navbar [class*="theme-toggle"]:hover {
+  opacity: 0.7 !important;
+}
+
+/* Mode toggle icon */
+#navbar button[aria-label*="theme"] svg,
+#navbar button[aria-label*="mode"] svg,
+#navbar [class*="mode-toggle"] svg,
+#navbar [class*="theme-toggle"] svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: #1a1a1a !important;
+}
+
+html.dark #navbar button[aria-label*="theme"] svg,
+html.dark #navbar button[aria-label*="mode"] svg,
+html.dark #navbar [class*="mode-toggle"] svg,
+html.dark #navbar [class*="theme-toggle"] svg {
+  color: #f0f0ee !important;
+}
+
+html.dark #navbar .h-16,
+html.dark #navbar [class*="h-16"] {
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Tabs row padding to align with sidebar */
+#navbar .h-12,
+#navbar [class*="h-12"] {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+/* Navbar tabs - inactive state */
+.nav-tabs-item,
+a.nav-tabs-item,
+#navbar .nav-tabs-item,
+.nav-tabs-item:not([class*="text-gray-800"]):not([class*="text-gray-200"]) {
+  color: #7c7c7c !important;
+}
+
+/* Navbar tabs - hover state */
+.nav-tabs-item:hover,
+a.nav-tabs-item:hover,
+#navbar .nav-tabs-item:hover {
+  color: #1a1a1a !important;
+}
+
+/* Active tab - text color */
+.nav-tabs-item.text-gray-800,
+.nav-tabs-item[class*="text-gray-800"],
+a.nav-tabs-item.text-gray-800,
+#navbar .nav-tabs-item.text-gray-800,
+.nav-tabs-item[aria-current="page"] {
+  color: #1a1a1a !important;
+}
+
+/* Active indicator line - using ::after pseudo-element */
+/* Hide indicator on inactive tabs */
+.nav-tabs-item::after,
+.nav-tabs-item.text-gray-600::after,
+.nav-tabs-item[class*="text-gray-600"]::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Show indicator only on active tabs (text-gray-800 class) */
+.nav-tabs-item.text-gray-800::after,
+a.nav-tabs-item.text-gray-800::after,
+#navbar .nav-tabs-item.text-gray-800::after,
+.nav-tabs-item[aria-current="page"]::after {
+  background-color: #1a1a1a !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode - inactive */
+html.dark .nav-tabs-item,
+html.dark a.nav-tabs-item,
+html.dark #navbar .nav-tabs-item {
+  color: #7c7c7c !important;
+}
+
+/* Dark mode - hover */
+html.dark .nav-tabs-item:hover,
+html.dark a.nav-tabs-item:hover {
+  color: #f0f0ee !important;
+}
+
+/* Dark mode - active */
+html.dark .nav-tabs-item.text-gray-200,
+html.dark .nav-tabs-item[class*="text-gray-200"],
+html.dark a.nav-tabs-item.text-gray-200,
+html.dark .nav-tabs-item[aria-current="page"] {
+  color: #f0f0ee !important;
+}
+
+/* Dark mode - active indicator */
+html.dark .nav-tabs-item.text-gray-200::after,
+html.dark a.nav-tabs-item.text-gray-200::after,
+html.dark .nav-tabs-item[aria-current="page"]::after {
+  background-color: #f0f0ee !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode - inactive indicator (hidden) */
+html.dark .nav-tabs-item.text-gray-400::after,
+html.dark .nav-tabs-item[class*="text-gray-400"]::after {
+  opacity: 0 !important;
 }
 
 /* Active sidebar item only: Medium weight (has text-primary class) */
@@ -56,6 +402,26 @@ code, pre, kbd, samp, .font-mono {
   font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   font-weight: 700 !important;
   font-feature-settings: "salt" on !important;
+}
+
+/* Global: All SVG icons should have non-scaling stroke */
+svg,
+svg * {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Ensure stroke width stays at 1.5px for Central Icons */
+svg[class*="icon"] path,
+svg[class*="icon"] line,
+svg[class*="icon"] circle,
+svg[class*="icon"] rect,
+svg[class*="icon"] polyline,
+svg[class*="icon"] polygon,
+.resources-link-icon path,
+.resources-link-icon line,
+.info-card svg path,
+.info-card svg line {
+  stroke-width: 1.5px;
 }
 
 /* Homepage: Headings use Regular weight (400) */
@@ -377,42 +743,77 @@ html.dark .hero-card {
    =========================================== */
 
 /* Hide "On this page" table of contents on homepage */
-body.is-homepage #table-of-contents,
-body.is-homepage [class*="table-of-contents"] {
+html.is-homepage #table-of-contents,
+html.is-homepage [class*="table-of-contents"] {
   display: none !important;
 }
 
-/* Hide page title on homepage */
-body.is-homepage #page-title {
+/* Hide page title and header on homepage */
+html.is-homepage #page-title,
+html.is-homepage #header {
   display: none !important;
+  visibility: hidden !important;
 }
 
 /* Hide the page context menu (copy button, etc) on homepage */
-body.is-homepage #page-context-menu,
-body.is-homepage #page-context-menu-button {
+html.is-homepage #page-context-menu,
+html.is-homepage #page-context-menu-button {
   display: none !important;
+  visibility: hidden !important;
 }
 
 /* Hide "Copy page" button on homepage */
-body.is-homepage #page-context-menu-button,
-body.is-homepage [class*="page-context-menu"] {
+html.is-homepage #page-context-menu-button,
+html.is-homepage [class*="page-context-menu"] {
   display: none !important;
 }
 
 /* Hide the eyebrow/breadcrumb on homepage */
-body.is-homepage .eyebrow,
-body.is-homepage [class*="eyebrow"] {
+html.is-homepage .eyebrow,
+html.is-homepage [class*="eyebrow"] {
   display: none !important;
 }
 
+/* Hide the next page CTA on homepage */
+html.is-homepage #pagination,
+body.is-homepage #pagination,
+html.is-homepage [class*="pagination"],
+body.is-homepage [class*="pagination"],
+html.is-homepage nav[aria-label*="pagination"],
+body.is-homepage nav[aria-label*="pagination"],
+html.is-homepage #content-area > #pagination,
+body.is-homepage #content-area > #pagination {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Hide footer on homepage */
+html.is-homepage footer,
+body.is-homepage footer,
+html.is-homepage #footer,
+body.is-homepage #footer,
+html.is-homepage [class*="footer"]:not(#sidebar-content *),
+body.is-homepage [class*="footer"]:not(#sidebar-content *) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* Give homepage content full width since TOC is hidden */
-body.is-homepage #content-area {
+html.is-homepage #content-area {
   max-width: 100%;
 }
 
 /* Adjust content layout when TOC is hidden */
-body.is-homepage #table-of-contents-layout,
-body.is-homepage [class*="table-of-contents-layout"] {
+html.is-homepage #table-of-contents-layout,
+html.is-homepage [class*="table-of-contents-layout"] {
   display: none !important;
 }
 
@@ -422,58 +823,117 @@ body.is-homepage [class*="table-of-contents-layout"] {
 
 .capabilities-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
   width: 100%;
+  margin-bottom: 8px;
+}
+
+/* What you can build section - same spacing as other sections */
+.section-what-you-can-build {
+  margin-top: 0;
+}
+
+/* Same padding as default section header for uniform spacing */
+.section-what-you-can-build .section-header {
+  padding-top: 48px;
+}
+
+html.dark .capabilities-grid {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 1024px) {
   .capabilities-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, auto);
   }
 }
 
 @media (max-width: 640px) {
   .capabilities-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
 }
 
 .capability-card {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+  padding: 24px 24px 20px 24px;
+  background: white;
+  border-right: 0.5px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+html.dark .capability-card {
+  background: var(--ls-gray-900);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Remove right border on last column */
+.capability-card:nth-child(4n) {
+  border-right: none;
+}
+
+/* Remove bottom border on last row */
+.capability-card:nth-last-child(-n+4) {
+  border-bottom: none;
+}
+
+@media (max-width: 1024px) {
+  .capability-card:nth-child(4n) {
+    border-right: 0.5px solid rgba(0, 0, 0, 0.1);
+  }
+  .capability-card:nth-child(2n) {
+    border-right: none;
+  }
+  .capability-card:nth-last-child(-n+4) {
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  }
+  .capability-card:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .capability-card {
+    border-right: none;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  }
+  .capability-card:last-child {
+    border-bottom: none;
+  }
+}
+
+.capability-header {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.capability-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* SVG Toggle - simple sizing */
+.capability-toggle {
+  width: 32px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
-.capability-icon svg {
-  width: 14px;
-  height: 14px;
-  color: white;
-}
-
-/* Capability icon colors from Figma */
-.capability-icon.send { background: #00B3E0; }
-.capability-icon.receive { background: #F77D26; }
-.capability-icon.convert { background: #11A967; }
-.capability-icon.hold { background: #F77D26; }
-.capability-icon.ramp { background: #CF00A7; }
-.capability-icon.bill { background: #118453; }
-.capability-icon.program { background: #44DDB5; }
-.capability-icon.identify { background: #0072DB; }
-
-.capability-title {
+.capability-title,
+.homepage-content .capability-title,
+div.capability-title,
+.capability-title span,
+.capability-title * {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--ls-gray-950);
+  font-weight: 450 !important;
+  line-height: 20px;
+  color: #1a1a1a;
+  font-feature-settings: "salt" 1;
+  padding-top: 2px;
 }
 
 html.dark .capability-title {
@@ -482,81 +942,114 @@ html.dark .capability-title {
 
 .capability-desc {
   font-size: 12px;
-  color: var(--ls-gray-500);
-  line-height: 1.4;
+  line-height: 18px;
+  color: #7c7c7c;
+  font-feature-settings: "salt" 1;
 }
 
 /* ===========================================
-   ProductTiles Component Styling
+   ProductTiles Component Styling ("What you can build")
    =========================================== */
 
 .product-tiles-container {
   width: 100%;
+  background: white;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+html.dark .product-tiles-container {
+  background: var(--ls-gray-900);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Tabs header - matches .flex.flex-wrap.gap-2.mb-6 */
+.product-tiles-container > div:first-child {
+  padding: 12px !important;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  gap: 2px !important;
+  margin-bottom: 0 !important;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+html.dark .product-tiles-container > div:first-child {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .product-tiles-tab {
-  padding: 8px 16px;
+  height: 28px;
+  padding: 0 16px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 450 !important;
+  line-height: 20px;
   border-radius: 4px;
-  border: 0.5px solid rgba(0, 0, 0, 0.1);
-  background: var(--ls-gray-050);
-  color: var(--ls-gray-950);
+  border: none;
+  background: transparent;
+  color: #7c7c7c;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-feature-settings: "salt" 1;
+}
+
+.product-tiles-tab span,
+.product-tiles-tab * {
+  font-weight: 450 !important;
 }
 
 html.dark .product-tiles-tab {
-  background: var(--ls-gray-900);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--ls-gray-050);
+  color: var(--ls-gray-400);
 }
 
 .product-tiles-tab:hover {
-  background: var(--ls-gray-100);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 html.dark .product-tiles-tab:hover {
-  background: var(--ls-gray-850);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .product-tiles-tab.active {
-  background: var(--ls-gray-950);
-  color: var(--ls-gray-050);
-  border-color: var(--ls-gray-950);
+  background: #fafaf9;
+  color: #1a1a1a;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.08);
 }
 
 html.dark .product-tiles-tab.active {
-  background: var(--ls-gray-050);
-  color: var(--ls-gray-950);
-  border-color: var(--ls-gray-050);
+  background: var(--ls-gray-800);
+  color: var(--ls-gray-050);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .product-tiles-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  display: flex;
+  gap: 16px;
+  padding: 16px;
   align-items: stretch;
 }
 
 @media (max-width: 1024px) {
   .product-tiles-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }
 
 .product-tiles-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
+  overflow: hidden;
 }
 
 .product-tiles-item {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px;
-  border-radius: 16px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 4px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -566,7 +1059,7 @@ html.dark .product-tiles-tab.active {
 }
 
 .product-tiles-item:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 html.dark .product-tiles-item:hover {
@@ -574,34 +1067,32 @@ html.dark .product-tiles-item:hover {
 }
 
 .product-tiles-item.active {
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: #f8f8f7;
 }
 
 html.dark .product-tiles-item.active {
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: none;
 }
 
 .product-tiles-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
-  margin-top: 2px;
-  opacity: 0.6;
 }
 
 .product-tiles-item-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .product-tiles-item-title {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--ls-gray-950);
+  font-weight: 400;
+  line-height: 21px;
+  color: #1a1a1a;
+  font-feature-settings: "salt" 1;
 }
 
 html.dark .product-tiles-item-title {
@@ -609,51 +1100,43 @@ html.dark .product-tiles-item-title {
 }
 
 .product-tiles-item-desc {
-  font-size: 13px;
-  color: var(--ls-gray-500);
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 21px;
+  color: #7c7c7c;
+  font-feature-settings: "salt" 1;
 }
 
 .product-tiles-chevron {
   flex-shrink: 0;
   color: var(--ls-gray-400);
   margin-left: auto;
+  display: none;
+}
+
+.product-tiles-item.active .product-tiles-chevron {
+  display: none !important;
 }
 
 .product-tiles-preview {
-  background: var(--ls-gray-100);
-  border-radius: 16px;
+  flex: 1;
+  background: #f0f0ee;
+  border-radius: 4px;
   overflow: hidden;
   min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: stretch;
 }
 
 html.dark .product-tiles-preview {
-  background: var(--ls-gray-900);
+  background: var(--ls-gray-800);
 }
 
 .product-tiles-preview-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.product-tiles-preview-img.light-only {
-  display: block;
-}
-
-.product-tiles-preview-img.dark-only {
-  display: none;
-}
-
-html.dark .product-tiles-preview-img.light-only {
-  display: none;
-}
-
-html.dark .product-tiles-preview-img.dark-only {
-  display: block;
 }
 
 .product-tiles-preview-placeholder {
@@ -668,7 +1151,9 @@ html.dark .product-tiles-preview-img.dark-only {
 .resources-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 48px;
+  gap: 24px;
+  padding: 8px 8px 24px 8px;
+  margin-top: 24px;
   width: 100%;
 }
 
@@ -688,26 +1173,40 @@ html.dark .product-tiles-preview-img.dark-only {
 .resources-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
 .resources-column-title {
   font-size: 12px;
   font-weight: 400;
-  color: var(--ls-gray-400);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  line-height: 18px;
+  letter-spacing: 0;
+  color: #989898;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  font-feature-settings: "salt" 1;
 }
 
-.resources-link {
+.resources-link,
+.homepage-content .resources-link,
+a.resources-link {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 8px 0;
   font-size: 14px;
-  color: var(--ls-gray-950);
+  font-weight: 450 !important;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+.resources-link span,
+.resources-link * {
+  font-weight: 450 !important;
+  color: #1a1a1a;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: opacity 0.2s ease;
+  font-feature-settings: "salt" 1;
 }
 
 html.dark .resources-link {
@@ -715,108 +1214,324 @@ html.dark .resources-link {
 }
 
 .resources-link:hover {
-  color: var(--ls-sky-500);
+  opacity: 0.7;
 }
 
 .resources-link-icon {
-  width: 16px;
-  height: 16px;
-  opacity: 0.6;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #1a1a1a;
+}
+
+html.dark .resources-link-icon {
+  color: var(--ls-gray-050);
 }
 
 /* ===========================================
-   Hero Banner Styling
+   Homepage Content Container (not-prose)
+   Full control over styling without Mintlify defaults
+   =========================================== */
+
+.homepage-content {
+  /* Reset all typography to our defaults */
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+
+html.dark .homepage-content {
+  color: #f0f0ee;
+}
+
+/* Section headings within homepage */
+.homepage-content h2 {
+  font-size: 21px;
+  font-weight: 400 !important;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  margin: 0 0 0 0;
+  padding: 48px 0 24px 8px;
+  color: #000000;
+  font-feature-settings: "salt" 1, "case" 1;
+  display: inline;
+}
+
+html.dark .homepage-content h2 {
+  color: #f0f0ee;
+}
+
+/* Section subtitle (text after heading) */
+.homepage-content h2 + span,
+.homepage-content .section-subtitle {
+  font-size: 21px;
+  font-weight: 400 !important;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  color: #989898;
+  font-feature-settings: "salt" 1, "case" 1;
+  display: inline;
+  margin-left: 6px;
+}
+
+/* Section header with title, subtitle, and arrow */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 8px 16px 8px;
+  width: 100%;
+}
+
+.section-header-text {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 1;
+}
+
+.section-title {
+  font-size: 21px;
+  font-weight: 400 !important;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  color: #1a1a1a;
+  font-feature-settings: "salt" 1, "case" 1;
+  white-space: nowrap;
+}
+
+html.dark .section-title {
+  color: #f0f0ee;
+}
+
+.section-header .section-subtitle {
+  margin-left: 0;
+}
+
+.section-header-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: #C1C0B8;
+  background-color: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.section-header-arrow:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+}
+
+.section-header-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+html.dark .section-header-arrow {
+  color: #C1C0B8;
+}
+
+html.dark .section-header-arrow:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #f0f0ee;
+}
+
+/* ===========================================
+   Hero Header - Two Column Layout
+   =========================================== */
+
+.hero-header {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 768px) {
+  .hero-header {
+    flex-direction: column;
+    gap: 24px;
+    align-items: flex-start;
+  }
+}
+
+.hero-header-left {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.hero-logo {
+  width: 90px;
+  height: 25px;
+  display: block;
+}
+
+.hero-subtitle {
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
+  color: #1a1a1a;
+  opacity: 0.5;
+  display: block;
+  font-feature-settings: "salt" 1, "case" 1;
+}
+
+html.dark .hero-subtitle {
+  color: #ffffff;
+  opacity: 0.5;
+}
+
+.hero-header-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+}
+
+.hero-tagline {
+  font-size: 15px;
+  line-height: 1.625;
+  letter-spacing: 0px;
+  color: #1a1a1a;
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .hero-tagline {
+  color: #f0f0ee;
+}
+
+/* ===========================================
+   Hero Banner Styling (Sandbox CTA)
    =========================================== */
 
 .hero-banner {
   position: relative;
+  height: 84px;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  background-image: url('/images/home/sand.png');
+  background-size: 100% auto;
+  background-position: center center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  gap: 24px;
 }
 
 .hero-banner-image {
-  width: 100%;
-  height: auto;
-  display: block;
+  display: none; /* Using CSS background instead */
 }
 
 .hero-banner-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px 24px;
-  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  gap: 24px;
 }
 
 .hero-banner-text {
-  color: white;
-  font-size: 14px;
+  flex: 1;
+  color: #f0f0ee;
+  font-size: 16px;
+  line-height: 24px;
+  font-feature-settings: "salt" 1;
 }
 
 .hero-banner-text a {
-  color: var(--ls-sky-400);
-  text-decoration: underline;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.hero-banner-text a:hover {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .hero-banner-button {
-  padding: 8px 16px;
-  background: white;
-  color: var(--ls-gray-950);
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
+  padding: 0 16px;
+  height: 36px;
+  min-width: 36px;
+  background: #f8f8f7;
+  color: #1a1a1a;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 450 !important;
+  line-height: 20px;
   text-decoration: none;
-  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.1s ease;
+  flex-shrink: 0;
 }
 
 .hero-banner-button:hover {
-  opacity: 0.9;
+  background: #ffffff;
+  transform: translateY(-1px);
 }
 
 /* ===========================================
-   Info Cards Styling
+   Info Cards Styling (Understand Grid & Start Building)
    =========================================== */
 
 .info-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-bottom: 48px;
+  display: flex;
+  gap: 16px;
+  padding-bottom: 8px;
+  margin-bottom: 0;
 }
 
 @media (max-width: 640px) {
   .info-cards-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }
 
 .info-card {
-  background: var(--ls-gray-050);
+  flex: 1 0 0;
+  background: white;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
 html.dark .info-card {
   background: var(--ls-gray-900);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .info-card-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
+}
+
+.info-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .info-card-title {
   font-size: 16px;
-  font-weight: 500;
-  color: var(--ls-gray-950);
+  font-weight: 400;
+  line-height: 24px;
+  color: #1a1a1a;
+  font-feature-settings: "salt" 1;
 }
 
 html.dark .info-card-title {
@@ -824,9 +1539,10 @@ html.dark .info-card-title {
 }
 
 .info-card-desc {
-  font-size: 14px;
-  color: var(--ls-gray-500);
-  margin-bottom: 8px;
+  font-size: 16px;
+  line-height: 24px;
+  color: #989898;
+  font-feature-settings: "salt" 1;
 }
 
 .info-card-links {
@@ -835,14 +1551,30 @@ html.dark .info-card-title {
   gap: 8px;
 }
 
-.info-card-link {
+.info-card-link,
+.homepage-content .info-card-link,
+a.info-card-link,
+.info-card-link span,
+.info-card-link * {
   font-size: 14px;
-  color: var(--ls-sky-500);
+  font-weight: 450 !important;
+  line-height: 20px;
   text-decoration: none;
+  transition: opacity 0.2s ease;
 }
 
 .info-card-link:hover {
-  text-decoration: underline;
+  opacity: 0.7;
+}
+
+/* Understand Grid card - cyan links */
+.info-card:first-child .info-card-link {
+  color: #00b3e0;
+}
+
+/* Start building card - orange links */
+.info-card:last-child .info-card-link {
+  color: #f77d26;
 }
 
 /* ===========================================
@@ -852,32 +1584,290 @@ html.dark .info-card-title {
 .trusted-by {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 32px 0;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: auto;
+  width: 100%;
+  padding: 48px 8px 8px 8px;
+}
+
+@media (max-width: 768px) {
+  .trusted-by {
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: flex-start;
+  }
 }
 
 .trusted-by-label {
-  font-size: 12px;
-  color: var(--ls-gray-400);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 20px;
+  color: #989898;
+  font-feature-settings: "salt" 1;
+  flex-shrink: 0;
 }
 
 .trusted-by-logos {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  flex-wrap: wrap;
+  display: contents; /* Make logos direct children of .trusted-by for uniform spacing */
+  pointer-events: none; /* Make logos non-clickable */
 }
 
+@media (max-width: 768px) {
+  .trusted-by-logos {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+}
+
+/* Logo images */
 .trusted-by-logo {
-  height: 24px;
+  flex-shrink: 0;
+  pointer-events: none;
+  display: block;
+  height: 16px;
   width: auto;
-  opacity: 0.5;
-  filter: grayscale(100%);
+}
+
+/* SoFi and Nu have 20px height in original SVGs */
+.trusted-by-logo[alt="SoFi"],
+.trusted-by-logo[alt="Nu"] {
+  height: 20px;
 }
 
 html.dark .trusted-by-logo {
-  filter: grayscale(100%) invert(1);
+  filter: brightness(0) invert(0.94);
 }
+
+/* ===========================================
+   Divider Section (between Trusted By and Resources)
+   =========================================== */
+
+.homepage-divider {
+  width: 100%;
+  height: 0;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  margin: 48px 0;
+}
+
+/* ===========================================
+   Sidebar Styling
+   =========================================== */
+
+/* Sidebar container */
+#sidebar-content {
+  background-color: #F0F0EE !important;
+  border-right: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+/* Navigation items container - override Mintlify padding */
+#navigation-items {
+  background-color: #F0F0EE !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Navigation groups container */
+#navigation-items > div.text-sm {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Group containers with mt-6/mt-8 classes - these are the actual groups */
+#navigation-items .mt-6,
+#navigation-items .lg\:mt-8,
+#navigation-items [class*="mt-6"],
+#navigation-items [class*="mt-8"] {
+  margin-top: 0 !important;
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+  position: relative !important;
+}
+
+/* First group doesn't need top padding, just bottom */
+#navigation-items > div > div:first-child,
+#navigation-items > div.text-sm > div:first-child,
+#navigation-items .text-sm > div:first-child,
+#navigation-items > .text-sm > div:first-of-type {
+  padding-top: 0 !important;
+  padding-bottom: 24px !important;
+  margin-top: 0 !important;
+}
+
+/* Add full-width divider before groups (except first) */
+#navigation-items .mt-6:not(:first-child)::before,
+#navigation-items .lg\:mt-8:not(:first-child)::before,
+#navigation-items [class*="mt-6"]:not(:first-child)::before,
+#navigation-items [class*="mt-8"]:not(:first-child)::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -24px !important;
+  right: -24px !important;
+  height: 0 !important;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Group labels (Overview, Quickstart, Core concepts) */
+#navigation-items button[class*="group"],
+#navigation-items [data-component-part="group-title"],
+.sidebar-group-header,
+h5#sidebar-title,
+.sidebar-group-header h5,
+#navigation-items h5 {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  color: #989898 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  margin-bottom: 2px !important;
+}
+
+/* Group header container - override Mintlify pl-4 */
+.sidebar-group-header,
+div.sidebar-group-header,
+#navigation-items .sidebar-group-header {
+  padding: 4px 8px !important;
+  padding-left: 8px !important;
+  margin-left: 0 !important;
+}
+
+/* Nav item list - add gap between items */
+#navigation-items ul,
+#navigation-items [class*="group"] + div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+/* Individual nav items */
+#navigation-items a,
+#navigation-items li > a {
+  height: 36px !important;
+  padding: 8px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: #7c7c7c !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* Active nav item */
+#navigation-items a[class*="text-primary"],
+#navigation-items a.active,
+#navigation-items a[aria-current="page"] {
+  color: #1a1a1a !important;
+  font-weight: 500 !important;
+}
+
+/* Hover state for nav items */
+#navigation-items a:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Nav item icons */
+#navigation-items a svg,
+#navigation-items a img {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Inactive icon colors - use filter for img tags */
+#navigation-items a svg {
+  color: #7c7c7c !important;
+}
+
+#navigation-items a img {
+  /* Filter to make black icons appear as #7C7C7C */
+  filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(98%) contrast(87%) !important;
+  opacity: 1 !important;
+}
+
+/* Icon stroke should not scale */
+#navigation-items a svg,
+#navigation-items a svg * {
+  vector-effect: non-scaling-stroke !important;
+  stroke-width: 1.5px !important;
+}
+
+/* Active nav item icons */
+#navigation-items a[class*="text-primary"] svg,
+#navigation-items a.active svg,
+#navigation-items a[aria-current="page"] svg {
+  color: #1a1a1a !important;
+}
+
+/* Active nav item img icons - darker filter for #1A1A1A */
+#navigation-items a[class*="text-primary"] img,
+#navigation-items a.active img,
+#navigation-items a[aria-current="page"] img {
+  filter: brightness(0) saturate(100%) invert(7%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(95%) !important;
+}
+
+/* Hide sidebar collapse button */
+button[class*="sidebar-toggle"],
+button[aria-label*="sidebar"],
+button[aria-label*="Collapse"],
+[class*="sidebar"] button[class*="collapse"],
+[class*="sidebar-collapse"],
+#sidebar-toggle,
+button[class*="toggle-sidebar"],
+#sidebar-content > button.absolute,
+#sidebar-content > button[class*="absolute"],
+button.absolute.top-5.right-5 {
+  display: none !important;
+}
+
+/* Hide light/dark mode toggle at bottom of sidebar only */
+#sidebar-content [class*="theme-toggle"],
+#sidebar-content [class*="color-mode"],
+#sidebar-content [class*="dark-mode-toggle"],
+#sidebar-content button[aria-label*="theme"],
+#sidebar-content button[aria-label*="dark mode"],
+#sidebar-content button[aria-label*="light mode"],
+[class*="sidebar"] [class*="footer"],
+[class*="sidebar-footer"],
+#sidebar-content #theme-toggle {
+  display: none !important;
+}
+
+/* Hide sidebar bottom divider/border */
+#sidebar-content > div[class*="border-t"],
+#sidebar-content > div.border-t,
+div[class*="px-7"][class*="py-4"][class*="border-t"] {
+  display: none !important;
+}
+
+/* ===========================================
+   Main Content Background & Width
+   =========================================== */
+
+/* Content area background for all pages */
+#content-container,
+#content-area,
+#content,
+[class*="content-container"],
+main[class*="content"],
+div[class*="peer-"][class*="lg:flex"],
+div[class*="is-not-custom"] {
+  background-color: #F8F8F7 !important;
+}
+
+/* Ensure the main wrapper also has the background */
+div[class*="lg:flex-1"][class*="lg:min-w-0"],
+div[class*="lg:flex-1"][class*="overflow-x-clip"] {
+  background-color: #F8F8F7 !important;
+}
+
