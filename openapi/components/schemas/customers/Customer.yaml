@@ -23,6 +23,11 @@ properties:
        Full UMA address (always present in responses, even if system-generated). This is an optional identifier
        to route payments to the customer.
     example: $john.doe@uma.domain.com
+  alias:
+    type: string
+    description: >-
+      Your public identifier for the customer for example `@alice` or `650-555-1234`.  This value can be used to enable payments to your existing customer public identifiers on the UMA network.
+    example: $alice-smith
   createdAt:
     type: string
     format: date-time
