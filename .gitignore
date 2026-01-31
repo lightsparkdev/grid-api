@@ -32,3 +32,9 @@ local.properties
 # Figma design tokens (local reference only)
 mintlify/tokens/
 
+# Development reference files
+refs/
+figma-*.md
+
+# Cursor IDE rules (personal config)
+.cursor/rules/
