@@ -643,8 +643,8 @@ ul#sidebar-group > li > button::after,
   top: 50% !important;
   width: 6px !important;
   height: 6px !important;
-  border-right: 1.5px solid var(--ls-gray-400) !important;
-  border-bottom: 1.5px solid var(--ls-gray-400) !important;
+  border-right: 1.5px solid var(--ls-gray-300) !important;
+  border-bottom: 1.5px solid var(--ls-gray-300) !important;
   transform: translateY(-50%) rotate(-45deg) !important;
   transition: transform 0.2s ease !important;
 }
@@ -740,16 +740,16 @@ ul#sidebar-group > li[data-title="External Accounts"] > button::before {
   background-image: url('/images/icons/bank.svg') !important;
 }
 
-/* Same-Currency Transfers - repeat arrows */
+/* Same-Currency Transfers - horizontal expand arrows */
 #sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
 ul#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
-  background-image: url('/images/icons/repeat.svg') !important;
+  background-image: url('/images/icons/arrow-expand-hor.svg') !important;
 }
 
-/* Cross-Currency Transfers - coins */
+/* Cross-Currency Transfers - left-right arrows */
 #sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
 ul#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
-  background-image: url('/images/icons/coins.svg') !important;
+  background-image: url('/images/icons/arrow-left-right.svg') !important;
 }
 
 /* Transactions - receipt */
@@ -758,22 +758,22 @@ ul#sidebar-group > li[data-title="Transactions"] > button::before {
   background-image: url('/images/icons/receipt-check.svg') !important;
 }
 
-/* Webhooks - code */
+/* Webhooks - bell */
 #sidebar-group > li[data-title="Webhooks"] > button::before,
 ul#sidebar-group > li[data-title="Webhooks"] > button::before {
-  background-image: url('/images/icons/code.svg') !important;
+  background-image: url('/images/icons/bell.svg') !important;
 }
 
-/* Invitations - paper plane */
+/* Invitations - people add */
 #sidebar-group > li[data-title="Invitations"] > button::before,
 ul#sidebar-group > li[data-title="Invitations"] > button::before {
-  background-image: url('/images/icons/paper-plane-top-right.svg') !important;
+  background-image: url('/images/icons/people-add.svg') !important;
 }
 
-/* Sandbox - blocks */
+/* Sandbox - sandbox icon */
 #sidebar-group > li[data-title="Sandbox"] > button::before,
 ul#sidebar-group > li[data-title="Sandbox"] > button::before {
-  background-image: url('/images/icons/blocks.svg') !important;
+  background-image: url('/images/icons/sandbox.svg') !important;
 }
 
 /* Available UMA Providers - at symbol */
