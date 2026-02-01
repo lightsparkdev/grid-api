@@ -2,23 +2,30 @@
 title: "Introduction"
 description: "Convert between fiat and crypto with Grid's on-ramp and off-ramp infrastructure"
 icon: "/images/icons/arrow-inbox.svg"
+mode: "wide"
 ---
 
 import { topLevelProductName } from '/snippets/variables.mdx';
 import { rampsProductName } from '/snippets/variables.mdx';
 
+<img 
+  src="https://placehold.co/928x400/e8e8e8/666666?text=Hero+Image" 
+  alt="Hero image placeholder"
+  style={{ width: '100%', borderRadius: '8px' }}
+/>
+
 With Grid, you can seamlessly convert between fiat currencies and cryptocurrencies through a single, simple API. The {topLevelProductName} automatically handles currency conversion, compliance, and instant settlement via the Lightning Network.
 
 <CardGroup cols={3}>
-  <Card title="Instant Conversion" icon="bolt">
+  <Card title="Instant Conversion" icon="/images/icons/lightning.svg">
     Convert fiat to crypto (on-ramp) or crypto to fiat (off-ramp) in seconds
     using real-time exchange rates.
   </Card>
-  <Card title="Simplified Infrastructure" icon="shield-check">
+  <Card title="Simplified Infrastructure" icon="/images/icons/shield.svg">
     Grid handles the conversion and settlement process, reducing complexity in
     your crypto integration.
   </Card>
-  <Card title="Global Settlement" icon="globe">
+  <Card title="Global Settlement" icon="/images/icons/globe.svg">
     Leverages the Lightning Network for instant Bitcoin transfers and local
     banking rails for fiat settlement worldwide.
   </Card>
@@ -104,6 +111,6 @@ The Production environment uses live credentials and base URLs for real transact
 
 ---
 
-<Card title="Get Started" icon="play" href="/ramps/quickstart">
+<Card title="Get Started" icon="/images/icons/light-bulb.svg" href="/ramps/quickstart">
   Ready to integrate {rampsProductName}? Check out our quickstart guide.
 </Card>
