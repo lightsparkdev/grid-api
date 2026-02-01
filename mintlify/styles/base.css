@@ -864,6 +864,67 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
 }
 
 /* ===========================================
+   API Reference Page Fixes
+   
+   These styles only apply to API reference pages
+   (pages with #api-playground-2-operation-page).
+   They should NOT affect the homepage or regular
+   content pages with TOC.
+   =========================================== */
+
+/* Add gap between main content and code column ONLY on API reference pages */
+/* Uses :has() to scope the rule to pages containing the API playground */
+#content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
+  gap: 48px !important;
+}
+
+/* Ensure API playground content is full width and left-aligned */
+#api-playground-2-operation-page {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+#api-playground-2-operation-page .mdx-content,
+#api-playground-2-operation-page [class*="api-section"],
+#api-playground-2-operation-page [class*="api-section-heading"] {
+  width: 100% !important;
+  text-align: left !important;
+  align-items: flex-start !important;
+}
+
+/* Fix "Example:" row layout - these use flex with gap-1.5 */
+/* Target the specific flex containers that show "Example: value" pairs */
+#api-playground-2-operation-page div.flex[class*="prose"][class*="mt-6"],
+#api-playground-2-operation-page div.flex.prose.prose-sm {
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  width: auto !important;
+}
+
+/* Ensure all prose paragraphs and text are full width and left-aligned */
+#api-playground-2-operation-page p,
+#api-playground-2-operation-page p.whitespace-pre-line {
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: left !important;
+  display: block !important;
+}
+
+/* Fix containers that wrap the prose content */
+#api-playground-2-operation-page [class*="space-y"],
+#api-playground-2-operation-page [class*="whitespace-normal"],
+#api-playground-2-operation-page [class*="overflow-wrap-anywhere"] {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+/* Ensure section subtitles are full width */
+#api-playground-2-operation-page [class*="api-section-heading-subtitle"],
+#api-playground-2-operation-page [class*="api-section-heading-subtitle"] > div {
+  width: 100% !important;
+}
+
+/* ===========================================
    Sidebar Footer
    =========================================== */
 
@@ -881,4 +942,53 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   color: var(--ls-gray-400);
   margin-right: auto;
   padding-left: 4px;
+}
+
+/* ===========================================
+   Card Components
+   =========================================== */
+
+/* Card container - border radius and border */
+.card,
+.card-group .card,
+div.card {
+  border-radius: var(--ls-radius-md) !important; /* 8px */
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .card,
+html.dark .card-group .card,
+html.dark div.card {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Card description text - secondary color */
+.card .prose p,
+.card .prose span,
+.card [data-as="p"],
+.card-group .card .prose p,
+.card-group .card .prose span {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Card icons - consistent sizing and stroke */
+.card svg,
+.card-group .card svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.card svg path,
+.card svg line,
+.card svg circle,
+.card svg rect,
+.card svg polyline,
+.card svg polygon,
+.card-group .card svg path,
+.card-group .card svg line,
+.card-group .card svg circle,
+.card-group .card svg rect,
+.card-group .card svg polyline,
+.card-group .card svg polygon {
+  stroke-width: 1.5px !important;
 }
