@@ -890,6 +890,30 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
    content pages with TOC.
    =========================================== */
 
+/* Wider layout for API reference pages only (max 1600px) */
+#content-container:has(#api-playground-2-operation-page) {
+  max-width: 1600px !important;
+  padding-right: 48px !important;
+}
+
+/* Override the inner max-w-5xl constraint on API reference pages */
+#content-container:has(#api-playground-2-operation-page) > div.max-w-5xl,
+#content-container:has(#api-playground-2-operation-page) > div[class*="max-w-5xl"] {
+  max-width: 100% !important;
+}
+
+/* Ensure code panel doesn't shrink on API reference pages */
+#content-container:has(#api-playground-2-operation-page) #content-side-layout {
+  flex-shrink: 0 !important;
+  min-width: 28rem !important;
+}
+
+/* Ensure content area is flexible on API reference pages */
+#content-container:has(#api-playground-2-operation-page) #content-area {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
 /* Add gap between main content and code column ONLY on API reference pages */
 /* Uses :has() to scope the rule to pages containing the API playground */
 #content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
