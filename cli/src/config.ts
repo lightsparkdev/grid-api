@@ -19,7 +19,11 @@ function loadCredentialsFile(): Partial<GridConfig> {
   const credentialsPath = getCredentialsPath();
   if (fs.existsSync(credentialsPath)) {
     const content = fs.readFileSync(credentialsPath, "utf-8");
-    return JSON.parse(content);
+    try {
+      return JSON.parse(content);
+    } catch {
+      throw new Error(`Invalid JSON in credentials file: ${credentialsPath}`);
+    }
   }
   return {};
 }
@@ -35,7 +39,11 @@ export function loadConfig(options: {
       throw new Error(`Config file not found: ${options.configPath}`);
     }
     const content = fs.readFileSync(options.configPath, "utf-8");
-    fileConfig = JSON.parse(content);
+    try {
+      fileConfig = JSON.parse(content);
+    } catch {
+      throw new Error(`Invalid JSON in config file: ${options.configPath}`);
+    }
   } else {
     fileConfig = loadCredentialsFile();
   }
@@ -66,7 +74,11 @@ export function saveCredentials(config: Partial<GridConfig>): void {
 
   if (fs.existsSync(credentialsPath)) {
     const content = fs.readFileSync(credentialsPath, "utf-8");
-    existing = JSON.parse(content);
+    try {
+      existing = JSON.parse(content);
+    } catch {
+      existing = {};
+    }
   }
 
   const merged = { ...existing, ...config };
