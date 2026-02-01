@@ -839,9 +839,9 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   padding-right: 24px !important;
 }
 
-/* Hide footer link in main footer */
-#footer > div.flex.items-center.justify-between > div > a {
-  display: none;
+/* Hide main footer completely */
+#footer {
+  display: none !important;
 }
 
 /* ===========================================
