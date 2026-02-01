@@ -895,6 +895,15 @@ npm run lint
 
 This repository includes a [Claude Code](https://claude.ai/code) skill for interacting with the Grid API. The skill enables Claude to execute API operations, answer documentation questions, and guide you through payment workflows.
 
+### Setup
+
+Before using the skill, build the CLI tool:
+```bash
+cd cli && npm install && npm run build && cd ..
+```
+
+Then configure credentials (see Configuration section below).
+
 ### Usage
 
 When using Claude Code in this repository, invoke the skill with `/grid-api` or ask questions like:

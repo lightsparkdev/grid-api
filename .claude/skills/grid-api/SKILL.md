@@ -55,6 +55,11 @@ For detailed information, read these reference files in the `references/` direct
 
 ## Configuration
 
+**Prerequisites**: Build the CLI before first use:
+```bash
+cd cli && npm install && npm run build && cd ..
+```
+
 ### Quick Setup (Recommended)
 
 Run the interactive configuration command:
