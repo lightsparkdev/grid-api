@@ -2,23 +2,29 @@
 title: "Introduction"
 description: "Integrate Global payments quickly and easily"
 icon: "/images/icons/paper-plane-top-right.svg"
+mode: "wide"
 ---
 
 import { payToBankProductName, topLevelProductName } from '/snippets/variables.mdx';
 import PaymentFlow from '/snippets/payment-flow.mdx';
 import CountrySupport from '/snippets/country-support.mdx';
 
+<img 
+  src="https://placehold.co/928x400/e8e8e8/666666?text=Hero+Image" 
+  alt="Hero image placeholder"
+  style={{ width: '100%', borderRadius: '8px' }}
+/>
+
 With {payToBankProductName}, you can send and receive low cost real-time payments to bank accounts worldwide through a single, simple API. {topLevelProductName} automatically routes each payment across its network of {topLevelProductName} switches, handling FX, blockchain settlement, and instant banking off-ramps for you.
 
-
 <CardGroup cols={3}>
-  <Card title="Instant Conversion" icon="bolt">
+  <Card title="Instant Conversion" icon="/images/icons/lightning.svg">
     Single API, global reach. {payToBankProductName} interacts with the Money Grid to route your payments globally.
   </Card>
-  <Card title="Simplified Infrastructure" icon="shield-check">
+  <Card title="Simplified Infrastructure" icon="/images/icons/shield.svg">
     No crypto handling. {payToBankProductName} converts between fiat and crypto instantly to simplify your implementation and minimize FX costs.
   </Card>
-  <Card title="Global Settlement" icon="globe">
+  <Card title="Global Settlement" icon="/images/icons/globe.svg">
     Real-time settlement. Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
   </Card>
 </CardGroup>
