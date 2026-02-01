@@ -690,6 +690,24 @@ ul#sidebar-group > li ul a,
   box-sizing: border-box !important;
 }
 
+/* Vertical indentation line for nested items in expandable groups */
+#sidebar-group > li > ul,
+ul#sidebar-group > li > ul,
+#navigation-items li.space-y-px > ul,
+#navigation-items li[class*="space-y"] > ul {
+  position: relative !important;
+  margin-left: 18px !important;
+  padding-left: 12px !important;
+  border-left: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #sidebar-group > li > ul,
+html.dark ul#sidebar-group > li > ul,
+html.dark #navigation-items li.space-y-px > ul,
+html.dark #navigation-items li[class*="space-y"] > ul {
+  border-left-color: var(--ls-white-10) !important;
+}
+
 /* ===========================================
    API Reference Sidebar - Group Icons
    =========================================== */
