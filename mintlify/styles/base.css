@@ -1235,3 +1235,61 @@ html.dark #pagination a {
 html.dark #pagination a:hover {
   background-color: var(--ls-white-10) !important;
 }
+
+/* ===========================================
+   Page Context Menu (Split Button Group)
+   =========================================== */
+
+/* Remove any border from parent container */
+#page-context-menu,
+div#page-context-menu {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Copy page button - rounded left corners, no right border */
+button#page-context-menu-button,
+#page-context-menu > button#page-context-menu-button {
+  background-color: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  border-top-left-radius: var(--ls-radius-sm) !important;
+  border-bottom-left-radius: var(--ls-radius-sm) !important;
+}
+
+/* Chevron button - rounded right corners, left border is the divider */
+#page-context-menu > button:not(#page-context-menu-button) {
+  background-color: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: 0 !important;
+  border-top-right-radius: var(--ls-radius-sm) !important;
+  border-bottom-right-radius: var(--ls-radius-sm) !important;
+}
+
+/* Hover state */
+button#page-context-menu-button:hover,
+#page-context-menu > button#page-context-menu-button:hover,
+#page-context-menu > button:not(#page-context-menu-button):hover {
+  background-color: var(--ls-gray-100) !important;
+}
+
+/* Dark mode */
+html.dark button#page-context-menu-button,
+html.dark #page-context-menu > button#page-context-menu-button {
+  background-color: var(--ls-gray-900) !important;
+  border-color: var(--ls-white-10) !important;
+  border-right: none !important;
+}
+
+html.dark #page-context-menu > button:not(#page-context-menu-button) {
+  background-color: var(--ls-gray-900) !important;
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Dark mode hover */
+html.dark button#page-context-menu-button:hover,
+html.dark #page-context-menu > button#page-context-menu-button:hover,
+html.dark #page-context-menu > button:not(#page-context-menu-button):hover {
+  background-color: var(--ls-gray-850) !important;
+}
