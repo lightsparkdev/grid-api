@@ -11,9 +11,9 @@
    =========================================== */
 
 :root {
-  --primary: var(--ls-gray-950) !important;
-  --text-primary: var(--ls-gray-950) !important;
-  --color-primary: var(--ls-gray-950) !important;
+  --primary: var(--ls-gray-900) !important;
+  --text-primary: var(--ls-gray-900) !important;
+  --color-primary: var(--ls-gray-900) !important;
   --tw-text-opacity: 1;
 }
 
@@ -124,6 +124,20 @@ svg[class*="icon"] polygon {
    Border, padding, and layout
    =========================================== */
 
+#navbar {
+  background-color: var(--ls-gray-100) !important;
+}
+
+html.dark #navbar {
+  background-color: var(--ls-gray-975) !important;
+}
+
+#navbar > div,
+#navbar .h-16,
+#navbar [class*="h-16"] {
+  background: transparent !important;
+}
+
 #navbar .h-16,
 #navbar [class*="h-16"] {
   border-bottom: 0.5px solid var(--ls-black-10) !important;
@@ -133,7 +147,7 @@ svg[class*="icon"] polygon {
 
 html.dark #navbar .h-16,
 html.dark #navbar [class*="h-16"] {
-  border-bottom: 0.5px solid var(--ls-white-10) !important;
+  border-bottom: 0.5px solid var(--ls-white-06) !important;
 }
 
 /* Tabs row padding */
@@ -141,6 +155,17 @@ html.dark #navbar [class*="h-16"] {
 #navbar [class*="h-12"] {
   padding-left: 32px !important;
   padding-right: 32px !important;
+  background: transparent !important;
+}
+
+html.dark #navbar .h-12,
+html.dark #navbar [class*="h-12"],
+html.dark #navbar .h-12 *,
+html.dark #navbar [class*="h-12"] *,
+html.dark #navbar > div,
+html.dark #navbar .z-10,
+html.dark #navbar [class*="z-10"] {
+  border-color: var(--ls-white-06) !important;
 }
 
 /* ===========================================
@@ -176,7 +201,7 @@ html.dark #navbar [class*="h-16"] {
 
 html.dark #search-bar-entry {
   background: rgba(255, 255, 255, 0.05) !important;
-  border-color: var(--ls-white-10) !important;
+  border-color: var(--ls-white-06) !important;
   color: var(--ls-gray-500) !important;
 }
 
@@ -218,7 +243,7 @@ html.dark #search-bar-entry:hover > div > span:first-child {
 
 html.dark #search-bar-entry kbd,
 html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
-  background: var(--ls-white-10) !important;
+  background: var(--ls-white-06) !important;
   color: var(--ls-gray-400) !important;
 }
 
@@ -252,7 +277,7 @@ html.dark [class*="ask-ai"],
 html.dark button[aria-label*="AI"],
 html.dark #ask-ai-button {
   background: rgba(255, 255, 255, 0.05) !important;
-  border-color: var(--ls-white-10) !important;
+  border-color: var(--ls-white-06) !important;
 }
 
 html.dark [class*="ask-ai"]:hover,
@@ -375,31 +400,35 @@ a.nav-tabs-item.text-gray-800::after,
 html.dark .nav-tabs-item,
 html.dark a.nav-tabs-item,
 html.dark #navbar .nav-tabs-item {
-  color: var(--ls-gray-500) !important;
+  color: var(--ls-gray-600) !important;
 }
 
 html.dark .nav-tabs-item:hover,
-html.dark a.nav-tabs-item:hover {
+html.dark a.nav-tabs-item:hover,
+html.dark #navbar .nav-tabs-item:hover {
   color: var(--ls-gray-100) !important;
 }
 
-html.dark .nav-tabs-item.text-gray-200,
-html.dark .nav-tabs-item[class*="text-gray-200"],
-html.dark a.nav-tabs-item.text-gray-200,
-html.dark .nav-tabs-item[aria-current="page"] {
-  color: var(--ls-gray-100) !important;
+/* Active tab in dark mode - override Tailwind's dark:text-gray-200 */
+html.dark .nav-tabs-item[class*="dark:text-gray-200"],
+html.dark a.nav-tabs-item[class*="dark:text-gray-200"],
+html.dark #navbar .nav-tabs-item[class*="dark:text-gray-200"],
+html.dark #navbar a.link.nav-tabs-item[class*="dark:text-gray-200"] {
+  color: var(--ls-white) !important;
 }
 
+/* Dark mode - hide ALL tab indicators by default */
+html.dark .nav-tabs-item::after,
+html.dark #navbar .nav-tabs-item::after {
+  background-color: var(--ls-gray-050) !important;
+  opacity: 0 !important;
+}
+
+/* Dark mode - show indicator ONLY for active tab */
 html.dark .nav-tabs-item.text-gray-200::after,
 html.dark a.nav-tabs-item.text-gray-200::after,
 html.dark .nav-tabs-item[aria-current="page"]::after {
-  background-color: var(--ls-gray-100) !important;
   opacity: 1 !important;
-}
-
-html.dark .nav-tabs-item.text-gray-400::after,
-html.dark .nav-tabs-item[class*="text-gray-400"]::after {
-  opacity: 0 !important;
 }
 
 /* Active sidebar item: Medium weight */
@@ -422,12 +451,21 @@ button[class*="text-primary"] * {
   max-width: 280px !important;
 }
 
+html.dark #sidebar-content {
+  background-color: var(--ls-gray-975) !important;
+  border-right-color: var(--ls-white-06) !important;
+}
+
 #navigation-items {
   background-color: var(--ls-gray-100) !important;
   padding: 24px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
+}
+
+html.dark #navigation-items {
+  background-color: var(--ls-gray-975) !important;
 }
 
 #navigation-items > div.text-sm {
@@ -471,6 +509,13 @@ button[class*="text-primary"] * {
   border-top: 0.5px solid var(--ls-black-10) !important;
 }
 
+html.dark #navigation-items .mt-6:not(:first-child)::before,
+html.dark #navigation-items .lg\:mt-8:not(:first-child)::before,
+html.dark #navigation-items [class*="mt-6"]:not(:first-child)::before,
+html.dark #navigation-items [class*="mt-8"]:not(:first-child)::before {
+  border-top-color: var(--ls-white-06) !important;
+}
+
 /* Group labels */
 #navigation-items button[class*="group"],
 #navigation-items [data-component-part="group-title"],
@@ -485,6 +530,15 @@ h5#sidebar-title,
   letter-spacing: 0 !important;
   text-transform: none !important;
   margin-bottom: 2px !important;
+}
+
+html.dark #navigation-items button[class*="group"],
+html.dark #navigation-items [data-component-part="group-title"],
+html.dark .sidebar-group-header,
+html.dark h5#sidebar-title,
+html.dark .sidebar-group-header h5,
+html.dark #navigation-items h5 {
+  color: var(--ls-gray-700) !important;
 }
 
 /* Group header container */
@@ -528,9 +582,28 @@ div.sidebar-group-header,
   font-weight: 500 !important;
 }
 
+/* Dark mode - inactive nav items one step darker */
+html.dark #navigation-items a {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark #navigation-items a svg {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark #navigation-items a[class*="text-primary"],
+html.dark #navigation-items a.active,
+html.dark #navigation-items a[aria-current="page"] {
+  color: var(--ls-gray-100) !important;
+}
+
 /* Hover state */
 #navigation-items a:hover {
   background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html.dark #navigation-items a:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Nav item icons */
@@ -550,6 +623,10 @@ div.sidebar-group-header,
   opacity: 1 !important;
 }
 
+html.dark #navigation-items a img {
+  filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(90%) !important;
+}
+
 #navigation-items a svg,
 #navigation-items a svg * {
   vector-effect: non-scaling-stroke !important;
@@ -563,10 +640,22 @@ div.sidebar-group-header,
   color: var(--ls-gray-950) !important;
 }
 
+html.dark #navigation-items a[class*="text-primary"] svg,
+html.dark #navigation-items a.active svg,
+html.dark #navigation-items a[aria-current="page"] svg {
+  color: var(--ls-gray-100) !important;
+}
+
 #navigation-items a[class*="text-primary"] img,
 #navigation-items a.active img,
 #navigation-items a[aria-current="page"] img {
   filter: brightness(0) saturate(100%) invert(7%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(95%) !important;
+}
+
+html.dark #navigation-items a[class*="text-primary"] img,
+html.dark #navigation-items a.active img,
+html.dark #navigation-items a[aria-current="page"] img {
+  filter: brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(105%) contrast(95%) !important;
 }
 
 /* Hide sidebar controls */
@@ -647,6 +736,13 @@ ul#sidebar-group > li > button,
   justify-content: flex-start !important;
 }
 
+html.dark #sidebar-group > li > button,
+html.dark ul#sidebar-group > li > button,
+html.dark #navigation-items li.space-y-px > button,
+html.dark #navigation-items li[class*="space-y"] > button {
+  color: var(--ls-gray-600) !important;
+}
+
 /* Hide the original SVG chevron */
 #sidebar-group > li > button > svg,
 ul#sidebar-group > li > button > svg,
@@ -687,6 +783,13 @@ ul#sidebar-group > li > button:hover,
 #navigation-items li.space-y-px > button:hover,
 #navigation-items li[class*="space-y"] > button:hover {
   background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html.dark #sidebar-group > li > button:hover,
+html.dark ul#sidebar-group > li > button:hover,
+html.dark #navigation-items li.space-y-px > button:hover,
+html.dark #navigation-items li[class*="space-y"] > button:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Group buttons stay gray - only active page links get bold/dark styling */
@@ -730,7 +833,7 @@ html.dark #sidebar-group > li > ul,
 html.dark ul#sidebar-group > li > ul,
 html.dark #navigation-items li.space-y-px > ul,
 html.dark #navigation-items li[class*="space-y"] > ul {
-  border-left-color: var(--ls-white-10) !important;
+  border-left-color: var(--ls-white-06) !important;
 }
 
 /* ===========================================
@@ -851,6 +954,21 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   background-color: var(--ls-gray-050) !important;
 }
 
+html.dark #content-container,
+html.dark #content-area,
+html.dark #content,
+html.dark [class*="content-container"],
+html.dark main[class*="content"],
+html.dark div[class*="peer-"][class*="lg:flex"],
+html.dark div[class*="is-not-custom"] {
+  background-color: var(--ls-gray-950) !important;
+}
+
+html.dark div[class*="lg:flex-1"][class*="lg:min-w-0"],
+html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
+  background-color: var(--ls-gray-950) !important;
+}
+
 /* Main content wrapper - remove padding/margin to keep gap clean */
 #content-area {
   padding-left: 0 !important;
@@ -951,7 +1069,7 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
 }
 
 html.dark #api-playground-2-operation-page [class*="border-gray-800"] {
-  border-color: var(--ls-white-10) !important;
+  border-color: var(--ls-white-06) !important;
 }
 
 /* Ensure API playground content is full width and left-aligned */
@@ -1035,7 +1153,15 @@ div.card {
 html.dark .card,
 html.dark .card-group .card,
 html.dark div.card {
-  border-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Card icons - invert for dark mode */
+html.dark .card img,
+html.dark .card-group .card img,
+html.dark div.card img {
+  filter: brightness(0) invert(1) !important;
 }
 
 /* Card description text - secondary color */
@@ -1081,7 +1207,7 @@ html.dark div.card {
 }
 
 html.dark #content-side-layout .code-group {
-  border-color: var(--ls-white-10) !important;
+  border-color: var(--ls-white-06) !important;
 }
 
 /* Code group inner container - no border radius */
@@ -1116,36 +1242,43 @@ html.dark #content-side-layout .code-group {
 }
 
 html.dark #content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
-  background-color: var(--ls-white-06) !important;
-  border-bottom-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-975) !important;
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* Code block content area - darker in dark mode */
+html.dark #content-side-layout .code-group [data-component-part="code-block-root"],
+html.dark #content-side-layout .code-block-background,
+html.dark #content-side-layout [class*="bg-codeblock"],
+html.dark .code-group [class*="dark:bg-codeblock"] {
+  background-color: var(--ls-gray-975) !important;
 }
 
 /* ===========================================
    API Reference - Endpoint Bar (GET /path)
    =========================================== */
 
-/* Outer container - 12px radius, black-10 border, white background */
-#api-playground-2-operation-page .border-standard.rounded-2xl {
-  border-radius: var(--ls-radius-lg) !important;
-  border: 0.5px solid var(--ls-black-10) !important;
-  background-color: var(--ls-white) !important;
-}
-
-html.dark #api-playground-2-operation-page .border-standard.rounded-2xl {
-  border-color: var(--ls-white-10) !important;
-  background-color: var(--ls-gray-900) !important;
-}
-
-/* Inner path container - white background, 6px radius, 0.5px border */
+/* Outer and inner containers - same background color */
+#api-playground-2-operation-page .border-standard.rounded-2xl,
 #api-playground-2-operation-page .border-standard.rounded-xl {
   background-color: var(--ls-white) !important;
-  border-radius: var(--ls-radius-sm) !important;
   border: 0.5px solid var(--ls-black-10) !important;
 }
 
-html.dark #api-playground-2-operation-page .border-standard.rounded-xl {
-  background-color: var(--ls-gray-900) !important;
-  border-color: var(--ls-white-10) !important;
+#api-playground-2-operation-page .border-standard.rounded-2xl {
+  border-radius: var(--ls-radius-lg) !important;
+}
+
+#api-playground-2-operation-page .border-standard.rounded-xl {
+  border-radius: var(--ls-radius-sm) !important;
+}
+
+html.dark #api-playground-2-operation-page .border-standard.rounded-2xl,
+html.dark #api-playground-2-operation-page .border-standard.rounded-xl,
+html.dark #api-playground-2-operation-page .border-standard[class*="rounded-xl"],
+html.dark #api-playground-2-operation-page [class*="border-standard"][class*="rounded-xl"] {
+  background-color: var(--ls-gray-975) !important;
+  border-color: var(--ls-white-06) !important;
 }
 
 /* Try it button - 6px radius */
@@ -1192,7 +1325,7 @@ header#header .text-lg {
 }
 
 html.dark #api-playground-2-operation-page [data-component-part="field-info-pill"] {
-  background-color: var(--ls-white-10) !important;
+  background-color: var(--ls-white-06) !important;
 }
 
 /* Inline code styling */
@@ -1205,7 +1338,7 @@ html.dark #api-playground-2-operation-page [data-component-part="field-info-pill
 html.dark #content code:not(pre code),
 html.dark #content-area code:not(pre code),
 html.dark .prose code:not(pre code) {
-  background-color: var(--ls-white-10) !important;
+  background-color: var(--ls-white-06) !important;
 }
 
 /* ===========================================
@@ -1229,11 +1362,12 @@ html.dark .prose code:not(pre code) {
 }
 
 html.dark #pagination a {
-  border-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
 }
 
 html.dark #pagination a:hover {
-  background-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-900) !important;
 }
 
 /* ===========================================
@@ -1277,14 +1411,14 @@ button#page-context-menu-button:hover,
 /* Dark mode */
 html.dark button#page-context-menu-button,
 html.dark #page-context-menu > button#page-context-menu-button {
-  background-color: var(--ls-gray-900) !important;
-  border-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
   border-right: none !important;
 }
 
 html.dark #page-context-menu > button:not(#page-context-menu-button) {
-  background-color: var(--ls-gray-900) !important;
-  border-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
 }
 
 /* Dark mode hover */

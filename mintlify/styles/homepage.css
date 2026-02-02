@@ -189,7 +189,7 @@ html.dark .section-header-arrow {
 }
 
 html.dark .section-header-arrow:hover {
-  background-color: var(--ls-white-10);
+  background-color: var(--ls-white-06);
   color: var(--ls-gray-100);
 }
 
@@ -233,6 +233,11 @@ html.dark .section-header-arrow:hover {
   width: 90px;
   height: 25px;
   display: block;
+  margin-left: 3px;
+}
+
+html.dark .hero-logo {
+  filter: brightness(0) invert(1);
 }
 
 .hero-subtitle {
@@ -280,7 +285,7 @@ html.dark .hero-tagline {
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 16px;
-  border: 0.5px solid var(--ls-white-10);
+  border: 0.5px solid var(--ls-white-06);
   background-image: url('/images/home/sand.png');
   background-size: 100% auto;
   background-position: center center;
@@ -344,6 +349,15 @@ html.dark .hero-tagline {
   transform: translateY(-1px);
 }
 
+html.dark .hero-banner-button {
+  background: var(--ls-gray-800);
+  color: var(--ls-gray-050);
+}
+
+html.dark .hero-banner-button:hover {
+  background: var(--ls-gray-700);
+}
+
 /* ===========================================
    Info Cards (Understand Grid & Start Building)
    =========================================== */
@@ -373,8 +387,8 @@ html.dark .hero-tagline {
 }
 
 html.dark .info-card {
-  background: var(--ls-gray-900);
-  border-color: var(--ls-white-10);
+  background: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
 }
 
 .info-card-icon {
@@ -451,7 +465,7 @@ html.dark .info-card-title {
 }
 
 html.dark .capabilities-grid {
-  border-color: var(--ls-white-10);
+  border-color: var(--ls-white-06);
 }
 
 @media (max-width: 1024px) {
@@ -479,8 +493,8 @@ html.dark .capabilities-grid {
 }
 
 html.dark .capability-card {
-  background: var(--ls-gray-900);
-  border-color: var(--ls-white-10);
+  background: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
 }
 
 .capability-card:nth-child(4n) {
@@ -504,6 +518,13 @@ html.dark .capability-card {
   .capability-card:nth-last-child(-n+2) {
     border-bottom: none;
   }
+
+  html.dark .capability-card:nth-child(4n) {
+    border-right: 0.5px solid var(--ls-white-06);
+  }
+  html.dark .capability-card:nth-last-child(-n+4) {
+    border-bottom: 0.5px solid var(--ls-white-06);
+  }
 }
 
 @media (max-width: 640px) {
@@ -512,6 +533,13 @@ html.dark .capability-card {
     border-bottom: 0.5px solid var(--ls-black-10);
   }
   .capability-card:last-child {
+    border-bottom: none;
+  }
+
+  html.dark .capability-card {
+    border-bottom: 0.5px solid var(--ls-white-06);
+  }
+  html.dark .capability-card:last-child {
     border-bottom: none;
   }
 }
@@ -560,8 +588,8 @@ html.dark .capability-title {
 }
 
 html.dark .product-tiles-container {
-  background: var(--ls-gray-900);
-  border-color: var(--ls-white-10);
+  background: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
 }
 
 /* Tabs header */
@@ -575,7 +603,7 @@ html.dark .product-tiles-container {
 }
 
 html.dark .product-tiles-container > div:first-child {
-  border-color: var(--ls-white-10);
+  border-color: var(--ls-white-06);
 }
 
 .product-tiles-tab {
@@ -615,7 +643,7 @@ html.dark .product-tiles-tab:hover {
 html.dark .product-tiles-tab.active {
   background: var(--ls-gray-800);
   color: var(--ls-gray-050);
-  border-color: var(--ls-white-10);
+  border-color: var(--ls-white-06);
 }
 
 .product-tiles-grid {
@@ -893,5 +921,5 @@ html.dark .trusted-by-logo {
 }
 
 html.dark .homepage-divider {
-  border-color: var(--ls-white-10);
+  border-color: var(--ls-white-06);
 }
