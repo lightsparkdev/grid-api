@@ -24,7 +24,10 @@
       "weight": 400
     }
   },
-  "favicon": "/favicon.svg",
+  "favicon": {
+    "light": "/favicon-dark.svg",
+    "dark": "/favicon-light.svg"
+  },
   "navigation": {
     "tabs": [
       {
