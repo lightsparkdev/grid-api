@@ -24,6 +24,19 @@ html.dark {
 }
 
 /* ===========================================
+   Hide Scrollbars Globally
+   =========================================== */
+
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+/* ===========================================
    Global Typography
    
    Base fonts configured in docs.json.
@@ -46,6 +59,17 @@ strong, b, th,
 [data-component-part="tab-button"] {
   font-weight: 500 !important;
   letter-spacing: normal !important;
+}
+
+/* Page title and H2s: Regular weight (400) */
+h1#page-title,
+#content h2 {
+  font-weight: 400 !important;
+}
+
+/* H3s: Book weight (450) */
+#content h3 {
+  font-weight: 450 !important;
 }
 
 /* Navigation tabs & CTA button: Medium weight */
@@ -698,6 +722,7 @@ ul#sidebar-group > li > ul,
   position: relative !important;
   margin-left: 18px !important;
   padding-left: 12px !important;
+  width: calc(100% - 18px) !important;
   border-left: 0.5px solid var(--ls-black-10) !important;
 }
 
@@ -920,6 +945,15 @@ div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   gap: 48px !important;
 }
 
+/* Override faint divider borders in API reference pages */
+#api-playground-2-operation-page [class*="border-gray-100"] {
+  border-color: var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [class*="border-gray-800"] {
+  border-color: var(--ls-white-10) !important;
+}
+
 /* Ensure API playground content is full width and left-aligned */
 #api-playground-2-operation-page {
   width: 100% !important;
@@ -1033,4 +1067,171 @@ html.dark div.card {
 .card-group .card svg polyline,
 .card-group .card svg polygon {
   stroke-width: 1.5px !important;
+}
+
+/* ===========================================
+   API Reference - Code Groups
+   =========================================== */
+
+/* Code group container - 8px border radius, no padding, black-10 border */
+#content-side-layout .code-group {
+  border-radius: var(--ls-radius-md) !important;
+  padding: 0 !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #content-side-layout .code-group {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Code group inner container - no border radius */
+#content-side-layout .code-group > div,
+#content-side-layout .code-group [class*="rounded"] {
+  border-radius: 0 !important;
+}
+
+/* Code group tab bar header */
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
+  height: fit-content !important;
+  background-color: var(--ls-gray-025) !important;
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Code group tab bar text - book weight */
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
+  font-weight: 450 !important;
+}
+
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] span,
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] button,
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] div {
+  font-weight: 450 !important;
+}
+
+/* Code group tab bar title - 2px left padding */
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] span.truncate {
+  padding-left: 4px !important;
+}
+
+html.dark #content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
+  background-color: var(--ls-white-06) !important;
+  border-bottom-color: var(--ls-white-10) !important;
+}
+
+/* ===========================================
+   API Reference - Endpoint Bar (GET /path)
+   =========================================== */
+
+/* Outer container - 12px radius, black-10 border, white background */
+#api-playground-2-operation-page .border-standard.rounded-2xl {
+  border-radius: var(--ls-radius-lg) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  background-color: var(--ls-white) !important;
+}
+
+html.dark #api-playground-2-operation-page .border-standard.rounded-2xl {
+  border-color: var(--ls-white-10) !important;
+  background-color: var(--ls-gray-900) !important;
+}
+
+/* Inner path container - white background, 6px radius, 0.5px border */
+#api-playground-2-operation-page .border-standard.rounded-xl {
+  background-color: var(--ls-white) !important;
+  border-radius: var(--ls-radius-sm) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page .border-standard.rounded-xl {
+  background-color: var(--ls-gray-900) !important;
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Try it button - 6px radius */
+#api-playground-2-operation-page .tryit-button {
+  border-radius: var(--ls-radius-sm) !important;
+}
+
+/* Expandable child attributes button */
+#api-playground-2-operation-page [data-component-part="expandable-button"] {
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="expandable-button"] {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Expandable details container when open */
+#api-playground-2-operation-page details.expandable,
+#api-playground-2-operation-page details.expandable[open],
+#api-playground-2-operation-page .expandable {
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark #api-playground-2-operation-page details.expandable,
+html.dark #api-playground-2-operation-page details.expandable[open],
+html.dark #api-playground-2-operation-page .expandable {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Page description text - match body text size */
+#api-playground-2-operation-page header#header .text-lg,
+header#header .text-lg {
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+/* ===========================================
+   API Reference - Field Info Pills (chips)
+   =========================================== */
+
+/* Make chips one step darker */
+#api-playground-2-operation-page [data-component-part="field-info-pill"] {
+  background-color: var(--ls-gray-150) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="field-info-pill"] {
+  background-color: var(--ls-white-10) !important;
+}
+
+/* Inline code styling */
+#content code:not(pre code),
+#content-area code:not(pre code),
+.prose code:not(pre code) {
+  background-color: var(--ls-gray-150) !important;
+}
+
+html.dark #content code:not(pre code),
+html.dark #content-area code:not(pre code),
+html.dark .prose code:not(pre code) {
+  background-color: var(--ls-white-10) !important;
+}
+
+/* ===========================================
+   Pagination Navigation Buttons
+   =========================================== */
+
+#pagination a {
+  border-radius: var(--ls-radius-md) !important;
+  background-color: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  transition: background-color 0.15s ease !important;
+}
+
+#pagination a:hover {
+  background-color: var(--ls-gray-100) !important;
+}
+
+#pagination a,
+#pagination a * {
+  font-weight: 450 !important;
+}
+
+html.dark #pagination a {
+  border-color: var(--ls-white-10) !important;
+}
+
+html.dark #pagination a:hover {
+  background-color: var(--ls-white-10) !important;
 }
