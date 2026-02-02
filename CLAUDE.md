@@ -155,6 +155,32 @@ Webhooks use **P-256 ECDSA signatures** in the `X-Grid-Signature` header for ver
 - Use relative paths for internal links
 - The mintlify subdirectory has its own CLAUDE.md with additional guidance
 
+### Mintlify CLI Version (Important)
+
+**Use Mintlify CLI version 4.2.284** for local development. Newer versions (e.g., 4.2.312) have a bug where the API reference pages render blank when using the palm theme with OpenAPI auto-generation.
+
+```bash
+# Check current version
+mintlify --version
+
+# If needed, install the working version
+npm install -g mintlify@4.2.284 --force
+```
+
+### Troubleshooting: API Reference Not Showing
+
+If the API reference pages appear blank (only showing title and navigation, no endpoint details):
+
+1. **Restart the dev server** - hot reload sometimes fails:
+   ```bash
+   pkill -f "mint.*dev"
+   cd mintlify && mint dev
+   ```
+
+2. **Check CLI version** - ensure you're on 4.2.284 (see above)
+
+3. **Verify OpenAPI spec** - run `mint openapi-check openapi.yaml` in the mintlify folder
+
 ### Documentation Philosophy
 
 - **Document just enough** for user success - balance between too much and too little
