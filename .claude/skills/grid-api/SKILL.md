@@ -55,35 +55,70 @@ For detailed information, read these reference files in the `references/` direct
 
 ## Configuration
 
-**Prerequisites**: Build the CLI before first use:
+**IMPORTANT**: Before building the CLI, you MUST configure credentials. Follow this order:
+
+### Step 1: Check Environment Variables
+
+First, check if credentials are already set in the current environment:
+```bash
+echo "Token ID: ${GRID_API_TOKEN_ID:+[set]}"
+echo "Client Secret: ${GRID_API_CLIENT_SECRET:+[set]}"
+echo "Base URL: ${GRID_BASE_URL:-https://api.lightspark.com/grid/2025-10-13}"
+```
+
+**IMPORTANT**: Never output or echo actual credential values. Only check if they are set.
+
+If both show `[set]`, skip to Step 4 (Build CLI). If either is empty, continue to Step 2.
+
+### Step 2: Check for Setup Script
+
+If environment variables are not set, check for the setup script:
+```bash
+ls -la setup-grid-credentials.sh 2>/dev/null
+```
+
+If the script exists, source it to load credentials:
+```bash
+source ./setup-grid-credentials.sh
+```
+
+Then verify the credentials are now set (repeat Step 1 check).
+
+### Step 3: Prompt for Credentials (if needed)
+
+**Skip this step if** environment variables are set (Step 1) OR the setup script exists (Step 2).
+
+Only if neither exists, prompt the user for credentials one at a time:
+
+1. First, ask for their **API Token ID** (`GRID_API_TOKEN_ID`)
+2. After receiving the token ID, ask for their **Client Secret** (`GRID_API_CLIENT_SECRET`)
+3. Finally, ask if they want to override the default base URL (`https://api.lightspark.com/grid/2025-10-13`). Only request `GRID_BASE_URL` if they say yes.
+
+**SECURITY**: When the user provides credentials:
+- Never echo, log, or display the credential values
+- Never include credentials in command output or error messages
+- Export them directly without confirmation output
+
+Once provided, export the credentials silently (do not echo):
+```bash
+export GRID_API_TOKEN_ID="<user-provided-token-id>"
+export GRID_API_CLIENT_SECRET="<user-provided-client-secret>"
+# Optional: only if user provided a custom base URL
+export GRID_BASE_URL="<user-provided-base-url>"
+```
+
+### Step 4: Build the CLI
+
+Only after credentials are configured, build the CLI:
 ```bash
 cd cli && npm install && npm run build && cd ..
 ```
 
-### Quick Setup (Recommended)
+### Environment Variables Reference
 
-Run the interactive configuration command:
-```bash
-node cli/dist/index.js configure
-```
-
-This will:
-1. Prompt for your API Token ID and Client Secret
-2. Validate the credentials against the API
-3. Save them to `~/.grid-credentials`
-
-### Alternative: Environment Variables
-
-You can also configure via environment variables:
-- `GRID_API_TOKEN_ID` - API token ID
-- `GRID_API_CLIENT_SECRET` - API client secret
+- `GRID_API_TOKEN_ID` - API token ID (required)
+- `GRID_API_CLIENT_SECRET` - API client secret (required)
 - `GRID_BASE_URL` - Base URL (defaults to `https://api.lightspark.com/grid/2025-10-13`)
-
-### Non-Interactive Setup
-
-```bash
-node cli/dist/index.js configure --token-id <id> --client-secret <secret>
-```
 
 ## CLI Commands
 
