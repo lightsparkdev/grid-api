@@ -1138,6 +1138,10 @@ html.dark #api-playground-2-operation-page [class*="border-gray-800"] {
   padding-left: 4px;
 }
 
+html.dark #sidebar-content > div:last-of-type::before {
+  color: var(--ls-gray-700);
+}
+
 /* ===========================================
    Card Components
    =========================================== */
@@ -1193,6 +1197,17 @@ html.dark div.card img {
 .card-group .card svg polyline,
 .card-group .card svg polygon {
   stroke-width: 1.5px !important;
+}
+
+/* ===========================================
+   Callout Components
+   =========================================== */
+
+/* Callout container - 8px border radius */
+.callout,
+div.callout,
+[data-callout-type] {
+  border-radius: var(--ls-radius-md) !important;
 }
 
 /* ===========================================
@@ -1333,12 +1348,102 @@ html.dark #api-playground-2-operation-page [data-component-part="field-info-pill
 #content-area code:not(pre code),
 .prose code:not(pre code) {
   background-color: var(--ls-gray-150) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
 }
 
 html.dark #content code:not(pre code),
 html.dark #content-area code:not(pre code),
 html.dark .prose code:not(pre code) {
   background-color: var(--ls-white-06) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* ===========================================
+   Content Area - Code Blocks
+   =========================================== */
+
+/* Code block container - 8px border radius, 0.5px border */
+#content .code-block,
+#content-area .code-block,
+.prose .code-block {
+  border-radius: var(--ls-radius-md) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #content .code-block,
+html.dark #content-area .code-block,
+html.dark .prose .code-block,
+html.dark #content .code-group,
+html.dark #content-area .code-group,
+html.dark .prose .code-group {
+  border: 0.5px solid var(--ls-white-06) !important;
+}
+
+/* Code block inner container - match outer radius */
+#content .code-block [data-component-part="code-block-root"],
+#content-area .code-block [data-component-part="code-block-root"],
+.prose .code-block [data-component-part="code-block-root"] {
+  border-radius: var(--ls-radius-md) !important;
+}
+
+/* ===========================================
+   Content Area - Code Blocks with Header
+   =========================================== */
+
+/* Code blocks with header - no padding, use overflow:hidden to clip corners */
+#content .code-block:has([data-component-part="code-block-header"]),
+#content-area .code-block:has([data-component-part="code-block-header"]),
+.prose .code-block:has([data-component-part="code-block-header"]),
+#content .code-group,
+#content-area .code-group,
+.prose .code-group {
+  border-radius: var(--ls-radius-md) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+/* Code block/group header - no border radius (clipped by parent) */
+#content .code-block [data-component-part="code-block-header"],
+#content-area .code-block [data-component-part="code-block-header"],
+.prose .code-block [data-component-part="code-block-header"],
+#content .code-group [data-component-part="code-group-tab-bar"],
+#content-area .code-group [data-component-part="code-group-tab-bar"],
+.prose .code-group [data-component-part="code-group-tab-bar"] {
+  background-color: var(--ls-gray-025) !important;
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  font-weight: 450 !important;
+  border-radius: 0 !important;
+}
+
+html.dark #content .code-block [data-component-part="code-block-header"],
+html.dark #content-area .code-block [data-component-part="code-block-header"],
+html.dark .prose .code-block [data-component-part="code-block-header"],
+html.dark #content .code-group [data-component-part="code-group-tab-bar"],
+html.dark #content-area .code-group [data-component-part="code-group-tab-bar"],
+html.dark .prose .code-group [data-component-part="code-group-tab-bar"] {
+  background-color: var(--ls-gray-975) !important;
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* Code block/group content area - no border radius (clipped by parent) */
+#content .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+#content-area .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+.prose .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+#content .code-group [data-component-part="code-block-root"],
+#content-area .code-group [data-component-part="code-block-root"],
+.prose .code-group [data-component-part="code-block-root"] {
+  border-radius: 0 !important;
+}
+
+/* Code block/group content area - darker in dark mode */
+html.dark #content .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+html.dark #content-area .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+html.dark .prose .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+html.dark #content .code-group [data-component-part="code-block-root"],
+html.dark #content-area .code-group [data-component-part="code-block-root"],
+html.dark .prose .code-group [data-component-part="code-block-root"] {
+  background-color: var(--ls-gray-975) !important;
 }
 
 /* ===========================================
@@ -1359,6 +1464,12 @@ html.dark .prose code:not(pre code) {
 #pagination a,
 #pagination a * {
   font-weight: 450 !important;
+}
+
+/* Pagination title - 15px font size */
+#pagination a .font-medium {
+  font-size: 15px !important;
+  line-height: 22px !important;
 }
 
 html.dark #pagination a {
@@ -1465,6 +1576,7 @@ html.dark .feature-card {
   border-radius: 4px;
   padding: 8px;
   width: fit-content;
+  pointer-events: none;
 }
 
 html.dark .feature-card-icon-wrapper {
@@ -1482,8 +1594,8 @@ html.dark .feature-card-icon {
 }
 
 .feature-card-title {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 15px;
+  line-height: 22px;
   color: var(--ls-gray-950);
 }
 
@@ -1492,8 +1604,8 @@ html.dark .feature-card-title {
 }
 
 .feature-card-desc {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 15px;
+  line-height: 22px;
   color: var(--ls-gray-500);
 }
 
