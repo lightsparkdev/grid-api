@@ -1427,3 +1427,123 @@ html.dark #page-context-menu > button#page-context-menu-button:hover,
 html.dark #page-context-menu > button:not(#page-context-menu-button):hover {
   background-color: var(--ls-gray-850) !important;
 }
+
+/* ===========================================
+   Feature Cards (Product pages)
+   =========================================== */
+
+.feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .feature-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-card {
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+html.dark .feature-card {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+.feature-card-icon-wrapper {
+  background-color: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: 4px;
+  padding: 8px;
+  width: fit-content;
+}
+
+html.dark .feature-card-icon-wrapper {
+  background-color: var(--ls-white-06);
+  border-color: var(--ls-white-06);
+}
+
+.feature-card-icon {
+  width: 20px;
+  height: 20px;
+}
+
+html.dark .feature-card-icon {
+  filter: brightness(0) invert(1);
+}
+
+.feature-card-title {
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .feature-card-title {
+  color: var(--ls-gray-050);
+}
+
+.feature-card-desc {
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ls-gray-500);
+}
+
+/* Column variants */
+.feature-cards-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.feature-cards-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.feature-cards-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+  .feature-cards-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .feature-cards-cols-2,
+  .feature-cards-cols-3,
+  .feature-cards-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Link card styles */
+.feature-card-anchor {
+  text-decoration: none;
+  display: block;
+}
+
+.feature-card-link {
+  transition: all 0.2s ease;
+}
+
+.feature-card-link:hover {
+  background-color: var(--ls-gray-025);
+  transform: scale(1.02);
+}
+
+html.dark .feature-card-link:hover {
+  background-color: var(--ls-gray-900);
+}
+
+/* Cards without icon */
+.feature-card-no-icon {
+  gap: 8px;
+}

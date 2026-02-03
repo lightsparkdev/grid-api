@@ -4,6 +4,8 @@ description: "Send and receive cryptocurrency to and from user-controlled wallet
 icon: "/images/icons/lock.svg"
 ---
 
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 ## Overview
 
 Grid supports sending Bitcoin via Lightning Network to self-custody wallets using Spark wallet addresses. This enables users to maintain full control of their crypto while benefiting from Grid's fiat-to-crypto conversion and payment rails.
@@ -406,28 +408,17 @@ console.log("Test transfer status:", testTransfer.status);
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Fiat-crypto conversion" icon="/images/icons/arrow-left-right.svg" href="/ramps/conversion-flows/fiat-crypto-conversion">
-  Learn about on-ramp and off-ramp flows
-</Card>
-
-<Card
-  title="External accounts"
-  icon="/images/icons/bank.svg"
-  href="/ramps/accounts/external-accounts"
->
-  Manage external accounts including Spark wallets
-</Card>
-
-<Card
-  title="Webhooks"
-  icon="/images/icons/bell.svg"
-  href="/ramps/platform-tools/webhooks"
->
-  Set up webhooks to monitor transaction status
-</Card>
-
-<Card title="Sandbox testing" icon="/images/icons/sandbox.svg" href="/ramps/platform-tools/sandbox-testing">
-  Test wallet integrations in sandbox mode
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Fiat-crypto conversion" href="/ramps/conversion-flows/fiat-crypto-conversion">
+    Learn about on-ramp and off-ramp flows
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bank.svg" title="External accounts" href="/ramps/accounts/external-accounts">
+    Manage external accounts including Spark wallets
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/ramps/platform-tools/webhooks">
+    Set up webhooks to monitor transaction status
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/sandbox.svg" title="Sandbox testing" href="/ramps/platform-tools/sandbox-testing">
+    Test wallet integrations in sandbox mode
+  </FeatureCard>
+</FeatureCardGrid>

@@ -4,6 +4,8 @@ title: "Send to an UMA address"
 description: "Send payments using Universal Money Addresses with Grid's Global P2P API."
 ---
 
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 <Info>
 This quickstart walks you through sending to an UMA address. For detailed implementation, see the full [Global P2P documentation](/global-p2p).
 </Info>
@@ -29,9 +31,11 @@ Universal Money Address (UMA) is an open standard that enables payments using hu
 
 Configure your platform for Global P2P payments.
 
-<Card title="Platform Configuration" icon="/images/icons/settings-gear2.svg" href="/global-p2p/getting-started/platform-configuration">
-  Learn how to configure your platform for P2P
-</Card>
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/settings-gear2.svg" title="Platform Configuration" href="/global-p2p/getting-started/platform-configuration">
+    Learn how to configure your platform for P2P
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Step 2: Resolve UMA Address
 
@@ -68,17 +72,19 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/payments \
 
 ## Testing
 
-<Card title="UMA Test Wallet" icon="/images/icons/wallet1.svg" href="/global-p2p/platform-tools/uma-test-wallet">
-  Use the UMA test wallet to test payments in sandbox
-</Card>
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="UMA Test Wallet" href="/global-p2p/platform-tools/uma-test-wallet">
+    Use the UMA test wallet to test payments in sandbox
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Full P2P Guide" icon="/images/icons/file-text.svg" href="/global-p2p">
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/file-text.svg" title="Full P2P Guide" href="/global-p2p">
     Explore the complete Global P2P documentation
-  </Card>
-  <Card title="Receiving Payments" icon="/images/icons/arrow-inbox.svg" href="/global-p2p/sending-receiving-payments/receiving-payments">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/arrow-inbox.svg" title="Receiving Payments" href="/global-p2p/sending-receiving-payments/receiving-payments">
     Learn how to receive UMA payments
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>
