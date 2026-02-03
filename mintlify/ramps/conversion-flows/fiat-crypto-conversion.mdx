@@ -4,6 +4,8 @@ description: "Build on-ramp and off-ramp flows to convert between fiat currencie
 icon: "/images/icons/repeat.svg"
 ---
 
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 ## Overview
 
 Grid enables seamless conversion between fiat currencies and cryptocurrencies via the Lightning Network. Use quotes to lock exchange rates and get payment instructions for completing transfers.
@@ -276,16 +278,14 @@ if (transaction.status === "FAILED") {
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Self-custody wallets" icon="/images/icons/wallet1.svg" href="/ramps/conversion-flows/self-custody-wallets">
-  Send crypto to user-controlled wallets
-</Card>
-
-<Card title="Webhooks" icon="/images/icons/bell.svg" href="/ramps/platform-tools/webhooks">
-  Monitor transaction status
-</Card>
-
-<Card title="API Reference" icon="/images/icons/code.svg" href="/api-reference">
-  Complete API documentation
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Self-custody wallets" href="/ramps/conversion-flows/self-custody-wallets">
+    Send crypto to user-controlled wallets
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/ramps/platform-tools/webhooks">
+    Monitor transaction status
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference">
+    Complete API documentation
+  </FeatureCard>
+</FeatureCardGrid>

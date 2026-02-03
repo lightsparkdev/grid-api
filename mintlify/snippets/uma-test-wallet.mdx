@@ -1,14 +1,15 @@
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 The UMA Test Wallet is an external tool that demonstrates UMA payment flows end to end and gives you a realistic counterparty for development and QA. It helps you understand flows through hands-on interaction, explore recommended UX patterns, and develop against a live UMA FI.
 
-<CardGroup cols={2}>
-<Card title="Launch Test Wallet" icon="/images/IconGlobus.svg" href="https://test.uma.me">
-Open the hosted test wallet to try UMA flows in your browser.
-</Card>
-
-<Card title="GitHub Repository" icon="/images/github.svg" href="https://github.com/uma-universal-money-address/uma-test-wallet">
-Browse the code, file issues, and contribute improvements.
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/IconGlobus.svg" title="Launch Test Wallet" href="https://test.uma.me">
+    Open the hosted test wallet to try UMA flows in your browser.
+  </FeatureCard>
+  <FeatureCard icon="/images/github.svg" title="GitHub Repository" href="https://github.com/uma-universal-money-address/uma-test-wallet">
+    Browse the code, file issues, and contribute improvements.
+  </FeatureCard>
+</FeatureCardGrid>
 
 ### What UMA Test Wallet can do
 - **Experience UMA flows**: Send and receive cross currency UMA payments 

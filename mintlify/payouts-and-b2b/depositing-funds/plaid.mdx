@@ -5,29 +5,23 @@ icon: "/images/icons/IconPlaid.svg"
 ---
 
 import PlaidIntegration from '/snippets/plaid-integration.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <PlaidIntegration />
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="External accounts" icon="/images/icons/bank.svg" href="/payouts-and-b2b/depositing-funds/external-accounts">
-Learn more about managing external accounts
-</Card>
-
-<Card title="Same-currency transfers" icon="/images/icons/arrow-left-right.svg" href="/api-reference">
-  Transfer funds between internal and external accounts
-</Card>
-
-<Card
-  title="Webhooks"
-  icon="/images/icons/bell.svg"
-  href="/payouts-and-b2b/platform-tools/webhooks"
->
-  Set up webhook handling for account notifications
-</Card>
-
-<Card title="API Reference" icon="/images/icons/code.svg" href="/api-reference">
-View complete Plaid API documentation
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/bank.svg" title="External accounts" href="/payouts-and-b2b/depositing-funds/external-accounts">
+    Learn more about managing external accounts
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Same-currency transfers" href="/api-reference">
+    Transfer funds between internal and external accounts
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/payouts-and-b2b/platform-tools/webhooks">
+    Set up webhook handling for account notifications
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference">
+    View complete Plaid API documentation
+  </FeatureCard>
+</FeatureCardGrid>

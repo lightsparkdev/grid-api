@@ -4,6 +4,8 @@ title: "On-ramp to crypto"
 description: "Enable users to convert fiat to crypto with Grid's Ramps API."
 ---
 
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 <Info>
 This quickstart walks you through your first fiat-to-crypto conversion. For detailed implementation, see the full [Ramps documentation](/ramps).
 </Info>
@@ -26,9 +28,11 @@ Grid's Ramps API enables seamless conversion between fiat and cryptocurrency. In
 
 Configure your platform for ramp operations.
 
-<Card title="Platform Configuration" icon="/images/icons/settings-gear2.svg" href="/ramps/onboarding/platform-configuration">
-  Learn how to configure your platform for ramps
-</Card>
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/settings-gear2.svg" title="Platform Configuration" href="/ramps/onboarding/platform-configuration">
+    Learn how to configure your platform for ramps
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Step 2: User Onboarding & KYC
 
@@ -49,14 +53,14 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/customers \
 
 Connect a bank account or other funding source.
 
-<CardGroup cols={2}>
-  <Card title="Plaid Integration" icon="/images/icons/IconPlaid.svg" href="/ramps/accounts/plaid">
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/IconPlaid.svg" title="Plaid Integration" href="/ramps/accounts/plaid">
     Link bank accounts via Plaid
-  </Card>
-  <Card title="External Accounts" icon="/images/icons/bank.svg" href="/ramps/accounts/external-accounts">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bank.svg" title="External Accounts" href="/ramps/accounts/external-accounts">
     Manual bank account setup
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Step 4: Execute Conversion
 
@@ -85,11 +89,11 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/conversions \
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Full Ramps Guide" icon="/images/icons/file-text.svg" href="/ramps">
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/file-text.svg" title="Full Ramps Guide" href="/ramps">
     Explore the complete Ramps documentation
-  </Card>
-  <Card title="Self-Custody Wallets" icon="/images/icons/key2.svg" href="/ramps/conversion-flows/self-custody-wallets">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/key2.svg" title="Self-Custody Wallets" href="/ramps/conversion-flows/self-custody-wallets">
     Learn about self-custody wallet support
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>

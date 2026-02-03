@@ -5,25 +5,20 @@ icon: "/images/icons/bank.svg"
 ---
 
 import ExternalAccounts from '/snippets/external-accounts.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <ExternalAccounts />
 
 ## Next steps
 
-<CardGroup cols={3}>
-<Card title="Plaid integration" icon="/images/icons/IconPlaid.svg" href="/payouts-and-b2b/depositing-funds/plaid">
-  Simplify external account setup with Plaid Link for instant bank verification
-</Card>
-
-<Card
-  title="Cross-currency transfers"
-  icon="/images/icons/globe.svg"
-  href="/payouts-and-b2b/quickstart"
->
-  Learn how to send international payments using external accounts
-</Card>
-
-<Card title="API Reference" icon="/images/icons/code.svg" href="/api-reference">
-  View complete API documentation for external accounts
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/IconPlaid.svg" title="Plaid integration" href="/payouts-and-b2b/depositing-funds/plaid">
+    Simplify external account setup with Plaid Link for instant bank verification
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Cross-currency transfers" href="/payouts-and-b2b/quickstart">
+    Learn how to send international payments using external accounts
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference">
+    View complete API documentation for external accounts
+  </FeatureCard>
+</FeatureCardGrid>

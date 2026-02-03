@@ -4,6 +4,8 @@ title: "Send Bitcoin rewards"
 description: "Deliver instant Bitcoin rewards and cashback with Grid's Rewards API."
 ---
 
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 <Info>
 This quickstart walks you through sending your first Bitcoin reward. For detailed implementation, see the full [Rewards documentation](/rewards).
 </Info>
@@ -25,9 +27,11 @@ Grid's Rewards API enables you to send micro-payments and Bitcoin rewards at sca
 
 Configure your platform for rewards distribution.
 
-<Card title="Platform Configuration" icon="/images/icons/settings-gear2.svg" href="/rewards/developer-guides/platform-configuration">
-  Learn how to configure your platform for rewards
-</Card>
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/settings-gear2.svg" title="Platform Configuration" href="/rewards/developer-guides/platform-configuration">
+    Learn how to configure your platform for rewards
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Step 2: Create Internal Account
 
@@ -60,22 +64,22 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/rewards \
 
 ## Use Cases
 
-<CardGroup cols={2}>
-  <Card title="Cashback Programs" icon="/images/icons/coins.svg" href="/rewards/developer-guides/distributing-rewards">
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/coins.svg" title="Cashback Programs" href="/rewards/developer-guides/distributing-rewards">
     Instant Bitcoin cashback on purchases
-  </Card>
-  <Card title="Loyalty Rewards" icon="/images/icons/gift1.svg" href="/rewards/developer-guides/distributing-rewards">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/gift1.svg" title="Loyalty Rewards" href="/rewards/developer-guides/distributing-rewards">
     Reward engagement and loyalty
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Full Rewards Guide" icon="/images/icons/file-text.svg" href="/rewards">
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/file-text.svg" title="Full Rewards Guide" href="/rewards">
     Explore the complete Rewards documentation
-  </Card>
-  <Card title="Webhooks" icon="/images/icons/bell.svg" href="/rewards/platform-tools/webhooks">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/rewards/platform-tools/webhooks">
     Track reward delivery status
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>

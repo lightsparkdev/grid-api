@@ -5,31 +5,33 @@ description: "Explore Grid's core capabilities for moving money globally"
 mode: "wide"
 ---
 
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 Grid provides a comprehensive set of primitives for building financial applications. Each capability can be combined to create powerful payment experiences.
 
-<CardGroup cols={4}>
-  <Card title="Send" icon="/images/icons/paper-plane-top-right.svg">
+<FeatureCardGrid cols={4}>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Send">
     Move funds to any destination
-  </Card>
-  <Card title="Receive" icon="/images/icons/arrow-inbox.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/arrow-inbox.svg" title="Receive">
     Accept incoming funds
-  </Card>
-  <Card title="Convert" icon="/images/icons/repeat.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/repeat.svg" title="Convert">
     Exchange currencies and assets
-  </Card>
-  <Card title="Hold" icon="/images/icons/wallet1.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Hold">
     Store multi-currency balances
-  </Card>
-  <Card title="Ramp" icon="/images/icons/arrow-left-right.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Ramp">
     Bridge fiat and crypto
-  </Card>
-  <Card title="Bill" icon="/images/icons/receipt-check.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/receipt-check.svg" title="Bill">
     Invoice and collect payments
-  </Card>
-  <Card title="Program" icon="/images/icons/code.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="Program">
     Create programmable flows
-  </Card>
-  <Card title="Identify" icon="/images/icons/people.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/people.svg" title="Identify">
     KYC/KYB verification
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>

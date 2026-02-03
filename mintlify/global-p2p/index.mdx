@@ -6,6 +6,7 @@ mode: "wide"
 ---
 import { remittanceProductName, topLevelProductName } from '/snippets/variables.mdx';
 import PaymentFlow from '/snippets/payment-flow.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <img 
   src="/images/heroes/hero-globalp2p.jpg" 
@@ -15,17 +16,17 @@ import PaymentFlow from '/snippets/payment-flow.mdx';
 
 With {remittanceProductName}, you can send and receive low cost real-time payments to bank accounts and UMA addresses worldwide through a single, simple API. {topLevelProductName} automatically routes each payment across its network of Grid switches, handling FX, blockchain settlement, and instant banking off-ramps for you.
 
-<CardGroup cols={3}>
-  <Card title="Single API, global reach" icon="/images/icons/globe.svg">
-     {remittanceProductName} interacts with the Money Grid to route your payments globally.
-  </Card>
-  <Card title="No Crypto Handling" icon="/images/icons/shield.svg">
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/globe.svg" title="Single API, global reach">
+    {remittanceProductName} interacts with the Money Grid to route your payments globally.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="No Crypto Handling">
     Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
-  </Card>
-  <Card title="Instant Delivery" icon="/images/icons/paper-plane-top-right.svg">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Instant Delivery">
     Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>
 
 <Note>For background on the UMA protocol itself, see the UMA Standard documentation: [UMA Standard—Introduction](https://docs.uma.me/uma-standard/introduction).</Note>
 

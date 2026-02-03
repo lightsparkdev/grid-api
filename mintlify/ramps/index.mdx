@@ -7,6 +7,7 @@ mode: "wide"
 
 import { topLevelProductName } from '/snippets/variables.mdx';
 import { rampsProductName } from '/snippets/variables.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <img 
   src="/images/heroes/hero-ramps.jpg" 
@@ -16,20 +17,17 @@ import { rampsProductName } from '/snippets/variables.mdx';
 
 With Grid, you can seamlessly convert between fiat currencies and cryptocurrencies through a single, simple API. The {topLevelProductName} automatically handles currency conversion, compliance, and instant settlement via the Lightning Network.
 
-<CardGroup cols={3}>
-  <Card title="Instant Conversion" icon="/images/icons/lightning.svg">
-    Convert fiat to crypto (on-ramp) or crypto to fiat (off-ramp) in seconds
-    using real-time exchange rates.
-  </Card>
-  <Card title="Simplified Infrastructure" icon="/images/icons/shield.svg">
-    Grid handles the conversion and settlement process, reducing complexity in
-    your crypto integration.
-  </Card>
-  <Card title="Global Settlement" icon="/images/icons/globe.svg">
-    Leverages the Lightning Network for instant Bitcoin transfers and local
-    banking rails for fiat settlement worldwide.
-  </Card>
-</CardGroup>
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/lightning.svg" title="Instant Conversion">
+    Convert fiat to crypto (on-ramp) or crypto to fiat (off-ramp) in seconds using real-time exchange rates.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="Simplified Infrastructure">
+    Grid handles the conversion and settlement process, reducing complexity in your crypto integration.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Global Settlement">
+    Leverages the Lightning Network for instant Bitcoin transfers and local banking rails for fiat settlement worldwide.
+  </FeatureCard>
+</FeatureCardGrid>
 
 ---
 
@@ -111,6 +109,8 @@ The Production environment uses live credentials and base URLs for real transact
 
 ---
 
-<Card title="Get Started" icon="/images/icons/light-bulb.svg" href="/ramps/quickstart">
-  Ready to integrate {rampsProductName}? Check out our quickstart guide.
-</Card>
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/light-bulb.svg" title="Get Started" href="/ramps/quickstart">
+    Ready to integrate {rampsProductName}? Check out our quickstart guide.
+  </FeatureCard>
+</FeatureCardGrid>
