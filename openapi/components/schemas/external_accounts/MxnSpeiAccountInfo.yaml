@@ -1,0 +1,34 @@
+type: object
+title: MxnSpeiAccountInfo
+description: Required fields for USD -> MXN corridor via Spei
+required:
+- accountType
+- beneficiary
+- clabeNumber
+- name
+properties:
+  accountType:
+    type: string
+    enum:
+    - MXN_SPEI_ACCOUNT
+    example: MXN_SPEI_ACCOUNT
+  clabeNumber:
+    type: string
+    description: 18-digit CLABE number (Mexican banking standard)
+    example: '123456789012345678'
+    minLength: 18
+    maxLength: 18
+    pattern: ^[0-9]{18}$
+  name:
+    type: string
+    description: Full name of the payee
+    example: Jane Smith
+  beneficiary:
+    oneOf:
+    - $ref: ./IndividualBeneficiary.yaml
+    - $ref: ./BusinessBeneficiary.yaml
+    discriminator:
+      propertyName: beneficiaryType
+      mapping:
+        INDIVIDUAL: ./IndividualBeneficiary.yaml
+        BUSINESS: ./BusinessBeneficiary.yaml
