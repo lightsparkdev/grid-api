@@ -1366,6 +1366,24 @@ html.dark #api-playground-2-operation-page [data-component-part="field-info-pill
   border: 0.5px solid var(--ls-white-06) !important;
 }
 
+/* Required/colored pills - add consistent border */
+#api-playground-2-operation-page [data-component-part="field-required-pill"] {
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="field-required-pill"] {
+  border: 0.5px solid var(--ls-white-10) !important;
+}
+
+/* Tab list border - consistent with design system */
+#api-playground-2-operation-page [data-component-part="tabs-list"] {
+  border-color: var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="tabs-list"] {
+  border-color: var(--ls-white-10) !important;
+}
+
 /* Inline code styling */
 #content code:not(pre code),
 #content-area code:not(pre code),
@@ -1674,6 +1692,10 @@ html.dark .feature-card-title {
 }
 
 /* Column variants */
+.feature-cards-cols-1 {
+  grid-template-columns: 1fr;
+}
+
 .feature-cards-cols-2 {
   grid-template-columns: repeat(2, 1fr);
 }
@@ -2175,4 +2197,114 @@ html.dark .accordion-group.divide-y > details:not(:last-child) {
 .accordion-group .steps > div:last-child {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
+}
+
+/* ===========================================
+   Standalone Accordion (not in accordion-group)
+   Note: .prose:not(.accordion-group) excludes accordion groups which also have .prose class
+   =========================================== */
+
+/* Container styling */
+#content > details.accordion,
+#content-area > details.accordion,
+.prose:not(.accordion-group) > details.accordion {
+  border-radius: var(--ls-radius-md) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+html.dark #content > details.accordion,
+html.dark #content-area > details.accordion,
+html.dark .prose:not(.accordion-group) > details.accordion {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Summary/trigger styling */
+#content > details.accordion > summary,
+#content-area > details.accordion > summary,
+.prose:not(.accordion-group) > details.accordion > summary {
+  padding: 16px !important;
+  padding-left: 30px !important;
+  background-color: var(--ls-gray-025) !important;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+html.dark #content > details.accordion > summary,
+html.dark #content-area > details.accordion > summary,
+html.dark .prose:not(.accordion-group) > details.accordion > summary {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* Hover state */
+#content > details.accordion > summary:hover,
+#content-area > details.accordion > summary:hover,
+.prose:not(.accordion-group) > details.accordion > summary:hover {
+  background-color: var(--ls-gray-075) !important;
+}
+
+html.dark #content > details.accordion > summary:hover,
+html.dark #content-area > details.accordion > summary:hover,
+html.dark .prose:not(.accordion-group) > details.accordion > summary:hover {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Hide Mintlify's chevron SVG */
+#content > details.accordion > summary svg,
+#content-area > details.accordion > summary svg,
+.prose:not(.accordion-group) > details.accordion > summary svg {
+  display: none !important;
+}
+
+/* Custom chevron */
+#content > details.accordion > summary::before,
+#content-area > details.accordion > summary::before,
+.prose:not(.accordion-group) > details.accordion > summary::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 20px !important;
+  top: 50% !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-right: 1.5px solid var(--ls-gray-400) !important;
+  border-bottom: 1.5px solid var(--ls-gray-400) !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+html.dark #content > details.accordion > summary::before,
+html.dark #content-area > details.accordion > summary::before,
+html.dark .prose:not(.accordion-group) > details.accordion > summary::before {
+  border-color: var(--ls-gray-500) !important;
+}
+
+/* Chevron rotation when open */
+#content > details.accordion[open] > summary::before,
+#content-area > details.accordion[open] > summary::before,
+.prose:not(.accordion-group) > details.accordion[open] > summary::before {
+  transform: translateY(-70%) rotate(45deg) !important;
+}
+
+/* Content area */
+#content > details.accordion > *:not(summary),
+#content-area > details.accordion > *:not(summary),
+.prose:not(.accordion-group) > details.accordion > *:not(summary),
+#content > details.accordion [data-component-part="accordion-content"],
+#content-area > details.accordion [data-component-part="accordion-content"],
+.prose:not(.accordion-group) > details.accordion [data-component-part="accordion-content"] {
+  padding: 16px !important;
+  padding-left: 30px !important;
+  margin: 0 !important;
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark #content > details.accordion > *:not(summary),
+html.dark #content-area > details.accordion > *:not(summary),
+html.dark .prose:not(.accordion-group) > details.accordion > *:not(summary),
+html.dark #content > details.accordion [data-component-part="accordion-content"],
+html.dark #content-area > details.accordion [data-component-part="accordion-content"],
+html.dark .prose:not(.accordion-group) > details.accordion [data-component-part="accordion-content"] {
+  background-color: var(--ls-white-04) !important;
 }
