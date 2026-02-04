@@ -1,18 +1,20 @@
-<CardGroup cols={3}>
-  <Card title="Cryptocurrency" icon="bitcoin" iconType="solid">
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/coins.svg" title="Cryptocurrency">
     **Available Globally**
 Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
-  </Card>
-  <Card title="Full Platform Access" icon="building" iconType="solid">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/blocks.svg" title="Full Platform Access">
     **United States & Europe**
 Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
 Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
-  </Card>
-  <Card title="Local Payment Rails" icon="globe" iconType="solid">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Local Payment Rails">
     **65 Countries**
 Receive payments via local rails like SEPA, PIX, UPI, and more.
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>
 
 | Country | ISO Code | Payment Rails |
 |---|:---:|:---:|
@@ -83,17 +85,18 @@ Receive payments via local rails like SEPA, PIX, UPI, and more.
 | 🇿🇲 Zambia | ZM | `Bank Transfer` |
 
 Regional Summary
-<CardGroup cols={4}>
-  <Card title="Europe" icon="landmark">
+
+<FeatureCardGrid cols={4}>
+  <FeatureCard icon="/images/icons/globe.svg" title="Europe">
     **32 countries** Primary: SEPA/SEPA Instant
-  </Card>
-  <Card title="Africa" icon="globe">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Africa">
     **17 countries** Primary: Bank Transfer
-  </Card>
-  <Card title="Asia-Pacific" icon="earth-asia">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Asia-Pacific">
     **11 countries** Various instant payment systems
-  </Card>
-  <Card title="Americas" icon="earth-americas">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Americas">
     **5 countries** PIX, SPEI, ACH, FedNow
-  </Card>
-</CardGroup>
+  </FeatureCard>
+</FeatureCardGrid>

@@ -1,11 +1,13 @@
 ---
 title: "Configuring Customers"
 description: "Create and manage customers for ramp conversions"
+icon: "/images/icons/people.svg"
 ---
 
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
 import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx'
 
 Customers must complete identity verification before processing conversions. The required information varies based on your platform's regulatory status.
 
@@ -79,28 +81,17 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Internal Accounts" icon="wallet" href="/ramps/accounts/internal-accounts">
-Fund crypto for off-ramp conversions
-</Card>
-
-<Card
-  title="External Accounts"
-  icon="arrow-up-right-from-square"
-  href="/ramps/accounts/external-accounts"
->
-  Set up wallet destinations
-</Card>
-
-<Card
-  title="Fiat-to-Crypto"
-  icon="arrow-right-arrow-left"
-  href="/ramps/conversion-flows/fiat-crypto-conversion"
->
-  Build conversion flows
-</Card>
-
-<Card title="API Reference" icon="code" href="/api-reference">
-Complete customer API docs
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Internal Accounts" href="/ramps/accounts/internal-accounts">
+    Fund crypto for off-ramp conversions
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bank.svg" title="External Accounts" href="/ramps/accounts/external-accounts">
+    Set up wallet destinations
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Fiat-to-Crypto" href="/ramps/conversion-flows/fiat-crypto-conversion">
+    Build conversion flows
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference">
+    Complete customer API docs
+  </FeatureCard>
+</FeatureCardGrid>

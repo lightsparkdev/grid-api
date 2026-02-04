@@ -1,22 +1,31 @@
 ---
-title: 'Introduction'
-description: 'Send instant Bitcoin rewards to users worldwide through a single API'
+title: "Rewards"
+sidebarTitle: "Introduction"
+icon: "/images/icons/gift1.svg"
+mode: "wide"
 ---
 import { rewardsProductName, topLevelProductName } from '/snippets/variables.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<img 
+  src="/images/heroes/hero-rewards.jpg" 
+  alt="Rewards hero"
+  style={{ width: '100%', borderRadius: '8px' }}
+/>
 
 With {rewardsProductName}, you can send instant Bitcoin rewards to your **users' self-custody wallets** worldwide through a single, simple API. {topLevelProductName} automatically handles the entire process, managing the fiat-to-crypto conversion, compliance checks, and instant delivery for you.
 
-<CardGroup cols={3}>
-  <Card title="Buy & Send in One Call" icon="bolt">
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/lightning.svg" title="Buy & Send in One Call">
     The Grid API combines USD-to-BTC conversion and payout into a single, atomic operation, simplifying the process of distributing rewards.
-  </Card>
-  <Card title="No Crypto Handling" icon="shield-check">
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="No Crypto Handling">
     Grid converts your platform's fiat balance into Bitcoin on demand, allowing you to offer crypto rewards without managing digital asset custody or complex exchange integrations.
-  </Card>
-  <Card title="Instant Delivery" icon="rocket">
-    Delivers Bitcoin to your users’ wallets in seconds (like a Spark wallet) giving them immediate ownership and control.
-  </Card>
-</CardGroup>
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Instant Delivery">
+    Delivers Bitcoin to your users' wallets in seconds (like a Spark wallet) giving them immediate ownership and control.
+  </FeatureCard>
+</FeatureCardGrid>
 
 ---
 
@@ -81,6 +90,8 @@ The Production environment uses live credentials and base URLs for real transact
 
 ---
 
-<Card title="Get Started" icon="play" href="/rewards/quickstart">
-  Ready to integrate {rewardsProductName}? Check out our quickstart guide.
-</Card>
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/light-bulb.svg" title="Get Started" href="/rewards/quickstart">
+    Ready to integrate {rewardsProductName}? Check out our quickstart guide.
+  </FeatureCard>
+</FeatureCardGrid>

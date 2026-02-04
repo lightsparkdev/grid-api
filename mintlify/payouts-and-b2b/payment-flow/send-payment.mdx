@@ -1,7 +1,10 @@
 ---
 title: "Sending Payments"
 description: "Learn how to send payments from internal accounts to external bank accounts with same-currency and cross-currency transfers"
+icon: "/images/icons/paper-plane-top-right.svg"
 ---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 Send payments from your customers' internal accounts to their external bank accounts or to other destinations. Grid supports both same-currency transfers and cross-currency transfers with automatic exchange rate handling.
 
@@ -9,15 +12,14 @@ Send payments from your customers' internal accounts to their external bank acco
 
 Grid provides two payment methods depending on your use case:
 
-<CardGroup cols={2}>
-<Card title="Same-Currency Transfers" icon="arrow-right-arrow-left" href="#same-currency-transfers">
-  Send funds in the same currency from an internal account to an external account. Fast and straightforward.
-</Card>
-
-<Card title="Cross-Currency Transfers" icon="globe" href="#cross-currency-transfers">
-  Send funds with currency conversion using real-time exchange rates. Supports multiple fiat currencies and payment rails.
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Same-Currency Transfers" href="#same-currency-transfers">
+    Send funds in the same currency from an internal account to an external account. Fast and straightforward.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Cross-Currency Transfers" href="#cross-currency-transfers">
+    Send funds with currency conversion using real-time exchange rates. Supports multiple fiat currencies and payment rails.
+  </FeatureCard>
+</FeatureCardGrid>
 
 ## Prerequisites
 
@@ -559,24 +561,14 @@ await db.payments.update(
 
 ## Next Steps
 
-<CardGroup cols={2}>
-<Card
-  title="Error Handling"
-  icon="triangle-exclamation"
-  href="/payouts-and-b2b/payment-flow/error-handling"
->
-  Handle payment failures and error scenarios
-</Card>
-
-<Card
-  title="List Transactions"
-  icon="list"
-  href="/payouts-and-b2b/payment-flow/list-transactions"
->
-  Query and filter transaction history
-</Card>
-
-<Card title="Reconciliation" icon="file-invoice-dollar" href="/payouts-and-b2b/payment-flow/reconciliation">
-  Match payments with your internal systems
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/square-info.svg" title="Error Handling" href="/payouts-and-b2b/payment-flow/error-handling">
+    Handle payment failures and error scenarios
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/file-text.svg" title="List Transactions" href="/payouts-and-b2b/payment-flow/list-transactions">
+    Query and filter transaction history
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/receipt-check.svg" title="Reconciliation" href="/payouts-and-b2b/payment-flow/reconciliation">
+    Match payments with your internal systems
+  </FeatureCard>
+</FeatureCardGrid>

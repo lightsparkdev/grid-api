@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "palm",
   "name": "Grid API Documentation",
   "description": "The Grid API enables modern financial institutions to easily send and receive global payments.  The following documentation helps developers understand the Grid API and how to integrate with it.",
   "colors": {
@@ -17,53 +17,65 @@
   "fonts": {
     "heading": {
       "family": "Suisse Intl",
-      "source": "/fonts/suisse-intl/SuisseIntl-Medium.woff2",
-      "format": "woff2",
       "weight": 500
     },
     "body": {
       "family": "Suisse Intl",
-      "source": "/fonts/suisse-intl/SuisseIntl-Regular.woff2",
-      "format": "woff2",
       "weight": 400
     }
   },
-  "favicon": "/favicon.svg",
+  "favicon": {
+    "light": "/favicon-dark.svg",
+    "dark": "/favicon-light.svg"
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Home",
-        "pages": ["index"]
-      },
-      {
-        "tab": "Platform Overview",
-        "pages": [
+        "tab": "Get started",
+        "groups": [
           {
-            "group": "Introduction",
+            "group": "Overview",
             "pages": [
+              "index",
               "platform-overview/introduction/what-is-grid",
+              "platform-overview/capabilities",
+              "platform-overview/use-cases",
               "platform-overview/introduction/faq"
             ]
           },
           {
-            "group": "Core Concepts",
+            "group": "Quickstart",
+            "pages": [
+              "platform-overview/quickstart/payouts",
+              "platform-overview/quickstart/ramps",
+              "platform-overview/quickstart/rewards",
+              "platform-overview/quickstart/p2p"
+            ]
+          },
+          {
+            "group": "Core concepts",
             "pages": [
               "platform-overview/core-concepts/entities",
               "platform-overview/core-concepts/quote-system",
               "platform-overview/core-concepts/account-model",
               "platform-overview/core-concepts/transaction-lifecycle",
-              "platform-overview/core-concepts/currencies-and-rails"
+              "platform-overview/core-concepts/currencies-and-rails",
+              "platform-overview/configuration"
             ]
           }
         ]
       },
       {
         "tab": "Payouts & B2B",
-        "pages": [
-          "payouts-and-b2b/index",
-          "payouts-and-b2b/terminology",
-          "payouts-and-b2b/onboarding/implementation-overview",
-          "payouts-and-b2b/quickstart",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "payouts-and-b2b/index",
+              "payouts-and-b2b/terminology",
+              "payouts-and-b2b/onboarding/implementation-overview"
+            ]
+          },
           {
             "group": "Onboarding",
             "pages": [
@@ -101,11 +113,15 @@
       },
       {
         "tab": "Ramps",
-        "pages": [
-          "ramps/index",
-          "ramps/terminology",
-          "ramps/onboarding/implementation-overview",
-          "ramps/quickstart",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "ramps/index",
+              "ramps/terminology",
+              "ramps/onboarding/implementation-overview"
+            ]
+          },
           {
             "group": "Onboarding",
             "pages": [
@@ -141,11 +157,15 @@
       },
       {
         "tab": "Rewards",
-        "pages": [
-          "rewards/index",
-          "rewards/terminology",
-          "rewards/developer-guides/implementation-overview",
-          "rewards/quickstart",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "rewards/index",
+              "rewards/terminology",
+              "rewards/developer-guides/implementation-overview"
+            ]
+          },
           {
             "group": "Onboarding",
             "pages": [
@@ -179,11 +199,15 @@
       },
       {
         "tab": "Global P2P",
-        "pages": [
-          "global-p2p/index",
-          "global-p2p/terminology",
-          "global-p2p/getting-started/implementation-overview",
-          "global-p2p/quickstart",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "global-p2p/index",
+              "global-p2p/terminology",
+              "global-p2p/getting-started/implementation-overview"
+            ]
+          },
           {
             "group": "Onboarding",
             "pages": [
@@ -247,28 +271,26 @@
   "navbar": {
     "links": [
       {
-        "label": "Github",
+        "label": "GitHub",
         "href": "https://github.com/lightsparkdev/grid-api",
         "icon": "github"
+      },
+      {
+        "label": "Contact sales",
+        "href": "https://lightspark.com/grid#signup"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Contact Sales",
-      "href": "https://lightspark.com/grid#signup"
-    }
+    ]
+  },
+  "modeToggle": {
+    "default": "light",
+    "isHidden": false
   },
   "contextual": {
     "options": ["copy", "view", "chatgpt", "claude"]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/lightspark",
-      "github": "https://github.com/lightsparkdev",
-      "linkedin": "https://linkedin.com/company/lightspark-group"
-    }
-  },
+  "footer": {},
   "head": {
+    "raw": "<style>#header:empty,#page-title:empty{display:none!important}</style><script>if(location.pathname==='/'||location.pathname==='/index'||location.pathname===''){document.write('<style>header#header,#page-title,#page-context-menu-button,#page-context-menu,.eyebrow,#pagination,[class*=\"space-y-2\"]>*{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style>');document.documentElement.classList.add('is-homepage');}</script><style>html.is-homepage #pagination,body.is-homepage #pagination,html.is-homepage #footer,body.is-homepage #footer,html.is-homepage header#header,body.is-homepage header#header,html.is-homepage #page-title,body.is-homepage #page-title,html.is-homepage #page-context-menu-button,body.is-homepage #page-context-menu-button,html.is-homepage #page-context-menu,body.is-homepage #page-context-menu,html.is-homepage .eyebrow,body.is-homepage .eyebrow{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important}</style>",
     "links": [
       {
         "rel": "preload",

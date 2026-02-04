@@ -1,6 +1,23 @@
 ---
+icon: "/images/icons/square-info.svg"
 title: "What is Grid?"
+mode: "wide"
 ---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<img 
+  src="/images/heroes/hero-what-is-grid-light.jpg" 
+  alt="What is Grid hero"
+  className="block dark:hidden"
+  style={{ width: '100%', borderRadius: '8px', marginBottom: '24px' }}
+/>
+<img 
+  src="/images/heroes/hero-what-is-grid-dark.jpg" 
+  alt="What is Grid hero"
+  className="hidden dark:block"
+  style={{ width: '100%', borderRadius: '8px', marginBottom: '24px' }}
+/>
 
 Grid is a low-level payment infrastructure API that enables modern financial institutions, businesses, or any developer to send, receive, and settle value globally across fiat currencies, stablecoins, and Bitcoin. With a single, simple API, you can build applications that move money instantly across borders without the complexity of orchestrating multiple payment rails or currencies.
 
@@ -11,7 +28,7 @@ Grid is a low-level payment infrastructure API that enables modern financial ins
 | <Icon icon="code" /> **One API**<br/>Move money anywhere. Fiat to fiat, crypto to fiat, or the other way around, all through a single API.   |
 | <Icon icon="globe" /> **Global Coverage**<br/>Send and receive across 65+ countries using local instant rails or global crypto rails.        |
 | <Icon icon="bolt" /> **Real-Time Settlement**<br/>Instant, 24/7/365. Powered by Bitcoin and local payment networks.                          |
-| <Icon icon="shield-check" /> **No Crypto Headaches**<br/>We handle all the on-chain logic, wallet ops, and conversions so you don’t have to. |
+| <Icon icon="shield-check" /> **No Crypto Headaches**<br/>We handle all the on-chain logic, wallet ops, and conversions so you don't have to. |
 
 ## What to build
 
@@ -47,44 +64,20 @@ Whether you're receiving Bitcoin or sending dollars as pesos to a bank account, 
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card
-  title="Entities & Relationships"
-  icon="diagram-project"
-  href="/platform-overview/core-concepts/entities"
->
-  Understand Grid's core data model and how entities relate to each other
-</Card>
-
-<Card
-  title="Quote System"
-  icon="money-bill-transfer"
-  href="/platform-overview/core-concepts/quote-system"
->
-  Learn how exchange rates, pricing, and payment execution work
-</Card>
-
-<Card
-  title="Account Model"
-  icon="building-columns"
-  href="/platform-overview/core-concepts/account-model"
->
-  Explore internal and external accounts and how they work together
-</Card>
-
-<Card
-  title="Transaction Lifecycle"
-  icon="arrows-spin"
-  href="/platform-overview/core-concepts/transaction-lifecycle"
->
-  Follow a payment from creation through settlement
-</Card>
-
-<Card
-  title="Currencies & Payment Rails"
-  icon="earth-americas"
-  href="/platform-overview/core-concepts/currencies-and-rails"
->
-  View supported currencies, countries, and payment methods
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/blocks.svg" title="Entities & Relationships" href="/platform-overview/core-concepts/entities">
+    Understand Grid's core data model and how entities relate to each other
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Quote System" href="/platform-overview/core-concepts/quote-system">
+    Learn how exchange rates, pricing, and payment execution work
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bank.svg" title="Account Model" href="/platform-overview/core-concepts/account-model">
+    Explore internal and external accounts and how they work together
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/repeat.svg" title="Transaction Lifecycle" href="/platform-overview/core-concepts/transaction-lifecycle">
+    Follow a payment from creation through settlement
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Currencies & Payment Rails" href="/platform-overview/core-concepts/currencies-and-rails">
+    View supported currencies, countries, and payment methods
+  </FeatureCard>
+</FeatureCardGrid>

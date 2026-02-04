@@ -1,7 +1,10 @@
 ---
 title: "Listing Transactions"
 description: "Query and track Bitcoin reward payment history with filtering and pagination"
+icon: "/images/icons/file-text.svg"
 ---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 Retrieve transaction history for Bitcoin rewards distributed through your platform. Transactions are returned in descending order (most recent first) and are paginated.
 
@@ -262,16 +265,14 @@ Always filter by `type=OUTGOING` when tracking rewards to exclude incoming trans
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Distributing Rewards" icon="gift" href="/rewards/developer-guides/distributing-rewards">
-  Learn how to create and execute Bitcoin reward payouts
-</Card>
-
-<Card title="Webhooks" icon="webhook" href="/rewards/platform-tools/webhooks">
-  Set up webhook handling for real-time transaction notifications
-</Card>
-
-<Card title="API Reference" icon="code" href="/api-reference/transactions/list-transactions">
-  View complete transaction API documentation
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/gift1.svg" title="Distributing Rewards" href="/rewards/developer-guides/distributing-rewards">
+    Learn how to create and execute Bitcoin reward payouts
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/rewards/platform-tools/webhooks">
+    Set up webhook handling for real-time transaction notifications
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference/transactions/list-transactions">
+    View complete transaction API documentation
+  </FeatureCard>
+</FeatureCardGrid>

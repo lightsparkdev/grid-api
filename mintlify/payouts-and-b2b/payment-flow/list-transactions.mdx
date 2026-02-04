@@ -1,7 +1,10 @@
 ---
 title: "List Transactions"
 description: "Query and filter payment history with powerful filtering and pagination options"
+icon: "/images/icons/file-text.svg"
 ---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 Retrieve transaction history with flexible filtering options. Transactions are returned in descending order (most recent first) with a default limit of 20 per page.
 
@@ -338,24 +341,14 @@ async function fetchWithRetry(url, retries = 3) {
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Send Payments" icon="paper-plane" href="/payouts-and-b2b/payment-flow/send-payment">
-  Learn how to send payments from internal accounts
-</Card>
-
-<Card
-  title="Reconciliation"
-  icon="file-invoice-dollar"
-  href="/payouts-and-b2b/payment-flow/reconciliation"
->
-  Match payments with your internal accounting systems
-</Card>
-
-<Card
-  title="Error Handling"
-  icon="triangle-exclamation"
-  href="/payouts-and-b2b/payment-flow/error-handling"
->
-  Handle transaction failures and errors
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Send Payments" href="/payouts-and-b2b/payment-flow/send-payment">
+    Learn how to send payments from internal accounts
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/receipt-check.svg" title="Reconciliation" href="/payouts-and-b2b/payment-flow/reconciliation">
+    Match payments with your internal accounting systems
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/square-info.svg" title="Error Handling" href="/payouts-and-b2b/payment-flow/error-handling">
+    Handle transaction failures and errors
+  </FeatureCard>
+</FeatureCardGrid>
