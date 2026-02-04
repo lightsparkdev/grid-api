@@ -37,7 +37,7 @@ export const ProductTiles = ({ categories }) => {
           {currentCategory?.items.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveItem(item.id)}
+              onMouseEnter={() => setActiveItem(item.id)}
               className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
             >
               <img src={item.icon} alt="" className="product-tiles-icon" />
@@ -54,11 +54,14 @@ export const ProductTiles = ({ categories }) => {
           ))}
         </div>
         <div className="product-tiles-preview">
-          {currentItem?.image ? (
-            <img src={currentItem.image} alt={currentItem.title} className="product-tiles-preview-img" />
-          ) : (
-            <div className="product-tiles-preview-placeholder">Preview</div>
-          )}
+          {currentCategory?.items.map((item) => (
+            <img 
+              key={item.id} 
+              src={item.image} 
+              alt={item.title} 
+              className={`product-tiles-preview-img ${activeItem === item.id ? 'active' : ''}`}
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -68,42 +71,39 @@ export const ProductTiles = ({ categories }) => {
 export const gridCategories = [
   {
     id: 'payouts',
-    label: 'Payouts',
+    label: 'Payouts & B2B',
     items: [
-      { id: 'gig-workers', title: 'Gig worker payments', description: 'Pay drivers, couriers, and freelancers instantly', icon: '/images/icons/car-front-view.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'marketplace', title: 'Marketplace payouts', description: 'Settle with sellers in their local currency', icon: '/images/icons/store4.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'suppliers', title: 'Supplier payments', description: 'Pay vendors and suppliers across borders', icon: '/images/icons/shipping.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'creators', title: 'Creator earnings', description: 'Distribute revenue to creators worldwide', icon: '/images/icons/multi-media.svg', image: '/images/home/placeholder-use-case.png' }
+      { id: 'creators', title: 'Creator payouts', description: 'Pay creators and influencers instantly, anywhere they bank', icon: '/images/icons/multi-media.svg', image: '/images/use-cases/payouts-b2b-creators.jpg' },
+      { id: 'payroll', title: 'Payroll & contractors', description: 'Send salaries and contractor payments globally with locked FX rates', icon: '/images/icons/suitcase-work.svg', image: '/images/use-cases/payouts-b2b-payroll.jpg' },
+      { id: 'marketplace', title: 'Marketplace disbursements', description: 'Distribute earnings to sellers and service providers worldwide automatically', icon: '/images/icons/store4.svg', image: '/images/use-cases/payouts-b2b-marketplace.jpg' },
+      { id: 'suppliers', title: 'Supplier/vendor payments', description: 'Pay international vendors and suppliers in their local currency, settled in seconds', icon: '/images/icons/shipping.svg', image: '/images/use-cases/payouts-b2b-suppliers.jpg' }
     ]
   },
   {
     id: 'ramps',
     label: 'Ramps',
     items: [
-      { id: 'on-ramp', title: 'On-ramp', description: 'Convert fiat to crypto for your users', icon: '/images/icons/arrow-inbox.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'off-ramp', title: 'Off-ramp', description: 'Convert crypto to fiat instantly', icon: '/images/icons/banknote1.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'stablecoin', title: 'Stablecoin bridge', description: 'Bridge between different stablecoin networks', icon: '/images/icons/arrows-repeat-circle.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'self-custody', title: 'Self-custody', description: 'Enable users to maintain their own wallets', icon: '/images/icons/wallet1.svg', image: '/images/home/placeholder-use-case.png' }
+      { id: 'buy-btc', title: 'Buy BTC', description: 'Let users purchase Bitcoin directly inside your app', icon: '/images/icons/bitcoin.svg', image: '/images/use-cases/ramps-buy-btc.jpg' },
+      { id: 'sell-btc', title: 'Sell BTC', description: 'Convert Bitcoin to fiat and settle to any bank account', icon: '/images/icons/money-hand.svg', image: '/images/use-cases/ramps-sell-btc.jpg' },
+      { id: 'wallet-funding', title: 'Wallet funding', description: 'On-ramp fiat to fund user wallets with stablecoins or BTC', icon: '/images/icons/crypto-wallet.svg', image: '/images/use-cases/ramps-on-ramp-usdc.jpg' },
+      { id: 'fiat-settlement', title: 'Fiat settlement', description: 'Off-ramp digital assets to local bank rails in real time', icon: '/images/icons/bank.svg', image: '/images/use-cases/ramps-offramp-usdc.jpg' }
     ]
   },
   {
     id: 'rewards',
     label: 'Rewards',
     items: [
-      { id: 'cashback', title: 'Cashback', description: 'Reward customers with instant Bitcoin cashback', icon: '/images/icons/gift1.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'loyalty', title: 'Loyalty programs', description: 'Build loyalty programs with crypto rewards', icon: '/images/icons/repeat.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'referrals', title: 'Referrals', description: 'Incentivize referrals with programmable rewards', icon: '/images/icons/people.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'gaming', title: 'Gaming', description: 'Distribute in-game rewards and winnings', icon: '/images/icons/lightning.svg', image: '/images/home/placeholder-use-case.png' }
+      { id: 'cashback', title: 'BTC cashback', description: 'Give users Bitcoin back on purchases or actions', icon: '/images/icons/gift1.svg', image: '/images/use-cases/rewards-cashback.jpg' },
+      { id: 'referrals', title: 'Referral incentives', description: 'Pay out BTC or fiat when users refer new customers', icon: '/images/icons/people-add.svg', image: '/images/use-cases/rewards-refer.jpg' },
+      { id: 'loyalty', title: 'Loyalty programs', description: 'Build point-based or asset-based loyalty with real redemption value', icon: '/images/icons/repeat.svg', image: '/images/use-cases/rewards-redeem.jpg' }
     ]
   },
   {
     id: 'global-p2p',
     label: 'Global P2P',
     items: [
-      { id: 'remittances', title: 'Remittances', description: 'Send money across borders with low fees', icon: '/images/icons/globe.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'bill-pay', title: 'Bill pay', description: 'Enable users to pay bills internationally', icon: '/images/icons/receipt-check.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'peer-transfers', title: 'Peer transfers', description: 'Facilitate person-to-person payments globally', icon: '/images/icons/paper-plane-top-right.svg', image: '/images/home/placeholder-use-case.png' },
-      { id: 'uma', title: 'UMA', description: 'Accept payments via Universal Money Addresses', icon: '/images/icons/at.svg', image: '/images/home/placeholder-use-case.png' }
+      { id: 'remittances', title: 'Cross-border remittances', description: 'Move money across countries on the fastest, lowest-cost rails', icon: '/images/icons/globe.svg', image: '/images/use-cases/global-p2p-remittances.jpg' },
+      { id: 'uma', title: 'Wallet-to-wallet (UMA)', description: 'Send and receive via UMA addresses across any participating app', icon: '/images/icons/at.svg', image: '/images/use-cases/global-p2p-uma.jpg' }
     ]
   }
 ];
