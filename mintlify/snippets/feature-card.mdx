@@ -1,7 +1,9 @@
-export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, color, tag, layout }) => {
+export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, color, tag, layout, variant, iconSize }) => {
   const isHorizontal = layout === 'horizontal';
+  const isFlat = variant === 'flat';
+  const isLargeIcon = iconSize === 'lg';
   const card = (
-    <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''} ${isHorizontal ? 'feature-card-horizontal' : ''}`}>
+    <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''} ${isHorizontal ? 'feature-card-horizontal' : ''} ${isFlat ? 'feature-card-flat' : ''} ${isLargeIcon ? 'feature-card-icon-lg' : ''}`}>
       {icon && (
         <div className="feature-card-icon-wrapper">
           {color ? (
@@ -55,6 +57,12 @@ export const FeatureCardGrid = ({ cols = 3, children }) => (
 
 export const FeatureCardList = ({ children }) => (
   <div className="not-prose feature-cards-list">
+    {children}
+  </div>
+);
+
+export const FeatureCardContainer = ({ children }) => (
+  <div className="not-prose feature-card-container">
     {children}
   </div>
 );

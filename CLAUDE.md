@@ -159,6 +159,20 @@ Webhooks use **P-256 ECDSA signatures** in the `X-Grid-Signature` header for ver
 
 **Use Mintlify CLI version 4.2.284** for local development. Newer versions (e.g., 4.2.312) have a bug where the API reference pages render blank when using the palm theme with OpenAPI auto-generation.
 
+**Requires Node.js LTS (v20 or v22)** - Mintlify does not support Node 25+. If you have a newer Node version installed, use Node 22 LTS:
+
+```bash
+# Install Node 22 via Homebrew (if needed)
+brew install node@22
+
+# Run mint dev with Node 22
+export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+cd mintlify && mint dev
+
+# Or add to ~/.zshrc to make permanent:
+# export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+```
+
 ```bash
 # Check current version
 mintlify --version
