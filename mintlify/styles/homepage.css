@@ -285,21 +285,34 @@ html.dark .hero-tagline {
   border-radius: var(--ls-radius-md);
   overflow: hidden;
   margin-bottom: 16px;
-  background-image: url('/images/home/sand.png');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   padding: 24px;
   gap: 24px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.hero-banner-image {
-  display: none;
+.hero-banner-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/home/sand.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transition: transform 0.4s ease, filter 0.3s ease;
+  z-index: 0;
+  transform: scale(1.03);
+}
+
+.hero-banner:hover .hero-banner-bg {
+  transform: scale(1);
+  filter: brightness(0.92);
 }
 
 .hero-banner-overlay {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -315,22 +328,8 @@ html.dark .hero-tagline {
   font-feature-settings: "salt" 1;
 }
 
-.hero-banner-text a {
+.hero-banner-text-link {
   color: var(--ls-white-50);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-html.dark .hero-banner-text a {
-  color: var(--ls-white-50) !important;
-}
-
-.hero-banner-text a:hover {
-  color: var(--ls-white-70);
-}
-
-html.dark .hero-banner-text a:hover {
-  color: var(--ls-white-70) !important;
 }
 
 .hero-banner-button {
@@ -347,13 +346,12 @@ html.dark .hero-banner-text a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: background 0.2s ease;
   flex-shrink: 0;
 }
 
 .hero-banner-button:hover {
   background: var(--ls-white);
-  transform: translateY(-1px);
 }
 
 html.dark .hero-banner-button {
@@ -706,6 +704,8 @@ html.dark .product-tiles-tab.active {
   text-align: left;
   transition: background 0.2s ease;
   width: 100%;
+  text-decoration: none;
+  color: inherit;
 }
 
 .product-tiles-item:hover {
