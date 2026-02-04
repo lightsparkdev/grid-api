@@ -17,11 +17,13 @@
     "mint": "^4.2.105"
   },
   "devDependencies": {
-    "@central-icons-react/all": "^1.1.109",
     "markdownlint-cli": "^0.44.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "widdershins": "^4.0.1"
+  },
+  "optionalDependencies": {
+    "@central-icons-react/all": "^1.1.109"
   },
   "author": "Lightspark Group",
   "license": "Apache-2.0"
