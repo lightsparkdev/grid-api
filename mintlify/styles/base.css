@@ -24,6 +24,16 @@ html.dark {
 }
 
 /* ===========================================
+   Squircle Corners (Progressive Enhancement)
+   Smooth Apple-style corners. Falls back to
+   regular border-radius in unsupported browsers.
+   =========================================== */
+
+* {
+  corner-shape: squircle;
+}
+
+/* ===========================================
    Hide Scrollbars Globally
    =========================================== */
 
