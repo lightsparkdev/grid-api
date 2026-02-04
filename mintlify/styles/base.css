@@ -1355,13 +1355,15 @@ header#header .text-lg {
    API Reference - Field Info Pills (chips)
    =========================================== */
 
-/* Make chips one step darker */
+/* Make chips one step darker with border */
 #api-playground-2-operation-page [data-component-part="field-info-pill"] {
   background-color: var(--ls-gray-150) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
 }
 
 html.dark #api-playground-2-operation-page [data-component-part="field-info-pill"] {
   background-color: var(--ls-white-06) !important;
+  border: 0.5px solid var(--ls-white-06) !important;
 }
 
 /* Inline code styling */
@@ -1749,6 +1751,114 @@ html.dark .feature-card-link:hover {
   gap: 12px;
 }
 
+/* Feature Card Container - card-style wrapper for grouped content */
+.feature-card-container {
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+html.dark .feature-card-container {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+/* Grid inside container - no gap, items have padding instead */
+.feature-card-container .feature-cards-grid {
+  gap: 0;
+}
+
+.feature-card-container .feature-card {
+  padding: 24px !important;
+}
+
+/* List inside container - no gap, use padding and dividers */
+.feature-card-container .feature-cards-list {
+  gap: 0;
+}
+
+/* Horizontal dividers between list items */
+.feature-card-container .feature-cards-list .feature-card:not(:last-child) {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  border-radius: 0 !important;
+}
+
+.feature-card-container .feature-cards-list .feature-card:last-child {
+  border-radius: 0 !important;
+}
+
+html.dark .feature-card-container .feature-cards-list .feature-card:not(:last-child) {
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* Vertical divider (for 2-column grid) */
+.feature-card-container:has(.feature-cards-cols-2)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  border-left: 0.5px solid var(--ls-black-10);
+  z-index: 1;
+}
+
+/* Horizontal divider (for 2x2 grid - 4 items) */
+.feature-card-container:has(.feature-cards-cols-2)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+  border-top: 0.5px solid var(--ls-black-10);
+  z-index: 1;
+}
+
+html.dark .feature-card-container:has(.feature-cards-cols-2)::before {
+  border-left-color: var(--ls-white-06);
+}
+
+html.dark .feature-card-container:has(.feature-cards-cols-2)::after {
+  border-top-color: var(--ls-white-06);
+}
+
+/* ===========================================
+   Feature Card - Flat Variant (no card styling)
+   =========================================== */
+
+.feature-card-flat {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+html.dark .feature-card-flat {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* ===========================================
+   Feature Card - Large Icon Variant (+8px)
+   =========================================== */
+
+.feature-card-icon-lg .feature-card-icon-wrapper {
+  padding: 12px;
+}
+
+.feature-card-icon-lg .feature-card-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* For colored mask icons in large variant */
+.feature-card-icon-lg .feature-card-icon[style*="mask-image"] {
+  width: 28px !important;
+  height: 28px !important;
+}
+
 /* ===========================================
    Image Cards (Use cases page)
    =========================================== */
@@ -1943,4 +2053,126 @@ html.dark [data-component-part="tab-button"][data-active="true"] {
 html.dark #content table tbody tr:hover,
 html.dark .prose table tbody tr:hover {
   background-color: var(--ls-white-02) !important;
+}
+
+/* ===========================================
+   Accordion Component
+   =========================================== */
+
+/* Accordion group container */
+.accordion-group {
+  border-radius: var(--ls-radius-md) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  overflow: hidden;
+}
+
+html.dark .accordion-group {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Accordion item summary/trigger */
+.accordion-group details > summary {
+  padding: 16px !important;
+  background-color: var(--ls-gray-025) !important;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+html.dark .accordion-group details > summary {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* Hover state */
+.accordion-group details > summary:hover {
+  background-color: var(--ls-gray-075) !important;
+}
+
+html.dark .accordion-group details > summary:hover {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Hide Mintlify's chevron SVG */
+.accordion-group details > summary svg {
+  display: none !important;
+}
+
+/* Create Central Icons style chevron */
+.accordion-group details > summary::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 20px !important;
+  top: 50% !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-right: 1.5px solid var(--ls-gray-400) !important;
+  border-bottom: 1.5px solid var(--ls-gray-400) !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+html.dark .accordion-group details > summary::before {
+  border-color: var(--ls-gray-500) !important;
+}
+
+/* Chevron rotation when open */
+.accordion-group details[open] > summary::before {
+  transform: translateY(-70%) rotate(45deg) !important;
+}
+
+/* Adjust summary text to account for chevron (16px + 6px chevron + 8px gap = 30px) */
+.accordion-group details > summary {
+  padding-left: 30px !important;
+}
+
+/* Accordion content area */
+.accordion-group details > *:not(summary),
+.accordion-group details [data-component-part="accordion-content"] {
+  padding: 16px !important;
+  padding-left: 30px !important;
+  margin: 0 !important;
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark .accordion-group details > *:not(summary),
+html.dark .accordion-group details [data-component-part="accordion-content"] {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* Dividers between accordion items */
+.accordion-group details:not(:last-child) {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .accordion-group details:not(:last-child) {
+  border-bottom-color: var(--ls-white-10) !important;
+}
+
+/* Override Mintlify's divide-y on accordion group */
+.accordion-group.divide-y > details {
+  border-top: none !important;
+}
+
+.accordion-group.divide-y > details:not(:last-child) {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .accordion-group.divide-y > details:not(:last-child) {
+  border-bottom-color: var(--ls-white-10) !important;
+}
+
+/* Steps inside accordion - reduce spacing */
+.accordion-group .steps {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.accordion-group .steps > div:first-child {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.accordion-group .steps > div:last-child {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
