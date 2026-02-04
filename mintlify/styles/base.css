@@ -1399,6 +1399,27 @@ html.dark .prose code:not(pre code) {
   border-color: var(--ls-white-06) !important;
 }
 
+/* Inline code inside callouts - semi-transparent to work with any callout color */
+#content .callout code:not(pre code),
+#content-area .callout code:not(pre code),
+.prose .callout code:not(pre code),
+#content [data-callout-type] code:not(pre code),
+#content-area [data-callout-type] code:not(pre code),
+.prose [data-callout-type] code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border: 0.5px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+html.dark #content .callout code:not(pre code),
+html.dark #content-area .callout code:not(pre code),
+html.dark .prose .callout code:not(pre code),
+html.dark #content [data-callout-type] code:not(pre code),
+html.dark #content-area [data-callout-type] code:not(pre code),
+html.dark .prose [data-callout-type] code:not(pre code) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.15) !important;
+}
+
 /* ===========================================
    Content Area - Code Blocks
    =========================================== */
