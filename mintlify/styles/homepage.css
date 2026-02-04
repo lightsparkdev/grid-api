@@ -504,6 +504,26 @@ html.dark .capability-card {
   border-color: var(--ls-white-06);
 }
 
+.capability-card {
+  transition: background-color 0.2s ease;
+}
+
+.capability-card:hover {
+  background: var(--ls-gray-025);
+}
+
+html.dark .capability-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.capability-toggle rect:last-child {
+  transition: transform 0.3s ease;
+}
+
+.capability-card:hover .capability-toggle rect:last-child {
+  transform: translateX(-16px);
+}
+
 .capability-card:nth-child(4n) {
   border-right: none;
 }
