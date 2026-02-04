@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - address
+  - accountType
 properties:
   accountType:
     type: string
-    const: BASE_WALLET
-    example: BASE_WALLET
+    enum:
+      - BASE_WALLET
   address:
     type: string
     description: Base eth wallet address

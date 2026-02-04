@@ -1,12 +1,12 @@
 type: object
 required:
-  - accountType
   - clabeNumber
+  - accountType
 properties:
   accountType:
     type: string
-    const: CLABE
-    example: CLABE
+    enum:
+      - CLABE
   clabeNumber:
     type: string
     description: 18-digit CLABE number (Mexican banking standard)

@@ -16,35 +16,7 @@ properties:
   type:
     $ref: ./TransactionType.yaml
   destination:
-    oneOf:
-      - title: Account Destination
-        type: object
-        required:
-          - accountId
-          - currency
-        properties:
-          accountId:
-            type: string
-            description: Destination account identifier
-            example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-          currency:
-            type: string
-            description: Currency code for the destination account
-            example: EUR
-        description: Destination account details
-      - title: UMA Address Destination
-        type: object
-        required:
-          - umaAddress
-        properties:
-          umaAddress:
-            type: string
-            description: UMA address of the recipient
-            example: $receiver@uma.domain.com
-          currency:
-            type: string
-            description: Currency code for the destination
-            example: EUR
+    $ref: ./TransactionDestinationOneOf.yaml
   customerId:
     type: string
     description: System ID of the customer (sender for outgoing, recipient for incoming)

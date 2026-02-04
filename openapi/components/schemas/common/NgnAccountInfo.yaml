@@ -1,13 +1,13 @@
 type: object
 required:
-  - accountType
   - accountNumber
   - bankName
+  - accountType
 properties:
   accountType:
     type: string
-    const: NGN_ACCOUNT
-    example: NGN_ACCOUNT
+    enum:
+      - NGN_ACCOUNT
   accountNumber:
     type: string
     description: Nigerian bank account number

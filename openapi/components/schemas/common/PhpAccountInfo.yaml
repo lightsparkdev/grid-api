@@ -1,13 +1,13 @@
 type: object
 required:
-  - accountType
   - bankName
   - accountNumber
+  - accountType
 properties:
   accountType:
     type: string
-    enum: [PHP_ACCOUNT]
-    example: PHP_ACCOUNT
+    enum:
+      - PHP_ACCOUNT
   bankName:
     type: string
     description: Name of the beneficiary's bank

@@ -1,0 +1,20 @@
+allOf:
+  - $ref: ./BaseQuoteSource.yaml
+  - type: object
+    required:
+      - accountId
+      - sourceType
+    properties:
+      sourceType:
+        type: string
+        enum:
+          - ACCOUNT
+      accountId:
+        type: string
+        description: Source account identifier
+        example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+      customerId:
+        type: string
+        description: Required when funding from an FBO account to identify the customer on whose behalf the transaction is being initiated.  Otherwise, will default to the customerId of the account owner.
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    description: Source account details

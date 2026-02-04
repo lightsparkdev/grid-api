@@ -13,115 +13,14 @@ post:
     content:
       application/json:
         schema:
-          oneOf:
-            - title: New Individual Customer
-              allOf:
-                - $ref: ../../components/schemas/customers/IndividualCustomerUpdate.yaml
-                - type: object
-                  required:
-                    - platformCustomerId
-                  properties:
-                    platformCustomerId:
-                      type: string
-                      description: Platform-specific customer identifier
-                      example: 9f84e0c2a72c4fa
-                    kycUrl:
-                      type: string
-                      description: A KYC URL to be shared with your individual customer if KYC needs to be completed
-                      example: "https://example.com/kyc"
-            - title: New Business Customer
-              allOf:
-                - $ref: ../../components/schemas/customers/BusinessCustomerUpdate.yaml
-                - type: object
-                  required:
-                    - platformCustomerId
-                    - businessInfo
-                  properties:
-                    platformCustomerId:
-                      type: string
-                      description: Platform-specific customer identifier
-                      example: 9f84e0c2a72c4fa
-                    kycUrl:
-                      type: string
-                      description: A KYC URL to be shared with your business customer if KYC needs to be completed
-                      example: "https://example.com/kyc"
-                    businessInfo:
-                      type: object
-                      required:
-                        - legalName
-                      properties:
-                        legalName:
-                          type: string
-                          description: Legal name of the business
-                          example: Acme Corporation, Inc.
-                        registrationNumber:
-                          type: string
-                          description: Business registration number
-                          example: BRN-123456789
-                        taxId:
-                          type: string
-                          description: Tax identification number
-                          example: EIN-987654321
-        examples:
-          individualCustomerWithUmaAddress:
-            summary: Create individual customer with UMA address, including deposit bank account information.
-            value:
-              umaAddress: $jane.doe@uma.domain.com
-              platformCustomerId: 7b3c5a89d2f1e0
-              customerType: INDIVIDUAL
-              fullName: Jane Doe
-              birthDate: '1992-03-25'
-              address:
-                line1: 123 Pine Street
-                line2: Unit 501
-                city: Seattle
-                state: WA
-                postalCode: '98101'
-                country: US
-          individualCustomerWithoutUmaAddress:
-            summary: Create individual customer without UMA address (will be generated)
-            value:
-              platformCustomerId: 7b3c5a89d2f1e0
-              customerType: INDIVIDUAL
-              fullName: John Smith
-              birthDate: '1985-06-10'
-              address:
-                line1: 456 Oak Avenue
-                city: Portland
-                state: OR
-                postalCode: '97201'
-                country: US
-          businessCustomer:
-            summary: Create business customer example
-            value:
-              platformCustomerId: 6e4d2c0b8a9f3
-              customerType: BUSINESS
-              businessInfo:
-                legalName: Acme Corporation
-                registrationNumber: BRN-456789123
-                taxId: EIN-987123456
-              address:
-                line1: 400 Commerce Way
-                city: Austin
-                state: TX
-                postalCode: '78701'
-                country: US
+          $ref: ../../components/schemas/customers/CustomerCreateRequestOneOf.yaml
   responses:
     '201':
       description: Customer created successfully
       content:
         application/json:
           schema:
-            oneOf:
-              - title: Individual Customer
-                $ref: ../../components/schemas/customers/IndividualCustomer.yaml
-              - title: Business Customer
-                $ref: ../../components/schemas/customers/BusinessCustomer.yaml
-            discriminator:
-              propertyName: customerType
-              mapping:
-                INDIVIDUAL: ../../components/schemas/customers/IndividualCustomer.yaml
-                BUSINESS: ../../components/schemas/customers/BusinessCustomer.yaml
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '400':
       description: Bad request
       content:
@@ -248,16 +147,7 @@ get:
                 type: array
                 description: List of customers matching the filter criteria
                 items:
-                  oneOf:
-                    - title: Individual Customer
-                      $ref: ../../components/schemas/customers/IndividualCustomer.yaml
-                    - title: Business Customer
-                      $ref: ../../components/schemas/customers/BusinessCustomer.yaml
-                  discriminator:
-                    propertyName: customerType
-                    mapping:
-                      INDIVIDUAL: ../../components/schemas/customers/IndividualCustomer.yaml
-                      BUSINESS: ../../components/schemas/customers/BusinessCustomer.yaml
+                  $ref: ../../components/schemas/customers/CustomerOneOf.yaml
               hasMore:
                 type: boolean
                 description: Indicates if more results are available beyond this page

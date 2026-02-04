@@ -1,24 +1,11 @@
 allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/NgnAccountInfo.yaml
   - type: object
     required:
-      - accountType
       - purposeOfPayment
       - beneficiary
     properties:
-      accountType:
-        type: string
-        const: NGN_ACCOUNT
-        example: NGN_ACCOUNT
-      beneficiary:
-        oneOf:
-          - $ref: ./IndividualBeneficiary.yaml
-          - $ref: ./BusinessBeneficiary.yaml
-        discriminator:
-          propertyName: beneficiaryType
-          mapping:
-            INDIVIDUAL: ./IndividualBeneficiary.yaml
-            BUSINESS: ./BusinessBeneficiary.yaml
       purposeOfPayment:
         type: string
         enum:
@@ -36,3 +23,5 @@ allOf:
           - OTHER
         description: Purpose of payment
         example: GOODS_OR_SERVICES
+      beneficiary:
+        $ref: ./BeneficiaryOneOf.yaml

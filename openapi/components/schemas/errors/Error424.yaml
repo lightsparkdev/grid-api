@@ -5,8 +5,9 @@ required:
   - code
 properties:
   status:
-    const: 424
     type: integer
+    enum: 
+      - 424
     description: HTTP status code
   code:
     type: string

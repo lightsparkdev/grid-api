@@ -1,20 +1,9 @@
 allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/PhpAccountInfo.yaml
   - type: object
     required:
-      - accountType
       - beneficiary
     properties:
-      accountType:
-        type: string
-        enum: [PHP_ACCOUNT]
-        example: PHP_ACCOUNT
       beneficiary:
-        oneOf:
-          - $ref: ./IndividualBeneficiary.yaml
-          - $ref: ./BusinessBeneficiary.yaml
-        discriminator:
-          propertyName: beneficiaryType
-          mapping:
-            INDIVIDUAL: ./IndividualBeneficiary.yaml
-            BUSINESS: ./BusinessBeneficiary.yaml
+        $ref: ./BeneficiaryOneOf.yaml

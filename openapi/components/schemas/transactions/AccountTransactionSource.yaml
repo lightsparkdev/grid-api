@@ -1,0 +1,16 @@
+allOf:
+  - $ref: ./BaseTransactionSource.yaml
+  - type: object
+    required:
+      - accountId
+      - sourceType
+    properties:
+      sourceType:
+        type: string
+        enum:
+          - ACCOUNT
+      accountId:
+        type: string
+        description: Source account identifier
+        example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+    description: Source account details

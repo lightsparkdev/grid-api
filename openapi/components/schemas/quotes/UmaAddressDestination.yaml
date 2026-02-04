@@ -1,0 +1,33 @@
+allOf:
+  - $ref: ./BaseDestination.yaml
+  - type: object
+    required:
+      - umaAddress
+      - destinationType
+    properties:
+      destinationType:
+        type: string
+        enum:
+          - UMA_ADDRESS
+      umaAddress:
+        type: string
+        description: UMA address of the recipient
+        example: $receiver@uma.domain.com
+      counterpartyInformation:
+        type: object
+        description: >-
+          Information about the recipient, as required by the platform in their
+          configuration.
+        additionalProperties: true
+        example:
+          FULL_NAME: Jane Receiver
+          BIRTH_DATE: '1990-01-01'
+          NATIONALITY: FR
+      currency:
+        type: string
+        description: >-
+          Currency code for the destination. See
+          [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
+          for the full list of supported fiat and crypto currencies.
+        example: EUR
+    description: UMA address destination details

@@ -1,0 +1,16 @@
+allOf:
+  - $ref: ./BaseTransactionDestination.yaml
+  - type: object
+    required:
+      - umaAddress
+      - destinationType
+    properties:
+      destinationType:
+        type: string
+        enum:
+          - UMA_ADDRESS
+      umaAddress:
+        type: string
+        description: UMA address of the recipient
+        example: $receiver@uma.domain.com
+    description: UMA address destination details

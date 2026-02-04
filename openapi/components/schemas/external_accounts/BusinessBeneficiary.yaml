@@ -1,23 +1,23 @@
-type: object
-required:
-  - legalName
-  - beneficiaryType
-properties:
-  beneficiaryType:
-    type: string
-    const: BUSINESS
-    example: BUSINESS
-  legalName:
-    type: string
-    description: Legal name of the business
-    example: Acme Corporation, Inc.
-  registrationNumber:
-    type: string
-    description: Business registration number
-    example: BRN-123456789
-  taxId:
-    type: string
-    description: Tax identification number
-    example: EIN-987654321
-  address:
-    $ref: ../common/Address.yaml
+allOf:
+  - $ref: ./BaseBeneficiary.yaml
+  - type: object
+    required:
+      - legalName
+      - beneficiaryType
+    properties:
+      beneficiaryType:
+        type: string
+        enum:
+          - BUSINESS
+      legalName:
+        type: string
+        description: Legal name of the business
+        example: Acme Corporation, Inc.
+      registrationNumber:
+        type: string
+        description: Business registration number
+        example: BRN-123456789
+      taxId:
+        type: string
+        description: Tax identification number
+        example: EIN-987654321

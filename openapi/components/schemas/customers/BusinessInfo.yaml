@@ -1,0 +1,17 @@
+type: object
+description: Additional information required for business entities
+required:
+  - legalName
+properties:
+  legalName:
+    type: string
+    description: Legal name of the business
+    example: Acme Corporation, Inc.
+  registrationNumber:
+    type: string
+    description: Business registration number
+    example: BRN-123456789
+  taxId:
+    type: string
+    description: Tax identification number
+    example: EIN-987654321

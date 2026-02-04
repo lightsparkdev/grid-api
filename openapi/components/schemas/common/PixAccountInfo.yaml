@@ -1,14 +1,14 @@
 type: object
 required:
-  - accountType
   - pixKey
   - pixKeyType
   - taxId
+  - accountType
 properties:
   accountType:
     type: string
-    const: PIX
-    example: PIX
+    enum:
+      - PIX
   pixKey:
     type: string
     description: PIX key for Brazilian instant payments

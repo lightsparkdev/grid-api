@@ -1,13 +1,13 @@
 type: object
 required:
-  - accountType
   - iban
   - swiftBic
+  - accountType
 properties:
   accountType:
     type: string
-    const: IBAN
-    example: IBAN
+    enum:
+      - IBAN
   iban:
     type: string
     description: International Bank Account Number
