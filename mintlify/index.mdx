@@ -35,8 +35,9 @@ export const ProductTiles = ({ categories }) => {
       <div className="product-tiles-grid">
         <div className="product-tiles-list">
           {currentCategory?.items.map((item) => (
-            <button
+            <a
               key={item.id}
+              href={currentCategory.href}
               onMouseEnter={() => setActiveItem(item.id)}
               className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
             >
@@ -50,7 +51,7 @@ export const ProductTiles = ({ categories }) => {
                   <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               )}
-            </button>
+            </a>
           ))}
         </div>
         <div className="product-tiles-preview">
@@ -72,6 +73,7 @@ export const gridCategories = [
   {
     id: 'payouts',
     label: 'Payouts & B2B',
+    href: '/payouts-and-b2b/',
     items: [
       { id: 'creators', title: 'Creator payouts', description: 'Pay creators and influencers instantly, anywhere they bank', icon: '/images/icons/multi-media.svg', image: '/images/use-cases/payouts-b2b-creators.jpg' },
       { id: 'payroll', title: 'Payroll & contractors', description: 'Send salaries and contractor payments globally with locked FX rates', icon: '/images/icons/suitcase-work.svg', image: '/images/use-cases/payouts-b2b-payroll.jpg' },
@@ -82,6 +84,7 @@ export const gridCategories = [
   {
     id: 'ramps',
     label: 'Ramps',
+    href: '/ramps/',
     items: [
       { id: 'buy-btc', title: 'Buy BTC', description: 'Let users purchase Bitcoin directly inside your app', icon: '/images/icons/bitcoin.svg', image: '/images/use-cases/ramps-buy-btc.jpg' },
       { id: 'sell-btc', title: 'Sell BTC', description: 'Convert Bitcoin to fiat and settle to any bank account', icon: '/images/icons/money-hand.svg', image: '/images/use-cases/ramps-sell-btc.jpg' },
@@ -92,6 +95,7 @@ export const gridCategories = [
   {
     id: 'rewards',
     label: 'Rewards',
+    href: '/rewards/',
     items: [
       { id: 'cashback', title: 'BTC cashback', description: 'Give users Bitcoin back on purchases or actions', icon: '/images/icons/gift1.svg', image: '/images/use-cases/rewards-cashback.jpg' },
       { id: 'referrals', title: 'Referral incentives', description: 'Pay out BTC or fiat when users refer new customers', icon: '/images/icons/people-add.svg', image: '/images/use-cases/rewards-refer.jpg' },
@@ -101,6 +105,7 @@ export const gridCategories = [
   {
     id: 'global-p2p',
     label: 'Global P2P',
+    href: '/global-p2p/',
     items: [
       { id: 'remittances', title: 'Cross-border remittances', description: 'Move money across countries on the fastest, lowest-cost rails', icon: '/images/icons/globe.svg', image: '/images/use-cases/global-p2p-remittances.jpg' },
       { id: 'uma', title: 'Wallet-to-wallet (UMA)', description: 'Send and receive via UMA addresses across any participating app', icon: '/images/icons/at.svg', image: '/images/use-cases/global-p2p-uma.jpg' }
@@ -123,13 +128,13 @@ export const gridCategories = [
 </div>
 
 {/* Hero Banner with Sand Dunes Image */}
-<div className="hero-banner">
-  <img src="/images/home/hero-landscape.png" alt="Grid Sandbox" className="hero-banner-image" />
+<a href="https://www.lightspark.com/contact" className="hero-banner">
+  <div className="hero-banner-bg"></div>
   <div className="hero-banner-overlay">
-    <span className="hero-banner-text">Ready to test? <a href="/payouts-and-b2b/platform-tools/sandbox-testing">Explore the Grid Sandbox</a></span>
-    <a href="https://lightspark.com/grid#signup" className="hero-banner-button">Request sandbox access</a>
+    <span className="hero-banner-text">Ready to test? <span className="hero-banner-text-link">Explore the Grid Sandbox</span></span>
+    <span className="hero-banner-button">Request sandbox access</span>
   </div>
-</div>
+</a>
 
 {/* Info Cards: Understand Grid & Start Building */}
 <div className="info-cards-grid">

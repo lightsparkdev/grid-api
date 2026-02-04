@@ -129,6 +129,12 @@ svg[class*="icon"] polygon {
   stroke-width: 1.5px;
 }
 
+/* Disable lightbox/click on all icon images */
+img[class*="icon"],
+svg[class*="icon"] {
+  pointer-events: none;
+}
+
 /* ===========================================
    Navbar - Top Row
    Border, padding, and layout
@@ -1602,6 +1608,7 @@ html.dark .feature-card-icon-wrapper {
 .feature-card-icon {
   width: 20px;
   height: 20px;
+  pointer-events: none;
 }
 
 html.dark .feature-card-icon {
@@ -1750,4 +1757,19 @@ html.dark .image-card-title {
 
 html.dark .image-card-link:hover {
   background-color: var(--ls-gray-900);
+}
+
+/* ===========================================
+   Steps Component
+   =========================================== */
+
+/* Step number indicators - one step darker than default */
+.steps [class*="size-7"][class*="rounded-full"] {
+  background-color: var(--ls-gray-150) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .steps [class*="size-7"][class*="rounded-full"] {
+  background-color: var(--ls-white-10) !important;
+  border-color: var(--ls-white-06) !important;
 }
