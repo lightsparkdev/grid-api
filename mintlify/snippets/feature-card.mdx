@@ -20,3 +20,18 @@ export const FeatureCardGrid = ({ cols = 3, children }) => (
     {children}
   </div>
 );
+
+export const ImageCard = ({ img, title, children, href }) => {
+  const card = (
+    <div className={`image-card ${href ? 'image-card-link' : ''}`}>
+      <div className="image-card-img-wrapper">
+        <img src={img} alt={title} className="image-card-img" />
+      </div>
+      <div className="image-card-content">
+        <div className="image-card-title">{title}</div>
+        <div className="image-card-desc">{children}</div>
+      </div>
+    </div>
+  );
+  return href ? <a href={href} className="image-card-anchor">{card}</a> : card;
+};

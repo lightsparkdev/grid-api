@@ -1674,3 +1674,80 @@ html.dark .feature-card-link:hover {
 .feature-card-no-icon {
   gap: 8px;
 }
+
+/* ===========================================
+   Image Cards (Use cases page)
+   =========================================== */
+
+.image-card {
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+html.dark .image-card {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+.image-card-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.image-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  border-radius: 0;
+}
+
+.image-card-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.image-card-title {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .image-card-title {
+  color: var(--ls-gray-050);
+}
+
+.image-card-desc {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-500);
+}
+
+/* Link card styles */
+.image-card-anchor {
+  text-decoration: none;
+  display: block;
+  height: 100%;
+}
+
+.image-card-link {
+  transition: all 0.2s ease;
+}
+
+.image-card-link:hover {
+  background-color: var(--ls-gray-025);
+  transform: scale(1.02);
+}
+
+html.dark .image-card-link:hover {
+  background-color: var(--ls-gray-900);
+}
