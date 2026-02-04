@@ -891,6 +891,39 @@ npm run lint
 # Or: make lint
 ```
 
+## Claude Code Skill
+
+This repository includes a [Claude Code](https://claude.ai/code) skill for interacting with the Grid API. The skill enables Claude to execute API operations, answer documentation questions, and guide you through payment workflows.
+
+### Setup
+
+Before using the skill, build the CLI tool:
+```bash
+cd cli && npm install && npm run build && cd ..
+```
+
+Then configure credentials (see Configuration section below).
+
+### Usage
+
+When using Claude Code in this repository, invoke the skill with `/grid-api` or ask questions like:
+
+- "Send a payment to Mexico"
+- "Create a quote from USDC to INR"
+- "What currencies does Grid support?"
+- "Help me set up a UPI account"
+
+The skill uses the CLI at `cli/dist/index.js` to execute operations against the Grid API.
+
+### Configuration
+
+Set your API credentials as environment variables:
+
+```bash
+export GRID_API_TOKEN_ID="your-token-id"
+export GRID_API_CLIENT_SECRET="your-client-secret"
+```
+
 ## Support
 
 For any questions or issues, please contact Grid support at <support@lightspark.com>.
