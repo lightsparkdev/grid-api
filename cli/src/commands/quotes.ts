@@ -143,9 +143,13 @@ export function registerQuotesCommand(
       };
 
       if (options.sourceAccount) {
-        body.source = { accountId: options.sourceAccount };
+        body.source = {
+          sourceType: "ACCOUNT",
+          accountId: options.sourceAccount,
+        };
       } else if (options.sourceCustomer) {
         body.source = {
+          sourceType: "REALTIME_FUNDING",
           customerId: options.sourceCustomer,
           currency: options.sourceCurrency,
         };
@@ -153,11 +157,12 @@ export function registerQuotesCommand(
 
       if (options.destAccount) {
         body.destination = {
+          destinationType: "ACCOUNT",
           accountId: options.destAccount,
-          currency: options.destCurrency,
         };
       } else if (options.destUma) {
         body.destination = {
+          destinationType: "UMA_ADDRESS",
           umaAddress: options.destUma,
           currency: options.destCurrency,
         };
