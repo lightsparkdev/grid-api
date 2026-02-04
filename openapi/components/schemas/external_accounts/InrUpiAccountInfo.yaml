@@ -1,0 +1,34 @@
+type: object
+title: INR UPI Account
+description: Required fields for USD -> INR corridor via Upi
+required:
+- accountType
+- beneficiary
+- vpa
+properties:
+  accountType:
+    type: string
+    enum:
+    - INR_UPI_ACCOUNT
+    example: INR_UPI_ACCOUNT
+  paymentRail:
+    type: string
+    const: UPI
+    description: Payment rail. Auto-populated based on account type.
+  receivingCurrency:
+    type: string
+    const: INR
+    description: Receiving currency code. Auto-populated based on account type.
+  vpa:
+    type: string
+    description: Virtual Payment Address for UPI payments
+    example: somecustomers@okbank
+  beneficiary:
+    type: object
+    required:
+    - fullName
+    properties:
+      fullName:
+        type: string
+        description: Individual's full name
+        example: John Michael Doe
