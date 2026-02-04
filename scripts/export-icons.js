@@ -71,6 +71,12 @@ const ICONS_TO_EXPORT = [
   'IconArrowExpandHor',     // Same-Currency Transfers
   'IconArrowLeftRight',     // Cross-Currency Transfers
   'IconBell',               // Webhooks
+  
+  // Use case icons (homepage ProductTiles)
+  'IconSuitcaseWork',       // Payroll & contractors
+  'IconBitcoin',            // Buy BTC
+  'IconMoneyHand',          // Sell BTC
+  'IconCryptoWallet',       // Wallet funding
 ];
 
 // Icon style configuration (matching design requirements)
