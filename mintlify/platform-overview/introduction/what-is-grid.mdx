@@ -4,16 +4,16 @@ title: "What is Grid?"
 mode: "wide"
 ---
 
-import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+import { FeatureCard, FeatureCardGrid, FeatureCardList } from '/snippets/feature-card.mdx';
 
 <img 
-  src="/images/heroes/hero-what-is-grid-light.jpg" 
+  src="/images/heroes/hero-what-is-grid-light.svg" 
   alt="What is Grid hero"
   className="block dark:hidden"
   style={{ width: '100%', borderRadius: '8px', marginBottom: '24px' }}
 />
 <img 
-  src="/images/heroes/hero-what-is-grid-dark.jpg" 
+  src="/images/heroes/hero-what-is-grid-dark.svg" 
   alt="What is Grid hero"
   className="hidden dark:block"
   style={{ width: '100%', borderRadius: '8px', marginBottom: '24px' }}
@@ -23,12 +23,20 @@ Grid is a low-level payment infrastructure API that enables modern financial ins
 
 ## Features
 
-|                                                                                                                                              |
-| -------------------------------------------------------------------------------------------------------------------------------------------- |
-| <Icon icon="code" /> **One API**<br/>Move money anywhere. Fiat to fiat, crypto to fiat, or the other way around, all through a single API.   |
-| <Icon icon="globe" /> **Global Coverage**<br/>Send and receive across 65+ countries using local instant rails or global crypto rails.        |
-| <Icon icon="bolt" /> **Real-Time Settlement**<br/>Instant, 24/7/365. Powered by Bitcoin and local payment networks.                          |
-| <Icon icon="shield-check" /> **No Crypto Headaches**<br/>We handle all the on-chain logic, wallet ops, and conversions so you don't have to. |
+<FeatureCardList>
+  <FeatureCard icon="/images/icons/code.svg" title="One API" layout="horizontal">
+    Move money anywhere. Fiat to fiat, crypto to fiat, or the other way around, all through a single API.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Global Coverage" layout="horizontal">
+    Send and receive across 65+ countries using local instant rails or global crypto rails.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/lightning.svg" title="Real-Time Settlement" layout="horizontal">
+    Instant, 24/7/365. Powered by Bitcoin and local payment networks.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="No Crypto Headaches" layout="horizontal">
+    We handle all the on-chain logic, wallet ops, and conversions so you don't have to.
+  </FeatureCard>
+</FeatureCardList>
 
 ## What to build
 

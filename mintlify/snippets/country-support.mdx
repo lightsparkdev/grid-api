@@ -1,23 +1,20 @@
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <FeatureCardGrid cols={3}>
-  <FeatureCard icon="/images/icons/coins.svg" title="Cryptocurrency">
-    **Available Globally**
-Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
+  <FeatureCard icon="/images/icons/coins.svg" title="Cryptocurrency" tag="Available Globally">
+    Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
   </FeatureCard>
-  <FeatureCard icon="/images/icons/blocks.svg" title="Full Platform Access">
-    **United States & Europe**
-Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
-Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
+  <FeatureCard icon="/images/icons/blocks.svg" title="Full Platform Access" tag="United States & Europe">
+    Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
+    Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
   </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Local Payment Rails">
-    **65 Countries**
-Receive payments via local rails like SEPA, PIX, UPI, and more.
+  <FeatureCard icon="/images/icons/globe.svg" title="Local Payment Rails" tag="65 Countries">
+    Receive payments via local rails like SEPA, PIX, UPI, and more.
   </FeatureCard>
 </FeatureCardGrid>
 
 | Country | ISO Code | Payment Rails |
-|---|:---:|:---:|
+|---|---|---:|
 | 🇦🇹 Austria | AT | `SEPA` `SEPA Instant` |
 | 🇧🇪 Belgium | BE | `SEPA` `SEPA Instant` |
 | 🇧🇯 Benin | BJ | `Bank Transfer` |
@@ -87,16 +84,16 @@ Receive payments via local rails like SEPA, PIX, UPI, and more.
 Regional Summary
 
 <FeatureCardGrid cols={4}>
-  <FeatureCard icon="/images/icons/globe.svg" title="Europe">
-    **32 countries** Primary: SEPA/SEPA Instant
+  <FeatureCard icon="/images/icons/globe.svg" title="Europe" tag="32 countries">
+    Primary: SEPA/SEPA Instant
   </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Africa">
-    **17 countries** Primary: Bank Transfer
+  <FeatureCard icon="/images/icons/globe.svg" title="Africa" tag="17 countries">
+    Primary: Bank Transfer
   </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Asia-Pacific">
-    **11 countries** Various instant payment systems
+  <FeatureCard icon="/images/icons/globe.svg" title="Asia-Pacific" tag="11 countries">
+    Various instant payment systems
   </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Americas">
-    **5 countries** PIX, SPEI, ACH, FedNow
+  <FeatureCard icon="/images/icons/globe.svg" title="Americas" tag="5 countries">
+    PIX, SPEI, ACH, FedNow
   </FeatureCard>
 </FeatureCardGrid>
