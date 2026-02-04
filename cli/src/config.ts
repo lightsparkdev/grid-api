@@ -22,11 +22,16 @@ function loadCredentialsFile(): Partial<GridConfig> {
     try {
       return JSON.parse(content);
     } catch {
-      throw new Error(`Invalid JSON in credentials file: ${credentialsPath}`);
+      throw new Error(
+        `Invalid JSON in credentials file: ${credentialsPath}. ` +
+        `Please fix the file or delete it and run 'grid configure'.`
+      );
     }
   }
   return {};
 }
+
+export { getCredentialsPath };
 
 export function loadConfig(options: {
   configPath?: string;
