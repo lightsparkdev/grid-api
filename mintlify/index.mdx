@@ -113,7 +113,33 @@ export const gridCategories = [
   }
 ];
 
+{/* Toggle animation handler - plays once on click, handles rapid clicks gracefully */}
+export const ToggleAnimationHandler = () => {
+  React.useEffect(() => {
+    const cards = document.querySelectorAll('.capability-card');
+    
+    cards.forEach(card => {
+      const toggle = card.querySelector('.capability-toggle');
+      
+      card.addEventListener('click', () => {
+        if (!card.classList.contains('animating')) {
+          card.classList.add('animating');
+        }
+      });
+      
+      toggle?.addEventListener('animationend', () => {
+        setTimeout(() => {
+          card.classList.remove('animating');
+        }, 500);
+      });
+    });
+  }, []);
+  
+  return null;
+};
+
 {/* Wrap all custom content in not-prose for full styling control */}
+<ToggleAnimationHandler />
 <div className="not-prose homepage-content">
 
 {/* Hero Header - Two Column Layout */}
@@ -179,56 +205,56 @@ export const gridCategories = [
 <div className="capabilities-grid">
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#00B3E0"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#00B3E0"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Send</div>
     </div>
     <div className="capability-desc">Move funds to any destination</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#11A967"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#11A967"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Receive</div>
     </div>
     <div className="capability-desc">Accept incoming funds</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#FF21CC"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#FF21CC"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Convert</div>
     </div>
     <div className="capability-desc">Exchange currencies and assets</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#F77D26"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#F77D26"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Hold</div>
     </div>
     <div className="capability-desc">Store multi-currency balances</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#CF00A7"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#CF00A7"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Ramp</div>
     </div>
     <div className="capability-desc">Bridge fiat and crypto</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#118453"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#118453"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Bill</div>
     </div>
     <div className="capability-desc">Invoice and collect payments</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#44DDB5"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#44DDB5"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Program</div>
     </div>
     <div className="capability-desc">Create programmable flows</div>
   </div>
   <div className="capability-card">
     <div className="capability-header">
-      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#0072DB"/><rect x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
+      <svg className="capability-toggle" width="32" height="16" viewBox="0 0 32 16" fill="none"><rect width="32" height="16" fill="#0072DB"/><rect className="toggle-out" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/><rect className="toggle-in" x="17.6" y="1.6" width="12.8" height="12.8" fill="#F8F8F7"/></svg>
       <div className="capability-title">Identify</div>
     </div>
     <div className="capability-desc">KYC/KYB verification</div>

@@ -1584,6 +1584,7 @@ html.dark #page-context-menu > button:not(#page-context-menu-button):hover {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  height: 100%;
 }
 
 html.dark .feature-card {
@@ -1611,7 +1612,8 @@ html.dark .feature-card-icon-wrapper {
   pointer-events: none;
 }
 
-html.dark .feature-card-icon {
+/* Only apply dark mode filter to img icons, not mask-image colored icons */
+html.dark .feature-card-icon-wrapper img.feature-card-icon {
   filter: brightness(0) invert(1);
 }
 
@@ -1625,10 +1627,48 @@ html.dark .feature-card-title {
   color: var(--ls-gray-050);
 }
 
+.feature-card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.feature-card-content .feature-card-link-row {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
 .feature-card-desc {
   font-size: 15px;
   line-height: 22px;
   color: var(--ls-gray-500);
+}
+
+.feature-card-link-row {
+  /* spacing handled by margin-top: auto in .feature-card-content context */
+}
+
+.feature-card-text-link {
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 20px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feature-card-text-link:hover {
+  opacity: 0.7;
+}
+
+.feature-card-coming-soon {
+  cursor: default;
+}
+
+.feature-card-coming-soon:hover {
+  opacity: 0.6;
 }
 
 /* Column variants */
@@ -1662,6 +1702,7 @@ html.dark .feature-card-title {
 .feature-card-anchor {
   text-decoration: none;
   display: block;
+  height: 100%;
 }
 
 .feature-card-link {
@@ -1680,6 +1721,32 @@ html.dark .feature-card-link:hover {
 /* Cards without icon */
 .feature-card-no-icon {
   gap: 8px;
+}
+
+/* ===========================================
+   Feature Card - Horizontal Layout
+   =========================================== */
+
+.feature-card-horizontal {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+}
+
+.feature-card-horizontal .feature-card-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.feature-card-horizontal .feature-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Feature Card List - vertical stack for horizontal cards */
+.feature-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* ===========================================
@@ -1772,4 +1839,108 @@ html.dark .image-card-link:hover {
 html.dark .steps [class*="size-7"][class*="rounded-full"] {
   background-color: var(--ls-white-10) !important;
   border-color: var(--ls-white-06) !important;
+}
+
+/* Feature card tag row - same structure as link-row */
+.feature-card-content .feature-card-tag-row {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+/* Feature card tag - pill style */
+.feature-card-tag {
+  display: inline-block;
+  width: fit-content;
+  background-color: var(--ls-gray-100);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-xs);
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--ls-gray-700);
+}
+
+html.dark .feature-card-tag {
+  background-color: var(--ls-white-06);
+  border-color: var(--ls-white-06);
+  color: var(--ls-gray-400);
+}
+
+/* ===========================================
+   Tab Controllers (API/Dashboard tabs)
+   =========================================== */
+
+/* Tab container border */
+#content ul:has([data-component-part="tab-button"]) {
+  border-bottom-color: var(--ls-black-10) !important;
+}
+
+html.dark #content ul:has([data-component-part="tab-button"]) {
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* All tabs - consistent weight to prevent layout shift */
+[data-component-part="tab-button"] {
+  font-weight: 450 !important;
+}
+
+/* Inactive tab */
+[data-component-part="tab-button"][data-active="false"] {
+  color: var(--ls-gray-500) !important;
+  border-color: transparent !important;
+}
+
+[data-component-part="tab-button"][data-active="false"]:hover {
+  color: var(--ls-gray-700) !important;
+  border-color: var(--ls-gray-300) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="false"] {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="false"]:hover {
+  color: var(--ls-gray-400) !important;
+  border-color: var(--ls-gray-700) !important;
+}
+
+/* Active tab */
+[data-component-part="tab-button"][data-active="true"] {
+  color: var(--ls-gray-950) !important;
+  border-color: var(--ls-gray-950) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="true"] {
+  color: var(--ls-white) !important;
+  border-color: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Tables
+   =========================================== */
+
+/* Table cell font size */
+#content table td,
+#content table th,
+.prose table td,
+.prose table th {
+  font-size: 15px !important;
+  line-height: 22px !important;
+}
+
+/* Table row hover effect */
+#content table tbody tr,
+.prose table tbody tr {
+  transition: background-color 0.15s ease !important;
+}
+
+#content table tbody tr:hover,
+.prose table tbody tr:hover {
+  background-color: var(--ls-gray-075) !important;
+}
+
+html.dark #content table tbody tr:hover,
+html.dark .prose table tbody tr:hover {
+  background-color: var(--ls-white-02) !important;
 }

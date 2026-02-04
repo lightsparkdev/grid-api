@@ -1,14 +1,46 @@
-export const FeatureCard = ({ icon, title, children, href }) => {
+export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, color, tag, layout }) => {
+  const isHorizontal = layout === 'horizontal';
   const card = (
-    <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''}`}>
+    <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''} ${isHorizontal ? 'feature-card-horizontal' : ''}`}>
       {icon && (
         <div className="feature-card-icon-wrapper">
-          <img src={icon} alt="" className="feature-card-icon" />
+          {color ? (
+            <div 
+              className="feature-card-icon"
+              style={{
+                WebkitMaskImage: `url(${icon})`,
+                maskImage: `url(${icon})`,
+                backgroundColor: color,
+                width: '24px',
+                height: '24px',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+          ) : (
+            <img src={icon} alt="" className="feature-card-icon" />
+          )}
         </div>
       )}
-      <div>
+      <div className="feature-card-content">
         <div className="feature-card-title">{title}</div>
         <div className="feature-card-desc">{children}</div>
+        {tag && <div className="feature-card-tag-row"><span className="feature-card-tag">{tag}</span></div>}
+        {linkText && (
+          <div className="feature-card-link-row">
+            {linkHref ? (
+              <a href={linkHref} className="feature-card-text-link" style={{ color: color }}>
+                {linkText}
+              </a>
+            ) : (
+              <span className="feature-card-text-link feature-card-coming-soon" style={{ color: color, opacity: 0.6 }}>
+                {linkText}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -17,6 +49,12 @@ export const FeatureCard = ({ icon, title, children, href }) => {
 
 export const FeatureCardGrid = ({ cols = 3, children }) => (
   <div className={`not-prose feature-cards-grid feature-cards-cols-${cols}`}>
+    {children}
+  </div>
+);
+
+export const FeatureCardList = ({ children }) => (
+  <div className="not-prose feature-cards-list">
     {children}
   </div>
 );

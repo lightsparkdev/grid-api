@@ -514,12 +514,27 @@ html.dark .capability-card:hover {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.capability-toggle rect:last-child {
-  transition: transform 0.3s ease;
+/* Toggle swap animation - JS-controlled, plays once to completion */
+@keyframes toggle-swap-out {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(32px); }
 }
 
-.capability-card:hover .capability-toggle rect:last-child {
-  transform: translateX(-16px);
+@keyframes toggle-swap-in {
+  0% { transform: translateX(-32px); }
+  100% { transform: translateX(0); }
+}
+
+.capability-toggle .toggle-in {
+  transform: translateX(-32px);
+}
+
+.capability-card.animating .capability-toggle .toggle-out {
+  animation: toggle-swap-out 0.45s ease forwards;
+}
+
+.capability-card.animating .capability-toggle .toggle-in {
+  animation: toggle-swap-in 0.45s ease forwards;
 }
 
 .capability-card:nth-child(4n) {
