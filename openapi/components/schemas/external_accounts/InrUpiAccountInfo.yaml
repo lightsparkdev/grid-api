@@ -1,0 +1,21 @@
+type: object
+title: InrUpiAccountInfo
+description: Required fields for USD -> INR corridor via Upi
+required:
+- accountType
+- fullName
+- vpa
+properties:
+  accountType:
+    type: string
+    enum:
+    - INR_UPI_ACCOUNT
+    example: INR_UPI_ACCOUNT
+  fullName:
+    type: string
+    description: Full name of the beneficiary
+    example: John Michael Doe
+  vpa:
+    type: string
+    description: Virtual Payment Address (UPI)
+    example: john@upi
