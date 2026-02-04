@@ -167,7 +167,7 @@ html.dark .section-title {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--ls-radius-sm);
   color: var(--ls-gray-300);
   background-color: transparent;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -282,12 +282,11 @@ html.dark .hero-tagline {
 .hero-banner {
   position: relative;
   height: 84px;
-  border-radius: 8px;
+  border-radius: var(--ls-radius-md);
   overflow: hidden;
   margin-bottom: 16px;
-  border: 0.5px solid var(--ls-white-06);
   background-image: url('/images/home/sand.png');
-  background-size: 100% auto;
+  background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
   display: flex;
@@ -322,8 +321,16 @@ html.dark .hero-tagline {
   transition: color 0.2s ease;
 }
 
+html.dark .hero-banner-text a {
+  color: var(--ls-white-50) !important;
+}
+
 .hero-banner-text a:hover {
   color: var(--ls-white-70);
+}
+
+html.dark .hero-banner-text a:hover {
+  color: var(--ls-white-70) !important;
 }
 
 .hero-banner-button {
@@ -332,7 +339,7 @@ html.dark .hero-tagline {
   min-width: 36px;
   background: var(--ls-gray-050);
   color: var(--ls-gray-950);
-  border-radius: 6px;
+  border-radius: var(--ls-radius-sm);
   font-size: 14px;
   font-weight: 450 !important;
   line-height: 20px;
@@ -350,12 +357,12 @@ html.dark .hero-tagline {
 }
 
 html.dark .hero-banner-button {
-  background: var(--ls-gray-800);
+  background: var(--ls-gray-950);
   color: var(--ls-gray-050);
 }
 
 html.dark .hero-banner-button:hover {
-  background: var(--ls-gray-700);
+  background: var(--ls-gray-900);
 }
 
 /* ===========================================
@@ -379,7 +386,7 @@ html.dark .hero-banner-button:hover {
   flex: 1 0 0;
   background: var(--ls-white);
   border: 0.5px solid var(--ls-black-10);
-  border-radius: 8px;
+  border-radius: var(--ls-radius-md);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -458,7 +465,7 @@ html.dark .info-card-title {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(2, auto);
   border: 0.5px solid var(--ls-black-10);
-  border-radius: 8px;
+  border-radius: var(--ls-radius-md);
   overflow: hidden;
   width: 100%;
   margin-bottom: 8px;
@@ -583,7 +590,7 @@ html.dark .capability-title {
   width: 100%;
   background: var(--ls-white);
   border: 0.5px solid var(--ls-black-10);
-  border-radius: 8px;
+  border-radius: var(--ls-radius-md);
   overflow: hidden;
 }
 
@@ -612,7 +619,7 @@ html.dark .product-tiles-container > div:first-child {
   font-size: 14px;
   font-weight: 450 !important;
   line-height: 20px;
-  border-radius: 4px;
+  border-radius: var(--ls-radius-xs);
   border: none;
   background: transparent;
   color: var(--ls-gray-500);
@@ -672,7 +679,7 @@ html.dark .product-tiles-tab.active {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  border-radius: 4px;
+  border-radius: var(--ls-radius-xs);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -701,6 +708,11 @@ html.dark .product-tiles-item.active {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
+}
+
+/* Dark mode: invert icons to white */
+html.dark .product-tiles-icon {
+  filter: brightness(0) invert(1);
 }
 
 .product-tiles-item-content {
@@ -743,13 +755,11 @@ html.dark .product-tiles-item-title {
 .product-tiles-preview {
   flex: 1;
   background: var(--ls-gray-100);
-  border-radius: 4px;
+  border-radius: var(--ls-radius-xs);
   overflow: hidden;
   min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   align-self: stretch;
+  position: relative;
 }
 
 html.dark .product-tiles-preview {
@@ -757,9 +767,18 @@ html.dark .product-tiles-preview {
 }
 
 .product-tiles-preview-img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.product-tiles-preview-img.active {
+  opacity: 1;
 }
 
 .product-tiles-preview-placeholder {
@@ -847,6 +866,7 @@ html.dark .resources-link {
 
 html.dark .resources-link-icon {
   color: var(--ls-gray-050);
+  filter: brightness(0) invert(1);
 }
 
 /* ===========================================
@@ -906,7 +926,7 @@ html.dark .resources-link-icon {
 }
 
 html.dark .trusted-by-logo {
-  filter: brightness(0) invert(0.94);
+  filter: brightness(0) invert(0.6);
 }
 
 /* ===========================================

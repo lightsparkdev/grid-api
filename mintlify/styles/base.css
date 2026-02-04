@@ -185,7 +185,7 @@ html.dark #navbar [class*="z-10"] {
 #search-bar-entry {
   background: var(--ls-gray-050) !important;
   border: 0.5px solid var(--ls-black-10) !important;
-  border-radius: 8px !important;
+  border-radius: var(--ls-radius-md) !important;
   width: 320px !important;
   height: 36px !important;
   padding: 8px 12px !important;
@@ -242,7 +242,7 @@ html.dark #search-bar-entry:hover > div > span:first-child {
 #search-bar-entry [class*="min-w-"] > span:last-child {
   background: var(--ls-gray-100) !important;
   border: none !important;
-  border-radius: 4px !important;
+  border-radius: var(--ls-radius-xs) !important;
   padding: 2px 6px !important;
   font-size: 12px !important;
   font-weight: 400 !important;
@@ -267,7 +267,7 @@ button[aria-label*="AI"],
 #ask-ai-button {
   background: var(--ls-gray-050) !important;
   border: 0.5px solid var(--ls-black-10) !important;
-  border-radius: 8px !important;
+  border-radius: var(--ls-radius-md) !important;
   height: 36px !important;
   padding: 8px 12px !important;
   font-size: 14px !important;
@@ -319,7 +319,7 @@ html.dark #ask-ai-button:hover {
   gap: 6px !important;
   height: 32px !important;
   padding: 0 4px !important;
-  border-radius: 6px !important;
+  border-radius: var(--ls-radius-sm) !important;
   font-size: 14px !important;
   font-weight: 450 !important;
   line-height: 20px !important;
@@ -573,7 +573,7 @@ div.sidebar-group-header,
 #navigation-items li > a {
   min-height: 36px !important;
   padding: 8px !important;
-  border-radius: 8px !important;
+  border-radius: var(--ls-radius-md) !important;
   font-size: 14px !important;
   font-weight: 400 !important;
   line-height: 20px !important;
@@ -733,7 +733,7 @@ ul#sidebar-group > li > button,
   min-height: 36px !important;
   padding: 8px !important;
   padding-right: 32px !important;
-  border-radius: 8px !important;
+  border-radius: var(--ls-radius-md) !important;
   font-size: 14px !important;
   font-weight: 400 !important;
   line-height: 20px !important;
@@ -977,6 +977,11 @@ html.dark div[class*="is-not-custom"] {
 html.dark div[class*="lg:flex-1"][class*="lg:min-w-0"],
 html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   background-color: var(--ls-gray-950) !important;
+}
+
+/* Content images - override Mintlify's inline border-radius with tokens */
+#content img[style*="border-radius"] {
+  border-radius: var(--ls-radius-md) !important;
 }
 
 /* Main content wrapper - remove padding/margin to keep gap clean */
@@ -1568,7 +1573,7 @@ html.dark #page-context-menu > button:not(#page-context-menu-button):hover {
 .feature-card {
   background-color: var(--ls-white);
   border: 0.5px solid var(--ls-black-10);
-  border-radius: 8px;
+  border-radius: var(--ls-radius-md);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -1583,7 +1588,7 @@ html.dark .feature-card {
 .feature-card-icon-wrapper {
   background-color: var(--ls-gray-050);
   border: 0.5px solid var(--ls-black-10);
-  border-radius: 4px;
+  border-radius: var(--ls-radius-xs);
   padding: 8px;
   width: fit-content;
   pointer-events: none;
