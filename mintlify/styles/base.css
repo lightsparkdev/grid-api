@@ -267,6 +267,7 @@ html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
    Navbar - Ask AI Button
    =========================================== */
 
+#assistant-entry,
 [class*="ask-ai"],
 button[aria-label*="AI"],
 [data-component*="ai"],
@@ -282,6 +283,7 @@ button[aria-label*="AI"],
   transition: all 0.2s ease !important;
 }
 
+#assistant-entry:hover,
 [class*="ask-ai"]:hover,
 button[aria-label*="AI"]:hover,
 #ask-ai-button:hover {
@@ -289,6 +291,7 @@ button[aria-label*="AI"]:hover,
   color: var(--ls-gray-950) !important;
 }
 
+html.dark #assistant-entry,
 html.dark [class*="ask-ai"],
 html.dark button[aria-label*="AI"],
 html.dark #ask-ai-button {
@@ -296,11 +299,17 @@ html.dark #ask-ai-button {
   border-color: var(--ls-white-06) !important;
 }
 
+html.dark #assistant-entry:hover,
 html.dark [class*="ask-ai"]:hover,
 html.dark button[aria-label*="AI"]:hover,
 html.dark #ask-ai-button:hover {
   border-color: var(--ls-white-20) !important;
   color: var(--ls-gray-100) !important;
+}
+
+/* Center search bar and Ask AI button in navbar */
+#navbar .flex-1:has(#search-bar-entry) {
+  justify-content: center !important;
 }
 
 /* ===========================================
@@ -361,6 +370,61 @@ html.dark .navbar-link svg {
   color: var(--ls-gray-100) !important;
 }
 
+/* ===========================================
+   Chat Assistant (Floating Input)
+   =========================================== */
+
+/* Container wrapper - darker/lighter than page bg for contrast */
+.chat-assistant-floating-input > div > div {
+  background: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: var(--ls-radius-lg) !important;
+}
+
+html.dark .chat-assistant-floating-input > div > div {
+  background: var(--ls-gray-975) !important;
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Textarea */
+#chat-assistant-textarea {
+  color: var(--ls-gray-950) !important;
+}
+
+#chat-assistant-textarea::placeholder {
+  color: var(--ls-gray-400) !important;
+}
+
+html.dark #chat-assistant-textarea {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark #chat-assistant-textarea::placeholder {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Submit button */
+.chat-assistant-floating-input button[type="submit"],
+.chat-assistant-floating-input button:has(svg) {
+  background: var(--ls-gray-950) !important;
+  color: var(--ls-gray-100) !important;
+}
+
+.chat-assistant-floating-input button[type="submit"] svg,
+.chat-assistant-floating-input button:has(svg) svg {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark .chat-assistant-floating-input button[type="submit"],
+html.dark .chat-assistant-floating-input button:has(svg) {
+  background: var(--ls-gray-100) !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark .chat-assistant-floating-input button[type="submit"] svg,
+html.dark .chat-assistant-floating-input button:has(svg) svg {
+  color: var(--ls-gray-950) !important;
+}
 
 /* ===========================================
    Navbar - Tabs
