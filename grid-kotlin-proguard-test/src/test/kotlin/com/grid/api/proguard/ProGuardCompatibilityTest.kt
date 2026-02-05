@@ -5,16 +5,11 @@ package com.grid.api.proguard
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.jsonMapper
-import com.grid.api.models.config.CustomerInfoFieldName
-import com.grid.api.models.config.PlatformConfig
-import com.grid.api.models.config.PlatformCurrencyConfig
 import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.Customer
 import com.grid.api.models.customers.CustomerOneOf
 import com.grid.api.models.customers.CustomerType
 import com.grid.api.models.customers.IndividualCustomer
-import com.grid.api.models.receiver.CounterpartyFieldDefinition
-import com.grid.api.models.transactions.TransactionType
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import kotlin.reflect.full.memberFunctions
@@ -76,59 +71,22 @@ internal class ProGuardCompatibilityTest {
     }
 
     @Test
-    fun platformConfigRoundtrip() {
+    fun addressRoundtrip() {
         val jsonMapper = jsonMapper()
-        val platformConfig =
-            PlatformConfig.builder()
-                .id("PlatformConfig:019542f5-b3e7-1d02-0000-000000000003")
-                .createdAt(OffsetDateTime.parse("2025-06-15T12:30:45Z"))
-                .isRegulatedFinancialInstitution(false)
-                .proxyUmaSubdomain("platform")
-                .addSupportedCurrency(
-                    PlatformCurrencyConfig.builder()
-                        .currencyCode("USD")
-                        .addEnabledTransactionType(TransactionType.OUTGOING)
-                        .addEnabledTransactionType(TransactionType.INCOMING)
-                        .maxAmount(1000000L)
-                        .minAmount(100L)
-                        .requiredCounterpartyFields(
-                            listOf(
-                                CounterpartyFieldDefinition.builder()
-                                    .mandatory(true)
-                                    .name(CustomerInfoFieldName.FULL_NAME)
-                                    .build(),
-                                CounterpartyFieldDefinition.builder()
-                                    .mandatory(true)
-                                    .name(CustomerInfoFieldName.BIRTH_DATE)
-                                    .build(),
-                                CounterpartyFieldDefinition.builder()
-                                    .mandatory(true)
-                                    .name(CustomerInfoFieldName.NATIONALITY)
-                                    .build(),
-                            )
-                        )
-                        .addProviderRequiredCounterpartyCustomerField(
-                            CustomerInfoFieldName.FULL_NAME
-                        )
-                        .addProviderRequiredCounterpartyCustomerField(
-                            CustomerInfoFieldName.COUNTRY_OF_RESIDENCE
-                        )
-                        .addProviderRequiredCustomerField(CustomerInfoFieldName.NATIONALITY)
-                        .addProviderRequiredCustomerField(CustomerInfoFieldName.BIRTH_DATE)
-                        .build()
-                )
-                .umaDomain("platform.uma.domain")
-                .updatedAt(OffsetDateTime.parse("2025-06-15T12:30:45Z"))
-                .webhookEndpoint("https://api.mycompany.com/webhooks/uma")
+        val address =
+            Address.builder()
+                .country("US")
+                .line1("123 Main Street")
+                .postalCode("94105")
+                .city("San Francisco")
+                .line2("Apt 4B")
+                .state("CA")
                 .build()
 
-        val roundtrippedPlatformConfig =
-            jsonMapper.readValue(
-                jsonMapper.writeValueAsString(platformConfig),
-                jacksonTypeRef<PlatformConfig>(),
-            )
+        val roundtrippedAddress =
+            jsonMapper.readValue(jsonMapper.writeValueAsString(address), jacksonTypeRef<Address>())
 
-        assertThat(roundtrippedPlatformConfig).isEqualTo(platformConfig)
+        assertThat(roundtrippedAddress).isEqualTo(address)
     }
 
     @Test
@@ -171,16 +129,16 @@ internal class ProGuardCompatibilityTest {
     }
 
     @Test
-    fun customerInfoFieldNameRoundtrip() {
+    fun customerTypeRoundtrip() {
         val jsonMapper = jsonMapper()
-        val customerInfoFieldName = CustomerInfoFieldName.FULL_NAME
+        val customerType = CustomerType.INDIVIDUAL
 
-        val roundtrippedCustomerInfoFieldName =
+        val roundtrippedCustomerType =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customerInfoFieldName),
-                jacksonTypeRef<CustomerInfoFieldName>(),
+                jsonMapper.writeValueAsString(customerType),
+                jacksonTypeRef<CustomerType>(),
             )
 
-        assertThat(roundtrippedCustomerInfoFieldName).isEqualTo(customerInfoFieldName)
+        assertThat(roundtrippedCustomerType).isEqualTo(customerType)
     }
 }
