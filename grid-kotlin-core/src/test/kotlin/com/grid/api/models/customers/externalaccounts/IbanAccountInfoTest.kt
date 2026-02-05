@@ -12,8 +12,13 @@ internal class IbanAccountInfoTest {
     @Test
     fun create() {
         val ibanAccountInfo =
-            IbanAccountInfo.builder().iban("DE89370400440532013000").swiftBic("DEUTDEFF").build()
+            IbanAccountInfo.builder()
+                .accountType(IbanAccountInfo.AccountType.IBAN)
+                .iban("DE89370400440532013000")
+                .swiftBic("DEUTDEFF")
+                .build()
 
+        assertThat(ibanAccountInfo.accountType()).isEqualTo(IbanAccountInfo.AccountType.IBAN)
         assertThat(ibanAccountInfo.iban()).isEqualTo("DE89370400440532013000")
         assertThat(ibanAccountInfo.swiftBic()).isEqualTo("DEUTDEFF")
     }
@@ -22,7 +27,11 @@ internal class IbanAccountInfoTest {
     fun roundtrip() {
         val jsonMapper = jsonMapper()
         val ibanAccountInfo =
-            IbanAccountInfo.builder().iban("DE89370400440532013000").swiftBic("DEUTDEFF").build()
+            IbanAccountInfo.builder()
+                .accountType(IbanAccountInfo.AccountType.IBAN)
+                .iban("DE89370400440532013000")
+                .swiftBic("DEUTDEFF")
+                .build()
 
         val roundtrippedIbanAccountInfo =
             jsonMapper.readValue(

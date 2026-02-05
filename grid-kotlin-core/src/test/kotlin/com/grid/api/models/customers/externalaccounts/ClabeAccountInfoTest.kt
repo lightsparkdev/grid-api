@@ -11,15 +11,24 @@ internal class ClabeAccountInfoTest {
 
     @Test
     fun create() {
-        val clabeAccountInfo = ClabeAccountInfo.builder().clabeNumber("123456789012345678").build()
+        val clabeAccountInfo =
+            ClabeAccountInfo.builder()
+                .accountType(ClabeAccountInfo.AccountType.CLABE)
+                .clabeNumber("123456789012345678")
+                .build()
 
+        assertThat(clabeAccountInfo.accountType()).isEqualTo(ClabeAccountInfo.AccountType.CLABE)
         assertThat(clabeAccountInfo.clabeNumber()).isEqualTo("123456789012345678")
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val clabeAccountInfo = ClabeAccountInfo.builder().clabeNumber("123456789012345678").build()
+        val clabeAccountInfo =
+            ClabeAccountInfo.builder()
+                .accountType(ClabeAccountInfo.AccountType.CLABE)
+                .clabeNumber("123456789012345678")
+                .build()
 
         val roundtrippedClabeAccountInfo =
             jsonMapper.readValue(

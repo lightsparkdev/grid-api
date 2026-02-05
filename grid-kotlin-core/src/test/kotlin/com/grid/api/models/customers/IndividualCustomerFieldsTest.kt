@@ -8,12 +8,13 @@ import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class IndividualCustomerUpdateTest {
+internal class IndividualCustomerFieldsTest {
 
     @Test
     fun create() {
-        val individualCustomerUpdate =
-            IndividualCustomerUpdate.builder()
+        val individualCustomerFields =
+            IndividualCustomerFields.builder()
+                .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
                 .address(
                     Address.builder()
                         .country("US")
@@ -27,11 +28,11 @@ internal class IndividualCustomerUpdateTest {
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")
-                .platformCustomerId("9f84e0c2a72c4fa")
-                .umaAddress("\$john.doe@uma.domain.com")
                 .build()
 
-        assertThat(individualCustomerUpdate.address())
+        assertThat(individualCustomerFields.customerType())
+            .isEqualTo(IndividualCustomerFields.CustomerType.INDIVIDUAL)
+        assertThat(individualCustomerFields.address())
             .isEqualTo(
                 Address.builder()
                     .country("US")
@@ -42,18 +43,17 @@ internal class IndividualCustomerUpdateTest {
                     .state("CA")
                     .build()
             )
-        assertThat(individualCustomerUpdate.birthDate()).isEqualTo(LocalDate.parse("1990-01-15"))
-        assertThat(individualCustomerUpdate.fullName()).isEqualTo("John Michael Doe")
-        assertThat(individualCustomerUpdate.nationality()).isEqualTo("US")
-        assertThat(individualCustomerUpdate.platformCustomerId()).isEqualTo("9f84e0c2a72c4fa")
-        assertThat(individualCustomerUpdate.umaAddress()).isEqualTo("\$john.doe@uma.domain.com")
+        assertThat(individualCustomerFields.birthDate()).isEqualTo(LocalDate.parse("1990-01-15"))
+        assertThat(individualCustomerFields.fullName()).isEqualTo("John Michael Doe")
+        assertThat(individualCustomerFields.nationality()).isEqualTo("US")
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val individualCustomerUpdate =
-            IndividualCustomerUpdate.builder()
+        val individualCustomerFields =
+            IndividualCustomerFields.builder()
+                .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
                 .address(
                     Address.builder()
                         .country("US")
@@ -67,16 +67,14 @@ internal class IndividualCustomerUpdateTest {
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")
-                .platformCustomerId("9f84e0c2a72c4fa")
-                .umaAddress("\$john.doe@uma.domain.com")
                 .build()
 
-        val roundtrippedIndividualCustomerUpdate =
+        val roundtrippedIndividualCustomerFields =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(individualCustomerUpdate),
-                jacksonTypeRef<IndividualCustomerUpdate>(),
+                jsonMapper.writeValueAsString(individualCustomerFields),
+                jacksonTypeRef<IndividualCustomerFields>(),
             )
 
-        assertThat(roundtrippedIndividualCustomerUpdate).isEqualTo(individualCustomerUpdate)
+        assertThat(roundtrippedIndividualCustomerFields).isEqualTo(individualCustomerFields)
     }
 }

@@ -10,7 +10,7 @@ import com.grid.api.models.config.PlatformConfig
 import com.grid.api.models.config.PlatformCurrencyConfig
 import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.Customer
-import com.grid.api.models.customers.CustomerCreateResponse
+import com.grid.api.models.customers.CustomerOneOf
 import com.grid.api.models.customers.CustomerType
 import com.grid.api.models.customers.IndividualCustomer
 import com.grid.api.models.receiver.CounterpartyFieldDefinition
@@ -132,10 +132,10 @@ internal class ProGuardCompatibilityTest {
     }
 
     @Test
-    fun customerCreateResponseRoundtrip() {
+    fun customerOneOfRoundtrip() {
         val jsonMapper = jsonMapper()
-        val customerCreateResponse =
-            CustomerCreateResponse.ofIndividualCustomer(
+        val customerOneOf =
+            CustomerOneOf.ofIndividualCustomer(
                 IndividualCustomer.builder()
                     .customerType(CustomerType.INDIVIDUAL)
                     .platformCustomerId("9f84e0c2a72c4fa")
@@ -161,13 +161,13 @@ internal class ProGuardCompatibilityTest {
                     .build()
             )
 
-        val roundtrippedCustomerCreateResponse =
+        val roundtrippedCustomerOneOf =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customerCreateResponse),
-                jacksonTypeRef<CustomerCreateResponse>(),
+                jsonMapper.writeValueAsString(customerOneOf),
+                jacksonTypeRef<CustomerOneOf>(),
             )
 
-        assertThat(roundtrippedCustomerCreateResponse).isEqualTo(customerCreateResponse)
+        assertThat(roundtrippedCustomerOneOf).isEqualTo(customerOneOf)
     }
 
     @Test

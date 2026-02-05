@@ -47,7 +47,7 @@ internal class CustomerListPageResponseTest {
 
         assertThat(customerListPageResponse.data())
             .containsExactly(
-                CustomerListResponse.ofIndividualCustomer(
+                CustomerOneOf.ofIndividualCustomer(
                     IndividualCustomer.builder()
                         .customerType(CustomerType.INDIVIDUAL)
                         .platformCustomerId("9f84e0c2a72c4fa")

@@ -18,9 +18,9 @@ internal class QuoteListPageResponseTest {
                     Quote.builder()
                         .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
                         .destination(
-                            Quote.Destination.Account.builder()
+                            QuoteDestinationOneOf.AccountDestination.builder()
+                                .destinationType(BaseDestination.DestinationType.ACCOUNT)
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
-                                .currency("EUR")
                                 .build()
                         )
                         .exchangeRate(1.0)
@@ -43,7 +43,13 @@ internal class QuoteListPageResponseTest {
                                 .symbol("\$")
                                 .build()
                         )
-                        .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                        .source(
+                            QuoteSourceOneOf.AccountQuoteSource.builder()
+                                .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
+                                .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                                .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                                .build()
+                        )
                         .status(Quote.Status.PENDING)
                         .totalReceivingAmount(1000L)
                         .totalSendingAmount(123010L)
@@ -52,7 +58,25 @@ internal class QuoteListPageResponseTest {
                         .addPaymentInstruction(
                             PaymentInstructions.builder()
                                 .accountOrWalletInfo(
-                                    PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
+                                    PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
+                                        .builder()
+                                        .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                        .clabeNumber("123456789012345678")
+                                        .reference("UMA-Q12345-REF")
+                                        .build()
+                                )
+                                .instructionsNotes(
+                                    "Please ensure the reference code is included in the payment memo/description field"
+                                )
+                                .isPlatformAccount(true)
+                                .build()
+                        )
+                        .addPaymentInstruction(
+                            PaymentInstructions.builder()
+                                .accountOrWalletInfo(
+                                    PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
+                                        .builder()
+                                        .accountType(BasePaymentAccountInfo.AccountType.CLABE)
                                         .clabeNumber("123456789012345678")
                                         .reference("UMA-Q12345-REF")
                                         .build()
@@ -85,9 +109,9 @@ internal class QuoteListPageResponseTest {
                 Quote.builder()
                     .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
                     .destination(
-                        Quote.Destination.Account.builder()
+                        QuoteDestinationOneOf.AccountDestination.builder()
+                            .destinationType(BaseDestination.DestinationType.ACCOUNT)
                             .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
-                            .currency("EUR")
                             .build()
                     )
                     .exchangeRate(1.0)
@@ -110,7 +134,13 @@ internal class QuoteListPageResponseTest {
                             .symbol("\$")
                             .build()
                     )
-                    .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                    .source(
+                        QuoteSourceOneOf.AccountQuoteSource.builder()
+                            .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
+                            .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                            .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                            .build()
+                    )
                     .status(Quote.Status.PENDING)
                     .totalReceivingAmount(1000L)
                     .totalSendingAmount(123010L)
@@ -119,7 +149,25 @@ internal class QuoteListPageResponseTest {
                     .addPaymentInstruction(
                         PaymentInstructions.builder()
                             .accountOrWalletInfo(
-                                PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
+                                PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
+                                    .builder()
+                                    .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                    .clabeNumber("123456789012345678")
+                                    .reference("UMA-Q12345-REF")
+                                    .build()
+                            )
+                            .instructionsNotes(
+                                "Please ensure the reference code is included in the payment memo/description field"
+                            )
+                            .isPlatformAccount(true)
+                            .build()
+                    )
+                    .addPaymentInstruction(
+                        PaymentInstructions.builder()
+                            .accountOrWalletInfo(
+                                PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
+                                    .builder()
+                                    .accountType(BasePaymentAccountInfo.AccountType.CLABE)
                                     .clabeNumber("123456789012345678")
                                     .reference("UMA-Q12345-REF")
                                     .build()
@@ -156,9 +204,9 @@ internal class QuoteListPageResponseTest {
                     Quote.builder()
                         .createdAt(OffsetDateTime.parse("2025-10-03T12:00:00Z"))
                         .destination(
-                            Quote.Destination.Account.builder()
+                            QuoteDestinationOneOf.AccountDestination.builder()
+                                .destinationType(BaseDestination.DestinationType.ACCOUNT)
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
-                                .currency("EUR")
                                 .build()
                         )
                         .exchangeRate(1.0)
@@ -181,7 +229,13 @@ internal class QuoteListPageResponseTest {
                                 .symbol("\$")
                                 .build()
                         )
-                        .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                        .source(
+                            QuoteSourceOneOf.AccountQuoteSource.builder()
+                                .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
+                                .accountId("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                                .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                                .build()
+                        )
                         .status(Quote.Status.PENDING)
                         .totalReceivingAmount(1000L)
                         .totalSendingAmount(123010L)
@@ -190,7 +244,25 @@ internal class QuoteListPageResponseTest {
                         .addPaymentInstruction(
                             PaymentInstructions.builder()
                                 .accountOrWalletInfo(
-                                    PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
+                                    PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
+                                        .builder()
+                                        .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                        .clabeNumber("123456789012345678")
+                                        .reference("UMA-Q12345-REF")
+                                        .build()
+                                )
+                                .instructionsNotes(
+                                    "Please ensure the reference code is included in the payment memo/description field"
+                                )
+                                .isPlatformAccount(true)
+                                .build()
+                        )
+                        .addPaymentInstruction(
+                            PaymentInstructions.builder()
+                                .accountOrWalletInfo(
+                                    PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
+                                        .builder()
+                                        .accountType(BasePaymentAccountInfo.AccountType.CLABE)
                                         .clabeNumber("123456789012345678")
                                         .reference("UMA-Q12345-REF")
                                         .build()

@@ -2,6 +2,7 @@
 
 package com.grid.api.models.customers
 
+import com.grid.api.core.JsonValue
 import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -12,8 +13,10 @@ internal class CustomerCreateParamsTest {
     fun create() {
         CustomerCreateParams.builder()
             .createCustomerRequest(
-                CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
-                    .builder()
+                CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest.builder()
+                    .customerType(CustomerType.INDIVIDUAL)
+                    .platformCustomerId("9f84e0c2a72c4fa")
+                    .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
                     .address(
                         Address.builder()
                             .country("US")
@@ -27,8 +30,6 @@ internal class CustomerCreateParamsTest {
                     .birthDate(LocalDate.parse("1990-01-15"))
                     .fullName("John Michael Doe")
                     .nationality("US")
-                    .platformCustomerId("9f84e0c2a72c4fa")
-                    .umaAddress("\$john.doe@uma.domain.com")
                     .build()
             )
             .build()
@@ -39,8 +40,11 @@ internal class CustomerCreateParamsTest {
         val params =
             CustomerCreateParams.builder()
                 .createCustomerRequest(
-                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                    CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest
                         .builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
+                        .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
                         .address(
                             Address.builder()
                                 .country("US")
@@ -54,8 +58,6 @@ internal class CustomerCreateParamsTest {
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
-                        .platformCustomerId("9f84e0c2a72c4fa")
-                        .umaAddress("\$john.doe@uma.domain.com")
                         .build()
                 )
                 .build()
@@ -64,9 +66,12 @@ internal class CustomerCreateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.CreateCustomerRequest.ofCustomersIndividualCustomerUpdate(
-                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                CustomerCreateParams.CreateCustomerRequest.ofIndividualCustomerCreate(
+                    CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest
                         .builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
+                        .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
                         .address(
                             Address.builder()
                                 .country("US")
@@ -80,8 +85,6 @@ internal class CustomerCreateParamsTest {
                         .birthDate(LocalDate.parse("1990-01-15"))
                         .fullName("John Michael Doe")
                         .nationality("US")
-                        .platformCustomerId("9f84e0c2a72c4fa")
-                        .umaAddress("\$john.doe@uma.domain.com")
                         .build()
                 )
             )
@@ -92,8 +95,10 @@ internal class CustomerCreateParamsTest {
         val params =
             CustomerCreateParams.builder()
                 .createCustomerRequest(
-                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                    CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest
                         .builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
                         .build()
                 )
                 .build()
@@ -102,9 +107,11 @@ internal class CustomerCreateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerCreateParams.CreateCustomerRequest.ofCustomersIndividualCustomerUpdate(
-                    CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                CustomerCreateParams.CreateCustomerRequest.ofIndividualCustomerCreate(
+                    CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest
                         .builder()
+                        .customerType(CustomerType.INDIVIDUAL)
+                        .platformCustomerId("9f84e0c2a72c4fa")
                         .build()
                 )
             )

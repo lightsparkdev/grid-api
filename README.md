@@ -311,7 +311,7 @@ To access individual page items and manually request the next page, use the `ite
 
 ```kotlin
 import com.grid.api.models.customers.CustomerListPage
-import com.grid.api.models.customers.CustomerListResponse
+import com.grid.api.models.customers.CustomerOneOf
 
 val page: CustomerListPage = client.customers().list()
 while (true) {

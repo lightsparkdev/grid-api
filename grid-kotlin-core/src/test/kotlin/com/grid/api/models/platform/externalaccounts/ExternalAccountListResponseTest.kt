@@ -5,8 +5,10 @@ package com.grid.api.models.platform.externalaccounts
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.core.jsonMapper
 import com.grid.api.models.customers.Address
+import com.grid.api.models.customers.externalaccounts.BaseBeneficiary
+import com.grid.api.models.customers.externalaccounts.BaseExternalAccountInfo
 import com.grid.api.models.customers.externalaccounts.ExternalAccount
-import com.grid.api.models.customers.externalaccounts.ExternalAccountInfo
+import com.grid.api.models.customers.externalaccounts.ExternalAccountInfoOneOf
 import com.grid.api.models.customers.externalaccounts.IndividualBeneficiary
 import com.grid.api.models.customers.externalaccounts.UsAccountInfo
 import java.time.LocalDate
@@ -23,16 +25,15 @@ internal class ExternalAccountListResponseTest {
                     ExternalAccount.builder()
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .accountInfo(
-                            ExternalAccountInfo.UsAccount.builder()
+                            ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                                .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                                 .accountNumber("123456789")
                                 .routingNumber("987654321")
                                 .bankName("Chase Bank")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
-                                        .birthDate(LocalDate.parse("1990-01-15"))
-                                        .fullName("John Michael Doe")
-                                        .nationality("US")
+                                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                         .address(
                                             Address.builder()
                                                 .country("US")
@@ -43,6 +44,9 @@ internal class ExternalAccountListResponseTest {
                                                 .state("CA")
                                                 .build()
                                         )
+                                        .birthDate(LocalDate.parse("1990-01-15"))
+                                        .fullName("John Michael Doe")
+                                        .nationality("US")
                                         .build()
                                 )
                                 .build()
@@ -61,16 +65,15 @@ internal class ExternalAccountListResponseTest {
                 ExternalAccount.builder()
                     .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                     .accountInfo(
-                        ExternalAccountInfo.UsAccount.builder()
+                        ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                             .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                             .accountNumber("123456789")
                             .routingNumber("987654321")
                             .bankName("Chase Bank")
                             .beneficiary(
                                 IndividualBeneficiary.builder()
-                                    .birthDate(LocalDate.parse("1990-01-15"))
-                                    .fullName("John Michael Doe")
-                                    .nationality("US")
+                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                     .address(
                                         Address.builder()
                                             .country("US")
@@ -81,6 +84,9 @@ internal class ExternalAccountListResponseTest {
                                             .state("CA")
                                             .build()
                                     )
+                                    .birthDate(LocalDate.parse("1990-01-15"))
+                                    .fullName("John Michael Doe")
+                                    .nationality("US")
                                     .build()
                             )
                             .build()
@@ -103,16 +109,15 @@ internal class ExternalAccountListResponseTest {
                     ExternalAccount.builder()
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .accountInfo(
-                            ExternalAccountInfo.UsAccount.builder()
+                            ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                                .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                                 .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                                 .accountNumber("123456789")
                                 .routingNumber("987654321")
                                 .bankName("Chase Bank")
                                 .beneficiary(
                                     IndividualBeneficiary.builder()
-                                        .birthDate(LocalDate.parse("1990-01-15"))
-                                        .fullName("John Michael Doe")
-                                        .nationality("US")
+                                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                         .address(
                                             Address.builder()
                                                 .country("US")
@@ -123,6 +128,9 @@ internal class ExternalAccountListResponseTest {
                                                 .state("CA")
                                                 .build()
                                         )
+                                        .birthDate(LocalDate.parse("1990-01-15"))
+                                        .fullName("John Michael Doe")
+                                        .nationality("US")
                                         .build()
                                 )
                                 .build()

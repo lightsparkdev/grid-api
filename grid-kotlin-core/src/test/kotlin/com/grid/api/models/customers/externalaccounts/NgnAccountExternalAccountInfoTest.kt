@@ -15,13 +15,12 @@ internal class NgnAccountExternalAccountInfoTest {
     fun create() {
         val ngnAccountExternalAccountInfo =
             NgnAccountExternalAccountInfo.builder()
+                .accountType(BaseExternalAccountInfo.AccountType.NGN_ACCOUNT)
                 .accountNumber("0123456789")
                 .bankName("First Bank of Nigeria")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .birthDate(LocalDate.parse("1990-01-15"))
-                        .fullName("John Michael Doe")
-                        .nationality("US")
+                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .address(
                             Address.builder()
                                 .country("US")
@@ -32,20 +31,23 @@ internal class NgnAccountExternalAccountInfoTest {
                                 .state("CA")
                                 .build()
                         )
+                        .birthDate(LocalDate.parse("1990-01-15"))
+                        .fullName("John Michael Doe")
+                        .nationality("US")
                         .build()
                 )
                 .purposeOfPayment(NgnAccountExternalAccountInfo.PurposeOfPayment.GOODS_OR_SERVICES)
                 .build()
 
+        assertThat(ngnAccountExternalAccountInfo.accountType())
+            .isEqualTo(BaseExternalAccountInfo.AccountType.NGN_ACCOUNT)
         assertThat(ngnAccountExternalAccountInfo.accountNumber()).isEqualTo("0123456789")
         assertThat(ngnAccountExternalAccountInfo.bankName()).isEqualTo("First Bank of Nigeria")
         assertThat(ngnAccountExternalAccountInfo.beneficiary())
             .isEqualTo(
-                NgnAccountExternalAccountInfo.Beneficiary.ofIndividual(
+                BeneficiaryOneOf.ofIndividualBeneficiary(
                     IndividualBeneficiary.builder()
-                        .birthDate(LocalDate.parse("1990-01-15"))
-                        .fullName("John Michael Doe")
-                        .nationality("US")
+                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .address(
                             Address.builder()
                                 .country("US")
@@ -56,6 +58,9 @@ internal class NgnAccountExternalAccountInfoTest {
                                 .state("CA")
                                 .build()
                         )
+                        .birthDate(LocalDate.parse("1990-01-15"))
+                        .fullName("John Michael Doe")
+                        .nationality("US")
                         .build()
                 )
             )
@@ -68,13 +73,12 @@ internal class NgnAccountExternalAccountInfoTest {
         val jsonMapper = jsonMapper()
         val ngnAccountExternalAccountInfo =
             NgnAccountExternalAccountInfo.builder()
+                .accountType(BaseExternalAccountInfo.AccountType.NGN_ACCOUNT)
                 .accountNumber("0123456789")
                 .bankName("First Bank of Nigeria")
                 .beneficiary(
                     IndividualBeneficiary.builder()
-                        .birthDate(LocalDate.parse("1990-01-15"))
-                        .fullName("John Michael Doe")
-                        .nationality("US")
+                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .address(
                             Address.builder()
                                 .country("US")
@@ -85,6 +89,9 @@ internal class NgnAccountExternalAccountInfoTest {
                                 .state("CA")
                                 .build()
                         )
+                        .birthDate(LocalDate.parse("1990-01-15"))
+                        .fullName("John Michael Doe")
+                        .nationality("US")
                         .build()
                 )
                 .purposeOfPayment(NgnAccountExternalAccountInfo.PurposeOfPayment.GOODS_OR_SERVICES)

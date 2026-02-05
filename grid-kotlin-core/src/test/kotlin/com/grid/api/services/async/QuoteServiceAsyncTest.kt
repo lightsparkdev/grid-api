@@ -5,7 +5,11 @@ package com.grid.api.services.async
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
 import com.grid.api.core.JsonValue
+import com.grid.api.models.quotes.BaseDestination
+import com.grid.api.models.quotes.BaseQuoteSource
 import com.grid.api.models.quotes.QuoteCreateParams
+import com.grid.api.models.quotes.QuoteDestinationOneOf
+import com.grid.api.models.quotes.QuoteSourceOneOf
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -28,15 +32,21 @@ internal class QuoteServiceAsyncTest {
             quoteServiceAsync.create(
                 QuoteCreateParams.builder()
                     .destination(
-                        QuoteCreateParams.Destination.Account.builder()
-                            .accountId("a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
-                            .currency("EUR")
+                        QuoteDestinationOneOf.AccountDestination.builder()
+                            .destinationType(BaseDestination.DestinationType.ACCOUNT)
+                            .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                             .build()
                     )
-                    .lockedCurrencyAmount(1000L)
+                    .lockedCurrencyAmount(10000L)
                     .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
-                    .accountSource("InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
-                    .description("Invoice #1234 payment")
+                    .source(
+                        QuoteSourceOneOf.AccountQuoteSource.builder()
+                            .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
+                            .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                            .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                            .build()
+                    )
+                    .description("Transfer between accounts, either internal or external.")
                     .immediatelyExecute(false)
                     .lookupId("Lookup:019542f5-b3e7-1d02-0000-000000000009")
                     .senderCustomerInfo(

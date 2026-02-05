@@ -21,10 +21,13 @@ import java.util.Objects
 /** Transfer funds from an internal account to an external account for a specific customer. */
 class TransferOutCreateParams
 private constructor(
+    private val idempotencyKey: String?,
     private val body: Body,
     private val additionalHeaders: Headers,
     private val additionalQueryParams: QueryParams,
 ) : Params {
+
+    fun idempotencyKey(): String? = idempotencyKey
 
     /**
      * Destination external account details
@@ -98,15 +101,19 @@ private constructor(
     /** A builder for [TransferOutCreateParams]. */
     class Builder internal constructor() {
 
+        private var idempotencyKey: String? = null
         private var body: Body.Builder = Body.builder()
         private var additionalHeaders: Headers.Builder = Headers.builder()
         private var additionalQueryParams: QueryParams.Builder = QueryParams.builder()
 
         internal fun from(transferOutCreateParams: TransferOutCreateParams) = apply {
+            idempotencyKey = transferOutCreateParams.idempotencyKey
             body = transferOutCreateParams.body.toBuilder()
             additionalHeaders = transferOutCreateParams.additionalHeaders.toBuilder()
             additionalQueryParams = transferOutCreateParams.additionalQueryParams.toBuilder()
         }
+
+        fun idempotencyKey(idempotencyKey: String?) = apply { this.idempotencyKey = idempotencyKey }
 
         /**
          * Sets the entire request body.
@@ -289,6 +296,7 @@ private constructor(
          */
         fun build(): TransferOutCreateParams =
             TransferOutCreateParams(
+                idempotencyKey,
                 body.build(),
                 additionalHeaders.build(),
                 additionalQueryParams.build(),
@@ -297,7 +305,13 @@ private constructor(
 
     fun _body(): Body = body
 
-    override fun _headers(): Headers = additionalHeaders
+    override fun _headers(): Headers =
+        Headers.builder()
+            .apply {
+                idempotencyKey?.let { put("Idempotency-Key", it) }
+                putAll(additionalHeaders)
+            }
+            .build()
 
     override fun _queryParams(): QueryParams = additionalQueryParams
 
@@ -868,13 +882,15 @@ private constructor(
         }
 
         return other is TransferOutCreateParams &&
+            idempotencyKey == other.idempotencyKey &&
             body == other.body &&
             additionalHeaders == other.additionalHeaders &&
             additionalQueryParams == other.additionalQueryParams
     }
 
-    override fun hashCode(): Int = Objects.hash(body, additionalHeaders, additionalQueryParams)
+    override fun hashCode(): Int =
+        Objects.hash(idempotencyKey, body, additionalHeaders, additionalQueryParams)
 
     override fun toString() =
-        "TransferOutCreateParams{body=$body, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
+        "TransferOutCreateParams{idempotencyKey=$idempotencyKey, body=$body, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
 }

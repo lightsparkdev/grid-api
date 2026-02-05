@@ -6,15 +6,6 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.ObjectCodec
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
-import com.grid.api.core.BaseDeserializer
-import com.grid.api.core.BaseSerializer
 import com.grid.api.core.Enum
 import com.grid.api.core.ExcludeMissing
 import com.grid.api.core.JsonField
@@ -22,16 +13,14 @@ import com.grid.api.core.JsonMissing
 import com.grid.api.core.JsonValue
 import com.grid.api.core.checkKnown
 import com.grid.api.core.checkRequired
-import com.grid.api.core.getOrThrow
 import com.grid.api.core.toImmutable
 import com.grid.api.errors.GridInvalidDataException
 import com.grid.api.models.invitations.CurrencyAmount
 import com.grid.api.models.quotes.OutgoingRateDetails
 import com.grid.api.models.quotes.PaymentInstructions
-import com.grid.api.models.transactions.AccountSource
+import com.grid.api.models.transactions.TransactionSourceOneOf
 import com.grid.api.models.transactions.TransactionStatus
 import com.grid.api.models.transactions.TransactionType
-import com.grid.api.models.transactions.UmaAddressSource
 import com.grid.api.models.transferin.Transaction
 import java.time.OffsetDateTime
 import java.util.Collections
@@ -53,7 +42,7 @@ private constructor(
     private val updatedAt: JsonField<OffsetDateTime>,
     private val paymentInstructions: JsonField<List<PaymentInstructions>>,
     private val sentAmount: JsonField<CurrencyAmount>,
-    private val source: JsonField<Source>,
+    private val source: JsonField<TransactionSourceOneOf>,
     private val exchangeRate: JsonField<Double>,
     private val failureReason: JsonField<FailureReason>,
     private val fees: JsonField<Long>,
@@ -102,7 +91,9 @@ private constructor(
         @JsonProperty("sentAmount")
         @ExcludeMissing
         sentAmount: JsonField<CurrencyAmount> = JsonMissing.of(),
-        @JsonProperty("source") @ExcludeMissing source: JsonField<Source> = JsonMissing.of(),
+        @JsonProperty("source")
+        @ExcludeMissing
+        source: JsonField<TransactionSourceOneOf> = JsonMissing.of(),
         @JsonProperty("exchangeRate")
         @ExcludeMissing
         exchangeRate: JsonField<Double> = JsonMissing.of(),
@@ -275,7 +266,7 @@ private constructor(
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    fun source(): Source = source.getRequired("source")
+    fun source(): TransactionSourceOneOf = source.getRequired("source")
 
     /**
      * Number of sending currency units per receiving currency unit.
@@ -458,7 +449,9 @@ private constructor(
      *
      * Unlike [source], this method doesn't throw if the JSON field has an unexpected type.
      */
-    @JsonProperty("source") @ExcludeMissing fun _source(): JsonField<Source> = source
+    @JsonProperty("source")
+    @ExcludeMissing
+    fun _source(): JsonField<TransactionSourceOneOf> = source
 
     /**
      * Returns the raw JSON value of [exchangeRate].
@@ -577,7 +570,7 @@ private constructor(
         private var updatedAt: JsonField<OffsetDateTime> = JsonMissing.of()
         private var paymentInstructions: JsonField<MutableList<PaymentInstructions>>? = null
         private var sentAmount: JsonField<CurrencyAmount>? = null
-        private var source: JsonField<Source>? = null
+        private var source: JsonField<TransactionSourceOneOf>? = null
         private var exchangeRate: JsonField<Double> = JsonMissing.of()
         private var failureReason: JsonField<FailureReason> = JsonMissing.of()
         private var fees: JsonField<Long> = JsonMissing.of()
@@ -653,26 +646,20 @@ private constructor(
             this.destination = destination
         }
 
-        /** Alias for calling [destination] with `Transaction.Destination.ofAccount(account)`. */
-        fun destination(account: Transaction.Destination.Account) =
-            destination(Transaction.Destination.ofAccount(account))
+        /**
+         * Alias for calling [destination] with
+         * `Transaction.Destination.ofAccountTransaction(accountTransaction)`.
+         */
+        fun destination(accountTransaction: Transaction.Destination.AccountTransactionDestination) =
+            destination(Transaction.Destination.ofAccountTransaction(accountTransaction))
 
         /**
-         * Alias for calling [destination] with `Transaction.Destination.ofUmaAddress(umaAddress)`.
+         * Alias for calling [destination] with
+         * `Transaction.Destination.ofUmaAddressTransaction(umaAddressTransaction)`.
          */
-        fun destination(umaAddress: Transaction.Destination.UmaAddress) =
-            destination(Transaction.Destination.ofUmaAddress(umaAddress))
-
-        /**
-         * Alias for calling [destination] with the following:
-         * ```kotlin
-         * Transaction.Destination.UmaAddress.builder()
-         *     .umaAddress(umaAddress)
-         *     .build()
-         * ```
-         */
-        fun umaAddressDestination(umaAddress: String) =
-            destination(Transaction.Destination.UmaAddress.builder().umaAddress(umaAddress).build())
+        fun destination(
+            umaAddressTransaction: Transaction.Destination.UmaAddressTransactionDestination
+        ) = destination(Transaction.Destination.ofUmaAddressTransaction(umaAddressTransaction))
 
         /** Platform-specific ID of the customer (sender for outgoing, recipient for incoming) */
         fun platformCustomerId(platformCustomerId: String) =
@@ -821,32 +808,34 @@ private constructor(
         }
 
         /** Source account details */
-        fun source(source: Source) = source(JsonField.of(source))
+        fun source(source: TransactionSourceOneOf) = source(JsonField.of(source))
 
         /**
          * Sets [Builder.source] to an arbitrary JSON value.
          *
-         * You should usually call [Builder.source] with a well-typed [Source] value instead. This
-         * method is primarily for setting the field to an undocumented or not yet supported value.
+         * You should usually call [Builder.source] with a well-typed [TransactionSourceOneOf] value
+         * instead. This method is primarily for setting the field to an undocumented or not yet
+         * supported value.
          */
-        fun source(source: JsonField<Source>) = apply { this.source = source }
-
-        /** Alias for calling [source] with `Source.ofAccount(account)`. */
-        fun source(account: AccountSource) = source(Source.ofAccount(account))
-
-        /** Alias for calling [source] with `Source.ofUmaAddress(umaAddress)`. */
-        fun source(umaAddress: UmaAddressSource) = source(Source.ofUmaAddress(umaAddress))
+        fun source(source: JsonField<TransactionSourceOneOf>) = apply { this.source = source }
 
         /**
-         * Alias for calling [source] with the following:
-         * ```kotlin
-         * UmaAddressSource.builder()
-         *     .umaAddress(umaAddress)
-         *     .build()
-         * ```
+         * Alias for calling [source] with
+         * `TransactionSourceOneOf.ofAccountTransactionSource(accountTransactionSource)`.
          */
-        fun umaAddressSource(umaAddress: String) =
-            source(UmaAddressSource.builder().umaAddress(umaAddress).build())
+        fun source(accountTransactionSource: TransactionSourceOneOf.AccountTransactionSource) =
+            source(TransactionSourceOneOf.ofAccountTransactionSource(accountTransactionSource))
+
+        /**
+         * Alias for calling [source] with
+         * `TransactionSourceOneOf.ofUmaAddressTransactionSource(umaAddressTransactionSource)`.
+         */
+        fun source(
+            umaAddressTransactionSource: TransactionSourceOneOf.UmaAddressTransactionSource
+        ) =
+            source(
+                TransactionSourceOneOf.ofUmaAddressTransactionSource(umaAddressTransactionSource)
+            )
 
         /** Number of sending currency units per receiving currency unit. */
         fun exchangeRate(exchangeRate: Double) = exchangeRate(JsonField.of(exchangeRate))
@@ -1091,179 +1080,6 @@ private constructor(
             (rateDetails.asKnown()?.validity() ?: 0) +
             (receivedAmount.asKnown()?.validity() ?: 0) +
             (refund.asKnown()?.validity() ?: 0)
-
-    /** Source account details */
-    @JsonDeserialize(using = Source.Deserializer::class)
-    @JsonSerialize(using = Source.Serializer::class)
-    class Source
-    private constructor(
-        private val account: AccountSource? = null,
-        private val umaAddress: UmaAddressSource? = null,
-        private val _json: JsonValue? = null,
-    ) {
-
-        /** Source account details */
-        fun account(): AccountSource? = account
-
-        /** UMA address source details */
-        fun umaAddress(): UmaAddressSource? = umaAddress
-
-        fun isAccount(): Boolean = account != null
-
-        fun isUmaAddress(): Boolean = umaAddress != null
-
-        /** Source account details */
-        fun asAccount(): AccountSource = account.getOrThrow("account")
-
-        /** UMA address source details */
-        fun asUmaAddress(): UmaAddressSource = umaAddress.getOrThrow("umaAddress")
-
-        fun _json(): JsonValue? = _json
-
-        fun <T> accept(visitor: Visitor<T>): T =
-            when {
-                account != null -> visitor.visitAccount(account)
-                umaAddress != null -> visitor.visitUmaAddress(umaAddress)
-                else -> visitor.unknown(_json)
-            }
-
-        private var validated: Boolean = false
-
-        fun validate(): Source = apply {
-            if (validated) {
-                return@apply
-            }
-
-            accept(
-                object : Visitor<Unit> {
-                    override fun visitAccount(account: AccountSource) {
-                        account.validate()
-                    }
-
-                    override fun visitUmaAddress(umaAddress: UmaAddressSource) {
-                        umaAddress.validate()
-                    }
-                }
-            )
-            validated = true
-        }
-
-        fun isValid(): Boolean =
-            try {
-                validate()
-                true
-            } catch (e: GridInvalidDataException) {
-                false
-            }
-
-        /**
-         * Returns a score indicating how many valid values are contained in this object
-         * recursively.
-         *
-         * Used for best match union deserialization.
-         */
-        internal fun validity(): Int =
-            accept(
-                object : Visitor<Int> {
-                    override fun visitAccount(account: AccountSource) = account.validity()
-
-                    override fun visitUmaAddress(umaAddress: UmaAddressSource) =
-                        umaAddress.validity()
-
-                    override fun unknown(json: JsonValue?) = 0
-                }
-            )
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-
-            return other is Source && account == other.account && umaAddress == other.umaAddress
-        }
-
-        override fun hashCode(): Int = Objects.hash(account, umaAddress)
-
-        override fun toString(): String =
-            when {
-                account != null -> "Source{account=$account}"
-                umaAddress != null -> "Source{umaAddress=$umaAddress}"
-                _json != null -> "Source{_unknown=$_json}"
-                else -> throw IllegalStateException("Invalid Source")
-            }
-
-        companion object {
-
-            /** Source account details */
-            fun ofAccount(account: AccountSource) = Source(account = account)
-
-            /** UMA address source details */
-            fun ofUmaAddress(umaAddress: UmaAddressSource) = Source(umaAddress = umaAddress)
-        }
-
-        /** An interface that defines how to map each variant of [Source] to a value of type [T]. */
-        interface Visitor<out T> {
-
-            /** Source account details */
-            fun visitAccount(account: AccountSource): T
-
-            /** UMA address source details */
-            fun visitUmaAddress(umaAddress: UmaAddressSource): T
-
-            /**
-             * Maps an unknown variant of [Source] to a value of type [T].
-             *
-             * An instance of [Source] can contain an unknown variant if it was deserialized from
-             * data that doesn't match any known variant. For example, if the SDK is on an older
-             * version than the API, then the API may respond with new variants that the SDK is
-             * unaware of.
-             *
-             * @throws GridInvalidDataException in the default implementation.
-             */
-            fun unknown(json: JsonValue?): T {
-                throw GridInvalidDataException("Unknown Source: $json")
-            }
-        }
-
-        internal class Deserializer : BaseDeserializer<Source>(Source::class) {
-
-            override fun ObjectCodec.deserialize(node: JsonNode): Source {
-                val json = JsonValue.fromJsonNode(node)
-                val sourceType = json.asObject()?.get("sourceType")?.asString()
-
-                when (sourceType) {
-                    "ACCOUNT" -> {
-                        return tryDeserialize(node, jacksonTypeRef<AccountSource>())?.let {
-                            Source(account = it, _json = json)
-                        } ?: Source(_json = json)
-                    }
-                    "UMA_ADDRESS" -> {
-                        return tryDeserialize(node, jacksonTypeRef<UmaAddressSource>())?.let {
-                            Source(umaAddress = it, _json = json)
-                        } ?: Source(_json = json)
-                    }
-                }
-
-                return Source(_json = json)
-            }
-        }
-
-        internal class Serializer : BaseSerializer<Source>(Source::class) {
-
-            override fun serialize(
-                value: Source,
-                generator: JsonGenerator,
-                provider: SerializerProvider,
-            ) {
-                when {
-                    value.account != null -> generator.writeObject(value.account)
-                    value.umaAddress != null -> generator.writeObject(value.umaAddress)
-                    value._json != null -> generator.writeObject(value._json)
-                    else -> throw IllegalStateException("Invalid Source")
-                }
-            }
-        }
-    }
 
     /** If the transaction failed, this field provides the reason for failure. */
     class FailureReason @JsonCreator private constructor(private val value: JsonField<String>) :

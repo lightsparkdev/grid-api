@@ -93,6 +93,15 @@ private constructor(
             .updatedAt(updatedAt)
             .build()
 
+    fun toIndividualCustomerFields(): IndividualCustomerFields =
+        IndividualCustomerFields.builder()
+            .customerType(customerType)
+            .address(address)
+            .birthDate(birthDate)
+            .fullName(fullName)
+            .nationality(nationality)
+            .build()
+
     /**
      * Whether the customer is an individual or a business entity
      *

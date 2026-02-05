@@ -15,9 +15,7 @@ internal class IndividualBeneficiaryTest {
     fun create() {
         val individualBeneficiary =
             IndividualBeneficiary.builder()
-                .birthDate(LocalDate.parse("1990-01-15"))
-                .fullName("John Michael Doe")
-                .nationality("US")
+                .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                 .address(
                     Address.builder()
                         .country("US")
@@ -28,11 +26,13 @@ internal class IndividualBeneficiaryTest {
                         .state("CA")
                         .build()
                 )
+                .birthDate(LocalDate.parse("1990-01-15"))
+                .fullName("John Michael Doe")
+                .nationality("US")
                 .build()
 
-        assertThat(individualBeneficiary.birthDate()).isEqualTo(LocalDate.parse("1990-01-15"))
-        assertThat(individualBeneficiary.fullName()).isEqualTo("John Michael Doe")
-        assertThat(individualBeneficiary.nationality()).isEqualTo("US")
+        assertThat(individualBeneficiary.beneficiaryType())
+            .isEqualTo(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
         assertThat(individualBeneficiary.address())
             .isEqualTo(
                 Address.builder()
@@ -44,6 +44,9 @@ internal class IndividualBeneficiaryTest {
                     .state("CA")
                     .build()
             )
+        assertThat(individualBeneficiary.birthDate()).isEqualTo(LocalDate.parse("1990-01-15"))
+        assertThat(individualBeneficiary.fullName()).isEqualTo("John Michael Doe")
+        assertThat(individualBeneficiary.nationality()).isEqualTo("US")
     }
 
     @Test
@@ -51,9 +54,7 @@ internal class IndividualBeneficiaryTest {
         val jsonMapper = jsonMapper()
         val individualBeneficiary =
             IndividualBeneficiary.builder()
-                .birthDate(LocalDate.parse("1990-01-15"))
-                .fullName("John Michael Doe")
-                .nationality("US")
+                .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                 .address(
                     Address.builder()
                         .country("US")
@@ -64,6 +65,9 @@ internal class IndividualBeneficiaryTest {
                         .state("CA")
                         .build()
                 )
+                .birthDate(LocalDate.parse("1990-01-15"))
+                .fullName("John Michael Doe")
+                .nationality("US")
                 .build()
 
         val roundtrippedIndividualBeneficiary =

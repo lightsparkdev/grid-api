@@ -16,16 +16,15 @@ internal class ExternalAccountCreateTest {
         val externalAccountCreate =
             ExternalAccountCreate.builder()
                 .accountInfo(
-                    ExternalAccountInfo.UsAccount.builder()
+                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                         .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                         .accountNumber("123456789")
                         .routingNumber("987654321")
                         .bankName("Chase Bank")
                         .beneficiary(
                             IndividualBeneficiary.builder()
-                                .birthDate(LocalDate.parse("1990-01-15"))
-                                .fullName("John Michael Doe")
-                                .nationality("US")
+                                .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                 .address(
                                     Address.builder()
                                         .country("US")
@@ -36,6 +35,9 @@ internal class ExternalAccountCreateTest {
                                         .state("CA")
                                         .build()
                                 )
+                                .birthDate(LocalDate.parse("1990-01-15"))
+                                .fullName("John Michael Doe")
+                                .nationality("US")
                                 .build()
                         )
                         .build()
@@ -48,17 +50,16 @@ internal class ExternalAccountCreateTest {
 
         assertThat(externalAccountCreate.accountInfo())
             .isEqualTo(
-                ExternalAccountInfo.ofUsAccount(
-                    ExternalAccountInfo.UsAccount.builder()
+                ExternalAccountInfoOneOf.ofUsAccountExternalAccountInfo(
+                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                         .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                         .accountNumber("123456789")
                         .routingNumber("987654321")
                         .bankName("Chase Bank")
                         .beneficiary(
                             IndividualBeneficiary.builder()
-                                .birthDate(LocalDate.parse("1990-01-15"))
-                                .fullName("John Michael Doe")
-                                .nationality("US")
+                                .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                 .address(
                                     Address.builder()
                                         .country("US")
@@ -69,6 +70,9 @@ internal class ExternalAccountCreateTest {
                                         .state("CA")
                                         .build()
                                 )
+                                .birthDate(LocalDate.parse("1990-01-15"))
+                                .fullName("John Michael Doe")
+                                .nationality("US")
                                 .build()
                         )
                         .build()
@@ -87,16 +91,15 @@ internal class ExternalAccountCreateTest {
         val externalAccountCreate =
             ExternalAccountCreate.builder()
                 .accountInfo(
-                    ExternalAccountInfo.UsAccount.builder()
+                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                         .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                         .accountNumber("123456789")
                         .routingNumber("987654321")
                         .bankName("Chase Bank")
                         .beneficiary(
                             IndividualBeneficiary.builder()
-                                .birthDate(LocalDate.parse("1990-01-15"))
-                                .fullName("John Michael Doe")
-                                .nationality("US")
+                                .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                 .address(
                                     Address.builder()
                                         .country("US")
@@ -107,6 +110,9 @@ internal class ExternalAccountCreateTest {
                                         .state("CA")
                                         .build()
                                 )
+                                .birthDate(LocalDate.parse("1990-01-15"))
+                                .fullName("John Michael Doe")
+                                .nationality("US")
                                 .build()
                         )
                         .build()

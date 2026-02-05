@@ -17,7 +17,6 @@ import com.grid.api.core.http.json
 import com.grid.api.core.http.parseable
 import com.grid.api.core.prepareAsync
 import com.grid.api.models.customers.CustomerCreateParams
-import com.grid.api.models.customers.CustomerCreateResponse
 import com.grid.api.models.customers.CustomerDeleteParams
 import com.grid.api.models.customers.CustomerDeleteResponse
 import com.grid.api.models.customers.CustomerGetKycLinkParams
@@ -28,6 +27,7 @@ import com.grid.api.models.customers.CustomerListInternalAccountsParams
 import com.grid.api.models.customers.CustomerListPageAsync
 import com.grid.api.models.customers.CustomerListPageResponse
 import com.grid.api.models.customers.CustomerListParams
+import com.grid.api.models.customers.CustomerOneOf
 import com.grid.api.models.customers.CustomerRetrieveParams
 import com.grid.api.models.customers.CustomerRetrieveResponse
 import com.grid.api.models.customers.CustomerUpdateParams
@@ -62,7 +62,7 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
     override suspend fun create(
         params: CustomerCreateParams,
         requestOptions: RequestOptions,
-    ): CustomerCreateResponse =
+    ): CustomerOneOf =
         // post /customers
         withRawResponse().create(params, requestOptions).parse()
 
@@ -134,13 +134,13 @@ class CustomerServiceAsyncImpl internal constructor(private val clientOptions: C
 
         override fun bulk(): BulkServiceAsync.WithRawResponse = bulk
 
-        private val createHandler: Handler<CustomerCreateResponse> =
-            jsonHandler<CustomerCreateResponse>(clientOptions.jsonMapper)
+        private val createHandler: Handler<CustomerOneOf> =
+            jsonHandler<CustomerOneOf>(clientOptions.jsonMapper)
 
         override suspend fun create(
             params: CustomerCreateParams,
             requestOptions: RequestOptions,
-        ): HttpResponseFor<CustomerCreateResponse> {
+        ): HttpResponseFor<CustomerOneOf> {
             val request =
                 HttpRequest.builder()
                     .method(HttpMethod.POST)

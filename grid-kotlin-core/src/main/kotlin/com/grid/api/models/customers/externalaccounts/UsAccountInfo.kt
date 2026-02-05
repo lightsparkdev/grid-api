@@ -21,7 +21,7 @@ class UsAccountInfo
 private constructor(
     private val accountCategory: JsonField<AccountCategory>,
     private val accountNumber: JsonField<String>,
-    private val accountType: JsonValue,
+    private val accountType: JsonField<AccountType>,
     private val routingNumber: JsonField<String>,
     private val bankName: JsonField<String>,
     private val additionalProperties: MutableMap<String, JsonValue>,
@@ -35,7 +35,9 @@ private constructor(
         @JsonProperty("accountNumber")
         @ExcludeMissing
         accountNumber: JsonField<String> = JsonMissing.of(),
-        @JsonProperty("accountType") @ExcludeMissing accountType: JsonValue = JsonMissing.of(),
+        @JsonProperty("accountType")
+        @ExcludeMissing
+        accountType: JsonField<AccountType> = JsonMissing.of(),
         @JsonProperty("routingNumber")
         @ExcludeMissing
         routingNumber: JsonField<String> = JsonMissing.of(),
@@ -59,15 +61,10 @@ private constructor(
     fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
     /**
-     * Expected to always return the following:
-     * ```kotlin
-     * JsonValue.from("US_ACCOUNT")
-     * ```
-     *
-     * However, this method can be useful for debugging and logging (e.g. if the server responded
-     * with an unexpected value).
+     * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
+     *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    @JsonProperty("accountType") @ExcludeMissing fun _accountType(): JsonValue = accountType
+    fun accountType(): AccountType = accountType.getRequired("accountType")
 
     /**
      * ACH routing number (9 digits)
@@ -102,6 +99,15 @@ private constructor(
     @JsonProperty("accountNumber")
     @ExcludeMissing
     fun _accountNumber(): JsonField<String> = accountNumber
+
+    /**
+     * Returns the raw JSON value of [accountType].
+     *
+     * Unlike [accountType], this method doesn't throw if the JSON field has an unexpected type.
+     */
+    @JsonProperty("accountType")
+    @ExcludeMissing
+    fun _accountType(): JsonField<AccountType> = accountType
 
     /**
      * Returns the raw JSON value of [routingNumber].
@@ -140,6 +146,7 @@ private constructor(
          * ```kotlin
          * .accountCategory()
          * .accountNumber()
+         * .accountType()
          * .routingNumber()
          * ```
          */
@@ -151,7 +158,7 @@ private constructor(
 
         private var accountCategory: JsonField<AccountCategory>? = null
         private var accountNumber: JsonField<String>? = null
-        private var accountType: JsonValue = JsonValue.from("US_ACCOUNT")
+        private var accountType: JsonField<AccountType>? = null
         private var routingNumber: JsonField<String>? = null
         private var bankName: JsonField<String> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
@@ -194,19 +201,18 @@ private constructor(
             this.accountNumber = accountNumber
         }
 
+        fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
+
         /**
-         * Sets the field to an arbitrary JSON value.
+         * Sets [Builder.accountType] to an arbitrary JSON value.
          *
-         * It is usually unnecessary to call this method because the field defaults to the
-         * following:
-         * ```kotlin
-         * JsonValue.from("US_ACCOUNT")
-         * ```
-         *
-         * This method is primarily for setting the field to an undocumented or not yet supported
-         * value.
+         * You should usually call [Builder.accountType] with a well-typed [AccountType] value
+         * instead. This method is primarily for setting the field to an undocumented or not yet
+         * supported value.
          */
-        fun accountType(accountType: JsonValue) = apply { this.accountType = accountType }
+        fun accountType(accountType: JsonField<AccountType>) = apply {
+            this.accountType = accountType
+        }
 
         /** ACH routing number (9 digits) */
         fun routingNumber(routingNumber: String) = routingNumber(JsonField.of(routingNumber))
@@ -261,6 +267,7 @@ private constructor(
          * ```kotlin
          * .accountCategory()
          * .accountNumber()
+         * .accountType()
          * .routingNumber()
          * ```
          *
@@ -270,7 +277,7 @@ private constructor(
             UsAccountInfo(
                 checkRequired("accountCategory", accountCategory),
                 checkRequired("accountNumber", accountNumber),
-                accountType,
+                checkRequired("accountType", accountType),
                 checkRequired("routingNumber", routingNumber),
                 bankName,
                 additionalProperties.toMutableMap(),
@@ -286,11 +293,7 @@ private constructor(
 
         accountCategory().validate()
         accountNumber()
-        _accountType().let {
-            if (it != JsonValue.from("US_ACCOUNT")) {
-                throw GridInvalidDataException("'accountType' is invalid, received $it")
-            }
-        }
+        accountType().validate()
         routingNumber()
         bankName()
         validated = true
@@ -312,7 +315,7 @@ private constructor(
     internal fun validity(): Int =
         (accountCategory.asKnown()?.validity() ?: 0) +
             (if (accountNumber.asKnown() == null) 0 else 1) +
-            accountType.let { if (it == JsonValue.from("US_ACCOUNT")) 1 else 0 } +
+            (accountType.asKnown()?.validity() ?: 0) +
             (if (routingNumber.asKnown() == null) 0 else 1) +
             (if (bankName.asKnown() == null) 0 else 1)
 
@@ -438,6 +441,127 @@ private constructor(
             }
 
             return other is AccountCategory && value == other.value
+        }
+
+        override fun hashCode() = value.hashCode()
+
+        override fun toString() = value.toString()
+    }
+
+    class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
+        Enum {
+
+        /**
+         * Returns this class instance's raw value.
+         *
+         * This is usually only useful if this instance was deserialized from data that doesn't
+         * match any known member, and you want to know that value. For example, if the SDK is on an
+         * older version than the API, then the API may respond with new members that the SDK is
+         * unaware of.
+         */
+        @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
+
+        companion object {
+
+            val US_ACCOUNT = of("US_ACCOUNT")
+
+            fun of(value: String) = AccountType(JsonField.of(value))
+        }
+
+        /** An enum containing [AccountType]'s known values. */
+        enum class Known {
+            US_ACCOUNT
+        }
+
+        /**
+         * An enum containing [AccountType]'s known values, as well as an [_UNKNOWN] member.
+         *
+         * An instance of [AccountType] can contain an unknown value in a couple of cases:
+         * - It was deserialized from data that doesn't match any known member. For example, if the
+         *   SDK is on an older version than the API, then the API may respond with new members that
+         *   the SDK is unaware of.
+         * - It was constructed with an arbitrary value using the [of] method.
+         */
+        enum class Value {
+            US_ACCOUNT,
+            /**
+             * An enum member indicating that [AccountType] was instantiated with an unknown value.
+             */
+            _UNKNOWN,
+        }
+
+        /**
+         * Returns an enum member corresponding to this class instance's value, or [Value._UNKNOWN]
+         * if the class was instantiated with an unknown value.
+         *
+         * Use the [known] method instead if you're certain the value is always known or if you want
+         * to throw for the unknown case.
+         */
+        fun value(): Value =
+            when (this) {
+                US_ACCOUNT -> Value.US_ACCOUNT
+                else -> Value._UNKNOWN
+            }
+
+        /**
+         * Returns an enum member corresponding to this class instance's value.
+         *
+         * Use the [value] method instead if you're uncertain the value is always known and don't
+         * want to throw for the unknown case.
+         *
+         * @throws GridInvalidDataException if this class instance's value is a not a known member.
+         */
+        fun known(): Known =
+            when (this) {
+                US_ACCOUNT -> Known.US_ACCOUNT
+                else -> throw GridInvalidDataException("Unknown AccountType: $value")
+            }
+
+        /**
+         * Returns this class instance's primitive wire representation.
+         *
+         * This differs from the [toString] method because that method is primarily for debugging
+         * and generally doesn't throw.
+         *
+         * @throws GridInvalidDataException if this class instance's value does not have the
+         *   expected primitive type.
+         */
+        fun asString(): String =
+            _value().asString() ?: throw GridInvalidDataException("Value is not a String")
+
+        private var validated: Boolean = false
+
+        fun validate(): AccountType = apply {
+            if (validated) {
+                return@apply
+            }
+
+            known()
+            validated = true
+        }
+
+        fun isValid(): Boolean =
+            try {
+                validate()
+                true
+            } catch (e: GridInvalidDataException) {
+                false
+            }
+
+        /**
+         * Returns a score indicating how many valid values are contained in this object
+         * recursively.
+         *
+         * Used for best match union deserialization.
+         */
+        internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) {
+                return true
+            }
+
+            return other is AccountType && value == other.value
         }
 
         override fun hashCode() = value.hashCode()

@@ -7,7 +7,6 @@ import com.grid.api.core.ClientOptions
 import com.grid.api.core.RequestOptions
 import com.grid.api.core.http.HttpResponseFor
 import com.grid.api.models.customers.CustomerCreateParams
-import com.grid.api.models.customers.CustomerCreateResponse
 import com.grid.api.models.customers.CustomerDeleteParams
 import com.grid.api.models.customers.CustomerDeleteResponse
 import com.grid.api.models.customers.CustomerGetKycLinkParams
@@ -16,6 +15,7 @@ import com.grid.api.models.customers.CustomerListInternalAccountsPage
 import com.grid.api.models.customers.CustomerListInternalAccountsParams
 import com.grid.api.models.customers.CustomerListPage
 import com.grid.api.models.customers.CustomerListParams
+import com.grid.api.models.customers.CustomerOneOf
 import com.grid.api.models.customers.CustomerRetrieveParams
 import com.grid.api.models.customers.CustomerRetrieveResponse
 import com.grid.api.models.customers.CustomerUpdateParams
@@ -47,7 +47,7 @@ interface CustomerService {
     fun create(
         params: CustomerCreateParams,
         requestOptions: RequestOptions = RequestOptions.none(),
-    ): CustomerCreateResponse
+    ): CustomerOneOf
 
     /** Retrieve a customer by their system-generated ID */
     fun retrieve(
@@ -157,7 +157,7 @@ interface CustomerService {
         fun create(
             params: CustomerCreateParams,
             requestOptions: RequestOptions = RequestOptions.none(),
-        ): HttpResponseFor<CustomerCreateResponse>
+        ): HttpResponseFor<CustomerOneOf>
 
         /**
          * Returns a raw HTTP response for `get /customers/{customerId}`, but is otherwise the same

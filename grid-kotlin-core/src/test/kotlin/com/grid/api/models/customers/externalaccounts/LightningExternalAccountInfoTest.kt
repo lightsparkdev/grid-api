@@ -13,6 +13,7 @@ internal class LightningExternalAccountInfoTest {
     fun create() {
         val lightningExternalAccountInfo =
             LightningExternalAccountInfo.builder()
+                .accountType(BaseExternalAccountInfo.AccountType.LIGHTNING)
                 .bolt12(
                     "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
                 )
@@ -22,6 +23,8 @@ internal class LightningExternalAccountInfoTest {
                 .lightningAddress("john.doe@lightningwallet.com")
                 .build()
 
+        assertThat(lightningExternalAccountInfo.accountType())
+            .isEqualTo(BaseExternalAccountInfo.AccountType.LIGHTNING)
         assertThat(lightningExternalAccountInfo.bolt12())
             .isEqualTo(
                 "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
@@ -39,6 +42,7 @@ internal class LightningExternalAccountInfoTest {
         val jsonMapper = jsonMapper()
         val lightningExternalAccountInfo =
             LightningExternalAccountInfo.builder()
+                .accountType(BaseExternalAccountInfo.AccountType.LIGHTNING)
                 .bolt12(
                     "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
                 )

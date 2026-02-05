@@ -4,9 +4,11 @@ package com.grid.api.services.async
 
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
+import com.grid.api.core.JsonValue
 import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.CustomerCreateParams
 import com.grid.api.models.customers.CustomerGetKycLinkParams
+import com.grid.api.models.customers.CustomerType
 import com.grid.api.models.customers.CustomerUpdateParams
 import java.time.LocalDate
 import org.junit.jupiter.api.Disabled
@@ -27,12 +29,15 @@ internal class CustomerServiceAsyncTest {
                 .build()
         val customerServiceAsync = client.customers()
 
-        val customer =
+        val customerOneOf =
             customerServiceAsync.create(
                 CustomerCreateParams.builder()
                     .createCustomerRequest(
-                        CustomerCreateParams.CreateCustomerRequest.CustomersIndividualCustomerUpdate
+                        CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest
                             .builder()
+                            .customerType(CustomerType.INDIVIDUAL)
+                            .platformCustomerId("9f84e0c2a72c4fa")
+                            .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
                             .address(
                                 Address.builder()
                                     .country("US")
@@ -46,14 +51,12 @@ internal class CustomerServiceAsyncTest {
                             .birthDate(LocalDate.parse("1990-01-15"))
                             .fullName("John Michael Doe")
                             .nationality("US")
-                            .platformCustomerId("9f84e0c2a72c4fa")
-                            .umaAddress("\$john.doe@uma.domain.com")
                             .build()
                     )
                     .build()
             )
 
-        customer.validate()
+        customerOneOf.validate()
     }
 
     @Disabled("Prism tests are disabled")
@@ -88,23 +91,23 @@ internal class CustomerServiceAsyncTest {
                 CustomerUpdateParams.builder()
                     .customerId("customerId")
                     .updateCustomerRequest(
-                        CustomerUpdateParams.UpdateCustomerRequest.CustomersIndividualCustomerUpdate
+                        CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
                             .builder()
+                            .customerType(CustomerType.INDIVIDUAL)
+                            .umaAddress("\$john.doe@uma.domain.com")
                             .address(
                                 Address.builder()
                                     .country("US")
-                                    .line1("123 Main Street")
-                                    .postalCode("94105")
+                                    .line1("456 Market St")
+                                    .postalCode("94103")
                                     .city("San Francisco")
                                     .line2("Apt 4B")
                                     .state("CA")
                                     .build()
                             )
-                            .birthDate(LocalDate.parse("1990-01-15"))
-                            .fullName("John Michael Doe")
+                            .birthDate(LocalDate.parse("1985-06-15"))
+                            .fullName("John Smith")
                             .nationality("US")
-                            .platformCustomerId("9f84e0c2a72c4fa")
-                            .umaAddress("\$john.doe@uma.domain.com")
                             .build()
                     )
                     .build()

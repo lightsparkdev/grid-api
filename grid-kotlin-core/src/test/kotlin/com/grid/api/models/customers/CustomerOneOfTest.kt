@@ -14,7 +14,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
-internal class CustomerListResponseTest {
+internal class CustomerOneOfTest {
 
     @Test
     fun ofIndividualCustomer() {
@@ -43,17 +43,17 @@ internal class CustomerListResponseTest {
                 .nationality("US")
                 .build()
 
-        val customerListResponse = CustomerListResponse.ofIndividualCustomer(individualCustomer)
+        val customerOneOf = CustomerOneOf.ofIndividualCustomer(individualCustomer)
 
-        assertThat(customerListResponse.individualCustomer()).isEqualTo(individualCustomer)
-        assertThat(customerListResponse.businessCustomer()).isNull()
+        assertThat(customerOneOf.individualCustomer()).isEqualTo(individualCustomer)
+        assertThat(customerOneOf.businessCustomer()).isNull()
     }
 
     @Test
     fun ofIndividualCustomerRoundtrip() {
         val jsonMapper = jsonMapper()
-        val customerListResponse =
-            CustomerListResponse.ofIndividualCustomer(
+        val customerOneOf =
+            CustomerOneOf.ofIndividualCustomer(
                 IndividualCustomer.builder()
                     .customerType(CustomerType.INDIVIDUAL)
                     .platformCustomerId("9f84e0c2a72c4fa")
@@ -79,20 +79,20 @@ internal class CustomerListResponseTest {
                     .build()
             )
 
-        val roundtrippedCustomerListResponse =
+        val roundtrippedCustomerOneOf =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customerListResponse),
-                jacksonTypeRef<CustomerListResponse>(),
+                jsonMapper.writeValueAsString(customerOneOf),
+                jacksonTypeRef<CustomerOneOf>(),
             )
 
-        assertThat(roundtrippedCustomerListResponse).isEqualTo(customerListResponse)
+        assertThat(roundtrippedCustomerOneOf).isEqualTo(customerOneOf)
     }
 
     @Test
     fun ofBusinessCustomer() {
         val businessCustomer =
             BusinessCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+                .customerType(CustomerType.BUSINESS)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -134,7 +134,7 @@ internal class CustomerListResponseTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomer.BusinessInfo.builder()
+                    BusinessCustomerFields.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
@@ -142,19 +142,19 @@ internal class CustomerListResponseTest {
                 )
                 .build()
 
-        val customerListResponse = CustomerListResponse.ofBusinessCustomer(businessCustomer)
+        val customerOneOf = CustomerOneOf.ofBusinessCustomer(businessCustomer)
 
-        assertThat(customerListResponse.individualCustomer()).isNull()
-        assertThat(customerListResponse.businessCustomer()).isEqualTo(businessCustomer)
+        assertThat(customerOneOf.individualCustomer()).isNull()
+        assertThat(customerOneOf.businessCustomer()).isEqualTo(businessCustomer)
     }
 
     @Test
     fun ofBusinessCustomerRoundtrip() {
         val jsonMapper = jsonMapper()
-        val customerListResponse =
-            CustomerListResponse.ofBusinessCustomer(
+        val customerOneOf =
+            CustomerOneOf.ofBusinessCustomer(
                 BusinessCustomer.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+                    .customerType(CustomerType.BUSINESS)
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -196,7 +196,7 @@ internal class CustomerListResponseTest {
                             .build()
                     )
                     .businessInfo(
-                        BusinessCustomer.BusinessInfo.builder()
+                        BusinessCustomerFields.BusinessInfo.builder()
                             .legalName("Acme Corporation, Inc.")
                             .registrationNumber("BRN-123456789")
                             .taxId("EIN-987654321")
@@ -205,13 +205,13 @@ internal class CustomerListResponseTest {
                     .build()
             )
 
-        val roundtrippedCustomerListResponse =
+        val roundtrippedCustomerOneOf =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customerListResponse),
-                jacksonTypeRef<CustomerListResponse>(),
+                jsonMapper.writeValueAsString(customerOneOf),
+                jacksonTypeRef<CustomerOneOf>(),
             )
 
-        assertThat(roundtrippedCustomerListResponse).isEqualTo(customerListResponse)
+        assertThat(roundtrippedCustomerOneOf).isEqualTo(customerOneOf)
     }
 
     enum class IncompatibleJsonShapeTestCase(val value: JsonValue) {
@@ -225,10 +225,10 @@ internal class CustomerListResponseTest {
     @ParameterizedTest
     @EnumSource
     fun incompatibleJsonShapeDeserializesToUnknown(testCase: IncompatibleJsonShapeTestCase) {
-        val customerListResponse =
-            jsonMapper().convertValue(testCase.value, jacksonTypeRef<CustomerListResponse>())
+        val customerOneOf =
+            jsonMapper().convertValue(testCase.value, jacksonTypeRef<CustomerOneOf>())
 
-        val e = assertThrows<GridInvalidDataException> { customerListResponse.validate() }
+        val e = assertThrows<GridInvalidDataException> { customerOneOf.validate() }
         assertThat(e).hasMessageStartingWith("Unknown ")
     }
 }

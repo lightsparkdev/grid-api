@@ -8,12 +8,13 @@ import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class BusinessCustomerUpdateTest {
+internal class BusinessCustomerFieldsTest {
 
     @Test
     fun create() {
-        val businessCustomerUpdate =
-            BusinessCustomerUpdate.builder()
+        val businessCustomerFields =
+            BusinessCustomerFields.builder()
+                .customerType(BusinessCustomerFields.CustomerType.BUSINESS)
                 .address(
                     Address.builder()
                         .country("US")
@@ -48,16 +49,17 @@ internal class BusinessCustomerUpdateTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomerUpdate.BusinessInfo.builder()
+                    BusinessCustomerFields.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
                         .build()
                 )
-                .umaAddress("\$acme@uma.domain.com")
                 .build()
 
-        assertThat(businessCustomerUpdate.address())
+        assertThat(businessCustomerFields.customerType())
+            .isEqualTo(BusinessCustomerFields.CustomerType.BUSINESS)
+        assertThat(businessCustomerFields.address())
             .isEqualTo(
                 Address.builder()
                     .country("US")
@@ -68,7 +70,7 @@ internal class BusinessCustomerUpdateTest {
                     .state("CA")
                     .build()
             )
-        assertThat(businessCustomerUpdate.beneficialOwners())
+        assertThat(businessCustomerFields.beneficialOwners())
             .containsExactly(
                 UltimateBeneficialOwner.builder()
                     .fullName("John Michael Doe")
@@ -92,22 +94,22 @@ internal class BusinessCustomerUpdateTest {
                     .title("CEO, COO, President")
                     .build()
             )
-        assertThat(businessCustomerUpdate.businessInfo())
+        assertThat(businessCustomerFields.businessInfo())
             .isEqualTo(
-                BusinessCustomerUpdate.BusinessInfo.builder()
+                BusinessCustomerFields.BusinessInfo.builder()
                     .legalName("Acme Corporation, Inc.")
                     .registrationNumber("BRN-123456789")
                     .taxId("EIN-987654321")
                     .build()
             )
-        assertThat(businessCustomerUpdate.umaAddress()).isEqualTo("\$acme@uma.domain.com")
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val businessCustomerUpdate =
-            BusinessCustomerUpdate.builder()
+        val businessCustomerFields =
+            BusinessCustomerFields.builder()
+                .customerType(BusinessCustomerFields.CustomerType.BUSINESS)
                 .address(
                     Address.builder()
                         .country("US")
@@ -142,21 +144,20 @@ internal class BusinessCustomerUpdateTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomerUpdate.BusinessInfo.builder()
+                    BusinessCustomerFields.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
                         .build()
                 )
-                .umaAddress("\$acme@uma.domain.com")
                 .build()
 
-        val roundtrippedBusinessCustomerUpdate =
+        val roundtrippedBusinessCustomerFields =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(businessCustomerUpdate),
-                jacksonTypeRef<BusinessCustomerUpdate>(),
+                jsonMapper.writeValueAsString(businessCustomerFields),
+                jacksonTypeRef<BusinessCustomerFields>(),
             )
 
-        assertThat(roundtrippedBusinessCustomerUpdate).isEqualTo(businessCustomerUpdate)
+        assertThat(roundtrippedBusinessCustomerFields).isEqualTo(businessCustomerFields)
     }
 }

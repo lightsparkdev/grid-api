@@ -20,7 +20,7 @@ import java.util.Objects
 class CustomerListPageResponse
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val data: JsonField<List<CustomerListResponse>>,
+    private val data: JsonField<List<CustomerOneOf>>,
     private val hasMore: JsonField<Boolean>,
     private val nextCursor: JsonField<String>,
     private val totalCount: JsonField<Long>,
@@ -31,7 +31,7 @@ private constructor(
     private constructor(
         @JsonProperty("data")
         @ExcludeMissing
-        data: JsonField<List<CustomerListResponse>> = JsonMissing.of(),
+        data: JsonField<List<CustomerOneOf>> = JsonMissing.of(),
         @JsonProperty("hasMore") @ExcludeMissing hasMore: JsonField<Boolean> = JsonMissing.of(),
         @JsonProperty("nextCursor")
         @ExcludeMissing
@@ -45,7 +45,7 @@ private constructor(
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
-    fun data(): List<CustomerListResponse> = data.getRequired("data")
+    fun data(): List<CustomerOneOf> = data.getRequired("data")
 
     /**
      * Indicates if more results are available beyond this page
@@ -76,7 +76,7 @@ private constructor(
      *
      * Unlike [data], this method doesn't throw if the JSON field has an unexpected type.
      */
-    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<CustomerListResponse>> = data
+    @JsonProperty("data") @ExcludeMissing fun _data(): JsonField<List<CustomerOneOf>> = data
 
     /**
      * Returns the raw JSON value of [hasMore].
@@ -128,7 +128,7 @@ private constructor(
     /** A builder for [CustomerListPageResponse]. */
     class Builder internal constructor() {
 
-        private var data: JsonField<MutableList<CustomerListResponse>>? = null
+        private var data: JsonField<MutableList<CustomerOneOf>>? = null
         private var hasMore: JsonField<Boolean>? = null
         private var nextCursor: JsonField<String> = JsonMissing.of()
         private var totalCount: JsonField<Long> = JsonMissing.of()
@@ -143,25 +143,25 @@ private constructor(
         }
 
         /** List of customers matching the filter criteria */
-        fun data(data: List<CustomerListResponse>) = data(JsonField.of(data))
+        fun data(data: List<CustomerOneOf>) = data(JsonField.of(data))
 
         /**
          * Sets [Builder.data] to an arbitrary JSON value.
          *
-         * You should usually call [Builder.data] with a well-typed `List<CustomerListResponse>`
-         * value instead. This method is primarily for setting the field to an undocumented or not
-         * yet supported value.
+         * You should usually call [Builder.data] with a well-typed `List<CustomerOneOf>` value
+         * instead. This method is primarily for setting the field to an undocumented or not yet
+         * supported value.
          */
-        fun data(data: JsonField<List<CustomerListResponse>>) = apply {
+        fun data(data: JsonField<List<CustomerOneOf>>) = apply {
             this.data = data.map { it.toMutableList() }
         }
 
         /**
-         * Adds a single [CustomerListResponse] to [Builder.data].
+         * Adds a single [CustomerOneOf] to [Builder.data].
          *
          * @throws IllegalStateException if the field was previously set to a non-list.
          */
-        fun addData(data: CustomerListResponse) = apply {
+        fun addData(data: CustomerOneOf) = apply {
             this.data =
                 (this.data ?: JsonField.of(mutableListOf())).also {
                     checkKnown("data", it).add(data)
@@ -170,17 +170,16 @@ private constructor(
 
         /**
          * Alias for calling [addData] with
-         * `CustomerListResponse.ofIndividualCustomer(individualCustomer)`.
+         * `CustomerOneOf.ofIndividualCustomer(individualCustomer)`.
          */
         fun addData(individualCustomer: IndividualCustomer) =
-            addData(CustomerListResponse.ofIndividualCustomer(individualCustomer))
+            addData(CustomerOneOf.ofIndividualCustomer(individualCustomer))
 
         /**
-         * Alias for calling [addData] with
-         * `CustomerListResponse.ofBusinessCustomer(businessCustomer)`.
+         * Alias for calling [addData] with `CustomerOneOf.ofBusinessCustomer(businessCustomer)`.
          */
         fun addData(businessCustomer: BusinessCustomer) =
-            addData(CustomerListResponse.ofBusinessCustomer(businessCustomer))
+            addData(CustomerOneOf.ofBusinessCustomer(businessCustomer))
 
         /** Indicates if more results are available beyond this page */
         fun hasMore(hasMore: Boolean) = hasMore(JsonField.of(hasMore))

@@ -5,8 +5,10 @@ package com.grid.api.services.blocking.platform
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.models.customers.Address
+import com.grid.api.models.customers.externalaccounts.BaseBeneficiary
+import com.grid.api.models.customers.externalaccounts.BaseExternalAccountInfo
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreate
-import com.grid.api.models.customers.externalaccounts.ExternalAccountInfo
+import com.grid.api.models.customers.externalaccounts.ExternalAccountInfoOneOf
 import com.grid.api.models.customers.externalaccounts.IndividualBeneficiary
 import com.grid.api.models.customers.externalaccounts.UsAccountInfo
 import com.grid.api.models.platform.externalaccounts.ExternalAccountListParams
@@ -33,16 +35,15 @@ internal class ExternalAccountServiceTest {
             externalAccountService.create(
                 ExternalAccountCreate.builder()
                     .accountInfo(
-                        ExternalAccountInfo.UsAccount.builder()
+                        ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
                             .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
                             .accountNumber("12345678901")
                             .routingNumber("123456789")
                             .bankName("Chase Bank")
                             .beneficiary(
                                 IndividualBeneficiary.builder()
-                                    .birthDate(LocalDate.parse("1990-01-15"))
-                                    .fullName("John Doe")
-                                    .nationality("US")
+                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
                                     .address(
                                         Address.builder()
                                             .country("US")
@@ -53,6 +54,9 @@ internal class ExternalAccountServiceTest {
                                             .state("CA")
                                             .build()
                                     )
+                                    .birthDate(LocalDate.parse("1990-01-15"))
+                                    .fullName("John Doe")
+                                    .nationality("US")
                                     .build()
                             )
                             .build()

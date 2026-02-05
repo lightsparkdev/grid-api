@@ -13,9 +13,12 @@ internal class SolanaWalletInfoTest {
     fun create() {
         val solanaWalletInfo =
             SolanaWalletInfo.builder()
+                .accountType(SolanaWalletInfo.AccountType.SOLANA_WALLET)
                 .address("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
                 .build()
 
+        assertThat(solanaWalletInfo.accountType())
+            .isEqualTo(SolanaWalletInfo.AccountType.SOLANA_WALLET)
         assertThat(solanaWalletInfo.address())
             .isEqualTo("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
     }
@@ -25,6 +28,7 @@ internal class SolanaWalletInfoTest {
         val jsonMapper = jsonMapper()
         val solanaWalletInfo =
             SolanaWalletInfo.builder()
+                .accountType(SolanaWalletInfo.AccountType.SOLANA_WALLET)
                 .address("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
                 .build()
 

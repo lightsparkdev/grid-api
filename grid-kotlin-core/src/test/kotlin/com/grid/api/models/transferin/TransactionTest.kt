@@ -20,9 +20,10 @@ internal class TransactionTest {
                 .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                 .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                 .destination(
-                    Transaction.Destination.Account.builder()
-                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                    Transaction.Destination.AccountTransactionDestination.builder()
+                        .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
                         .currency("EUR")
+                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                         .build()
                 )
                 .platformCustomerId("18d3e5f7b4a9c2")
@@ -46,10 +47,11 @@ internal class TransactionTest {
             .isEqualTo("Customer:019542f5-b3e7-1d02-0000-000000000001")
         assertThat(transaction.destination())
             .isEqualTo(
-                Transaction.Destination.ofAccount(
-                    Transaction.Destination.Account.builder()
-                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                Transaction.Destination.ofAccountTransaction(
+                    Transaction.Destination.AccountTransactionDestination.builder()
+                        .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
                         .currency("EUR")
+                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                         .build()
                 )
             )
@@ -78,9 +80,10 @@ internal class TransactionTest {
                 .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                 .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                 .destination(
-                    Transaction.Destination.Account.builder()
-                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                    Transaction.Destination.AccountTransactionDestination.builder()
+                        .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
                         .currency("EUR")
+                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                         .build()
                 )
                 .platformCustomerId("18d3e5f7b4a9c2")

@@ -17,9 +17,9 @@ import com.grid.api.core.getOrThrow
 import com.grid.api.errors.GridInvalidDataException
 import java.util.Objects
 
-@JsonDeserialize(using = CustomerCreateResponse.Deserializer::class)
-@JsonSerialize(using = CustomerCreateResponse.Serializer::class)
-class CustomerCreateResponse
+@JsonDeserialize(using = CustomerOneOf.Deserializer::class)
+@JsonSerialize(using = CustomerOneOf.Serializer::class)
+class CustomerOneOf
 private constructor(
     private val individualCustomer: IndividualCustomer? = null,
     private val businessCustomer: BusinessCustomer? = null,
@@ -50,7 +50,7 @@ private constructor(
 
     private var validated: Boolean = false
 
-    fun validate(): CustomerCreateResponse = apply {
+    fun validate(): CustomerOneOf = apply {
         if (validated) {
             return@apply
         }
@@ -100,7 +100,7 @@ private constructor(
             return true
         }
 
-        return other is CustomerCreateResponse &&
+        return other is CustomerOneOf &&
             individualCustomer == other.individualCustomer &&
             businessCustomer == other.businessCustomer
     }
@@ -109,25 +109,23 @@ private constructor(
 
     override fun toString(): String =
         when {
-            individualCustomer != null ->
-                "CustomerCreateResponse{individualCustomer=$individualCustomer}"
-            businessCustomer != null -> "CustomerCreateResponse{businessCustomer=$businessCustomer}"
-            _json != null -> "CustomerCreateResponse{_unknown=$_json}"
-            else -> throw IllegalStateException("Invalid CustomerCreateResponse")
+            individualCustomer != null -> "CustomerOneOf{individualCustomer=$individualCustomer}"
+            businessCustomer != null -> "CustomerOneOf{businessCustomer=$businessCustomer}"
+            _json != null -> "CustomerOneOf{_unknown=$_json}"
+            else -> throw IllegalStateException("Invalid CustomerOneOf")
         }
 
     companion object {
 
         fun ofIndividualCustomer(individualCustomer: IndividualCustomer) =
-            CustomerCreateResponse(individualCustomer = individualCustomer)
+            CustomerOneOf(individualCustomer = individualCustomer)
 
         fun ofBusinessCustomer(businessCustomer: BusinessCustomer) =
-            CustomerCreateResponse(businessCustomer = businessCustomer)
+            CustomerOneOf(businessCustomer = businessCustomer)
     }
 
     /**
-     * An interface that defines how to map each variant of [CustomerCreateResponse] to a value of
-     * type [T].
+     * An interface that defines how to map each variant of [CustomerOneOf] to a value of type [T].
      */
     interface Visitor<out T> {
 
@@ -136,33 +134,31 @@ private constructor(
         fun visitBusinessCustomer(businessCustomer: BusinessCustomer): T
 
         /**
-         * Maps an unknown variant of [CustomerCreateResponse] to a value of type [T].
+         * Maps an unknown variant of [CustomerOneOf] to a value of type [T].
          *
-         * An instance of [CustomerCreateResponse] can contain an unknown variant if it was
-         * deserialized from data that doesn't match any known variant. For example, if the SDK is
-         * on an older version than the API, then the API may respond with new variants that the SDK
-         * is unaware of.
+         * An instance of [CustomerOneOf] can contain an unknown variant if it was deserialized from
+         * data that doesn't match any known variant. For example, if the SDK is on an older version
+         * than the API, then the API may respond with new variants that the SDK is unaware of.
          *
          * @throws GridInvalidDataException in the default implementation.
          */
         fun unknown(json: JsonValue?): T {
-            throw GridInvalidDataException("Unknown CustomerCreateResponse: $json")
+            throw GridInvalidDataException("Unknown CustomerOneOf: $json")
         }
     }
 
-    internal class Deserializer :
-        BaseDeserializer<CustomerCreateResponse>(CustomerCreateResponse::class) {
+    internal class Deserializer : BaseDeserializer<CustomerOneOf>(CustomerOneOf::class) {
 
-        override fun ObjectCodec.deserialize(node: JsonNode): CustomerCreateResponse {
+        override fun ObjectCodec.deserialize(node: JsonNode): CustomerOneOf {
             val json = JsonValue.fromJsonNode(node)
 
             val bestMatches =
                 sequenceOf(
                         tryDeserialize(node, jacksonTypeRef<IndividualCustomer>())?.let {
-                            CustomerCreateResponse(individualCustomer = it, _json = json)
+                            CustomerOneOf(individualCustomer = it, _json = json)
                         },
                         tryDeserialize(node, jacksonTypeRef<BusinessCustomer>())?.let {
-                            CustomerCreateResponse(businessCustomer = it, _json = json)
+                            CustomerOneOf(businessCustomer = it, _json = json)
                         },
                     )
                     .filterNotNull()
@@ -171,7 +167,7 @@ private constructor(
             return when (bestMatches.size) {
                 // This can happen if what we're deserializing is completely incompatible with all
                 // the possible variants (e.g. deserializing from boolean).
-                0 -> CustomerCreateResponse(_json = json)
+                0 -> CustomerOneOf(_json = json)
                 1 -> bestMatches.single()
                 // If there's more than one match with the highest validity, then use the first
                 // completely valid match, or simply the first match if none are completely valid.
@@ -180,11 +176,10 @@ private constructor(
         }
     }
 
-    internal class Serializer :
-        BaseSerializer<CustomerCreateResponse>(CustomerCreateResponse::class) {
+    internal class Serializer : BaseSerializer<CustomerOneOf>(CustomerOneOf::class) {
 
         override fun serialize(
-            value: CustomerCreateResponse,
+            value: CustomerOneOf,
             generator: JsonGenerator,
             provider: SerializerProvider,
         ) {
@@ -192,7 +187,7 @@ private constructor(
                 value.individualCustomer != null -> generator.writeObject(value.individualCustomer)
                 value.businessCustomer != null -> generator.writeObject(value.businessCustomer)
                 value._json != null -> generator.writeObject(value._json)
-                else -> throw IllegalStateException("Invalid CustomerCreateResponse")
+                else -> throw IllegalStateException("Invalid CustomerOneOf")
             }
         }
     }

@@ -12,8 +12,12 @@ internal class BaseWalletInfoTest {
     @Test
     fun create() {
         val baseWalletInfo =
-            BaseWalletInfo.builder().address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12").build()
+            BaseWalletInfo.builder()
+                .accountType(BaseWalletInfo.AccountType.BASE_WALLET)
+                .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
+                .build()
 
+        assertThat(baseWalletInfo.accountType()).isEqualTo(BaseWalletInfo.AccountType.BASE_WALLET)
         assertThat(baseWalletInfo.address()).isEqualTo("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
     }
 
@@ -21,7 +25,10 @@ internal class BaseWalletInfoTest {
     fun roundtrip() {
         val jsonMapper = jsonMapper()
         val baseWalletInfo =
-            BaseWalletInfo.builder().address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12").build()
+            BaseWalletInfo.builder()
+                .accountType(BaseWalletInfo.AccountType.BASE_WALLET)
+                .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
+                .build()
 
         val roundtrippedBaseWalletInfo =
             jsonMapper.readValue(

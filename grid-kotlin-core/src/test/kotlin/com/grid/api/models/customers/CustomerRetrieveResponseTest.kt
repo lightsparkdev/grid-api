@@ -93,7 +93,7 @@ internal class CustomerRetrieveResponseTest {
     fun ofBusinessCustomer() {
         val businessCustomer =
             BusinessCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+                .customerType(CustomerType.BUSINESS)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -135,7 +135,7 @@ internal class CustomerRetrieveResponseTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomer.BusinessInfo.builder()
+                    BusinessCustomerFields.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
@@ -155,7 +155,7 @@ internal class CustomerRetrieveResponseTest {
         val customerRetrieveResponse =
             CustomerRetrieveResponse.ofBusinessCustomer(
                 BusinessCustomer.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+                    .customerType(CustomerType.BUSINESS)
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -197,7 +197,7 @@ internal class CustomerRetrieveResponseTest {
                             .build()
                     )
                     .businessInfo(
-                        BusinessCustomer.BusinessInfo.builder()
+                        BusinessCustomerFields.BusinessInfo.builder()
                             .legalName("Acme Corporation, Inc.")
                             .registrationNumber("BRN-123456789")
                             .taxId("EIN-987654321")

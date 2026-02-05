@@ -7,6 +7,7 @@ import com.grid.api.core.JsonValue
 import com.grid.api.core.jsonMapper
 import com.grid.api.models.invitations.CurrencyAmount
 import com.grid.api.models.quotes.Currency
+import com.grid.api.models.transferin.BaseTransactionDestination
 import com.grid.api.models.transferin.Transaction
 import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
@@ -21,9 +22,10 @@ internal class IncomingTransactionTest {
                 .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                 .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                 .destination(
-                    Transaction.Destination.Account.builder()
-                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                    Transaction.Destination.AccountTransactionDestination.builder()
+                        .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
                         .currency("EUR")
+                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                         .build()
                 )
                 .platformCustomerId("18d3e5f7b4a9c2")
@@ -68,9 +70,10 @@ internal class IncomingTransactionTest {
                         .build()
                 )
                 .source(
-                    AccountSource.builder()
-                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                    TransactionSourceOneOf.AccountTransactionSource.builder()
+                        .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
                         .currency("USD")
+                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .build()
                 )
                 .build()
@@ -81,10 +84,11 @@ internal class IncomingTransactionTest {
             .isEqualTo("Customer:019542f5-b3e7-1d02-0000-000000000001")
         assertThat(incomingTransaction.destination())
             .isEqualTo(
-                Transaction.Destination.ofAccount(
-                    Transaction.Destination.Account.builder()
-                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                Transaction.Destination.ofAccountTransaction(
+                    Transaction.Destination.AccountTransactionDestination.builder()
+                        .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
                         .currency("EUR")
+                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                         .build()
                 )
             )
@@ -139,10 +143,11 @@ internal class IncomingTransactionTest {
             )
         assertThat(incomingTransaction.source())
             .isEqualTo(
-                IncomingTransaction.Source.ofAccount(
-                    AccountSource.builder()
-                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                TransactionSourceOneOf.ofAccountTransactionSource(
+                    TransactionSourceOneOf.AccountTransactionSource.builder()
+                        .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
                         .currency("USD")
+                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .build()
                 )
             )
@@ -156,9 +161,10 @@ internal class IncomingTransactionTest {
                 .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                 .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                 .destination(
-                    Transaction.Destination.Account.builder()
-                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                    Transaction.Destination.AccountTransactionDestination.builder()
+                        .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
                         .currency("EUR")
+                        .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                         .build()
                 )
                 .platformCustomerId("18d3e5f7b4a9c2")
@@ -203,9 +209,10 @@ internal class IncomingTransactionTest {
                         .build()
                 )
                 .source(
-                    AccountSource.builder()
-                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                    TransactionSourceOneOf.AccountTransactionSource.builder()
+                        .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
                         .currency("USD")
+                        .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .build()
                 )
                 .build()

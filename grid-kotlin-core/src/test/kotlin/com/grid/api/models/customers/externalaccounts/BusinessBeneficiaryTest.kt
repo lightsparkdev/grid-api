@@ -14,7 +14,7 @@ internal class BusinessBeneficiaryTest {
     fun create() {
         val businessBeneficiary =
             BusinessBeneficiary.builder()
-                .legalName("Acme Corporation, Inc.")
+                .beneficiaryType(BaseBeneficiary.BeneficiaryType.BUSINESS)
                 .address(
                     Address.builder()
                         .country("US")
@@ -25,11 +25,13 @@ internal class BusinessBeneficiaryTest {
                         .state("CA")
                         .build()
                 )
+                .legalName("Acme Corporation, Inc.")
                 .registrationNumber("BRN-123456789")
                 .taxId("EIN-987654321")
                 .build()
 
-        assertThat(businessBeneficiary.legalName()).isEqualTo("Acme Corporation, Inc.")
+        assertThat(businessBeneficiary.beneficiaryType())
+            .isEqualTo(BaseBeneficiary.BeneficiaryType.BUSINESS)
         assertThat(businessBeneficiary.address())
             .isEqualTo(
                 Address.builder()
@@ -41,6 +43,7 @@ internal class BusinessBeneficiaryTest {
                     .state("CA")
                     .build()
             )
+        assertThat(businessBeneficiary.legalName()).isEqualTo("Acme Corporation, Inc.")
         assertThat(businessBeneficiary.registrationNumber()).isEqualTo("BRN-123456789")
         assertThat(businessBeneficiary.taxId()).isEqualTo("EIN-987654321")
     }
@@ -50,7 +53,7 @@ internal class BusinessBeneficiaryTest {
         val jsonMapper = jsonMapper()
         val businessBeneficiary =
             BusinessBeneficiary.builder()
-                .legalName("Acme Corporation, Inc.")
+                .beneficiaryType(BaseBeneficiary.BeneficiaryType.BUSINESS)
                 .address(
                     Address.builder()
                         .country("US")
@@ -61,6 +64,7 @@ internal class BusinessBeneficiaryTest {
                         .state("CA")
                         .build()
                 )
+                .legalName("Acme Corporation, Inc.")
                 .registrationNumber("BRN-123456789")
                 .taxId("EIN-987654321")
                 .build()
