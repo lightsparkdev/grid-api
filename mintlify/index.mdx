@@ -36,9 +36,9 @@ export const ProductTiles = ({ categories }) => {
       <div className="product-tiles-grid">
         <div className="product-tiles-list">
           {currentCategory?.items.map((item) => (
-            <a
+            <div
               key={item.id}
-              href={currentCategory.href}
+              onClick={() => setActiveItem(item.id)}
               onMouseEnter={() => setActiveItem(item.id)}
               className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
             >
@@ -47,12 +47,10 @@ export const ProductTiles = ({ categories }) => {
                 <div className="product-tiles-item-title">{item.title}</div>
                 <div className="product-tiles-item-desc">{item.description}</div>
               </div>
-              {activeItem === item.id && (
-                <svg className="product-tiles-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              )}
-            </a>
+              <a href={currentCategory.href} className="product-tiles-link">
+                View guide →
+              </a>
+            </div>
           ))}
         </div>
         <div className="product-tiles-preview">

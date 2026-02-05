@@ -203,6 +203,30 @@ If the API reference pages appear blank (only showing title and navigation, no e
 - **Check existing patterns** for consistency before making changes
 - **Search before adding** - look for existing information before creating new content
 
+### CSS Styling Tips (Mintlify Overrides)
+
+When overriding Mintlify's default styles in `mintlify/styles/base.css`:
+
+- **Tailwind utility classes are hard to override directly** - Classes like `mb-3.5` have high specificity. Even with `!important` and complex selectors, they often won't budge.
+
+- **Workaround: Use negative margins on sibling elements** - Instead of reducing `margin-bottom` on an element, add negative `margin-top` to the following sibling. This achieves the same visual effect.
+
+- **Test selectors with visible properties first** - If a style isn't applying, add `border: 2px solid red !important;` to confirm the selector is matching. If the border shows, the selector works but something else is overriding your property.
+
+- **HeadlessUI portal elements** - Mobile nav and modals render inside `#headlessui-portal-root`. Use this in selectors for higher specificity: `#headlessui-portal-root #mobile-nav ...`
+
+- **Mobile nav lives in `#mobile-nav`** - Target mobile-specific styles with `#mobile-nav` or `div#mobile-nav` selectors to avoid affecting desktop sidebar.
+
+- **Negative margins for edge-to-edge layouts** - To break out of parent padding (e.g., make nav items edge-to-edge), use negative margins equal to the parent's padding, then add your own padding inside.
+
+### MDX Component Limitations
+
+- **`React.useEffect` breaks the MDX parser** - Mintlify uses acorn to parse MDX, and it chokes on `useEffect`. Avoid using hooks that require cleanup or side effects.
+
+- **`React.useState` works fine** - Simple state management is supported.
+
+- **Keep components simple** - If you need complex interactivity, consider using CSS-only solutions or restructuring to avoid problematic hooks.
+
 ## Environments
 
 - **Production**: `https://api.lightspark.com/grid/2025-10-13`
