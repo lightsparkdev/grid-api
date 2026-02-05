@@ -44,15 +44,6 @@
             ]
           },
           {
-            "group": "Quickstart",
-            "pages": [
-              "platform-overview/quickstart/payouts",
-              "platform-overview/quickstart/ramps",
-              "platform-overview/quickstart/rewards",
-              "platform-overview/quickstart/p2p"
-            ]
-          },
-          {
             "group": "Core concepts",
             "pages": [
               "platform-overview/core-concepts/entities",
