@@ -815,24 +815,25 @@ html.dark .product-tiles-item-title {
   transform: translateX(0);
 }
 
-/* Product tiles "View guide" link */
+/* Product tiles "Learn more" link */
 .product-tiles-link {
   font-size: 14px;
   font-weight: 450;
   line-height: 20px;
   color: var(--ls-gray-500);
   text-decoration: none;
-  margin-left: auto;
   opacity: 0;
-  transition: opacity 0.2s ease, color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.2s ease, margin-top 0.2s ease, color 0.2s ease;
+  display: block;
+  margin-top: 0;
 }
 
 .product-tiles-item.active .product-tiles-link {
   opacity: 1;
+  max-height: 24px;
+  margin-top: 8px;
 }
 
 .product-tiles-link:hover {

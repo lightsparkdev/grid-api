@@ -46,10 +46,10 @@ export const ProductTiles = ({ categories }) => {
               <div className="product-tiles-item-content">
                 <div className="product-tiles-item-title">{item.title}</div>
                 <div className="product-tiles-item-desc">{item.description}</div>
+                <a href={currentCategory.href} className="product-tiles-link">
+                  Learn more →
+                </a>
               </div>
-              <a href={currentCategory.href} className="product-tiles-link">
-                View guide →
-              </a>
             </div>
           ))}
         </div>
