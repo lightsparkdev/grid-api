@@ -283,6 +283,13 @@
   "contextual": {
     "options": ["copy", "view", "chatgpt", "claude"]
   },
+  "seo": {
+    "metatags": {
+      "og:image": "/images/og/og-fallback-bg.png",
+      "og:image:width": "1200",
+      "og:image:height": "630"
+    }
+  },
   "footer": {},
   "head": {
     "raw": "<style>#header:empty,#page-title:empty{display:none!important}</style><script>if(location.pathname==='/'||location.pathname==='/index'||location.pathname===''){document.write('<style>header#header,#page-title,#page-context-menu-button,#page-context-menu,.eyebrow,#pagination,[class*=\"space-y-2\"]>*{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style>');document.documentElement.classList.add('is-homepage');}</script><style>html.is-homepage #pagination,body.is-homepage #pagination,html.is-homepage #footer,body.is-homepage #footer,html.is-homepage header#header,body.is-homepage header#header,html.is-homepage #page-title,body.is-homepage #page-title,html.is-homepage #page-context-menu-button,body.is-homepage #page-context-menu-button,html.is-homepage #page-context-menu,body.is-homepage #page-context-menu,html.is-homepage .eyebrow,body.is-homepage .eyebrow{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important}</style>",
