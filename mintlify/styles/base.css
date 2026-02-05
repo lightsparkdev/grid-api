@@ -1668,6 +1668,24 @@ html.dark .feature-card-title {
   color: var(--ls-gray-050);
 }
 
+/* Title row with inline tag */
+.feature-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.feature-card-title-row .feature-card-title {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .feature-card-title-row .feature-card-title {
+  color: var(--ls-gray-050);
+}
+
 .feature-card-content {
   display: flex;
   flex-direction: column;
