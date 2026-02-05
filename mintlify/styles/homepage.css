@@ -502,39 +502,12 @@ html.dark .capability-card {
   border-color: var(--ls-white-06);
 }
 
-.capability-card {
-  transition: background-color 0.2s ease;
+.capability-toggle rect:last-child {
+  transition: transform 0.3s ease;
 }
 
-.capability-card:hover {
-  background: var(--ls-gray-025);
-}
-
-html.dark .capability-card:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-/* Toggle swap animation - JS-controlled, plays once to completion */
-@keyframes toggle-swap-out {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(32px); }
-}
-
-@keyframes toggle-swap-in {
-  0% { transform: translateX(-32px); }
-  100% { transform: translateX(0); }
-}
-
-.capability-toggle .toggle-in {
-  transform: translateX(-32px);
-}
-
-.capability-card.animating .capability-toggle .toggle-out {
-  animation: toggle-swap-out 0.45s ease forwards;
-}
-
-.capability-card.animating .capability-toggle .toggle-in {
-  animation: toggle-swap-in 0.45s ease forwards;
+.capability-card:hover .capability-toggle rect:last-child {
+  transform: translateX(-16px);
 }
 
 .capability-card:nth-child(4n) {

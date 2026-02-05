@@ -1,7 +1,8 @@
-export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, color, tag, layout, variant, iconSize }) => {
+export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, color, tag, tagPosition, layout, variant, iconSize }) => {
   const isHorizontal = layout === 'horizontal';
   const isFlat = variant === 'flat';
   const isLargeIcon = iconSize === 'lg';
+  const isInlineTag = tagPosition === 'inline';
   const card = (
     <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''} ${isHorizontal ? 'feature-card-horizontal' : ''} ${isFlat ? 'feature-card-flat' : ''} ${isLargeIcon ? 'feature-card-icon-lg' : ''}`}>
       {icon && (
@@ -27,9 +28,16 @@ export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, c
         </div>
       )}
       <div className="feature-card-content">
-        <div className="feature-card-title">{title}</div>
+        {isInlineTag ? (
+          <div className="feature-card-title-row">
+            <span className="feature-card-title">{title}</span>
+            {tag && <span className="feature-card-tag">{tag}</span>}
+          </div>
+        ) : (
+          <div className="feature-card-title">{title}</div>
+        )}
         <div className="feature-card-desc">{children}</div>
-        {tag && <div className="feature-card-tag-row"><span className="feature-card-tag">{tag}</span></div>}
+        {tag && !isInlineTag && <div className="feature-card-tag-row"><span className="feature-card-tag">{tag}</span></div>}
         {linkText && (
           <div className="feature-card-link-row">
             {linkHref ? (

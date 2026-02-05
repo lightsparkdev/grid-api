@@ -1,17 +1,19 @@
-import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+import { FeatureCard, FeatureCardGrid, FeatureCardList, FeatureCardContainer } from '/snippets/feature-card.mdx';
 
-<FeatureCardGrid cols={3}>
-  <FeatureCard icon="/images/icons/coins.svg" title="Cryptocurrency" tag="Available Globally">
-    Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/blocks.svg" title="Full Platform Access" tag="United States & Europe">
-    Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
-    Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Local Payment Rails" tag="65 Countries">
-    Receive payments via local rails like SEPA, PIX, UPI, and more.
-  </FeatureCard>
-</FeatureCardGrid>
+<FeatureCardContainer>
+  <FeatureCardList>
+    <FeatureCard icon="/images/icons/coins.svg" title="Cryptocurrency" tag="Available Globally" tagPosition="inline" layout="horizontal" variant="flat">
+      Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
+    </FeatureCard>
+    <FeatureCard icon="/images/icons/blocks.svg" title="Full Platform Access" tag="United States & Europe" tagPosition="inline" layout="horizontal" variant="flat">
+      Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
+      Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
+    </FeatureCard>
+    <FeatureCard icon="/images/icons/globe.svg" title="Local Payment Rails" tag="65 Countries" tagPosition="inline" layout="horizontal" variant="flat">
+      Receive payments via local rails like SEPA, PIX, UPI, and more.
+    </FeatureCard>
+  </FeatureCardList>
+</FeatureCardContainer>
 
 | Country | ISO Code | Payment Rails |
 |---|---|---:|

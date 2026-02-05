@@ -45,3 +45,6 @@ figma-*.md
 
 # Cursor IDE rules (personal config)
 .cursor/rules/
+
+# Personal todo files
+TODO-*.md
