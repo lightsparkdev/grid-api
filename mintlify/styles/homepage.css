@@ -70,14 +70,14 @@ html.is-homepage #content-area {
 }
 
 /* Fix content container width and centering on homepage */
-/* 1072px = 1024px content + 24px padding on each side */
+/* 1076px = 980px content + 48px padding on each side */
 html.is-homepage #content-container {
-  max-width: 1072px !important;
+  max-width: 1076px !important;
   width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
-  padding-left: 24px !important;
-  padding-right: 24px !important;
+  padding-left: 48px !important;
+  padding-right: 48px !important;
 }
 
 /* ===========================================
