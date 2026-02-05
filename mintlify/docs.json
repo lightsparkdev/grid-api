@@ -73,7 +73,8 @@
             "pages": [
               "payouts-and-b2b/index",
               "payouts-and-b2b/terminology",
-              "payouts-and-b2b/onboarding/implementation-overview"
+              "payouts-and-b2b/onboarding/implementation-overview",
+              "payouts-and-b2b/quickstart"
             ]
           },
           {
@@ -119,7 +120,8 @@
             "pages": [
               "ramps/index",
               "ramps/terminology",
-              "ramps/onboarding/implementation-overview"
+              "ramps/onboarding/implementation-overview",
+              "ramps/quickstart"
             ]
           },
           {
@@ -163,7 +165,8 @@
             "pages": [
               "rewards/index",
               "rewards/terminology",
-              "rewards/developer-guides/implementation-overview"
+              "rewards/developer-guides/implementation-overview",
+              "rewards/quickstart"
             ]
           },
           {
@@ -205,7 +208,8 @@
             "pages": [
               "global-p2p/index",
               "global-p2p/terminology",
-              "global-p2p/getting-started/implementation-overview"
+              "global-p2p/getting-started/implementation-overview",
+              "global-p2p/quickstart"
             ]
           },
           {

@@ -18,7 +18,7 @@ const path = require('path');
 // Icons to export based on the Figma design mapping
 const ICONS_TO_EXPORT = [
   // Overview section
-  'IconSquareInfo',        // What is Grid?
+  // 'IconSquareInfo',     // What is Grid? - EXCLUDED: using custom version from refs/Sidebar/
   'IconBlocks',            // Capabilities
   'IconLightBulb',         // Use cases
   'IconBubbleQuestion',    // FAQ (using BubbleQuestion instead of CircleQuestionmark)
@@ -28,6 +28,7 @@ const ICONS_TO_EXPORT = [
   'IconArrowInbox',         // On-ramp to crypto
   'IconGift1',              // Send Bitcoin rewards
   'IconAt',                 // Send to UMA address
+  'IconRocket',             // Quickstart pages
   
   // Core concepts section
   'IconAgent',              // Entities & Relationships
