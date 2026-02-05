@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Grid API Schema and Documentation",
   "scripts": {
+    "build:icons": "CENTRAL_LICENSE_KEY=$CENTRAL_LICENSE_KEY node scripts/export-icons.js",
     "build:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
     "prelint:openapi": "npm run build:openapi",
     "lint:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && npx @redocly/cli lint openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
@@ -20,7 +21,12 @@
   },
   "devDependencies": {
     "markdownlint-cli": "^0.44.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "widdershins": "^4.0.1"
+  },
+  "optionalDependencies": {
+    "@central-icons-react/all": "^1.1.109"
   },
   "author": "Lightspark Group",
   "license": "Apache-2.0"

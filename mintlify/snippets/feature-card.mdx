@@ -1,0 +1,91 @@
+export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, color, tag, tagPosition, layout, variant, iconSize }) => {
+  const isHorizontal = layout === 'horizontal';
+  const isFlat = variant === 'flat';
+  const isLargeIcon = iconSize === 'lg';
+  const isInlineTag = tagPosition === 'inline';
+  const card = (
+    <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''} ${isHorizontal ? 'feature-card-horizontal' : ''} ${isFlat ? 'feature-card-flat' : ''} ${isLargeIcon ? 'feature-card-icon-lg' : ''}`}>
+      {icon && (
+        <div className="feature-card-icon-wrapper">
+          {color ? (
+            <div 
+              className="feature-card-icon"
+              style={{
+                WebkitMaskImage: `url(${icon})`,
+                maskImage: `url(${icon})`,
+                backgroundColor: color,
+                width: '24px',
+                height: '24px',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+          ) : (
+            <img src={icon} alt="" className="feature-card-icon" />
+          )}
+        </div>
+      )}
+      <div className="feature-card-content">
+        {isInlineTag ? (
+          <div className="feature-card-title-row">
+            <span className="feature-card-title">{title}</span>
+            {tag && <span className="feature-card-tag">{tag}</span>}
+          </div>
+        ) : (
+          <div className="feature-card-title">{title}</div>
+        )}
+        <div className="feature-card-desc">{children}</div>
+        {tag && !isInlineTag && <div className="feature-card-tag-row"><span className="feature-card-tag">{tag}</span></div>}
+        {linkText && (
+          <div className="feature-card-link-row">
+            {linkHref ? (
+              <a href={linkHref} className="feature-card-text-link" style={{ color: color }}>
+                {linkText}
+              </a>
+            ) : (
+              <span className="feature-card-text-link feature-card-coming-soon" style={{ color: color, opacity: 0.6 }}>
+                {linkText}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  return href ? <a href={href} className="feature-card-anchor">{card}</a> : card;
+};
+
+export const FeatureCardGrid = ({ cols = 3, children }) => (
+  <div className={`not-prose feature-cards-grid feature-cards-cols-${cols}`}>
+    {children}
+  </div>
+);
+
+export const FeatureCardList = ({ children }) => (
+  <div className="not-prose feature-cards-list">
+    {children}
+  </div>
+);
+
+export const FeatureCardContainer = ({ children }) => (
+  <div className="not-prose feature-card-container">
+    {children}
+  </div>
+);
+
+export const ImageCard = ({ img, title, children, href }) => {
+  const card = (
+    <div className={`image-card ${href ? 'image-card-link' : ''}`}>
+      <div className="image-card-img-wrapper">
+        <img src={img} alt={title} className="image-card-img" />
+      </div>
+      <div className="image-card-content">
+        <div className="image-card-title">{title}</div>
+        <div className="image-card-desc">{children}</div>
+      </div>
+    </div>
+  );
+  return href ? <a href={href} className="image-card-anchor">{card}</a> : card;
+};

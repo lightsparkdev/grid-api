@@ -155,6 +155,46 @@ Webhooks use **P-256 ECDSA signatures** in the `X-Grid-Signature` header for ver
 - Use relative paths for internal links
 - The mintlify subdirectory has its own CLAUDE.md with additional guidance
 
+### Mintlify CLI Version (Important)
+
+**Use Mintlify CLI version 4.2.284** for local development. Newer versions (e.g., 4.2.312) have a bug where the API reference pages render blank when using the palm theme with OpenAPI auto-generation.
+
+**Requires Node.js LTS (v20 or v22)** - Mintlify does not support Node 25+. If you have a newer Node version installed, use Node 22 LTS:
+
+```bash
+# Install Node 22 via Homebrew (if needed)
+brew install node@22
+
+# Run mint dev with Node 22
+export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+cd mintlify && mint dev
+
+# Or add to ~/.zshrc to make permanent:
+# export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+```
+
+```bash
+# Check current version
+mintlify --version
+
+# If needed, install the working version
+npm install -g mintlify@4.2.284 --force
+```
+
+### Troubleshooting: API Reference Not Showing
+
+If the API reference pages appear blank (only showing title and navigation, no endpoint details):
+
+1. **Restart the dev server** - hot reload sometimes fails:
+   ```bash
+   pkill -f "mint.*dev"
+   cd mintlify && mint dev
+   ```
+
+2. **Check CLI version** - ensure you're on 4.2.284 (see above)
+
+3. **Verify OpenAPI spec** - run `mint openapi-check openapi.yaml` in the mintlify folder
+
 ### Documentation Philosophy
 
 - **Document just enough** for user success - balance between too much and too little
@@ -162,6 +202,30 @@ Webhooks use **P-256 ECDSA signatures** in the `X-Grid-Signature` header for ver
 - **Make content evergreen** when possible
 - **Check existing patterns** for consistency before making changes
 - **Search before adding** - look for existing information before creating new content
+
+### CSS Styling Tips (Mintlify Overrides)
+
+When overriding Mintlify's default styles in `mintlify/styles/base.css`:
+
+- **Tailwind utility classes are hard to override directly** - Classes like `mb-3.5` have high specificity. Even with `!important` and complex selectors, they often won't budge.
+
+- **Workaround: Use negative margins on sibling elements** - Instead of reducing `margin-bottom` on an element, add negative `margin-top` to the following sibling. This achieves the same visual effect.
+
+- **Test selectors with visible properties first** - If a style isn't applying, add `border: 2px solid red !important;` to confirm the selector is matching. If the border shows, the selector works but something else is overriding your property.
+
+- **HeadlessUI portal elements** - Mobile nav and modals render inside `#headlessui-portal-root`. Use this in selectors for higher specificity: `#headlessui-portal-root #mobile-nav ...`
+
+- **Mobile nav lives in `#mobile-nav`** - Target mobile-specific styles with `#mobile-nav` or `div#mobile-nav` selectors to avoid affecting desktop sidebar.
+
+- **Negative margins for edge-to-edge layouts** - To break out of parent padding (e.g., make nav items edge-to-edge), use negative margins equal to the parent's padding, then add your own padding inside.
+
+### MDX Component Limitations
+
+- **`React.useEffect` breaks the MDX parser** - Mintlify uses acorn to parse MDX, and it chokes on `useEffect`. Avoid using hooks that require cleanup or side effects.
+
+- **`React.useState` works fine** - Simple state management is supported.
+
+- **Keep components simple** - If you need complex interactivity, consider using CSS-only solutions or restructuring to avoid problematic hooks.
 
 ## Environments
 

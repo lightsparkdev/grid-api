@@ -1,9 +1,11 @@
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 <Note>
 Use our hosted Postman collection to explore endpoints and send test requests quickly.
 </Note>
 
-<Card title="Open Postman Collection" icon="link" href="https://www.postman.com/lightspark-dev/lightspark-grid/collection/adligoh/grid-api?action=share&source=copy-link&creator=49207478">
-Launch the collection in Postman.
-</Card>
-
-
+<FeatureCardGrid cols={1}>
+  <FeatureCard icon="/images/icons/IconPostman.svg" title="Open Postman Collection" href="https://www.postman.com/lightspark-dev/lightspark-grid/collection/adligoh/grid-api?action=share&source=copy-link&creator=49207478">
+    Launch the collection in Postman.
+  </FeatureCard>
+</FeatureCardGrid>

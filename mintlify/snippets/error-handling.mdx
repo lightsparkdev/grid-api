@@ -1,3 +1,5 @@
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
 Learn how to handle errors when working with payments and transactions in Grid. Proper error handling ensures a smooth user experience and helps you quickly identify and resolve issues.
 
 ## HTTP status codes
@@ -526,26 +528,16 @@ try {
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Send Payments" icon="paper-plane" href="/payouts-and-b2b/payment-flow/send-payment">
-  Learn how to send payments from internal accounts
-</Card>
-
-<Card
-  title="List Transactions"
-  icon="list"
-  href="/payouts-and-b2b/payment-flow/list-transactions"
->
-  Query and filter payment history
-</Card>
-
-<Card
-  title="Reconciliation"
-  icon="file-invoice-dollar"
-  href="/payouts-and-b2b/payment-flow/reconciliation"
->
-  Match payments with your internal systems
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Send Payments" href="/payouts-and-b2b/payment-flow/send-payment">
+    Learn how to send payments from internal accounts
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/file-text.svg" title="List Transactions" href="/payouts-and-b2b/payment-flow/list-transactions">
+    Query and filter payment history
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/receipt-check.svg" title="Reconciliation" href="/payouts-and-b2b/payment-flow/reconciliation">
+    Match payments with your internal systems
+  </FeatureCard>
+</FeatureCardGrid>
 
 

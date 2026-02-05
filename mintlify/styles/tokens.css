@@ -88,3 +88,26 @@
   --ls-radius-4xl: 40px;
   --ls-radius-round: 999px;
 }
+
+/* ===========================================
+   Figma-Matched Radii (Squircle Support)
+   
+   When corner-shape: squircle is supported,
+   multiply radii by 1.8 to match Figma's
+   corner smoothing algorithm.
+   =========================================== */
+
+@supports (corner-shape: squircle) {
+  :root {
+    --ls-radius-2xs: 3.6px;   /* 2 × 1.8 */
+    --ls-radius-xs: 7.2px;    /* 4 × 1.8 */
+    --ls-radius-sm: 10.8px;   /* 6 × 1.8 */
+    --ls-radius-md: 14.4px;   /* 8 × 1.8 */
+    --ls-radius-lg: 21.6px;   /* 12 × 1.8 */
+    --ls-radius-xl: 28.8px;   /* 16 × 1.8 */
+    --ls-radius-2xl: 43.2px;  /* 24 × 1.8 */
+    --ls-radius-3xl: 57.6px;  /* 32 × 1.8 */
+    --ls-radius-4xl: 72px;    /* 40 × 1.8 */
+    /* --ls-radius-none and --ls-radius-round unchanged */
+  }
+}

@@ -1,21 +1,22 @@
-<CardGroup cols={3}>
-  <Card title="Cryptocurrency" icon="bitcoin" iconType="solid">
-    **Available Globally**
-Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
-  </Card>
-  <Card title="Full Platform Access" icon="building" iconType="solid">
-    **United States & Europe**
-Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
-Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
-  </Card>
-  <Card title="Local Payment Rails" icon="globe" iconType="solid">
-    **65 Countries**
-Receive payments via local rails like SEPA, PIX, UPI, and more.
-  </Card>
-</CardGroup>
+import { FeatureCard, FeatureCardGrid, FeatureCardList, FeatureCardContainer } from '/snippets/feature-card.mdx';
+
+<FeatureCardContainer>
+  <FeatureCardList>
+    <FeatureCard icon="/images/icons/coins.svg" title="Cryptocurrency" tag="Available Globally" tagPosition="inline" layout="horizontal" variant="flat">
+      Bitcoin (BTC) and Stablecoin transactions supported worldwide with no geographic restrictions.
+    </FeatureCard>
+    <FeatureCard icon="/images/icons/blocks.svg" title="Full Platform Access" tag="United States & Europe" tagPosition="inline" layout="horizontal" variant="flat">
+      Onboard as a platform with complete access to APIs, hosted KYC/KYB, dashboard, and business integrations.
+      Send payments to 65 countries on local banking rails, in addition to BTC and stablecoins.
+    </FeatureCard>
+    <FeatureCard icon="/images/icons/globe.svg" title="Local Payment Rails" tag="65 Countries" tagPosition="inline" layout="horizontal" variant="flat">
+      Receive payments via local rails like SEPA, PIX, UPI, and more.
+    </FeatureCard>
+  </FeatureCardList>
+</FeatureCardContainer>
 
 | Country | ISO Code | Payment Rails |
-|---|:---:|:---:|
+|---|---|---:|
 | 🇦🇹 Austria | AT | `SEPA` `SEPA Instant` |
 | 🇧🇪 Belgium | BE | `SEPA` `SEPA Instant` |
 | 🇧🇯 Benin | BJ | `Bank Transfer` |
@@ -83,17 +84,18 @@ Receive payments via local rails like SEPA, PIX, UPI, and more.
 | 🇿🇲 Zambia | ZM | `Bank Transfer` |
 
 Regional Summary
-<CardGroup cols={4}>
-  <Card title="Europe" icon="landmark">
-    **32 countries** Primary: SEPA/SEPA Instant
-  </Card>
-  <Card title="Africa" icon="globe">
-    **17 countries** Primary: Bank Transfer
-  </Card>
-  <Card title="Asia-Pacific" icon="earth-asia">
-    **11 countries** Various instant payment systems
-  </Card>
-  <Card title="Americas" icon="earth-americas">
-    **5 countries** PIX, SPEI, ACH, FedNow
-  </Card>
-</CardGroup>
+
+<FeatureCardGrid cols={4}>
+  <FeatureCard icon="/images/icons/globe.svg" title="Europe" tag="32 countries">
+    Primary: SEPA/SEPA Instant
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Africa" tag="17 countries">
+    Primary: Bank Transfer
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Asia-Pacific" tag="11 countries">
+    Various instant payment systems
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Americas" tag="5 countries">
+    PIX, SPEI, ACH, FedNow
+  </FeatureCard>
+</FeatureCardGrid>

@@ -39,3 +39,12 @@ cli/dist/
 # Figma design tokens (local reference only)
 mintlify/tokens/
 
+# Development reference files
+refs/
+figma-*.md
+
+# Cursor IDE rules (personal config)
+.cursor/rules/
+
+# Personal todo files
+TODO-*.md

@@ -1,0 +1,95 @@
+---
+icon: "/images/icons/blocks.svg"
+title: "Capabilities"
+mode: "wide"
+"og:image": "/images/og/og-get-started.png"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<img 
+  src="/images/heroes/hero-capabilities-light.svg" 
+  alt="Capabilities hero"
+  className="page-hero block dark:hidden"
+/>
+<img 
+  src="/images/heroes/hero-capabilities-dark.svg" 
+  alt="Capabilities hero"
+  className="page-hero hidden dark:block"
+/>
+
+Grid exposes low-level primitives that you combine to build any payment flow. Fiat, crypto, or both.
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard 
+    icon="/images/icons/paper-plane-top-right.svg" 
+    title="Send"
+    color="#00B3E0"
+    linkHref="/platform-overview/core-concepts/currencies-and-rails"
+    linkText="View coverage"
+  >
+    Push funds to bank accounts in 65+ countries, crypto wallets, or UMA addresses. You choose the destination, Grid handles delivery.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/arrow-inbox.svg" 
+    title="Receive"
+    color="#11A967"
+    linkHref="/global-p2p/sending-receiving-payments/receiving-payments"
+    linkText="Receiving payments"
+  >
+    Accept incoming payments via bank transfer, crypto deposit, or UMA. Webhooks notify you in real-time.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/repeat.svg" 
+    title="Convert"
+    color="#FF21CC"
+    linkHref="/platform-overview/core-concepts/quote-system"
+    linkText="How quotes work"
+  >
+    Exchange between fiat currencies or convert fiat to crypto. Lock in rates before execution.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/wallet1.svg" 
+    title="Hold"
+    color="#F77D26"
+    linkHref="/platform-overview/core-concepts/account-model"
+    linkText="Account model"
+  >
+    Maintain balances in USD, EUR, BRL, BTC, USDC, and more. Fund and manage accounts via API.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/arrow-left-right.svg" 
+    title="Ramp"
+    color="#CF00A7"
+    linkHref="/ramps"
+    linkText="Explore ramps"
+  >
+    On-ramp from bank accounts to BTC or stablecoins. Off-ramp crypto to local bank rails instantly.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/receipt-check.svg" 
+    title="Bill"
+    color="#118453"
+    linkText="Coming soon"
+  >
+    Generate payment requests and collect funds. Track payment status through completion.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/code.svg" 
+    title="Program"
+    color="#44DDB5"
+    linkHref="/api-reference"
+    linkText="API reference"
+  >
+    Automate flows with webhooks, approval logic, and idempotent operations. Build any payment experience.
+  </FeatureCard>
+  <FeatureCard 
+    icon="/images/icons/people.svg" 
+    title="Identify"
+    color="#0072DB"
+    linkHref="/payouts-and-b2b/onboarding/configuring-customers"
+    linkText="Onboarding guide"
+  >
+    KYC/KYB verification—use Grid's hosted flows or bring your own compliance.
+  </FeatureCard>
+</FeatureCardGrid>
