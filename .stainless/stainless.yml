@@ -1,0 +1,341 @@
+# yaml-language-server: $schema=https://app.stainless.com/config.schema.json
+
+# The main edition for the config, see the [docs] for more information.
+#
+# [docs]: https://www.stainless.com/docs/reference/editions
+edition: 2025-10-10
+
+organization:
+  # Name of your organization or company, used to determine the name of the client
+  # and headings.
+  name: grid
+  # Link to your API documentation.
+  docs: ''
+  # Contact email for bug reports, questions, and support requests.
+  contact: support@lightspark.com
+
+# `targets` define the output targets and their customization options, such as
+# whether to emit the Node SDK and what its package name should be.
+targets:
+  typescript:
+    # The edition for this target, see the [docs] for more information.
+    #
+    # [docs]: https://www.stainless.com/docs/reference/editions
+    edition: typescript.2025-10-10
+    package_name: grid
+    production_repo: null
+    publish:
+      npm: false
+  kotlin:
+    edition: kotlin.2025-10-08
+    reverse_domain: com.grid.api
+    production_repo: null
+    publish:
+      maven: false
+
+# `environments` are a map of the name of the environment (e.g. "sandbox",
+# "production") to the corresponding url to use.
+environments:
+  production: https://api.lightspark.com/grid/2025-10-13
+
+# `resources` define the structure and organization for your API, such as how
+# methods and models are grouped together and accessed. See the [configuration
+# guide] for more information.
+#
+# [configuration guide]: https://www.stainless.com/docs/guides/configure#resources
+resources:
+  config:
+    # Configure the methods defined in this resource. Each key in the object is the
+    # name of the method and the value is either an endpoint (for example, `get /foo`)
+    # or an object with more detail.
+    #
+    # [reference]: https://www.stainless.com/docs/reference/config#method
+    # Configure the models--named types--defined in the resource. Each key in the
+    # object is the name of the model and the value is either the name of a schema in
+    # `#/components/schemas` or an object with more detail.
+    #
+    # [reference]: https://www.stainless.com/docs/reference/config#model
+    models:
+      customer_info_field_name: '#/components/schemas/CustomerInfoFieldName'
+      platform_currency_config: '#/components/schemas/PlatformCurrencyConfig'
+      platform_config: '#/components/schemas/PlatformConfig'
+    methods:
+      retrieve: get /config
+      update: patch /config
+
+  customers:
+    models:
+      customer_type: '#/components/schemas/CustomerType'
+      individual_customer: '#/components/schemas/IndividualCustomer'
+      customer: '#/components/schemas/Customer'
+      address: '#/components/schemas/Address'
+      ultimate_beneficial_owner: '#/components/schemas/UltimateBeneficialOwner'
+      business_customer: '#/components/schemas/BusinessCustomer'
+      business_customer_fields: "#/components/schemas/BusinessCustomerFields"
+      business_info: "#/components/schemas/BusinessInfo"
+      individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
+      customer_one_of: "#/components/schemas/CustomerOneOf"
+      customer_create: "#/components/schemas/CustomerCreateRequest"
+      customer_update: "#/components/schemas/CustomerUpdateRequest"
+    methods:
+      create:
+        endpoint: post /customers
+        body_param_name: CreateCustomerRequest
+      list: get /customers
+      retrieve: get /customers/{customerId}
+      update:
+        endpoint: patch /customers/{customerId}
+        body_param_name: UpdateCustomerRequest
+      delete: delete /customers/{customerId}
+      get_kyc_link: get /customers/kyc-link
+      list_internal_accounts: get /customers/internal-accounts
+    # Subresources define resources that are nested within another for more powerful
+    # logical groupings, e.g. `cards.payments`.
+    subresources:
+      external_accounts:
+        models:
+          us_account_info: '#/components/schemas/UsAccountInfo'
+          pix_account_info: '#/components/schemas/PixAccountInfo'
+          iban_account_info: '#/components/schemas/IbanAccountInfo'
+          upi_account_info: '#/components/schemas/UpiAccountInfo'
+          spark_wallet_info: '#/components/schemas/SparkWalletInfo'
+          solana_wallet_info: '#/components/schemas/SolanaWalletInfo'
+          tron_wallet_info: '#/components/schemas/TronWalletInfo'
+          polygon_wallet_info: '#/components/schemas/PolygonWalletInfo'
+          clabe_account_info: '#/components/schemas/ClabeAccountInfo'
+          base_wallet_info: '#/components/schemas/BaseWalletInfo'
+          individual_beneficiary: '#/components/schemas/IndividualBeneficiary'
+          business_beneficiary: '#/components/schemas/BusinessBeneficiary'
+          external_account: '#/components/schemas/ExternalAccount'
+          external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
+          lightning_external_account_info: "#/components/schemas/LightningExternalAccountInfo"
+          ngn_account_external_account_info: "#/components/schemas/NgnAccountExternalAccountInfo"
+          base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
+          base_beneficiary: "#/components/schemas/BaseBeneficiary"
+          beneficiary_one_of: "#/components/schemas/BeneficiaryOneOf"
+          external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
+        methods:
+          list: get /customers/external-accounts
+          create: post /customers/external-accounts
+      bulk:
+        methods:
+          upload_csv: post /customers/bulk/csv
+          get_job_status: get /customers/bulk/jobs/{jobId}
+
+  platform:
+    methods:
+      list_internal_accounts:
+        endpoint: get /platform/internal-accounts
+        paginated: false
+    subresources:
+      external_accounts:
+        methods:
+          list:
+            endpoint: get /platform/external-accounts
+            paginated: false
+          create: post /platform/external-accounts
+
+  plaid:
+    methods:
+      create_link_token: post /plaid/link-tokens
+      submit_public_token: post /plaid/callback/{plaid_link_token}
+
+  transfer_in:
+    models:
+      transaction: '#/components/schemas/Transaction'
+      base_transaction_destination: "#/components/schemas/BaseTransactionDestination"
+    methods:
+      create: post /transfer-in
+
+  transfer_out:
+    methods:
+      create: post /transfer-out
+
+  receiver:
+    models:
+      counterparty_field_definition: '#/components/schemas/CounterpartyFieldDefinition'
+      lookup_response: '#/components/schemas/ReceiverLookupResponse'
+    methods:
+      lookup_uma: get /receiver/uma/{receiverUmaAddress}
+      lookup_external_account: get /receiver/external-account/{accountId}
+
+  quotes:
+    models:
+      currency: '#/components/schemas/Currency'
+      payment_instructions: '#/components/schemas/PaymentInstructions'
+      outgoing_rate_details: '#/components/schemas/OutgoingRateDetails'
+      quote: '#/components/schemas/Quote'
+      base_payment_account_info: "#/components/schemas/BasePaymentAccountInfo"
+      base_quote_source: "#/components/schemas/BaseQuoteSource"
+      quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
+      base_destination: "#/components/schemas/BaseDestination"
+      quote_destination_one_of: "#/components/schemas/QuoteDestinationOneOf"
+    methods:
+      retrieve: get /quotes/{quoteId}
+      create: post /quotes
+      list: get /quotes
+      execute: post /quotes/{quoteId}/execute
+
+  transactions:
+    models:
+      transaction_type: '#/components/schemas/TransactionType'
+      incoming_transaction: '#/components/schemas/IncomingTransaction'
+      transaction_status: '#/components/schemas/TransactionStatus'
+      base_transaction_source: "#/components/schemas/BaseTransactionSource"
+      transaction_source_one_of: "#/components/schemas/TransactionSourceOneOf"
+    methods:
+      list: get /transactions
+      retrieve: get /transactions/{transactionId}
+      approve: post /transactions/{transactionId}/approve
+      reject: post /transactions/{transactionId}/reject
+
+  webhooks:
+    methods:
+      send_test: post /webhooks/test
+
+  invitations:
+    models:
+      currency_amount: '#/components/schemas/CurrencyAmount'
+      uma_invitation: '#/components/schemas/UmaInvitation'
+    methods:
+      create: post /invitations
+      retrieve: get /invitations/{invitationCode}
+      claim: post /invitations/{invitationCode}/claim
+      cancel: post /invitations/{invitationCode}/cancel
+
+  sandbox:
+    methods:
+      send_funds: post /sandbox/send
+    subresources:
+      uma:
+        methods:
+          receive_payment: post /sandbox/uma/receive
+      internal_accounts:
+        models:
+          internal_account: '#/components/schemas/InternalAccount'
+        methods:
+          fund: post /sandbox/internal-accounts/{accountId}/fund
+
+  uma_providers:
+    methods:
+      list: get /uma-providers
+
+  tokens:
+    models:
+      permission: '#/components/schemas/Permission'
+      api_token: '#/components/schemas/ApiToken'
+    methods:
+      create: post /tokens
+      list: get /tokens
+      retrieve: get /tokens/{tokenId}
+      delete: delete /tokens/{tokenId}
+
+settings:
+  # All generated integration tests that hit the prism mock http server are marked
+  # as skipped. Removing this setting or setting it to false enables tests, but
+  # doing so may result in test failures due to bugs in the test server.
+  #
+  # [prism mock http server]: https://stoplight.io/open-source/prism
+  disable_mock_tests: true
+  license: Apache-2.0
+
+# `client_settings` define settings for the API client, such as extra constructor
+# arguments (used for authentication), retry behavior, idempotency, etc.
+client_settings:
+  opts:
+    username:
+      type: string
+      nullable: false
+      auth:
+        security_scheme: BasicAuth
+        role: username
+      description: API token authentication using format `<api token id>:<api client secret>`
+      read_env: GRID_USERNAME
+    password:
+      type: string
+      nullable: false
+      auth:
+        security_scheme: BasicAuth
+        role: password
+      description: API token authentication using format `<api token id>:<api client secret>`
+      read_env: GRID_PASSWORD
+    webhook_signature:
+      type: string
+      nullable: true
+      auth:
+        security_scheme: WebhookSignature
+      description: |
+        Secp256r1 (P-256) asymmetric signature of the webhook payload, which can be used to verify that the webhook was sent by Grid.
+
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      read_env: GRID_WEBHOOK_SIGNATURE
+
+# `readme` is used to configure the code snippets that will be rendered in the
+# README.md of various SDKs. In particular, you can change the `headline`
+# snippet's endpoint and the arguments to call it with.
+readme:
+  example_requests:
+    default:
+      type: request
+      endpoint: get /config
+      params: {}
+    headline:
+      type: request
+      endpoint: get /config
+      params: {}
+    pagination:
+      type: request
+      endpoint: get /customers
+      params: {}
+
+pagination:
+  - name: default_pagination
+    type: cursor
+    request:
+      cursor:
+        type: string
+        x-stainless-pagination-property:
+          purpose: next_cursor_param
+    response:
+      data:
+        type: array
+        items:
+          type: object
+      nextCursor:
+        type: string
+        x-stainless-pagination-property:
+          purpose: next_cursor_field
+      hasMore:
+        type: boolean
+        x-stainless-pagination-property:
+          purpose: has_next_page
+      totalCount:
+        type: integer
+
+openapi:
+  code_samples: mintlify
+  transformations:
+    - command: splitSchemasByEnumProperty
+      reason: Split error schemas with multiple enum values into distinct ones
+      args:
+        unionPath: AllErrors
+        enumProperty: code
+
+errors:
+  union:
+    source: AllErrors
+    discriminator: code
+    status_property: status
+
+codeflow:
+  detect_breaking_changes: true
+diagnostics:
+  ignored:
+    Schema/ObjectHasNoProperties:
+      - pagination.0.response.data.items
