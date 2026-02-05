@@ -184,6 +184,19 @@ html.dark #navbar [class*="z-10"] {
   border-color: var(--ls-white-06) !important;
 }
 
+/* Mobile: Full-width navbar with 20px/24px padding */
+@media (max-width: 1023px) {
+  #navbar .h-16,
+  #navbar [class*="h-16"],
+  #navbar .h-12,
+  #navbar [class*="h-12"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 24px !important;
+  }
+}
+
 /* ===========================================
    Navbar - Search Bar
    =========================================== */
@@ -534,6 +547,78 @@ button[class*="text-primary"] * {
 html.dark #sidebar-content {
   background-color: var(--ls-gray-975) !important;
   border-right-color: var(--ls-white-06) !important;
+}
+
+/* Mobile Navigation Sidebar - consistent background */
+#mobile-nav,
+#mobile-nav > div {
+  background-color: var(--ls-gray-100) !important;
+}
+
+html.dark #mobile-nav,
+html.dark #mobile-nav > div {
+  background-color: var(--ls-gray-975) !important;
+}
+
+/* Mobile nav items - extend to sidebar edges */
+#mobile-nav #navigation-items {
+  margin-left: -16px !important;
+  margin-right: -16px !important;
+  padding: 0 24px 24px 24px !important;
+}
+
+/* Mobile nav - dropdown button: 1 step brighter background */
+#mobile-nav #navigation-items button[aria-haspopup="menu"] {
+  background-color: var(--ls-gray-050) !important;
+  border-radius: var(--ls-radius-md) !important;
+}
+
+html.dark #mobile-nav #navigation-items button[aria-haspopup="menu"] {
+  background-color: var(--ls-gray-950) !important;
+}
+
+/* Mobile nav tabs dropdown - fix active/inactive colors */
+.mobile-nav-tabs-item {
+  color: var(--ls-gray-500) !important;
+}
+
+.mobile-nav-tabs-item.text-primary,
+.mobile-nav-tabs-item[class*="text-primary"] {
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark .mobile-nav-tabs-item {
+  color: var(--ls-gray-500) !important;
+}
+
+html.dark .mobile-nav-tabs-item.text-primary,
+html.dark .mobile-nav-tabs-item[class*="text-primary"] {
+  color: var(--ls-gray-100) !important;
+}
+
+/* Mobile nav - top bar with logo and mode selector */
+div#mobile-nav .flex.items-center.justify-between {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* Mobile nav - dropdown wrapper: reduce bottom spacing */
+div#mobile-nav div#navigation-items > div:first-child {
+  margin-bottom: 0 !important;
+}
+
+div#mobile-nav div#navigation-items .flex.flex-wrap {
+  padding-bottom: 20px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Mobile nav - sidebar group list: adjust spacing */
+div#mobile-nav ul.sidebar-group,
+div#mobile-nav ul#sidebar-group,
+#mobile-nav .sidebar-group-header + ul {
+  margin-top: -14px !important;
+  padding-top: 0 !important;
+  padding-bottom: 24px !important;
 }
 
 #navigation-items {
@@ -1089,6 +1174,14 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   margin-right: auto !important;
   padding-left: 48px !important;
   padding-right: 48px !important;
+}
+
+/* Mobile: Reduce content container padding to 24px */
+@media (max-width: 1023px) {
+  #content-container {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
 }
 
 /* Prose container - center the content with consistent margins */
