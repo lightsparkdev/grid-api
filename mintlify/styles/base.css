@@ -2348,3 +2348,22 @@ html.dark #content-area > details.accordion [data-component-part="accordion-cont
 html.dark .prose:not(.accordion-group) > details.accordion [data-component-part="accordion-content"] {
   background-color: var(--ls-white-04) !important;
 }
+
+/* ===========================================
+   Page Hero Images
+   Mobile: Square aspect ratio with center crop
+   =========================================== */
+
+.page-hero {
+  width: 100%;
+  border-radius: var(--ls-radius-md);
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  .page-hero {
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    object-position: center;
+  }
+}
