@@ -3963,6 +3963,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error500:
       type: object
       required:
@@ -3991,6 +3992,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error400:
       type: object
       required:
@@ -4069,6 +4071,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error501:
       type: object
       required:
@@ -4097,6 +4100,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     CustomerType:
       type: string
       enum:
@@ -4416,6 +4420,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error404:
       type: object
       required:
@@ -4456,6 +4461,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error:
       type: object
       properties:
@@ -6063,6 +6069,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     Error424:
       type: object
       required:
@@ -6095,6 +6102,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     AccountQuoteSource:
       allOf:
         - $ref: '#/components/schemas/BaseQuoteSource'
@@ -6430,6 +6438,32 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    GridError:
+      type: object
+      title: GridError
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    BulkCustomerImportErrorEntry:
+      allOf:
+        - $ref: '#/components/schemas/GridError'
+        - type: object
+          description: Error information for a failed bulk import entry
+          required:
+            - correlationId
+          properties:
+            correlationId:
+              type: string
+              description: Platform customer ID or row number for the failed entry
+              example: biz456
     BulkCustomerImportJob:
       type: object
       required:
@@ -6478,17 +6512,7 @@ components:
           type: array
           description: Detailed error information for failed entries
           items:
-            type: object
-            required:
-              - correlationId
-              - error
-            properties:
-              correlationId:
-                type: string
-                description: Platform customer ID or row number for the failed entry
-                example: biz456
-              error:
-                $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/BulkCustomerImportErrorEntry'
         completedAt:
           type: string
           format: date-time
@@ -6584,6 +6608,7 @@ components:
         details:
           type: object
           description: Additional error details
+          additionalProperties: true
     UmaProvider:
       type: object
       properties:
@@ -6803,7 +6828,7 @@ components:
           description: Information about the recipient, provided by the platform if requested in the webhook via `requestedReceiverCustomerInfoFields` and the payment is approved.
     IncomingPaymentWebhookForbiddenResponse:
       allOf:
-        - $ref: '#/components/schemas/Error'
+        - $ref: '#/components/schemas/GridError'
         - type: object
           properties:
             reason:
@@ -6812,7 +6837,7 @@ components:
               example: RESTRICTED_JURISDICTION
     IncomingPaymentWebhookUnprocessableResponse:
       allOf:
-        - $ref: '#/components/schemas/Error'
+        - $ref: '#/components/schemas/GridError'
         - type: object
           properties:
             requiredFields:
