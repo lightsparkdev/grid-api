@@ -20,7 +20,7 @@ class CustomerCreate
 private constructor(
     private val customerType: JsonField<CustomerType>,
     private val platformCustomerId: JsonField<String>,
-    private val umaAddress: JsonValue,
+    private val umaAddress: JsonField<String>,
     private val additionalProperties: MutableMap<String, JsonValue>,
 ) {
 
@@ -32,7 +32,7 @@ private constructor(
         @JsonProperty("platformCustomerId")
         @ExcludeMissing
         platformCustomerId: JsonField<String> = JsonMissing.of(),
-        @JsonProperty("umaAddress") @ExcludeMissing umaAddress: JsonValue = JsonMissing.of(),
+        @JsonProperty("umaAddress") @ExcludeMissing umaAddress: JsonField<String> = JsonMissing.of(),
     ) : this(customerType, platformCustomerId, umaAddress, mutableMapOf())
 
     /**
@@ -57,12 +57,10 @@ private constructor(
      * to the provided value. This is an optional identifier to route payments to the customer. This
      * is an optional identifier to route payments to the customer.
      *
-     * This arbitrary value can be deserialized into a custom type using the `convert` method:
-     * ```kotlin
-     * val myObject: MyClass = customerCreate.umaAddress().convert(MyClass::class.java)
-     * ```
+     * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
+     *   responded with an unexpected value).
      */
-    @JsonProperty("umaAddress") @ExcludeMissing fun _umaAddress(): JsonValue = umaAddress
+    fun umaAddress(): String? = umaAddress.getNullable("umaAddress")
 
     /**
      * Returns the raw JSON value of [customerType].
@@ -82,6 +80,13 @@ private constructor(
     @JsonProperty("platformCustomerId")
     @ExcludeMissing
     fun _platformCustomerId(): JsonField<String> = platformCustomerId
+
+    /**
+     * Returns the raw JSON value of [umaAddress].
+     *
+     * Unlike [umaAddress], this method doesn't throw if the JSON field has an unexpected type.
+     */
+    @JsonProperty("umaAddress") @ExcludeMissing fun _umaAddress(): JsonField<String> = umaAddress
 
     @JsonAnySetter
     private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -114,7 +119,7 @@ private constructor(
 
         private var customerType: JsonField<CustomerType>? = null
         private var platformCustomerId: JsonField<String>? = null
-        private var umaAddress: JsonValue = JsonMissing.of()
+        private var umaAddress: JsonField<String> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
         internal fun from(customerCreate: CustomerCreate) = apply {
@@ -162,7 +167,16 @@ private constructor(
          * updated to the provided value. This is an optional identifier to route payments to the
          * customer. This is an optional identifier to route payments to the customer.
          */
-        fun umaAddress(umaAddress: JsonValue) = apply { this.umaAddress = umaAddress }
+        fun umaAddress(umaAddress: String) = umaAddress(JsonField.of(umaAddress))
+
+        /**
+         * Sets [Builder.umaAddress] to an arbitrary JSON value.
+         *
+         * You should usually call [Builder.umaAddress] with a well-typed [String] value instead.
+         * This method is primarily for setting the field to an undocumented or not yet supported
+         * value.
+         */
+        fun umaAddress(umaAddress: JsonField<String>) = apply { this.umaAddress = umaAddress }
 
         fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
             this.additionalProperties.clear()
@@ -214,6 +228,7 @@ private constructor(
 
         customerType().validate()
         platformCustomerId()
+        umaAddress()
         validated = true
     }
 
@@ -232,7 +247,8 @@ private constructor(
      */
     internal fun validity(): Int =
         (customerType.asKnown()?.validity() ?: 0) +
-            (if (platformCustomerId.asKnown() == null) 0 else 1)
+            (if (platformCustomerId.asKnown() == null) 0 else 1) +
+            (if (umaAddress.asKnown() == null) 0 else 1)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {

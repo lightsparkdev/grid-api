@@ -4,7 +4,6 @@ package com.grid.api.services.async
 
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
-import com.grid.api.core.JsonValue
 import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.CustomerCreateParams
 import com.grid.api.models.customers.CustomerGetKycLinkParams
@@ -37,7 +36,7 @@ internal class CustomerServiceAsyncTest {
                             .builder()
                             .customerType(CustomerType.INDIVIDUAL)
                             .platformCustomerId("9f84e0c2a72c4fa")
-                            .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
+                            .umaAddress("\$john.doe@uma.domain.com")
                             .address(
                                 Address.builder()
                                     .country("US")

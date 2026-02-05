@@ -2,7 +2,6 @@
 
 package com.grid.api.models.customers
 
-import com.grid.api.core.JsonValue
 import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -16,7 +15,7 @@ internal class CustomerCreateParamsTest {
                 CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest.builder()
                     .customerType(CustomerType.INDIVIDUAL)
                     .platformCustomerId("9f84e0c2a72c4fa")
-                    .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
+                    .umaAddress("\$john.doe@uma.domain.com")
                     .address(
                         Address.builder()
                             .country("US")
@@ -44,7 +43,7 @@ internal class CustomerCreateParamsTest {
                         .builder()
                         .customerType(CustomerType.INDIVIDUAL)
                         .platformCustomerId("9f84e0c2a72c4fa")
-                        .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
+                        .umaAddress("\$john.doe@uma.domain.com")
                         .address(
                             Address.builder()
                                 .country("US")
@@ -71,7 +70,7 @@ internal class CustomerCreateParamsTest {
                         .builder()
                         .customerType(CustomerType.INDIVIDUAL)
                         .platformCustomerId("9f84e0c2a72c4fa")
-                        .umaAddress(JsonValue.from("\$john.doe@uma.domain.com"))
+                        .umaAddress("\$john.doe@uma.domain.com")
                         .address(
                             Address.builder()
                                 .country("US")

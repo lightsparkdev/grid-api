@@ -436,7 +436,7 @@ private constructor(
         private constructor(
             private val customerType: JsonField<CustomerType>,
             private val platformCustomerId: JsonField<String>,
-            private val umaAddress: JsonValue,
+            private val umaAddress: JsonField<String>,
             private val address: JsonField<Address>,
             private val birthDate: JsonField<LocalDate>,
             private val fullName: JsonField<String>,
@@ -454,7 +454,7 @@ private constructor(
                 platformCustomerId: JsonField<String> = JsonMissing.of(),
                 @JsonProperty("umaAddress")
                 @ExcludeMissing
-                umaAddress: JsonValue = JsonMissing.of(),
+                umaAddress: JsonField<String> = JsonMissing.of(),
                 @JsonProperty("address")
                 @ExcludeMissing
                 address: JsonField<Address> = JsonMissing.of(),
@@ -519,13 +519,10 @@ private constructor(
              * be updated to the provided value. This is an optional identifier to route payments to
              * the customer. This is an optional identifier to route payments to the customer.
              *
-             * This arbitrary value can be deserialized into a custom type using the `convert`
-             * method:
-             * ```kotlin
-             * val myObject: MyClass = individualCustomerCreateRequest.umaAddress().convert(MyClass::class.java)
-             * ```
+             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
+             *   the server responded with an unexpected value).
              */
-            @JsonProperty("umaAddress") @ExcludeMissing fun _umaAddress(): JsonValue = umaAddress
+            fun umaAddress(): String? = umaAddress.getNullable("umaAddress")
 
             /**
              * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
@@ -576,6 +573,16 @@ private constructor(
             @JsonProperty("platformCustomerId")
             @ExcludeMissing
             fun _platformCustomerId(): JsonField<String> = platformCustomerId
+
+            /**
+             * Returns the raw JSON value of [umaAddress].
+             *
+             * Unlike [umaAddress], this method doesn't throw if the JSON field has an unexpected
+             * type.
+             */
+            @JsonProperty("umaAddress")
+            @ExcludeMissing
+            fun _umaAddress(): JsonField<String> = umaAddress
 
             /**
              * Returns the raw JSON value of [address].
@@ -644,7 +651,7 @@ private constructor(
 
                 private var customerType: JsonField<CustomerType>? = null
                 private var platformCustomerId: JsonField<String>? = null
-                private var umaAddress: JsonValue = JsonMissing.of()
+                private var umaAddress: JsonField<String> = JsonMissing.of()
                 private var address: JsonField<Address> = JsonMissing.of()
                 private var birthDate: JsonField<LocalDate> = JsonMissing.of()
                 private var fullName: JsonField<String> = JsonMissing.of()
@@ -705,7 +712,18 @@ private constructor(
                  * route payments to the customer. This is an optional identifier to route payments
                  * to the customer.
                  */
-                fun umaAddress(umaAddress: JsonValue) = apply { this.umaAddress = umaAddress }
+                fun umaAddress(umaAddress: String) = umaAddress(JsonField.of(umaAddress))
+
+                /**
+                 * Sets [Builder.umaAddress] to an arbitrary JSON value.
+                 *
+                 * You should usually call [Builder.umaAddress] with a well-typed [String] value
+                 * instead. This method is primarily for setting the field to an undocumented or not
+                 * yet supported value.
+                 */
+                fun umaAddress(umaAddress: JsonField<String>) = apply {
+                    this.umaAddress = umaAddress
+                }
 
                 fun address(address: Address) = address(JsonField.of(address))
 
@@ -815,6 +833,7 @@ private constructor(
 
                 customerType().validate()
                 platformCustomerId()
+                umaAddress()
                 address()?.validate()
                 birthDate()
                 fullName()
@@ -839,6 +858,7 @@ private constructor(
             internal fun validity(): Int =
                 (customerType.asKnown()?.validity() ?: 0) +
                     (if (platformCustomerId.asKnown() == null) 0 else 1) +
+                    (if (umaAddress.asKnown() == null) 0 else 1) +
                     (address.asKnown()?.validity() ?: 0) +
                     (if (birthDate.asKnown() == null) 0 else 1) +
                     (if (fullName.asKnown() == null) 0 else 1) +
@@ -884,7 +904,7 @@ private constructor(
         private constructor(
             private val customerType: JsonField<CustomerType>,
             private val platformCustomerId: JsonField<String>,
-            private val umaAddress: JsonValue,
+            private val umaAddress: JsonField<String>,
             private val address: JsonField<Address>,
             private val beneficialOwners: JsonField<List<UltimateBeneficialOwner>>,
             private val businessInfo: JsonField<BusinessCustomerFields.BusinessInfo>,
@@ -901,7 +921,7 @@ private constructor(
                 platformCustomerId: JsonField<String> = JsonMissing.of(),
                 @JsonProperty("umaAddress")
                 @ExcludeMissing
-                umaAddress: JsonValue = JsonMissing.of(),
+                umaAddress: JsonField<String> = JsonMissing.of(),
                 @JsonProperty("address")
                 @ExcludeMissing
                 address: JsonField<Address> = JsonMissing.of(),
@@ -961,13 +981,10 @@ private constructor(
              * be updated to the provided value. This is an optional identifier to route payments to
              * the customer. This is an optional identifier to route payments to the customer.
              *
-             * This arbitrary value can be deserialized into a custom type using the `convert`
-             * method:
-             * ```kotlin
-             * val myObject: MyClass = businessCustomerCreateRequest.umaAddress().convert(MyClass::class.java)
-             * ```
+             * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
+             *   the server responded with an unexpected value).
              */
-            @JsonProperty("umaAddress") @ExcludeMissing fun _umaAddress(): JsonValue = umaAddress
+            fun umaAddress(): String? = umaAddress.getNullable("umaAddress")
 
             /**
              * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if
@@ -1010,6 +1027,16 @@ private constructor(
             @JsonProperty("platformCustomerId")
             @ExcludeMissing
             fun _platformCustomerId(): JsonField<String> = platformCustomerId
+
+            /**
+             * Returns the raw JSON value of [umaAddress].
+             *
+             * Unlike [umaAddress], this method doesn't throw if the JSON field has an unexpected
+             * type.
+             */
+            @JsonProperty("umaAddress")
+            @ExcludeMissing
+            fun _umaAddress(): JsonField<String> = umaAddress
 
             /**
              * Returns the raw JSON value of [address].
@@ -1070,7 +1097,7 @@ private constructor(
 
                 private var customerType: JsonField<CustomerType>? = null
                 private var platformCustomerId: JsonField<String>? = null
-                private var umaAddress: JsonValue = JsonMissing.of()
+                private var umaAddress: JsonField<String> = JsonMissing.of()
                 private var address: JsonField<Address> = JsonMissing.of()
                 private var beneficialOwners: JsonField<MutableList<UltimateBeneficialOwner>>? =
                     null
@@ -1133,7 +1160,18 @@ private constructor(
                  * route payments to the customer. This is an optional identifier to route payments
                  * to the customer.
                  */
-                fun umaAddress(umaAddress: JsonValue) = apply { this.umaAddress = umaAddress }
+                fun umaAddress(umaAddress: String) = umaAddress(JsonField.of(umaAddress))
+
+                /**
+                 * Sets [Builder.umaAddress] to an arbitrary JSON value.
+                 *
+                 * You should usually call [Builder.umaAddress] with a well-typed [String] value
+                 * instead. This method is primarily for setting the field to an undocumented or not
+                 * yet supported value.
+                 */
+                fun umaAddress(umaAddress: JsonField<String>) = apply {
+                    this.umaAddress = umaAddress
+                }
 
                 fun address(address: Address) = address(JsonField.of(address))
 
@@ -1245,6 +1283,7 @@ private constructor(
 
                 customerType().validate()
                 platformCustomerId()
+                umaAddress()
                 address()?.validate()
                 beneficialOwners()?.forEach { it.validate() }
                 businessInfo()?.validate()
@@ -1268,6 +1307,7 @@ private constructor(
             internal fun validity(): Int =
                 (customerType.asKnown()?.validity() ?: 0) +
                     (if (platformCustomerId.asKnown() == null) 0 else 1) +
+                    (if (umaAddress.asKnown() == null) 0 else 1) +
                     (address.asKnown()?.validity() ?: 0) +
                     (beneficialOwners.asKnown()?.sumOf { it.validity().toInt() } ?: 0) +
                     (businessInfo.asKnown()?.validity() ?: 0)
