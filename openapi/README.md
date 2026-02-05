@@ -8,9 +8,7 @@ This readme is a continually evolving document meant to provide API design best 
 
 ---
 ## OpenAPI schema version
-We use [OpenAPI schema 3.1][(](https://spec.openapis.org/oas/v3.1.0.html)).  Do not define schema in 3.2, it will break client library generation.
-
-## Design Considerations
+This guide uses [OpenAPI schema 3.1](https://spec.openapis.org/oas/v3.1.0.html).
 - Imagine you're teaching a customer how to use our API. How might you structure the API to make it easy to explain and understand?
 - Since we don't know exactly how customers will use the API, how might we make it flexible?
 - Can integrators guess how your API works based on how other features work?
