@@ -1017,8 +1017,9 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
 }
 
 /* Content container - set width and centering */
+/* 1076px = 980px content + 48px padding on each side */
 #content-container {
-  max-width: 1024px !important;
+  max-width: 1076px !important;
   width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
