@@ -28,7 +28,7 @@ interface TransactionServiceAsync {
      */
     fun withOptions(modifier: (ClientOptions.Builder) -> Unit): TransactionServiceAsync
 
-    /** Retrieve detailed information about a specific transaction */
+    /** Retrieve detailed information about a specific transaction. */
     suspend fun retrieve(
         transactionId: String,
         params: TransactionRetrieveParams = TransactionRetrieveParams.none(),

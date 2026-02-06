@@ -7,7 +7,7 @@ import com.grid.api.core.http.Headers
 import com.grid.api.core.http.QueryParams
 import java.util.Objects
 
-/** Get a specific UMA invitation by code. */
+/** Retrieve details about an UMA invitation by its invitation code. */
 class InvitationRetrieveParams
 private constructor(
     private val invitationCode: String?,

@@ -28,7 +28,7 @@ interface TransactionService {
      */
     fun withOptions(modifier: (ClientOptions.Builder) -> Unit): TransactionService
 
-    /** Retrieve detailed information about a specific transaction */
+    /** Retrieve detailed information about a specific transaction. */
     fun retrieve(
         transactionId: String,
         params: TransactionRetrieveParams = TransactionRetrieveParams.none(),

@@ -7,7 +7,7 @@ import com.grid.api.core.http.Headers
 import com.grid.api.core.http.QueryParams
 import java.util.Objects
 
-/** Retrieve detailed information about a specific transaction */
+/** Retrieve detailed information about a specific transaction. */
 class TransactionRetrieveParams
 private constructor(
     private val transactionId: String?,
