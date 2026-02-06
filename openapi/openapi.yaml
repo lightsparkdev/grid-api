@@ -35,6 +35,10 @@ tags:
     description: Endpoints to trigger test cases in sandbox
   - name: API Tokens
     description: Endpoints to programmatically manage API tokens
+  - name: Exchange Rates
+    description: >-
+      Endpoints for retrieving cached foreign exchange rates. Rates are cached
+      for approximately 5 minutes and include platform-specific fees.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -84,6 +88,8 @@ components:
 paths:
   /config:
     $ref: paths/platform/config.yaml
+  /exchange-rates:
+    $ref: paths/exchange-rates/exchange_rates.yaml
   /customers:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:

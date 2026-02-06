@@ -10,7 +10,7 @@ organization:
   # and headings.
   name: grid
   # Link to your API documentation.
-  docs: ''
+  docs: 'grid.lightspark.com'
   # Contact email for bug reports, questions, and support requests.
   contact: support@lightspark.com
 
@@ -229,6 +229,11 @@ resources:
       list: get /tokens
       retrieve: get /tokens/{tokenId}
       delete: delete /tokens/{tokenId}
+  exchange_rates:
+    methods:
+      list:
+        endpoint: get /exchange-rates
+        paginated: false
 
 settings:
   # All generated integration tests that hit the prism mock http server are marked
@@ -326,6 +331,86 @@ openapi:
       args:
         unionPath: AllErrors
         enumProperty: code
+    # ── customerType: IndividualCustomerFields / BusinessCustomerFields ──
+    - command: remove
+      reason: >-
+        Remove inline customerType enums from customer fields schemas to avoid
+        conflicting types when allOf merges them with base schemas (Customer,
+        CustomerCreateRequest, CustomerUpdateRequest) that define customerType
+        via the shared CustomerType $ref
+      args:
+        target:
+          - "$.components.schemas.IndividualCustomerFields.properties"
+          - "$.components.schemas.BusinessCustomerFields.properties"
+        keys: [ "customerType" ]
+
+    # ── accountType: common account info schemas ──
+    - command: remove
+      reason: >-
+        Remove inline accountType enums from common account info schemas to
+        avoid conflicting types when allOf merges them with
+        BaseExternalAccountInfo or BasePaymentAccountInfo, which define
+        accountType via shared $ref enums
+      args:
+        target:
+          - "$.components.schemas.UsAccountInfo.properties"
+          - "$.components.schemas.ClabeAccountInfo.properties"
+          - "$.components.schemas.PixAccountInfo.properties"
+          - "$.components.schemas.IbanAccountInfo.properties"
+          - "$.components.schemas.UpiAccountInfo.properties"
+          - "$.components.schemas.NgnAccountInfo.properties"
+          - "$.components.schemas.CadAccountInfo.properties"
+          - "$.components.schemas.GbpAccountInfo.properties"
+          - "$.components.schemas.PhpAccountInfo.properties"
+          - "$.components.schemas.SgdAccountInfo.properties"
+          - "$.components.schemas.SparkWalletInfo.properties"
+          - "$.components.schemas.LightningInfo.properties"
+          - "$.components.schemas.SolanaWalletInfo.properties"
+          - "$.components.schemas.TronWalletInfo.properties"
+          - "$.components.schemas.PolygonWalletInfo.properties"
+          - "$.components.schemas.BaseWalletInfo.properties"
+        keys: [ "accountType" ]
+
+    # ── sourceType: transaction and quote source schemas ──
+    - command: remove
+      reason: >-
+        Remove inline sourceType enums from transaction and quote source
+        allOf variants to avoid conflicting types with their base schemas
+        which define sourceType via shared $ref enums
+      args:
+        target:
+          - "$.components.schemas.AccountTransactionSource.allOf[1].properties"
+          - "$.components.schemas.UmaAddressTransactionSource.allOf[1].properties"
+          - "$.components.schemas.AccountQuoteSource.allOf[1].properties"
+          - "$.components.schemas.RealtimeFundingQuoteSource.allOf[1].properties"
+        keys: [ "sourceType" ]
+
+    # ── destinationType: transaction and quote destination schemas ──
+    - command: remove
+      reason: >-
+        Remove inline destinationType enums from transaction and quote
+        destination allOf variants to avoid conflicting types with their
+        base schemas which define destinationType via shared $ref enums
+      args:
+        target:
+          - "$.components.schemas.AccountTransactionDestination.allOf[1].properties"
+          - "$.components.schemas.UmaAddressTransactionDestination.allOf[1].properties"
+          - "$.components.schemas.AccountDestination.allOf[1].properties"
+          - "$.components.schemas.UmaAddressDestination.allOf[1].properties"
+          - "$.components.schemas.ExternalAccountDetailsDestination.allOf[1].properties"
+        keys: [ "destinationType" ]
+
+    # ── beneficiaryType: beneficiary schemas ──
+    - command: remove
+      reason: >-
+        Remove inline beneficiaryType enums from beneficiary allOf variants
+        to avoid conflicting types with BaseBeneficiary which defines
+        beneficiaryType via a shared $ref enum
+      args:
+        target:
+          - "$.components.schemas.IndividualBeneficiary.allOf[1].properties"
+          - "$.components.schemas.BusinessBeneficiary.allOf[1].properties"
+        keys: [ "beneficiaryType" ]
 
 errors:
   union:
@@ -339,3 +424,4 @@ diagnostics:
   ignored:
     Schema/ObjectHasNoProperties:
       - pagination.0.response.data.items
+    Schema/EnumHasOneMember: true
