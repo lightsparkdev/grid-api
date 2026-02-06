@@ -54,7 +54,7 @@ internal class SandboxSendFundsResponseTest {
                         .accountOrWalletInfo(
                             PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                 .builder()
-                                .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -70,7 +70,7 @@ internal class SandboxSendFundsResponseTest {
                         .accountOrWalletInfo(
                             PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                 .builder()
-                                .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -175,7 +175,7 @@ internal class SandboxSendFundsResponseTest {
                 PaymentInstructions.builder()
                     .accountOrWalletInfo(
                         PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo.builder()
-                            .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                            .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
                             .clabeNumber("123456789012345678")
                             .reference("UMA-Q12345-REF")
                             .build()
@@ -188,7 +188,7 @@ internal class SandboxSendFundsResponseTest {
                 PaymentInstructions.builder()
                     .accountOrWalletInfo(
                         PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo.builder()
-                            .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                            .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
                             .clabeNumber("123456789012345678")
                             .reference("UMA-Q12345-REF")
                             .build()
@@ -299,7 +299,7 @@ internal class SandboxSendFundsResponseTest {
                         .accountOrWalletInfo(
                             PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                 .builder()
-                                .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -315,7 +315,7 @@ internal class SandboxSendFundsResponseTest {
                         .accountOrWalletInfo(
                             PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                 .builder()
-                                .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                                .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()

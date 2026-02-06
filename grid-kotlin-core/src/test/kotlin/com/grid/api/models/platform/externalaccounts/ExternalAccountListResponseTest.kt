@@ -5,12 +5,9 @@ package com.grid.api.models.platform.externalaccounts
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.core.jsonMapper
 import com.grid.api.models.customers.Address
-import com.grid.api.models.customers.externalaccounts.BaseBeneficiary
-import com.grid.api.models.customers.externalaccounts.BaseExternalAccountInfo
+import com.grid.api.models.customers.externalaccounts.BeneficiaryOneOf
 import com.grid.api.models.customers.externalaccounts.ExternalAccount
 import com.grid.api.models.customers.externalaccounts.ExternalAccountInfoOneOf
-import com.grid.api.models.customers.externalaccounts.IndividualBeneficiary
-import com.grid.api.models.customers.externalaccounts.UsAccountInfo
 import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -26,14 +23,26 @@ internal class ExternalAccountListResponseTest {
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .accountInfo(
                             ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                                .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                                .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                                .accountCategory(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountCategory
+                                        .CHECKING
+                                )
                                 .accountNumber("123456789")
-                                .routingNumber("987654321")
-                                .bankName("Chase Bank")
+                                .accountType(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountType
+                                        .US_ACCOUNT
+                                )
                                 .beneficiary(
-                                    IndividualBeneficiary.builder()
-                                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                    BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                        .beneficiaryType(
+                                            BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                                .INDIVIDUAL
+                                        )
+                                        .birthDate(LocalDate.parse("1990-01-15"))
+                                        .fullName("John Michael Doe")
+                                        .nationality("US")
                                         .address(
                                             Address.builder()
                                                 .country("US")
@@ -44,11 +53,10 @@ internal class ExternalAccountListResponseTest {
                                                 .state("CA")
                                                 .build()
                                         )
-                                        .birthDate(LocalDate.parse("1990-01-15"))
-                                        .fullName("John Michael Doe")
-                                        .nationality("US")
                                         .build()
                                 )
+                                .routingNumber("987654321")
+                                .bankName("Chase Bank")
                                 .build()
                         )
                         .currency("USD")
@@ -66,14 +74,25 @@ internal class ExternalAccountListResponseTest {
                     .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                     .accountInfo(
                         ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                            .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                            .accountCategory(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                    .AccountCategory
+                                    .CHECKING
+                            )
                             .accountNumber("123456789")
-                            .routingNumber("987654321")
-                            .bankName("Chase Bank")
+                            .accountType(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
+                                    .US_ACCOUNT
+                            )
                             .beneficiary(
-                                IndividualBeneficiary.builder()
-                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                    .beneficiaryType(
+                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                            .INDIVIDUAL
+                                    )
+                                    .birthDate(LocalDate.parse("1990-01-15"))
+                                    .fullName("John Michael Doe")
+                                    .nationality("US")
                                     .address(
                                         Address.builder()
                                             .country("US")
@@ -84,11 +103,10 @@ internal class ExternalAccountListResponseTest {
                                             .state("CA")
                                             .build()
                                     )
-                                    .birthDate(LocalDate.parse("1990-01-15"))
-                                    .fullName("John Michael Doe")
-                                    .nationality("US")
                                     .build()
                             )
+                            .routingNumber("987654321")
+                            .bankName("Chase Bank")
                             .build()
                     )
                     .currency("USD")
@@ -110,14 +128,26 @@ internal class ExternalAccountListResponseTest {
                         .id("ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
                         .accountInfo(
                             ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                                .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                                .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                                .accountCategory(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountCategory
+                                        .CHECKING
+                                )
                                 .accountNumber("123456789")
-                                .routingNumber("987654321")
-                                .bankName("Chase Bank")
+                                .accountType(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountType
+                                        .US_ACCOUNT
+                                )
                                 .beneficiary(
-                                    IndividualBeneficiary.builder()
-                                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                    BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                        .beneficiaryType(
+                                            BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                                .INDIVIDUAL
+                                        )
+                                        .birthDate(LocalDate.parse("1990-01-15"))
+                                        .fullName("John Michael Doe")
+                                        .nationality("US")
                                         .address(
                                             Address.builder()
                                                 .country("US")
@@ -128,11 +158,10 @@ internal class ExternalAccountListResponseTest {
                                                 .state("CA")
                                                 .build()
                                         )
-                                        .birthDate(LocalDate.parse("1990-01-15"))
-                                        .fullName("John Michael Doe")
-                                        .nationality("US")
                                         .build()
                                 )
+                                .routingNumber("987654321")
+                                .bankName("Chase Bank")
                                 .build()
                         )
                         .currency("USD")

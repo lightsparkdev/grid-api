@@ -54,7 +54,7 @@ internal class QuoteSourceOneOfTest {
     fun ofRealtimeFundingQuoteSource() {
         val realtimeFundingQuoteSource =
             QuoteSourceOneOf.RealtimeFundingQuoteSource.builder()
-                .sourceType(BaseQuoteSource.SourceType.REALTIME_FUNDING)
+                .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
                 .currency("USD")
                 .customerId("Customer:019542f5-b3e7-1d02-0000-000000000009")
                 .build()
@@ -73,7 +73,7 @@ internal class QuoteSourceOneOfTest {
         val quoteSourceOneOf =
             QuoteSourceOneOf.ofRealtimeFundingQuoteSource(
                 QuoteSourceOneOf.RealtimeFundingQuoteSource.builder()
-                    .sourceType(BaseQuoteSource.SourceType.REALTIME_FUNDING)
+                    .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
                     .currency("USD")
                     .customerId("Customer:019542f5-b3e7-1d02-0000-000000000009")
                     .build()

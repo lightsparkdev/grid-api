@@ -8,6 +8,8 @@ import com.grid.api.services.blocking.ConfigService
 import com.grid.api.services.blocking.ConfigServiceImpl
 import com.grid.api.services.blocking.CustomerService
 import com.grid.api.services.blocking.CustomerServiceImpl
+import com.grid.api.services.blocking.ExchangeRateService
+import com.grid.api.services.blocking.ExchangeRateServiceImpl
 import com.grid.api.services.blocking.InvitationService
 import com.grid.api.services.blocking.InvitationServiceImpl
 import com.grid.api.services.blocking.PlaidService
@@ -94,6 +96,10 @@ class GridClientImpl(private val clientOptions: ClientOptions) : GridClient {
 
     private val tokens: TokenService by lazy { TokenServiceImpl(clientOptionsWithUserAgent) }
 
+    private val exchangeRates: ExchangeRateService by lazy {
+        ExchangeRateServiceImpl(clientOptionsWithUserAgent)
+    }
+
     override fun async(): GridClientAsync = async
 
     override fun withRawResponse(): GridClient.WithRawResponse = withRawResponse
@@ -128,6 +134,8 @@ class GridClientImpl(private val clientOptions: ClientOptions) : GridClient {
     override fun umaProviders(): UmaProviderService = umaProviders
 
     override fun tokens(): TokenService = tokens
+
+    override fun exchangeRates(): ExchangeRateService = exchangeRates
 
     override fun close() = clientOptions.close()
 
@@ -190,6 +198,10 @@ class GridClientImpl(private val clientOptions: ClientOptions) : GridClient {
             TokenServiceImpl.WithRawResponseImpl(clientOptions)
         }
 
+        private val exchangeRates: ExchangeRateService.WithRawResponse by lazy {
+            ExchangeRateServiceImpl.WithRawResponseImpl(clientOptions)
+        }
+
         override fun withOptions(
             modifier: (ClientOptions.Builder) -> Unit
         ): GridClient.WithRawResponse =
@@ -222,5 +234,7 @@ class GridClientImpl(private val clientOptions: ClientOptions) : GridClient {
         override fun umaProviders(): UmaProviderService.WithRawResponse = umaProviders
 
         override fun tokens(): TokenService.WithRawResponse = tokens
+
+        override fun exchangeRates(): ExchangeRateService.WithRawResponse = exchangeRates
     }
 }

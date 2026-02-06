@@ -93,7 +93,6 @@ private constructor(
 
     fun toBusinessCustomerFields(): BusinessCustomerFields =
         BusinessCustomerFields.builder()
-            .customerType(customerType)
             .address(address)
             .beneficialOwners(beneficialOwners)
             .businessInfo(businessInfo)

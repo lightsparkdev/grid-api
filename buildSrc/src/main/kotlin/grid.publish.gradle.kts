@@ -11,7 +11,7 @@ configure<PublishingExtension> {
             pom {
                 name.set("Grid API")
                 description.set("API for managing global payments on the open Money Grid. Built by Lightspark.\nSee the full documentation at https://grid.lightspark.com/.")
-                url.set("https://www.github.com/stainless-sdks/grid-kotlin")
+                url.set("grid.lightspark.com")
 
                 licenses {
                     license {

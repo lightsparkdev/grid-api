@@ -32,7 +32,7 @@ interface InvitationService {
         requestOptions: RequestOptions = RequestOptions.none(),
     ): UmaInvitation
 
-    /** Retrieve details about an UMA invitation by its invitation code. */
+    /** Get a specific UMA invitation by code. */
     fun retrieve(
         invitationCode: String,
         params: InvitationRetrieveParams = InvitationRetrieveParams.none(),

@@ -8,6 +8,8 @@ import com.grid.api.services.async.ConfigServiceAsync
 import com.grid.api.services.async.ConfigServiceAsyncImpl
 import com.grid.api.services.async.CustomerServiceAsync
 import com.grid.api.services.async.CustomerServiceAsyncImpl
+import com.grid.api.services.async.ExchangeRateServiceAsync
+import com.grid.api.services.async.ExchangeRateServiceAsyncImpl
 import com.grid.api.services.async.InvitationServiceAsync
 import com.grid.api.services.async.InvitationServiceAsyncImpl
 import com.grid.api.services.async.PlaidServiceAsync
@@ -106,6 +108,10 @@ class GridClientAsyncImpl(private val clientOptions: ClientOptions) : GridClient
         TokenServiceAsyncImpl(clientOptionsWithUserAgent)
     }
 
+    private val exchangeRates: ExchangeRateServiceAsync by lazy {
+        ExchangeRateServiceAsyncImpl(clientOptionsWithUserAgent)
+    }
+
     override fun sync(): GridClient = sync
 
     override fun withRawResponse(): GridClientAsync.WithRawResponse = withRawResponse
@@ -140,6 +146,8 @@ class GridClientAsyncImpl(private val clientOptions: ClientOptions) : GridClient
     override fun umaProviders(): UmaProviderServiceAsync = umaProviders
 
     override fun tokens(): TokenServiceAsync = tokens
+
+    override fun exchangeRates(): ExchangeRateServiceAsync = exchangeRates
 
     override fun close() = clientOptions.close()
 
@@ -202,6 +210,10 @@ class GridClientAsyncImpl(private val clientOptions: ClientOptions) : GridClient
             TokenServiceAsyncImpl.WithRawResponseImpl(clientOptions)
         }
 
+        private val exchangeRates: ExchangeRateServiceAsync.WithRawResponse by lazy {
+            ExchangeRateServiceAsyncImpl.WithRawResponseImpl(clientOptions)
+        }
+
         override fun withOptions(
             modifier: (ClientOptions.Builder) -> Unit
         ): GridClientAsync.WithRawResponse =
@@ -236,5 +248,7 @@ class GridClientAsyncImpl(private val clientOptions: ClientOptions) : GridClient
         override fun umaProviders(): UmaProviderServiceAsync.WithRawResponse = umaProviders
 
         override fun tokens(): TokenServiceAsync.WithRawResponse = tokens
+
+        override fun exchangeRates(): ExchangeRateServiceAsync.WithRawResponse = exchangeRates
     }
 }

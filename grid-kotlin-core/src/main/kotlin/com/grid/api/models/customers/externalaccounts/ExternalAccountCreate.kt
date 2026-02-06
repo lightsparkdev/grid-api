@@ -51,9 +51,6 @@ private constructor(
     )
 
     /**
-     * Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must
-     * be provided.
-     *
      * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
      *   missing or null (e.g. if the server responded with an unexpected value).
      */
@@ -188,10 +185,6 @@ private constructor(
             additionalProperties = externalAccountCreate.additionalProperties.toMutableMap()
         }
 
-        /**
-         * Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress`
-         * must be provided.
-         */
         fun accountInfo(accountInfo: ExternalAccountInfoOneOf) =
             accountInfo(JsonField.of(accountInfo))
 
@@ -276,7 +269,9 @@ private constructor(
          * Alias for calling [accountInfo] with
          * `ExternalAccountInfoOneOf.ofNgnAccountExternalAccountInfo(ngnAccountExternalAccountInfo)`.
          */
-        fun accountInfo(ngnAccountExternalAccountInfo: NgnAccountExternalAccountInfo) =
+        fun accountInfo(
+            ngnAccountExternalAccountInfo: ExternalAccountInfoOneOf.NgnAccountExternalAccountInfo
+        ) =
             accountInfo(
                 ExternalAccountInfoOneOf.ofNgnAccountExternalAccountInfo(
                     ngnAccountExternalAccountInfo
@@ -352,7 +347,9 @@ private constructor(
          * Alias for calling [accountInfo] with
          * `ExternalAccountInfoOneOf.ofLightningExternalAccountInfo(lightningExternalAccountInfo)`.
          */
-        fun accountInfo(lightningExternalAccountInfo: LightningExternalAccountInfo) =
+        fun accountInfo(
+            lightningExternalAccountInfo: ExternalAccountInfoOneOf.LightningExternalAccountInfo
+        ) =
             accountInfo(
                 ExternalAccountInfoOneOf.ofLightningExternalAccountInfo(
                     lightningExternalAccountInfo

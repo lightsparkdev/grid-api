@@ -3,12 +3,9 @@
 package com.grid.api.models.platform.externalaccounts
 
 import com.grid.api.models.customers.Address
-import com.grid.api.models.customers.externalaccounts.BaseBeneficiary
-import com.grid.api.models.customers.externalaccounts.BaseExternalAccountInfo
+import com.grid.api.models.customers.externalaccounts.BeneficiaryOneOf
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreate
 import com.grid.api.models.customers.externalaccounts.ExternalAccountInfoOneOf
-import com.grid.api.models.customers.externalaccounts.IndividualBeneficiary
-import com.grid.api.models.customers.externalaccounts.UsAccountInfo
 import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -22,14 +19,25 @@ internal class ExternalAccountCreateParamsTest {
                 ExternalAccountCreate.builder()
                     .accountInfo(
                         ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                            .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                            .accountCategory(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                    .AccountCategory
+                                    .CHECKING
+                            )
                             .accountNumber("12345678901")
-                            .routingNumber("123456789")
-                            .bankName("Chase Bank")
+                            .accountType(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
+                                    .US_ACCOUNT
+                            )
                             .beneficiary(
-                                IndividualBeneficiary.builder()
-                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                    .beneficiaryType(
+                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                            .INDIVIDUAL
+                                    )
+                                    .birthDate(LocalDate.parse("1990-01-15"))
+                                    .fullName("John Doe")
+                                    .nationality("US")
                                     .address(
                                         Address.builder()
                                             .country("US")
@@ -40,11 +48,10 @@ internal class ExternalAccountCreateParamsTest {
                                             .state("CA")
                                             .build()
                                     )
-                                    .birthDate(LocalDate.parse("1990-01-15"))
-                                    .fullName("John Doe")
-                                    .nationality("US")
                                     .build()
                             )
+                            .routingNumber("123456789")
+                            .bankName("Chase Bank")
                             .build()
                     )
                     .currency("USD")
@@ -64,14 +71,26 @@ internal class ExternalAccountCreateParamsTest {
                     ExternalAccountCreate.builder()
                         .accountInfo(
                             ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                                .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                                .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                                .accountCategory(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountCategory
+                                        .CHECKING
+                                )
                                 .accountNumber("12345678901")
-                                .routingNumber("123456789")
-                                .bankName("Chase Bank")
+                                .accountType(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountType
+                                        .US_ACCOUNT
+                                )
                                 .beneficiary(
-                                    IndividualBeneficiary.builder()
-                                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                    BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                        .beneficiaryType(
+                                            BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                                .INDIVIDUAL
+                                        )
+                                        .birthDate(LocalDate.parse("1990-01-15"))
+                                        .fullName("John Doe")
+                                        .nationality("US")
                                         .address(
                                             Address.builder()
                                                 .country("US")
@@ -82,11 +101,10 @@ internal class ExternalAccountCreateParamsTest {
                                                 .state("CA")
                                                 .build()
                                         )
-                                        .birthDate(LocalDate.parse("1990-01-15"))
-                                        .fullName("John Doe")
-                                        .nationality("US")
                                         .build()
                                 )
+                                .routingNumber("123456789")
+                                .bankName("Chase Bank")
                                 .build()
                         )
                         .currency("USD")
@@ -104,14 +122,25 @@ internal class ExternalAccountCreateParamsTest {
                 ExternalAccountCreate.builder()
                     .accountInfo(
                         ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                            .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                            .accountCategory(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                    .AccountCategory
+                                    .CHECKING
+                            )
                             .accountNumber("12345678901")
-                            .routingNumber("123456789")
-                            .bankName("Chase Bank")
+                            .accountType(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
+                                    .US_ACCOUNT
+                            )
                             .beneficiary(
-                                IndividualBeneficiary.builder()
-                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                    .beneficiaryType(
+                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                            .INDIVIDUAL
+                                    )
+                                    .birthDate(LocalDate.parse("1990-01-15"))
+                                    .fullName("John Doe")
+                                    .nationality("US")
                                     .address(
                                         Address.builder()
                                             .country("US")
@@ -122,11 +151,10 @@ internal class ExternalAccountCreateParamsTest {
                                             .state("CA")
                                             .build()
                                     )
-                                    .birthDate(LocalDate.parse("1990-01-15"))
-                                    .fullName("John Doe")
-                                    .nationality("US")
                                     .build()
                             )
+                            .routingNumber("123456789")
+                            .bankName("Chase Bank")
                             .build()
                     )
                     .currency("USD")
@@ -145,18 +173,29 @@ internal class ExternalAccountCreateParamsTest {
                     ExternalAccountCreate.builder()
                         .accountInfo(
                             ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                                .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                                .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                                .accountCategory(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountCategory
+                                        .CHECKING
+                                )
                                 .accountNumber("12345678901")
-                                .routingNumber("123456789")
+                                .accountType(
+                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                        .AccountType
+                                        .US_ACCOUNT
+                                )
                                 .beneficiary(
-                                    IndividualBeneficiary.builder()
-                                        .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                    BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                        .beneficiaryType(
+                                            BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                                .INDIVIDUAL
+                                        )
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Doe")
                                         .nationality("US")
                                         .build()
                                 )
+                                .routingNumber("123456789")
                                 .build()
                         )
                         .currency("USD")
@@ -171,18 +210,28 @@ internal class ExternalAccountCreateParamsTest {
                 ExternalAccountCreate.builder()
                     .accountInfo(
                         ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                            .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                            .accountCategory(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                    .AccountCategory
+                                    .CHECKING
+                            )
                             .accountNumber("12345678901")
-                            .routingNumber("123456789")
+                            .accountType(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
+                                    .US_ACCOUNT
+                            )
                             .beneficiary(
-                                IndividualBeneficiary.builder()
-                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                    .beneficiaryType(
+                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                            .INDIVIDUAL
+                                    )
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")
                                     .build()
                             )
+                            .routingNumber("123456789")
                             .build()
                     )
                     .currency("USD")

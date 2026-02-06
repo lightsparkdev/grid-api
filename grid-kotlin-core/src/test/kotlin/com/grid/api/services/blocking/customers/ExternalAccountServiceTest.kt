@@ -5,12 +5,9 @@ package com.grid.api.services.blocking.customers
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.models.customers.Address
-import com.grid.api.models.customers.externalaccounts.BaseBeneficiary
-import com.grid.api.models.customers.externalaccounts.BaseExternalAccountInfo
+import com.grid.api.models.customers.externalaccounts.BeneficiaryOneOf
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreate
 import com.grid.api.models.customers.externalaccounts.ExternalAccountInfoOneOf
-import com.grid.api.models.customers.externalaccounts.IndividualBeneficiary
-import com.grid.api.models.customers.externalaccounts.UsAccountInfo
 import java.time.LocalDate
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -35,14 +32,25 @@ internal class ExternalAccountServiceTest {
                 ExternalAccountCreate.builder()
                     .accountInfo(
                         ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
-                            .accountType(BaseExternalAccountInfo.AccountType.US_ACCOUNT)
-                            .accountCategory(UsAccountInfo.AccountCategory.CHECKING)
+                            .accountCategory(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
+                                    .AccountCategory
+                                    .CHECKING
+                            )
                             .accountNumber("12345678901")
-                            .routingNumber("123456789")
-                            .bankName("Chase Bank")
+                            .accountType(
+                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
+                                    .US_ACCOUNT
+                            )
                             .beneficiary(
-                                IndividualBeneficiary.builder()
-                                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                                BeneficiaryOneOf.IndividualBeneficiary.builder()
+                                    .beneficiaryType(
+                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
+                                            .INDIVIDUAL
+                                    )
+                                    .birthDate(LocalDate.parse("1990-01-15"))
+                                    .fullName("John Doe")
+                                    .nationality("US")
                                     .address(
                                         Address.builder()
                                             .country("US")
@@ -53,11 +61,10 @@ internal class ExternalAccountServiceTest {
                                             .state("CA")
                                             .build()
                                     )
-                                    .birthDate(LocalDate.parse("1990-01-15"))
-                                    .fullName("John Doe")
-                                    .nationality("US")
                                     .build()
                             )
+                            .routingNumber("123456789")
+                            .bankName("Chase Bank")
                             .build()
                     )
                     .currency("USD")

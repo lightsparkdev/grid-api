@@ -492,7 +492,6 @@ private constructor(
 
             fun toIndividualCustomerFields(): IndividualCustomerFields =
                 IndividualCustomerFields.builder()
-                    .customerType(customerType)
                     .address(address)
                     .birthDate(birthDate)
                     .fullName(fullName)
@@ -894,7 +893,6 @@ private constructor(
 
             fun toBusinessCustomerFields(): BusinessCustomerFields =
                 BusinessCustomerFields.builder()
-                    .customerType(customerType)
                     .address(address)
                     .beneficialOwners(beneficialOwners)
                     .businessInfo(businessInfo)

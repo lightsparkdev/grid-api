@@ -19,8 +19,11 @@ internal class BeneficiaryOneOfTest {
     @Test
     fun ofIndividualBeneficiary() {
         val individualBeneficiary =
-            IndividualBeneficiary.builder()
-                .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+            BeneficiaryOneOf.IndividualBeneficiary.builder()
+                .beneficiaryType(BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
+                .birthDate(LocalDate.parse("1990-01-15"))
+                .fullName("John Michael Doe")
+                .nationality("US")
                 .address(
                     Address.builder()
                         .country("US")
@@ -31,9 +34,6 @@ internal class BeneficiaryOneOfTest {
                         .state("CA")
                         .build()
                 )
-                .birthDate(LocalDate.parse("1990-01-15"))
-                .fullName("John Michael Doe")
-                .nationality("US")
                 .build()
 
         val beneficiaryOneOf = BeneficiaryOneOf.ofIndividualBeneficiary(individualBeneficiary)
@@ -47,8 +47,13 @@ internal class BeneficiaryOneOfTest {
         val jsonMapper = jsonMapper()
         val beneficiaryOneOf =
             BeneficiaryOneOf.ofIndividualBeneficiary(
-                IndividualBeneficiary.builder()
-                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.INDIVIDUAL)
+                BeneficiaryOneOf.IndividualBeneficiary.builder()
+                    .beneficiaryType(
+                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
+                    )
+                    .birthDate(LocalDate.parse("1990-01-15"))
+                    .fullName("John Michael Doe")
+                    .nationality("US")
                     .address(
                         Address.builder()
                             .country("US")
@@ -59,9 +64,6 @@ internal class BeneficiaryOneOfTest {
                             .state("CA")
                             .build()
                     )
-                    .birthDate(LocalDate.parse("1990-01-15"))
-                    .fullName("John Michael Doe")
-                    .nationality("US")
                     .build()
             )
 
@@ -77,8 +79,9 @@ internal class BeneficiaryOneOfTest {
     @Test
     fun ofBusinessBeneficiary() {
         val businessBeneficiary =
-            BusinessBeneficiary.builder()
-                .beneficiaryType(BaseBeneficiary.BeneficiaryType.BUSINESS)
+            BeneficiaryOneOf.BusinessBeneficiary.builder()
+                .beneficiaryType(BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.INDIVIDUAL)
+                .legalName("Acme Corporation, Inc.")
                 .address(
                     Address.builder()
                         .country("US")
@@ -89,7 +92,6 @@ internal class BeneficiaryOneOfTest {
                         .state("CA")
                         .build()
                 )
-                .legalName("Acme Corporation, Inc.")
                 .registrationNumber("BRN-123456789")
                 .taxId("EIN-987654321")
                 .build()
@@ -105,8 +107,11 @@ internal class BeneficiaryOneOfTest {
         val jsonMapper = jsonMapper()
         val beneficiaryOneOf =
             BeneficiaryOneOf.ofBusinessBeneficiary(
-                BusinessBeneficiary.builder()
-                    .beneficiaryType(BaseBeneficiary.BeneficiaryType.BUSINESS)
+                BeneficiaryOneOf.BusinessBeneficiary.builder()
+                    .beneficiaryType(
+                        BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.INDIVIDUAL
+                    )
+                    .legalName("Acme Corporation, Inc.")
                     .address(
                         Address.builder()
                             .country("US")
@@ -117,7 +122,6 @@ internal class BeneficiaryOneOfTest {
                             .state("CA")
                             .build()
                     )
-                    .legalName("Acme Corporation, Inc.")
                     .registrationNumber("BRN-123456789")
                     .taxId("EIN-987654321")
                     .build()

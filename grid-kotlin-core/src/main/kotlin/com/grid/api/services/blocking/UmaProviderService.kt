@@ -24,8 +24,11 @@ interface UmaProviderService {
     fun withOptions(modifier: (ClientOptions.Builder) -> Unit): UmaProviderService
 
     /**
-     * Retrieve a list of available Counterparty Providers. The response includes basic information
-     * about each provider, such as its UMA address, name, and supported currencies.
+     * This endpoint provides a list of Counterparty Providers that are available.
+     *
+     * The response includes basic information about each provider, such as its UMA address, name,
+     * and supported currencies. This can be used to determine which providers are available for
+     * sending or receiving payments.
      */
     fun list(
         params: UmaProviderListParams = UmaProviderListParams.none(),

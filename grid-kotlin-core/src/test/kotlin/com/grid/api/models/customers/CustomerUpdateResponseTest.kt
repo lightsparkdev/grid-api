@@ -92,7 +92,7 @@ internal class CustomerUpdateResponseTest {
     fun ofBusinessCustomer() {
         val businessCustomer =
             BusinessCustomer.builder()
-                .customerType(CustomerType.BUSINESS)
+                .customerType(CustomerType.INDIVIDUAL)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -154,7 +154,7 @@ internal class CustomerUpdateResponseTest {
         val customerUpdateResponse =
             CustomerUpdateResponse.ofBusinessCustomer(
                 BusinessCustomer.builder()
-                    .customerType(CustomerType.BUSINESS)
+                    .customerType(CustomerType.INDIVIDUAL)
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")

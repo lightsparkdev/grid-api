@@ -6,12 +6,10 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.grid.api.core.Enum
 import com.grid.api.core.ExcludeMissing
 import com.grid.api.core.JsonField
 import com.grid.api.core.JsonMissing
 import com.grid.api.core.JsonValue
-import com.grid.api.core.checkRequired
 import com.grid.api.errors.GridInvalidDataException
 import java.time.LocalDate
 import java.util.Collections
@@ -20,7 +18,6 @@ import java.util.Objects
 class IndividualCustomerFields
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val customerType: JsonField<CustomerType>,
     private val address: JsonField<Address>,
     private val birthDate: JsonField<LocalDate>,
     private val fullName: JsonField<String>,
@@ -30,9 +27,6 @@ private constructor(
 
     @JsonCreator
     private constructor(
-        @JsonProperty("customerType")
-        @ExcludeMissing
-        customerType: JsonField<CustomerType> = JsonMissing.of(),
         @JsonProperty("address") @ExcludeMissing address: JsonField<Address> = JsonMissing.of(),
         @JsonProperty("birthDate")
         @ExcludeMissing
@@ -41,13 +35,7 @@ private constructor(
         @JsonProperty("nationality")
         @ExcludeMissing
         nationality: JsonField<String> = JsonMissing.of(),
-    ) : this(customerType, address, birthDate, fullName, nationality, mutableMapOf())
-
-    /**
-     * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
-     *   missing or null (e.g. if the server responded with an unexpected value).
-     */
-    fun customerType(): CustomerType = customerType.getRequired("customerType")
+    ) : this(address, birthDate, fullName, nationality, mutableMapOf())
 
     /**
      * @throws GridInvalidDataException if the JSON field has an unexpected type (e.g. if the server
@@ -78,15 +66,6 @@ private constructor(
      *   responded with an unexpected value).
      */
     fun nationality(): String? = nationality.getNullable("nationality")
-
-    /**
-     * Returns the raw JSON value of [customerType].
-     *
-     * Unlike [customerType], this method doesn't throw if the JSON field has an unexpected type.
-     */
-    @JsonProperty("customerType")
-    @ExcludeMissing
-    fun _customerType(): JsonField<CustomerType> = customerType
 
     /**
      * Returns the raw JSON value of [address].
@@ -130,21 +109,13 @@ private constructor(
 
     companion object {
 
-        /**
-         * Returns a mutable builder for constructing an instance of [IndividualCustomerFields].
-         *
-         * The following fields are required:
-         * ```kotlin
-         * .customerType()
-         * ```
-         */
+        /** Returns a mutable builder for constructing an instance of [IndividualCustomerFields]. */
         fun builder() = Builder()
     }
 
     /** A builder for [IndividualCustomerFields]. */
     class Builder internal constructor() {
 
-        private var customerType: JsonField<CustomerType>? = null
         private var address: JsonField<Address> = JsonMissing.of()
         private var birthDate: JsonField<LocalDate> = JsonMissing.of()
         private var fullName: JsonField<String> = JsonMissing.of()
@@ -152,25 +123,11 @@ private constructor(
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
         internal fun from(individualCustomerFields: IndividualCustomerFields) = apply {
-            customerType = individualCustomerFields.customerType
             address = individualCustomerFields.address
             birthDate = individualCustomerFields.birthDate
             fullName = individualCustomerFields.fullName
             nationality = individualCustomerFields.nationality
             additionalProperties = individualCustomerFields.additionalProperties.toMutableMap()
-        }
-
-        fun customerType(customerType: CustomerType) = customerType(JsonField.of(customerType))
-
-        /**
-         * Sets [Builder.customerType] to an arbitrary JSON value.
-         *
-         * You should usually call [Builder.customerType] with a well-typed [CustomerType] value
-         * instead. This method is primarily for setting the field to an undocumented or not yet
-         * supported value.
-         */
-        fun customerType(customerType: JsonField<CustomerType>) = apply {
-            this.customerType = customerType
         }
 
         fun address(address: Address) = address(JsonField.of(address))
@@ -241,17 +198,9 @@ private constructor(
          * Returns an immutable instance of [IndividualCustomerFields].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
-         *
-         * The following fields are required:
-         * ```kotlin
-         * .customerType()
-         * ```
-         *
-         * @throws IllegalStateException if any required field is unset.
          */
         fun build(): IndividualCustomerFields =
             IndividualCustomerFields(
-                checkRequired("customerType", customerType),
                 address,
                 birthDate,
                 fullName,
@@ -267,7 +216,6 @@ private constructor(
             return@apply
         }
 
-        customerType().validate()
         address()?.validate()
         birthDate()
         fullName()
@@ -289,132 +237,10 @@ private constructor(
      * Used for best match union deserialization.
      */
     internal fun validity(): Int =
-        (customerType.asKnown()?.validity() ?: 0) +
-            (address.asKnown()?.validity() ?: 0) +
+        (address.asKnown()?.validity() ?: 0) +
             (if (birthDate.asKnown() == null) 0 else 1) +
             (if (fullName.asKnown() == null) 0 else 1) +
             (if (nationality.asKnown() == null) 0 else 1)
-
-    class CustomerType @JsonCreator private constructor(private val value: JsonField<String>) :
-        Enum {
-
-        /**
-         * Returns this class instance's raw value.
-         *
-         * This is usually only useful if this instance was deserialized from data that doesn't
-         * match any known member, and you want to know that value. For example, if the SDK is on an
-         * older version than the API, then the API may respond with new members that the SDK is
-         * unaware of.
-         */
-        @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
-
-        companion object {
-
-            val INDIVIDUAL = of("INDIVIDUAL")
-
-            fun of(value: String) = CustomerType(JsonField.of(value))
-        }
-
-        /** An enum containing [CustomerType]'s known values. */
-        enum class Known {
-            INDIVIDUAL
-        }
-
-        /**
-         * An enum containing [CustomerType]'s known values, as well as an [_UNKNOWN] member.
-         *
-         * An instance of [CustomerType] can contain an unknown value in a couple of cases:
-         * - It was deserialized from data that doesn't match any known member. For example, if the
-         *   SDK is on an older version than the API, then the API may respond with new members that
-         *   the SDK is unaware of.
-         * - It was constructed with an arbitrary value using the [of] method.
-         */
-        enum class Value {
-            INDIVIDUAL,
-            /**
-             * An enum member indicating that [CustomerType] was instantiated with an unknown value.
-             */
-            _UNKNOWN,
-        }
-
-        /**
-         * Returns an enum member corresponding to this class instance's value, or [Value._UNKNOWN]
-         * if the class was instantiated with an unknown value.
-         *
-         * Use the [known] method instead if you're certain the value is always known or if you want
-         * to throw for the unknown case.
-         */
-        fun value(): Value =
-            when (this) {
-                INDIVIDUAL -> Value.INDIVIDUAL
-                else -> Value._UNKNOWN
-            }
-
-        /**
-         * Returns an enum member corresponding to this class instance's value.
-         *
-         * Use the [value] method instead if you're uncertain the value is always known and don't
-         * want to throw for the unknown case.
-         *
-         * @throws GridInvalidDataException if this class instance's value is a not a known member.
-         */
-        fun known(): Known =
-            when (this) {
-                INDIVIDUAL -> Known.INDIVIDUAL
-                else -> throw GridInvalidDataException("Unknown CustomerType: $value")
-            }
-
-        /**
-         * Returns this class instance's primitive wire representation.
-         *
-         * This differs from the [toString] method because that method is primarily for debugging
-         * and generally doesn't throw.
-         *
-         * @throws GridInvalidDataException if this class instance's value does not have the
-         *   expected primitive type.
-         */
-        fun asString(): String =
-            _value().asString() ?: throw GridInvalidDataException("Value is not a String")
-
-        private var validated: Boolean = false
-
-        fun validate(): CustomerType = apply {
-            if (validated) {
-                return@apply
-            }
-
-            known()
-            validated = true
-        }
-
-        fun isValid(): Boolean =
-            try {
-                validate()
-                true
-            } catch (e: GridInvalidDataException) {
-                false
-            }
-
-        /**
-         * Returns a score indicating how many valid values are contained in this object
-         * recursively.
-         *
-         * Used for best match union deserialization.
-         */
-        internal fun validity(): Int = if (value() == Value._UNKNOWN) 0 else 1
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-
-            return other is CustomerType && value == other.value
-        }
-
-        override fun hashCode() = value.hashCode()
-
-        override fun toString() = value.toString()
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -422,7 +248,6 @@ private constructor(
         }
 
         return other is IndividualCustomerFields &&
-            customerType == other.customerType &&
             address == other.address &&
             birthDate == other.birthDate &&
             fullName == other.fullName &&
@@ -431,11 +256,11 @@ private constructor(
     }
 
     private val hashCode: Int by lazy {
-        Objects.hash(customerType, address, birthDate, fullName, nationality, additionalProperties)
+        Objects.hash(address, birthDate, fullName, nationality, additionalProperties)
     }
 
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "IndividualCustomerFields{customerType=$customerType, address=$address, birthDate=$birthDate, fullName=$fullName, nationality=$nationality, additionalProperties=$additionalProperties}"
+        "IndividualCustomerFields{address=$address, birthDate=$birthDate, fullName=$fullName, nationality=$nationality, additionalProperties=$additionalProperties}"
 }

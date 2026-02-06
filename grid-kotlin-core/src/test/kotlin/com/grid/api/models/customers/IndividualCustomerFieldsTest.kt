@@ -14,7 +14,6 @@ internal class IndividualCustomerFieldsTest {
     fun create() {
         val individualCustomerFields =
             IndividualCustomerFields.builder()
-                .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
                 .address(
                     Address.builder()
                         .country("US")
@@ -30,8 +29,6 @@ internal class IndividualCustomerFieldsTest {
                 .nationality("US")
                 .build()
 
-        assertThat(individualCustomerFields.customerType())
-            .isEqualTo(IndividualCustomerFields.CustomerType.INDIVIDUAL)
         assertThat(individualCustomerFields.address())
             .isEqualTo(
                 Address.builder()
@@ -53,7 +50,6 @@ internal class IndividualCustomerFieldsTest {
         val jsonMapper = jsonMapper()
         val individualCustomerFields =
             IndividualCustomerFields.builder()
-                .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
                 .address(
                     Address.builder()
                         .country("US")

@@ -1,21 +1,45 @@
 // File generated from our OpenAPI spec by Stainless.
 
-package com.grid.api.models.invitations
+package com.grid.api.models.exchangerates
 
 import com.grid.api.core.Params
 import com.grid.api.core.http.Headers
 import com.grid.api.core.http.QueryParams
+import com.grid.api.core.toImmutable
 import java.util.Objects
 
-/** Get a specific UMA invitation by code. */
-class InvitationRetrieveParams
+/**
+ * Retrieve cached exchange rates for currency corridors. Returns FX rates that are cached for
+ * approximately 5 minutes. Rates include fees specific to your platform for authenticated requests.
+ *
+ * **Filtering Options:**
+ * - Filter by source currency to get all available destination corridors
+ * - Filter by specific destination currency or currencies
+ * - Provide a sending amount to get calculated receiving amounts
+ */
+class ExchangeRateListParams
 private constructor(
-    private val invitationCode: String?,
+    private val destinationCurrency: List<String>?,
+    private val sendingAmount: Long?,
+    private val sourceCurrency: String?,
     private val additionalHeaders: Headers,
     private val additionalQueryParams: QueryParams,
 ) : Params {
 
-    fun invitationCode(): String? = invitationCode
+    /**
+     * Filter by destination currency code(s). Can be repeated for multiple currencies (e.g.,
+     * &destinationCurrency=INR&destinationCurrency=GBP)
+     */
+    fun destinationCurrency(): List<String>? = destinationCurrency
+
+    /**
+     * Sending amount in the smallest unit of the source currency (e.g., cents for USD). If no
+     * amount is provided, the default is 10000 in the sending currency smallest unit.
+     */
+    fun sendingAmount(): Long? = sendingAmount
+
+    /** Filter by source currency code (e.g., USD) */
+    fun sourceCurrency(): String? = sourceCurrency
 
     /** Additional headers to send with the request. */
     fun _additionalHeaders(): Headers = additionalHeaders
@@ -27,26 +51,62 @@ private constructor(
 
     companion object {
 
-        fun none(): InvitationRetrieveParams = builder().build()
+        fun none(): ExchangeRateListParams = builder().build()
 
-        /** Returns a mutable builder for constructing an instance of [InvitationRetrieveParams]. */
+        /** Returns a mutable builder for constructing an instance of [ExchangeRateListParams]. */
         fun builder() = Builder()
     }
 
-    /** A builder for [InvitationRetrieveParams]. */
+    /** A builder for [ExchangeRateListParams]. */
     class Builder internal constructor() {
 
-        private var invitationCode: String? = null
+        private var destinationCurrency: MutableList<String>? = null
+        private var sendingAmount: Long? = null
+        private var sourceCurrency: String? = null
         private var additionalHeaders: Headers.Builder = Headers.builder()
         private var additionalQueryParams: QueryParams.Builder = QueryParams.builder()
 
-        internal fun from(invitationRetrieveParams: InvitationRetrieveParams) = apply {
-            invitationCode = invitationRetrieveParams.invitationCode
-            additionalHeaders = invitationRetrieveParams.additionalHeaders.toBuilder()
-            additionalQueryParams = invitationRetrieveParams.additionalQueryParams.toBuilder()
+        internal fun from(exchangeRateListParams: ExchangeRateListParams) = apply {
+            destinationCurrency = exchangeRateListParams.destinationCurrency?.toMutableList()
+            sendingAmount = exchangeRateListParams.sendingAmount
+            sourceCurrency = exchangeRateListParams.sourceCurrency
+            additionalHeaders = exchangeRateListParams.additionalHeaders.toBuilder()
+            additionalQueryParams = exchangeRateListParams.additionalQueryParams.toBuilder()
         }
 
-        fun invitationCode(invitationCode: String?) = apply { this.invitationCode = invitationCode }
+        /**
+         * Filter by destination currency code(s). Can be repeated for multiple currencies (e.g.,
+         * &destinationCurrency=INR&destinationCurrency=GBP)
+         */
+        fun destinationCurrency(destinationCurrency: List<String>?) = apply {
+            this.destinationCurrency = destinationCurrency?.toMutableList()
+        }
+
+        /**
+         * Adds a single [String] to [Builder.destinationCurrency].
+         *
+         * @throws IllegalStateException if the field was previously set to a non-list.
+         */
+        fun addDestinationCurrency(destinationCurrency: String) = apply {
+            this.destinationCurrency =
+                (this.destinationCurrency ?: mutableListOf()).apply { add(destinationCurrency) }
+        }
+
+        /**
+         * Sending amount in the smallest unit of the source currency (e.g., cents for USD). If no
+         * amount is provided, the default is 10000 in the sending currency smallest unit.
+         */
+        fun sendingAmount(sendingAmount: Long?) = apply { this.sendingAmount = sendingAmount }
+
+        /**
+         * Alias for [Builder.sendingAmount].
+         *
+         * This unboxed primitive overload exists for backwards compatibility.
+         */
+        fun sendingAmount(sendingAmount: Long) = sendingAmount(sendingAmount as Long?)
+
+        /** Filter by source currency code (e.g., USD) */
+        fun sourceCurrency(sourceCurrency: String?) = apply { this.sourceCurrency = sourceCurrency }
 
         fun additionalHeaders(additionalHeaders: Headers) = apply {
             this.additionalHeaders.clear()
@@ -147,42 +207,54 @@ private constructor(
         }
 
         /**
-         * Returns an immutable instance of [InvitationRetrieveParams].
+         * Returns an immutable instance of [ExchangeRateListParams].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
          */
-        fun build(): InvitationRetrieveParams =
-            InvitationRetrieveParams(
-                invitationCode,
+        fun build(): ExchangeRateListParams =
+            ExchangeRateListParams(
+                destinationCurrency?.toImmutable(),
+                sendingAmount,
+                sourceCurrency,
                 additionalHeaders.build(),
                 additionalQueryParams.build(),
             )
     }
 
-    fun _pathParam(index: Int): String =
-        when (index) {
-            0 -> invitationCode ?: ""
-            else -> ""
-        }
-
     override fun _headers(): Headers = additionalHeaders
 
-    override fun _queryParams(): QueryParams = additionalQueryParams
+    override fun _queryParams(): QueryParams =
+        QueryParams.builder()
+            .apply {
+                destinationCurrency?.let { put("destinationCurrency", it.joinToString(",")) }
+                sendingAmount?.let { put("sendingAmount", it.toString()) }
+                sourceCurrency?.let { put("sourceCurrency", it) }
+                putAll(additionalQueryParams)
+            }
+            .build()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
             return true
         }
 
-        return other is InvitationRetrieveParams &&
-            invitationCode == other.invitationCode &&
+        return other is ExchangeRateListParams &&
+            destinationCurrency == other.destinationCurrency &&
+            sendingAmount == other.sendingAmount &&
+            sourceCurrency == other.sourceCurrency &&
             additionalHeaders == other.additionalHeaders &&
             additionalQueryParams == other.additionalQueryParams
     }
 
     override fun hashCode(): Int =
-        Objects.hash(invitationCode, additionalHeaders, additionalQueryParams)
+        Objects.hash(
+            destinationCurrency,
+            sendingAmount,
+            sourceCurrency,
+            additionalHeaders,
+            additionalQueryParams,
+        )
 
     override fun toString() =
-        "InvitationRetrieveParams{invitationCode=$invitationCode, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
+        "ExchangeRateListParams{destinationCurrency=$destinationCurrency, sendingAmount=$sendingAmount, sourceCurrency=$sourceCurrency, additionalHeaders=$additionalHeaders, additionalQueryParams=$additionalQueryParams}"
 }

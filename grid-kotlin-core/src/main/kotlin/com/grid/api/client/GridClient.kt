@@ -5,6 +5,7 @@ package com.grid.api.client
 import com.grid.api.core.ClientOptions
 import com.grid.api.services.blocking.ConfigService
 import com.grid.api.services.blocking.CustomerService
+import com.grid.api.services.blocking.ExchangeRateService
 import com.grid.api.services.blocking.InvitationService
 import com.grid.api.services.blocking.PlaidService
 import com.grid.api.services.blocking.PlatformService
@@ -82,6 +83,8 @@ interface GridClient {
 
     fun tokens(): TokenService
 
+    fun exchangeRates(): ExchangeRateService
+
     /**
      * Closes this client, relinquishing any underlying resources.
      *
@@ -132,5 +135,7 @@ interface GridClient {
         fun umaProviders(): UmaProviderService.WithRawResponse
 
         fun tokens(): TokenService.WithRawResponse
+
+        fun exchangeRates(): ExchangeRateService.WithRawResponse
     }
 }
