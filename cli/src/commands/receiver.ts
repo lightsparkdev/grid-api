@@ -30,7 +30,7 @@ export function registerReceiverCommand(
 
   receiverCmd
     .command("lookup-uma <umaAddress>")
-    .description("Look up a UMA address to get payment capabilities")
+    .description("Look up an UMA address to get payment capabilities")
     .option("--customer-id <id>", "Sender customer ID")
     .option("--sender-uma <address>", "Sender UMA address")
     .action(async (umaAddress: string, options) => {

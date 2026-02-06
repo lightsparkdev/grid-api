@@ -230,7 +230,7 @@ Internal Account (USD) → External Account (USD)  [transfer-out]
 
 When a user wants to send a payment, guide them through these steps:
 
-### Sending to a UMA Address
+### Sending to an UMA Address
 
 1. Look up the receiver: `node cli/dist/index.js receiver lookup-uma $user@domain.com`
 2. Show supported currencies and any required payer data

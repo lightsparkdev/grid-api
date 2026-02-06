@@ -1,7 +1,7 @@
 get:
-  summary: Get a specific UMA invitation by code.
+  summary: Get an UMA invitation by code
   description: |
-    Get a specific UMA invitation by code.
+    Retrieve details about an UMA invitation by its invitation code.
   operationId: getInvitation
   tags:
     - Invitations

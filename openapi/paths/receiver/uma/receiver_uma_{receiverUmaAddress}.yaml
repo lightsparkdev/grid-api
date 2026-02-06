@@ -1,5 +1,5 @@
 get:
-  summary: Look up a UMA address for payment
+  summary: Look up an UMA address for payment
   description: >
     Lookup a receiving UMA address to determine supported currencies and
     exchange rates.
