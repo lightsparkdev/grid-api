@@ -1,5 +1,5 @@
 post:
-  summary: Create an UMA invitation from a given platform customer.
+  summary: Create an UMA invitation
   description: |
     Create an UMA invitation from a given platform customer.
   operationId: createInvitation

@@ -1301,7 +1301,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /receiver/uma/{receiverUmaAddress}:
     get:
-      summary: Look up a UMA address for payment
+      summary: Look up an UMA address for payment
       description: |
         Lookup a receiving UMA address to determine supported currencies and exchange rates.
         This endpoint helps platforms determine what currencies they can send to a given UMA address.
@@ -1971,7 +1971,7 @@ paths:
           type: string
     get:
       summary: Get transaction by ID
-      description: Retrieve detailed information about a specific transaction
+      description: Retrieve detailed information about a specific transaction.
       operationId: getTransactionById
       tags:
         - Transactions
@@ -2322,7 +2322,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /invitations:
     post:
-      summary: Create an UMA invitation from a given platform customer.
+      summary: Create an UMA invitation
       description: |
         Create an UMA invitation from a given platform customer.
       operationId: createInvitation
@@ -2389,9 +2389,9 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /invitations/{invitationCode}:
     get:
-      summary: Get a specific UMA invitation by code.
+      summary: Get an UMA invitation by code
       description: |
-        Get a specific UMA invitation by code.
+        Retrieve details about an UMA invitation by its invitation code.
       operationId: getInvitation
       tags:
         - Invitations
@@ -2795,12 +2795,9 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /uma-providers:
     get:
-      summary: This endpoint provides a list of Counterparty Providers that are available.
+      summary: List available Counterparty Providers
       description: |
-        This endpoint provides a list of Counterparty Providers that are available.
-
-        The response includes basic information about each provider, such as its UMA address, name, and supported currencies.
-        This can be used to determine which providers are available for sending or receiving payments.
+        Retrieve a list of available Counterparty Providers. The response includes basic information about each provider, such as its UMA address, name, and supported currencies.
       operationId: getAvailableUmaProviders
       tags:
         - Available UMA Providers

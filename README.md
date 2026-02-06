@@ -149,7 +149,7 @@ The process consists of five main steps:
 
 #### Step 1: Look up recipient UMA address
 
-First, check if a UMA address is valid and retrieve supported currencies and exchange rates.
+First, check if an UMA address is valid and retrieve supported currencies and exchange rates.
 
 ```http
 GET /receiver/$recipient@example.com?userId=9f84e0c2a72c4fa

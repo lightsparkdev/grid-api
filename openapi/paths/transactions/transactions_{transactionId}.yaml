@@ -7,7 +7,7 @@ parameters:
       type: string
 get:
   summary: Get transaction by ID
-  description: Retrieve detailed information about a specific transaction
+  description: Retrieve detailed information about a specific transaction.
   operationId: getTransactionById
   tags:
     - Transactions

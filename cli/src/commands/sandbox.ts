@@ -45,7 +45,7 @@ export function registerSandboxCommand(
 
   sandboxCmd
     .command("receive")
-    .description("Simulate receiving a UMA payment in sandbox")
+    .description("Simulate receiving an UMA payment in sandbox")
     .requiredOption("--uma-address <address>", "Receiver UMA address")
     .requiredOption("--amount <number>", "Amount in smallest unit")
     .requiredOption("--currency <code>", "Currency code")

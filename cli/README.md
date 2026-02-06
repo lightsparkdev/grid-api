@@ -303,7 +303,7 @@ node cli/dist/index.js sandbox fund <internalAccountId> --amount 100000
 # Simulate sending funds to a JIT quote
 node cli/dist/index.js sandbox send --quote-id <quoteId> --currency USDC
 
-# Simulate receiving a UMA payment
+# Simulate receiving an UMA payment
 node cli/dist/index.js sandbox receive \
   --uma-address '$user@domain.com' \
   --amount 1000 \

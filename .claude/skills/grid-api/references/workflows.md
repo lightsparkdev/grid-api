@@ -8,7 +8,7 @@ This reference describes common payment workflows using the Grid API CLI.
 
 ## Workflow 1: Send Payment to UMA Address
 
-Use this when the user wants to send money to a UMA address like `$alice@example.com`.
+Use this when the user wants to send money to an UMA address like `$alice@example.com`.
 
 ### Steps
 
