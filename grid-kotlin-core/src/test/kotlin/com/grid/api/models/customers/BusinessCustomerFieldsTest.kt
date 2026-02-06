@@ -54,6 +54,7 @@ internal class BusinessCustomerFieldsTest {
                         .taxId("EIN-987654321")
                         .build()
                 )
+                .customerType(BusinessCustomerFields.CustomerType.BUSINESS)
                 .build()
 
         assertThat(businessCustomerFields.address())
@@ -99,6 +100,8 @@ internal class BusinessCustomerFieldsTest {
                     .taxId("EIN-987654321")
                     .build()
             )
+        assertThat(businessCustomerFields.customerType())
+            .isEqualTo(BusinessCustomerFields.CustomerType.BUSINESS)
     }
 
     @Test
@@ -146,6 +149,7 @@ internal class BusinessCustomerFieldsTest {
                         .taxId("EIN-987654321")
                         .build()
                 )
+                .customerType(BusinessCustomerFields.CustomerType.BUSINESS)
                 .build()
 
         val roundtrippedBusinessCustomerFields =

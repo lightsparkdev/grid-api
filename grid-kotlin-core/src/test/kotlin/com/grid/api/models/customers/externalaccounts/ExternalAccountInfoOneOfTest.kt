@@ -126,7 +126,7 @@ internal class ExternalAccountInfoOneOfTest {
         val clabeAccountExternalAccountInfo =
             ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo.AccountType.CLABE
                 )
                 .beneficiary(
                     BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -182,8 +182,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.ofClabeAccountExternalAccountInfo(
                 ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo.builder()
                     .accountType(
-                        ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                        ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo.AccountType.CLABE
                     )
                     .beneficiary(
                         BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -222,9 +221,7 @@ internal class ExternalAccountInfoOneOfTest {
     fun ofPixAccountExternalAccountInfo() {
         val pixAccountExternalAccountInfo =
             ExternalAccountInfoOneOf.PixAccountExternalAccountInfo.builder()
-                .accountType(
-                    ExternalAccountInfoOneOf.PixAccountExternalAccountInfo.AccountType.US_ACCOUNT
-                )
+                .accountType(ExternalAccountInfoOneOf.PixAccountExternalAccountInfo.AccountType.PIX)
                 .beneficiary(
                     BeneficiaryOneOf.IndividualBeneficiary.builder()
                         .beneficiaryType(
@@ -279,8 +276,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.ofPixAccountExternalAccountInfo(
                 ExternalAccountInfoOneOf.PixAccountExternalAccountInfo.builder()
                     .accountType(
-                        ExternalAccountInfoOneOf.PixAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                        ExternalAccountInfoOneOf.PixAccountExternalAccountInfo.AccountType.PIX
                     )
                     .beneficiary(
                         BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -324,7 +320,7 @@ internal class ExternalAccountInfoOneOfTest {
         val ibanAccountExternalAccountInfo =
             ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo.AccountType.IBAN
                 )
                 .beneficiary(
                     BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -381,8 +377,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.ofIbanAccountExternalAccountInfo(
                 ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo.builder()
                     .accountType(
-                        ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                        ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo.AccountType.IBAN
                     )
                     .beneficiary(
                         BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -422,9 +417,7 @@ internal class ExternalAccountInfoOneOfTest {
     fun ofUpiAccountExternalAccountInfo() {
         val upiAccountExternalAccountInfo =
             ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo.builder()
-                .accountType(
-                    ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo.AccountType.US_ACCOUNT
-                )
+                .accountType(ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo.AccountType.UPI)
                 .beneficiary(
                     BeneficiaryOneOf.IndividualBeneficiary.builder()
                         .beneficiaryType(
@@ -477,8 +470,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.ofUpiAccountExternalAccountInfo(
                 ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo.builder()
                     .accountType(
-                        ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                        ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo.AccountType.UPI
                     )
                     .beneficiary(
                         BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -519,7 +511,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.NgnAccountExternalAccountInfo.builder()
                 .accountNumber("0123456789")
                 .accountType(
-                    ExternalAccountInfoOneOf.NgnAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.NgnAccountExternalAccountInfo.AccountType.NGN_ACCOUNT
                 )
                 .bankName("First Bank of Nigeria")
                 .beneficiary(
@@ -579,7 +571,7 @@ internal class ExternalAccountInfoOneOfTest {
                     .accountNumber("0123456789")
                     .accountType(
                         ExternalAccountInfoOneOf.NgnAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .NGN_ACCOUNT
                     )
                     .bankName("First Bank of Nigeria")
                     .beneficiary(
@@ -624,7 +616,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.CadAccountExternalAccountInfo.builder()
                 .accountNumber("1234567")
                 .accountType(
-                    ExternalAccountInfoOneOf.CadAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.CadAccountExternalAccountInfo.AccountType.CAD_ACCOUNT
                 )
                 .bankCode("001")
                 .beneficiary(
@@ -681,7 +673,7 @@ internal class ExternalAccountInfoOneOfTest {
                     .accountNumber("1234567")
                     .accountType(
                         ExternalAccountInfoOneOf.CadAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .CAD_ACCOUNT
                     )
                     .bankCode("001")
                     .beneficiary(
@@ -723,7 +715,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.GbpAccountExternalAccountInfo.builder()
                 .accountNumber("12345678")
                 .accountType(
-                    ExternalAccountInfoOneOf.GbpAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.GbpAccountExternalAccountInfo.AccountType.GBP_ACCOUNT
                 )
                 .beneficiary(
                     BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -779,7 +771,7 @@ internal class ExternalAccountInfoOneOfTest {
                     .accountNumber("12345678")
                     .accountType(
                         ExternalAccountInfoOneOf.GbpAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .GBP_ACCOUNT
                     )
                     .beneficiary(
                         BeneficiaryOneOf.IndividualBeneficiary.builder()
@@ -820,7 +812,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.PhpAccountExternalAccountInfo.builder()
                 .accountNumber("001234567890")
                 .accountType(
-                    ExternalAccountInfoOneOf.PhpAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.PhpAccountExternalAccountInfo.AccountType.PHP_ACCOUNT
                 )
                 .bankName("BDO Unibank")
                 .beneficiary(
@@ -876,7 +868,7 @@ internal class ExternalAccountInfoOneOfTest {
                     .accountNumber("001234567890")
                     .accountType(
                         ExternalAccountInfoOneOf.PhpAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .PHP_ACCOUNT
                     )
                     .bankName("BDO Unibank")
                     .beneficiary(
@@ -917,7 +909,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.SgdAccountExternalAccountInfo.builder()
                 .accountNumber("0123456789")
                 .accountType(
-                    ExternalAccountInfoOneOf.SgdAccountExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.SgdAccountExternalAccountInfo.AccountType.SGD_ACCOUNT
                 )
                 .bankName("DBS Bank Ltd")
                 .beneficiary(
@@ -974,7 +966,7 @@ internal class ExternalAccountInfoOneOfTest {
                     .accountNumber("0123456789")
                     .accountType(
                         ExternalAccountInfoOneOf.SgdAccountExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .SGD_ACCOUNT
                     )
                     .bankName("DBS Bank Ltd")
                     .beneficiary(
@@ -1015,7 +1007,7 @@ internal class ExternalAccountInfoOneOfTest {
         val sparkWalletExternalAccountInfo =
             ExternalAccountInfoOneOf.SparkWalletExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.SparkWalletExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.SparkWalletExternalAccountInfo.AccountType.SPARK_WALLET
                 )
                 .address("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
                 .build()
@@ -1052,7 +1044,7 @@ internal class ExternalAccountInfoOneOfTest {
                 ExternalAccountInfoOneOf.SparkWalletExternalAccountInfo.builder()
                     .accountType(
                         ExternalAccountInfoOneOf.SparkWalletExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .SPARK_WALLET
                     )
                     .address("spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu")
                     .build()
@@ -1072,7 +1064,7 @@ internal class ExternalAccountInfoOneOfTest {
         val lightningExternalAccountInfo =
             ExternalAccountInfoOneOf.LightningExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.LightningExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.LightningExternalAccountInfo.AccountType.LIGHTNING
                 )
                 .bolt12(
                     "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
@@ -1112,7 +1104,7 @@ internal class ExternalAccountInfoOneOfTest {
             ExternalAccountInfoOneOf.ofLightningExternalAccountInfo(
                 ExternalAccountInfoOneOf.LightningExternalAccountInfo.builder()
                     .accountType(
-                        ExternalAccountInfoOneOf.LightningExternalAccountInfo.AccountType.US_ACCOUNT
+                        ExternalAccountInfoOneOf.LightningExternalAccountInfo.AccountType.LIGHTNING
                     )
                     .bolt12(
                         "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
@@ -1138,7 +1130,8 @@ internal class ExternalAccountInfoOneOfTest {
         val solanaWalletExternalAccountInfo =
             ExternalAccountInfoOneOf.SolanaWalletExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.SolanaWalletExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.SolanaWalletExternalAccountInfo.AccountType
+                        .SOLANA_WALLET
                 )
                 .address("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
                 .build()
@@ -1175,7 +1168,7 @@ internal class ExternalAccountInfoOneOfTest {
                 ExternalAccountInfoOneOf.SolanaWalletExternalAccountInfo.builder()
                     .accountType(
                         ExternalAccountInfoOneOf.SolanaWalletExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .SOLANA_WALLET
                     )
                     .address("4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg")
                     .build()
@@ -1195,7 +1188,7 @@ internal class ExternalAccountInfoOneOfTest {
         val tronWalletExternalAccountInfo =
             ExternalAccountInfoOneOf.TronWalletExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.TronWalletExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.TronWalletExternalAccountInfo.AccountType.TRON_WALLET
                 )
                 .address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
                 .build()
@@ -1230,7 +1223,7 @@ internal class ExternalAccountInfoOneOfTest {
                 ExternalAccountInfoOneOf.TronWalletExternalAccountInfo.builder()
                     .accountType(
                         ExternalAccountInfoOneOf.TronWalletExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .TRON_WALLET
                     )
                     .address("TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL")
                     .build()
@@ -1250,7 +1243,8 @@ internal class ExternalAccountInfoOneOfTest {
         val polygonWalletExternalAccountInfo =
             ExternalAccountInfoOneOf.PolygonWalletExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.PolygonWalletExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.PolygonWalletExternalAccountInfo.AccountType
+                        .POLYGON_WALLET
                 )
                 .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                 .build()
@@ -1287,7 +1281,7 @@ internal class ExternalAccountInfoOneOfTest {
                 ExternalAccountInfoOneOf.PolygonWalletExternalAccountInfo.builder()
                     .accountType(
                         ExternalAccountInfoOneOf.PolygonWalletExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .POLYGON_WALLET
                     )
                     .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                     .build()
@@ -1307,7 +1301,7 @@ internal class ExternalAccountInfoOneOfTest {
         val baseWalletExternalAccountInfo =
             ExternalAccountInfoOneOf.BaseWalletExternalAccountInfo.builder()
                 .accountType(
-                    ExternalAccountInfoOneOf.BaseWalletExternalAccountInfo.AccountType.US_ACCOUNT
+                    ExternalAccountInfoOneOf.BaseWalletExternalAccountInfo.AccountType.BASE_WALLET
                 )
                 .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                 .build()
@@ -1342,7 +1336,7 @@ internal class ExternalAccountInfoOneOfTest {
                 ExternalAccountInfoOneOf.BaseWalletExternalAccountInfo.builder()
                     .accountType(
                         ExternalAccountInfoOneOf.BaseWalletExternalAccountInfo.AccountType
-                            .US_ACCOUNT
+                            .BASE_WALLET
                     )
                     .address("0xAbCDEF1234567890aBCdEf1234567890ABcDef12")
                     .build()

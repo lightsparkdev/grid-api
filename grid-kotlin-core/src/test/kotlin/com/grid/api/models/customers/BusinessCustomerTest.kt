@@ -15,7 +15,7 @@ internal class BusinessCustomerTest {
     fun create() {
         val businessCustomer =
             BusinessCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+                .customerType(CustomerType.BUSINESS)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -65,7 +65,7 @@ internal class BusinessCustomerTest {
                 )
                 .build()
 
-        assertThat(businessCustomer.customerType()).isEqualTo(CustomerType.INDIVIDUAL)
+        assertThat(businessCustomer.customerType()).isEqualTo(CustomerType.BUSINESS)
         assertThat(businessCustomer.platformCustomerId()).isEqualTo("9f84e0c2a72c4fa")
         assertThat(businessCustomer.umaAddress()).isEqualTo("\$john.doe@uma.domain.com")
         assertThat(businessCustomer.id()).isEqualTo("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -125,7 +125,7 @@ internal class BusinessCustomerTest {
         val jsonMapper = jsonMapper()
         val businessCustomer =
             BusinessCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+                .customerType(CustomerType.BUSINESS)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")

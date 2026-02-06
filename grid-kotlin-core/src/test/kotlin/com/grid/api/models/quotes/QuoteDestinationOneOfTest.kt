@@ -58,7 +58,7 @@ internal class QuoteDestinationOneOfTest {
     fun ofUmaAddressDestination() {
         val umaAddressDestination =
             QuoteDestinationOneOf.UmaAddressDestination.builder()
-                .destinationType(BaseDestination.DestinationType.ACCOUNT)
+                .destinationType(BaseDestination.DestinationType.UMA_ADDRESS)
                 .umaAddress("\$receiver@uma.domain.com")
                 .counterpartyInformation(
                     QuoteDestinationOneOf.UmaAddressDestination.CounterpartyInformation.builder()
@@ -84,7 +84,7 @@ internal class QuoteDestinationOneOfTest {
         val quoteDestinationOneOf =
             QuoteDestinationOneOf.ofUmaAddressDestination(
                 QuoteDestinationOneOf.UmaAddressDestination.builder()
-                    .destinationType(BaseDestination.DestinationType.ACCOUNT)
+                    .destinationType(BaseDestination.DestinationType.UMA_ADDRESS)
                     .umaAddress("\$receiver@uma.domain.com")
                     .counterpartyInformation(
                         QuoteDestinationOneOf.UmaAddressDestination.CounterpartyInformation
@@ -111,7 +111,7 @@ internal class QuoteDestinationOneOfTest {
     fun ofExternalAccountDetailsDestination() {
         val externalAccountDetailsDestination =
             QuoteDestinationOneOf.ExternalAccountDetailsDestination.builder()
-                .destinationType(BaseDestination.DestinationType.ACCOUNT)
+                .destinationType(BaseDestination.DestinationType.EXTERNAL_ACCOUNT_DETAILS)
                 .externalAccountDetails(
                     ExternalAccountCreate.builder()
                         .accountInfo(
@@ -177,7 +177,7 @@ internal class QuoteDestinationOneOfTest {
         val quoteDestinationOneOf =
             QuoteDestinationOneOf.ofExternalAccountDetailsDestination(
                 QuoteDestinationOneOf.ExternalAccountDetailsDestination.builder()
-                    .destinationType(BaseDestination.DestinationType.ACCOUNT)
+                    .destinationType(BaseDestination.DestinationType.EXTERNAL_ACCOUNT_DETAILS)
                     .externalAccountDetails(
                         ExternalAccountCreate.builder()
                             .accountInfo(

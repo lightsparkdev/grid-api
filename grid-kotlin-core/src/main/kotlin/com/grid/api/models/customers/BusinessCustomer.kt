@@ -96,6 +96,7 @@ private constructor(
             .address(address)
             .beneficialOwners(beneficialOwners)
             .businessInfo(businessInfo)
+            .customerType(customerType)
             .build()
 
     /**

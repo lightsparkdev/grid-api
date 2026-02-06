@@ -494,6 +494,7 @@ private constructor(
                 IndividualCustomerFields.builder()
                     .address(address)
                     .birthDate(birthDate)
+                    .customerType(customerType)
                     .fullName(fullName)
                     .nationality(nationality)
                     .build()
@@ -896,6 +897,7 @@ private constructor(
                     .address(address)
                     .beneficialOwners(beneficialOwners)
                     .businessInfo(businessInfo)
+                    .customerType(customerType)
                     .build()
 
             /**

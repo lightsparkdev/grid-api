@@ -889,8 +889,6 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -1054,7 +1052,6 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -1337,7 +1334,6 @@ private constructor(
             override fun toString() = value.toString()
         }
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -1607,8 +1603,6 @@ private constructor(
         ) : this(accountType, beneficiary, clabeNumber, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -1700,7 +1694,6 @@ private constructor(
                         clabeAccountExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -1829,7 +1822,6 @@ private constructor(
                 (beneficiary.asKnown()?.validity() ?: 0) +
                 (if (clabeNumber.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -1845,9 +1837,9 @@ private constructor(
 
             companion object {
 
-                val US_ACCOUNT = of("US_ACCOUNT")
-
                 val CLABE = of("CLABE")
+
+                val US_ACCOUNT = of("US_ACCOUNT")
 
                 val PIX = of("PIX")
 
@@ -1882,8 +1874,8 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
-                US_ACCOUNT,
                 CLABE,
+                US_ACCOUNT,
                 PIX,
                 IBAN,
                 UPI,
@@ -1910,8 +1902,8 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
-                US_ACCOUNT,
                 CLABE,
+                US_ACCOUNT,
                 PIX,
                 IBAN,
                 UPI,
@@ -1942,8 +1934,8 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
-                    US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
+                    US_ACCOUNT -> Value.US_ACCOUNT
                     PIX -> Value.PIX
                     IBAN -> Value.IBAN
                     UPI -> Value.UPI
@@ -1972,8 +1964,8 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
-                    US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
+                    US_ACCOUNT -> Known.US_ACCOUNT
                     PIX -> Known.PIX
                     IBAN -> Known.IBAN
                     UPI -> Known.UPI
@@ -2092,8 +2084,6 @@ private constructor(
         ) : this(accountType, beneficiary, pixKey, pixKeyType, taxId, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -2221,7 +2211,6 @@ private constructor(
                         pixAccountExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -2382,7 +2371,6 @@ private constructor(
                 (pixKeyType.asKnown()?.validity() ?: 0) +
                 (if (taxId.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -2398,11 +2386,11 @@ private constructor(
 
             companion object {
 
+                val PIX = of("PIX")
+
                 val US_ACCOUNT = of("US_ACCOUNT")
 
                 val CLABE = of("CLABE")
-
-                val PIX = of("PIX")
 
                 val IBAN = of("IBAN")
 
@@ -2435,9 +2423,9 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                PIX,
                 US_ACCOUNT,
                 CLABE,
-                PIX,
                 IBAN,
                 UPI,
                 NGN_ACCOUNT,
@@ -2463,9 +2451,9 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                PIX,
                 US_ACCOUNT,
                 CLABE,
-                PIX,
                 IBAN,
                 UPI,
                 NGN_ACCOUNT,
@@ -2495,9 +2483,9 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    PIX -> Value.PIX
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
-                    PIX -> Value.PIX
                     IBAN -> Value.IBAN
                     UPI -> Value.UPI
                     NGN_ACCOUNT -> Value.NGN_ACCOUNT
@@ -2525,9 +2513,9 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    PIX -> Known.PIX
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
-                    PIX -> Known.PIX
                     IBAN -> Known.IBAN
                     UPI -> Known.UPI
                     NGN_ACCOUNT -> Known.NGN_ACCOUNT
@@ -2791,8 +2779,6 @@ private constructor(
         ) : this(accountType, beneficiary, iban, swiftBic, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -2900,7 +2886,6 @@ private constructor(
                         ibanAccountExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -3043,7 +3028,6 @@ private constructor(
                 (if (iban.asKnown() == null) 0 else 1) +
                 (if (swiftBic.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -3059,13 +3043,13 @@ private constructor(
 
             companion object {
 
+                val IBAN = of("IBAN")
+
                 val US_ACCOUNT = of("US_ACCOUNT")
 
                 val CLABE = of("CLABE")
 
                 val PIX = of("PIX")
-
-                val IBAN = of("IBAN")
 
                 val UPI = of("UPI")
 
@@ -3096,10 +3080,10 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                IBAN,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
-                IBAN,
                 UPI,
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
@@ -3124,10 +3108,10 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                IBAN,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
-                IBAN,
                 UPI,
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
@@ -3156,10 +3140,10 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    IBAN -> Value.IBAN
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
-                    IBAN -> Value.IBAN
                     UPI -> Value.UPI
                     NGN_ACCOUNT -> Value.NGN_ACCOUNT
                     CAD_ACCOUNT -> Value.CAD_ACCOUNT
@@ -3186,10 +3170,10 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    IBAN -> Known.IBAN
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
-                    IBAN -> Known.IBAN
                     UPI -> Known.UPI
                     NGN_ACCOUNT -> Known.NGN_ACCOUNT
                     CAD_ACCOUNT -> Known.CAD_ACCOUNT
@@ -3301,8 +3285,6 @@ private constructor(
         ) : this(accountType, beneficiary, vpa, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -3392,7 +3374,6 @@ private constructor(
                         upiAccountExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -3519,7 +3500,6 @@ private constructor(
                 (beneficiary.asKnown()?.validity() ?: 0) +
                 (if (vpa.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -3535,6 +3515,8 @@ private constructor(
 
             companion object {
 
+                val UPI = of("UPI")
+
                 val US_ACCOUNT = of("US_ACCOUNT")
 
                 val CLABE = of("CLABE")
@@ -3542,8 +3524,6 @@ private constructor(
                 val PIX = of("PIX")
 
                 val IBAN = of("IBAN")
-
-                val UPI = of("UPI")
 
                 val NGN_ACCOUNT = of("NGN_ACCOUNT")
 
@@ -3572,11 +3552,11 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                UPI,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
                 IBAN,
-                UPI,
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
@@ -3600,11 +3580,11 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                UPI,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
                 IBAN,
-                UPI,
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
@@ -3632,11 +3612,11 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    UPI -> Value.UPI
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
                     IBAN -> Value.IBAN
-                    UPI -> Value.UPI
                     NGN_ACCOUNT -> Value.NGN_ACCOUNT
                     CAD_ACCOUNT -> Value.CAD_ACCOUNT
                     GBP_ACCOUNT -> Value.GBP_ACCOUNT
@@ -3662,11 +3642,11 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    UPI -> Known.UPI
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
                     IBAN -> Known.IBAN
-                    UPI -> Known.UPI
                     NGN_ACCOUNT -> Known.NGN_ACCOUNT
                     CAD_ACCOUNT -> Known.CAD_ACCOUNT
                     GBP_ACCOUNT -> Known.GBP_ACCOUNT
@@ -3801,8 +3781,6 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -3940,7 +3918,6 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -4090,7 +4067,6 @@ private constructor(
                 (beneficiary.asKnown()?.validity() ?: 0) +
                 (purposeOfPayment.asKnown()?.validity() ?: 0)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -4106,6 +4082,8 @@ private constructor(
 
             companion object {
 
+                val NGN_ACCOUNT = of("NGN_ACCOUNT")
+
                 val US_ACCOUNT = of("US_ACCOUNT")
 
                 val CLABE = of("CLABE")
@@ -4115,8 +4093,6 @@ private constructor(
                 val IBAN = of("IBAN")
 
                 val UPI = of("UPI")
-
-                val NGN_ACCOUNT = of("NGN_ACCOUNT")
 
                 val CAD_ACCOUNT = of("CAD_ACCOUNT")
 
@@ -4143,12 +4119,12 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                NGN_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
                 IBAN,
                 UPI,
-                NGN_ACCOUNT,
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
@@ -4171,12 +4147,12 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                NGN_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
                 IBAN,
                 UPI,
-                NGN_ACCOUNT,
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
@@ -4203,12 +4179,12 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    NGN_ACCOUNT -> Value.NGN_ACCOUNT
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
                     IBAN -> Value.IBAN
                     UPI -> Value.UPI
-                    NGN_ACCOUNT -> Value.NGN_ACCOUNT
                     CAD_ACCOUNT -> Value.CAD_ACCOUNT
                     GBP_ACCOUNT -> Value.GBP_ACCOUNT
                     PHP_ACCOUNT -> Value.PHP_ACCOUNT
@@ -4233,12 +4209,12 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    NGN_ACCOUNT -> Known.NGN_ACCOUNT
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
                     IBAN -> Known.IBAN
                     UPI -> Known.UPI
-                    NGN_ACCOUNT -> Known.NGN_ACCOUNT
                     CAD_ACCOUNT -> Known.CAD_ACCOUNT
                     GBP_ACCOUNT -> Known.GBP_ACCOUNT
                     PHP_ACCOUNT -> Known.PHP_ACCOUNT
@@ -4566,8 +4542,6 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -4704,7 +4678,6 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -4851,7 +4824,6 @@ private constructor(
                 (beneficiary.asKnown()?.validity() ?: 0) +
                 (if (branchCode.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -4867,6 +4839,8 @@ private constructor(
 
             companion object {
 
+                val CAD_ACCOUNT = of("CAD_ACCOUNT")
+
                 val US_ACCOUNT = of("US_ACCOUNT")
 
                 val CLABE = of("CLABE")
@@ -4878,8 +4852,6 @@ private constructor(
                 val UPI = of("UPI")
 
                 val NGN_ACCOUNT = of("NGN_ACCOUNT")
-
-                val CAD_ACCOUNT = of("CAD_ACCOUNT")
 
                 val GBP_ACCOUNT = of("GBP_ACCOUNT")
 
@@ -4904,13 +4876,13 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                CAD_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
                 IBAN,
                 UPI,
                 NGN_ACCOUNT,
-                CAD_ACCOUNT,
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
@@ -4932,13 +4904,13 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                CAD_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
                 IBAN,
                 UPI,
                 NGN_ACCOUNT,
-                CAD_ACCOUNT,
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
@@ -4964,13 +4936,13 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    CAD_ACCOUNT -> Value.CAD_ACCOUNT
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
                     IBAN -> Value.IBAN
                     UPI -> Value.UPI
                     NGN_ACCOUNT -> Value.NGN_ACCOUNT
-                    CAD_ACCOUNT -> Value.CAD_ACCOUNT
                     GBP_ACCOUNT -> Value.GBP_ACCOUNT
                     PHP_ACCOUNT -> Value.PHP_ACCOUNT
                     SGD_ACCOUNT -> Value.SGD_ACCOUNT
@@ -4994,13 +4966,13 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    CAD_ACCOUNT -> Known.CAD_ACCOUNT
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
                     IBAN -> Known.IBAN
                     UPI -> Known.UPI
                     NGN_ACCOUNT -> Known.NGN_ACCOUNT
-                    CAD_ACCOUNT -> Known.CAD_ACCOUNT
                     GBP_ACCOUNT -> Known.GBP_ACCOUNT
                     PHP_ACCOUNT -> Known.PHP_ACCOUNT
                     SGD_ACCOUNT -> Known.SGD_ACCOUNT
@@ -5129,8 +5101,6 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -5247,7 +5217,6 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -5378,7 +5347,6 @@ private constructor(
                 (beneficiary.asKnown()?.validity() ?: 0) +
                 (if (sortCode.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -5394,6 +5362,8 @@ private constructor(
 
             companion object {
 
+                val GBP_ACCOUNT = of("GBP_ACCOUNT")
+
                 val US_ACCOUNT = of("US_ACCOUNT")
 
                 val CLABE = of("CLABE")
@@ -5407,8 +5377,6 @@ private constructor(
                 val NGN_ACCOUNT = of("NGN_ACCOUNT")
 
                 val CAD_ACCOUNT = of("CAD_ACCOUNT")
-
-                val GBP_ACCOUNT = of("GBP_ACCOUNT")
 
                 val PHP_ACCOUNT = of("PHP_ACCOUNT")
 
@@ -5431,6 +5399,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                GBP_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -5438,7 +5407,6 @@ private constructor(
                 UPI,
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
-                GBP_ACCOUNT,
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
                 SPARK_WALLET,
@@ -5459,6 +5427,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                GBP_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -5466,7 +5435,6 @@ private constructor(
                 UPI,
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
-                GBP_ACCOUNT,
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
                 SPARK_WALLET,
@@ -5491,6 +5459,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    GBP_ACCOUNT -> Value.GBP_ACCOUNT
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -5498,7 +5467,6 @@ private constructor(
                     UPI -> Value.UPI
                     NGN_ACCOUNT -> Value.NGN_ACCOUNT
                     CAD_ACCOUNT -> Value.CAD_ACCOUNT
-                    GBP_ACCOUNT -> Value.GBP_ACCOUNT
                     PHP_ACCOUNT -> Value.PHP_ACCOUNT
                     SGD_ACCOUNT -> Value.SGD_ACCOUNT
                     SPARK_WALLET -> Value.SPARK_WALLET
@@ -5521,6 +5489,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    GBP_ACCOUNT -> Known.GBP_ACCOUNT
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -5528,7 +5497,6 @@ private constructor(
                     UPI -> Known.UPI
                     NGN_ACCOUNT -> Known.NGN_ACCOUNT
                     CAD_ACCOUNT -> Known.CAD_ACCOUNT
-                    GBP_ACCOUNT -> Known.GBP_ACCOUNT
                     PHP_ACCOUNT -> Known.PHP_ACCOUNT
                     SGD_ACCOUNT -> Known.SGD_ACCOUNT
                     SPARK_WALLET -> Known.SPARK_WALLET
@@ -5650,8 +5618,6 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -5768,7 +5734,6 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -5899,7 +5864,6 @@ private constructor(
                 (if (bankName.asKnown() == null) 0 else 1) +
                 (beneficiary.asKnown()?.validity() ?: 0)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -5914,6 +5878,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val PHP_ACCOUNT = of("PHP_ACCOUNT")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -5930,8 +5896,6 @@ private constructor(
                 val CAD_ACCOUNT = of("CAD_ACCOUNT")
 
                 val GBP_ACCOUNT = of("GBP_ACCOUNT")
-
-                val PHP_ACCOUNT = of("PHP_ACCOUNT")
 
                 val SGD_ACCOUNT = of("SGD_ACCOUNT")
 
@@ -5952,6 +5916,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                PHP_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -5960,7 +5925,6 @@ private constructor(
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
-                PHP_ACCOUNT,
                 SGD_ACCOUNT,
                 SPARK_WALLET,
                 LIGHTNING,
@@ -5980,6 +5944,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                PHP_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -5988,7 +5953,6 @@ private constructor(
                 NGN_ACCOUNT,
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
-                PHP_ACCOUNT,
                 SGD_ACCOUNT,
                 SPARK_WALLET,
                 LIGHTNING,
@@ -6012,6 +5976,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    PHP_ACCOUNT -> Value.PHP_ACCOUNT
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -6020,7 +5985,6 @@ private constructor(
                     NGN_ACCOUNT -> Value.NGN_ACCOUNT
                     CAD_ACCOUNT -> Value.CAD_ACCOUNT
                     GBP_ACCOUNT -> Value.GBP_ACCOUNT
-                    PHP_ACCOUNT -> Value.PHP_ACCOUNT
                     SGD_ACCOUNT -> Value.SGD_ACCOUNT
                     SPARK_WALLET -> Value.SPARK_WALLET
                     LIGHTNING -> Value.LIGHTNING
@@ -6042,6 +6006,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    PHP_ACCOUNT -> Known.PHP_ACCOUNT
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -6050,7 +6015,6 @@ private constructor(
                     NGN_ACCOUNT -> Known.NGN_ACCOUNT
                     CAD_ACCOUNT -> Known.CAD_ACCOUNT
                     GBP_ACCOUNT -> Known.GBP_ACCOUNT
-                    PHP_ACCOUNT -> Known.PHP_ACCOUNT
                     SGD_ACCOUNT -> Known.SGD_ACCOUNT
                     SPARK_WALLET -> Known.SPARK_WALLET
                     LIGHTNING -> Known.LIGHTNING
@@ -6175,8 +6139,6 @@ private constructor(
         fun accountNumber(): String = accountNumber.getRequired("accountNumber")
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -6311,7 +6273,6 @@ private constructor(
                 this.accountNumber = accountNumber
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -6458,7 +6419,6 @@ private constructor(
                 (beneficiary.asKnown()?.validity() ?: 0) +
                 (if (swiftCode.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -6473,6 +6433,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val SGD_ACCOUNT = of("SGD_ACCOUNT")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -6492,8 +6454,6 @@ private constructor(
 
                 val PHP_ACCOUNT = of("PHP_ACCOUNT")
 
-                val SGD_ACCOUNT = of("SGD_ACCOUNT")
-
                 val SPARK_WALLET = of("SPARK_WALLET")
 
                 val LIGHTNING = of("LIGHTNING")
@@ -6511,6 +6471,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                SGD_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -6520,7 +6481,6 @@ private constructor(
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
-                SGD_ACCOUNT,
                 SPARK_WALLET,
                 LIGHTNING,
                 SOLANA_WALLET,
@@ -6539,6 +6499,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                SGD_ACCOUNT,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -6548,7 +6509,6 @@ private constructor(
                 CAD_ACCOUNT,
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
-                SGD_ACCOUNT,
                 SPARK_WALLET,
                 LIGHTNING,
                 SOLANA_WALLET,
@@ -6571,6 +6531,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    SGD_ACCOUNT -> Value.SGD_ACCOUNT
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -6580,7 +6541,6 @@ private constructor(
                     CAD_ACCOUNT -> Value.CAD_ACCOUNT
                     GBP_ACCOUNT -> Value.GBP_ACCOUNT
                     PHP_ACCOUNT -> Value.PHP_ACCOUNT
-                    SGD_ACCOUNT -> Value.SGD_ACCOUNT
                     SPARK_WALLET -> Value.SPARK_WALLET
                     LIGHTNING -> Value.LIGHTNING
                     SOLANA_WALLET -> Value.SOLANA_WALLET
@@ -6601,6 +6561,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    SGD_ACCOUNT -> Known.SGD_ACCOUNT
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -6610,7 +6571,6 @@ private constructor(
                     CAD_ACCOUNT -> Known.CAD_ACCOUNT
                     GBP_ACCOUNT -> Known.GBP_ACCOUNT
                     PHP_ACCOUNT -> Known.PHP_ACCOUNT
-                    SGD_ACCOUNT -> Known.SGD_ACCOUNT
                     SPARK_WALLET -> Known.SPARK_WALLET
                     LIGHTNING -> Known.LIGHTNING
                     SOLANA_WALLET -> Known.SOLANA_WALLET
@@ -6720,8 +6680,6 @@ private constructor(
         ) : this(accountType, address, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -6793,7 +6751,6 @@ private constructor(
                         sparkWalletExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -6888,7 +6845,6 @@ private constructor(
         internal fun validity(): Int =
             (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -6903,6 +6859,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val SPARK_WALLET = of("SPARK_WALLET")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -6924,8 +6882,6 @@ private constructor(
 
                 val SGD_ACCOUNT = of("SGD_ACCOUNT")
 
-                val SPARK_WALLET = of("SPARK_WALLET")
-
                 val LIGHTNING = of("LIGHTNING")
 
                 val SOLANA_WALLET = of("SOLANA_WALLET")
@@ -6941,6 +6897,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                SPARK_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -6951,7 +6908,6 @@ private constructor(
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
-                SPARK_WALLET,
                 LIGHTNING,
                 SOLANA_WALLET,
                 TRON_WALLET,
@@ -6969,6 +6925,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                SPARK_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -6979,7 +6936,6 @@ private constructor(
                 GBP_ACCOUNT,
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
-                SPARK_WALLET,
                 LIGHTNING,
                 SOLANA_WALLET,
                 TRON_WALLET,
@@ -7001,6 +6957,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    SPARK_WALLET -> Value.SPARK_WALLET
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -7011,7 +6968,6 @@ private constructor(
                     GBP_ACCOUNT -> Value.GBP_ACCOUNT
                     PHP_ACCOUNT -> Value.PHP_ACCOUNT
                     SGD_ACCOUNT -> Value.SGD_ACCOUNT
-                    SPARK_WALLET -> Value.SPARK_WALLET
                     LIGHTNING -> Value.LIGHTNING
                     SOLANA_WALLET -> Value.SOLANA_WALLET
                     TRON_WALLET -> Value.TRON_WALLET
@@ -7031,6 +6987,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    SPARK_WALLET -> Known.SPARK_WALLET
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -7041,7 +6998,6 @@ private constructor(
                     GBP_ACCOUNT -> Known.GBP_ACCOUNT
                     PHP_ACCOUNT -> Known.PHP_ACCOUNT
                     SGD_ACCOUNT -> Known.SGD_ACCOUNT
-                    SPARK_WALLET -> Known.SPARK_WALLET
                     LIGHTNING -> Known.LIGHTNING
                     SOLANA_WALLET -> Known.SOLANA_WALLET
                     TRON_WALLET -> Known.TRON_WALLET
@@ -7146,8 +7102,6 @@ private constructor(
         ) : this(accountType, bolt12, invoice, lightningAddress, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -7256,7 +7210,6 @@ private constructor(
                     lightningExternalAccountInfo.additionalProperties.toMutableMap()
             }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -7388,7 +7341,6 @@ private constructor(
                 (if (invoice.asKnown() == null) 0 else 1) +
                 (if (lightningAddress.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -7403,6 +7355,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val LIGHTNING = of("LIGHTNING")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -7426,8 +7380,6 @@ private constructor(
 
                 val SPARK_WALLET = of("SPARK_WALLET")
 
-                val LIGHTNING = of("LIGHTNING")
-
                 val SOLANA_WALLET = of("SOLANA_WALLET")
 
                 val TRON_WALLET = of("TRON_WALLET")
@@ -7441,6 +7393,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                LIGHTNING,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -7452,7 +7405,6 @@ private constructor(
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
                 SPARK_WALLET,
-                LIGHTNING,
                 SOLANA_WALLET,
                 TRON_WALLET,
                 POLYGON_WALLET,
@@ -7469,6 +7421,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                LIGHTNING,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -7480,7 +7433,6 @@ private constructor(
                 PHP_ACCOUNT,
                 SGD_ACCOUNT,
                 SPARK_WALLET,
-                LIGHTNING,
                 SOLANA_WALLET,
                 TRON_WALLET,
                 POLYGON_WALLET,
@@ -7501,6 +7453,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    LIGHTNING -> Value.LIGHTNING
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -7512,7 +7465,6 @@ private constructor(
                     PHP_ACCOUNT -> Value.PHP_ACCOUNT
                     SGD_ACCOUNT -> Value.SGD_ACCOUNT
                     SPARK_WALLET -> Value.SPARK_WALLET
-                    LIGHTNING -> Value.LIGHTNING
                     SOLANA_WALLET -> Value.SOLANA_WALLET
                     TRON_WALLET -> Value.TRON_WALLET
                     POLYGON_WALLET -> Value.POLYGON_WALLET
@@ -7531,6 +7483,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    LIGHTNING -> Known.LIGHTNING
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -7542,7 +7495,6 @@ private constructor(
                     PHP_ACCOUNT -> Known.PHP_ACCOUNT
                     SGD_ACCOUNT -> Known.SGD_ACCOUNT
                     SPARK_WALLET -> Known.SPARK_WALLET
-                    LIGHTNING -> Known.LIGHTNING
                     SOLANA_WALLET -> Known.SOLANA_WALLET
                     TRON_WALLET -> Known.TRON_WALLET
                     POLYGON_WALLET -> Known.POLYGON_WALLET
@@ -7642,8 +7594,6 @@ private constructor(
         ) : this(accountType, address, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -7715,7 +7665,6 @@ private constructor(
                         solanaWalletExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -7810,7 +7759,6 @@ private constructor(
         internal fun validity(): Int =
             (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -7825,6 +7773,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val SOLANA_WALLET = of("SOLANA_WALLET")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -7850,8 +7800,6 @@ private constructor(
 
                 val LIGHTNING = of("LIGHTNING")
 
-                val SOLANA_WALLET = of("SOLANA_WALLET")
-
                 val TRON_WALLET = of("TRON_WALLET")
 
                 val POLYGON_WALLET = of("POLYGON_WALLET")
@@ -7863,6 +7811,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                SOLANA_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -7875,7 +7824,6 @@ private constructor(
                 SGD_ACCOUNT,
                 SPARK_WALLET,
                 LIGHTNING,
-                SOLANA_WALLET,
                 TRON_WALLET,
                 POLYGON_WALLET,
                 BASE_WALLET,
@@ -7891,6 +7839,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                SOLANA_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -7903,7 +7852,6 @@ private constructor(
                 SGD_ACCOUNT,
                 SPARK_WALLET,
                 LIGHTNING,
-                SOLANA_WALLET,
                 TRON_WALLET,
                 POLYGON_WALLET,
                 BASE_WALLET,
@@ -7923,6 +7871,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    SOLANA_WALLET -> Value.SOLANA_WALLET
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -7935,7 +7884,6 @@ private constructor(
                     SGD_ACCOUNT -> Value.SGD_ACCOUNT
                     SPARK_WALLET -> Value.SPARK_WALLET
                     LIGHTNING -> Value.LIGHTNING
-                    SOLANA_WALLET -> Value.SOLANA_WALLET
                     TRON_WALLET -> Value.TRON_WALLET
                     POLYGON_WALLET -> Value.POLYGON_WALLET
                     BASE_WALLET -> Value.BASE_WALLET
@@ -7953,6 +7901,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    SOLANA_WALLET -> Known.SOLANA_WALLET
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -7965,7 +7914,6 @@ private constructor(
                     SGD_ACCOUNT -> Known.SGD_ACCOUNT
                     SPARK_WALLET -> Known.SPARK_WALLET
                     LIGHTNING -> Known.LIGHTNING
-                    SOLANA_WALLET -> Known.SOLANA_WALLET
                     TRON_WALLET -> Known.TRON_WALLET
                     POLYGON_WALLET -> Known.POLYGON_WALLET
                     BASE_WALLET -> Known.BASE_WALLET
@@ -8062,8 +8010,6 @@ private constructor(
         ) : this(accountType, address, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -8135,7 +8081,6 @@ private constructor(
                         tronWalletExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -8230,7 +8175,6 @@ private constructor(
         internal fun validity(): Int =
             (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -8245,6 +8189,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val TRON_WALLET = of("TRON_WALLET")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -8272,8 +8218,6 @@ private constructor(
 
                 val SOLANA_WALLET = of("SOLANA_WALLET")
 
-                val TRON_WALLET = of("TRON_WALLET")
-
                 val POLYGON_WALLET = of("POLYGON_WALLET")
 
                 val BASE_WALLET = of("BASE_WALLET")
@@ -8283,6 +8227,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                TRON_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -8296,7 +8241,6 @@ private constructor(
                 SPARK_WALLET,
                 LIGHTNING,
                 SOLANA_WALLET,
-                TRON_WALLET,
                 POLYGON_WALLET,
                 BASE_WALLET,
             }
@@ -8311,6 +8255,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                TRON_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -8324,7 +8269,6 @@ private constructor(
                 SPARK_WALLET,
                 LIGHTNING,
                 SOLANA_WALLET,
-                TRON_WALLET,
                 POLYGON_WALLET,
                 BASE_WALLET,
                 /**
@@ -8343,6 +8287,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    TRON_WALLET -> Value.TRON_WALLET
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -8356,7 +8301,6 @@ private constructor(
                     SPARK_WALLET -> Value.SPARK_WALLET
                     LIGHTNING -> Value.LIGHTNING
                     SOLANA_WALLET -> Value.SOLANA_WALLET
-                    TRON_WALLET -> Value.TRON_WALLET
                     POLYGON_WALLET -> Value.POLYGON_WALLET
                     BASE_WALLET -> Value.BASE_WALLET
                     else -> Value._UNKNOWN
@@ -8373,6 +8317,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    TRON_WALLET -> Known.TRON_WALLET
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -8386,7 +8331,6 @@ private constructor(
                     SPARK_WALLET -> Known.SPARK_WALLET
                     LIGHTNING -> Known.LIGHTNING
                     SOLANA_WALLET -> Known.SOLANA_WALLET
-                    TRON_WALLET -> Known.TRON_WALLET
                     POLYGON_WALLET -> Known.POLYGON_WALLET
                     BASE_WALLET -> Known.BASE_WALLET
                     else -> throw GridInvalidDataException("Unknown AccountType: $value")
@@ -8482,8 +8426,6 @@ private constructor(
         ) : this(accountType, address, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -8555,7 +8497,6 @@ private constructor(
                         polygonWalletExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -8650,7 +8591,6 @@ private constructor(
         internal fun validity(): Int =
             (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -8665,6 +8605,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val POLYGON_WALLET = of("POLYGON_WALLET")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -8694,8 +8636,6 @@ private constructor(
 
                 val TRON_WALLET = of("TRON_WALLET")
 
-                val POLYGON_WALLET = of("POLYGON_WALLET")
-
                 val BASE_WALLET = of("BASE_WALLET")
 
                 fun of(value: String) = AccountType(JsonField.of(value))
@@ -8703,6 +8643,7 @@ private constructor(
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                POLYGON_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -8717,7 +8658,6 @@ private constructor(
                 LIGHTNING,
                 SOLANA_WALLET,
                 TRON_WALLET,
-                POLYGON_WALLET,
                 BASE_WALLET,
             }
 
@@ -8731,6 +8671,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                POLYGON_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -8745,7 +8686,6 @@ private constructor(
                 LIGHTNING,
                 SOLANA_WALLET,
                 TRON_WALLET,
-                POLYGON_WALLET,
                 BASE_WALLET,
                 /**
                  * An enum member indicating that [AccountType] was instantiated with an unknown
@@ -8763,6 +8703,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    POLYGON_WALLET -> Value.POLYGON_WALLET
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -8777,7 +8718,6 @@ private constructor(
                     LIGHTNING -> Value.LIGHTNING
                     SOLANA_WALLET -> Value.SOLANA_WALLET
                     TRON_WALLET -> Value.TRON_WALLET
-                    POLYGON_WALLET -> Value.POLYGON_WALLET
                     BASE_WALLET -> Value.BASE_WALLET
                     else -> Value._UNKNOWN
                 }
@@ -8793,6 +8733,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    POLYGON_WALLET -> Known.POLYGON_WALLET
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -8807,7 +8748,6 @@ private constructor(
                     LIGHTNING -> Known.LIGHTNING
                     SOLANA_WALLET -> Known.SOLANA_WALLET
                     TRON_WALLET -> Known.TRON_WALLET
-                    POLYGON_WALLET -> Known.POLYGON_WALLET
                     BASE_WALLET -> Known.BASE_WALLET
                     else -> throw GridInvalidDataException("Unknown AccountType: $value")
                 }
@@ -8902,8 +8842,6 @@ private constructor(
         ) : this(accountType, address, mutableMapOf())
 
         /**
-         * Type of external account or wallet
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -8975,7 +8913,6 @@ private constructor(
                         baseWalletExternalAccountInfo.additionalProperties.toMutableMap()
                 }
 
-            /** Type of external account or wallet */
             fun accountType(accountType: AccountType) = accountType(JsonField.of(accountType))
 
             /**
@@ -9070,7 +9007,6 @@ private constructor(
         internal fun validity(): Int =
             (accountType.asKnown()?.validity() ?: 0) + (if (address.asKnown() == null) 0 else 1)
 
-        /** Type of external account or wallet */
         class AccountType @JsonCreator private constructor(private val value: JsonField<String>) :
             Enum {
 
@@ -9085,6 +9021,8 @@ private constructor(
             @com.fasterxml.jackson.annotation.JsonValue fun _value(): JsonField<String> = value
 
             companion object {
+
+                val BASE_WALLET = of("BASE_WALLET")
 
                 val US_ACCOUNT = of("US_ACCOUNT")
 
@@ -9116,13 +9054,12 @@ private constructor(
 
                 val POLYGON_WALLET = of("POLYGON_WALLET")
 
-                val BASE_WALLET = of("BASE_WALLET")
-
                 fun of(value: String) = AccountType(JsonField.of(value))
             }
 
             /** An enum containing [AccountType]'s known values. */
             enum class Known {
+                BASE_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -9138,7 +9075,6 @@ private constructor(
                 SOLANA_WALLET,
                 TRON_WALLET,
                 POLYGON_WALLET,
-                BASE_WALLET,
             }
 
             /**
@@ -9151,6 +9087,7 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
+                BASE_WALLET,
                 US_ACCOUNT,
                 CLABE,
                 PIX,
@@ -9166,7 +9103,6 @@ private constructor(
                 SOLANA_WALLET,
                 TRON_WALLET,
                 POLYGON_WALLET,
-                BASE_WALLET,
                 /**
                  * An enum member indicating that [AccountType] was instantiated with an unknown
                  * value.
@@ -9183,6 +9119,7 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
+                    BASE_WALLET -> Value.BASE_WALLET
                     US_ACCOUNT -> Value.US_ACCOUNT
                     CLABE -> Value.CLABE
                     PIX -> Value.PIX
@@ -9198,7 +9135,6 @@ private constructor(
                     SOLANA_WALLET -> Value.SOLANA_WALLET
                     TRON_WALLET -> Value.TRON_WALLET
                     POLYGON_WALLET -> Value.POLYGON_WALLET
-                    BASE_WALLET -> Value.BASE_WALLET
                     else -> Value._UNKNOWN
                 }
 
@@ -9213,6 +9149,7 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
+                    BASE_WALLET -> Known.BASE_WALLET
                     US_ACCOUNT -> Known.US_ACCOUNT
                     CLABE -> Known.CLABE
                     PIX -> Known.PIX
@@ -9228,7 +9165,6 @@ private constructor(
                     SOLANA_WALLET -> Known.SOLANA_WALLET
                     TRON_WALLET -> Known.TRON_WALLET
                     POLYGON_WALLET -> Known.POLYGON_WALLET
-                    BASE_WALLET -> Known.BASE_WALLET
                     else -> throw GridInvalidDataException("Unknown AccountType: $value")
                 }
 

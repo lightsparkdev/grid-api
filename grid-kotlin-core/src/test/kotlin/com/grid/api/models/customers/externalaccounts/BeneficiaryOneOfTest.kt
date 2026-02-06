@@ -80,7 +80,7 @@ internal class BeneficiaryOneOfTest {
     fun ofBusinessBeneficiary() {
         val businessBeneficiary =
             BeneficiaryOneOf.BusinessBeneficiary.builder()
-                .beneficiaryType(BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.INDIVIDUAL)
+                .beneficiaryType(BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.BUSINESS)
                 .legalName("Acme Corporation, Inc.")
                 .address(
                     Address.builder()
@@ -108,9 +108,7 @@ internal class BeneficiaryOneOfTest {
         val beneficiaryOneOf =
             BeneficiaryOneOf.ofBusinessBeneficiary(
                 BeneficiaryOneOf.BusinessBeneficiary.builder()
-                    .beneficiaryType(
-                        BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.INDIVIDUAL
-                    )
+                    .beneficiaryType(BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.BUSINESS)
                     .legalName("Acme Corporation, Inc.")
                     .address(
                         Address.builder()

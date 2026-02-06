@@ -41,7 +41,7 @@ internal class PlatformListInternalAccountsResponseTest {
                                 .accountOrWalletInfo(
                                     PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                         .builder()
-                                        .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
+                                        .accountType(BasePaymentAccountInfo.AccountType.CLABE)
                                         .clabeNumber("123456789012345678")
                                         .reference("UMA-Q12345-REF")
                                         .build()
@@ -81,7 +81,7 @@ internal class PlatformListInternalAccountsResponseTest {
                             .accountOrWalletInfo(
                                 PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                     .builder()
-                                    .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
+                                    .accountType(BasePaymentAccountInfo.AccountType.CLABE)
                                     .clabeNumber("123456789012345678")
                                     .reference("UMA-Q12345-REF")
                                     .build()
@@ -125,7 +125,7 @@ internal class PlatformListInternalAccountsResponseTest {
                                 .accountOrWalletInfo(
                                     PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
                                         .builder()
-                                        .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
+                                        .accountType(BasePaymentAccountInfo.AccountType.CLABE)
                                         .clabeNumber("123456789012345678")
                                         .reference("UMA-Q12345-REF")
                                         .build()

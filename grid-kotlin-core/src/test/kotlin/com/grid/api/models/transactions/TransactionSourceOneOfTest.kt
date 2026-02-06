@@ -56,7 +56,7 @@ internal class TransactionSourceOneOfTest {
     fun ofUmaAddressTransactionSource() {
         val umaAddressTransactionSource =
             TransactionSourceOneOf.UmaAddressTransactionSource.builder()
-                .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
+                .sourceType(BaseTransactionSource.SourceType.UMA_ADDRESS)
                 .currency("USD")
                 .umaAddress("\$sender@uma.domain.com")
                 .build()
@@ -75,7 +75,7 @@ internal class TransactionSourceOneOfTest {
         val transactionSourceOneOf =
             TransactionSourceOneOf.ofUmaAddressTransactionSource(
                 TransactionSourceOneOf.UmaAddressTransactionSource.builder()
-                    .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
+                    .sourceType(BaseTransactionSource.SourceType.UMA_ADDRESS)
                     .currency("USD")
                     .umaAddress("\$sender@uma.domain.com")
                     .build()

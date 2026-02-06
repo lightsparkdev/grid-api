@@ -247,8 +247,6 @@ private constructor(
         ) : this(beneficiaryType, birthDate, fullName, nationality, address, mutableMapOf())
 
         /**
-         * Whether the beneficiary is an individual or a business entity
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -373,7 +371,6 @@ private constructor(
                 additionalProperties = individualBeneficiary.additionalProperties.toMutableMap()
             }
 
-            /** Whether the beneficiary is an individual or a business entity */
             fun beneficiaryType(beneficiaryType: BeneficiaryType) =
                 beneficiaryType(JsonField.of(beneficiaryType))
 
@@ -518,7 +515,6 @@ private constructor(
                 (if (nationality.asKnown() == null) 0 else 1) +
                 (address.asKnown()?.validity() ?: 0)
 
-        /** Whether the beneficiary is an individual or a business entity */
         class BeneficiaryType
         @JsonCreator
         private constructor(private val value: JsonField<String>) : Enum {
@@ -707,8 +703,6 @@ private constructor(
         ) : this(beneficiaryType, legalName, address, registrationNumber, taxId, mutableMapOf())
 
         /**
-         * Whether the beneficiary is an individual or a business entity
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
@@ -830,7 +824,6 @@ private constructor(
                 additionalProperties = businessBeneficiary.additionalProperties.toMutableMap()
             }
 
-            /** Whether the beneficiary is an individual or a business entity */
             fun beneficiaryType(beneficiaryType: BeneficiaryType) =
                 beneficiaryType(JsonField.of(beneficiaryType))
 
@@ -974,7 +967,6 @@ private constructor(
                 (if (registrationNumber.asKnown() == null) 0 else 1) +
                 (if (taxId.asKnown() == null) 0 else 1)
 
-        /** Whether the beneficiary is an individual or a business entity */
         class BeneficiaryType
         @JsonCreator
         private constructor(private val value: JsonField<String>) : Enum {
@@ -991,17 +983,17 @@ private constructor(
 
             companion object {
 
-                val INDIVIDUAL = of("INDIVIDUAL")
-
                 val BUSINESS = of("BUSINESS")
+
+                val INDIVIDUAL = of("INDIVIDUAL")
 
                 fun of(value: String) = BeneficiaryType(JsonField.of(value))
             }
 
             /** An enum containing [BeneficiaryType]'s known values. */
             enum class Known {
-                INDIVIDUAL,
                 BUSINESS,
+                INDIVIDUAL,
             }
 
             /**
@@ -1014,8 +1006,8 @@ private constructor(
              * - It was constructed with an arbitrary value using the [of] method.
              */
             enum class Value {
-                INDIVIDUAL,
                 BUSINESS,
+                INDIVIDUAL,
                 /**
                  * An enum member indicating that [BeneficiaryType] was instantiated with an unknown
                  * value.
@@ -1032,8 +1024,8 @@ private constructor(
              */
             fun value(): Value =
                 when (this) {
-                    INDIVIDUAL -> Value.INDIVIDUAL
                     BUSINESS -> Value.BUSINESS
+                    INDIVIDUAL -> Value.INDIVIDUAL
                     else -> Value._UNKNOWN
                 }
 
@@ -1048,8 +1040,8 @@ private constructor(
              */
             fun known(): Known =
                 when (this) {
-                    INDIVIDUAL -> Known.INDIVIDUAL
                     BUSINESS -> Known.BUSINESS
+                    INDIVIDUAL -> Known.INDIVIDUAL
                     else -> throw GridInvalidDataException("Unknown BeneficiaryType: $value")
                 }
 

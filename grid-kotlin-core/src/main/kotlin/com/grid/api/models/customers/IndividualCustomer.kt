@@ -97,6 +97,7 @@ private constructor(
         IndividualCustomerFields.builder()
             .address(address)
             .birthDate(birthDate)
+            .customerType(customerType)
             .fullName(fullName)
             .nationality(nationality)
             .build()
