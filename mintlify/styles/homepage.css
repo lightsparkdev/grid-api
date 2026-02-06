@@ -80,6 +80,22 @@ html.is-homepage #content-container {
   padding-right: 48px !important;
 }
 
+/* Mobile breadcrumb bar - show (0, 0, 0) origin on homepage */
+html.is-homepage #navbar button[class*="h-14"][class*="text-left"]::after,
+body.is-homepage #navbar button[class*="h-14"][class*="text-left"]::after {
+  content: "(0, 0, 0)";
+  margin-left: auto;
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ls-gray-400);
+}
+
+html.dark.is-homepage #navbar button[class*="h-14"][class*="text-left"]::after,
+html.dark body.is-homepage #navbar button[class*="h-14"][class*="text-left"]::after {
+  color: var(--ls-gray-700);
+}
+
 /* ===========================================
    Homepage Content Container
    Full control over styling without prose

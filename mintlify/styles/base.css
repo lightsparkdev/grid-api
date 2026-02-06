@@ -195,6 +195,12 @@ html.dark #navbar [class*="z-10"] {
     padding-left: 20px !important;
     padding-right: 24px !important;
   }
+
+  /* Mobile breadcrumb bar - slight padding adjustment */
+  #navbar button[class*="h-14"][class*="text-left"] {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
 }
 
 /* ===========================================
@@ -217,6 +223,7 @@ html.dark #navbar [class*="z-10"] {
   gap: 8px !important;
   transition: all 0.2s ease !important;
   box-shadow: none !important;
+  outline: none !important;
 }
 
 #search-bar-entry:hover {
@@ -280,11 +287,7 @@ html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
    Navbar - Ask AI Button
    =========================================== */
 
-#assistant-entry,
-[class*="ask-ai"],
-button[aria-label*="AI"],
-[data-component*="ai"],
-#ask-ai-button {
+#assistant-entry {
   background: var(--ls-gray-050) !important;
   border: 0.5px solid var(--ls-black-10) !important;
   border-radius: var(--ls-radius-md) !important;
@@ -294,28 +297,22 @@ button[aria-label*="AI"],
   font-weight: 400 !important;
   color: var(--ls-gray-500) !important;
   transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  outline: none !important;
 }
 
-#assistant-entry:hover,
-[class*="ask-ai"]:hover,
-button[aria-label*="AI"]:hover,
-#ask-ai-button:hover {
+#assistant-entry:hover {
   border-color: var(--ls-black-20) !important;
   color: var(--ls-gray-950) !important;
 }
 
-html.dark #assistant-entry,
-html.dark [class*="ask-ai"],
-html.dark button[aria-label*="AI"],
-html.dark #ask-ai-button {
+html.dark #assistant-entry {
   background: rgba(255, 255, 255, 0.05) !important;
   border-color: var(--ls-white-06) !important;
 }
 
-html.dark #assistant-entry:hover,
-html.dark [class*="ask-ai"]:hover,
-html.dark button[aria-label*="AI"]:hover,
-html.dark #ask-ai-button:hover {
+html.dark #assistant-entry:hover {
   border-color: var(--ls-white-20) !important;
   color: var(--ls-gray-100) !important;
 }
@@ -323,6 +320,14 @@ html.dark #ask-ai-button:hover {
 /* Center search bar and Ask AI button in navbar */
 #navbar .flex-1:has(#search-bar-entry) {
   justify-content: center !important;
+}
+
+/* Hide copy/AI tooltips in code blocks */
+div[class*="text-tooltip-foreground"][class*="bg-primary-dark"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* ===========================================
@@ -934,6 +939,15 @@ ul#sidebar-group > li > button::after,
   transition: transform 0.2s ease !important;
 }
 
+/* Dark mode chevron - match sidebar text color */
+html.dark #sidebar-group > li > button::after,
+html.dark ul#sidebar-group > li > button::after,
+html.dark #navigation-items li.space-y-px > button::after,
+html.dark #navigation-items li[class*="space-y"] > button::after {
+  border-right-color: var(--ls-gray-600) !important;
+  border-bottom-color: var(--ls-gray-600) !important;
+}
+
 /* Chevron rotation when expanded (points down) */
 #sidebar-group > li > button[aria-expanded="true"]::after,
 ul#sidebar-group > li > button[aria-expanded="true"]::after,
@@ -1394,24 +1408,41 @@ div.callout,
    =========================================== */
 
 /* Code group container - 8px border radius, no padding, black-10 border */
-#content-side-layout .code-group {
+#content-side-layout .code-group,
+#content-side-layout [data-testid="code-group-select"] {
   border-radius: var(--ls-radius-md) !important;
   padding: 0 !important;
   border: 0.5px solid var(--ls-black-10) !important;
 }
 
-html.dark #content-side-layout .code-group {
+html.dark #content-side-layout .code-group,
+html.dark #content-side-layout [data-testid="code-group-select"] {
   border-color: var(--ls-white-06) !important;
 }
 
-/* Code group inner container - no border radius */
+/* Code group inner container - no border radius (exclude interactive tabs/buttons) */
 #content-side-layout .code-group > div,
-#content-side-layout .code-group [class*="rounded"] {
+#content-side-layout [data-testid="code-group-select"] > div {
   border-radius: 0 !important;
 }
 
+/* Code block content area - strip rounded corners */
+#content-side-layout .code-group [data-component-part="code-block-root"],
+#content-side-layout [data-testid="code-group-select"] [data-component-part="code-block-root"] {
+  border-radius: 0 !important;
+}
+
+/* Restore radius on interactive tabs and pills inside code groups */
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] button div[class*="rounded"],
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] > div > button > div,
+#content-side-layout .code-group button div[class*="rounded"],
+#content-side-layout [data-testid="code-group-select"] button div[class*="rounded"] {
+  border-radius: var(--ls-radius-sm) !important;
+}
+
 /* Code group tab bar header */
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"],
+#content-side-layout [data-testid="code-group-select"] > div:first-child {
   height: fit-content !important;
   background-color: var(--ls-gray-025) !important;
   border-bottom: 0.5px solid var(--ls-black-10) !important;
@@ -1419,14 +1450,19 @@ html.dark #content-side-layout .code-group {
   padding-bottom: 4px !important;
 }
 
+
 /* Code group tab bar text - book weight */
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"],
+#content-side-layout [data-testid="code-group-select"] > div:first-child {
   font-weight: 450 !important;
 }
 
 #content-side-layout .code-group [data-component-part="code-group-tab-bar"] span,
 #content-side-layout .code-group [data-component-part="code-group-tab-bar"] button,
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] div {
+#content-side-layout .code-group [data-component-part="code-group-tab-bar"] div,
+#content-side-layout [data-testid="code-group-select"] > div:first-child span,
+#content-side-layout [data-testid="code-group-select"] > div:first-child button,
+#content-side-layout [data-testid="code-group-select"] > div:first-child div {
   font-weight: 450 !important;
 }
 
@@ -1435,7 +1471,8 @@ html.dark #content-side-layout .code-group {
   padding-left: 4px !important;
 }
 
-html.dark #content-side-layout .code-group [data-component-part="code-group-tab-bar"] {
+html.dark #content-side-layout .code-group [data-component-part="code-group-tab-bar"],
+html.dark #content-side-layout [data-testid="code-group-select"] > div:first-child {
   background-color: var(--ls-gray-975) !important;
   border-bottom-color: var(--ls-white-06) !important;
 }
