@@ -616,11 +616,15 @@ html.dark .mobile-nav-tabs-item[class*="text-primary"] {
   color: var(--ls-gray-100) !important;
 }
 
-/* Mobile nav - top bar with logo and mode selector */
-div#mobile-nav .flex.items-center.justify-between {
-  padding-left: 8px !important;
-  padding-right: 8px !important;
+/* Mobile nav - top bar: indent logo and toggle without affecting toggle internals */
+div#mobile-nav .flex.items-center.justify-between > a:first-child {
+  margin-left: 8px !important;
 }
+
+div#mobile-nav .flex.items-center.justify-between > button[class*="rounded-full"] {
+  margin-right: 8px !important;
+}
+
 
 /* Mobile nav - dropdown wrapper: reduce bottom spacing */
 div#mobile-nav div#navigation-items > div:first-child {
