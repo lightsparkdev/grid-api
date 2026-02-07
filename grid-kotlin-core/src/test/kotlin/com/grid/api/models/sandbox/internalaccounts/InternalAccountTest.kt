@@ -5,7 +5,6 @@ package com.grid.api.models.sandbox.internalaccounts
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.core.jsonMapper
 import com.grid.api.models.invitations.CurrencyAmount
-import com.grid.api.models.quotes.BasePaymentAccountInfo
 import com.grid.api.models.quotes.Currency
 import com.grid.api.models.quotes.PaymentInstructions
 import java.time.OffsetDateTime
@@ -36,9 +35,10 @@ internal class InternalAccountTest {
                 .addFundingPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
-                                .builder()
-                                .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
+                                .accountType(
+                                    PaymentInstructions.AccountOrWalletInfo.Clabe.AccountType.CLABE
+                                )
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()
@@ -75,8 +75,10 @@ internal class InternalAccountTest {
             .containsExactly(
                 PaymentInstructions.builder()
                     .accountOrWalletInfo(
-                        PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo.builder()
-                            .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                        PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
+                            .accountType(
+                                PaymentInstructions.AccountOrWalletInfo.Clabe.AccountType.CLABE
+                            )
                             .clabeNumber("123456789012345678")
                             .reference("UMA-Q12345-REF")
                             .build()
@@ -116,9 +118,10 @@ internal class InternalAccountTest {
                 .addFundingPaymentInstruction(
                     PaymentInstructions.builder()
                         .accountOrWalletInfo(
-                            PaymentInstructions.AccountOrWalletInfo.PaymentClabeAccountInfo
-                                .builder()
-                                .accountType(BasePaymentAccountInfo.AccountType.CLABE)
+                            PaymentInstructions.AccountOrWalletInfo.Clabe.builder()
+                                .accountType(
+                                    PaymentInstructions.AccountOrWalletInfo.Clabe.AccountType.CLABE
+                                )
                                 .clabeNumber("123456789012345678")
                                 .reference("UMA-Q12345-REF")
                                 .build()

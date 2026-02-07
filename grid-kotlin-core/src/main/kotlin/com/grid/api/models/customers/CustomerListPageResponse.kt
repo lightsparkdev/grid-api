@@ -168,18 +168,12 @@ private constructor(
                 }
         }
 
-        /**
-         * Alias for calling [addData] with
-         * `CustomerOneOf.ofIndividualCustomer(individualCustomer)`.
-         */
-        fun addData(individualCustomer: IndividualCustomer) =
-            addData(CustomerOneOf.ofIndividualCustomer(individualCustomer))
+        /** Alias for calling [addData] with `CustomerOneOf.ofIndividual(individual)`. */
+        fun addData(individual: CustomerOneOf.Individual) =
+            addData(CustomerOneOf.ofIndividual(individual))
 
-        /**
-         * Alias for calling [addData] with `CustomerOneOf.ofBusinessCustomer(businessCustomer)`.
-         */
-        fun addData(businessCustomer: BusinessCustomer) =
-            addData(CustomerOneOf.ofBusinessCustomer(businessCustomer))
+        /** Alias for calling [addData] with `CustomerOneOf.ofBusiness(business)`. */
+        fun addData(business: CustomerOneOf.Business) = addData(CustomerOneOf.ofBusiness(business))
 
         /** Indicates if more results are available beyond this page */
         fun hasMore(hasMore: Boolean) = hasMore(JsonField.of(hasMore))

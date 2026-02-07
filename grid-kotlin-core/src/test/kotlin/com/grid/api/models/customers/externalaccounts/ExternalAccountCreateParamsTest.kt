@@ -2,7 +2,6 @@
 
 package com.grid.api.models.customers.externalaccounts
 
-import com.grid.api.models.customers.Address
 import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -15,28 +14,18 @@ internal class ExternalAccountCreateParamsTest {
             .externalAccountCreate(
                 ExternalAccountCreate.builder()
                     .accountInfo(
-                        ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        ExternalAccountInfoOneOf.UsAccount.builder()
                             .accountCategory(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                    .AccountCategory
-                                    .CHECKING
+                                ExternalAccountInfoOneOf.UsAccount.AccountCategory.CHECKING
                             )
                             .accountNumber("12345678901")
-                            .accountType(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
-                                    .US_ACCOUNT
-                            )
                             .beneficiary(
-                                BeneficiaryOneOf.IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
-                                            .INDIVIDUAL
-                                    )
+                                BeneficiaryOneOf.Individual.builder()
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")
                                     .address(
-                                        Address.builder()
+                                        BeneficiaryOneOf.Individual.Address.builder()
                                             .country("US")
                                             .line1("123 Main Street")
                                             .postalCode("94105")
@@ -67,29 +56,18 @@ internal class ExternalAccountCreateParamsTest {
                 .externalAccountCreate(
                     ExternalAccountCreate.builder()
                         .accountInfo(
-                            ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                            ExternalAccountInfoOneOf.UsAccount.builder()
                                 .accountCategory(
-                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                        .AccountCategory
-                                        .CHECKING
+                                    ExternalAccountInfoOneOf.UsAccount.AccountCategory.CHECKING
                                 )
                                 .accountNumber("12345678901")
-                                .accountType(
-                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                        .AccountType
-                                        .US_ACCOUNT
-                                )
                                 .beneficiary(
-                                    BeneficiaryOneOf.IndividualBeneficiary.builder()
-                                        .beneficiaryType(
-                                            BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
-                                                .INDIVIDUAL
-                                        )
+                                    BeneficiaryOneOf.Individual.builder()
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Doe")
                                         .nationality("US")
                                         .address(
-                                            Address.builder()
+                                            BeneficiaryOneOf.Individual.Address.builder()
                                                 .country("US")
                                                 .line1("123 Main Street")
                                                 .postalCode("94105")
@@ -118,28 +96,18 @@ internal class ExternalAccountCreateParamsTest {
             .isEqualTo(
                 ExternalAccountCreate.builder()
                     .accountInfo(
-                        ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        ExternalAccountInfoOneOf.UsAccount.builder()
                             .accountCategory(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                    .AccountCategory
-                                    .CHECKING
+                                ExternalAccountInfoOneOf.UsAccount.AccountCategory.CHECKING
                             )
                             .accountNumber("12345678901")
-                            .accountType(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
-                                    .US_ACCOUNT
-                            )
                             .beneficiary(
-                                BeneficiaryOneOf.IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
-                                            .INDIVIDUAL
-                                    )
+                                BeneficiaryOneOf.Individual.builder()
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")
                                     .address(
-                                        Address.builder()
+                                        BeneficiaryOneOf.Individual.Address.builder()
                                             .country("US")
                                             .line1("123 Main Street")
                                             .postalCode("94105")
@@ -169,24 +137,13 @@ internal class ExternalAccountCreateParamsTest {
                 .externalAccountCreate(
                     ExternalAccountCreate.builder()
                         .accountInfo(
-                            ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                            ExternalAccountInfoOneOf.UsAccount.builder()
                                 .accountCategory(
-                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                        .AccountCategory
-                                        .CHECKING
+                                    ExternalAccountInfoOneOf.UsAccount.AccountCategory.CHECKING
                                 )
                                 .accountNumber("12345678901")
-                                .accountType(
-                                    ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                        .AccountType
-                                        .US_ACCOUNT
-                                )
                                 .beneficiary(
-                                    BeneficiaryOneOf.IndividualBeneficiary.builder()
-                                        .beneficiaryType(
-                                            BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
-                                                .INDIVIDUAL
-                                        )
+                                    BeneficiaryOneOf.Individual.builder()
                                         .birthDate(LocalDate.parse("1990-01-15"))
                                         .fullName("John Doe")
                                         .nationality("US")
@@ -206,23 +163,13 @@ internal class ExternalAccountCreateParamsTest {
             .isEqualTo(
                 ExternalAccountCreate.builder()
                     .accountInfo(
-                        ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        ExternalAccountInfoOneOf.UsAccount.builder()
                             .accountCategory(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                    .AccountCategory
-                                    .CHECKING
+                                ExternalAccountInfoOneOf.UsAccount.AccountCategory.CHECKING
                             )
                             .accountNumber("12345678901")
-                            .accountType(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
-                                    .US_ACCOUNT
-                            )
                             .beneficiary(
-                                BeneficiaryOneOf.IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
-                                            .INDIVIDUAL
-                                    )
+                                BeneficiaryOneOf.Individual.builder()
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")

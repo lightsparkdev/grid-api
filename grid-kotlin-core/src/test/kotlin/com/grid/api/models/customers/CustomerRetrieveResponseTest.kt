@@ -17,10 +17,9 @@ import org.junit.jupiter.params.provider.EnumSource
 internal class CustomerRetrieveResponseTest {
 
     @Test
-    fun ofIndividualCustomer() {
-        val individualCustomer =
-            IndividualCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+    fun ofIndividual() {
+        val individual =
+            CustomerRetrieveResponse.Individual.builder()
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -28,8 +27,9 @@ internal class CustomerRetrieveResponseTest {
                 .isDeleted(false)
                 .kycStatus(Customer.KycStatus.APPROVED)
                 .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .customerType(CustomerRetrieveResponse.Individual.CustomerType.INDIVIDUAL)
                 .address(
-                    Address.builder()
+                    CustomerRetrieveResponse.Individual.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -43,20 +43,18 @@ internal class CustomerRetrieveResponseTest {
                 .nationality("US")
                 .build()
 
-        val customerRetrieveResponse =
-            CustomerRetrieveResponse.ofIndividualCustomer(individualCustomer)
+        val customerRetrieveResponse = CustomerRetrieveResponse.ofIndividual(individual)
 
-        assertThat(customerRetrieveResponse.individualCustomer()).isEqualTo(individualCustomer)
-        assertThat(customerRetrieveResponse.businessCustomer()).isNull()
+        assertThat(customerRetrieveResponse.individual()).isEqualTo(individual)
+        assertThat(customerRetrieveResponse.business()).isNull()
     }
 
     @Test
-    fun ofIndividualCustomerRoundtrip() {
+    fun ofIndividualRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerRetrieveResponse =
-            CustomerRetrieveResponse.ofIndividualCustomer(
-                IndividualCustomer.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+            CustomerRetrieveResponse.ofIndividual(
+                CustomerRetrieveResponse.Individual.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -64,8 +62,9 @@ internal class CustomerRetrieveResponseTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerRetrieveResponse.Individual.CustomerType.INDIVIDUAL)
                     .address(
-                        Address.builder()
+                        CustomerRetrieveResponse.Individual.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -90,10 +89,9 @@ internal class CustomerRetrieveResponseTest {
     }
 
     @Test
-    fun ofBusinessCustomer() {
-        val businessCustomer =
-            BusinessCustomer.builder()
-                .customerType(CustomerType.BUSINESS)
+    fun ofBusiness() {
+        val business =
+            CustomerRetrieveResponse.Business.builder()
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -101,8 +99,9 @@ internal class CustomerRetrieveResponseTest {
                 .isDeleted(false)
                 .kycStatus(Customer.KycStatus.APPROVED)
                 .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .customerType(CustomerRetrieveResponse.Business.CustomerType.BUSINESS)
                 .address(
-                    Address.builder()
+                    CustomerRetrieveResponse.Business.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -112,11 +111,14 @@ internal class CustomerRetrieveResponseTest {
                         .build()
                 )
                 .addBeneficialOwner(
-                    UltimateBeneficialOwner.builder()
+                    CustomerRetrieveResponse.Business.BeneficialOwner.builder()
                         .fullName("John Michael Doe")
-                        .individualType(UltimateBeneficialOwner.IndividualType.DIRECTOR)
+                        .individualType(
+                            CustomerRetrieveResponse.Business.BeneficialOwner.IndividualType
+                                .DIRECTOR
+                        )
                         .address(
-                            Address.builder()
+                            CustomerRetrieveResponse.Business.BeneficialOwner.Address.builder()
                                 .country("US")
                                 .line1("123 Main Street")
                                 .postalCode("94105")
@@ -135,7 +137,7 @@ internal class CustomerRetrieveResponseTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomerFields.BusinessInfo.builder()
+                    CustomerRetrieveResponse.Business.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
@@ -143,19 +145,18 @@ internal class CustomerRetrieveResponseTest {
                 )
                 .build()
 
-        val customerRetrieveResponse = CustomerRetrieveResponse.ofBusinessCustomer(businessCustomer)
+        val customerRetrieveResponse = CustomerRetrieveResponse.ofBusiness(business)
 
-        assertThat(customerRetrieveResponse.individualCustomer()).isNull()
-        assertThat(customerRetrieveResponse.businessCustomer()).isEqualTo(businessCustomer)
+        assertThat(customerRetrieveResponse.individual()).isNull()
+        assertThat(customerRetrieveResponse.business()).isEqualTo(business)
     }
 
     @Test
-    fun ofBusinessCustomerRoundtrip() {
+    fun ofBusinessRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerRetrieveResponse =
-            CustomerRetrieveResponse.ofBusinessCustomer(
-                BusinessCustomer.builder()
-                    .customerType(CustomerType.BUSINESS)
+            CustomerRetrieveResponse.ofBusiness(
+                CustomerRetrieveResponse.Business.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -163,8 +164,9 @@ internal class CustomerRetrieveResponseTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerRetrieveResponse.Business.CustomerType.BUSINESS)
                     .address(
-                        Address.builder()
+                        CustomerRetrieveResponse.Business.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -174,11 +176,14 @@ internal class CustomerRetrieveResponseTest {
                             .build()
                     )
                     .addBeneficialOwner(
-                        UltimateBeneficialOwner.builder()
+                        CustomerRetrieveResponse.Business.BeneficialOwner.builder()
                             .fullName("John Michael Doe")
-                            .individualType(UltimateBeneficialOwner.IndividualType.DIRECTOR)
+                            .individualType(
+                                CustomerRetrieveResponse.Business.BeneficialOwner.IndividualType
+                                    .DIRECTOR
+                            )
                             .address(
-                                Address.builder()
+                                CustomerRetrieveResponse.Business.BeneficialOwner.Address.builder()
                                     .country("US")
                                     .line1("123 Main Street")
                                     .postalCode("94105")
@@ -197,7 +202,7 @@ internal class CustomerRetrieveResponseTest {
                             .build()
                     )
                     .businessInfo(
-                        BusinessCustomerFields.BusinessInfo.builder()
+                        CustomerRetrieveResponse.Business.BusinessInfo.builder()
                             .legalName("Acme Corporation, Inc.")
                             .registrationNumber("BRN-123456789")
                             .taxId("EIN-987654321")

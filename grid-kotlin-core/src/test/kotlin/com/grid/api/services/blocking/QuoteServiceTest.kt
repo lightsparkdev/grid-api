@@ -5,10 +5,7 @@ package com.grid.api.services.blocking
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.JsonValue
-import com.grid.api.models.quotes.BaseDestination
-import com.grid.api.models.quotes.BaseQuoteSource
 import com.grid.api.models.quotes.QuoteCreateParams
-import com.grid.api.models.quotes.QuoteDestinationOneOf
 import com.grid.api.models.quotes.QuoteSourceOneOf
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -31,18 +28,13 @@ internal class QuoteServiceTest {
         val quote =
             quoteService.create(
                 QuoteCreateParams.builder()
-                    .destination(
-                        QuoteDestinationOneOf.AccountDestination.builder()
-                            .destinationType(BaseDestination.DestinationType.ACCOUNT)
-                            .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
-                            .build()
-                    )
+                    .accountDestination("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
                     .lockedCurrencyAmount(10000L)
                     .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
                     .source(
-                        QuoteSourceOneOf.AccountQuoteSource.builder()
-                            .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
+                        QuoteSourceOneOf.Account.builder()
                             .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                            .sourceType(QuoteSourceOneOf.Account.SourceType.ACCOUNT)
                             .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                             .build()
                     )

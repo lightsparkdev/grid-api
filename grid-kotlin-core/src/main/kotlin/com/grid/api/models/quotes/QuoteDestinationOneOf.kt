@@ -34,17 +34,17 @@ import java.util.Objects
 @JsonSerialize(using = QuoteDestinationOneOf.Serializer::class)
 class QuoteDestinationOneOf
 private constructor(
-    private val accountDestination: AccountDestination? = null,
-    private val umaAddressDestination: UmaAddressDestination? = null,
-    private val externalAccountDetailsDestination: ExternalAccountDetailsDestination? = null,
+    private val account: Account? = null,
+    private val umaAddress: UmaAddress? = null,
+    private val externalAccountDetails: ExternalAccountDetails? = null,
     private val _json: JsonValue? = null,
 ) {
 
     /** Destination account details */
-    fun accountDestination(): AccountDestination? = accountDestination
+    fun account(): Account? = account
 
     /** UMA address destination details */
-    fun umaAddressDestination(): UmaAddressDestination? = umaAddressDestination
+    fun umaAddress(): UmaAddress? = umaAddress
 
     /**
      * A convenient destination option which adds the external account and creates the quote in one
@@ -52,22 +52,19 @@ private constructor(
      * one-off payments to some destination. See the external accounts endpoints for test values in
      * sandbox mode.
      */
-    fun externalAccountDetailsDestination(): ExternalAccountDetailsDestination? =
-        externalAccountDetailsDestination
+    fun externalAccountDetails(): ExternalAccountDetails? = externalAccountDetails
 
-    fun isAccountDestination(): Boolean = accountDestination != null
+    fun isAccount(): Boolean = account != null
 
-    fun isUmaAddressDestination(): Boolean = umaAddressDestination != null
+    fun isUmaAddress(): Boolean = umaAddress != null
 
-    fun isExternalAccountDetailsDestination(): Boolean = externalAccountDetailsDestination != null
+    fun isExternalAccountDetails(): Boolean = externalAccountDetails != null
 
     /** Destination account details */
-    fun asAccountDestination(): AccountDestination =
-        accountDestination.getOrThrow("accountDestination")
+    fun asAccount(): Account = account.getOrThrow("account")
 
     /** UMA address destination details */
-    fun asUmaAddressDestination(): UmaAddressDestination =
-        umaAddressDestination.getOrThrow("umaAddressDestination")
+    fun asUmaAddress(): UmaAddress = umaAddress.getOrThrow("umaAddress")
 
     /**
      * A convenient destination option which adds the external account and creates the quote in one
@@ -75,18 +72,17 @@ private constructor(
      * one-off payments to some destination. See the external accounts endpoints for test values in
      * sandbox mode.
      */
-    fun asExternalAccountDetailsDestination(): ExternalAccountDetailsDestination =
-        externalAccountDetailsDestination.getOrThrow("externalAccountDetailsDestination")
+    fun asExternalAccountDetails(): ExternalAccountDetails =
+        externalAccountDetails.getOrThrow("externalAccountDetails")
 
     fun _json(): JsonValue? = _json
 
     fun <T> accept(visitor: Visitor<T>): T =
         when {
-            accountDestination != null -> visitor.visitAccountDestination(accountDestination)
-            umaAddressDestination != null ->
-                visitor.visitUmaAddressDestination(umaAddressDestination)
-            externalAccountDetailsDestination != null ->
-                visitor.visitExternalAccountDetailsDestination(externalAccountDetailsDestination)
+            account != null -> visitor.visitAccount(account)
+            umaAddress != null -> visitor.visitUmaAddress(umaAddress)
+            externalAccountDetails != null ->
+                visitor.visitExternalAccountDetails(externalAccountDetails)
             else -> visitor.unknown(_json)
         }
 
@@ -99,20 +95,18 @@ private constructor(
 
         accept(
             object : Visitor<Unit> {
-                override fun visitAccountDestination(accountDestination: AccountDestination) {
-                    accountDestination.validate()
+                override fun visitAccount(account: Account) {
+                    account.validate()
                 }
 
-                override fun visitUmaAddressDestination(
-                    umaAddressDestination: UmaAddressDestination
-                ) {
-                    umaAddressDestination.validate()
+                override fun visitUmaAddress(umaAddress: UmaAddress) {
+                    umaAddress.validate()
                 }
 
-                override fun visitExternalAccountDetailsDestination(
-                    externalAccountDetailsDestination: ExternalAccountDetailsDestination
+                override fun visitExternalAccountDetails(
+                    externalAccountDetails: ExternalAccountDetails
                 ) {
-                    externalAccountDetailsDestination.validate()
+                    externalAccountDetails.validate()
                 }
             }
         )
@@ -135,16 +129,13 @@ private constructor(
     internal fun validity(): Int =
         accept(
             object : Visitor<Int> {
-                override fun visitAccountDestination(accountDestination: AccountDestination) =
-                    accountDestination.validity()
+                override fun visitAccount(account: Account) = account.validity()
 
-                override fun visitUmaAddressDestination(
-                    umaAddressDestination: UmaAddressDestination
-                ) = umaAddressDestination.validity()
+                override fun visitUmaAddress(umaAddress: UmaAddress) = umaAddress.validity()
 
-                override fun visitExternalAccountDetailsDestination(
-                    externalAccountDetailsDestination: ExternalAccountDetailsDestination
-                ) = externalAccountDetailsDestination.validity()
+                override fun visitExternalAccountDetails(
+                    externalAccountDetails: ExternalAccountDetails
+                ) = externalAccountDetails.validity()
 
                 override fun unknown(json: JsonValue?) = 0
             }
@@ -156,22 +147,19 @@ private constructor(
         }
 
         return other is QuoteDestinationOneOf &&
-            accountDestination == other.accountDestination &&
-            umaAddressDestination == other.umaAddressDestination &&
-            externalAccountDetailsDestination == other.externalAccountDetailsDestination
+            account == other.account &&
+            umaAddress == other.umaAddress &&
+            externalAccountDetails == other.externalAccountDetails
     }
 
-    override fun hashCode(): Int =
-        Objects.hash(accountDestination, umaAddressDestination, externalAccountDetailsDestination)
+    override fun hashCode(): Int = Objects.hash(account, umaAddress, externalAccountDetails)
 
     override fun toString(): String =
         when {
-            accountDestination != null ->
-                "QuoteDestinationOneOf{accountDestination=$accountDestination}"
-            umaAddressDestination != null ->
-                "QuoteDestinationOneOf{umaAddressDestination=$umaAddressDestination}"
-            externalAccountDetailsDestination != null ->
-                "QuoteDestinationOneOf{externalAccountDetailsDestination=$externalAccountDetailsDestination}"
+            account != null -> "QuoteDestinationOneOf{account=$account}"
+            umaAddress != null -> "QuoteDestinationOneOf{umaAddress=$umaAddress}"
+            externalAccountDetails != null ->
+                "QuoteDestinationOneOf{externalAccountDetails=$externalAccountDetails}"
             _json != null -> "QuoteDestinationOneOf{_unknown=$_json}"
             else -> throw IllegalStateException("Invalid QuoteDestinationOneOf")
         }
@@ -179,12 +167,10 @@ private constructor(
     companion object {
 
         /** Destination account details */
-        fun ofAccountDestination(accountDestination: AccountDestination) =
-            QuoteDestinationOneOf(accountDestination = accountDestination)
+        fun ofAccount(account: Account) = QuoteDestinationOneOf(account = account)
 
         /** UMA address destination details */
-        fun ofUmaAddressDestination(umaAddressDestination: UmaAddressDestination) =
-            QuoteDestinationOneOf(umaAddressDestination = umaAddressDestination)
+        fun ofUmaAddress(umaAddress: UmaAddress) = QuoteDestinationOneOf(umaAddress = umaAddress)
 
         /**
          * A convenient destination option which adds the external account and creates the quote in
@@ -192,12 +178,8 @@ private constructor(
          * for one-off payments to some destination. See the external accounts endpoints for test
          * values in sandbox mode.
          */
-        fun ofExternalAccountDetailsDestination(
-            externalAccountDetailsDestination: ExternalAccountDetailsDestination
-        ) =
-            QuoteDestinationOneOf(
-                externalAccountDetailsDestination = externalAccountDetailsDestination
-            )
+        fun ofExternalAccountDetails(externalAccountDetails: ExternalAccountDetails) =
+            QuoteDestinationOneOf(externalAccountDetails = externalAccountDetails)
     }
 
     /**
@@ -207,10 +189,10 @@ private constructor(
     interface Visitor<out T> {
 
         /** Destination account details */
-        fun visitAccountDestination(accountDestination: AccountDestination): T
+        fun visitAccount(account: Account): T
 
         /** UMA address destination details */
-        fun visitUmaAddressDestination(umaAddressDestination: UmaAddressDestination): T
+        fun visitUmaAddress(umaAddress: UmaAddress): T
 
         /**
          * A convenient destination option which adds the external account and creates the quote in
@@ -218,9 +200,7 @@ private constructor(
          * for one-off payments to some destination. See the external accounts endpoints for test
          * values in sandbox mode.
          */
-        fun visitExternalAccountDetailsDestination(
-            externalAccountDetailsDestination: ExternalAccountDetailsDestination
-        ): T
+        fun visitExternalAccountDetails(externalAccountDetails: ExternalAccountDetails): T
 
         /**
          * Maps an unknown variant of [QuoteDestinationOneOf] to a value of type [T].
@@ -245,19 +225,15 @@ private constructor(
 
             val bestMatches =
                 sequenceOf(
-                        tryDeserialize(node, jacksonTypeRef<AccountDestination>())?.let {
-                            QuoteDestinationOneOf(accountDestination = it, _json = json)
+                        tryDeserialize(node, jacksonTypeRef<Account>())?.let {
+                            QuoteDestinationOneOf(account = it, _json = json)
                         },
-                        tryDeserialize(node, jacksonTypeRef<UmaAddressDestination>())?.let {
-                            QuoteDestinationOneOf(umaAddressDestination = it, _json = json)
+                        tryDeserialize(node, jacksonTypeRef<UmaAddress>())?.let {
+                            QuoteDestinationOneOf(umaAddress = it, _json = json)
                         },
-                        tryDeserialize(node, jacksonTypeRef<ExternalAccountDetailsDestination>())
-                            ?.let {
-                                QuoteDestinationOneOf(
-                                    externalAccountDetailsDestination = it,
-                                    _json = json,
-                                )
-                            },
+                        tryDeserialize(node, jacksonTypeRef<ExternalAccountDetails>())?.let {
+                            QuoteDestinationOneOf(externalAccountDetails = it, _json = json)
+                        },
                     )
                     .filterNotNull()
                     .allMaxBy { it.validity() }
@@ -283,11 +259,10 @@ private constructor(
             provider: SerializerProvider,
         ) {
             when {
-                value.accountDestination != null -> generator.writeObject(value.accountDestination)
-                value.umaAddressDestination != null ->
-                    generator.writeObject(value.umaAddressDestination)
-                value.externalAccountDetailsDestination != null ->
-                    generator.writeObject(value.externalAccountDetailsDestination)
+                value.account != null -> generator.writeObject(value.account)
+                value.umaAddress != null -> generator.writeObject(value.umaAddress)
+                value.externalAccountDetails != null ->
+                    generator.writeObject(value.externalAccountDetails)
                 value._json != null -> generator.writeObject(value._json)
                 else -> throw IllegalStateException("Invalid QuoteDestinationOneOf")
             }
@@ -295,35 +270,25 @@ private constructor(
     }
 
     /** Destination account details */
-    class AccountDestination
+    class Account
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val destinationType: JsonField<BaseDestination.DestinationType>,
         private val accountId: JsonField<String>,
+        private val destinationType: JsonField<DestinationType>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("destinationType")
-            @ExcludeMissing
-            destinationType: JsonField<BaseDestination.DestinationType> = JsonMissing.of(),
             @JsonProperty("accountId")
             @ExcludeMissing
             accountId: JsonField<String> = JsonMissing.of(),
-        ) : this(destinationType, accountId, mutableMapOf())
+            @JsonProperty("destinationType")
+            @ExcludeMissing
+            destinationType: JsonField<DestinationType> = JsonMissing.of(),
+        ) : this(accountId, destinationType, mutableMapOf())
 
-        fun toBaseDestination(): BaseDestination =
-            BaseDestination.builder().destinationType(destinationType).build()
-
-        /**
-         * Type of payment destination
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun destinationType(): BaseDestination.DestinationType =
-            destinationType.getRequired("destinationType")
+        fun toBaseDestination(): BaseDestination = BaseDestination.builder().build()
 
         /**
          * Destination account identifier
@@ -334,14 +299,10 @@ private constructor(
         fun accountId(): String = accountId.getRequired("accountId")
 
         /**
-         * Returns the raw JSON value of [destinationType].
-         *
-         * Unlike [destinationType], this method doesn't throw if the JSON field has an unexpected
-         * type.
+         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
+         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
-        @JsonProperty("destinationType")
-        @ExcludeMissing
-        fun _destinationType(): JsonField<BaseDestination.DestinationType> = destinationType
+        fun destinationType(): DestinationType = destinationType.getRequired("destinationType")
 
         /**
          * Returns the raw JSON value of [accountId].
@@ -349,6 +310,16 @@ private constructor(
          * Unlike [accountId], this method doesn't throw if the JSON field has an unexpected type.
          */
         @JsonProperty("accountId") @ExcludeMissing fun _accountId(): JsonField<String> = accountId
+
+        /**
+         * Returns the raw JSON value of [destinationType].
+         *
+         * Unlike [destinationType], this method doesn't throw if the JSON field has an unexpected
+         * type.
+         */
+        @JsonProperty("destinationType")
+        @ExcludeMissing
+        fun _destinationType(): JsonField<DestinationType> = destinationType
 
         @JsonAnySetter
         private fun putAdditionalProperty(key: String, value: JsonValue) {
@@ -365,45 +336,29 @@ private constructor(
         companion object {
 
             /**
-             * Returns a mutable builder for constructing an instance of [AccountDestination].
+             * Returns a mutable builder for constructing an instance of [Account].
              *
              * The following fields are required:
              * ```kotlin
-             * .destinationType()
              * .accountId()
+             * .destinationType()
              * ```
              */
             fun builder() = Builder()
         }
 
-        /** A builder for [AccountDestination]. */
+        /** A builder for [Account]. */
         class Builder internal constructor() {
 
-            private var destinationType: JsonField<BaseDestination.DestinationType>? = null
             private var accountId: JsonField<String>? = null
+            private var destinationType: JsonField<DestinationType>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-            internal fun from(accountDestination: AccountDestination) = apply {
-                destinationType = accountDestination.destinationType
-                accountId = accountDestination.accountId
-                additionalProperties = accountDestination.additionalProperties.toMutableMap()
+            internal fun from(account: Account) = apply {
+                accountId = account.accountId
+                destinationType = account.destinationType
+                additionalProperties = account.additionalProperties.toMutableMap()
             }
-
-            /** Type of payment destination */
-            fun destinationType(destinationType: BaseDestination.DestinationType) =
-                destinationType(JsonField.of(destinationType))
-
-            /**
-             * Sets [Builder.destinationType] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.destinationType] with a well-typed
-             * [BaseDestination.DestinationType] value instead. This method is primarily for setting
-             * the field to an undocumented or not yet supported value.
-             */
-            fun destinationType(destinationType: JsonField<BaseDestination.DestinationType>) =
-                apply {
-                    this.destinationType = destinationType
-                }
 
             /** Destination account identifier */
             fun accountId(accountId: String) = accountId(JsonField.of(accountId))
@@ -416,6 +371,20 @@ private constructor(
              * supported value.
              */
             fun accountId(accountId: JsonField<String>) = apply { this.accountId = accountId }
+
+            fun destinationType(destinationType: DestinationType) =
+                destinationType(JsonField.of(destinationType))
+
+            /**
+             * Sets [Builder.destinationType] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.destinationType] with a well-typed [DestinationType]
+             * value instead. This method is primarily for setting the field to an undocumented or
+             * not yet supported value.
+             */
+            fun destinationType(destinationType: JsonField<DestinationType>) = apply {
+                this.destinationType = destinationType
+            }
 
             fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
                 this.additionalProperties.clear()
@@ -437,35 +406,35 @@ private constructor(
             }
 
             /**
-             * Returns an immutable instance of [AccountDestination].
+             * Returns an immutable instance of [Account].
              *
              * Further updates to this [Builder] will not mutate the returned instance.
              *
              * The following fields are required:
              * ```kotlin
-             * .destinationType()
              * .accountId()
+             * .destinationType()
              * ```
              *
              * @throws IllegalStateException if any required field is unset.
              */
-            fun build(): AccountDestination =
-                AccountDestination(
-                    checkRequired("destinationType", destinationType),
+            fun build(): Account =
+                Account(
                     checkRequired("accountId", accountId),
+                    checkRequired("destinationType", destinationType),
                     additionalProperties.toMutableMap(),
                 )
         }
 
         private var validated: Boolean = false
 
-        fun validate(): AccountDestination = apply {
+        fun validate(): Account = apply {
             if (validated) {
                 return@apply
             }
 
-            destinationType().validate()
             accountId()
+            destinationType().validate()
             validated = true
         }
 
@@ -484,8 +453,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (destinationType.asKnown()?.validity() ?: 0) +
-                (if (accountId.asKnown() == null) 0 else 1)
+            (if (accountId.asKnown() == null) 0 else 1) +
+                (destinationType.asKnown()?.validity() ?: 0)
 
         class DestinationType
         @JsonCreator
@@ -616,27 +585,27 @@ private constructor(
                 return true
             }
 
-            return other is AccountDestination &&
-                destinationType == other.destinationType &&
+            return other is Account &&
                 accountId == other.accountId &&
+                destinationType == other.destinationType &&
                 additionalProperties == other.additionalProperties
         }
 
         private val hashCode: Int by lazy {
-            Objects.hash(destinationType, accountId, additionalProperties)
+            Objects.hash(accountId, destinationType, additionalProperties)
         }
 
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "AccountDestination{destinationType=$destinationType, accountId=$accountId, additionalProperties=$additionalProperties}"
+            "Account{accountId=$accountId, destinationType=$destinationType, additionalProperties=$additionalProperties}"
     }
 
     /** UMA address destination details */
-    class UmaAddressDestination
+    class UmaAddress
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val destinationType: JsonField<BaseDestination.DestinationType>,
+        private val destinationType: JsonField<DestinationType>,
         private val umaAddress: JsonField<String>,
         private val counterpartyInformation: JsonField<CounterpartyInformation>,
         private val currency: JsonField<String>,
@@ -647,7 +616,7 @@ private constructor(
         private constructor(
             @JsonProperty("destinationType")
             @ExcludeMissing
-            destinationType: JsonField<BaseDestination.DestinationType> = JsonMissing.of(),
+            destinationType: JsonField<DestinationType> = JsonMissing.of(),
             @JsonProperty("umaAddress")
             @ExcludeMissing
             umaAddress: JsonField<String> = JsonMissing.of(),
@@ -657,17 +626,13 @@ private constructor(
             @JsonProperty("currency") @ExcludeMissing currency: JsonField<String> = JsonMissing.of(),
         ) : this(destinationType, umaAddress, counterpartyInformation, currency, mutableMapOf())
 
-        fun toBaseDestination(): BaseDestination =
-            BaseDestination.builder().destinationType(destinationType).build()
+        fun toBaseDestination(): BaseDestination = BaseDestination.builder().build()
 
         /**
-         * Type of payment destination
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
-        fun destinationType(): BaseDestination.DestinationType =
-            destinationType.getRequired("destinationType")
+        fun destinationType(): DestinationType = destinationType.getRequired("destinationType")
 
         /**
          * UMA address of the recipient
@@ -704,7 +669,7 @@ private constructor(
          */
         @JsonProperty("destinationType")
         @ExcludeMissing
-        fun _destinationType(): JsonField<BaseDestination.DestinationType> = destinationType
+        fun _destinationType(): JsonField<DestinationType> = destinationType
 
         /**
          * Returns the raw JSON value of [umaAddress].
@@ -747,7 +712,7 @@ private constructor(
         companion object {
 
             /**
-             * Returns a mutable builder for constructing an instance of [UmaAddressDestination].
+             * Returns a mutable builder for constructing an instance of [UmaAddress].
              *
              * The following fields are required:
              * ```kotlin
@@ -758,39 +723,37 @@ private constructor(
             fun builder() = Builder()
         }
 
-        /** A builder for [UmaAddressDestination]. */
+        /** A builder for [UmaAddress]. */
         class Builder internal constructor() {
 
-            private var destinationType: JsonField<BaseDestination.DestinationType>? = null
+            private var destinationType: JsonField<DestinationType>? = null
             private var umaAddress: JsonField<String>? = null
             private var counterpartyInformation: JsonField<CounterpartyInformation> =
                 JsonMissing.of()
             private var currency: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-            internal fun from(umaAddressDestination: UmaAddressDestination) = apply {
-                destinationType = umaAddressDestination.destinationType
-                umaAddress = umaAddressDestination.umaAddress
-                counterpartyInformation = umaAddressDestination.counterpartyInformation
-                currency = umaAddressDestination.currency
-                additionalProperties = umaAddressDestination.additionalProperties.toMutableMap()
+            internal fun from(umaAddress: UmaAddress) = apply {
+                destinationType = umaAddress.destinationType
+                this.umaAddress = umaAddress.umaAddress
+                counterpartyInformation = umaAddress.counterpartyInformation
+                currency = umaAddress.currency
+                additionalProperties = umaAddress.additionalProperties.toMutableMap()
             }
 
-            /** Type of payment destination */
-            fun destinationType(destinationType: BaseDestination.DestinationType) =
+            fun destinationType(destinationType: DestinationType) =
                 destinationType(JsonField.of(destinationType))
 
             /**
              * Sets [Builder.destinationType] to an arbitrary JSON value.
              *
-             * You should usually call [Builder.destinationType] with a well-typed
-             * [BaseDestination.DestinationType] value instead. This method is primarily for setting
-             * the field to an undocumented or not yet supported value.
+             * You should usually call [Builder.destinationType] with a well-typed [DestinationType]
+             * value instead. This method is primarily for setting the field to an undocumented or
+             * not yet supported value.
              */
-            fun destinationType(destinationType: JsonField<BaseDestination.DestinationType>) =
-                apply {
-                    this.destinationType = destinationType
-                }
+            fun destinationType(destinationType: JsonField<DestinationType>) = apply {
+                this.destinationType = destinationType
+            }
 
             /** UMA address of the recipient */
             fun umaAddress(umaAddress: String) = umaAddress(JsonField.of(umaAddress))
@@ -857,7 +820,7 @@ private constructor(
             }
 
             /**
-             * Returns an immutable instance of [UmaAddressDestination].
+             * Returns an immutable instance of [UmaAddress].
              *
              * Further updates to this [Builder] will not mutate the returned instance.
              *
@@ -869,8 +832,8 @@ private constructor(
              *
              * @throws IllegalStateException if any required field is unset.
              */
-            fun build(): UmaAddressDestination =
-                UmaAddressDestination(
+            fun build(): UmaAddress =
+                UmaAddress(
                     checkRequired("destinationType", destinationType),
                     checkRequired("umaAddress", umaAddress),
                     counterpartyInformation,
@@ -881,7 +844,7 @@ private constructor(
 
         private var validated: Boolean = false
 
-        fun validate(): UmaAddressDestination = apply {
+        fun validate(): UmaAddress = apply {
             if (validated) {
                 return@apply
             }
@@ -912,114 +875,6 @@ private constructor(
                 (if (umaAddress.asKnown() == null) 0 else 1) +
                 (counterpartyInformation.asKnown()?.validity() ?: 0) +
                 (if (currency.asKnown() == null) 0 else 1)
-
-        /** Information about the recipient, as required by the platform in their configuration. */
-        class CounterpartyInformation
-        @JsonCreator
-        private constructor(
-            @com.fasterxml.jackson.annotation.JsonValue
-            private val additionalProperties: Map<String, JsonValue>
-        ) {
-
-            @JsonAnyGetter
-            @ExcludeMissing
-            fun _additionalProperties(): Map<String, JsonValue> = additionalProperties
-
-            fun toBuilder() = Builder().from(this)
-
-            companion object {
-
-                /**
-                 * Returns a mutable builder for constructing an instance of
-                 * [CounterpartyInformation].
-                 */
-                fun builder() = Builder()
-            }
-
-            /** A builder for [CounterpartyInformation]. */
-            class Builder internal constructor() {
-
-                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
-
-                internal fun from(counterpartyInformation: CounterpartyInformation) = apply {
-                    additionalProperties =
-                        counterpartyInformation.additionalProperties.toMutableMap()
-                }
-
-                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
-                    this.additionalProperties.clear()
-                    putAllAdditionalProperties(additionalProperties)
-                }
-
-                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
-                    additionalProperties.put(key, value)
-                }
-
-                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
-                    apply {
-                        this.additionalProperties.putAll(additionalProperties)
-                    }
-
-                fun removeAdditionalProperty(key: String) = apply {
-                    additionalProperties.remove(key)
-                }
-
-                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
-                    keys.forEach(::removeAdditionalProperty)
-                }
-
-                /**
-                 * Returns an immutable instance of [CounterpartyInformation].
-                 *
-                 * Further updates to this [Builder] will not mutate the returned instance.
-                 */
-                fun build(): CounterpartyInformation =
-                    CounterpartyInformation(additionalProperties.toImmutable())
-            }
-
-            private var validated: Boolean = false
-
-            fun validate(): CounterpartyInformation = apply {
-                if (validated) {
-                    return@apply
-                }
-
-                validated = true
-            }
-
-            fun isValid(): Boolean =
-                try {
-                    validate()
-                    true
-                } catch (e: GridInvalidDataException) {
-                    false
-                }
-
-            /**
-             * Returns a score indicating how many valid values are contained in this object
-             * recursively.
-             *
-             * Used for best match union deserialization.
-             */
-            internal fun validity(): Int =
-                additionalProperties.count { (_, value) -> !value.isNull() && !value.isMissing() }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) {
-                    return true
-                }
-
-                return other is CounterpartyInformation &&
-                    additionalProperties == other.additionalProperties
-            }
-
-            private val hashCode: Int by lazy { Objects.hash(additionalProperties) }
-
-            override fun hashCode(): Int = hashCode
-
-            override fun toString() =
-                "CounterpartyInformation{additionalProperties=$additionalProperties}"
-        }
 
         class DestinationType
         @JsonCreator
@@ -1145,12 +1000,120 @@ private constructor(
             override fun toString() = value.toString()
         }
 
+        /** Information about the recipient, as required by the platform in their configuration. */
+        class CounterpartyInformation
+        @JsonCreator
+        private constructor(
+            @com.fasterxml.jackson.annotation.JsonValue
+            private val additionalProperties: Map<String, JsonValue>
+        ) {
+
+            @JsonAnyGetter
+            @ExcludeMissing
+            fun _additionalProperties(): Map<String, JsonValue> = additionalProperties
+
+            fun toBuilder() = Builder().from(this)
+
+            companion object {
+
+                /**
+                 * Returns a mutable builder for constructing an instance of
+                 * [CounterpartyInformation].
+                 */
+                fun builder() = Builder()
+            }
+
+            /** A builder for [CounterpartyInformation]. */
+            class Builder internal constructor() {
+
+                private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
+
+                internal fun from(counterpartyInformation: CounterpartyInformation) = apply {
+                    additionalProperties =
+                        counterpartyInformation.additionalProperties.toMutableMap()
+                }
+
+                fun additionalProperties(additionalProperties: Map<String, JsonValue>) = apply {
+                    this.additionalProperties.clear()
+                    putAllAdditionalProperties(additionalProperties)
+                }
+
+                fun putAdditionalProperty(key: String, value: JsonValue) = apply {
+                    additionalProperties.put(key, value)
+                }
+
+                fun putAllAdditionalProperties(additionalProperties: Map<String, JsonValue>) =
+                    apply {
+                        this.additionalProperties.putAll(additionalProperties)
+                    }
+
+                fun removeAdditionalProperty(key: String) = apply {
+                    additionalProperties.remove(key)
+                }
+
+                fun removeAllAdditionalProperties(keys: Set<String>) = apply {
+                    keys.forEach(::removeAdditionalProperty)
+                }
+
+                /**
+                 * Returns an immutable instance of [CounterpartyInformation].
+                 *
+                 * Further updates to this [Builder] will not mutate the returned instance.
+                 */
+                fun build(): CounterpartyInformation =
+                    CounterpartyInformation(additionalProperties.toImmutable())
+            }
+
+            private var validated: Boolean = false
+
+            fun validate(): CounterpartyInformation = apply {
+                if (validated) {
+                    return@apply
+                }
+
+                validated = true
+            }
+
+            fun isValid(): Boolean =
+                try {
+                    validate()
+                    true
+                } catch (e: GridInvalidDataException) {
+                    false
+                }
+
+            /**
+             * Returns a score indicating how many valid values are contained in this object
+             * recursively.
+             *
+             * Used for best match union deserialization.
+             */
+            internal fun validity(): Int =
+                additionalProperties.count { (_, value) -> !value.isNull() && !value.isMissing() }
+
+            override fun equals(other: Any?): Boolean {
+                if (this === other) {
+                    return true
+                }
+
+                return other is CounterpartyInformation &&
+                    additionalProperties == other.additionalProperties
+            }
+
+            private val hashCode: Int by lazy { Objects.hash(additionalProperties) }
+
+            override fun hashCode(): Int = hashCode
+
+            override fun toString() =
+                "CounterpartyInformation{additionalProperties=$additionalProperties}"
+        }
+
         override fun equals(other: Any?): Boolean {
             if (this === other) {
                 return true
             }
 
-            return other is UmaAddressDestination &&
+            return other is UmaAddress &&
                 destinationType == other.destinationType &&
                 umaAddress == other.umaAddress &&
                 counterpartyInformation == other.counterpartyInformation &&
@@ -1171,7 +1134,7 @@ private constructor(
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "UmaAddressDestination{destinationType=$destinationType, umaAddress=$umaAddress, counterpartyInformation=$counterpartyInformation, currency=$currency, additionalProperties=$additionalProperties}"
+            "UmaAddress{destinationType=$destinationType, umaAddress=$umaAddress, counterpartyInformation=$counterpartyInformation, currency=$currency, additionalProperties=$additionalProperties}"
     }
 
     /**
@@ -1180,10 +1143,10 @@ private constructor(
      * one-off payments to some destination. See the external accounts endpoints for test values in
      * sandbox mode.
      */
-    class ExternalAccountDetailsDestination
+    class ExternalAccountDetails
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val destinationType: JsonField<BaseDestination.DestinationType>,
+        private val destinationType: JsonField<DestinationType>,
         private val externalAccountDetails: JsonField<ExternalAccountCreate>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
@@ -1192,23 +1155,19 @@ private constructor(
         private constructor(
             @JsonProperty("destinationType")
             @ExcludeMissing
-            destinationType: JsonField<BaseDestination.DestinationType> = JsonMissing.of(),
+            destinationType: JsonField<DestinationType> = JsonMissing.of(),
             @JsonProperty("externalAccountDetails")
             @ExcludeMissing
             externalAccountDetails: JsonField<ExternalAccountCreate> = JsonMissing.of(),
         ) : this(destinationType, externalAccountDetails, mutableMapOf())
 
-        fun toBaseDestination(): BaseDestination =
-            BaseDestination.builder().destinationType(destinationType).build()
+        fun toBaseDestination(): BaseDestination = BaseDestination.builder().build()
 
         /**
-         * Type of payment destination
-         *
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
-        fun destinationType(): BaseDestination.DestinationType =
-            destinationType.getRequired("destinationType")
+        fun destinationType(): DestinationType = destinationType.getRequired("destinationType")
 
         /**
          * @throws GridInvalidDataException if the JSON field has an unexpected type or is
@@ -1225,7 +1184,7 @@ private constructor(
          */
         @JsonProperty("destinationType")
         @ExcludeMissing
-        fun _destinationType(): JsonField<BaseDestination.DestinationType> = destinationType
+        fun _destinationType(): JsonField<DestinationType> = destinationType
 
         /**
          * Returns the raw JSON value of [externalAccountDetails].
@@ -1252,8 +1211,7 @@ private constructor(
         companion object {
 
             /**
-             * Returns a mutable builder for constructing an instance of
-             * [ExternalAccountDetailsDestination].
+             * Returns a mutable builder for constructing an instance of [ExternalAccountDetails].
              *
              * The following fields are required:
              * ```kotlin
@@ -1264,37 +1222,32 @@ private constructor(
             fun builder() = Builder()
         }
 
-        /** A builder for [ExternalAccountDetailsDestination]. */
+        /** A builder for [ExternalAccountDetails]. */
         class Builder internal constructor() {
 
-            private var destinationType: JsonField<BaseDestination.DestinationType>? = null
+            private var destinationType: JsonField<DestinationType>? = null
             private var externalAccountDetails: JsonField<ExternalAccountCreate>? = null
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-            internal fun from(
-                externalAccountDetailsDestination: ExternalAccountDetailsDestination
-            ) = apply {
-                destinationType = externalAccountDetailsDestination.destinationType
-                externalAccountDetails = externalAccountDetailsDestination.externalAccountDetails
-                additionalProperties =
-                    externalAccountDetailsDestination.additionalProperties.toMutableMap()
+            internal fun from(externalAccountDetails: ExternalAccountDetails) = apply {
+                destinationType = externalAccountDetails.destinationType
+                this.externalAccountDetails = externalAccountDetails.externalAccountDetails
+                additionalProperties = externalAccountDetails.additionalProperties.toMutableMap()
             }
 
-            /** Type of payment destination */
-            fun destinationType(destinationType: BaseDestination.DestinationType) =
+            fun destinationType(destinationType: DestinationType) =
                 destinationType(JsonField.of(destinationType))
 
             /**
              * Sets [Builder.destinationType] to an arbitrary JSON value.
              *
-             * You should usually call [Builder.destinationType] with a well-typed
-             * [BaseDestination.DestinationType] value instead. This method is primarily for setting
-             * the field to an undocumented or not yet supported value.
+             * You should usually call [Builder.destinationType] with a well-typed [DestinationType]
+             * value instead. This method is primarily for setting the field to an undocumented or
+             * not yet supported value.
              */
-            fun destinationType(destinationType: JsonField<BaseDestination.DestinationType>) =
-                apply {
-                    this.destinationType = destinationType
-                }
+            fun destinationType(destinationType: JsonField<DestinationType>) = apply {
+                this.destinationType = destinationType
+            }
 
             fun externalAccountDetails(externalAccountDetails: ExternalAccountCreate) =
                 externalAccountDetails(JsonField.of(externalAccountDetails))
@@ -1331,7 +1284,7 @@ private constructor(
             }
 
             /**
-             * Returns an immutable instance of [ExternalAccountDetailsDestination].
+             * Returns an immutable instance of [ExternalAccountDetails].
              *
              * Further updates to this [Builder] will not mutate the returned instance.
              *
@@ -1343,8 +1296,8 @@ private constructor(
              *
              * @throws IllegalStateException if any required field is unset.
              */
-            fun build(): ExternalAccountDetailsDestination =
-                ExternalAccountDetailsDestination(
+            fun build(): ExternalAccountDetails =
+                ExternalAccountDetails(
                     checkRequired("destinationType", destinationType),
                     checkRequired("externalAccountDetails", externalAccountDetails),
                     additionalProperties.toMutableMap(),
@@ -1353,7 +1306,7 @@ private constructor(
 
         private var validated: Boolean = false
 
-        fun validate(): ExternalAccountDetailsDestination = apply {
+        fun validate(): ExternalAccountDetails = apply {
             if (validated) {
                 return@apply
             }
@@ -1510,7 +1463,7 @@ private constructor(
                 return true
             }
 
-            return other is ExternalAccountDetailsDestination &&
+            return other is ExternalAccountDetails &&
                 destinationType == other.destinationType &&
                 externalAccountDetails == other.externalAccountDetails &&
                 additionalProperties == other.additionalProperties
@@ -1523,6 +1476,6 @@ private constructor(
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "ExternalAccountDetailsDestination{destinationType=$destinationType, externalAccountDetails=$externalAccountDetails, additionalProperties=$additionalProperties}"
+            "ExternalAccountDetails{destinationType=$destinationType, externalAccountDetails=$externalAccountDetails, additionalProperties=$additionalProperties}"
     }
 }

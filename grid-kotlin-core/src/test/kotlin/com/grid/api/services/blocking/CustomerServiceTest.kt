@@ -4,10 +4,8 @@ package com.grid.api.services.blocking
 
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
-import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.CustomerCreateParams
 import com.grid.api.models.customers.CustomerGetKycLinkParams
-import com.grid.api.models.customers.CustomerType
 import com.grid.api.models.customers.CustomerUpdateParams
 import java.time.LocalDate
 import org.junit.jupiter.api.Disabled
@@ -32,13 +30,16 @@ internal class CustomerServiceTest {
             customerService.create(
                 CustomerCreateParams.builder()
                     .createCustomerRequest(
-                        CustomerCreateParams.CreateCustomerRequest.IndividualCustomerCreateRequest
-                            .builder()
-                            .customerType(CustomerType.INDIVIDUAL)
+                        CustomerCreateParams.CreateCustomerRequest.Individual.builder()
                             .platformCustomerId("9f84e0c2a72c4fa")
                             .umaAddress("\$john.doe@uma.domain.com")
+                            .customerType(
+                                CustomerCreateParams.CreateCustomerRequest.Individual.CustomerType
+                                    .INDIVIDUAL
+                            )
                             .address(
-                                Address.builder()
+                                CustomerCreateParams.CreateCustomerRequest.Individual.Address
+                                    .builder()
                                     .country("US")
                                     .line1("123 Main Street")
                                     .postalCode("94105")
@@ -90,12 +91,15 @@ internal class CustomerServiceTest {
                 CustomerUpdateParams.builder()
                     .customerId("customerId")
                     .updateCustomerRequest(
-                        CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
-                            .builder()
-                            .customerType(CustomerType.INDIVIDUAL)
+                        CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
                             .umaAddress("\$john.doe@uma.domain.com")
+                            .customerType(
+                                CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                                    .INDIVIDUAL
+                            )
                             .address(
-                                Address.builder()
+                                CustomerUpdateParams.UpdateCustomerRequest.Individual.Address
+                                    .builder()
                                     .country("US")
                                     .line1("456 Market St")
                                     .postalCode("94103")

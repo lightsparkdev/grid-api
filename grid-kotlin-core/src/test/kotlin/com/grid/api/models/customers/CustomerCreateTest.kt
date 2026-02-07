@@ -13,12 +13,10 @@ internal class CustomerCreateTest {
     fun create() {
         val customerCreate =
             CustomerCreate.builder()
-                .customerType(CustomerType.INDIVIDUAL)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .build()
 
-        assertThat(customerCreate.customerType()).isEqualTo(CustomerType.INDIVIDUAL)
         assertThat(customerCreate.platformCustomerId()).isEqualTo("9f84e0c2a72c4fa")
         assertThat(customerCreate.umaAddress()).isEqualTo("\$john.doe@uma.domain.com")
     }
@@ -28,7 +26,6 @@ internal class CustomerCreateTest {
         val jsonMapper = jsonMapper()
         val customerCreate =
             CustomerCreate.builder()
-                .customerType(CustomerType.INDIVIDUAL)
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .build()

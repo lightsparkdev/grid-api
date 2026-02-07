@@ -10,7 +10,6 @@ import com.grid.api.core.ExcludeMissing
 import com.grid.api.core.JsonField
 import com.grid.api.core.JsonMissing
 import com.grid.api.core.JsonValue
-import com.grid.api.core.checkRequired
 import com.grid.api.errors.GridInvalidDataException
 import java.util.Collections
 import java.util.Objects
@@ -18,26 +17,14 @@ import java.util.Objects
 class CustomerUpdate
 @JsonCreator(mode = JsonCreator.Mode.DISABLED)
 private constructor(
-    private val customerType: JsonField<CustomerType>,
     private val umaAddress: JsonField<String>,
     private val additionalProperties: MutableMap<String, JsonValue>,
 ) {
 
     @JsonCreator
     private constructor(
-        @JsonProperty("customerType")
-        @ExcludeMissing
-        customerType: JsonField<CustomerType> = JsonMissing.of(),
-        @JsonProperty("umaAddress") @ExcludeMissing umaAddress: JsonField<String> = JsonMissing.of(),
-    ) : this(customerType, umaAddress, mutableMapOf())
-
-    /**
-     * Whether the customer is an individual or a business entity
-     *
-     * @throws GridInvalidDataException if the JSON field has an unexpected type or is unexpectedly
-     *   missing or null (e.g. if the server responded with an unexpected value).
-     */
-    fun customerType(): CustomerType = customerType.getRequired("customerType")
+        @JsonProperty("umaAddress") @ExcludeMissing umaAddress: JsonField<String> = JsonMissing.of()
+    ) : this(umaAddress, mutableMapOf())
 
     /**
      * Optional UMA address identifier. If provided, the customer's UMA address will be updated.
@@ -47,15 +34,6 @@ private constructor(
      *   responded with an unexpected value).
      */
     fun umaAddress(): String? = umaAddress.getNullable("umaAddress")
-
-    /**
-     * Returns the raw JSON value of [customerType].
-     *
-     * Unlike [customerType], this method doesn't throw if the JSON field has an unexpected type.
-     */
-    @JsonProperty("customerType")
-    @ExcludeMissing
-    fun _customerType(): JsonField<CustomerType> = customerType
 
     /**
      * Returns the raw JSON value of [umaAddress].
@@ -78,42 +56,19 @@ private constructor(
 
     companion object {
 
-        /**
-         * Returns a mutable builder for constructing an instance of [CustomerUpdate].
-         *
-         * The following fields are required:
-         * ```kotlin
-         * .customerType()
-         * ```
-         */
+        /** Returns a mutable builder for constructing an instance of [CustomerUpdate]. */
         fun builder() = Builder()
     }
 
     /** A builder for [CustomerUpdate]. */
     class Builder internal constructor() {
 
-        private var customerType: JsonField<CustomerType>? = null
         private var umaAddress: JsonField<String> = JsonMissing.of()
         private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
         internal fun from(customerUpdate: CustomerUpdate) = apply {
-            customerType = customerUpdate.customerType
             umaAddress = customerUpdate.umaAddress
             additionalProperties = customerUpdate.additionalProperties.toMutableMap()
-        }
-
-        /** Whether the customer is an individual or a business entity */
-        fun customerType(customerType: CustomerType) = customerType(JsonField.of(customerType))
-
-        /**
-         * Sets [Builder.customerType] to an arbitrary JSON value.
-         *
-         * You should usually call [Builder.customerType] with a well-typed [CustomerType] value
-         * instead. This method is primarily for setting the field to an undocumented or not yet
-         * supported value.
-         */
-        fun customerType(customerType: JsonField<CustomerType>) = apply {
-            this.customerType = customerType
         }
 
         /**
@@ -154,20 +109,9 @@ private constructor(
          * Returns an immutable instance of [CustomerUpdate].
          *
          * Further updates to this [Builder] will not mutate the returned instance.
-         *
-         * The following fields are required:
-         * ```kotlin
-         * .customerType()
-         * ```
-         *
-         * @throws IllegalStateException if any required field is unset.
          */
         fun build(): CustomerUpdate =
-            CustomerUpdate(
-                checkRequired("customerType", customerType),
-                umaAddress,
-                additionalProperties.toMutableMap(),
-            )
+            CustomerUpdate(umaAddress, additionalProperties.toMutableMap())
     }
 
     private var validated: Boolean = false
@@ -177,7 +121,6 @@ private constructor(
             return@apply
         }
 
-        customerType().validate()
         umaAddress()
         validated = true
     }
@@ -195,8 +138,7 @@ private constructor(
      *
      * Used for best match union deserialization.
      */
-    internal fun validity(): Int =
-        (customerType.asKnown()?.validity() ?: 0) + (if (umaAddress.asKnown() == null) 0 else 1)
+    internal fun validity(): Int = (if (umaAddress.asKnown() == null) 0 else 1)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -204,17 +146,14 @@ private constructor(
         }
 
         return other is CustomerUpdate &&
-            customerType == other.customerType &&
             umaAddress == other.umaAddress &&
             additionalProperties == other.additionalProperties
     }
 
-    private val hashCode: Int by lazy {
-        Objects.hash(customerType, umaAddress, additionalProperties)
-    }
+    private val hashCode: Int by lazy { Objects.hash(umaAddress, additionalProperties) }
 
     override fun hashCode(): Int = hashCode
 
     override fun toString() =
-        "CustomerUpdate{customerType=$customerType, umaAddress=$umaAddress, additionalProperties=$additionalProperties}"
+        "CustomerUpdate{umaAddress=$umaAddress, additionalProperties=$additionalProperties}"
 }

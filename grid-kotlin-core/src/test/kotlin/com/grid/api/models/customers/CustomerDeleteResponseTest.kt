@@ -17,10 +17,9 @@ import org.junit.jupiter.params.provider.EnumSource
 internal class CustomerDeleteResponseTest {
 
     @Test
-    fun ofIndividualCustomer() {
-        val individualCustomer =
-            IndividualCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+    fun ofIndividual() {
+        val individual =
+            CustomerDeleteResponse.Individual.builder()
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -28,8 +27,9 @@ internal class CustomerDeleteResponseTest {
                 .isDeleted(false)
                 .kycStatus(Customer.KycStatus.APPROVED)
                 .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .customerType(CustomerDeleteResponse.Individual.CustomerType.INDIVIDUAL)
                 .address(
-                    Address.builder()
+                    CustomerDeleteResponse.Individual.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -43,19 +43,18 @@ internal class CustomerDeleteResponseTest {
                 .nationality("US")
                 .build()
 
-        val customerDeleteResponse = CustomerDeleteResponse.ofIndividualCustomer(individualCustomer)
+        val customerDeleteResponse = CustomerDeleteResponse.ofIndividual(individual)
 
-        assertThat(customerDeleteResponse.individualCustomer()).isEqualTo(individualCustomer)
-        assertThat(customerDeleteResponse.businessCustomer()).isNull()
+        assertThat(customerDeleteResponse.individual()).isEqualTo(individual)
+        assertThat(customerDeleteResponse.business()).isNull()
     }
 
     @Test
-    fun ofIndividualCustomerRoundtrip() {
+    fun ofIndividualRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerDeleteResponse =
-            CustomerDeleteResponse.ofIndividualCustomer(
-                IndividualCustomer.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+            CustomerDeleteResponse.ofIndividual(
+                CustomerDeleteResponse.Individual.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -63,8 +62,9 @@ internal class CustomerDeleteResponseTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerDeleteResponse.Individual.CustomerType.INDIVIDUAL)
                     .address(
-                        Address.builder()
+                        CustomerDeleteResponse.Individual.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -89,10 +89,9 @@ internal class CustomerDeleteResponseTest {
     }
 
     @Test
-    fun ofBusinessCustomer() {
-        val businessCustomer =
-            BusinessCustomer.builder()
-                .customerType(CustomerType.BUSINESS)
+    fun ofBusiness() {
+        val business =
+            CustomerDeleteResponse.Business.builder()
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -100,8 +99,9 @@ internal class CustomerDeleteResponseTest {
                 .isDeleted(false)
                 .kycStatus(Customer.KycStatus.APPROVED)
                 .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .customerType(CustomerDeleteResponse.Business.CustomerType.BUSINESS)
                 .address(
-                    Address.builder()
+                    CustomerDeleteResponse.Business.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -111,11 +111,13 @@ internal class CustomerDeleteResponseTest {
                         .build()
                 )
                 .addBeneficialOwner(
-                    UltimateBeneficialOwner.builder()
+                    CustomerDeleteResponse.Business.BeneficialOwner.builder()
                         .fullName("John Michael Doe")
-                        .individualType(UltimateBeneficialOwner.IndividualType.DIRECTOR)
+                        .individualType(
+                            CustomerDeleteResponse.Business.BeneficialOwner.IndividualType.DIRECTOR
+                        )
                         .address(
-                            Address.builder()
+                            CustomerDeleteResponse.Business.BeneficialOwner.Address.builder()
                                 .country("US")
                                 .line1("123 Main Street")
                                 .postalCode("94105")
@@ -134,7 +136,7 @@ internal class CustomerDeleteResponseTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomerFields.BusinessInfo.builder()
+                    CustomerDeleteResponse.Business.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
@@ -142,19 +144,18 @@ internal class CustomerDeleteResponseTest {
                 )
                 .build()
 
-        val customerDeleteResponse = CustomerDeleteResponse.ofBusinessCustomer(businessCustomer)
+        val customerDeleteResponse = CustomerDeleteResponse.ofBusiness(business)
 
-        assertThat(customerDeleteResponse.individualCustomer()).isNull()
-        assertThat(customerDeleteResponse.businessCustomer()).isEqualTo(businessCustomer)
+        assertThat(customerDeleteResponse.individual()).isNull()
+        assertThat(customerDeleteResponse.business()).isEqualTo(business)
     }
 
     @Test
-    fun ofBusinessCustomerRoundtrip() {
+    fun ofBusinessRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerDeleteResponse =
-            CustomerDeleteResponse.ofBusinessCustomer(
-                BusinessCustomer.builder()
-                    .customerType(CustomerType.BUSINESS)
+            CustomerDeleteResponse.ofBusiness(
+                CustomerDeleteResponse.Business.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -162,8 +163,9 @@ internal class CustomerDeleteResponseTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerDeleteResponse.Business.CustomerType.BUSINESS)
                     .address(
-                        Address.builder()
+                        CustomerDeleteResponse.Business.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -173,11 +175,14 @@ internal class CustomerDeleteResponseTest {
                             .build()
                     )
                     .addBeneficialOwner(
-                        UltimateBeneficialOwner.builder()
+                        CustomerDeleteResponse.Business.BeneficialOwner.builder()
                             .fullName("John Michael Doe")
-                            .individualType(UltimateBeneficialOwner.IndividualType.DIRECTOR)
+                            .individualType(
+                                CustomerDeleteResponse.Business.BeneficialOwner.IndividualType
+                                    .DIRECTOR
+                            )
                             .address(
-                                Address.builder()
+                                CustomerDeleteResponse.Business.BeneficialOwner.Address.builder()
                                     .country("US")
                                     .line1("123 Main Street")
                                     .postalCode("94105")
@@ -196,7 +201,7 @@ internal class CustomerDeleteResponseTest {
                             .build()
                     )
                     .businessInfo(
-                        BusinessCustomerFields.BusinessInfo.builder()
+                        CustomerDeleteResponse.Business.BusinessInfo.builder()
                             .legalName("Acme Corporation, Inc.")
                             .registrationNumber("BRN-123456789")
                             .taxId("EIN-987654321")

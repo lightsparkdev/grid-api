@@ -11,25 +11,15 @@ internal class BaseTransactionSourceTest {
 
     @Test
     fun create() {
-        val baseTransactionSource =
-            BaseTransactionSource.builder()
-                .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
-                .currency("USD")
-                .build()
+        val baseTransactionSource = BaseTransactionSource.builder().currency("USD").build()
 
-        assertThat(baseTransactionSource.sourceType())
-            .isEqualTo(BaseTransactionSource.SourceType.ACCOUNT)
         assertThat(baseTransactionSource.currency()).isEqualTo("USD")
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val baseTransactionSource =
-            BaseTransactionSource.builder()
-                .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
-                .currency("USD")
-                .build()
+        val baseTransactionSource = BaseTransactionSource.builder().currency("USD").build()
 
         val roundtrippedBaseTransactionSource =
             jsonMapper.readValue(

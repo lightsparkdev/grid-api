@@ -15,31 +15,29 @@ import org.junit.jupiter.params.provider.EnumSource
 internal class TransactionSourceOneOfTest {
 
     @Test
-    fun ofAccountTransactionSource() {
-        val accountTransactionSource =
-            TransactionSourceOneOf.AccountTransactionSource.builder()
-                .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
+    fun ofAccount() {
+        val account =
+            TransactionSourceOneOf.Account.builder()
                 .currency("USD")
                 .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                .sourceType(TransactionSourceOneOf.Account.SourceType.ACCOUNT)
                 .build()
 
-        val transactionSourceOneOf =
-            TransactionSourceOneOf.ofAccountTransactionSource(accountTransactionSource)
+        val transactionSourceOneOf = TransactionSourceOneOf.ofAccount(account)
 
-        assertThat(transactionSourceOneOf.accountTransactionSource())
-            .isEqualTo(accountTransactionSource)
-        assertThat(transactionSourceOneOf.umaAddressTransactionSource()).isNull()
+        assertThat(transactionSourceOneOf.account()).isEqualTo(account)
+        assertThat(transactionSourceOneOf.umaAddress()).isNull()
     }
 
     @Test
-    fun ofAccountTransactionSourceRoundtrip() {
+    fun ofAccountRoundtrip() {
         val jsonMapper = jsonMapper()
         val transactionSourceOneOf =
-            TransactionSourceOneOf.ofAccountTransactionSource(
-                TransactionSourceOneOf.AccountTransactionSource.builder()
-                    .sourceType(BaseTransactionSource.SourceType.ACCOUNT)
+            TransactionSourceOneOf.ofAccount(
+                TransactionSourceOneOf.Account.builder()
                     .currency("USD")
                     .accountId("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+                    .sourceType(TransactionSourceOneOf.Account.SourceType.ACCOUNT)
                     .build()
             )
 
@@ -53,30 +51,28 @@ internal class TransactionSourceOneOfTest {
     }
 
     @Test
-    fun ofUmaAddressTransactionSource() {
-        val umaAddressTransactionSource =
-            TransactionSourceOneOf.UmaAddressTransactionSource.builder()
-                .sourceType(BaseTransactionSource.SourceType.UMA_ADDRESS)
+    fun ofUmaAddress() {
+        val umaAddress =
+            TransactionSourceOneOf.UmaAddress.builder()
                 .currency("USD")
+                .sourceType(TransactionSourceOneOf.UmaAddress.SourceType.UMA_ADDRESS)
                 .umaAddress("\$sender@uma.domain.com")
                 .build()
 
-        val transactionSourceOneOf =
-            TransactionSourceOneOf.ofUmaAddressTransactionSource(umaAddressTransactionSource)
+        val transactionSourceOneOf = TransactionSourceOneOf.ofUmaAddress(umaAddress)
 
-        assertThat(transactionSourceOneOf.accountTransactionSource()).isNull()
-        assertThat(transactionSourceOneOf.umaAddressTransactionSource())
-            .isEqualTo(umaAddressTransactionSource)
+        assertThat(transactionSourceOneOf.account()).isNull()
+        assertThat(transactionSourceOneOf.umaAddress()).isEqualTo(umaAddress)
     }
 
     @Test
-    fun ofUmaAddressTransactionSourceRoundtrip() {
+    fun ofUmaAddressRoundtrip() {
         val jsonMapper = jsonMapper()
         val transactionSourceOneOf =
-            TransactionSourceOneOf.ofUmaAddressTransactionSource(
-                TransactionSourceOneOf.UmaAddressTransactionSource.builder()
-                    .sourceType(BaseTransactionSource.SourceType.UMA_ADDRESS)
+            TransactionSourceOneOf.ofUmaAddress(
+                TransactionSourceOneOf.UmaAddress.builder()
                     .currency("USD")
+                    .sourceType(TransactionSourceOneOf.UmaAddress.SourceType.UMA_ADDRESS)
                     .umaAddress("\$sender@uma.domain.com")
                     .build()
             )

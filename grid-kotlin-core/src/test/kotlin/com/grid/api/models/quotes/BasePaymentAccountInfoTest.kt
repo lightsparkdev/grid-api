@@ -11,22 +11,13 @@ internal class BasePaymentAccountInfoTest {
 
     @Test
     fun create() {
-        val basePaymentAccountInfo =
-            BasePaymentAccountInfo.builder()
-                .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
-                .build()
-
-        assertThat(basePaymentAccountInfo.accountType())
-            .isEqualTo(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
+        val basePaymentAccountInfo = BasePaymentAccountInfo.builder().build()
     }
 
     @Test
     fun roundtrip() {
         val jsonMapper = jsonMapper()
-        val basePaymentAccountInfo =
-            BasePaymentAccountInfo.builder()
-                .accountType(BasePaymentAccountInfo.AccountType.US_ACCOUNT)
-                .build()
+        val basePaymentAccountInfo = BasePaymentAccountInfo.builder().build()
 
         val roundtrippedBasePaymentAccountInfo =
             jsonMapper.readValue(

@@ -251,215 +251,150 @@ private constructor(
         }
 
         /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofUsAccountExternalAccountInfo(usAccountExternalAccountInfo)`.
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofUsAccount(usAccount)`.
          */
-        fun accountInfo(
-            usAccountExternalAccountInfo: ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofUsAccountExternalAccountInfo(
-                    usAccountExternalAccountInfo
-                )
-            )
+        fun accountInfo(usAccount: ExternalAccountInfoOneOf.UsAccount) =
+            accountInfo(ExternalAccountInfoOneOf.ofUsAccount(usAccount))
+
+        /** Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofClabe(clabe)`. */
+        fun accountInfo(clabe: ExternalAccountInfoOneOf.Clabe) =
+            accountInfo(ExternalAccountInfoOneOf.ofClabe(clabe))
+
+        /** Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofPix(pix)`. */
+        fun accountInfo(pix: ExternalAccountInfoOneOf.Pix) =
+            accountInfo(ExternalAccountInfoOneOf.ofPix(pix))
+
+        /** Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofIban(iban)`. */
+        fun accountInfo(iban: ExternalAccountInfoOneOf.Iban) =
+            accountInfo(ExternalAccountInfoOneOf.ofIban(iban))
+
+        /** Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofUpi(upi)`. */
+        fun accountInfo(upi: ExternalAccountInfoOneOf.Upi) =
+            accountInfo(ExternalAccountInfoOneOf.ofUpi(upi))
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofNgnAccount(ngnAccount)`.
+         */
+        fun accountInfo(ngnAccount: ExternalAccountInfoOneOf.NgnAccount) =
+            accountInfo(ExternalAccountInfoOneOf.ofNgnAccount(ngnAccount))
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofCadAccount(cadAccount)`.
+         */
+        fun accountInfo(cadAccount: ExternalAccountInfoOneOf.CadAccount) =
+            accountInfo(ExternalAccountInfoOneOf.ofCadAccount(cadAccount))
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofGbpAccount(gbpAccount)`.
+         */
+        fun accountInfo(gbpAccount: ExternalAccountInfoOneOf.GbpAccount) =
+            accountInfo(ExternalAccountInfoOneOf.ofGbpAccount(gbpAccount))
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofPhpAccount(phpAccount)`.
+         */
+        fun accountInfo(phpAccount: ExternalAccountInfoOneOf.PhpAccount) =
+            accountInfo(ExternalAccountInfoOneOf.ofPhpAccount(phpAccount))
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofSgdAccount(sgdAccount)`.
+         */
+        fun accountInfo(sgdAccount: ExternalAccountInfoOneOf.SgdAccount) =
+            accountInfo(ExternalAccountInfoOneOf.ofSgdAccount(sgdAccount))
 
         /**
          * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofClabeAccountExternalAccountInfo(clabeAccountExternalAccountInfo)`.
+         * `ExternalAccountInfoOneOf.ofSparkWallet(sparkWallet)`.
          */
-        fun accountInfo(
-            clabeAccountExternalAccountInfo:
-                ExternalAccountInfoOneOf.ClabeAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofClabeAccountExternalAccountInfo(
-                    clabeAccountExternalAccountInfo
-                )
-            )
+        fun accountInfo(sparkWallet: ExternalAccountInfoOneOf.SparkWallet) =
+            accountInfo(ExternalAccountInfoOneOf.ofSparkWallet(sparkWallet))
+
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfoOneOf.SparkWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun sparkWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfoOneOf.SparkWallet.builder().address(address).build())
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofLightning(lightning)`.
+         */
+        fun accountInfo(lightning: ExternalAccountInfoOneOf.Lightning) =
+            accountInfo(ExternalAccountInfoOneOf.ofLightning(lightning))
 
         /**
          * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofPixAccountExternalAccountInfo(pixAccountExternalAccountInfo)`.
+         * `ExternalAccountInfoOneOf.ofSolanaWallet(solanaWallet)`.
          */
-        fun accountInfo(
-            pixAccountExternalAccountInfo: ExternalAccountInfoOneOf.PixAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofPixAccountExternalAccountInfo(
-                    pixAccountExternalAccountInfo
-                )
-            )
+        fun accountInfo(solanaWallet: ExternalAccountInfoOneOf.SolanaWallet) =
+            accountInfo(ExternalAccountInfoOneOf.ofSolanaWallet(solanaWallet))
+
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfoOneOf.SolanaWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun solanaWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfoOneOf.SolanaWallet.builder().address(address).build())
+
+        /**
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofTronWallet(tronWallet)`.
+         */
+        fun accountInfo(tronWallet: ExternalAccountInfoOneOf.TronWallet) =
+            accountInfo(ExternalAccountInfoOneOf.ofTronWallet(tronWallet))
+
+        /**
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfoOneOf.TronWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
+         */
+        fun tronWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfoOneOf.TronWallet.builder().address(address).build())
 
         /**
          * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofIbanAccountExternalAccountInfo(ibanAccountExternalAccountInfo)`.
+         * `ExternalAccountInfoOneOf.ofPolygonWallet(polygonWallet)`.
          */
-        fun accountInfo(
-            ibanAccountExternalAccountInfo: ExternalAccountInfoOneOf.IbanAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofIbanAccountExternalAccountInfo(
-                    ibanAccountExternalAccountInfo
-                )
-            )
+        fun accountInfo(polygonWallet: ExternalAccountInfoOneOf.PolygonWallet) =
+            accountInfo(ExternalAccountInfoOneOf.ofPolygonWallet(polygonWallet))
 
         /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofUpiAccountExternalAccountInfo(upiAccountExternalAccountInfo)`.
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfoOneOf.PolygonWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
          */
-        fun accountInfo(
-            upiAccountExternalAccountInfo: ExternalAccountInfoOneOf.UpiAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofUpiAccountExternalAccountInfo(
-                    upiAccountExternalAccountInfo
-                )
-            )
+        fun polygonWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfoOneOf.PolygonWallet.builder().address(address).build())
 
         /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofNgnAccountExternalAccountInfo(ngnAccountExternalAccountInfo)`.
+         * Alias for calling [accountInfo] with `ExternalAccountInfoOneOf.ofBaseWallet(baseWallet)`.
          */
-        fun accountInfo(
-            ngnAccountExternalAccountInfo: ExternalAccountInfoOneOf.NgnAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofNgnAccountExternalAccountInfo(
-                    ngnAccountExternalAccountInfo
-                )
-            )
+        fun accountInfo(baseWallet: ExternalAccountInfoOneOf.BaseWallet) =
+            accountInfo(ExternalAccountInfoOneOf.ofBaseWallet(baseWallet))
 
         /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofCadAccountExternalAccountInfo(cadAccountExternalAccountInfo)`.
+         * Alias for calling [accountInfo] with the following:
+         * ```kotlin
+         * ExternalAccountInfoOneOf.BaseWallet.builder()
+         *     .address(address)
+         *     .build()
+         * ```
          */
-        fun accountInfo(
-            cadAccountExternalAccountInfo: ExternalAccountInfoOneOf.CadAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofCadAccountExternalAccountInfo(
-                    cadAccountExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofGbpAccountExternalAccountInfo(gbpAccountExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            gbpAccountExternalAccountInfo: ExternalAccountInfoOneOf.GbpAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofGbpAccountExternalAccountInfo(
-                    gbpAccountExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofPhpAccountExternalAccountInfo(phpAccountExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            phpAccountExternalAccountInfo: ExternalAccountInfoOneOf.PhpAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofPhpAccountExternalAccountInfo(
-                    phpAccountExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofSgdAccountExternalAccountInfo(sgdAccountExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            sgdAccountExternalAccountInfo: ExternalAccountInfoOneOf.SgdAccountExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofSgdAccountExternalAccountInfo(
-                    sgdAccountExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofSparkWalletExternalAccountInfo(sparkWalletExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            sparkWalletExternalAccountInfo: ExternalAccountInfoOneOf.SparkWalletExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofSparkWalletExternalAccountInfo(
-                    sparkWalletExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofLightningExternalAccountInfo(lightningExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            lightningExternalAccountInfo: ExternalAccountInfoOneOf.LightningExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofLightningExternalAccountInfo(
-                    lightningExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofSolanaWalletExternalAccountInfo(solanaWalletExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            solanaWalletExternalAccountInfo:
-                ExternalAccountInfoOneOf.SolanaWalletExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofSolanaWalletExternalAccountInfo(
-                    solanaWalletExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofTronWalletExternalAccountInfo(tronWalletExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            tronWalletExternalAccountInfo: ExternalAccountInfoOneOf.TronWalletExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofTronWalletExternalAccountInfo(
-                    tronWalletExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofPolygonWalletExternalAccountInfo(polygonWalletExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            polygonWalletExternalAccountInfo:
-                ExternalAccountInfoOneOf.PolygonWalletExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofPolygonWalletExternalAccountInfo(
-                    polygonWalletExternalAccountInfo
-                )
-            )
-
-        /**
-         * Alias for calling [accountInfo] with
-         * `ExternalAccountInfoOneOf.ofBaseWalletExternalAccountInfo(baseWalletExternalAccountInfo)`.
-         */
-        fun accountInfo(
-            baseWalletExternalAccountInfo: ExternalAccountInfoOneOf.BaseWalletExternalAccountInfo
-        ) =
-            accountInfo(
-                ExternalAccountInfoOneOf.ofBaseWalletExternalAccountInfo(
-                    baseWalletExternalAccountInfo
-                )
-            )
+        fun baseWalletAccountInfo(address: String) =
+            accountInfo(ExternalAccountInfoOneOf.BaseWallet.builder().address(address).build())
 
         /** The ISO 4217 currency code */
         fun currency(currency: String) = currency(JsonField.of(currency))

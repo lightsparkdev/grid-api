@@ -4,7 +4,6 @@ package com.grid.api.services.blocking.platform
 
 import com.grid.api.TestServerExtension
 import com.grid.api.client.okhttp.GridOkHttpClient
-import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.externalaccounts.BeneficiaryOneOf
 import com.grid.api.models.customers.externalaccounts.ExternalAccountCreate
 import com.grid.api.models.customers.externalaccounts.ExternalAccountInfoOneOf
@@ -32,28 +31,18 @@ internal class ExternalAccountServiceTest {
             externalAccountService.create(
                 ExternalAccountCreate.builder()
                     .accountInfo(
-                        ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.builder()
+                        ExternalAccountInfoOneOf.UsAccount.builder()
                             .accountCategory(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo
-                                    .AccountCategory
-                                    .CHECKING
+                                ExternalAccountInfoOneOf.UsAccount.AccountCategory.CHECKING
                             )
                             .accountNumber("12345678901")
-                            .accountType(
-                                ExternalAccountInfoOneOf.UsAccountExternalAccountInfo.AccountType
-                                    .US_ACCOUNT
-                            )
                             .beneficiary(
-                                BeneficiaryOneOf.IndividualBeneficiary.builder()
-                                    .beneficiaryType(
-                                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType
-                                            .INDIVIDUAL
-                                    )
+                                BeneficiaryOneOf.Individual.builder()
                                     .birthDate(LocalDate.parse("1990-01-15"))
                                     .fullName("John Doe")
                                     .nationality("US")
                                     .address(
-                                        Address.builder()
+                                        BeneficiaryOneOf.Individual.Address.builder()
                                             .country("US")
                                             .line1("123 Main Street")
                                             .postalCode("94105")

@@ -13,11 +13,14 @@ internal class CustomerUpdateParamsTest {
         CustomerUpdateParams.builder()
             .customerId("customerId")
             .updateCustomerRequest(
-                CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+                CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
                     .umaAddress("\$john.doe@uma.domain.com")
+                    .customerType(
+                        CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                            .INDIVIDUAL
+                    )
                     .address(
-                        Address.builder()
+                        CustomerUpdateParams.UpdateCustomerRequest.Individual.Address.builder()
                             .country("US")
                             .line1("456 Market St")
                             .postalCode("94103")
@@ -40,9 +43,11 @@ internal class CustomerUpdateParamsTest {
             CustomerUpdateParams.builder()
                 .customerId("customerId")
                 .updateCustomerRequest(
-                    CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
-                        .builder()
-                        .customerType(CustomerType.INDIVIDUAL)
+                    CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
+                        .customerType(
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                                .INDIVIDUAL
+                        )
                         .build()
                 )
                 .build()
@@ -58,12 +63,14 @@ internal class CustomerUpdateParamsTest {
             CustomerUpdateParams.builder()
                 .customerId("customerId")
                 .updateCustomerRequest(
-                    CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
-                        .builder()
-                        .customerType(CustomerType.INDIVIDUAL)
+                    CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
                         .umaAddress("\$john.doe@uma.domain.com")
+                        .customerType(
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                                .INDIVIDUAL
+                        )
                         .address(
-                            Address.builder()
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.Address.builder()
                                 .country("US")
                                 .line1("456 Market St")
                                 .postalCode("94103")
@@ -83,13 +90,15 @@ internal class CustomerUpdateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerUpdateParams.UpdateCustomerRequest.ofIndividualCustomerUpdate(
-                    CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
-                        .builder()
-                        .customerType(CustomerType.INDIVIDUAL)
+                CustomerUpdateParams.UpdateCustomerRequest.ofIndividual(
+                    CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
                         .umaAddress("\$john.doe@uma.domain.com")
+                        .customerType(
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                                .INDIVIDUAL
+                        )
                         .address(
-                            Address.builder()
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.Address.builder()
                                 .country("US")
                                 .line1("456 Market St")
                                 .postalCode("94103")
@@ -112,9 +121,11 @@ internal class CustomerUpdateParamsTest {
             CustomerUpdateParams.builder()
                 .customerId("customerId")
                 .updateCustomerRequest(
-                    CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
-                        .builder()
-                        .customerType(CustomerType.INDIVIDUAL)
+                    CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
+                        .customerType(
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                                .INDIVIDUAL
+                        )
                         .build()
                 )
                 .build()
@@ -123,10 +134,12 @@ internal class CustomerUpdateParamsTest {
 
         assertThat(body)
             .isEqualTo(
-                CustomerUpdateParams.UpdateCustomerRequest.ofIndividualCustomerUpdate(
-                    CustomerUpdateParams.UpdateCustomerRequest.IndividualCustomerUpdateRequest
-                        .builder()
-                        .customerType(CustomerType.INDIVIDUAL)
+                CustomerUpdateParams.UpdateCustomerRequest.ofIndividual(
+                    CustomerUpdateParams.UpdateCustomerRequest.Individual.builder()
+                        .customerType(
+                            CustomerUpdateParams.UpdateCustomerRequest.Individual.CustomerType
+                                .INDIVIDUAL
+                        )
                         .build()
                 )
             )

@@ -646,20 +646,49 @@ private constructor(
             this.destination = destination
         }
 
-        /**
-         * Alias for calling [destination] with
-         * `Transaction.Destination.ofAccountTransaction(accountTransaction)`.
-         */
-        fun destination(accountTransaction: Transaction.Destination.AccountTransactionDestination) =
-            destination(Transaction.Destination.ofAccountTransaction(accountTransaction))
+        /** Alias for calling [destination] with `Transaction.Destination.ofAccount(account)`. */
+        fun destination(account: Transaction.Destination.Account) =
+            destination(Transaction.Destination.ofAccount(account))
 
         /**
-         * Alias for calling [destination] with
-         * `Transaction.Destination.ofUmaAddressTransaction(umaAddressTransaction)`.
+         * Alias for calling [destination] with the following:
+         * ```kotlin
+         * Transaction.Destination.Account.builder()
+         *     .destinationType(Transaction.Destination.Account.DestinationType.ACCOUNT)
+         *     .accountId(accountId)
+         *     .build()
+         * ```
          */
-        fun destination(
-            umaAddressTransaction: Transaction.Destination.UmaAddressTransactionDestination
-        ) = destination(Transaction.Destination.ofUmaAddressTransaction(umaAddressTransaction))
+        fun accountDestination(accountId: String) =
+            destination(
+                Transaction.Destination.Account.builder()
+                    .destinationType(Transaction.Destination.Account.DestinationType.ACCOUNT)
+                    .accountId(accountId)
+                    .build()
+            )
+
+        /**
+         * Alias for calling [destination] with `Transaction.Destination.ofUmaAddress(umaAddress)`.
+         */
+        fun destination(umaAddress: Transaction.Destination.UmaAddress) =
+            destination(Transaction.Destination.ofUmaAddress(umaAddress))
+
+        /**
+         * Alias for calling [destination] with the following:
+         * ```kotlin
+         * Transaction.Destination.UmaAddress.builder()
+         *     .destinationType(Transaction.Destination.UmaAddress.DestinationType.UMA_ADDRESS)
+         *     .umaAddress(umaAddress)
+         *     .build()
+         * ```
+         */
+        fun umaAddressDestination(umaAddress: String) =
+            destination(
+                Transaction.Destination.UmaAddress.builder()
+                    .destinationType(Transaction.Destination.UmaAddress.DestinationType.UMA_ADDRESS)
+                    .umaAddress(umaAddress)
+                    .build()
+            )
 
         /** Platform-specific ID of the customer (sender for outgoing, recipient for incoming) */
         fun platformCustomerId(platformCustomerId: String) =
@@ -819,22 +848,46 @@ private constructor(
          */
         fun source(source: JsonField<TransactionSourceOneOf>) = apply { this.source = source }
 
-        /**
-         * Alias for calling [source] with
-         * `TransactionSourceOneOf.ofAccountTransactionSource(accountTransactionSource)`.
-         */
-        fun source(accountTransactionSource: TransactionSourceOneOf.AccountTransactionSource) =
-            source(TransactionSourceOneOf.ofAccountTransactionSource(accountTransactionSource))
+        /** Alias for calling [source] with `TransactionSourceOneOf.ofAccount(account)`. */
+        fun source(account: TransactionSourceOneOf.Account) =
+            source(TransactionSourceOneOf.ofAccount(account))
 
         /**
-         * Alias for calling [source] with
-         * `TransactionSourceOneOf.ofUmaAddressTransactionSource(umaAddressTransactionSource)`.
+         * Alias for calling [source] with the following:
+         * ```kotlin
+         * TransactionSourceOneOf.Account.builder()
+         *     .sourceType(TransactionSourceOneOf.Account.SourceType.ACCOUNT)
+         *     .accountId(accountId)
+         *     .build()
+         * ```
          */
-        fun source(
-            umaAddressTransactionSource: TransactionSourceOneOf.UmaAddressTransactionSource
-        ) =
+        fun accountSource(accountId: String) =
             source(
-                TransactionSourceOneOf.ofUmaAddressTransactionSource(umaAddressTransactionSource)
+                TransactionSourceOneOf.Account.builder()
+                    .sourceType(TransactionSourceOneOf.Account.SourceType.ACCOUNT)
+                    .accountId(accountId)
+                    .build()
+            )
+
+        /** Alias for calling [source] with `TransactionSourceOneOf.ofUmaAddress(umaAddress)`. */
+        fun source(umaAddress: TransactionSourceOneOf.UmaAddress) =
+            source(TransactionSourceOneOf.ofUmaAddress(umaAddress))
+
+        /**
+         * Alias for calling [source] with the following:
+         * ```kotlin
+         * TransactionSourceOneOf.UmaAddress.builder()
+         *     .sourceType(TransactionSourceOneOf.UmaAddress.SourceType.UMA_ADDRESS)
+         *     .umaAddress(umaAddress)
+         *     .build()
+         * ```
+         */
+        fun umaAddressSource(umaAddress: String) =
+            source(
+                TransactionSourceOneOf.UmaAddress.builder()
+                    .sourceType(TransactionSourceOneOf.UmaAddress.SourceType.UMA_ADDRESS)
+                    .umaAddress(umaAddress)
+                    .build()
             )
 
         /** Number of sending currency units per receiving currency unit. */

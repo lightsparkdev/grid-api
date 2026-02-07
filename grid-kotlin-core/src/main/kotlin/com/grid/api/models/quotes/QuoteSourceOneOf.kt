@@ -32,13 +32,13 @@ import java.util.Objects
 @JsonSerialize(using = QuoteSourceOneOf.Serializer::class)
 class QuoteSourceOneOf
 private constructor(
-    private val accountQuoteSource: AccountQuoteSource? = null,
-    private val realtimeFundingQuoteSource: RealtimeFundingQuoteSource? = null,
+    private val account: Account? = null,
+    private val realtimeFunding: RealtimeFunding? = null,
     private val _json: JsonValue? = null,
 ) {
 
     /** Source account details */
-    fun accountQuoteSource(): AccountQuoteSource? = accountQuoteSource
+    fun account(): Account? = account
 
     /**
      * Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
@@ -46,15 +46,14 @@ private constructor(
      * Because quotes expire quickly, this option is only valid for instant payment methods. Do not
      * try to fund a quote with a non-instant payment method (ACH, etc.).
      */
-    fun realtimeFundingQuoteSource(): RealtimeFundingQuoteSource? = realtimeFundingQuoteSource
+    fun realtimeFunding(): RealtimeFunding? = realtimeFunding
 
-    fun isAccountQuoteSource(): Boolean = accountQuoteSource != null
+    fun isAccount(): Boolean = account != null
 
-    fun isRealtimeFundingQuoteSource(): Boolean = realtimeFundingQuoteSource != null
+    fun isRealtimeFunding(): Boolean = realtimeFunding != null
 
     /** Source account details */
-    fun asAccountQuoteSource(): AccountQuoteSource =
-        accountQuoteSource.getOrThrow("accountQuoteSource")
+    fun asAccount(): Account = account.getOrThrow("account")
 
     /**
      * Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
@@ -62,16 +61,14 @@ private constructor(
      * Because quotes expire quickly, this option is only valid for instant payment methods. Do not
      * try to fund a quote with a non-instant payment method (ACH, etc.).
      */
-    fun asRealtimeFundingQuoteSource(): RealtimeFundingQuoteSource =
-        realtimeFundingQuoteSource.getOrThrow("realtimeFundingQuoteSource")
+    fun asRealtimeFunding(): RealtimeFunding = realtimeFunding.getOrThrow("realtimeFunding")
 
     fun _json(): JsonValue? = _json
 
     fun <T> accept(visitor: Visitor<T>): T =
         when {
-            accountQuoteSource != null -> visitor.visitAccountQuoteSource(accountQuoteSource)
-            realtimeFundingQuoteSource != null ->
-                visitor.visitRealtimeFundingQuoteSource(realtimeFundingQuoteSource)
+            account != null -> visitor.visitAccount(account)
+            realtimeFunding != null -> visitor.visitRealtimeFunding(realtimeFunding)
             else -> visitor.unknown(_json)
         }
 
@@ -84,14 +81,12 @@ private constructor(
 
         accept(
             object : Visitor<Unit> {
-                override fun visitAccountQuoteSource(accountQuoteSource: AccountQuoteSource) {
-                    accountQuoteSource.validate()
+                override fun visitAccount(account: Account) {
+                    account.validate()
                 }
 
-                override fun visitRealtimeFundingQuoteSource(
-                    realtimeFundingQuoteSource: RealtimeFundingQuoteSource
-                ) {
-                    realtimeFundingQuoteSource.validate()
+                override fun visitRealtimeFunding(realtimeFunding: RealtimeFunding) {
+                    realtimeFunding.validate()
                 }
             }
         )
@@ -114,12 +109,10 @@ private constructor(
     internal fun validity(): Int =
         accept(
             object : Visitor<Int> {
-                override fun visitAccountQuoteSource(accountQuoteSource: AccountQuoteSource) =
-                    accountQuoteSource.validity()
+                override fun visitAccount(account: Account) = account.validity()
 
-                override fun visitRealtimeFundingQuoteSource(
-                    realtimeFundingQuoteSource: RealtimeFundingQuoteSource
-                ) = realtimeFundingQuoteSource.validity()
+                override fun visitRealtimeFunding(realtimeFunding: RealtimeFunding) =
+                    realtimeFunding.validity()
 
                 override fun unknown(json: JsonValue?) = 0
             }
@@ -131,17 +124,16 @@ private constructor(
         }
 
         return other is QuoteSourceOneOf &&
-            accountQuoteSource == other.accountQuoteSource &&
-            realtimeFundingQuoteSource == other.realtimeFundingQuoteSource
+            account == other.account &&
+            realtimeFunding == other.realtimeFunding
     }
 
-    override fun hashCode(): Int = Objects.hash(accountQuoteSource, realtimeFundingQuoteSource)
+    override fun hashCode(): Int = Objects.hash(account, realtimeFunding)
 
     override fun toString(): String =
         when {
-            accountQuoteSource != null -> "QuoteSourceOneOf{accountQuoteSource=$accountQuoteSource}"
-            realtimeFundingQuoteSource != null ->
-                "QuoteSourceOneOf{realtimeFundingQuoteSource=$realtimeFundingQuoteSource}"
+            account != null -> "QuoteSourceOneOf{account=$account}"
+            realtimeFunding != null -> "QuoteSourceOneOf{realtimeFunding=$realtimeFunding}"
             _json != null -> "QuoteSourceOneOf{_unknown=$_json}"
             else -> throw IllegalStateException("Invalid QuoteSourceOneOf")
         }
@@ -149,8 +141,7 @@ private constructor(
     companion object {
 
         /** Source account details */
-        fun ofAccountQuoteSource(accountQuoteSource: AccountQuoteSource) =
-            QuoteSourceOneOf(accountQuoteSource = accountQuoteSource)
+        fun ofAccount(account: Account) = QuoteSourceOneOf(account = account)
 
         /**
          * Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables,
@@ -158,8 +149,8 @@ private constructor(
          * response. Because quotes expire quickly, this option is only valid for instant payment
          * methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
          */
-        fun ofRealtimeFundingQuoteSource(realtimeFundingQuoteSource: RealtimeFundingQuoteSource) =
-            QuoteSourceOneOf(realtimeFundingQuoteSource = realtimeFundingQuoteSource)
+        fun ofRealtimeFunding(realtimeFunding: RealtimeFunding) =
+            QuoteSourceOneOf(realtimeFunding = realtimeFunding)
     }
 
     /**
@@ -169,7 +160,7 @@ private constructor(
     interface Visitor<out T> {
 
         /** Source account details */
-        fun visitAccountQuoteSource(accountQuoteSource: AccountQuoteSource): T
+        fun visitAccount(account: Account): T
 
         /**
          * Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables,
@@ -177,9 +168,7 @@ private constructor(
          * response. Because quotes expire quickly, this option is only valid for instant payment
          * methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
          */
-        fun visitRealtimeFundingQuoteSource(
-            realtimeFundingQuoteSource: RealtimeFundingQuoteSource
-        ): T
+        fun visitRealtimeFunding(realtimeFunding: RealtimeFunding): T
 
         /**
          * Maps an unknown variant of [QuoteSourceOneOf] to a value of type [T].
@@ -203,11 +192,11 @@ private constructor(
 
             val bestMatches =
                 sequenceOf(
-                        tryDeserialize(node, jacksonTypeRef<AccountQuoteSource>())?.let {
-                            QuoteSourceOneOf(accountQuoteSource = it, _json = json)
+                        tryDeserialize(node, jacksonTypeRef<Account>())?.let {
+                            QuoteSourceOneOf(account = it, _json = json)
                         },
-                        tryDeserialize(node, jacksonTypeRef<RealtimeFundingQuoteSource>())?.let {
-                            QuoteSourceOneOf(realtimeFundingQuoteSource = it, _json = json)
+                        tryDeserialize(node, jacksonTypeRef<RealtimeFunding>())?.let {
+                            QuoteSourceOneOf(realtimeFunding = it, _json = json)
                         },
                     )
                     .filterNotNull()
@@ -233,9 +222,8 @@ private constructor(
             provider: SerializerProvider,
         ) {
             when {
-                value.accountQuoteSource != null -> generator.writeObject(value.accountQuoteSource)
-                value.realtimeFundingQuoteSource != null ->
-                    generator.writeObject(value.realtimeFundingQuoteSource)
+                value.account != null -> generator.writeObject(value.account)
+                value.realtimeFunding != null -> generator.writeObject(value.realtimeFunding)
                 value._json != null -> generator.writeObject(value._json)
                 else -> throw IllegalStateException("Invalid QuoteSourceOneOf")
             }
@@ -243,38 +231,29 @@ private constructor(
     }
 
     /** Source account details */
-    class AccountQuoteSource
+    class Account
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val sourceType: JsonField<BaseQuoteSource.SourceType>,
         private val accountId: JsonField<String>,
+        private val sourceType: JsonField<SourceType>,
         private val customerId: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("sourceType")
-            @ExcludeMissing
-            sourceType: JsonField<BaseQuoteSource.SourceType> = JsonMissing.of(),
             @JsonProperty("accountId")
             @ExcludeMissing
             accountId: JsonField<String> = JsonMissing.of(),
+            @JsonProperty("sourceType")
+            @ExcludeMissing
+            sourceType: JsonField<SourceType> = JsonMissing.of(),
             @JsonProperty("customerId")
             @ExcludeMissing
             customerId: JsonField<String> = JsonMissing.of(),
-        ) : this(sourceType, accountId, customerId, mutableMapOf())
+        ) : this(accountId, sourceType, customerId, mutableMapOf())
 
-        fun toBaseQuoteSource(): BaseQuoteSource =
-            BaseQuoteSource.builder().sourceType(sourceType).build()
-
-        /**
-         * Type of quote funding source
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun sourceType(): BaseQuoteSource.SourceType = sourceType.getRequired("sourceType")
+        fun toBaseQuoteSource(): BaseQuoteSource = BaseQuoteSource.builder().build()
 
         /**
          * Source account identifier
@@ -283,6 +262,12 @@ private constructor(
          *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
          */
         fun accountId(): String = accountId.getRequired("accountId")
+
+        /**
+         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
+         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         */
+        fun sourceType(): SourceType = sourceType.getRequired("sourceType")
 
         /**
          * Required when funding from an FBO account to identify the customer on whose behalf the
@@ -295,20 +280,20 @@ private constructor(
         fun customerId(): String? = customerId.getNullable("customerId")
 
         /**
+         * Returns the raw JSON value of [accountId].
+         *
+         * Unlike [accountId], this method doesn't throw if the JSON field has an unexpected type.
+         */
+        @JsonProperty("accountId") @ExcludeMissing fun _accountId(): JsonField<String> = accountId
+
+        /**
          * Returns the raw JSON value of [sourceType].
          *
          * Unlike [sourceType], this method doesn't throw if the JSON field has an unexpected type.
          */
         @JsonProperty("sourceType")
         @ExcludeMissing
-        fun _sourceType(): JsonField<BaseQuoteSource.SourceType> = sourceType
-
-        /**
-         * Returns the raw JSON value of [accountId].
-         *
-         * Unlike [accountId], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("accountId") @ExcludeMissing fun _accountId(): JsonField<String> = accountId
+        fun _sourceType(): JsonField<SourceType> = sourceType
 
         /**
          * Returns the raw JSON value of [customerId].
@@ -334,45 +319,30 @@ private constructor(
         companion object {
 
             /**
-             * Returns a mutable builder for constructing an instance of [AccountQuoteSource].
+             * Returns a mutable builder for constructing an instance of [Account].
              *
              * The following fields are required:
              * ```kotlin
-             * .sourceType()
              * .accountId()
+             * .sourceType()
              * ```
              */
             fun builder() = Builder()
         }
 
-        /** A builder for [AccountQuoteSource]. */
+        /** A builder for [Account]. */
         class Builder internal constructor() {
 
-            private var sourceType: JsonField<BaseQuoteSource.SourceType>? = null
             private var accountId: JsonField<String>? = null
+            private var sourceType: JsonField<SourceType>? = null
             private var customerId: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-            internal fun from(accountQuoteSource: AccountQuoteSource) = apply {
-                sourceType = accountQuoteSource.sourceType
-                accountId = accountQuoteSource.accountId
-                customerId = accountQuoteSource.customerId
-                additionalProperties = accountQuoteSource.additionalProperties.toMutableMap()
-            }
-
-            /** Type of quote funding source */
-            fun sourceType(sourceType: BaseQuoteSource.SourceType) =
-                sourceType(JsonField.of(sourceType))
-
-            /**
-             * Sets [Builder.sourceType] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.sourceType] with a well-typed
-             * [BaseQuoteSource.SourceType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
-             */
-            fun sourceType(sourceType: JsonField<BaseQuoteSource.SourceType>) = apply {
-                this.sourceType = sourceType
+            internal fun from(account: Account) = apply {
+                accountId = account.accountId
+                sourceType = account.sourceType
+                customerId = account.customerId
+                additionalProperties = account.additionalProperties.toMutableMap()
             }
 
             /** Source account identifier */
@@ -386,6 +356,19 @@ private constructor(
              * supported value.
              */
             fun accountId(accountId: JsonField<String>) = apply { this.accountId = accountId }
+
+            fun sourceType(sourceType: SourceType) = sourceType(JsonField.of(sourceType))
+
+            /**
+             * Sets [Builder.sourceType] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.sourceType] with a well-typed [SourceType] value
+             * instead. This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun sourceType(sourceType: JsonField<SourceType>) = apply {
+                this.sourceType = sourceType
+            }
 
             /**
              * Required when funding from an FBO account to identify the customer on whose behalf
@@ -423,22 +406,22 @@ private constructor(
             }
 
             /**
-             * Returns an immutable instance of [AccountQuoteSource].
+             * Returns an immutable instance of [Account].
              *
              * Further updates to this [Builder] will not mutate the returned instance.
              *
              * The following fields are required:
              * ```kotlin
-             * .sourceType()
              * .accountId()
+             * .sourceType()
              * ```
              *
              * @throws IllegalStateException if any required field is unset.
              */
-            fun build(): AccountQuoteSource =
-                AccountQuoteSource(
-                    checkRequired("sourceType", sourceType),
+            fun build(): Account =
+                Account(
                     checkRequired("accountId", accountId),
+                    checkRequired("sourceType", sourceType),
                     customerId,
                     additionalProperties.toMutableMap(),
                 )
@@ -446,13 +429,13 @@ private constructor(
 
         private var validated: Boolean = false
 
-        fun validate(): AccountQuoteSource = apply {
+        fun validate(): Account = apply {
             if (validated) {
                 return@apply
             }
 
-            sourceType().validate()
             accountId()
+            sourceType().validate()
             customerId()
             validated = true
         }
@@ -472,8 +455,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (sourceType.asKnown()?.validity() ?: 0) +
-                (if (accountId.asKnown() == null) 0 else 1) +
+            (if (accountId.asKnown() == null) 0 else 1) +
+                (sourceType.asKnown()?.validity() ?: 0) +
                 (if (customerId.asKnown() == null) 0 else 1)
 
         class SourceType @JsonCreator private constructor(private val value: JsonField<String>) :
@@ -604,21 +587,21 @@ private constructor(
                 return true
             }
 
-            return other is AccountQuoteSource &&
-                sourceType == other.sourceType &&
+            return other is Account &&
                 accountId == other.accountId &&
+                sourceType == other.sourceType &&
                 customerId == other.customerId &&
                 additionalProperties == other.additionalProperties
         }
 
         private val hashCode: Int by lazy {
-            Objects.hash(sourceType, accountId, customerId, additionalProperties)
+            Objects.hash(accountId, sourceType, customerId, additionalProperties)
         }
 
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "AccountQuoteSource{sourceType=$sourceType, accountId=$accountId, customerId=$customerId, additionalProperties=$additionalProperties}"
+            "Account{accountId=$accountId, sourceType=$sourceType, customerId=$customerId, additionalProperties=$additionalProperties}"
     }
 
     /**
@@ -627,38 +610,29 @@ private constructor(
      * Because quotes expire quickly, this option is only valid for instant payment methods. Do not
      * try to fund a quote with a non-instant payment method (ACH, etc.).
      */
-    class RealtimeFundingQuoteSource
+    class RealtimeFunding
     @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     private constructor(
-        private val sourceType: JsonField<BaseQuoteSource.SourceType>,
         private val currency: JsonField<String>,
+        private val sourceType: JsonField<SourceType>,
         private val customerId: JsonField<String>,
         private val additionalProperties: MutableMap<String, JsonValue>,
     ) {
 
         @JsonCreator
         private constructor(
-            @JsonProperty("sourceType")
-            @ExcludeMissing
-            sourceType: JsonField<BaseQuoteSource.SourceType> = JsonMissing.of(),
             @JsonProperty("currency")
             @ExcludeMissing
             currency: JsonField<String> = JsonMissing.of(),
+            @JsonProperty("sourceType")
+            @ExcludeMissing
+            sourceType: JsonField<SourceType> = JsonMissing.of(),
             @JsonProperty("customerId")
             @ExcludeMissing
             customerId: JsonField<String> = JsonMissing.of(),
-        ) : this(sourceType, currency, customerId, mutableMapOf())
+        ) : this(currency, sourceType, customerId, mutableMapOf())
 
-        fun toBaseQuoteSource(): BaseQuoteSource =
-            BaseQuoteSource.builder().sourceType(sourceType).build()
-
-        /**
-         * Type of quote funding source
-         *
-         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
-         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
-         */
-        fun sourceType(): BaseQuoteSource.SourceType = sourceType.getRequired("sourceType")
+        fun toBaseQuoteSource(): BaseQuoteSource = BaseQuoteSource.builder().build()
 
         /**
          * Currency code for the funding source. See
@@ -671,6 +645,12 @@ private constructor(
         fun currency(): String = currency.getRequired("currency")
 
         /**
+         * @throws GridInvalidDataException if the JSON field has an unexpected type or is
+         *   unexpectedly missing or null (e.g. if the server responded with an unexpected value).
+         */
+        fun sourceType(): SourceType = sourceType.getRequired("sourceType")
+
+        /**
          * Source customer ID. If this transaction is being initiated on behalf of a customer, this
          * is required. If customerId is not provided, the quote will be created on behalf of the
          * platform itself.
@@ -681,20 +661,20 @@ private constructor(
         fun customerId(): String? = customerId.getNullable("customerId")
 
         /**
+         * Returns the raw JSON value of [currency].
+         *
+         * Unlike [currency], this method doesn't throw if the JSON field has an unexpected type.
+         */
+        @JsonProperty("currency") @ExcludeMissing fun _currency(): JsonField<String> = currency
+
+        /**
          * Returns the raw JSON value of [sourceType].
          *
          * Unlike [sourceType], this method doesn't throw if the JSON field has an unexpected type.
          */
         @JsonProperty("sourceType")
         @ExcludeMissing
-        fun _sourceType(): JsonField<BaseQuoteSource.SourceType> = sourceType
-
-        /**
-         * Returns the raw JSON value of [currency].
-         *
-         * Unlike [currency], this method doesn't throw if the JSON field has an unexpected type.
-         */
-        @JsonProperty("currency") @ExcludeMissing fun _currency(): JsonField<String> = currency
+        fun _sourceType(): JsonField<SourceType> = sourceType
 
         /**
          * Returns the raw JSON value of [customerId].
@@ -720,47 +700,30 @@ private constructor(
         companion object {
 
             /**
-             * Returns a mutable builder for constructing an instance of
-             * [RealtimeFundingQuoteSource].
+             * Returns a mutable builder for constructing an instance of [RealtimeFunding].
              *
              * The following fields are required:
              * ```kotlin
-             * .sourceType()
              * .currency()
+             * .sourceType()
              * ```
              */
             fun builder() = Builder()
         }
 
-        /** A builder for [RealtimeFundingQuoteSource]. */
+        /** A builder for [RealtimeFunding]. */
         class Builder internal constructor() {
 
-            private var sourceType: JsonField<BaseQuoteSource.SourceType>? = null
             private var currency: JsonField<String>? = null
+            private var sourceType: JsonField<SourceType>? = null
             private var customerId: JsonField<String> = JsonMissing.of()
             private var additionalProperties: MutableMap<String, JsonValue> = mutableMapOf()
 
-            internal fun from(realtimeFundingQuoteSource: RealtimeFundingQuoteSource) = apply {
-                sourceType = realtimeFundingQuoteSource.sourceType
-                currency = realtimeFundingQuoteSource.currency
-                customerId = realtimeFundingQuoteSource.customerId
-                additionalProperties =
-                    realtimeFundingQuoteSource.additionalProperties.toMutableMap()
-            }
-
-            /** Type of quote funding source */
-            fun sourceType(sourceType: BaseQuoteSource.SourceType) =
-                sourceType(JsonField.of(sourceType))
-
-            /**
-             * Sets [Builder.sourceType] to an arbitrary JSON value.
-             *
-             * You should usually call [Builder.sourceType] with a well-typed
-             * [BaseQuoteSource.SourceType] value instead. This method is primarily for setting the
-             * field to an undocumented or not yet supported value.
-             */
-            fun sourceType(sourceType: JsonField<BaseQuoteSource.SourceType>) = apply {
-                this.sourceType = sourceType
+            internal fun from(realtimeFunding: RealtimeFunding) = apply {
+                currency = realtimeFunding.currency
+                sourceType = realtimeFunding.sourceType
+                customerId = realtimeFunding.customerId
+                additionalProperties = realtimeFunding.additionalProperties.toMutableMap()
             }
 
             /**
@@ -778,6 +741,19 @@ private constructor(
              * supported value.
              */
             fun currency(currency: JsonField<String>) = apply { this.currency = currency }
+
+            fun sourceType(sourceType: SourceType) = sourceType(JsonField.of(sourceType))
+
+            /**
+             * Sets [Builder.sourceType] to an arbitrary JSON value.
+             *
+             * You should usually call [Builder.sourceType] with a well-typed [SourceType] value
+             * instead. This method is primarily for setting the field to an undocumented or not yet
+             * supported value.
+             */
+            fun sourceType(sourceType: JsonField<SourceType>) = apply {
+                this.sourceType = sourceType
+            }
 
             /**
              * Source customer ID. If this transaction is being initiated on behalf of a customer,
@@ -815,22 +791,22 @@ private constructor(
             }
 
             /**
-             * Returns an immutable instance of [RealtimeFundingQuoteSource].
+             * Returns an immutable instance of [RealtimeFunding].
              *
              * Further updates to this [Builder] will not mutate the returned instance.
              *
              * The following fields are required:
              * ```kotlin
-             * .sourceType()
              * .currency()
+             * .sourceType()
              * ```
              *
              * @throws IllegalStateException if any required field is unset.
              */
-            fun build(): RealtimeFundingQuoteSource =
-                RealtimeFundingQuoteSource(
-                    checkRequired("sourceType", sourceType),
+            fun build(): RealtimeFunding =
+                RealtimeFunding(
                     checkRequired("currency", currency),
+                    checkRequired("sourceType", sourceType),
                     customerId,
                     additionalProperties.toMutableMap(),
                 )
@@ -838,13 +814,13 @@ private constructor(
 
         private var validated: Boolean = false
 
-        fun validate(): RealtimeFundingQuoteSource = apply {
+        fun validate(): RealtimeFunding = apply {
             if (validated) {
                 return@apply
             }
 
-            sourceType().validate()
             currency()
+            sourceType().validate()
             customerId()
             validated = true
         }
@@ -864,8 +840,8 @@ private constructor(
          * Used for best match union deserialization.
          */
         internal fun validity(): Int =
-            (sourceType.asKnown()?.validity() ?: 0) +
-                (if (currency.asKnown() == null) 0 else 1) +
+            (if (currency.asKnown() == null) 0 else 1) +
+                (sourceType.asKnown()?.validity() ?: 0) +
                 (if (customerId.asKnown() == null) 0 else 1)
 
         class SourceType @JsonCreator private constructor(private val value: JsonField<String>) :
@@ -996,20 +972,20 @@ private constructor(
                 return true
             }
 
-            return other is RealtimeFundingQuoteSource &&
-                sourceType == other.sourceType &&
+            return other is RealtimeFunding &&
                 currency == other.currency &&
+                sourceType == other.sourceType &&
                 customerId == other.customerId &&
                 additionalProperties == other.additionalProperties
         }
 
         private val hashCode: Int by lazy {
-            Objects.hash(sourceType, currency, customerId, additionalProperties)
+            Objects.hash(currency, sourceType, customerId, additionalProperties)
         }
 
         override fun hashCode(): Int = hashCode
 
         override fun toString() =
-            "RealtimeFundingQuoteSource{sourceType=$sourceType, currency=$currency, customerId=$customerId, additionalProperties=$additionalProperties}"
+            "RealtimeFunding{currency=$currency, sourceType=$sourceType, customerId=$customerId, additionalProperties=$additionalProperties}"
     }
 }

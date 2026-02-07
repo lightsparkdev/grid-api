@@ -6,7 +6,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.core.JsonValue
 import com.grid.api.core.jsonMapper
 import com.grid.api.errors.GridInvalidDataException
-import com.grid.api.models.customers.Address
 import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -17,15 +16,14 @@ import org.junit.jupiter.params.provider.EnumSource
 internal class BeneficiaryOneOfTest {
 
     @Test
-    fun ofIndividualBeneficiary() {
-        val individualBeneficiary =
-            BeneficiaryOneOf.IndividualBeneficiary.builder()
-                .beneficiaryType(BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType.INDIVIDUAL)
+    fun ofIndividual() {
+        val individual =
+            BeneficiaryOneOf.Individual.builder()
                 .birthDate(LocalDate.parse("1990-01-15"))
                 .fullName("John Michael Doe")
                 .nationality("US")
                 .address(
-                    Address.builder()
+                    BeneficiaryOneOf.Individual.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -36,26 +34,23 @@ internal class BeneficiaryOneOfTest {
                 )
                 .build()
 
-        val beneficiaryOneOf = BeneficiaryOneOf.ofIndividualBeneficiary(individualBeneficiary)
+        val beneficiaryOneOf = BeneficiaryOneOf.ofIndividual(individual)
 
-        assertThat(beneficiaryOneOf.individualBeneficiary()).isEqualTo(individualBeneficiary)
-        assertThat(beneficiaryOneOf.businessBeneficiary()).isNull()
+        assertThat(beneficiaryOneOf.individual()).isEqualTo(individual)
+        assertThat(beneficiaryOneOf.business()).isNull()
     }
 
     @Test
-    fun ofIndividualBeneficiaryRoundtrip() {
+    fun ofIndividualRoundtrip() {
         val jsonMapper = jsonMapper()
         val beneficiaryOneOf =
-            BeneficiaryOneOf.ofIndividualBeneficiary(
-                BeneficiaryOneOf.IndividualBeneficiary.builder()
-                    .beneficiaryType(
-                        BeneficiaryOneOf.IndividualBeneficiary.BeneficiaryType.INDIVIDUAL
-                    )
+            BeneficiaryOneOf.ofIndividual(
+                BeneficiaryOneOf.Individual.builder()
                     .birthDate(LocalDate.parse("1990-01-15"))
                     .fullName("John Michael Doe")
                     .nationality("US")
                     .address(
-                        Address.builder()
+                        BeneficiaryOneOf.Individual.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -77,13 +72,12 @@ internal class BeneficiaryOneOfTest {
     }
 
     @Test
-    fun ofBusinessBeneficiary() {
-        val businessBeneficiary =
-            BeneficiaryOneOf.BusinessBeneficiary.builder()
-                .beneficiaryType(BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.BUSINESS)
+    fun ofBusiness() {
+        val business =
+            BeneficiaryOneOf.Business.builder()
                 .legalName("Acme Corporation, Inc.")
                 .address(
-                    Address.builder()
+                    BeneficiaryOneOf.Business.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -96,22 +90,21 @@ internal class BeneficiaryOneOfTest {
                 .taxId("EIN-987654321")
                 .build()
 
-        val beneficiaryOneOf = BeneficiaryOneOf.ofBusinessBeneficiary(businessBeneficiary)
+        val beneficiaryOneOf = BeneficiaryOneOf.ofBusiness(business)
 
-        assertThat(beneficiaryOneOf.individualBeneficiary()).isNull()
-        assertThat(beneficiaryOneOf.businessBeneficiary()).isEqualTo(businessBeneficiary)
+        assertThat(beneficiaryOneOf.individual()).isNull()
+        assertThat(beneficiaryOneOf.business()).isEqualTo(business)
     }
 
     @Test
-    fun ofBusinessBeneficiaryRoundtrip() {
+    fun ofBusinessRoundtrip() {
         val jsonMapper = jsonMapper()
         val beneficiaryOneOf =
-            BeneficiaryOneOf.ofBusinessBeneficiary(
-                BeneficiaryOneOf.BusinessBeneficiary.builder()
-                    .beneficiaryType(BeneficiaryOneOf.BusinessBeneficiary.BeneficiaryType.BUSINESS)
+            BeneficiaryOneOf.ofBusiness(
+                BeneficiaryOneOf.Business.builder()
                     .legalName("Acme Corporation, Inc.")
                     .address(
-                        Address.builder()
+                        BeneficiaryOneOf.Business.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")

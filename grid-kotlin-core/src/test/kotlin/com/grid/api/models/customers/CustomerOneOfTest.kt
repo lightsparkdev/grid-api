@@ -17,10 +17,9 @@ import org.junit.jupiter.params.provider.EnumSource
 internal class CustomerOneOfTest {
 
     @Test
-    fun ofIndividualCustomer() {
-        val individualCustomer =
-            IndividualCustomer.builder()
-                .customerType(CustomerType.INDIVIDUAL)
+    fun ofIndividual() {
+        val individual =
+            CustomerOneOf.Individual.builder()
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -28,8 +27,9 @@ internal class CustomerOneOfTest {
                 .isDeleted(false)
                 .kycStatus(Customer.KycStatus.APPROVED)
                 .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .customerType(CustomerOneOf.Individual.CustomerType.INDIVIDUAL)
                 .address(
-                    Address.builder()
+                    CustomerOneOf.Individual.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -43,19 +43,18 @@ internal class CustomerOneOfTest {
                 .nationality("US")
                 .build()
 
-        val customerOneOf = CustomerOneOf.ofIndividualCustomer(individualCustomer)
+        val customerOneOf = CustomerOneOf.ofIndividual(individual)
 
-        assertThat(customerOneOf.individualCustomer()).isEqualTo(individualCustomer)
-        assertThat(customerOneOf.businessCustomer()).isNull()
+        assertThat(customerOneOf.individual()).isEqualTo(individual)
+        assertThat(customerOneOf.business()).isNull()
     }
 
     @Test
-    fun ofIndividualCustomerRoundtrip() {
+    fun ofIndividualRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerOneOf =
-            CustomerOneOf.ofIndividualCustomer(
-                IndividualCustomer.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+            CustomerOneOf.ofIndividual(
+                CustomerOneOf.Individual.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -63,8 +62,9 @@ internal class CustomerOneOfTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerOneOf.Individual.CustomerType.INDIVIDUAL)
                     .address(
-                        Address.builder()
+                        CustomerOneOf.Individual.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -89,10 +89,9 @@ internal class CustomerOneOfTest {
     }
 
     @Test
-    fun ofBusinessCustomer() {
-        val businessCustomer =
-            BusinessCustomer.builder()
-                .customerType(CustomerType.BUSINESS)
+    fun ofBusiness() {
+        val business =
+            CustomerOneOf.Business.builder()
                 .platformCustomerId("9f84e0c2a72c4fa")
                 .umaAddress("\$john.doe@uma.domain.com")
                 .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -100,8 +99,9 @@ internal class CustomerOneOfTest {
                 .isDeleted(false)
                 .kycStatus(Customer.KycStatus.APPROVED)
                 .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .customerType(CustomerOneOf.Business.CustomerType.BUSINESS)
                 .address(
-                    Address.builder()
+                    CustomerOneOf.Business.Address.builder()
                         .country("US")
                         .line1("123 Main Street")
                         .postalCode("94105")
@@ -111,11 +111,13 @@ internal class CustomerOneOfTest {
                         .build()
                 )
                 .addBeneficialOwner(
-                    UltimateBeneficialOwner.builder()
+                    CustomerOneOf.Business.BeneficialOwner.builder()
                         .fullName("John Michael Doe")
-                        .individualType(UltimateBeneficialOwner.IndividualType.DIRECTOR)
+                        .individualType(
+                            CustomerOneOf.Business.BeneficialOwner.IndividualType.DIRECTOR
+                        )
                         .address(
-                            Address.builder()
+                            CustomerOneOf.Business.BeneficialOwner.Address.builder()
                                 .country("US")
                                 .line1("123 Main Street")
                                 .postalCode("94105")
@@ -134,7 +136,7 @@ internal class CustomerOneOfTest {
                         .build()
                 )
                 .businessInfo(
-                    BusinessCustomerFields.BusinessInfo.builder()
+                    CustomerOneOf.Business.BusinessInfo.builder()
                         .legalName("Acme Corporation, Inc.")
                         .registrationNumber("BRN-123456789")
                         .taxId("EIN-987654321")
@@ -142,19 +144,18 @@ internal class CustomerOneOfTest {
                 )
                 .build()
 
-        val customerOneOf = CustomerOneOf.ofBusinessCustomer(businessCustomer)
+        val customerOneOf = CustomerOneOf.ofBusiness(business)
 
-        assertThat(customerOneOf.individualCustomer()).isNull()
-        assertThat(customerOneOf.businessCustomer()).isEqualTo(businessCustomer)
+        assertThat(customerOneOf.individual()).isNull()
+        assertThat(customerOneOf.business()).isEqualTo(business)
     }
 
     @Test
-    fun ofBusinessCustomerRoundtrip() {
+    fun ofBusinessRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerOneOf =
-            CustomerOneOf.ofBusinessCustomer(
-                BusinessCustomer.builder()
-                    .customerType(CustomerType.BUSINESS)
+            CustomerOneOf.ofBusiness(
+                CustomerOneOf.Business.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -162,8 +163,9 @@ internal class CustomerOneOfTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerOneOf.Business.CustomerType.BUSINESS)
                     .address(
-                        Address.builder()
+                        CustomerOneOf.Business.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")
@@ -173,11 +175,13 @@ internal class CustomerOneOfTest {
                             .build()
                     )
                     .addBeneficialOwner(
-                        UltimateBeneficialOwner.builder()
+                        CustomerOneOf.Business.BeneficialOwner.builder()
                             .fullName("John Michael Doe")
-                            .individualType(UltimateBeneficialOwner.IndividualType.DIRECTOR)
+                            .individualType(
+                                CustomerOneOf.Business.BeneficialOwner.IndividualType.DIRECTOR
+                            )
                             .address(
-                                Address.builder()
+                                CustomerOneOf.Business.BeneficialOwner.Address.builder()
                                     .country("US")
                                     .line1("123 Main Street")
                                     .postalCode("94105")
@@ -196,7 +200,7 @@ internal class CustomerOneOfTest {
                             .build()
                     )
                     .businessInfo(
-                        BusinessCustomerFields.BusinessInfo.builder()
+                        CustomerOneOf.Business.BusinessInfo.builder()
                             .legalName("Acme Corporation, Inc.")
                             .registrationNumber("BRN-123456789")
                             .taxId("EIN-987654321")

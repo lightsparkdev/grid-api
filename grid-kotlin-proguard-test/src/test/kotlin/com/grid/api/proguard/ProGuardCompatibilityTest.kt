@@ -8,11 +8,8 @@ import com.grid.api.core.jsonMapper
 import com.grid.api.models.config.CustomerInfoFieldName
 import com.grid.api.models.config.PlatformConfig
 import com.grid.api.models.config.PlatformCurrencyConfig
-import com.grid.api.models.customers.Address
 import com.grid.api.models.customers.Customer
 import com.grid.api.models.customers.CustomerOneOf
-import com.grid.api.models.customers.CustomerType
-import com.grid.api.models.customers.IndividualCustomer
 import com.grid.api.models.receiver.CounterpartyFieldDefinition
 import com.grid.api.models.transactions.TransactionType
 import java.time.LocalDate
@@ -136,9 +133,8 @@ internal class ProGuardCompatibilityTest {
     fun customerOneOfRoundtrip() {
         val jsonMapper = jsonMapper()
         val customerOneOf =
-            CustomerOneOf.ofIndividualCustomer(
-                IndividualCustomer.builder()
-                    .customerType(CustomerType.INDIVIDUAL)
+            CustomerOneOf.ofIndividual(
+                CustomerOneOf.Individual.builder()
                     .platformCustomerId("9f84e0c2a72c4fa")
                     .umaAddress("\$john.doe@uma.domain.com")
                     .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
@@ -146,8 +142,9 @@ internal class ProGuardCompatibilityTest {
                     .isDeleted(false)
                     .kycStatus(Customer.KycStatus.APPROVED)
                     .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                    .customerType(CustomerOneOf.Individual.CustomerType.INDIVIDUAL)
                     .address(
-                        Address.builder()
+                        CustomerOneOf.Individual.Address.builder()
                             .country("US")
                             .line1("123 Main Street")
                             .postalCode("94105")

@@ -5,7 +5,6 @@ package com.grid.api.models.transactions
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.core.JsonValue
 import com.grid.api.core.jsonMapper
-import com.grid.api.models.transferin.BaseTransactionDestination
 import com.grid.api.models.transferin.Transaction
 import java.time.OffsetDateTime
 import org.assertj.core.api.Assertions.assertThat
@@ -22,10 +21,12 @@ internal class TransactionListPageResponseTest {
                         .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                         .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                         .destination(
-                            Transaction.Destination.AccountTransactionDestination.builder()
-                                .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
+                            Transaction.Destination.Account.builder()
                                 .currency("EUR")
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                                .destinationType(
+                                    Transaction.Destination.Account.DestinationType.ACCOUNT
+                                )
                                 .build()
                         )
                         .platformCustomerId("18d3e5f7b4a9c2")
@@ -55,10 +56,12 @@ internal class TransactionListPageResponseTest {
                     .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                     .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                     .destination(
-                        Transaction.Destination.AccountTransactionDestination.builder()
-                            .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
+                        Transaction.Destination.Account.builder()
                             .currency("EUR")
                             .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                            .destinationType(
+                                Transaction.Destination.Account.DestinationType.ACCOUNT
+                            )
                             .build()
                     )
                     .platformCustomerId("18d3e5f7b4a9c2")
@@ -92,10 +95,12 @@ internal class TransactionListPageResponseTest {
                         .id("Transaction:019542f5-b3e7-1d02-0000-000000000004")
                         .customerId("Customer:019542f5-b3e7-1d02-0000-000000000001")
                         .destination(
-                            Transaction.Destination.AccountTransactionDestination.builder()
-                                .destinationType(BaseTransactionDestination.DestinationType.ACCOUNT)
+                            Transaction.Destination.Account.builder()
                                 .currency("EUR")
                                 .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                                .destinationType(
+                                    Transaction.Destination.Account.DestinationType.ACCOUNT
+                                )
                                 .build()
                         )
                         .platformCustomerId("18d3e5f7b4a9c2")
