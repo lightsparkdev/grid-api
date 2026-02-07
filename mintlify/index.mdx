@@ -38,7 +38,12 @@ export const ProductTiles = ({ categories }) => {
           {currentCategory?.items.map((item) => (
             <div
               key={item.id}
-              onClick={() => setActiveItem(item.id)}
+              onClick={() => {
+                setActiveItem(item.id);
+                if (window.innerWidth > 1024) {
+                  window.location.href = currentCategory.href;
+                }
+              }}
               onMouseEnter={() => setActiveItem(item.id)}
               className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
             >
@@ -53,7 +58,7 @@ export const ProductTiles = ({ categories }) => {
             </div>
           ))}
         </div>
-        <div className="product-tiles-preview">
+        <div className="product-tiles-preview" onClick={() => window.location.href = currentCategory.href}>
           {currentCategory?.items.map((item) => (
             <img 
               key={item.id} 

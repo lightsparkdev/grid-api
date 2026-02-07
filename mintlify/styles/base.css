@@ -11,14 +11,14 @@
    =========================================== */
 
 :root {
-  --primary: var(--ls-gray-900) !important;
+  --primary: 40 40 40 !important; /* --ls-gray-900 (#282828) as raw RGB for Tailwind */
   --text-primary: var(--ls-gray-900) !important;
   --color-primary: var(--ls-gray-900) !important;
   --tw-text-opacity: 1;
 }
 
 html.dark {
-  --primary: var(--ls-gray-100) !important;
+  --primary: 240 240 238 !important; /* --ls-gray-100 (#F0F0EE) as raw RGB for Tailwind */
   --text-primary: var(--ls-gray-100) !important;
   --color-primary: var(--ls-gray-100) !important;
 }
@@ -392,15 +392,30 @@ html.dark .navbar-link svg {
    Chat Assistant (Floating Input)
    =========================================== */
 
-/* Container wrapper - darker/lighter than page bg for contrast */
+/* Mobile assistant bar placeholder - make transparent so it doesn't cover content */
+#assistant-bar-placeholder {
+  background: transparent !important;
+}
+
+/* Mobile: extend chat input 8px past content edges */
+@media (max-width: 639px) {
+  .chat-assistant-floating-input {
+    margin-left: -8px !important;
+    width: calc(100% + 16px) !important;
+  }
+}
+
+/* Container wrapper - glassy blur effect */
 .chat-assistant-floating-input > div > div {
-  background: var(--ls-gray-025) !important;
+  background: var(--ls-white-70) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   border: 0.5px solid var(--ls-black-10) !important;
   border-radius: var(--ls-radius-lg) !important;
 }
 
 html.dark .chat-assistant-floating-input > div > div {
-  background: var(--ls-gray-975) !important;
+  background: var(--ls-black-40) !important;
   border-color: var(--ls-white-10) !important;
 }
 
@@ -1261,6 +1276,10 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   border-color: var(--ls-black-10) !important;
 }
 
+html.dark #api-playground-2-operation-page [class*="border-gray-100"] {
+  border-color: var(--ls-white-06) !important;
+}
+
 html.dark #api-playground-2-operation-page [class*="border-gray-800"] {
   border-color: var(--ls-white-06) !important;
 }
@@ -1408,41 +1427,41 @@ div.callout,
    =========================================== */
 
 /* Code group container - 8px border radius, no padding, black-10 border */
-#content-side-layout .code-group,
-#content-side-layout [data-testid="code-group-select"] {
+.code-group,
+[data-testid="code-group-select"] {
   border-radius: var(--ls-radius-md) !important;
   padding: 0 !important;
   border: 0.5px solid var(--ls-black-10) !important;
 }
 
-html.dark #content-side-layout .code-group,
-html.dark #content-side-layout [data-testid="code-group-select"] {
+html.dark .code-group,
+html.dark [data-testid="code-group-select"] {
   border-color: var(--ls-white-06) !important;
 }
 
 /* Code group inner container - no border radius (exclude interactive tabs/buttons) */
-#content-side-layout .code-group > div,
-#content-side-layout [data-testid="code-group-select"] > div {
+.code-group > div,
+[data-testid="code-group-select"] > div {
   border-radius: 0 !important;
 }
 
 /* Code block content area - strip rounded corners */
-#content-side-layout .code-group [data-component-part="code-block-root"],
-#content-side-layout [data-testid="code-group-select"] [data-component-part="code-block-root"] {
+.code-group [data-component-part="code-block-root"],
+[data-testid="code-group-select"] [data-component-part="code-block-root"] {
   border-radius: 0 !important;
 }
 
 /* Restore radius on interactive tabs and pills inside code groups */
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] button div[class*="rounded"],
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] > div > button > div,
-#content-side-layout .code-group button div[class*="rounded"],
-#content-side-layout [data-testid="code-group-select"] button div[class*="rounded"] {
+.code-group [data-component-part="code-group-tab-bar"] button div[class*="rounded"],
+.code-group [data-component-part="code-group-tab-bar"] > div > button > div,
+.code-group button div[class*="rounded"],
+[data-testid="code-group-select"] button div[class*="rounded"] {
   border-radius: var(--ls-radius-sm) !important;
 }
 
 /* Code group tab bar header */
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"],
-#content-side-layout [data-testid="code-group-select"] > div:first-child {
+.code-group [data-component-part="code-group-tab-bar"],
+[data-testid="code-group-select"] > div:first-child {
   height: fit-content !important;
   background-color: var(--ls-gray-025) !important;
   border-bottom: 0.5px solid var(--ls-black-10) !important;
@@ -1450,39 +1469,66 @@ html.dark #content-side-layout [data-testid="code-group-select"] {
   padding-bottom: 4px !important;
 }
 
-
 /* Code group tab bar text - book weight */
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"],
-#content-side-layout [data-testid="code-group-select"] > div:first-child {
+.code-group [data-component-part="code-group-tab-bar"],
+[data-testid="code-group-select"] > div:first-child {
   font-weight: 450 !important;
 }
 
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] span,
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] button,
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] div,
-#content-side-layout [data-testid="code-group-select"] > div:first-child span,
-#content-side-layout [data-testid="code-group-select"] > div:first-child button,
-#content-side-layout [data-testid="code-group-select"] > div:first-child div {
+.code-group [data-component-part="code-group-tab-bar"] span,
+.code-group [data-component-part="code-group-tab-bar"] button,
+.code-group [data-component-part="code-group-tab-bar"] div,
+[data-testid="code-group-select"] > div:first-child span,
+[data-testid="code-group-select"] > div:first-child button,
+[data-testid="code-group-select"] > div:first-child div {
   font-weight: 450 !important;
 }
 
 /* Code group tab bar title - 2px left padding */
-#content-side-layout .code-group [data-component-part="code-group-tab-bar"] span.truncate {
+.code-group [data-component-part="code-group-tab-bar"] span.truncate {
   padding-left: 4px !important;
 }
 
-html.dark #content-side-layout .code-group [data-component-part="code-group-tab-bar"],
-html.dark #content-side-layout [data-testid="code-group-select"] > div:first-child {
+html.dark .code-group [data-component-part="code-group-tab-bar"],
+html.dark [data-testid="code-group-select"] > div:first-child {
   background-color: var(--ls-gray-975) !important;
   border-bottom-color: var(--ls-white-06) !important;
 }
 
 /* Code block content area - darker in dark mode */
-html.dark #content-side-layout .code-group [data-component-part="code-block-root"],
-html.dark #content-side-layout .code-block-background,
-html.dark #content-side-layout [class*="bg-codeblock"],
+html.dark .code-group [data-component-part="code-block-root"],
+html.dark .code-block-background,
 html.dark .code-group [class*="dark:bg-codeblock"] {
   background-color: var(--ls-gray-975) !important;
+}
+
+/* API Reference - Try It input fields */
+#api-playground-input,
+select[class*="text-playground-input"] {
+  background-color: var(--ls-gray-025) !important;
+  border-radius: var(--ls-radius-sm) !important;
+  padding: 6px 8px !important;
+  outline: none !important;
+  box-shadow: 0 0 0 0px var(--ls-gray-200) !important;
+  transition: box-shadow 0.15s ease !important;
+}
+
+#api-playground-input:focus,
+select[class*="text-playground-input"]:focus {
+  box-shadow: 0 0 0 2px var(--ls-gray-200) !important;
+  background-color: var(--ls-white) !important;
+}
+
+html.dark #api-playground-input,
+html.dark select[class*="text-playground-input"] {
+  background-color: var(--ls-gray-975) !important;
+  box-shadow: 0 0 0 0px var(--ls-gray-800) !important;
+}
+
+html.dark #api-playground-input:focus,
+html.dark select[class*="text-playground-input"]:focus {
+  box-shadow: 0 0 0 2px var(--ls-gray-800) !important;
+  background-color: var(--ls-black) !important;
 }
 
 /* ===========================================
@@ -2348,8 +2394,9 @@ html.dark .accordion-group details > summary:hover {
   background-color: var(--ls-white-06) !important;
 }
 
-/* Hide Mintlify's chevron SVG */
-.accordion-group details > summary svg {
+/* Hide Mintlify's chevron SVG and icon wrapper */
+.accordion-group details > summary svg,
+.accordion-group details > summary div[data-component-part="accordion-icon"] {
   display: none !important;
 }
 
@@ -2485,10 +2532,13 @@ html.dark .prose:not(.accordion-group) > details.accordion > summary:hover {
   background-color: var(--ls-white-06) !important;
 }
 
-/* Hide Mintlify's chevron SVG */
+/* Hide Mintlify's chevron SVG and icon wrapper */
 #content > details.accordion > summary svg,
 #content-area > details.accordion > summary svg,
-.prose:not(.accordion-group) > details.accordion > summary svg {
+.prose:not(.accordion-group) > details.accordion > summary svg,
+#content > details.accordion > summary div[data-component-part="accordion-icon"],
+#content-area > details.accordion > summary div[data-component-part="accordion-icon"],
+.prose:not(.accordion-group) > details.accordion > summary div[data-component-part="accordion-icon"] {
   display: none !important;
 }
 
@@ -2555,9 +2605,10 @@ html.dark .prose:not(.accordion-group) > details.accordion [data-component-part=
 }
 
 @media (max-width: 640px) {
-  .page-hero {
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    object-position: center;
+  img.page-hero,
+  picture img.page-hero {
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    object-position: center !important;
   }
 }

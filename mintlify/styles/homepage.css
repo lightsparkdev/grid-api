@@ -831,25 +831,31 @@ html.dark .product-tiles-item-title {
   transform: translateX(0);
 }
 
-/* Product tiles "Learn more" link */
+/* Product tiles "Learn more" link - hidden on desktop, shown on mobile */
 .product-tiles-link {
   font-size: 14px;
   font-weight: 450;
   line-height: 20px;
   color: var(--ls-gray-500);
   text-decoration: none;
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition: opacity 0.2s ease, max-height 0.2s ease, margin-top 0.2s ease, color 0.2s ease;
-  display: block;
-  margin-top: 0;
+  display: none;
 }
 
-.product-tiles-item.active .product-tiles-link {
-  opacity: 1;
-  max-height: 24px;
-  margin-top: 8px;
+@media (max-width: 1024px) {
+  .product-tiles-link {
+    display: block;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    margin-top: 0;
+    transition: opacity 0.2s ease, max-height 0.2s ease, margin-top 0.2s ease, color 0.2s ease;
+  }
+
+  .product-tiles-item.active .product-tiles-link {
+    opacity: 1;
+    max-height: 24px;
+    margin-top: 8px;
+  }
 }
 
 .product-tiles-link:hover {
@@ -868,6 +874,7 @@ html.dark .product-tiles-link:hover {
   min-height: 300px;
   align-self: stretch;
   position: relative;
+  cursor: pointer;
 }
 
 html.dark .product-tiles-preview {
@@ -882,11 +889,17 @@ html.dark .product-tiles-preview {
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 0.25s ease-in-out;
+  transform: scale(1.03);
+  transition: opacity 0.25s ease-in-out, transform 0.4s ease;
+  pointer-events: none;
 }
 
 .product-tiles-preview-img.active {
   opacity: 1;
+}
+
+.product-tiles-preview:hover .product-tiles-preview-img {
+  transform: scale(1);
 }
 
 .product-tiles-preview-placeholder {
