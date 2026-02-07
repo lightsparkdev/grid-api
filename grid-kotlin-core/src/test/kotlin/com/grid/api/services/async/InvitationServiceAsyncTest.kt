@@ -1,0 +1,94 @@
+// File generated from our OpenAPI spec by Stainless.
+
+package com.grid.api.services.async
+
+import com.grid.api.TestServerExtension
+import com.grid.api.client.okhttp.GridOkHttpClientAsync
+import com.grid.api.models.invitations.InvitationClaimParams
+import com.grid.api.models.invitations.InvitationCreateParams
+import java.time.OffsetDateTime
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+
+@ExtendWith(TestServerExtension::class)
+internal class InvitationServiceAsyncTest {
+
+    @Disabled("Prism tests are disabled")
+    @Test
+    suspend fun create() {
+        val client =
+            GridOkHttpClientAsync.builder()
+                .baseUrl(TestServerExtension.BASE_URL)
+                .username("My Username")
+                .password("My Password")
+                .build()
+        val invitationServiceAsync = client.invitations()
+
+        val umaInvitation =
+            invitationServiceAsync.create(
+                InvitationCreateParams.builder()
+                    .inviterUma("\$inviter@uma.domain")
+                    .amountToSend(12550L)
+                    .expiresAt(OffsetDateTime.parse("2025-09-01T14:30:00Z"))
+                    .firstName("Alice")
+                    .build()
+            )
+
+        umaInvitation.validate()
+    }
+
+    @Disabled("Prism tests are disabled")
+    @Test
+    suspend fun retrieve() {
+        val client =
+            GridOkHttpClientAsync.builder()
+                .baseUrl(TestServerExtension.BASE_URL)
+                .username("My Username")
+                .password("My Password")
+                .build()
+        val invitationServiceAsync = client.invitations()
+
+        val umaInvitation = invitationServiceAsync.retrieve("invitationCode")
+
+        umaInvitation.validate()
+    }
+
+    @Disabled("Prism tests are disabled")
+    @Test
+    suspend fun cancel() {
+        val client =
+            GridOkHttpClientAsync.builder()
+                .baseUrl(TestServerExtension.BASE_URL)
+                .username("My Username")
+                .password("My Password")
+                .build()
+        val invitationServiceAsync = client.invitations()
+
+        val umaInvitation = invitationServiceAsync.cancel("invitationCode")
+
+        umaInvitation.validate()
+    }
+
+    @Disabled("Prism tests are disabled")
+    @Test
+    suspend fun claim() {
+        val client =
+            GridOkHttpClientAsync.builder()
+                .baseUrl(TestServerExtension.BASE_URL)
+                .username("My Username")
+                .password("My Password")
+                .build()
+        val invitationServiceAsync = client.invitations()
+
+        val umaInvitation =
+            invitationServiceAsync.claim(
+                InvitationClaimParams.builder()
+                    .invitationCode("invitationCode")
+                    .inviteeUma("\$invitee@uma.domain")
+                    .build()
+            )
+
+        umaInvitation.validate()
+    }
+}

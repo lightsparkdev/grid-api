@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if command -v ktfmt &> /dev/null; then
+    echo "==> Checking ktfmt"
+    ./scripts/format --dry-run --set-exit-if-changed
+else
+    echo "==> Running gradlew lint"
+    ./gradlew lint
+fi

@@ -1,7 +1,0 @@
-type: string
-enum:
-  - ACCOUNT
-  - UMA_ADDRESS
-  - REALTIME_FUNDING
-description: Type of transaction source
-example: ACCOUNT

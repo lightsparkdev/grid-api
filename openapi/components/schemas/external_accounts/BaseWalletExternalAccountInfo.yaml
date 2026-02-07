@@ -1,4 +1,0 @@
-allOf:
-  - $ref: ./BaseExternalAccountInfo.yaml
-  - $ref: ../common/BaseWalletInfo.yaml
-  

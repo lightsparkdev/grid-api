@@ -1,9 +1,0 @@
-type: object
-properties:
-  receiverCustomerInfo:
-    type: object
-    additionalProperties: true
-    description: >-
-      Information about the recipient, provided by the platform if
-      requested in the webhook via `requestedReceiverCustomerInfoFields`
-      and the payment is approved.

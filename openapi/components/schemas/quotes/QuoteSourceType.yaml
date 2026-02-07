@@ -1,6 +1,0 @@
-type: string
-enum:
-  - ACCOUNT
-  - REALTIME_FUNDING
-description: Type of quote funding source
-example: ACCOUNT

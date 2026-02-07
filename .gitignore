@@ -1,41 +1,7 @@
-# Dependencies
-node_modules/
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Editor directories and files
+.prism.log
+.gradle
 .idea
-.vscode
-*.swp
-*.swo
-.DS_Store
-
-
-# Gradle
-.gradle/
+.kotlin
 build/
-gradle-app.setting
-!gradle-wrapper.jar
-!gradle-wrapper.properties
-.gradletasknamecache
-bin/
-
-# Local Environment files
-.env
-local.properties
-
-# Grid CLI credentials
-.grid-credentials
-.claude/settings.local.json
-
-# CLI build output
-cli/dist/
-
-# Figma design tokens (local reference only)
-mintlify/tokens/
-
+codegen.log
+kls_database.db

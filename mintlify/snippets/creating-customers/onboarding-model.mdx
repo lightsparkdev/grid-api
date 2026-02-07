@@ -1,6 +1,0 @@
-## Onboarding model
-
-There are two models for regulated and unregulated platforms.
-
-- Regulated platforms: Use your existing compliance processes. Create individual and business customers directly via `POST /customers`. The information you supply is used for beneficiary/counterparty compliance screening.
-- Unregulated platforms: Grid performs KYC/KYB. Generate a hosted KYC/KYB link, redirect your customer to complete verification in their locale, receive a KYC result webhook. While KYC is pending, allow customers to finish account setup but block funding and money movement.

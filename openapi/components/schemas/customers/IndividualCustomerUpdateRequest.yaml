@@ -1,3 +1,0 @@
-allOf:
-  - $ref: ./CustomerUpdateRequest.yaml
-  - $ref: ./IndividualCustomerFields.yaml

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if command -v ktfmt &> /dev/null; then
+    echo "==> Running ktfmt"
+    find . -name "*.kt" -not -path "./buildSrc/build/*" -print0 | xargs -0 -r ktfmt --kotlinlang-style "$@"
+else
+    echo "==> Running gradlew format"
+    ./gradlew format
+fi
