@@ -27,9 +27,9 @@ configure<PublishingExtension> {
                 }
 
                 scm {
-                    connection.set("scm:git:git://github.com/stainless-sdks/grid-kotlin.git")
-                    developerConnection.set("scm:git:git://github.com/stainless-sdks/grid-kotlin.git")
-                    url.set("https://github.com/stainless-sdks/grid-kotlin")
+                    connection.set("scm:git:git://github.com/lightsparkdev/grid-api.git")
+                    developerConnection.set("scm:git:git://github.com/lightsparkdev/grid-api.git")
+                    url.set("https://github.com/lightsparkdev/grid-api")
                 }
 
                 versionMapping {
