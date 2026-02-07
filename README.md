@@ -36,14 +36,20 @@ This library requires Java 8 or later.
 ```kotlin
 import com.grid.api.client.GridClient
 import com.grid.api.client.okhttp.GridOkHttpClient
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.quotes.Quote
+import com.grid.api.models.quotes.QuoteCreateParams
 
 // Configures using the `grid.username`, `grid.password`, `grid.webhookSignature` and `grid.baseUrl` system properties
 // Or configures using the `GRID_USERNAME`, `GRID_PASSWORD`, `GRID_WEBHOOK_SIGNATURE` and `GRID_BASE_URL` environment variables
 val client: GridClient = GridOkHttpClient.fromEnv()
 
-val platformConfig: PlatformConfig = client.config().retrieve()
+val params: QuoteCreateParams = QuoteCreateParams.builder()
+    .accountDestination("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+    .lockedCurrencyAmount(10000L)
+    .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
+    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+    .build()
+val quote: Quote = client.quotes().create(params)
 ```
 
 ## Client configuration
@@ -119,7 +125,7 @@ The `withOptions()` method does not affect the original client or service.
 
 To send a request to the Grid API, build an instance of some `Params` class and pass it to the corresponding client method. When the response is received, it will be deserialized into an instance of a Kotlin class.
 
-For example, `client.config().retrieve(...)` should be called with an instance of `ConfigRetrieveParams`, and it will return an instance of `PlatformConfig`.
+For example, `client.quotes().create(...)` should be called with an instance of `QuoteCreateParams`, and it will return an instance of `Quote`.
 
 ## Immutability
 
@@ -136,14 +142,20 @@ The default client is synchronous. To switch to asynchronous execution, call the
 ```kotlin
 import com.grid.api.client.GridClient
 import com.grid.api.client.okhttp.GridOkHttpClient
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.quotes.Quote
+import com.grid.api.models.quotes.QuoteCreateParams
 
 // Configures using the `grid.username`, `grid.password`, `grid.webhookSignature` and `grid.baseUrl` system properties
 // Or configures using the `GRID_USERNAME`, `GRID_PASSWORD`, `GRID_WEBHOOK_SIGNATURE` and `GRID_BASE_URL` environment variables
 val client: GridClient = GridOkHttpClient.fromEnv()
 
-val platformConfig: PlatformConfig = client.async().config().retrieve()
+val params: QuoteCreateParams = QuoteCreateParams.builder()
+    .accountDestination("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+    .lockedCurrencyAmount(10000L)
+    .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
+    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+    .build()
+val quote: Quote = client.async().quotes().create(params)
 ```
 
 Or create an asynchronous client from the beginning:
@@ -151,14 +163,20 @@ Or create an asynchronous client from the beginning:
 ```kotlin
 import com.grid.api.client.GridClientAsync
 import com.grid.api.client.okhttp.GridOkHttpClientAsync
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.quotes.Quote
+import com.grid.api.models.quotes.QuoteCreateParams
 
 // Configures using the `grid.username`, `grid.password`, `grid.webhookSignature` and `grid.baseUrl` system properties
 // Or configures using the `GRID_USERNAME`, `GRID_PASSWORD`, `GRID_WEBHOOK_SIGNATURE` and `GRID_BASE_URL` environment variables
 val client: GridClientAsync = GridOkHttpClientAsync.fromEnv()
 
-val platformConfig: PlatformConfig = client.config().retrieve()
+val params: QuoteCreateParams = QuoteCreateParams.builder()
+    .accountDestination("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+    .lockedCurrencyAmount(10000L)
+    .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
+    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+    .build()
+val quote: Quote = client.quotes().create(params)
 ```
 
 The asynchronous client supports the same options as the synchronous one, except most methods are [suspending](https://kotlinlang.org/docs/coroutines-guide.html).
@@ -232,21 +250,24 @@ To access this data, prefix any HTTP method call on a client or service with `wi
 ```kotlin
 import com.grid.api.core.http.Headers
 import com.grid.api.core.http.HttpResponseFor
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerCreateParams
+import com.grid.api.models.customers.CustomerOneOf
 
-val platformConfig: HttpResponseFor<PlatformConfig> = client.config().withRawResponse().retrieve()
+val params: CustomerCreateParams = CustomerCreateParams.builder()
+    .individualCreateCustomerRequest("9f84e0c2a72c4fa")
+    .build()
+val customerOneOf: HttpResponseFor<CustomerOneOf> = client.customers().withRawResponse().create(params)
 
-val statusCode: Int = platformConfig.statusCode()
-val headers: Headers = platformConfig.headers()
+val statusCode: Int = customerOneOf.statusCode()
+val headers: Headers = customerOneOf.headers()
 ```
 
 You can still deserialize the response into an instance of a Kotlin class if needed:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerOneOf
 
-val parsedPlatformConfig: PlatformConfig = platformConfig.parse()
+val parsedCustomerOneOf: CustomerOneOf = customerOneOf.parse()
 ```
 
 ## Error handling
@@ -397,9 +418,11 @@ Requests time out after 1 minute by default.
 To set a custom timeout, configure the method call using the `timeout` method:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.customers.CustomerOneOf
 
-val platformConfig: PlatformConfig = client.config().retrieve(RequestOptions.builder().timeout(Duration.ofSeconds(30)).build())
+val customerOneOf: CustomerOneOf = client.customers().create(
+  params, RequestOptions.builder().timeout(Duration.ofSeconds(30)).build()
+)
 ```
 
 Or configure the default for all method calls at the client level:
@@ -502,9 +525,9 @@ To set undocumented parameters, call the `putAdditionalHeader`, `putAdditionalQu
 
 ```kotlin
 import com.grid.api.core.JsonValue
-import com.grid.api.models.config.ConfigRetrieveParams
+import com.grid.api.models.quotes.QuoteCreateParams
 
-val params: ConfigRetrieveParams = ConfigRetrieveParams.builder()
+val params: QuoteCreateParams = QuoteCreateParams.builder()
     .putAdditionalHeader("Secret-Header", "42")
     .putAdditionalQueryParam("secret_query_param", "42")
     .putAdditionalBodyProperty("secretProperty", JsonValue.from("42"))
@@ -531,9 +554,15 @@ These properties can be accessed on the nested built object later using the `_ad
 To set a documented parameter or property to an undocumented or not yet supported _value_, pass a [`JsonValue`](grid-kotlin-core/src/main/kotlin/com/grid/api/core/Values.kt) object to its setter:
 
 ```kotlin
-import com.grid.api.models.config.ConfigRetrieveParams
+import com.grid.api.core.JsonValue
+import com.grid.api.models.quotes.QuoteCreateParams
 
-val params: ConfigRetrieveParams = ConfigRetrieveParams.builder().build()
+val params: QuoteCreateParams = QuoteCreateParams.builder()
+    .destination(JsonValue.from(42))
+    .lockedCurrencyAmount(10000L)
+    .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
+    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+    .build()
 ```
 
 The most straightforward way to create a [`JsonValue`](grid-kotlin-core/src/main/kotlin/com/grid/api/core/Values.kt) is using its `from(...)` method:
@@ -577,11 +606,13 @@ To forcibly omit a required parameter or property, pass [`JsonMissing`](grid-kot
 
 ```kotlin
 import com.grid.api.core.JsonMissing
-import com.grid.api.models.config.ConfigRetrieveParams
-import com.grid.api.models.customers.CustomerRetrieveParams
+import com.grid.api.models.quotes.QuoteCreateParams
 
-val params: ConfigRetrieveParams = CustomerRetrieveParams.builder()
-    .customerId(JsonMissing.of())
+val params: QuoteCreateParams = QuoteCreateParams.builder()
+    .lockedCurrencyAmount(10000L)
+    .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
+    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
+    .destination(JsonMissing.of())
     .build()
 ```
 
@@ -595,7 +626,7 @@ import com.grid.api.core.JsonNull
 import com.grid.api.core.JsonNumber
 import com.grid.api.core.JsonValue
 
-val additionalProperties: Map<String, JsonValue> = client.config().retrieve(params)._additionalProperties()
+val additionalProperties: Map<String, JsonValue> = client.quotes().create(params)._additionalProperties()
 val secretPropertyValue: JsonValue = additionalProperties.get("secretProperty")
 
 val result = when (secretPropertyValue) {
@@ -611,20 +642,21 @@ To access a property's raw JSON value, which may be undocumented, call its `_` p
 
 ```kotlin
 import com.grid.api.core.JsonField
+import com.grid.api.models.quotes.QuoteDestinationOneOf
 
-val field: JsonField<Any> = client.config().retrieve(params)._field()
+val destination: JsonField<QuoteDestinationOneOf> = client.quotes().create(params)._destination()
 
-if (field.isMissing()) {
+if (destination.isMissing()) {
   // The property is absent from the JSON response
-} else if (field.isNull()) {
+} else if (destination.isNull()) {
   // The property was set to literal null
 } else {
   // Check if value was provided as a string
   // Other methods include `asNumber()`, `asBoolean()`, etc.
-  val jsonString: String? = field.asString();
+  val jsonString: String? = destination.asString();
 
   // Try to deserialize into a custom type
-  val myObject: MyClass = field.asUnknown()!!.convert(MyClass::class.java)
+  val myObject: MyClass = destination.asUnknown()!!.convert(MyClass::class.java)
 }
 ```
 
@@ -637,17 +669,19 @@ By default, the SDK will not throw an exception in this case. It will throw [`Gr
 If you would prefer to check that the response is completely well-typed upfront, then either call `validate()`:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.quotes.Quote
 
-val platformConfig: PlatformConfig = client.config().retrieve(params).validate()
+val quote: Quote = client.quotes().create(params).validate()
 ```
 
 Or configure the method call to validate the response using the `responseValidation` method:
 
 ```kotlin
-import com.grid.api.models.config.PlatformConfig
+import com.grid.api.models.quotes.Quote
 
-val platformConfig: PlatformConfig = client.config().retrieve(RequestOptions.builder().responseValidation(true).build())
+val quote: Quote = client.quotes().create(
+  params, RequestOptions.builder().responseValidation(true).build()
+)
 ```
 
 Or configure the default for all method calls at the client level:

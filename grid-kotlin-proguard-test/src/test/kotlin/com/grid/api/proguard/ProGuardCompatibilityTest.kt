@@ -6,12 +6,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.jsonMapper
 import com.grid.api.models.config.CustomerInfoFieldName
-import com.grid.api.models.config.PlatformConfig
-import com.grid.api.models.config.PlatformCurrencyConfig
 import com.grid.api.models.customers.Customer
 import com.grid.api.models.customers.CustomerOneOf
-import com.grid.api.models.receiver.CounterpartyFieldDefinition
-import com.grid.api.models.transactions.TransactionType
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import kotlin.reflect.full.memberFunctions
@@ -74,59 +70,26 @@ internal class ProGuardCompatibilityTest {
     }
 
     @Test
-    fun platformConfigRoundtrip() {
+    fun customerRoundtrip() {
         val jsonMapper = jsonMapper()
-        val platformConfig =
-            PlatformConfig.builder()
-                .id("PlatformConfig:019542f5-b3e7-1d02-0000-000000000003")
-                .createdAt(OffsetDateTime.parse("2025-06-15T12:30:45Z"))
-                .isRegulatedFinancialInstitution(false)
-                .proxyUmaSubdomain("platform")
-                .addSupportedCurrency(
-                    PlatformCurrencyConfig.builder()
-                        .currencyCode("USD")
-                        .addEnabledTransactionType(TransactionType.OUTGOING)
-                        .addEnabledTransactionType(TransactionType.INCOMING)
-                        .maxAmount(1000000L)
-                        .minAmount(100L)
-                        .requiredCounterpartyFields(
-                            listOf(
-                                CounterpartyFieldDefinition.builder()
-                                    .mandatory(true)
-                                    .name(CustomerInfoFieldName.FULL_NAME)
-                                    .build(),
-                                CounterpartyFieldDefinition.builder()
-                                    .mandatory(true)
-                                    .name(CustomerInfoFieldName.BIRTH_DATE)
-                                    .build(),
-                                CounterpartyFieldDefinition.builder()
-                                    .mandatory(true)
-                                    .name(CustomerInfoFieldName.NATIONALITY)
-                                    .build(),
-                            )
-                        )
-                        .addProviderRequiredCounterpartyCustomerField(
-                            CustomerInfoFieldName.FULL_NAME
-                        )
-                        .addProviderRequiredCounterpartyCustomerField(
-                            CustomerInfoFieldName.COUNTRY_OF_RESIDENCE
-                        )
-                        .addProviderRequiredCustomerField(CustomerInfoFieldName.NATIONALITY)
-                        .addProviderRequiredCustomerField(CustomerInfoFieldName.BIRTH_DATE)
-                        .build()
-                )
-                .umaDomain("platform.uma.domain")
-                .updatedAt(OffsetDateTime.parse("2025-06-15T12:30:45Z"))
-                .webhookEndpoint("https://api.mycompany.com/webhooks/uma")
+        val customer =
+            Customer.builder()
+                .platformCustomerId("9f84e0c2a72c4fa")
+                .umaAddress("\$john.doe@uma.domain.com")
+                .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
+                .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+                .isDeleted(false)
+                .kycStatus(Customer.KycStatus.APPROVED)
+                .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
                 .build()
 
-        val roundtrippedPlatformConfig =
+        val roundtrippedCustomer =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(platformConfig),
-                jacksonTypeRef<PlatformConfig>(),
+                jsonMapper.writeValueAsString(customer),
+                jacksonTypeRef<Customer>(),
             )
 
-        assertThat(roundtrippedPlatformConfig).isEqualTo(platformConfig)
+        assertThat(roundtrippedCustomer).isEqualTo(customer)
     }
 
     @Test
