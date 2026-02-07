@@ -250,24 +250,27 @@ To access this data, prefix any HTTP method call on a client or service with `wi
 ```kotlin
 import com.grid.api.core.http.Headers
 import com.grid.api.core.http.HttpResponseFor
-import com.grid.api.models.customers.CustomerCreateParams
-import com.grid.api.models.customers.CustomerOneOf
+import com.grid.api.models.quotes.Quote
+import com.grid.api.models.quotes.QuoteCreateParams
 
-val params: CustomerCreateParams = CustomerCreateParams.builder()
-    .individualCreateCustomerRequest("9f84e0c2a72c4fa")
+val params: QuoteCreateParams = QuoteCreateParams.builder()
+    .accountDestination("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+    .lockedCurrencyAmount(10000L)
+    .lockedCurrencySide(QuoteCreateParams.LockedCurrencySide.SENDING)
+    .accountSource("InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965")
     .build()
-val customerOneOf: HttpResponseFor<CustomerOneOf> = client.customers().withRawResponse().create(params)
+val quote: HttpResponseFor<Quote> = client.quotes().withRawResponse().create(params)
 
-val statusCode: Int = customerOneOf.statusCode()
-val headers: Headers = customerOneOf.headers()
+val statusCode: Int = quote.statusCode()
+val headers: Headers = quote.headers()
 ```
 
 You can still deserialize the response into an instance of a Kotlin class if needed:
 
 ```kotlin
-import com.grid.api.models.customers.CustomerOneOf
+import com.grid.api.models.quotes.Quote
 
-val parsedCustomerOneOf: CustomerOneOf = customerOneOf.parse()
+val parsedQuote: Quote = quote.parse()
 ```
 
 ## Error handling
@@ -418,9 +421,9 @@ Requests time out after 1 minute by default.
 To set a custom timeout, configure the method call using the `timeout` method:
 
 ```kotlin
-import com.grid.api.models.customers.CustomerOneOf
+import com.grid.api.models.quotes.Quote
 
-val customerOneOf: CustomerOneOf = client.customers().create(
+val quote: Quote = client.quotes().create(
   params, RequestOptions.builder().timeout(Duration.ofSeconds(30)).build()
 )
 ```

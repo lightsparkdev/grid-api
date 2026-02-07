@@ -15,10 +15,8 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest
 import com.grid.api.client.GridClient
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.JsonValue
-import com.grid.api.models.customers.CustomerCreateParams
 import com.grid.api.models.quotes.QuoteCreateParams
 import com.grid.api.models.quotes.QuoteSourceOneOf
-import java.time.LocalDate
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -38,49 +36,6 @@ internal class ServiceParamsTest {
                 .username("My Username")
                 .password("My Password")
                 .build()
-    }
-
-    @Disabled("Prism tests are disabled")
-    @Test
-    fun create() {
-        val customerService = client.customers()
-        stubFor(post(anyUrl()).willReturn(ok("{}")))
-
-        customerService.create(
-            CustomerCreateParams.builder()
-                .createCustomerRequest(
-                    CustomerCreateParams.CreateCustomerRequest.Individual.builder()
-                        .platformCustomerId("9f84e0c2a72c4fa")
-                        .umaAddress("\$john.doe@uma.domain.com")
-                        .customerType(
-                            CustomerCreateParams.CreateCustomerRequest.Individual.CustomerType
-                                .INDIVIDUAL
-                        )
-                        .address(
-                            CustomerCreateParams.CreateCustomerRequest.Individual.Address.builder()
-                                .country("US")
-                                .line1("123 Main Street")
-                                .postalCode("94105")
-                                .city("San Francisco")
-                                .line2("Apt 4B")
-                                .state("CA")
-                                .build()
-                        )
-                        .birthDate(LocalDate.parse("1990-01-15"))
-                        .fullName("John Michael Doe")
-                        .nationality("US")
-                        .build()
-                )
-                .putAdditionalHeader("Secret-Header", "42")
-                .putAdditionalQueryParam("secret_query_param", "42")
-                .build()
-        )
-
-        verify(
-            postRequestedFor(anyUrl())
-                .withHeader("Secret-Header", equalTo("42"))
-                .withQueryParam("secret_query_param", equalTo("42"))
-        )
     }
 
     @Disabled("Prism tests are disabled")

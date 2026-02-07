@@ -6,10 +6,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.grid.api.client.okhttp.GridOkHttpClient
 import com.grid.api.core.jsonMapper
 import com.grid.api.models.config.CustomerInfoFieldName
-import com.grid.api.models.customers.Customer
-import com.grid.api.models.customers.CustomerOneOf
-import java.time.LocalDate
-import java.time.OffsetDateTime
+import com.grid.api.models.quotes.Currency
+import com.grid.api.models.quotes.QuoteDestinationOneOf
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.javaMethod
 import org.assertj.core.api.Assertions.assertThat
@@ -70,65 +68,43 @@ internal class ProGuardCompatibilityTest {
     }
 
     @Test
-    fun customerRoundtrip() {
+    fun currencyRoundtrip() {
         val jsonMapper = jsonMapper()
-        val customer =
-            Customer.builder()
-                .platformCustomerId("9f84e0c2a72c4fa")
-                .umaAddress("\$john.doe@uma.domain.com")
-                .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
-                .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
-                .isDeleted(false)
-                .kycStatus(Customer.KycStatus.APPROVED)
-                .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
+        val currency =
+            Currency.builder()
+                .code("USD")
+                .decimals(2L)
+                .name("United States Dollar")
+                .symbol("\$")
                 .build()
 
-        val roundtrippedCustomer =
+        val roundtrippedCurrency =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customer),
-                jacksonTypeRef<Customer>(),
+                jsonMapper.writeValueAsString(currency),
+                jacksonTypeRef<Currency>(),
             )
 
-        assertThat(roundtrippedCustomer).isEqualTo(customer)
+        assertThat(roundtrippedCurrency).isEqualTo(currency)
     }
 
     @Test
-    fun customerOneOfRoundtrip() {
+    fun quoteDestinationOneOfRoundtrip() {
         val jsonMapper = jsonMapper()
-        val customerOneOf =
-            CustomerOneOf.ofIndividual(
-                CustomerOneOf.Individual.builder()
-                    .platformCustomerId("9f84e0c2a72c4fa")
-                    .umaAddress("\$john.doe@uma.domain.com")
-                    .id("Customer:019542f5-b3e7-1d02-0000-000000000001")
-                    .createdAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
-                    .isDeleted(false)
-                    .kycStatus(Customer.KycStatus.APPROVED)
-                    .updatedAt(OffsetDateTime.parse("2025-07-21T17:32:28Z"))
-                    .customerType(CustomerOneOf.Individual.CustomerType.INDIVIDUAL)
-                    .address(
-                        CustomerOneOf.Individual.Address.builder()
-                            .country("US")
-                            .line1("123 Main Street")
-                            .postalCode("94105")
-                            .city("San Francisco")
-                            .line2("Apt 4B")
-                            .state("CA")
-                            .build()
-                    )
-                    .birthDate(LocalDate.parse("1990-01-15"))
-                    .fullName("John Michael Doe")
-                    .nationality("US")
+        val quoteDestinationOneOf =
+            QuoteDestinationOneOf.ofAccount(
+                QuoteDestinationOneOf.Account.builder()
+                    .accountId("ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123")
+                    .destinationType(QuoteDestinationOneOf.Account.DestinationType.ACCOUNT)
                     .build()
             )
 
-        val roundtrippedCustomerOneOf =
+        val roundtrippedQuoteDestinationOneOf =
             jsonMapper.readValue(
-                jsonMapper.writeValueAsString(customerOneOf),
-                jacksonTypeRef<CustomerOneOf>(),
+                jsonMapper.writeValueAsString(quoteDestinationOneOf),
+                jacksonTypeRef<QuoteDestinationOneOf>(),
             )
 
-        assertThat(roundtrippedCustomerOneOf).isEqualTo(customerOneOf)
+        assertThat(roundtrippedQuoteDestinationOneOf).isEqualTo(quoteDestinationOneOf)
     }
 
     @Test
