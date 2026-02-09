@@ -5067,9 +5067,9 @@ components:
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
           CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
@@ -5272,103 +5272,187 @@ components:
               $ref: '#/components/schemas/BeneficiaryOneOf'
     GbpAccountInfo:
       type: object
+      title: GBP Account
+      description: 'Required fields for USD -> GBP corridor. Supported payment rails: Local.'
       required:
+        - accountType
         - sortCode
         - accountNumber
-        - accountType
+        - beneficiary
       properties:
         accountType:
           type: string
           enum:
             - GBP_ACCOUNT
+          example: GBP_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: GBP
+          description: Receiving currency code. Auto-populated based on account type.
         sortCode:
           type: string
-          description: UK bank sort code (6 digits, may include hyphens)
-          example: 20-00-00
-          pattern: ^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$
+          description: The sort code of the bank
         accountNumber:
           type: string
-          description: UK bank account number (8 digits)
-          example: '12345678'
-          minLength: 8
-          maxLength: 8
-          pattern: ^[0-9]{8}$
-    GbpAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GbpAccountInfo'
-        - type: object
+          description: The account number of the bank
+        beneficiary:
+          type: object
           required:
-            - beneficiary
+            - fullName
           properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
     PhpAccountInfo:
       type: object
+      title: PHP Account
+      description: 'Required fields for USD -> PHP corridor. Supported payment rails: Local.'
       required:
+        - accountType
         - bankName
         - accountNumber
-        - accountType
+        - beneficiary
       properties:
         accountType:
           type: string
           enum:
             - PHP_ACCOUNT
+          example: PHP_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: PHP
+          description: Receiving currency code. Auto-populated based on account type.
         bankName:
           type: string
-          description: Name of the beneficiary's bank
-          example: BDO Unibank
+          description: The bank name of the bank
         accountNumber:
           type: string
-          description: Bank account number
-          example: '001234567890'
-    PhpAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PhpAccountInfo'
-        - type: object
+          description: The account number of the bank
+        beneficiary:
+          type: object
           required:
-            - beneficiary
+            - fullName
           properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
     SgdAccountInfo:
       type: object
+      title: SGD Account
+      description: 'Required fields for USD -> SGD corridor. Supported payment rails: Local.'
       required:
-        - bankName
-        - swiftCode
-        - accountNumber
         - accountType
+        - bankName
+        - accountNumber
+        - beneficiary
       properties:
         accountType:
           type: string
           enum:
             - SGD_ACCOUNT
+          example: SGD_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: SGD
+          description: Receiving currency code. Auto-populated based on account type.
         bankName:
           type: string
-          description: Name of the beneficiary's bank
-          example: DBS Bank Ltd
-        swiftCode:
-          type: string
-          description: SWIFT/BIC code (8 or 11 characters)
-          example: DBSSSGSG
-          minLength: 8
-          maxLength: 11
-          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+          description: The bank name of the bank
         accountNumber:
           type: string
-          description: Bank account number
-          example: '0123456789'
-    SgdAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SgdAccountInfo'
-        - type: object
+          description: The account number of the bank
+        beneficiary:
+          type: object
           required:
-            - beneficiary
+            - fullName
           properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
     SparkWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5435,28 +5519,548 @@ components:
         - BASE_WALLET
       description: Type of external account or wallet
       example: US_ACCOUNT
+    ThbAccountInfo:
+      type: object
+      title: THB Account
+      description: 'Required fields for USD -> THB corridor. Supported payment rails: Local.'
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - THB_ACCOUNT
+          example: THB_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: THB
+          description: Receiving currency code. Auto-populated based on account type.
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    BrlAccountInfo:
+      type: object
+      title: BRL Account
+      description: 'Required fields for USD -> BRL corridor. Supported payment rails: Pix.'
+      required:
+        - accountType
+        - pixKey
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BRL_ACCOUNT
+          example: BRL_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Pix
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: BRL
+          description: Receiving currency code. Auto-populated based on account type.
+        pixKey:
+          type: string
+          description: The PIX key of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    IdrAccountInfo:
+      type: object
+      title: IDR Account
+      description: 'Required fields for USD -> IDR corridor. Supported payment rails: Local.'
+      required:
+        - accountType
+        - sortCode
+        - accountNumber
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - IDR_ACCOUNT
+          example: IDR_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: IDR
+          description: Receiving currency code. Auto-populated based on account type.
+        sortCode:
+          type: string
+          description: The sort code of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    MyrAccountInfo:
+      type: object
+      title: MYR Account
+      description: 'Required fields for USD -> MYR corridor. Supported payment rails: Local.'
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - MYR_ACCOUNT
+          example: MYR_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: MYR
+          description: Receiving currency code. Auto-populated based on account type.
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    InrAccountInfo:
+      type: object
+      title: INR Account
+      description: 'Required fields for USD -> INR corridor. Supported payment rails: Upi.'
+      required:
+        - accountType
+        - vpa
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - INR_ACCOUNT
+          example: INR_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Upi
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: INR
+          description: Receiving currency code. Auto-populated based on account type.
+        vpa:
+          type: string
+          description: The VPA of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    DkkAccountInfo:
+      type: object
+      title: DKK Account
+      description: 'Required fields for USD -> DKK corridor. Supported payment rails: Sepa.'
+      required:
+        - accountType
+        - iban
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - DKK_ACCOUNT
+          example: DKK_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Sepa
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: DKK
+          description: Receiving currency code. Auto-populated based on account type.
+        iban:
+          type: string
+          description: The IBAN of the bank
+        swiftBic:
+          type: string
+          description: The SWIFT BIC of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    VndAccountInfo:
+      type: object
+      title: VND Account
+      description: 'Required fields for USD -> VND corridor. Supported payment rails: Local.'
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - VND_ACCOUNT
+          example: VND_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: VND
+          description: Receiving currency code. Auto-populated based on account type.
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    MxnAccountInfo:
+      type: object
+      title: MXN Account
+      description: 'Required fields for USD -> MXN corridor. Supported payment rails: Spei.'
+      required:
+        - accountType
+        - clabeNumber
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - MXN_ACCOUNT
+          example: MXN_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Spei
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: MXN
+          description: Receiving currency code. Auto-populated based on account type.
+        clabeNumber:
+          type: string
+          description: The CLABE number of the bank
+          example: '123456789012345678'
+          minLength: 18
+          maxLength: 18
+          pattern: ^[0-9]{18}$
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
+    HkdAccountInfo:
+      type: object
+      title: HKD Account
+      description: 'Required fields for USD -> HKD corridor. Supported payment rails: Local.'
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+        - beneficiary
+      properties:
+        accountType:
+          type: string
+          enum:
+            - HKD_ACCOUNT
+          example: HKD_ACCOUNT
+        payment_rails:
+          type: array
+          items:
+            type: string
+          const:
+            - Local
+          description: Supported payment rails for this currency. Auto-populated based on account type.
+        receivingCurrency:
+          type: string
+          const: HKD
+          description: Receiving currency code. Auto-populated based on account type.
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        beneficiary:
+          type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              description: The full name of the beneficiary
+            birthDate:
+              type: string
+              description: The birth date of the beneficiary
+            nationality:
+              type: string
+              description: The nationality of the beneficiary
+            email:
+              type: string
+              description: The email of the beneficiary
+            phoneNumber:
+              type: string
+              description: The phone number of the beneficiary
+            registrationNumber:
+              type: string
+              description: The registration number of the beneficiary
+            countryOfResidence:
+              type: string
+              description: The country of residence of the beneficiary
+            address:
+              type: string
+              description: The address of the beneficiary
     ExternalAccountInfoOneOf:
       oneOf:
-        - title: US Account
-          $ref: '#/components/schemas/UsAccountExternalAccountInfo'
-        - title: CLABE Account
-          $ref: '#/components/schemas/ClabeAccountExternalAccountInfo'
-        - title: PIX Account
-          $ref: '#/components/schemas/PixAccountExternalAccountInfo'
-        - title: IBAN Account
-          $ref: '#/components/schemas/IbanAccountExternalAccountInfo'
-        - title: UPI Account
-          $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
-        - title: NGN Account
-          $ref: '#/components/schemas/NgnAccountExternalAccountInfo'
-        - title: CAD Account
-          $ref: '#/components/schemas/CadAccountExternalAccountInfo'
-        - title: GBP Account
-          $ref: '#/components/schemas/GbpAccountExternalAccountInfo'
-        - title: PHP Account
-          $ref: '#/components/schemas/PhpAccountExternalAccountInfo'
-        - title: SGD Account
-          $ref: '#/components/schemas/SgdAccountExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
@@ -5469,6 +6073,30 @@ components:
           $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - title: Base Wallet
           $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - title: THB Account
+          $ref: '#/components/schemas/ThbAccountInfo'
+        - title: BRL Account
+          $ref: '#/components/schemas/BrlAccountInfo'
+        - title: IDR Account
+          $ref: '#/components/schemas/IdrAccountInfo'
+        - title: SGD Account
+          $ref: '#/components/schemas/SgdAccountInfo'
+        - title: PHP Account
+          $ref: '#/components/schemas/PhpAccountInfo'
+        - title: MYR Account
+          $ref: '#/components/schemas/MyrAccountInfo'
+        - title: INR Account
+          $ref: '#/components/schemas/InrAccountInfo'
+        - title: DKK Account
+          $ref: '#/components/schemas/DkkAccountInfo'
+        - title: VND Account
+          $ref: '#/components/schemas/VndAccountInfo'
+        - title: MXN Account
+          $ref: '#/components/schemas/MxnAccountInfo'
+        - title: GBP Account
+          $ref: '#/components/schemas/GbpAccountInfo'
+        - title: HKD Account
+          $ref: '#/components/schemas/HkdAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -5477,17 +6105,21 @@ components:
           PIX: '#/components/schemas/PixAccountExternalAccountInfo'
           IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
           UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          THB_ACCOUNT: '#/components/schemas/ThbAccountInfo'
+          BRL_ACCOUNT: '#/components/schemas/BrlAccountInfo'
+          IDR_ACCOUNT: '#/components/schemas/IdrAccountInfo'
+          MYR_ACCOUNT: '#/components/schemas/MyrAccountInfo'
+          INR_ACCOUNT: '#/components/schemas/InrAccountInfo'
+          DKK_ACCOUNT: '#/components/schemas/DkkAccountInfo'
+          VND_ACCOUNT: '#/components/schemas/VndAccountInfo'
+          MXN_ACCOUNT: '#/components/schemas/MxnAccountInfo'
+          HKD_ACCOUNT: '#/components/schemas/HkdAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
