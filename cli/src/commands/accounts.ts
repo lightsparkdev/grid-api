@@ -136,6 +136,8 @@ export function registerAccountsCommand(
     .option("--account-category <cat>", "Account category: CHECKING or SAVINGS (for US_ACCOUNT)")
     .option("--clabe <number>", "CLABE number (for Mexico)")
     .option("--pix-key <key>", "PIX key (for Brazil)")
+    .option("--pix-key-type <type>", "PIX key type: CPF, CNPJ, EMAIL, PHONE, RANDOM (for Brazil)")
+    .option("--tax-id <id>", "Tax ID of the account holder (for Brazil PIX)")
     .option("--iban <number>", "IBAN (for Europe)")
     .option("--upi-id <id>", "UPI ID (for India)")
     .option("--bank-name <name>", "Bank name (for NGN_ACCOUNT)")
@@ -181,6 +183,8 @@ export function registerAccountsCommand(
           break;
         case "PIX":
           if (options.pixKey) accountInfo.pixKey = options.pixKey;
+          if (options.pixKeyType) accountInfo.pixKeyType = options.pixKeyType;
+          if (options.taxId) accountInfo.taxId = options.taxId;
           break;
         case "IBAN":
           if (options.iban) accountInfo.iban = options.iban;
