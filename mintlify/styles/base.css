@@ -1251,6 +1251,13 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   padding-right: 48px !important;
 }
 
+/* Mobile: Remove the extra 48px padding on API reference pages */
+@media (max-width: 1023px) {
+  #content-container:has(#api-playground-2-operation-page) {
+    padding-right: 24px !important;
+  }
+}
+
 /* Override the inner max-w-5xl constraint on API reference pages */
 #content-container:has(#api-playground-2-operation-page) > div.max-w-5xl,
 #content-container:has(#api-playground-2-operation-page) > div[class*="max-w-5xl"] {
