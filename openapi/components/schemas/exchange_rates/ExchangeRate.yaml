@@ -1,0 +1,44 @@
+type: object
+description: Exchange rate information for a currency corridor
+required:
+  - sourceCurrency
+  - destinationCurrency
+  - destinationPaymentRail
+  - sendingAmount
+  - receivingAmount
+  - exchangeRate
+  - fees
+  - updatedAt
+properties:
+  sourceCurrency:
+    $ref: ../common/Currency.yaml
+  sendingAmount:
+    type: integer
+    format: int64
+    description: The sending amount in the smallest unit of the source currency (e.g., cents for USD). Echoed back from the request if provided.
+    minimum: 0
+    example: 10000
+  destinationCurrency:
+    $ref: ../common/Currency.yaml
+  destinationPaymentRail:
+    type: string
+    description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
+    example: UPI
+  receivingAmount:
+    type: integer
+    format: int64
+    description: The receiving amount in the smallest unit of the destination currency
+    minimum: 0
+    example: 1650000
+  exchangeRate:
+    type: number
+    description: Number of sending currency units per receiving currency unit.
+    exclusiveMinimum: 0
+    example: 82.50
+  fees:
+    $ref: ./ExchangeRateFees.yaml
+  updatedAt:
+    type: string
+    format: date-time
+    description: Timestamp when this exchange rate was last refreshed
+    example: "2025-02-05T12:00:00Z"

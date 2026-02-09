@@ -1,0 +1,9 @@
+type: object
+description: Fees associated with an exchange rate
+properties:
+  fixed:
+    type: integer
+    format: int64
+    description: Fixed fee in the smallest unit of the sending currency (e.g., cents for USD)
+    minimum: 0
+    example: 100

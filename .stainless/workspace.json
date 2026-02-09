@@ -5,6 +5,9 @@
   "targets": {
     "typescript": {
       "output_path": "../sdks/grid-typescript"
+    },
+    "kotlin": {
+      "output_path": "../sdks/grid-kotlin"
     }
   }
 }

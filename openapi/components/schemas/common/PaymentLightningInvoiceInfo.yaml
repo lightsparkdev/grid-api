@@ -4,6 +4,10 @@ allOf:
     required:
       - invoice
     properties:
+      accountType:
+        type: string
+        enum:
+          - LIGHTNING
       invoice:
         type: string
         description: Invoice for the payment

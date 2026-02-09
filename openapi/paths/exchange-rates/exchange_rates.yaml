@@ -1,0 +1,120 @@
+get:
+  summary: Get exchange rates
+  description: |
+    Retrieve cached exchange rates for currency corridors. Returns FX rates that are cached
+    for approximately 5 minutes. Rates include fees specific to your platform for authenticated requests.
+
+    **Filtering Options:**
+    - Filter by source currency to get all available destination corridors
+    - Filter by specific destination currency or currencies
+    - Provide a sending amount to get calculated receiving amounts
+
+  operationId: getExchangeRates
+  tags:
+    - Exchange Rates
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: sourceCurrency
+      in: query
+      description: Filter by source currency code (e.g., USD)
+      required: false
+      schema:
+        type: string
+      example: USD
+    - name: destinationCurrency
+      in: query
+      description: >-
+        Filter by destination currency code(s). Can be repeated for multiple currencies
+        (e.g., &destinationCurrency=INR&destinationCurrency=GBP)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+      example:
+        - INR
+    - name: sendingAmount
+      in: query
+      description: Sending amount in the smallest unit of the source currency (e.g., cents for USD).  If no amount is provided, the default is 10000 in the sending currency smallest unit.
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        default: 10000
+      example: 10000
+  responses:
+    "200":
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                description: List of exchange rates matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/exchange_rates/ExchangeRate.yaml
+          examples:
+            allRatesFromUSD:
+              summary: All exchange rates from USD
+              value:
+                data:
+                  - sourceCurrency:
+                      code: USD
+                      decimals: 2
+                      name: US Dollar
+                      symbol: "$"
+                    sendingAmount: 10000
+                    destinationCurrency:
+                      code: INR
+                      decimals: 2
+                      name: Indian Rupee
+                      symbol: "₹"
+                    destinationPaymentRail: UPI
+                    receivingAmount: 825000
+                    exchangeRate: 82.50
+                    fees:
+                      fixed: 100
+                    updatedAt: "2025-02-05T12:00:00Z"
+                  - sourceCurrency:
+                      code: USD
+                      decimals: 2
+                      name: US Dollar
+                      symbol: "$"
+                    sendingAmount: 10000
+                    destinationCurrency:
+                      code: EUR
+                      decimals: 2
+                      name: Euro
+                      symbol: "€"
+                    destinationPaymentRail: SEPA_INSTANT
+                    receivingAmount: 18500
+                    exchangeRate: 0.925
+                    fees:
+                      fixed: 10
+                    updatedAt: "2025-02-05T12:00:00Z"
+    "400":
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    "401":
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    "500":
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

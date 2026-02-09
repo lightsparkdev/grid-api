@@ -7,8 +7,13 @@ This readme is a continually evolving document meant to provide API design best 
 3. Make new APIs easy to define
 
 ---
+
 ## OpenAPI schema version
+
 This guide uses [OpenAPI schema 3.1](https://spec.openapis.org/oas/v3.1.0.html).
+
+## Design Guidelines
+
 - Imagine you're teaching a customer how to use our API. How might you structure the API to make it easy to explain and understand?
 - Since we don't know exactly how customers will use the API, how might we make it flexible?
 - Can integrators guess how your API works based on how other features work?
@@ -49,11 +54,13 @@ openapi/
 We version by dates but SDKs still use semver.
 
 ### Version Format
+
 - **API Version**: `YYYY-MM-DD` format (e.g., `2025-10-13`)
 - **Server URL**: Version is included in the path: `https://api.lightspark.com/grid/2025-10-13`
 - **SDK Version**: Follows semver (`1.0.0`, `1.1.0`, `2.0.0`)
 
 ### What's Considered a Breaking Change
+
 - New required field on request
 - Removing a field from response
 - Changing a field name
@@ -64,6 +71,7 @@ We version by dates but SDKs still use semver.
 When you release an SDK, Stainless will flag breaking changes.
 
 ### What's Not a Breaking Change
+
 - Making a required field optional
 - Adding a new optional field
 - Adding a new enum value
@@ -71,13 +79,16 @@ When you release an SDK, Stainless will flag breaking changes.
 - Adding a new response field
 
 ### Deprecation Policy
+
 *TBD! BUT initial thoughts* 
+
 1. Mark deprecated endpoints with `deprecated: true` in OpenAPI spec
 2. Document deprecation in changelog and SDK release notes
-3. Maintain deprecated endpoints for at least X months
+3. Maintain deprecated endpoints for at least 6 months
 4. Communicate migration path in documentation
 
 ### Instead of a breaking change, you can
+
 - Add new optional fields instead of modifying existing ones
 - Create a new endpoint if behavior must change significantly
 
@@ -86,10 +97,12 @@ When you release an SDK, Stainless will flag breaking changes.
 ## Naming Conventions
 
 ### Resources
+
 - Use **plural nouns** for resource names: `/customers` not `/customer`
 - Exception: Use singular when there can only be one (e.g., `/config`)
 
 ### Identifiers
+
 ID values should be prefixed with the resource type to help users identify the resource type in their system.
 
 | Resource | ID Format | Example |
@@ -124,6 +137,7 @@ Use a type hint where it makes sense eg startDate, customerId.
 ### States
 
 Resources with lifecycle states (e.g., transactions, quotes, invitations) should document:
+
 1. All possible states
 2. Valid state transitions
 3. What triggers each transition
@@ -261,9 +275,77 @@ discriminator:
     BUSINESS: '#/components/schemas/BusinessCustomer'
 ```
 
-Also:
-- Define the discriminator property as a separate schema with an enum so generated client libraries include an enum class (see `openapi/components/schemas/customers/CustomerType.yaml`, used by `customerType` in `Customer` and `CustomerCreateRequest`).
-- Each discriminated schema must include the discriminator field with a single-value enum, because the OpenAPI generator does not reliably infer it from the discriminator (see `IndividualCustomerFields` included by `IndividualCustomer.yaml` and `IndividualCustomerCreateRequest.yaml`, where `customerType` is `enum: [INDIVIDUAL]`).
+#### Three-layer discriminator pattern
+
+We use a three-layer pattern for discriminated unions:
+
+1. **Shared enum schema** — A standalone schema defining all possible discriminator values (e.g., `CustomerType.yaml` with `enum: [INDIVIDUAL, BUSINESS]`). This generates a reusable enum class in SDKs and is used by query parameters, filters, etc.
+2. **Base schema with `$ref` and discriminator** — The base schema references the shared enum and declares the discriminator mapping (e.g., `Customer.yaml` has `customerType: $ref: ./CustomerType.yaml` and a `discriminator` block).
+3. **Variant schemas with single-value inline enums** — Each variant redefines the discriminator property with a single-value `enum` (e.g., `IndividualCustomerFields.yaml` has `customerType: enum: [INDIVIDUAL]`). Variants are composed with the base via `allOf`.
+
+```
+CustomerType.yaml          → enum: [INDIVIDUAL, BUSINESS]   (shared type)
+Customer.yaml              → customerType: $ref CustomerType  (base, with discriminator)
+IndividualCustomerFields   → customerType: enum: [INDIVIDUAL] (variant, single-value)
+IndividualCustomer.yaml    → allOf: [Customer, IndividualCustomerFields]
+```
+
+#### Why variants need single-value inline enums
+
+The inline single-value enums in variant schemas serve two purposes:
+
+- **Python openapi-generator**: Does not reliably use the `discriminator` when deserializing JSON responses. The inline enum ensures each variant is self-describing and can be distinguished without discriminator logic.
+- **Stainless Kotlin SDK**: Uses structural matching (`tryDeserialize` in sequence) rather than discriminator-based deserialization. Variants that are structurally identical (e.g., wallet types that all have `{ accountType, address }`) can only be distinguished if each has its own single-value enum that rejects other values during deserialization.
+
+#### Why this causes `allOf` type conflicts in Stainless
+
+When `allOf` merges a base schema (where the discriminator uses a `$ref` to the shared enum) with a variant schema (where the discriminator is an inline single-value enum), Stainless generates two different types for the same property. This causes Kotlin compilation errors like:
+
+```
+None of the following functions can be called with the arguments supplied:
+  customerType(JsonField<BusinessCustomerFields.CustomerType>): Builder
+  customerType(BusinessCustomerFields.CustomerType): Builder
+```
+
+#### The fix: Stainless transforms remove the property from base schemas
+
+To resolve the conflict, Stainless transforms in `.stainless/stainless.yml` remove the discriminator property from the **base** schemas' `properties` (not from the variants). This makes the variant's inline enum the sole definition of the property in the `allOf` composition, eliminating the type conflict.
+
+```yaml
+# In .stainless/stainless.yml
+openapi:
+  transformations:
+    - command: remove
+      reason: Remove accountType $ref from base to avoid allOf type conflicts
+      args:
+        target:
+          - "$.components.schemas.BaseExternalAccountInfo.properties"
+        keys: ["accountType"]
+```
+
+**Important**: We remove from the **base**, not the variant, because:
+
+- Removing from variants would strip the single-value enum, making structurally identical schemas (e.g., all wallet types) indistinguishable during Stainless deserialization.
+- Removing from the base preserves each variant's distinct enum value for structural matching.
+
+The original OpenAPI spec is unchanged — transforms only affect what Stainless sees during SDK generation. The Python openapi-generator and documentation continue to use the full spec with both definitions.
+
+#### Required fields for discriminator properties
+
+The discriminator property must be listed in `required` in the **variant** schemas (or their fields/info schemas). Since the Stainless transform removes the property from the base, the variant is the sole owner — if it's not `required` there, the generated SDK treats it as optional, causing test failures where the discriminator value is missing from roundtripped objects.
+
+```yaml
+# In the variant schema — discriminator MUST be in required
+- type: object
+  required:
+    - accountId
+    - destinationType    # ← must be here
+  properties:
+    destinationType:
+      type: string
+      enum:
+        - ACCOUNT
+```
 
 ### Composition
 
@@ -317,6 +399,7 @@ code:
 | 204 | Resource deleted successfully (no content) |
 
 ### Error Status Codes
+
 Generally 4xx errors indicate an issue with the integrators request and 5xx errors indicate an issue with our services.  Our client libraries will automatically retry 5xx responses.
 
 | Code | Meaning | When to Use |
@@ -446,7 +529,35 @@ try {
   }
 }
 ```
+
 Stainless also generates [API reference SDK examples](https://www.stainless.com/docs/guides/integrate-docs#how-stainless-generates-sdk-code-snippets) for our Mintlify documentation
+
+### Stainless OpenAPI Transforms
+
+Stainless transforms modify the OpenAPI spec during SDK generation without editing the source file. They are configured in `.stainless/stainless.yml` under `openapi.transformations`.
+
+We use transforms to resolve `allOf` type conflicts caused by the [three-layer discriminator pattern](#three-layer-discriminator-pattern). See that section for the full explanation.
+
+#### When adding a new `oneOf` with discriminator
+
+If you add a new discriminated `oneOf` that follows the three-layer pattern (base with `$ref` + variants with inline enums composed via `allOf`), you must also add a `remove` transform in `.stainless/stainless.yml` to strip the discriminator property from the base schema:
+
+1. Add the base schema to the appropriate `remove` transform target list (or create a new transform)
+2. Ensure variant schemas have the discriminator property in both `properties` (with single-value enum) and `required`
+3. Re-generate the SDK and verify tests pass
+
+#### Available transform commands
+
+
+| Command              | Use case                                                                |
+| -------------------- | ----------------------------------------------------------------------- |
+| `remove` with `keys` | Remove a property from a schema's `properties` object                   |
+| `update`             | Replace a property definition (e.g., inline enum → `$ref`)              |
+| `append`             | Add a new field (fails if it already exists — good for temporary fixes) |
+| `merge`              | Add permanent metadata like `x-stainless-naming`                        |
+
+
+See [Stainless transforms documentation](https://www.stainless.com/docs/guides/transforms/) for the full reference.
 
 ---
 
@@ -465,3 +576,4 @@ npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml
 - [Hide APIs for internal use](https://redocly.com/docs/cli/guides/hide-apis)
 - Lint rules configured in `.redocly.yaml`
 - Ignore specific lint rules in `.redocly.lint-ignore.yaml`
+
