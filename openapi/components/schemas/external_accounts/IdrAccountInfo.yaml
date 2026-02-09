@@ -1,0 +1,63 @@
+type: object
+title: IDR Account
+description: 'Required fields for USD -> IDR corridor. Supported payment rails: Local.'
+required:
+- accountType
+- sortCode
+- accountNumber
+- beneficiary
+properties:
+  accountType:
+    type: string
+    enum:
+    - IDR_ACCOUNT
+    example: IDR_ACCOUNT
+  payment_rails:
+    type: array
+    items:
+      type: string
+    const:
+    - Local
+    description: Supported payment rails for this currency. Auto-populated based on
+      account type.
+  receivingCurrency:
+    type: string
+    const: IDR
+    description: Receiving currency code. Auto-populated based on account type.
+  sortCode:
+    type: string
+    description: The sort code of the bank
+  accountNumber:
+    type: string
+    description: The account number of the bank
+  beneficiary:
+    type: object
+    required:
+    - birthDate
+    - fullName
+    - nationality
+    properties:
+      fullName:
+        type: string
+        description: The full name of the beneficiary
+      birthDate:
+        type: string
+        description: The birth date of the beneficiary
+      nationality:
+        type: string
+        description: The nationality of the beneficiary
+      email:
+        type: string
+        description: The email of the beneficiary
+      phoneNumber:
+        type: string
+        description: The phone number of the beneficiary
+      registrationNumber:
+        type: string
+        description: The registration number of the beneficiary
+      countryOfResidence:
+        type: string
+        description: The country of residence of the beneficiary
+      address:
+        type: string
+        description: The address of the beneficiary

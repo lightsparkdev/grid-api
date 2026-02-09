@@ -1,0 +1,62 @@
+type: object
+title: DKK Account
+description: 'Required fields for USD -> DKK corridor. Supported payment rails: Sepa.'
+required:
+- accountType
+- iban
+- beneficiary
+properties:
+  accountType:
+    type: string
+    enum:
+    - DKK_ACCOUNT
+    example: DKK_ACCOUNT
+  payment_rails:
+    type: array
+    items:
+      type: string
+    const:
+    - Sepa
+    description: Supported payment rails for this currency. Auto-populated based on
+      account type.
+  receivingCurrency:
+    type: string
+    const: DKK
+    description: Receiving currency code. Auto-populated based on account type.
+  iban:
+    type: string
+    description: The IBAN of the bank
+  swiftBic:
+    type: string
+    description: The SWIFT BIC of the bank
+  beneficiary:
+    type: object
+    required:
+    - birthDate
+    - fullName
+    - nationality
+    properties:
+      fullName:
+        type: string
+        description: The full name of the beneficiary
+      birthDate:
+        type: string
+        description: The birth date of the beneficiary
+      nationality:
+        type: string
+        description: The nationality of the beneficiary
+      email:
+        type: string
+        description: The email of the beneficiary
+      phoneNumber:
+        type: string
+        description: The phone number of the beneficiary
+      registrationNumber:
+        type: string
+        description: The registration number of the beneficiary
+      countryOfResidence:
+        type: string
+        description: The country of residence of the beneficiary
+      address:
+        type: string
+        description: The address of the beneficiary
