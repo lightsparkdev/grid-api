@@ -308,5 +308,10 @@
       { "rel": "stylesheet", "href": "/styles/fonts.css" },
       { "rel": "stylesheet", "href": "/styles/styles.css" }
     ]
+  },
+  "integrations": {
+    "gtm": {
+        "tagId": "GTM-5R5NP3DS"
+    }
   }
 }
