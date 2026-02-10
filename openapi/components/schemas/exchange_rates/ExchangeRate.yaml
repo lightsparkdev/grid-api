@@ -4,6 +4,8 @@ required:
   - sourceCurrency
   - destinationCurrency
   - destinationPaymentRail
+  - minSendingAmount
+  - maxSendingAmount
   - sendingAmount
   - receivingAmount
   - exchangeRate
@@ -18,6 +20,18 @@ properties:
     description: The sending amount in the smallest unit of the source currency (e.g., cents for USD). Echoed back from the request if provided.
     minimum: 0
     example: 10000
+  minSendingAmount:
+    type: integer
+    format: int64
+    description: The minimum supported sending amount in the smallest unit of the source currency.
+    minimum: 0
+    example: 100
+  maxSendingAmount:
+    type: integer
+    format: int64
+    description: The maximum supported sending amount in the smallest unit of the source currency.
+    minimum: 0
+    example: 10000000
   destinationCurrency:
     $ref: ../common/Currency.yaml
   destinationPaymentRail:

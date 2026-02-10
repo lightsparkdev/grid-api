@@ -72,6 +72,8 @@ get:
                       name: US Dollar
                       symbol: "$"
                     sendingAmount: 10000
+                    minSendingAmount: 100
+                    maxSendingAmount: 10000000
                     destinationCurrency:
                       code: INR
                       decimals: 2
@@ -89,6 +91,8 @@ get:
                       name: US Dollar
                       symbol: "$"
                     sendingAmount: 10000
+                    minSendingAmount: 100
+                    maxSendingAmount: 10000000
                     destinationCurrency:
                       code: EUR
                       decimals: 2
