@@ -6279,6 +6279,10 @@ components:
                 state:
                   type: string
                   description: State or province
+    SparkWalletExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SparkWalletInfo'
     BaseExternalAccountInfo:
       type: object
       required:
@@ -6289,13 +6293,6 @@ components:
       discriminator:
         propertyName: accountType
         mapping:
-          US_ACCOUNT: '#/components/schemas/UsAccountExternalAccountInfo'
-          CLABE: '#/components/schemas/ClabeAccountExternalAccountInfo'
-          PIX: '#/components/schemas/PixAccountExternalAccountInfo'
-          IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
-          UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
           GBP_ACCOUNT: '#/components/schemas/GbpAccountInfo'
           PHP_ACCOUNT: '#/components/schemas/PhpAccountInfo'
           SGD_ACCOUNT: '#/components/schemas/SgdAccountInfo'
@@ -6305,214 +6302,6 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
-    IndividualBeneficiary:
-      allOf:
-        - $ref: '#/components/schemas/BaseBeneficiary'
-        - type: object
-          required:
-            - fullName
-            - birthDate
-            - nationality
-            - beneficiaryType
-          properties:
-            beneficiaryType:
-              type: string
-              enum:
-                - INDIVIDUAL
-            fullName:
-              type: string
-              description: Individual's full name
-              example: John Michael Doe
-            birthDate:
-              type: string
-              format: date
-              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-              example: '1990-01-15'
-            nationality:
-              type: string
-              description: Country code (ISO 3166-1 alpha-2)
-              example: US
-    BaseBeneficiary:
-      type: object
-      required:
-        - beneficiaryType
-      properties:
-        beneficiaryType:
-          $ref: '#/components/schemas/BeneficiaryType'
-        address:
-          $ref: '#/components/schemas/Address'
-      discriminator:
-        propertyName: beneficiaryType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
-          BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    BusinessBeneficiary:
-      allOf:
-        - $ref: '#/components/schemas/BaseBeneficiary'
-        - type: object
-          required:
-            - legalName
-            - beneficiaryType
-          properties:
-            beneficiaryType:
-              type: string
-              enum:
-                - BUSINESS
-            legalName:
-              type: string
-              description: Legal name of the business
-              example: Acme Corporation, Inc.
-            registrationNumber:
-              type: string
-              description: Business registration number
-              example: BRN-123456789
-            taxId:
-              type: string
-              description: Tax identification number
-              example: EIN-987654321
-    BeneficiaryType:
-      type: string
-      enum:
-        - INDIVIDUAL
-        - BUSINESS
-      description: Whether the beneficiary is an individual or a business entity
-      example: INDIVIDUAL
-    BeneficiaryOneOf:
-      oneOf:
-        - title: Individual Beneficiary
-          $ref: '#/components/schemas/IndividualBeneficiary'
-        - title: Business Beneficiary
-          $ref: '#/components/schemas/BusinessBeneficiary'
-      discriminator:
-        propertyName: beneficiaryType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
-          BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    UsAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UsAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    ClabeAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/ClabeAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    PixAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PixAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    IbanAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/IbanAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    UpiAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UpiAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    NgnAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/NgnAccountInfo'
-        - type: object
-          required:
-            - purposeOfPayment
-            - beneficiary
-          properties:
-            purposeOfPayment:
-              type: string
-              enum:
-                - GIFT
-                - SELF
-                - GOODS_OR_SERVICES
-                - EDUCATION
-                - HEALTH_OR_MEDICAL
-                - REAL_ESTATE_PURCHASE
-                - LOAN_PAYMENT
-                - TAX_PAYMENT
-                - UTILITY_BILL
-                - DONATION
-                - TRAVEL
-                - OTHER
-              description: Purpose of payment
-              example: GOODS_OR_SERVICES
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    CadAccountInfo:
-      type: object
-      required:
-        - bankCode
-        - branchCode
-        - accountNumber
-        - accountType
-      properties:
-        accountType:
-          type: string
-          enum:
-            - CAD_ACCOUNT
-        bankCode:
-          type: string
-          description: Canadian financial institution number (3 digits)
-          example: '001'
-          minLength: 3
-          maxLength: 3
-          pattern: ^[0-9]{3}$
-        branchCode:
-          type: string
-          description: Transit number identifying the branch (5 digits)
-          example: '00012'
-          minLength: 5
-          maxLength: 5
-          pattern: ^[0-9]{5}$
-        accountNumber:
-          type: string
-          description: Bank account number (7-12 digits)
-          example: '1234567'
-          minLength: 7
-          maxLength: 12
-          pattern: ^[0-9]{7,12}$
-    CadAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    SparkWalletExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SparkWalletInfo'
     LightningInfo:
       type: object
       description: |

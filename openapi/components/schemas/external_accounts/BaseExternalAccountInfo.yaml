@@ -7,13 +7,6 @@ properties:
 discriminator:
   propertyName: accountType
   mapping:
-    US_ACCOUNT: ./UsAccountExternalAccountInfo.yaml
-    CLABE: ./ClabeAccountExternalAccountInfo.yaml
-    PIX: ./PixAccountExternalAccountInfo.yaml
-    IBAN: ./IbanAccountExternalAccountInfo.yaml
-    UPI: ./UpiAccountExternalAccountInfo.yaml
-    NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
-    CAD_ACCOUNT: ./CadAccountExternalAccountInfo.yaml
     GBP_ACCOUNT: ./GbpAccountInfo.yaml
     PHP_ACCOUNT: ./PhpAccountInfo.yaml
     SGD_ACCOUNT: ./SgdAccountInfo.yaml
