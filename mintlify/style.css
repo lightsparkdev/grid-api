@@ -408,7 +408,7 @@ html.dark #navbar [class*="z-10"] {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  transition: border-color 0.2s ease, background-color 0.2s ease !important;
+  transition: none !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -483,7 +483,7 @@ html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
   font-size: 14px !important;
   font-weight: 400 !important;
   color: var(--ls-gray-500) !important;
-  transition: border-color 0.2s ease, background-color 0.2s ease !important;
+  transition: none !important;
   box-shadow: none !important;
   --tw-ring-shadow: none !important;
   outline: none !important;
@@ -594,10 +594,10 @@ html.dark .navbar-link svg {
 
 /* Mobile: extend chat input 8px past content edges */
 @media (max-width: 639px) {
-  /* Allow 8px horizontal extension while keeping vertical clip for hide logic */
+  /* Allow chat input to extend 8px past content edges.
+     Hidden state uses opacity:0 so no visual leak on short pages. */
   div:has(> .chat-assistant-floating-input) {
-    overflow-x: visible !important;
-    overflow-y: hidden !important;
+    overflow: visible !important;
   }
 
   .chat-assistant-floating-input {
