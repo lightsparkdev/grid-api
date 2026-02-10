@@ -334,5 +334,10 @@
         "crossOrigin": "anonymous"
       }
     ]
+  },
+  "integrations": {
+    "gtm": {
+      "tagId": "GTM-5R5NP3DS"
+    }
   }
 }
