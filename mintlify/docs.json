@@ -311,7 +311,7 @@
   },
   "integrations": {
     "gtm": {
-        "tagId": "GTM-5R5NP3DS"
+      "tagId": "GTM-5R5NP3DS"
     }
   }
 }
