@@ -8,7 +8,7 @@
   src: url("/fonts/suisse-intl/SuisseIntl-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
   ascent-override: 85%;
   descent-override: 15%;
   line-gap-override: 0%;
@@ -20,7 +20,7 @@
   src: url("/fonts/suisse-intl/SuisseIntl-Book.woff2") format("woff2");
   font-weight: 450;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
   ascent-override: 85%;
   descent-override: 15%;
   line-gap-override: 0%;
@@ -32,7 +32,7 @@
   src: url("/fonts/suisse-intl/SuisseIntl-Medium.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
   ascent-override: 85%;
   descent-override: 15%;
   line-gap-override: 0%;
@@ -44,7 +44,7 @@
   src: url("/fonts/suisse-intl/SuisseIntl-Medium.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
   ascent-override: 85%;
   descent-override: 15%;
   line-gap-override: 0%;
@@ -60,7 +60,7 @@
   src: url("/fonts/suisse-intl-mono/SuisseIntlMono-Regular-WebXL.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 /* Mono Bold - Bold code */
@@ -69,7 +69,7 @@
   src: url("/fonts/suisse-intl-mono/SuisseIntlMono-Bold-WebXL.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 /* ===========================================
    Lightspark Design Tokens
