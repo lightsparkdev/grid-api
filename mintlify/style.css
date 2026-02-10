@@ -407,7 +407,7 @@ html.dark #navbar [class*="z-10"] {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  transition: all 0.2s ease !important;
+  transition: border-color 0.2s ease, color 0.2s ease !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -482,7 +482,7 @@ html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
   font-size: 14px !important;
   font-weight: 400 !important;
   color: var(--ls-gray-500) !important;
-  transition: all 0.2s ease !important;
+  transition: border-color 0.2s ease, color 0.2s ease !important;
   box-shadow: none !important;
   --tw-ring-shadow: none !important;
   outline: none !important;
