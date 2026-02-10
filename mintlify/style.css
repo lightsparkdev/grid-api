@@ -277,10 +277,11 @@ h1#page-title,
   text-shadow: none !important;
 }
 
-/* Navbar links: Book weight (450) */
+/* Navbar links: Medium weight (500) — avoids font flash during SPA navigation
+   since Medium is preloaded via next/font/local in docs.json */
 .navbar-link a,
 #navbar a.link:not(.nav-tabs-item) {
-  font-weight: 450 !important;
+  font-weight: 500 !important;
 }
 
 /* Code: Suisse Intl Mono */
@@ -407,7 +408,7 @@ html.dark #navbar [class*="z-10"] {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  transition: all 0.2s ease !important;
+  transition: border-color 0.2s ease, background-color 0.2s ease !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -482,7 +483,7 @@ html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
   font-size: 14px !important;
   font-weight: 400 !important;
   color: var(--ls-gray-500) !important;
-  transition: all 0.2s ease !important;
+  transition: border-color 0.2s ease, background-color 0.2s ease !important;
   box-shadow: none !important;
   --tw-ring-shadow: none !important;
   outline: none !important;
@@ -540,7 +541,7 @@ div[class*="text-tooltip-foreground"][class*="bg-primary-dark"] {
   padding: 0 4px !important;
   border-radius: var(--ls-radius-sm) !important;
   font-size: 14px !important;
-  font-weight: 450 !important;
+  font-weight: 500 !important;
   line-height: 20px !important;
   color: var(--ls-gray-950) !important;
   text-decoration: none !important;
@@ -578,6 +579,14 @@ html.dark .navbar-link svg {
    Chat Assistant (Floating Input)
    =========================================== */
 
+/* Kill entrance slide-up animation on page navigation.
+   Only targets the inner wrapper — outer container's width/scale
+   transitions for expand-on-click/hover are unaffected.
+   Mintlify JS still controls show/hide (hidden on short pages). */
+.chat-assistant-floating-input > div {
+  transition: none !important;
+}
+
 /* Mobile assistant bar placeholder - make transparent so it doesn't cover content */
 #assistant-bar-placeholder {
   background: transparent !important;
@@ -585,6 +594,12 @@ html.dark .navbar-link svg {
 
 /* Mobile: extend chat input 8px past content edges */
 @media (max-width: 639px) {
+  /* Allow 8px horizontal extension while keeping vertical clip for hide logic */
+  div:has(> .chat-assistant-floating-input) {
+    overflow-x: visible !important;
+    overflow-y: hidden !important;
+  }
+
   .chat-assistant-floating-input {
     margin-left: -8px !important;
     width: calc(100% + 16px) !important;
@@ -1316,6 +1331,12 @@ ul#sidebar-group > li[data-title="Available UMA Providers"] > button::before {
 #sidebar-group > li[data-title="API Tokens"] > button::before,
 ul#sidebar-group > li[data-title="API Tokens"] > button::before {
   background-image: url('/images/icons/key2.svg') !important;
+}
+
+/* Exchange Rates - trending */
+#sidebar-group > li[data-title="Exchange Rates"] > button::before,
+ul#sidebar-group > li[data-title="Exchange Rates"] > button::before {
+  background-image: url('/images/icons/trending.svg') !important;
 }
 
 
