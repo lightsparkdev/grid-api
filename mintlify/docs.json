@@ -328,11 +328,7 @@
         "as": "font",
         "type": "font/woff2",
         "crossOrigin": "anonymous"
-      },
-      { "rel": "stylesheet", "href": "/styles/fonts.css" },
-      { "rel": "stylesheet", "href": "/styles/tokens.css" },
-      { "rel": "stylesheet", "href": "/styles/base.css" },
-      { "rel": "stylesheet", "href": "/styles/homepage.css" }
+      }
     ]
   }
 }
