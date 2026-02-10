@@ -214,6 +214,8 @@ paths:
                           name: US Dollar
                           symbol: $
                         sendingAmount: 10000
+                        minSendingAmount: 100
+                        maxSendingAmount: 10000000
                         destinationCurrency:
                           code: INR
                           decimals: 2
@@ -231,6 +233,8 @@ paths:
                           name: US Dollar
                           symbol: $
                         sendingAmount: 10000
+                        minSendingAmount: 100
+                        maxSendingAmount: 10000000
                         destinationCurrency:
                           code: EUR
                           decimals: 2
@@ -4267,6 +4271,8 @@ components:
         - sourceCurrency
         - destinationCurrency
         - destinationPaymentRail
+        - minSendingAmount
+        - maxSendingAmount
         - sendingAmount
         - receivingAmount
         - exchangeRate
@@ -4281,6 +4287,18 @@ components:
           description: The sending amount in the smallest unit of the source currency (e.g., cents for USD). Echoed back from the request if provided.
           minimum: 0
           example: 10000
+        minSendingAmount:
+          type: integer
+          format: int64
+          description: The minimum supported sending amount in the smallest unit of the source currency.
+          minimum: 0
+          example: 100
+        maxSendingAmount:
+          type: integer
+          format: int64
+          description: The maximum supported sending amount in the smallest unit of the source currency.
+          minimum: 0
+          example: 10000000
         destinationCurrency:
           $ref: '#/components/schemas/Currency'
         destinationPaymentRail:
