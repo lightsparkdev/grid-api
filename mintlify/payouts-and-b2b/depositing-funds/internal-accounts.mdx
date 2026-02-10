@@ -1,28 +1,28 @@
 ---
 title: "Internal Accounts"
 description: "Learn how to manage internal accounts for holding platform and customer funds"
+icon: "/images/icons/wallet1.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
 ---
 
 import InternalAccounts from '/snippets/internal-accounts.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <InternalAccounts />
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="External accounts" icon="building-columns" href="/payouts-and-b2b/depositing-funds/external-accounts">
-Learn how to add customer bank accounts as withdrawal destinations
-</Card>
-
-<Card title="Plaid integration" icon="link" href="/payouts-and-b2b/depositing-funds/plaid">
-Simplify bank account verification with Plaid Link
-</Card>
-
-<Card title="Cross-currency transfers" icon="earth-americas" href="/payouts-and-b2b/quickstart">
-Use internal account balances to send international payments
-</Card>
-
-<Card title="API Reference" icon="code" href="/api-reference">
-View complete API documentation for internal accounts
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/bank.svg" title="External accounts" href="/payouts-and-b2b/depositing-funds/external-accounts">
+    Learn how to add customer bank accounts as withdrawal destinations
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/IconPlaid.svg" title="Plaid integration" href="/payouts-and-b2b/depositing-funds/plaid">
+    Simplify bank account verification with Plaid Link
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Cross-currency transfers" href="/payouts-and-b2b/quickstart">
+    Use internal account balances to send international payments
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference">
+    View complete API documentation for internal accounts
+  </FeatureCard>
+</FeatureCardGrid>

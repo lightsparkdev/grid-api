@@ -1,7 +1,11 @@
 ---
 title: "Self-Custody Wallet Integration"
 description: "Send and receive cryptocurrency to and from user-controlled wallets"
+icon: "/images/icons/lock.svg"
+"og:image": "/images/og/og-ramps.png"
 ---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 ## Overview
 
@@ -405,28 +409,17 @@ console.log("Test transfer status:", testTransfer.status);
 
 ## Next steps
 
-<CardGroup cols={2}>
-<Card title="Fiat-crypto conversion" icon="arrow-right-arrow-left" href="/ramps/conversion-flows/fiat-crypto-conversion">
-  Learn about on-ramp and off-ramp flows
-</Card>
-
-<Card
-  title="External accounts"
-  icon="building-columns"
-  href="/ramps/accounts/external-accounts"
->
-  Manage external accounts including Spark wallets
-</Card>
-
-<Card
-  title="Webhooks"
-  icon="webhook"
-  href="/ramps/platform-tools/webhooks"
->
-  Set up webhooks to monitor transaction status
-</Card>
-
-<Card title="Sandbox testing" icon="flask" href="/ramps/platform-tools/sandbox-testing">
-  Test wallet integrations in sandbox mode
-</Card>
-</CardGroup>
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Fiat-crypto conversion" href="/ramps/conversion-flows/fiat-crypto-conversion">
+    Learn about on-ramp and off-ramp flows
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bank.svg" title="External accounts" href="/ramps/accounts/external-accounts">
+    Manage external accounts including Spark wallets
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/ramps/platform-tools/webhooks">
+    Set up webhooks to monitor transaction status
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/sandbox.svg" title="Sandbox testing" href="/ramps/platform-tools/sandbox-testing">
+    Test wallet integrations in sandbox mode
+  </FeatureCard>
+</FeatureCardGrid>

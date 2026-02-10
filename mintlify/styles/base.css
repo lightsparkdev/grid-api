@@ -1,0 +1,2625 @@
+/* ===========================================
+   Base Styles
+   
+   Global typography, navbar, sidebar, and 
+   content area styling. Uses design tokens.
+   =========================================== */
+
+/* ===========================================
+   Root Color Overrides
+   Override Mintlify's primary color variables
+   =========================================== */
+
+:root {
+  --primary: 40 40 40 !important; /* --ls-gray-900 (#282828) as raw RGB for Tailwind */
+  --text-primary: var(--ls-gray-900) !important;
+  --color-primary: var(--ls-gray-900) !important;
+  --tw-text-opacity: 1;
+}
+
+html.dark {
+  --primary: 240 240 238 !important; /* --ls-gray-100 (#F0F0EE) as raw RGB for Tailwind */
+  --text-primary: var(--ls-gray-100) !important;
+  --color-primary: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Squircle Corners (Progressive Enhancement)
+   Smooth Apple-style corners. Falls back to
+   regular border-radius in unsupported browsers.
+   =========================================== */
+
+* {
+  corner-shape: squircle;
+}
+
+/* ===========================================
+   Hide Scrollbars Globally
+   =========================================== */
+
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+/* ===========================================
+   Global Typography
+   
+   Base fonts configured in docs.json.
+   This handles additional customizations.
+   =========================================== */
+
+/* Enable single-story 'a' (stylistic alternates) */
+* {
+  font-feature-settings: "salt" on;
+  text-shadow: none;
+}
+
+/* Headings & Bold: Medium weight (500) */
+h1, h2, h3, h4, h5, h6,
+strong, b, th,
+.sidebar-group-header,
+.eyebrow,
+.font-semibold,
+[data-component-part="step-title"],
+[data-component-part="tab-button"] {
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
+
+/* Page title and H2s: Regular weight (400) */
+h1#page-title,
+#content h2 {
+  font-weight: 400 !important;
+}
+
+/* H3s: Book weight (450) */
+#content h3 {
+  font-weight: 450 !important;
+}
+
+/* Navigation tabs & CTA button: Medium weight */
+.nav-tabs-item,
+#topbar-cta-button, #topbar-cta-button *,
+#page-context-menu-button, #page-context-menu-button *,
+#pagination a, #pagination a * {
+  font-weight: 500 !important;
+  text-shadow: none !important;
+}
+
+/* Navbar links: Book weight (450) */
+.navbar-link a,
+#navbar a.link:not(.nav-tabs-item) {
+  font-weight: 450 !important;
+}
+
+/* Code: Suisse Intl Mono */
+code, pre, kbd, samp, .font-mono {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* API field names: Mono Bold */
+[data-component-part="field-name"] {
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-weight: 700 !important;
+  font-feature-settings: "salt" on !important;
+}
+
+/* ===========================================
+   SVG Icons
+   =========================================== */
+
+/* Non-scaling stroke for all SVGs */
+svg, svg * {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Stroke width for Central Icons */
+svg[class*="icon"] path,
+svg[class*="icon"] line,
+svg[class*="icon"] circle,
+svg[class*="icon"] rect,
+svg[class*="icon"] polyline,
+svg[class*="icon"] polygon {
+  stroke-width: 1.5px;
+}
+
+/* Disable lightbox/click on all icon images */
+img[class*="icon"],
+svg[class*="icon"] {
+  pointer-events: none;
+}
+
+/* ===========================================
+   Navbar - Top Row
+   Border, padding, and layout
+   =========================================== */
+
+#navbar {
+  background-color: var(--ls-gray-100) !important;
+}
+
+html.dark #navbar {
+  background-color: var(--ls-gray-975) !important;
+}
+
+#navbar > div,
+#navbar .h-16,
+#navbar [class*="h-16"] {
+  background: transparent !important;
+}
+
+#navbar .h-16,
+#navbar [class*="h-16"] {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+html.dark #navbar .h-16,
+html.dark #navbar [class*="h-16"] {
+  border-bottom: 0.5px solid var(--ls-white-06) !important;
+}
+
+/* Tabs row padding */
+#navbar .h-12,
+#navbar [class*="h-12"] {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+  background: transparent !important;
+}
+
+html.dark #navbar .h-12,
+html.dark #navbar [class*="h-12"],
+html.dark #navbar .h-12 *,
+html.dark #navbar [class*="h-12"] *,
+html.dark #navbar > div,
+html.dark #navbar .z-10,
+html.dark #navbar [class*="z-10"] {
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Mobile: Full-width navbar with 20px/24px padding */
+@media (max-width: 1023px) {
+  #navbar .h-16,
+  #navbar [class*="h-16"],
+  #navbar .h-12,
+  #navbar [class*="h-12"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 24px !important;
+  }
+
+  /* Mobile breadcrumb bar - slight padding adjustment */
+  #navbar button[class*="h-14"][class*="text-left"] {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+/* ===========================================
+   Navbar - Search Bar
+   =========================================== */
+
+#search-bar-entry {
+  background: var(--ls-gray-050) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: var(--ls-radius-md) !important;
+  width: 320px !important;
+  height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-500) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#search-bar-entry:hover {
+  border-color: var(--ls-black-20) !important;
+}
+
+#search-bar-entry:hover svg,
+#search-bar-entry:hover > div > span:first-child {
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #search-bar-entry {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--ls-white-06) !important;
+  color: var(--ls-gray-500) !important;
+}
+
+html.dark #search-bar-entry:hover {
+  border-color: var(--ls-white-20) !important;
+}
+
+html.dark #search-bar-entry:hover svg,
+html.dark #search-bar-entry:hover > div > span:first-child {
+  color: var(--ls-gray-100) !important;
+}
+
+#search-bar-entry svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--ls-gray-500) !important;
+  stroke-width: 1.5px !important;
+  transition: color 0.2s ease !important;
+}
+
+#search-bar-entry span {
+  color: var(--ls-gray-500) !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Keyboard shortcut badge */
+#search-bar-entry kbd,
+#search-bar-entry [class*="min-w-"] > span:last-child {
+  background: var(--ls-gray-100) !important;
+  border: none !important;
+  border-radius: var(--ls-radius-xs) !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  color: var(--ls-gray-500) !important;
+  font-family: inherit !important;
+}
+
+html.dark #search-bar-entry kbd,
+html.dark #search-bar-entry [class*="min-w-"] > span:last-child {
+  background: var(--ls-white-06) !important;
+  color: var(--ls-gray-400) !important;
+}
+
+/* ===========================================
+   Navbar - Ask AI Button
+   =========================================== */
+
+#assistant-entry {
+  background: var(--ls-gray-050) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: var(--ls-radius-md) !important;
+  height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--ls-gray-500) !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  outline: none !important;
+}
+
+#assistant-entry:hover {
+  border-color: var(--ls-black-20) !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #assistant-entry {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+html.dark #assistant-entry:hover {
+  border-color: var(--ls-white-20) !important;
+  color: var(--ls-gray-100) !important;
+}
+
+/* Center search bar and Ask AI button in navbar */
+#navbar .flex-1:has(#search-bar-entry) {
+  justify-content: center !important;
+}
+
+/* Hide copy/AI tooltips in code blocks */
+div[class*="text-tooltip-foreground"][class*="bg-primary-dark"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ===========================================
+   Navbar - Links (GitHub, Contact)
+   =========================================== */
+
+#navbar .h-16 [class*="gap-x-"],
+#navbar .h-16 [class*="flex"][class*="items-center"] > *:not(:first-child) {
+  margin-left: 0 !important;
+}
+
+/* Navbar link buttons gap */
+#navbar .h-16 nav ul {
+  gap: 8px !important;
+}
+
+#navbar a.link:not(.nav-tabs-item),
+#navbar [class*="navbar"] a,
+.navbar-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 0 4px !important;
+  border-radius: var(--ls-radius-sm) !important;
+  font-size: 14px !important;
+  font-weight: 450 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-950) !important;
+  text-decoration: none !important;
+  transition: opacity 0.15s ease !important;
+  font-feature-settings: "salt" 1 !important;
+}
+
+#navbar a.link:not(.nav-tabs-item):hover,
+#navbar [class*="navbar"] a:hover,
+.navbar-link:hover {
+  opacity: 0.7 !important;
+}
+
+#navbar a.link:not(.nav-tabs-item) svg,
+#navbar [class*="navbar"] a svg,
+.navbar-link svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #navbar a.link:not(.nav-tabs-item),
+html.dark #navbar [class*="navbar"] a,
+html.dark .navbar-link {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark #navbar a.link:not(.nav-tabs-item) svg,
+html.dark #navbar [class*="navbar"] a svg,
+html.dark .navbar-link svg {
+  color: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Chat Assistant (Floating Input)
+   =========================================== */
+
+/* Mobile assistant bar placeholder - make transparent so it doesn't cover content */
+#assistant-bar-placeholder {
+  background: transparent !important;
+}
+
+/* Mobile: extend chat input 8px past content edges */
+@media (max-width: 639px) {
+  .chat-assistant-floating-input {
+    margin-left: -8px !important;
+    width: calc(100% + 16px) !important;
+  }
+}
+
+/* Container wrapper - glassy blur effect */
+.chat-assistant-floating-input > div > div {
+  background: var(--ls-white-70) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: var(--ls-radius-lg) !important;
+}
+
+html.dark .chat-assistant-floating-input > div > div {
+  background: var(--ls-black-40) !important;
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Textarea */
+#chat-assistant-textarea {
+  color: var(--ls-gray-950) !important;
+}
+
+#chat-assistant-textarea::placeholder {
+  color: var(--ls-gray-400) !important;
+}
+
+html.dark #chat-assistant-textarea {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark #chat-assistant-textarea::placeholder {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Submit button */
+.chat-assistant-floating-input button[type="submit"],
+.chat-assistant-floating-input button:has(svg) {
+  background: var(--ls-gray-950) !important;
+  color: var(--ls-gray-100) !important;
+}
+
+.chat-assistant-floating-input button[type="submit"] svg,
+.chat-assistant-floating-input button:has(svg) svg {
+  color: var(--ls-gray-100) !important;
+}
+
+html.dark .chat-assistant-floating-input button[type="submit"],
+html.dark .chat-assistant-floating-input button:has(svg) {
+  background: var(--ls-gray-100) !important;
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark .chat-assistant-floating-input button[type="submit"] svg,
+html.dark .chat-assistant-floating-input button:has(svg) svg {
+  color: var(--ls-gray-950) !important;
+}
+
+/* ===========================================
+   Navbar - Tabs
+   =========================================== */
+
+/* Inactive state */
+.nav-tabs-item,
+a.nav-tabs-item,
+#navbar .nav-tabs-item,
+.nav-tabs-item:not([class*="text-gray-800"]):not([class*="text-gray-200"]) {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Hover state */
+.nav-tabs-item:hover,
+a.nav-tabs-item:hover,
+#navbar .nav-tabs-item:hover {
+  color: var(--ls-gray-950) !important;
+}
+
+/* Active state */
+.nav-tabs-item.text-gray-800,
+.nav-tabs-item[class*="text-gray-800"],
+a.nav-tabs-item.text-gray-800,
+#navbar .nav-tabs-item.text-gray-800,
+.nav-tabs-item[aria-current="page"] {
+  color: var(--ls-gray-950) !important;
+}
+
+/* Active indicator line */
+.nav-tabs-item::after,
+.nav-tabs-item.text-gray-600::after,
+.nav-tabs-item[class*="text-gray-600"]::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+.nav-tabs-item.text-gray-800::after,
+a.nav-tabs-item.text-gray-800::after,
+#navbar .nav-tabs-item.text-gray-800::after,
+.nav-tabs-item[aria-current="page"]::after {
+  background-color: var(--ls-gray-950) !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode tabs */
+html.dark .nav-tabs-item,
+html.dark a.nav-tabs-item,
+html.dark #navbar .nav-tabs-item {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark .nav-tabs-item:hover,
+html.dark a.nav-tabs-item:hover,
+html.dark #navbar .nav-tabs-item:hover {
+  color: var(--ls-gray-100) !important;
+}
+
+/* Active tab in dark mode - override Tailwind's dark:text-gray-200 */
+html.dark .nav-tabs-item[class*="dark:text-gray-200"],
+html.dark a.nav-tabs-item[class*="dark:text-gray-200"],
+html.dark #navbar .nav-tabs-item[class*="dark:text-gray-200"],
+html.dark #navbar a.link.nav-tabs-item[class*="dark:text-gray-200"] {
+  color: var(--ls-white) !important;
+}
+
+/* Dark mode - hide ALL tab indicators by default */
+html.dark .nav-tabs-item::after,
+html.dark #navbar .nav-tabs-item::after {
+  background-color: var(--ls-gray-050) !important;
+  opacity: 0 !important;
+}
+
+/* Dark mode - show indicator ONLY for active tab */
+html.dark .nav-tabs-item.text-gray-200::after,
+html.dark a.nav-tabs-item.text-gray-200::after,
+html.dark .nav-tabs-item[aria-current="page"]::after {
+  opacity: 1 !important;
+}
+
+/* Active sidebar item: Medium weight */
+a[class*="text-primary"]:not(.nav-tabs-item),
+a[class*="text-primary"]:not(.nav-tabs-item) *,
+button[class*="text-primary"],
+button[class*="text-primary"] * {
+  font-weight: 500 !important;
+}
+
+/* ===========================================
+   Sidebar
+   =========================================== */
+
+#sidebar-content {
+  background-color: var(--ls-gray-100) !important;
+  border-right: 0.5px solid var(--ls-black-10) !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+html.dark #sidebar-content {
+  background-color: var(--ls-gray-975) !important;
+  border-right-color: var(--ls-white-06) !important;
+}
+
+/* Mobile Navigation Sidebar - consistent background */
+#mobile-nav,
+#mobile-nav > div {
+  background-color: var(--ls-gray-100) !important;
+}
+
+html.dark #mobile-nav,
+html.dark #mobile-nav > div {
+  background-color: var(--ls-gray-975) !important;
+}
+
+/* Mobile nav items - extend to sidebar edges */
+#mobile-nav #navigation-items {
+  margin-left: -16px !important;
+  margin-right: -16px !important;
+  padding: 0 24px 24px 24px !important;
+}
+
+/* Mobile nav - dropdown button: 1 step brighter background */
+#mobile-nav #navigation-items button[aria-haspopup="menu"] {
+  background-color: var(--ls-gray-050) !important;
+  border-radius: var(--ls-radius-md) !important;
+}
+
+html.dark #mobile-nav #navigation-items button[aria-haspopup="menu"] {
+  background-color: var(--ls-gray-950) !important;
+}
+
+/* Mobile nav tabs dropdown - fix active/inactive colors */
+.mobile-nav-tabs-item {
+  color: var(--ls-gray-500) !important;
+}
+
+.mobile-nav-tabs-item.text-primary,
+.mobile-nav-tabs-item[class*="text-primary"] {
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark .mobile-nav-tabs-item {
+  color: var(--ls-gray-500) !important;
+}
+
+html.dark .mobile-nav-tabs-item.text-primary,
+html.dark .mobile-nav-tabs-item[class*="text-primary"] {
+  color: var(--ls-gray-100) !important;
+}
+
+/* Mobile nav - top bar: indent logo and toggle without affecting toggle internals */
+div#mobile-nav .flex.items-center.justify-between > a:first-child {
+  margin-left: 8px !important;
+}
+
+div#mobile-nav .flex.items-center.justify-between > button[class*="rounded-full"] {
+  margin-right: 8px !important;
+}
+
+
+/* Mobile nav - dropdown wrapper: reduce bottom spacing */
+div#mobile-nav div#navigation-items > div:first-child {
+  margin-bottom: 0 !important;
+}
+
+div#mobile-nav div#navigation-items .flex.flex-wrap {
+  padding-bottom: 20px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Mobile nav - sidebar group list: adjust spacing */
+div#mobile-nav ul.sidebar-group,
+div#mobile-nav ul#sidebar-group,
+#mobile-nav .sidebar-group-header + ul {
+  margin-top: -14px !important;
+  padding-top: 0 !important;
+  padding-bottom: 24px !important;
+}
+
+#navigation-items {
+  background-color: var(--ls-gray-100) !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+html.dark #navigation-items {
+  background-color: var(--ls-gray-975) !important;
+}
+
+#navigation-items > div.text-sm {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Group containers */
+#navigation-items .mt-6,
+#navigation-items .lg\:mt-8,
+#navigation-items [class*="mt-6"],
+#navigation-items [class*="mt-8"] {
+  margin-top: 0 !important;
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+  position: relative !important;
+}
+
+/* First group */
+#navigation-items > div > div:first-child,
+#navigation-items > div.text-sm > div:first-child,
+#navigation-items .text-sm > div:first-child,
+#navigation-items > .text-sm > div:first-of-type {
+  padding-top: 0 !important;
+  padding-bottom: 24px !important;
+  margin-top: 0 !important;
+}
+
+/* Group dividers */
+#navigation-items .mt-6:not(:first-child)::before,
+#navigation-items .lg\:mt-8:not(:first-child)::before,
+#navigation-items [class*="mt-6"]:not(:first-child)::before,
+#navigation-items [class*="mt-8"]:not(:first-child)::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -24px !important;
+  right: -24px !important;
+  height: 0 !important;
+  border-top: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #navigation-items .mt-6:not(:first-child)::before,
+html.dark #navigation-items .lg\:mt-8:not(:first-child)::before,
+html.dark #navigation-items [class*="mt-6"]:not(:first-child)::before,
+html.dark #navigation-items [class*="mt-8"]:not(:first-child)::before {
+  border-top-color: var(--ls-white-06) !important;
+}
+
+/* Group labels */
+#navigation-items button[class*="group"],
+#navigation-items [data-component-part="group-title"],
+.sidebar-group-header,
+h5#sidebar-title,
+.sidebar-group-header h5,
+#navigation-items h5 {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  color: var(--ls-gray-400) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  margin-bottom: 2px !important;
+}
+
+html.dark #navigation-items button[class*="group"],
+html.dark #navigation-items [data-component-part="group-title"],
+html.dark .sidebar-group-header,
+html.dark h5#sidebar-title,
+html.dark .sidebar-group-header h5,
+html.dark #navigation-items h5 {
+  color: var(--ls-gray-700) !important;
+}
+
+/* Group header container */
+.sidebar-group-header,
+div.sidebar-group-header,
+#navigation-items .sidebar-group-header {
+  padding: 4px 8px !important;
+  padding-left: 8px !important;
+  margin-left: 0 !important;
+}
+
+/* Nav item list */
+#navigation-items ul,
+#navigation-items [class*="group"] + div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+/* Nav items */
+#navigation-items a,
+#navigation-items li > a {
+  min-height: 36px !important;
+  padding: 8px !important;
+  border-radius: var(--ls-radius-md) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-500) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* Active nav item */
+#navigation-items a[class*="text-primary"],
+#navigation-items a.active,
+#navigation-items a[aria-current="page"] {
+  color: var(--ls-gray-950) !important;
+  font-weight: 500 !important;
+}
+
+/* Dark mode - inactive nav items one step darker */
+html.dark #navigation-items a {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark #navigation-items a svg {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark #navigation-items a[class*="text-primary"],
+html.dark #navigation-items a.active,
+html.dark #navigation-items a[aria-current="page"] {
+  color: var(--ls-gray-100) !important;
+}
+
+/* Hover state */
+#navigation-items a:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html.dark #navigation-items a:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Nav item icons */
+#navigation-items a svg,
+#navigation-items a img {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+#navigation-items a svg {
+  color: var(--ls-gray-500) !important;
+}
+
+#navigation-items a img {
+  filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(98%) contrast(87%) !important;
+  opacity: 1 !important;
+}
+
+html.dark #navigation-items a img {
+  filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(90%) !important;
+}
+
+#navigation-items a svg,
+#navigation-items a svg * {
+  vector-effect: non-scaling-stroke !important;
+  stroke-width: 1.5px !important;
+}
+
+/* Active nav item icons */
+#navigation-items a[class*="text-primary"] svg,
+#navigation-items a.active svg,
+#navigation-items a[aria-current="page"] svg {
+  color: var(--ls-gray-950) !important;
+}
+
+html.dark #navigation-items a[class*="text-primary"] svg,
+html.dark #navigation-items a.active svg,
+html.dark #navigation-items a[aria-current="page"] svg {
+  color: var(--ls-gray-100) !important;
+}
+
+#navigation-items a[class*="text-primary"] img,
+#navigation-items a.active img,
+#navigation-items a[aria-current="page"] img {
+  filter: brightness(0) saturate(100%) invert(7%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(95%) !important;
+}
+
+html.dark #navigation-items a[class*="text-primary"] img,
+html.dark #navigation-items a.active img,
+html.dark #navigation-items a[aria-current="page"] img {
+  filter: brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(105%) contrast(95%) !important;
+}
+
+/* Hide sidebar controls */
+button[class*="sidebar-toggle"],
+button[aria-label*="sidebar"],
+button[aria-label*="Collapse"],
+[class*="sidebar"] button[class*="collapse"],
+[class*="sidebar-collapse"],
+#sidebar-toggle,
+button[class*="toggle-sidebar"],
+#sidebar-content > button.absolute,
+#sidebar-content > button[class*="absolute"],
+button.absolute.top-5.right-5 {
+  display: none !important;
+}
+
+/* ===========================================
+   API Reference Sidebar - Expandable Groups
+   =========================================== */
+
+/* Force left alignment on sidebar group elements (overrides Palm theme defaults) */
+#navigation-items [class*="mt-6"],
+#navigation-items [class*="mt-8"],
+#navigation-items [class*="lg:mt-"],
+#sidebar-group,
+ul#sidebar-group,
+#sidebar-group *,
+ul#sidebar-group *,
+#navigation-items li.space-y-px,
+#navigation-items li.space-y-px *,
+#navigation-items li[class*="space-y"],
+#navigation-items li[class*="space-y"] * {
+  text-align: left !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+/* Sidebar group container - full width, left aligned */
+#sidebar-group,
+ul#sidebar-group {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+/* List items - full width, block display */
+#sidebar-group > li,
+ul#sidebar-group > li,
+#navigation-items li.space-y-px,
+#navigation-items li[class*="space-y"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  text-align: left !important;
+}
+
+/* Expandable group buttons - full width, left aligned */
+#sidebar-group > li > button,
+ul#sidebar-group > li > button,
+#navigation-items li.space-y-px > button,
+#navigation-items li[class*="space-y"] > button {
+  position: relative !important;
+  min-height: 36px !important;
+  padding: 8px !important;
+  padding-right: 32px !important;
+  border-radius: var(--ls-radius-md) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-500) !important;
+  display: block !important;
+  text-align: left !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  justify-content: flex-start !important;
+}
+
+html.dark #sidebar-group > li > button,
+html.dark ul#sidebar-group > li > button,
+html.dark #navigation-items li.space-y-px > button,
+html.dark #navigation-items li[class*="space-y"] > button {
+  color: var(--ls-gray-600) !important;
+}
+
+/* Hide the original SVG chevron */
+#sidebar-group > li > button > svg,
+ul#sidebar-group > li > button > svg,
+#navigation-items li.space-y-px > button > svg,
+#navigation-items li[class*="space-y"] > button > svg {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Create new chevron using CSS pseudo-element (Central Icons style) */
+#sidebar-group > li > button::after,
+ul#sidebar-group > li > button::after,
+#navigation-items li.space-y-px > button::after,
+#navigation-items li[class*="space-y"] > button::after {
+  content: "" !important;
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-right: 1.5px solid var(--ls-gray-300) !important;
+  border-bottom: 1.5px solid var(--ls-gray-300) !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+/* Dark mode chevron - match sidebar text color */
+html.dark #sidebar-group > li > button::after,
+html.dark ul#sidebar-group > li > button::after,
+html.dark #navigation-items li.space-y-px > button::after,
+html.dark #navigation-items li[class*="space-y"] > button::after {
+  border-right-color: var(--ls-gray-600) !important;
+  border-bottom-color: var(--ls-gray-600) !important;
+}
+
+/* Chevron rotation when expanded (points down) */
+#sidebar-group > li > button[aria-expanded="true"]::after,
+ul#sidebar-group > li > button[aria-expanded="true"]::after,
+#navigation-items li.space-y-px > button[aria-expanded="true"]::after,
+#navigation-items li[class*="space-y"] > button[aria-expanded="true"]::after {
+  transform: translateY(-70%) rotate(45deg) !important;
+}
+
+/* Hover state for expandable groups - background only, no color change */
+#sidebar-group > li > button:hover,
+ul#sidebar-group > li > button:hover,
+#navigation-items li.space-y-px > button:hover,
+#navigation-items li[class*="space-y"] > button:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html.dark #sidebar-group > li > button:hover,
+html.dark ul#sidebar-group > li > button:hover,
+html.dark #navigation-items li.space-y-px > button:hover,
+html.dark #navigation-items li[class*="space-y"] > button:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Group buttons stay gray - only active page links get bold/dark styling */
+
+/* Nested items in API reference groups */
+#sidebar-group > li ul,
+ul#sidebar-group > li ul,
+#sidebar-group > li ul li,
+ul#sidebar-group > li ul li {
+  width: 100% !important;
+  display: block !important;
+}
+
+#sidebar-group > li ul a,
+ul#sidebar-group > li ul a,
+#navigation-items li.space-y-px ul a,
+#navigation-items li[class*="space-y"] ul a {
+  font-size: 14px !important;
+  text-align: left !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Vertical indentation line for nested items in expandable groups */
+#sidebar-group > li > ul,
+ul#sidebar-group > li > ul,
+#navigation-items li.space-y-px > ul,
+#navigation-items li[class*="space-y"] > ul {
+  position: relative !important;
+  margin-left: 18px !important;
+  padding-left: 12px !important;
+  width: calc(100% - 18px) !important;
+  border-left: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #sidebar-group > li > ul,
+html.dark ul#sidebar-group > li > ul,
+html.dark #navigation-items li.space-y-px > ul,
+html.dark #navigation-items li[class*="space-y"] > ul {
+  border-left-color: var(--ls-white-06) !important;
+}
+
+/* ===========================================
+   API Reference Sidebar - Group Icons
+   =========================================== */
+
+/* Base icon styles for all API groups */
+#sidebar-group > li[data-title] > button,
+ul#sidebar-group > li[data-title] > button {
+  padding-left: 40px !important;
+}
+
+#sidebar-group > li[data-title] > button::before,
+ul#sidebar-group > li[data-title] > button::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 20px !important;
+  height: 20px !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(98%) contrast(87%) !important;
+  opacity: 1 !important;
+}
+
+/* Platform Configuration - settings gear */
+#sidebar-group > li[data-title="Platform Configuration"] > button::before,
+ul#sidebar-group > li[data-title="Platform Configuration"] > button::before {
+  background-image: url('/images/icons/settings-gear2.svg') !important;
+}
+
+/* Customers - people */
+#sidebar-group > li[data-title="Customers"] > button::before,
+ul#sidebar-group > li[data-title="Customers"] > button::before {
+  background-image: url('/images/icons/people.svg') !important;
+}
+
+/* Internal Accounts - wallet */
+#sidebar-group > li[data-title="Internal Accounts"] > button::before,
+ul#sidebar-group > li[data-title="Internal Accounts"] > button::before {
+  background-image: url('/images/icons/wallet1.svg') !important;
+}
+
+/* External Accounts - bank */
+#sidebar-group > li[data-title="External Accounts"] > button::before,
+ul#sidebar-group > li[data-title="External Accounts"] > button::before {
+  background-image: url('/images/icons/bank.svg') !important;
+}
+
+/* Same-Currency Transfers - horizontal expand arrows */
+#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
+ul#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
+  background-image: url('/images/icons/arrow-expand-hor.svg') !important;
+}
+
+/* Cross-Currency Transfers - left-right arrows */
+#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
+ul#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
+  background-image: url('/images/icons/arrow-left-right.svg') !important;
+}
+
+/* Transactions - receipt */
+#sidebar-group > li[data-title="Transactions"] > button::before,
+ul#sidebar-group > li[data-title="Transactions"] > button::before {
+  background-image: url('/images/icons/receipt-check.svg') !important;
+}
+
+/* Webhooks - bell */
+#sidebar-group > li[data-title="Webhooks"] > button::before,
+ul#sidebar-group > li[data-title="Webhooks"] > button::before {
+  background-image: url('/images/icons/bell.svg') !important;
+}
+
+/* Invitations - people add */
+#sidebar-group > li[data-title="Invitations"] > button::before,
+ul#sidebar-group > li[data-title="Invitations"] > button::before {
+  background-image: url('/images/icons/people-add.svg') !important;
+}
+
+/* Sandbox - sandbox icon */
+#sidebar-group > li[data-title="Sandbox"] > button::before,
+ul#sidebar-group > li[data-title="Sandbox"] > button::before {
+  background-image: url('/images/icons/sandbox.svg') !important;
+}
+
+/* Available UMA Providers - at symbol */
+#sidebar-group > li[data-title="Available UMA Providers"] > button::before,
+ul#sidebar-group > li[data-title="Available UMA Providers"] > button::before {
+  background-image: url('/images/icons/at.svg') !important;
+}
+
+/* API Tokens - key */
+#sidebar-group > li[data-title="API Tokens"] > button::before,
+ul#sidebar-group > li[data-title="API Tokens"] > button::before {
+  background-image: url('/images/icons/key2.svg') !important;
+}
+
+
+/* ===========================================
+   Main Content Area
+   =========================================== */
+
+#content-container,
+#content-area,
+#content,
+[class*="content-container"],
+main[class*="content"],
+div[class*="peer-"][class*="lg:flex"],
+div[class*="is-not-custom"] {
+  background-color: var(--ls-gray-050) !important;
+}
+
+div[class*="lg:flex-1"][class*="lg:min-w-0"],
+div[class*="lg:flex-1"][class*="overflow-x-clip"] {
+  background-color: var(--ls-gray-050) !important;
+}
+
+html.dark #content-container,
+html.dark #content-area,
+html.dark #content,
+html.dark [class*="content-container"],
+html.dark main[class*="content"],
+html.dark div[class*="peer-"][class*="lg:flex"],
+html.dark div[class*="is-not-custom"] {
+  background-color: var(--ls-gray-950) !important;
+}
+
+html.dark div[class*="lg:flex-1"][class*="lg:min-w-0"],
+html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
+  background-color: var(--ls-gray-950) !important;
+}
+
+/* Content images - override Mintlify's inline border-radius with tokens */
+#content img[style*="border-radius"] {
+  border-radius: var(--ls-radius-md) !important;
+}
+
+/* Main content wrapper - remove padding/margin to keep gap clean */
+#content-area {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Inner pages content + TOC gap */
+#content-container > div[class*="flex-row-reverse"] {
+  gap: 0 !important;
+}
+
+/* Table of contents sidebar width */
+#content-side-layout {
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Table of contents inner layout - 48px total gap from content */
+#table-of-contents-layout {
+  padding-left: 48px !important;
+}
+
+/* Content container - set width and centering */
+/* 1076px = 980px content + 48px padding on each side */
+#content-container {
+  max-width: 1076px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 48px !important;
+  padding-right: 48px !important;
+}
+
+/* Mobile: Reduce content container padding to 24px */
+@media (max-width: 1023px) {
+  #content-container {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+/* Prose container - center the content with consistent margins */
+#content-area > article,
+#content-area > div > article,
+.prose {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Table of contents layout - ensure balanced spacing */
+#table-of-contents-layout,
+[class*="table-of-contents-layout"] {
+  padding-right: 24px !important;
+}
+
+/* Hide main footer completely */
+#footer {
+  display: none !important;
+}
+
+/* ===========================================
+   API Reference Page Fixes
+   
+   These styles only apply to API reference pages
+   (pages with #api-playground-2-operation-page).
+   They should NOT affect the homepage or regular
+   content pages with TOC.
+   =========================================== */
+
+/* Wider layout for API reference pages only (max 1600px) */
+#content-container:has(#api-playground-2-operation-page) {
+  max-width: 1600px !important;
+  padding-right: 48px !important;
+}
+
+/* Mobile: Remove the extra 48px padding on API reference pages */
+@media (max-width: 1023px) {
+  #content-container:has(#api-playground-2-operation-page) {
+    padding-right: 24px !important;
+  }
+}
+
+/* Override the inner max-w-5xl constraint on API reference pages */
+#content-container:has(#api-playground-2-operation-page) > div.max-w-5xl,
+#content-container:has(#api-playground-2-operation-page) > div[class*="max-w-5xl"] {
+  max-width: 100% !important;
+}
+
+/* Ensure code panel doesn't shrink on API reference pages */
+#content-container:has(#api-playground-2-operation-page) #content-side-layout {
+  flex-shrink: 0 !important;
+  min-width: 28rem !important;
+}
+
+/* Ensure content area is flexible on API reference pages */
+#content-container:has(#api-playground-2-operation-page) #content-area {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* Add gap between main content and code column ONLY on API reference pages */
+/* Uses :has() to scope the rule to pages containing the API playground */
+#content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
+  gap: 48px !important;
+}
+
+/* Override faint divider borders in API reference pages */
+#api-playground-2-operation-page [class*="border-gray-100"] {
+  border-color: var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [class*="border-gray-100"] {
+  border-color: var(--ls-white-06) !important;
+}
+
+html.dark #api-playground-2-operation-page [class*="border-gray-800"] {
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Ensure API playground content is full width and left-aligned */
+#api-playground-2-operation-page {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+#api-playground-2-operation-page .mdx-content,
+#api-playground-2-operation-page [class*="api-section"],
+#api-playground-2-operation-page [class*="api-section-heading"] {
+  width: 100% !important;
+  text-align: left !important;
+  align-items: flex-start !important;
+}
+
+/* Fix "Example:" row layout - these use flex with gap-1.5 */
+/* Target the specific flex containers that show "Example: value" pairs */
+#api-playground-2-operation-page div.flex[class*="prose"][class*="mt-6"],
+#api-playground-2-operation-page div.flex.prose.prose-sm {
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  width: auto !important;
+}
+
+/* Ensure all prose paragraphs and text are full width and left-aligned */
+#api-playground-2-operation-page p,
+#api-playground-2-operation-page p.whitespace-pre-line {
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: left !important;
+  display: block !important;
+}
+
+/* Fix containers that wrap the prose content */
+#api-playground-2-operation-page [class*="space-y"],
+#api-playground-2-operation-page [class*="whitespace-normal"],
+#api-playground-2-operation-page [class*="overflow-wrap-anywhere"] {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+/* Ensure section subtitles are full width */
+#api-playground-2-operation-page [class*="api-section-heading-subtitle"],
+#api-playground-2-operation-page [class*="api-section-heading-subtitle"] > div {
+  width: 100% !important;
+}
+
+/* ===========================================
+   Sidebar Footer
+   =========================================== */
+
+/* Sidebar footer section padding */
+#sidebar-content > div:last-of-type {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* Add "(0, 0, 0)" text to the left of sidebar footer */
+#sidebar-content > div:last-of-type::before {
+  content: "(0, 0, 0)";
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  color: var(--ls-gray-400);
+  margin-right: auto;
+  padding-left: 4px;
+}
+
+html.dark #sidebar-content > div:last-of-type::before {
+  color: var(--ls-gray-700);
+}
+
+/* ===========================================
+   Card Components
+   =========================================== */
+
+/* Card container - border radius and border */
+.card,
+.card-group .card,
+div.card {
+  border-radius: var(--ls-radius-md) !important; /* 8px */
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .card,
+html.dark .card-group .card,
+html.dark div.card {
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Card icons - invert for dark mode */
+html.dark .card img,
+html.dark .card-group .card img,
+html.dark div.card img {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Card description text - secondary color */
+.card .prose p,
+.card .prose span,
+.card [data-as="p"],
+.card-group .card .prose p,
+.card-group .card .prose span {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Card icons - consistent sizing and stroke */
+.card svg,
+.card-group .card svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.card svg path,
+.card svg line,
+.card svg circle,
+.card svg rect,
+.card svg polyline,
+.card svg polygon,
+.card-group .card svg path,
+.card-group .card svg line,
+.card-group .card svg circle,
+.card-group .card svg rect,
+.card-group .card svg polyline,
+.card-group .card svg polygon {
+  stroke-width: 1.5px !important;
+}
+
+/* ===========================================
+   Callout Components
+   =========================================== */
+
+/* Callout container - 8px border radius */
+.callout,
+div.callout,
+[data-callout-type] {
+  border-radius: var(--ls-radius-md) !important;
+}
+
+/* ===========================================
+   API Reference - Code Groups
+   =========================================== */
+
+/* Code group container - 8px border radius, no padding, black-10 border */
+.code-group,
+[data-testid="code-group-select"] {
+  border-radius: var(--ls-radius-md) !important;
+  padding: 0 !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .code-group,
+html.dark [data-testid="code-group-select"] {
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Code group inner container - no border radius (exclude interactive tabs/buttons) */
+.code-group > div,
+[data-testid="code-group-select"] > div {
+  border-radius: 0 !important;
+}
+
+/* Code block content area - strip rounded corners */
+.code-group [data-component-part="code-block-root"],
+[data-testid="code-group-select"] [data-component-part="code-block-root"] {
+  border-radius: 0 !important;
+}
+
+/* Restore radius on interactive tabs and pills inside code groups */
+.code-group [data-component-part="code-group-tab-bar"] button div[class*="rounded"],
+.code-group [data-component-part="code-group-tab-bar"] > div > button > div,
+.code-group button div[class*="rounded"],
+[data-testid="code-group-select"] button div[class*="rounded"] {
+  border-radius: var(--ls-radius-sm) !important;
+}
+
+/* Code group tab bar header */
+.code-group [data-component-part="code-group-tab-bar"],
+[data-testid="code-group-select"] > div:first-child {
+  height: fit-content !important;
+  background-color: var(--ls-gray-025) !important;
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Code group tab bar text - book weight */
+.code-group [data-component-part="code-group-tab-bar"],
+[data-testid="code-group-select"] > div:first-child {
+  font-weight: 450 !important;
+}
+
+.code-group [data-component-part="code-group-tab-bar"] span,
+.code-group [data-component-part="code-group-tab-bar"] button,
+.code-group [data-component-part="code-group-tab-bar"] div,
+[data-testid="code-group-select"] > div:first-child span,
+[data-testid="code-group-select"] > div:first-child button,
+[data-testid="code-group-select"] > div:first-child div {
+  font-weight: 450 !important;
+}
+
+/* Code group tab bar title - 2px left padding */
+.code-group [data-component-part="code-group-tab-bar"] span.truncate {
+  padding-left: 4px !important;
+}
+
+html.dark .code-group [data-component-part="code-group-tab-bar"],
+html.dark [data-testid="code-group-select"] > div:first-child {
+  background-color: var(--ls-gray-975) !important;
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* Code block content area - darker in dark mode */
+html.dark .code-group [data-component-part="code-block-root"],
+html.dark .code-block-background,
+html.dark .code-group [class*="dark:bg-codeblock"] {
+  background-color: var(--ls-gray-975) !important;
+}
+
+/* API Reference - Try It input fields */
+#api-playground-input,
+select[class*="text-playground-input"] {
+  background-color: var(--ls-gray-025) !important;
+  border-radius: var(--ls-radius-sm) !important;
+  padding: 6px 8px !important;
+  outline: none !important;
+  box-shadow: 0 0 0 0px var(--ls-gray-200) !important;
+  transition: box-shadow 0.15s ease !important;
+}
+
+#api-playground-input:focus,
+select[class*="text-playground-input"]:focus {
+  box-shadow: 0 0 0 2px var(--ls-gray-200) !important;
+  background-color: var(--ls-white) !important;
+}
+
+html.dark #api-playground-input,
+html.dark select[class*="text-playground-input"] {
+  background-color: var(--ls-gray-975) !important;
+  box-shadow: 0 0 0 0px var(--ls-gray-800) !important;
+}
+
+html.dark #api-playground-input:focus,
+html.dark select[class*="text-playground-input"]:focus {
+  box-shadow: 0 0 0 2px var(--ls-gray-800) !important;
+  background-color: var(--ls-black) !important;
+}
+
+/* ===========================================
+   API Reference - Endpoint Bar (GET /path)
+   =========================================== */
+
+/* Outer and inner containers - same background color */
+#api-playground-2-operation-page .border-standard.rounded-2xl,
+#api-playground-2-operation-page .border-standard.rounded-xl {
+  background-color: var(--ls-white) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+#api-playground-2-operation-page .border-standard.rounded-2xl {
+  border-radius: var(--ls-radius-lg) !important;
+}
+
+#api-playground-2-operation-page .border-standard.rounded-xl {
+  border-radius: var(--ls-radius-sm) !important;
+}
+
+html.dark #api-playground-2-operation-page .border-standard.rounded-2xl,
+html.dark #api-playground-2-operation-page .border-standard.rounded-xl,
+html.dark #api-playground-2-operation-page .border-standard[class*="rounded-xl"],
+html.dark #api-playground-2-operation-page [class*="border-standard"][class*="rounded-xl"] {
+  background-color: var(--ls-gray-975) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Try it button - 6px radius */
+#api-playground-2-operation-page .tryit-button {
+  border-radius: var(--ls-radius-sm) !important;
+}
+
+/* Expandable child attributes button */
+#api-playground-2-operation-page [data-component-part="expandable-button"] {
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="expandable-button"] {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Expandable details container when open */
+#api-playground-2-operation-page details.expandable,
+#api-playground-2-operation-page details.expandable[open],
+#api-playground-2-operation-page .expandable {
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark #api-playground-2-operation-page details.expandable,
+html.dark #api-playground-2-operation-page details.expandable[open],
+html.dark #api-playground-2-operation-page .expandable {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Page description text - match body text size */
+#api-playground-2-operation-page header#header .text-lg,
+header#header .text-lg {
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+/* ===========================================
+   API Reference - Field Info Pills (chips)
+   =========================================== */
+
+/* Make chips one step darker with border */
+#api-playground-2-operation-page [data-component-part="field-info-pill"] {
+  background-color: var(--ls-gray-150) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="field-info-pill"] {
+  background-color: var(--ls-white-06) !important;
+  border: 0.5px solid var(--ls-white-06) !important;
+}
+
+/* Required/colored pills - add consistent border */
+#api-playground-2-operation-page [data-component-part="field-required-pill"] {
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="field-required-pill"] {
+  border: 0.5px solid var(--ls-white-10) !important;
+}
+
+/* Tab list border - consistent with design system */
+#api-playground-2-operation-page [data-component-part="tabs-list"] {
+  border-color: var(--ls-black-10) !important;
+}
+
+html.dark #api-playground-2-operation-page [data-component-part="tabs-list"] {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Inline code styling */
+#content code:not(pre code),
+#content-area code:not(pre code),
+.prose code:not(pre code) {
+  background-color: var(--ls-gray-150) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #content code:not(pre code),
+html.dark #content-area code:not(pre code),
+html.dark .prose code:not(pre code) {
+  background-color: var(--ls-white-06) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Inline code inside callouts - semi-transparent to work with any callout color */
+#content .callout code:not(pre code),
+#content-area .callout code:not(pre code),
+.prose .callout code:not(pre code),
+#content [data-callout-type] code:not(pre code),
+#content-area [data-callout-type] code:not(pre code),
+.prose [data-callout-type] code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border: 0.5px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+html.dark #content .callout code:not(pre code),
+html.dark #content-area .callout code:not(pre code),
+html.dark .prose .callout code:not(pre code),
+html.dark #content [data-callout-type] code:not(pre code),
+html.dark #content-area [data-callout-type] code:not(pre code),
+html.dark .prose [data-callout-type] code:not(pre code) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ===========================================
+   Content Area - Code Blocks
+   =========================================== */
+
+/* Code block container - 8px border radius, 0.5px border */
+#content .code-block,
+#content-area .code-block,
+.prose .code-block {
+  border-radius: var(--ls-radius-md) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark #content .code-block,
+html.dark #content-area .code-block,
+html.dark .prose .code-block,
+html.dark #content .code-group,
+html.dark #content-area .code-group,
+html.dark .prose .code-group {
+  border: 0.5px solid var(--ls-white-06) !important;
+}
+
+/* Code block inner container - match outer radius */
+#content .code-block [data-component-part="code-block-root"],
+#content-area .code-block [data-component-part="code-block-root"],
+.prose .code-block [data-component-part="code-block-root"] {
+  border-radius: var(--ls-radius-md) !important;
+}
+
+/* ===========================================
+   Content Area - Code Blocks with Header
+   =========================================== */
+
+/* Code blocks with header - no padding, use overflow:hidden to clip corners */
+#content .code-block:has([data-component-part="code-block-header"]),
+#content-area .code-block:has([data-component-part="code-block-header"]),
+.prose .code-block:has([data-component-part="code-block-header"]),
+#content .code-group,
+#content-area .code-group,
+.prose .code-group {
+  border-radius: var(--ls-radius-md) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+/* Code block/group header - no border radius (clipped by parent) */
+#content .code-block [data-component-part="code-block-header"],
+#content-area .code-block [data-component-part="code-block-header"],
+.prose .code-block [data-component-part="code-block-header"],
+#content .code-group [data-component-part="code-group-tab-bar"],
+#content-area .code-group [data-component-part="code-group-tab-bar"],
+.prose .code-group [data-component-part="code-group-tab-bar"] {
+  background-color: var(--ls-gray-025) !important;
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  font-weight: 450 !important;
+  border-radius: 0 !important;
+}
+
+html.dark #content .code-block [data-component-part="code-block-header"],
+html.dark #content-area .code-block [data-component-part="code-block-header"],
+html.dark .prose .code-block [data-component-part="code-block-header"],
+html.dark #content .code-group [data-component-part="code-group-tab-bar"],
+html.dark #content-area .code-group [data-component-part="code-group-tab-bar"],
+html.dark .prose .code-group [data-component-part="code-group-tab-bar"] {
+  background-color: var(--ls-gray-975) !important;
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* Code block/group content area - no border radius (clipped by parent) */
+#content .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+#content-area .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+.prose .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+#content .code-group [data-component-part="code-block-root"],
+#content-area .code-group [data-component-part="code-block-root"],
+.prose .code-group [data-component-part="code-block-root"] {
+  border-radius: 0 !important;
+}
+
+/* Code block/group content area - darker in dark mode */
+html.dark #content .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+html.dark #content-area .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+html.dark .prose .code-block:has([data-component-part="code-block-header"]) [data-component-part="code-block-root"],
+html.dark #content .code-group [data-component-part="code-block-root"],
+html.dark #content-area .code-group [data-component-part="code-block-root"],
+html.dark .prose .code-group [data-component-part="code-block-root"] {
+  background-color: var(--ls-gray-975) !important;
+}
+
+/* ===========================================
+   Pagination Navigation Buttons
+   =========================================== */
+
+#pagination a {
+  border-radius: var(--ls-radius-md) !important;
+  background-color: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  transition: background-color 0.15s ease !important;
+}
+
+#pagination a:hover {
+  background-color: var(--ls-gray-100) !important;
+}
+
+#pagination a,
+#pagination a * {
+  font-weight: 450 !important;
+}
+
+/* Pagination title - 15px font size */
+#pagination a .font-medium {
+  font-size: 15px !important;
+  line-height: 22px !important;
+}
+
+html.dark #pagination a {
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+html.dark #pagination a:hover {
+  background-color: var(--ls-gray-900) !important;
+}
+
+/* ===========================================
+   Page Context Menu (Split Button Group)
+   =========================================== */
+
+/* Remove any border from parent container */
+#page-context-menu,
+div#page-context-menu {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Copy page button - rounded left corners, no right border */
+button#page-context-menu-button,
+#page-context-menu > button#page-context-menu-button {
+  background-color: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  border-top-left-radius: var(--ls-radius-sm) !important;
+  border-bottom-left-radius: var(--ls-radius-sm) !important;
+}
+
+/* Chevron button - rounded right corners, left border is the divider */
+#page-context-menu > button:not(#page-context-menu-button) {
+  background-color: var(--ls-gray-025) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  border-radius: 0 !important;
+  border-top-right-radius: var(--ls-radius-sm) !important;
+  border-bottom-right-radius: var(--ls-radius-sm) !important;
+}
+
+/* Hover state */
+button#page-context-menu-button:hover,
+#page-context-menu > button#page-context-menu-button:hover,
+#page-context-menu > button:not(#page-context-menu-button):hover {
+  background-color: var(--ls-gray-100) !important;
+}
+
+/* Dark mode */
+html.dark button#page-context-menu-button,
+html.dark #page-context-menu > button#page-context-menu-button {
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
+  border-right: none !important;
+}
+
+html.dark #page-context-menu > button:not(#page-context-menu-button) {
+  background-color: var(--ls-gray-925) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Dark mode hover */
+html.dark button#page-context-menu-button:hover,
+html.dark #page-context-menu > button#page-context-menu-button:hover,
+html.dark #page-context-menu > button:not(#page-context-menu-button):hover {
+  background-color: var(--ls-gray-850) !important;
+}
+
+/* ===========================================
+   Feature Cards (Product pages)
+   =========================================== */
+
+.feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .feature-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-card {
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+}
+
+html.dark .feature-card {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+.feature-card-icon-wrapper {
+  background-color: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-xs);
+  padding: 8px;
+  width: fit-content;
+  pointer-events: none;
+}
+
+html.dark .feature-card-icon-wrapper {
+  background-color: var(--ls-white-06);
+  border-color: var(--ls-white-06);
+}
+
+.feature-card-icon {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+/* Only apply dark mode filter to img icons, not mask-image colored icons */
+html.dark .feature-card-icon-wrapper img.feature-card-icon {
+  filter: brightness(0) invert(1);
+}
+
+.feature-card-title {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .feature-card-title {
+  color: var(--ls-gray-050);
+}
+
+/* Title row with inline tag */
+.feature-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.feature-card-title-row .feature-card-title {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .feature-card-title-row .feature-card-title {
+  color: var(--ls-gray-050);
+}
+
+.feature-card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.feature-card-content .feature-card-link-row {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.feature-card-desc {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-500);
+}
+
+.feature-card-link-row {
+  /* spacing handled by margin-top: auto in .feature-card-content context */
+}
+
+.feature-card-text-link {
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 20px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feature-card-text-link:hover {
+  opacity: 0.7;
+}
+
+.feature-card-coming-soon {
+  cursor: default;
+}
+
+.feature-card-coming-soon:hover {
+  opacity: 0.6;
+}
+
+/* Column variants */
+.feature-cards-cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.feature-cards-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.feature-cards-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.feature-cards-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+  .feature-cards-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .feature-cards-cols-2,
+  .feature-cards-cols-3,
+  .feature-cards-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Link card styles */
+.feature-card-anchor {
+  text-decoration: none;
+  display: block;
+  height: 100%;
+}
+
+.feature-card-link {
+  transition: all 0.2s ease;
+}
+
+.feature-card-link:hover {
+  background-color: var(--ls-gray-025);
+  transform: scale(1.02);
+}
+
+html.dark .feature-card-link:hover {
+  background-color: var(--ls-gray-900);
+}
+
+/* Cards without icon */
+.feature-card-no-icon {
+  gap: 8px;
+}
+
+/* ===========================================
+   Feature Card - Horizontal Layout
+   =========================================== */
+
+.feature-card-horizontal {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+}
+
+.feature-card-horizontal .feature-card-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.feature-card-horizontal .feature-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Feature Card List - vertical stack for horizontal cards */
+.feature-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Feature Card Container - card-style wrapper for grouped content */
+.feature-card-container {
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+html.dark .feature-card-container {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+/* Grid inside container - no gap, items have padding instead */
+.feature-card-container .feature-cards-grid {
+  gap: 0;
+}
+
+.feature-card-container .feature-card {
+  padding: 24px !important;
+}
+
+/* List inside container - no gap, use padding and dividers */
+.feature-card-container .feature-cards-list {
+  gap: 0;
+}
+
+/* Horizontal dividers between list items */
+.feature-card-container .feature-cards-list .feature-card:not(:last-child) {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+  border-radius: 0 !important;
+}
+
+.feature-card-container .feature-cards-list .feature-card:last-child {
+  border-radius: 0 !important;
+}
+
+html.dark .feature-card-container .feature-cards-list .feature-card:not(:last-child) {
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* Vertical divider (for 2-column grid) */
+.feature-card-container:has(.feature-cards-cols-2)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  border-left: 0.5px solid var(--ls-black-10);
+  z-index: 1;
+}
+
+/* Horizontal divider (for 2x2 grid - 4 items) */
+.feature-card-container:has(.feature-cards-cols-2)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+  border-top: 0.5px solid var(--ls-black-10);
+  z-index: 1;
+}
+
+html.dark .feature-card-container:has(.feature-cards-cols-2)::before {
+  border-left-color: var(--ls-white-06);
+}
+
+html.dark .feature-card-container:has(.feature-cards-cols-2)::after {
+  border-top-color: var(--ls-white-06);
+}
+
+/* ===========================================
+   Feature Card - Flat Variant (no card styling)
+   =========================================== */
+
+.feature-card-flat {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+html.dark .feature-card-flat {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* ===========================================
+   Feature Card - Large Icon Variant (+8px)
+   =========================================== */
+
+.feature-card-icon-lg .feature-card-icon-wrapper {
+  padding: 12px;
+}
+
+.feature-card-icon-lg .feature-card-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* For colored mask icons in large variant */
+.feature-card-icon-lg .feature-card-icon[style*="mask-image"] {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* ===========================================
+   Image Cards (Use cases page)
+   =========================================== */
+
+.image-card {
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+html.dark .image-card {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+.image-card-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.image-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  border-radius: 0;
+}
+
+.image-card-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.image-card-title {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .image-card-title {
+  color: var(--ls-gray-050);
+}
+
+.image-card-desc {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ls-gray-500);
+}
+
+/* Link card styles */
+.image-card-anchor {
+  text-decoration: none;
+  display: block;
+  height: 100%;
+}
+
+.image-card-link {
+  transition: all 0.2s ease;
+}
+
+.image-card-link:hover {
+  background-color: var(--ls-gray-025);
+  transform: scale(1.02);
+}
+
+html.dark .image-card-link:hover {
+  background-color: var(--ls-gray-900);
+}
+
+/* ===========================================
+   Steps Component
+   =========================================== */
+
+/* Step number indicators - one step darker than default */
+.steps [class*="size-7"][class*="rounded-full"] {
+  background-color: var(--ls-gray-150) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .steps [class*="size-7"][class*="rounded-full"] {
+  background-color: var(--ls-white-10) !important;
+  border-color: var(--ls-white-06) !important;
+}
+
+/* Feature card tag row - same structure as link-row */
+.feature-card-content .feature-card-tag-row {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+/* Feature card tag - pill style */
+.feature-card-tag {
+  display: inline-block;
+  width: fit-content;
+  background-color: var(--ls-gray-100);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-xs);
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--ls-gray-700);
+}
+
+html.dark .feature-card-tag {
+  background-color: var(--ls-white-06);
+  border-color: var(--ls-white-06);
+  color: var(--ls-gray-400);
+}
+
+/* ===========================================
+   Tab Controllers (API/Dashboard tabs)
+   =========================================== */
+
+/* Tab container border */
+#content ul:has([data-component-part="tab-button"]) {
+  border-bottom-color: var(--ls-black-10) !important;
+}
+
+html.dark #content ul:has([data-component-part="tab-button"]) {
+  border-bottom-color: var(--ls-white-06) !important;
+}
+
+/* All tabs - consistent weight to prevent layout shift */
+[data-component-part="tab-button"] {
+  font-weight: 450 !important;
+}
+
+/* Inactive tab */
+[data-component-part="tab-button"][data-active="false"] {
+  color: var(--ls-gray-500) !important;
+  border-color: transparent !important;
+}
+
+[data-component-part="tab-button"][data-active="false"]:hover {
+  color: var(--ls-gray-700) !important;
+  border-color: var(--ls-gray-300) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="false"] {
+  color: var(--ls-gray-600) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="false"]:hover {
+  color: var(--ls-gray-400) !important;
+  border-color: var(--ls-gray-700) !important;
+}
+
+/* Active tab */
+[data-component-part="tab-button"][data-active="true"] {
+  color: var(--ls-gray-950) !important;
+  border-color: var(--ls-gray-950) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="true"] {
+  color: var(--ls-white) !important;
+  border-color: var(--ls-gray-100) !important;
+}
+
+/* ===========================================
+   Tables
+   =========================================== */
+
+/* Table cell font size */
+#content table td,
+#content table th,
+.prose table td,
+.prose table th {
+  font-size: 15px !important;
+  line-height: 22px !important;
+}
+
+/* Table row hover effect */
+#content table tbody tr,
+.prose table tbody tr {
+  transition: background-color 0.15s ease !important;
+}
+
+#content table tbody tr:hover,
+.prose table tbody tr:hover {
+  background-color: var(--ls-gray-075) !important;
+}
+
+html.dark #content table tbody tr:hover,
+html.dark .prose table tbody tr:hover {
+  background-color: var(--ls-white-02) !important;
+}
+
+/* ===========================================
+   Accordion Component
+   =========================================== */
+
+/* Accordion group container */
+.accordion-group {
+  border-radius: var(--ls-radius-md) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  overflow: hidden;
+}
+
+html.dark .accordion-group {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Accordion item summary/trigger */
+.accordion-group details > summary {
+  padding: 16px !important;
+  background-color: var(--ls-gray-025) !important;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+html.dark .accordion-group details > summary {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* Hover state */
+.accordion-group details > summary:hover {
+  background-color: var(--ls-gray-075) !important;
+}
+
+html.dark .accordion-group details > summary:hover {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Hide Mintlify's chevron SVG and icon wrapper */
+.accordion-group details > summary svg,
+.accordion-group details > summary div[data-component-part="accordion-icon"] {
+  display: none !important;
+}
+
+/* Create Central Icons style chevron */
+.accordion-group details > summary::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 20px !important;
+  top: 50% !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-right: 1.5px solid var(--ls-gray-400) !important;
+  border-bottom: 1.5px solid var(--ls-gray-400) !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+html.dark .accordion-group details > summary::before {
+  border-color: var(--ls-gray-500) !important;
+}
+
+/* Chevron rotation when open */
+.accordion-group details[open] > summary::before {
+  transform: translateY(-70%) rotate(45deg) !important;
+}
+
+/* Adjust summary text to account for chevron (16px + 6px chevron + 8px gap = 30px) */
+.accordion-group details > summary {
+  padding-left: 30px !important;
+}
+
+/* Accordion content area */
+.accordion-group details > *:not(summary),
+.accordion-group details [data-component-part="accordion-content"] {
+  padding: 16px !important;
+  padding-left: 30px !important;
+  margin: 0 !important;
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark .accordion-group details > *:not(summary),
+html.dark .accordion-group details [data-component-part="accordion-content"] {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* Dividers between accordion items */
+.accordion-group details:not(:last-child) {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .accordion-group details:not(:last-child) {
+  border-bottom-color: var(--ls-white-10) !important;
+}
+
+/* Override Mintlify's divide-y on accordion group */
+.accordion-group.divide-y > details {
+  border-top: none !important;
+}
+
+.accordion-group.divide-y > details:not(:last-child) {
+  border-bottom: 0.5px solid var(--ls-black-10) !important;
+}
+
+html.dark .accordion-group.divide-y > details:not(:last-child) {
+  border-bottom-color: var(--ls-white-10) !important;
+}
+
+/* Steps inside accordion - reduce spacing */
+.accordion-group .steps {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.accordion-group .steps > div:first-child {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.accordion-group .steps > div:last-child {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ===========================================
+   Standalone Accordion (not in accordion-group)
+   Note: .prose:not(.accordion-group) excludes accordion groups which also have .prose class
+   =========================================== */
+
+/* Container styling */
+#content > details.accordion,
+#content-area > details.accordion,
+.prose:not(.accordion-group) > details.accordion {
+  border-radius: var(--ls-radius-md) !important;
+  border: 0.5px solid var(--ls-black-10) !important;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+html.dark #content > details.accordion,
+html.dark #content-area > details.accordion,
+html.dark .prose:not(.accordion-group) > details.accordion {
+  border-color: var(--ls-white-10) !important;
+}
+
+/* Summary/trigger styling */
+#content > details.accordion > summary,
+#content-area > details.accordion > summary,
+.prose:not(.accordion-group) > details.accordion > summary {
+  padding: 16px !important;
+  padding-left: 30px !important;
+  background-color: var(--ls-gray-025) !important;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+html.dark #content > details.accordion > summary,
+html.dark #content-area > details.accordion > summary,
+html.dark .prose:not(.accordion-group) > details.accordion > summary {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* Hover state */
+#content > details.accordion > summary:hover,
+#content-area > details.accordion > summary:hover,
+.prose:not(.accordion-group) > details.accordion > summary:hover {
+  background-color: var(--ls-gray-075) !important;
+}
+
+html.dark #content > details.accordion > summary:hover,
+html.dark #content-area > details.accordion > summary:hover,
+html.dark .prose:not(.accordion-group) > details.accordion > summary:hover {
+  background-color: var(--ls-white-06) !important;
+}
+
+/* Hide Mintlify's chevron SVG and icon wrapper */
+#content > details.accordion > summary svg,
+#content-area > details.accordion > summary svg,
+.prose:not(.accordion-group) > details.accordion > summary svg,
+#content > details.accordion > summary div[data-component-part="accordion-icon"],
+#content-area > details.accordion > summary div[data-component-part="accordion-icon"],
+.prose:not(.accordion-group) > details.accordion > summary div[data-component-part="accordion-icon"] {
+  display: none !important;
+}
+
+/* Custom chevron */
+#content > details.accordion > summary::before,
+#content-area > details.accordion > summary::before,
+.prose:not(.accordion-group) > details.accordion > summary::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 20px !important;
+  top: 50% !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-right: 1.5px solid var(--ls-gray-400) !important;
+  border-bottom: 1.5px solid var(--ls-gray-400) !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+html.dark #content > details.accordion > summary::before,
+html.dark #content-area > details.accordion > summary::before,
+html.dark .prose:not(.accordion-group) > details.accordion > summary::before {
+  border-color: var(--ls-gray-500) !important;
+}
+
+/* Chevron rotation when open */
+#content > details.accordion[open] > summary::before,
+#content-area > details.accordion[open] > summary::before,
+.prose:not(.accordion-group) > details.accordion[open] > summary::before {
+  transform: translateY(-70%) rotate(45deg) !important;
+}
+
+/* Content area */
+#content > details.accordion > *:not(summary),
+#content-area > details.accordion > *:not(summary),
+.prose:not(.accordion-group) > details.accordion > *:not(summary),
+#content > details.accordion [data-component-part="accordion-content"],
+#content-area > details.accordion [data-component-part="accordion-content"],
+.prose:not(.accordion-group) > details.accordion [data-component-part="accordion-content"] {
+  padding: 16px !important;
+  padding-left: 30px !important;
+  margin: 0 !important;
+  background-color: var(--ls-gray-025) !important;
+}
+
+html.dark #content > details.accordion > *:not(summary),
+html.dark #content-area > details.accordion > *:not(summary),
+html.dark .prose:not(.accordion-group) > details.accordion > *:not(summary),
+html.dark #content > details.accordion [data-component-part="accordion-content"],
+html.dark #content-area > details.accordion [data-component-part="accordion-content"],
+html.dark .prose:not(.accordion-group) > details.accordion [data-component-part="accordion-content"] {
+  background-color: var(--ls-white-04) !important;
+}
+
+/* ===========================================
+   Page Hero Images
+   Mobile: Square aspect ratio with center crop
+   =========================================== */
+
+.page-hero {
+  width: 100%;
+  border-radius: var(--ls-radius-md);
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  img.page-hero,
+  picture img.page-hero {
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    object-position: center !important;
+  }
+}

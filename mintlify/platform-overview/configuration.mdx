@@ -1,0 +1,43 @@
+---
+icon: "/images/icons/settings-gear2.svg"
+title: "Configuration"
+description: "Configure your Grid integration"
+"og:image": "/images/og/og-get-started.png"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+Learn how to configure Grid for your specific use case.
+
+## Platform Configuration
+
+Before you can start using Grid, you'll need to configure your platform settings. This includes:
+
+- Setting up your API credentials
+- Configuring webhooks for real-time updates
+- Defining your supported currencies and payment rails
+- Setting up compliance and KYC requirements
+
+## Environment Setup
+
+Grid provides two environments:
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/sandbox.svg" title="Sandbox" href="/api-reference/environments">
+    Test your integration with simulated payments
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/lightning.svg" title="Production" href="/api-reference/environments">
+    Process real payments with live credentials
+  </FeatureCard>
+</FeatureCardGrid>
+
+## Next Steps
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/key2.svg" title="Authentication" href="/api-reference/authentication">
+    Learn how to authenticate API requests
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks" href="/payouts-and-b2b/platform-tools/webhooks">
+    Set up real-time event notifications
+  </FeatureCard>
+</FeatureCardGrid>
