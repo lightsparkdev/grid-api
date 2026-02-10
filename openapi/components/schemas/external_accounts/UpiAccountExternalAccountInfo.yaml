@@ -5,5 +5,16 @@ allOf:
     required:
       - beneficiary
     properties:
+      beneficiaryNameVerificationStatus:
+        description: >-
+          The result of verifying the beneficiary name provided at resource creation against the
+          name on the account. `MATCHED` indicates an exact match, `PARTIALLY_MATCHED` indicates
+          a fuzzy match, and `NO_MATCH` indicates the name failed the fuzzy match.
+        type: string
+        enum:
+          - MATCHED
+          - PARTIALLY_MATCHED
+          - NO_MATCH
+        example: MATCHED
       beneficiary:
         $ref: ./BeneficiaryOneOf.yaml

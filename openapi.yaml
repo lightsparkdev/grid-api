@@ -39,7 +39,7 @@ tags:
   - name: API Tokens
     description: Endpoints to programmatically manage API tokens
   - name: Exchange Rates
-    description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
+    description: Endpoints for retrieving exchange rates.
 paths:
   /config:
     get:
@@ -5376,6 +5376,14 @@ components:
           required:
             - beneficiary
           properties:
+            beneficiaryNameVerificationStatus:
+              description: The result of verifying the beneficiary name provided at resource creation against the name on the account. `MATCHED` indicates an exact match, `PARTIALLY_MATCHED` indicates a fuzzy match, and `NO_MATCH` indicates the name failed the fuzzy match.
+              type: string
+              enum:
+                - MATCHED
+                - PARTIALLY_MATCHED
+                - NO_MATCH
+              example: MATCHED
             beneficiary:
               $ref: '#/components/schemas/BeneficiaryOneOf'
     NgnAccountExternalAccountInfo:
