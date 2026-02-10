@@ -14,9 +14,9 @@ discriminator:
     UPI: ./UpiAccountExternalAccountInfo.yaml
     NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
     CAD_ACCOUNT: ./CadAccountExternalAccountInfo.yaml
-    GBP_ACCOUNT: ./GbpAccountExternalAccountInfo.yaml
-    PHP_ACCOUNT: ./PhpAccountExternalAccountInfo.yaml
-    SGD_ACCOUNT: ./SgdAccountExternalAccountInfo.yaml
+    GBP_ACCOUNT: ./GbpAccountInfo.yaml
+    PHP_ACCOUNT: ./PhpAccountInfo.yaml
+    SGD_ACCOUNT: ./SgdAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml

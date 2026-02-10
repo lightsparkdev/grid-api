@@ -1,24 +1,32 @@
 oneOf:
-- title: US Account
-  $ref: ./UsAccountExternalAccountInfo.yaml
-- title: CLABE Account
-  $ref: ./ClabeAccountExternalAccountInfo.yaml
-- title: PIX Account
-  $ref: ./PixAccountExternalAccountInfo.yaml
-- title: IBAN Account
-  $ref: ./IbanAccountExternalAccountInfo.yaml
-- title: UPI Account
-  $ref: ./UpiAccountExternalAccountInfo.yaml
-- title: NGN Account
-  $ref: ./NgnAccountExternalAccountInfo.yaml
-- title: CAD Account
-  $ref: ./CadAccountExternalAccountInfo.yaml
+# Fiat accounts
+- title: BRL Account
+  $ref: ./BrlAccountInfo.yaml
+- title: DKK Account
+  $ref: ./DkkAccountInfo.yaml
 - title: GBP Account
-  $ref: ./GbpAccountExternalAccountInfo.yaml
+  $ref: ./GbpAccountInfo.yaml
+- title: HKD Account
+  $ref: ./HkdAccountInfo.yaml
+- title: IDR Account
+  $ref: ./IdrAccountInfo.yaml
+- title: INR Account
+  $ref: ./InrAccountInfo.yaml
+- title: MXN Account
+  $ref: ./MxnAccountInfo.yaml
+- title: MYR Account
+  $ref: ./MyrAccountInfo.yaml
 - title: PHP Account
-  $ref: ./PhpAccountExternalAccountInfo.yaml
+  $ref: ./PhpAccountInfo.yaml
 - title: SGD Account
-  $ref: ./SgdAccountExternalAccountInfo.yaml
+  $ref: ./SgdAccountInfo.yaml
+- title: THB Account
+  $ref: ./ThbAccountInfo.yaml
+- title: USD Account
+  $ref: ./UsdAccountInfo.yaml
+- title: VND Account
+  $ref: ./VndAccountInfo.yaml
+# Crypto wallets
 - title: Spark Wallet
   $ref: ./SparkWalletExternalAccountInfo.yaml
 - title: Lightning
@@ -31,58 +39,27 @@ oneOf:
   $ref: ./PolygonWalletExternalAccountInfo.yaml
 - title: Base Wallet
   $ref: ./BaseWalletExternalAccountInfo.yaml
-- title: THB Account
-  $ref: ./ThbAccountInfo.yaml
-- title: BRL Account
-  $ref: ./BrlAccountInfo.yaml
-- title: IDR Account
-  $ref: ./IdrAccountInfo.yaml
-- title: SGD Account
-  $ref: ./SgdAccountInfo.yaml
-- title: USD Account
-  $ref: ./UsdAccountInfo.yaml
-- title: PHP Account
-  $ref: ./PhpAccountInfo.yaml
-- title: MYR Account
-  $ref: ./MyrAccountInfo.yaml
-- title: INR Account
-  $ref: ./InrAccountInfo.yaml
-- title: DKK Account
-  $ref: ./DkkAccountInfo.yaml
-- title: VND Account
-  $ref: ./VndAccountInfo.yaml
-- title: MXN Account
-  $ref: ./MxnAccountInfo.yaml
-- title: GBP Account
-  $ref: ./GbpAccountInfo.yaml
-- title: HKD Account
-  $ref: ./HkdAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
-    US_ACCOUNT: ./UsAccountExternalAccountInfo.yaml
-    CLABE: ./ClabeAccountExternalAccountInfo.yaml
-    PIX: ./PixAccountExternalAccountInfo.yaml
-    IBAN: ./IbanAccountExternalAccountInfo.yaml
-    UPI: ./UpiAccountExternalAccountInfo.yaml
-    NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
-    CAD_ACCOUNT: ./CadAccountExternalAccountInfo.yaml
-    GBP_ACCOUNT: ./GbpAccountExternalAccountInfo.yaml
-    PHP_ACCOUNT: ./PhpAccountExternalAccountInfo.yaml
-    SGD_ACCOUNT: ./SgdAccountExternalAccountInfo.yaml
+    # Fiat accounts
+    BRL_ACCOUNT: ./BrlAccountInfo.yaml
+    DKK_ACCOUNT: ./DkkAccountInfo.yaml
+    GBP_ACCOUNT: ./GbpAccountInfo.yaml
+    HKD_ACCOUNT: ./HkdAccountInfo.yaml
+    IDR_ACCOUNT: ./IdrAccountInfo.yaml
+    INR_ACCOUNT: ./InrAccountInfo.yaml
+    MXN_ACCOUNT: ./MxnAccountInfo.yaml
+    MYR_ACCOUNT: ./MyrAccountInfo.yaml
+    PHP_ACCOUNT: ./PhpAccountInfo.yaml
+    SGD_ACCOUNT: ./SgdAccountInfo.yaml
+    THB_ACCOUNT: ./ThbAccountInfo.yaml
+    USD_ACCOUNT: ./UsdAccountInfo.yaml
+    VND_ACCOUNT: ./VndAccountInfo.yaml
+    # Crypto wallets
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
-    THB_ACCOUNT: ./ThbAccountInfo.yaml
-    BRL_ACCOUNT: ./BrlAccountInfo.yaml
-    IDR_ACCOUNT: ./IdrAccountInfo.yaml
-    USD_ACCOUNT: ./UsdAccountInfo.yaml
-    MYR_ACCOUNT: ./MyrAccountInfo.yaml
-    INR_ACCOUNT: ./InrAccountInfo.yaml
-    DKK_ACCOUNT: ./DkkAccountInfo.yaml
-    VND_ACCOUNT: ./VndAccountInfo.yaml
-    MXN_ACCOUNT: ./MxnAccountInfo.yaml
-    HKD_ACCOUNT: ./HkdAccountInfo.yaml
