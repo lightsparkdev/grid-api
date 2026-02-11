@@ -112,6 +112,7 @@ export function registerQuotesCommand(
     .option("--sender-name <name>", "Sender full name (for UMA destinations)")
     .option("--sender-birth-date <date>", "Sender birth date YYYY-MM-DD (for UMA destinations)")
     .option("--sender-nationality <code>", "Sender nationality country code (for UMA destinations)")
+    .option("--purpose-of-payment <purpose>", "Purpose of payment (GOODS_OR_SERVICES, GIFT, SELF, EDUCATION, etc.)")
     .action(async (options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
@@ -176,6 +177,7 @@ export function registerQuotesCommand(
       if (options.senderName) senderInfo.FULL_NAME = options.senderName;
       if (options.senderBirthDate) senderInfo.BIRTH_DATE = options.senderBirthDate;
       if (options.senderNationality) senderInfo.NATIONALITY = options.senderNationality;
+      if (options.purposeOfPayment) senderInfo.PURPOSE_OF_PAYMENT = options.purposeOfPayment;
       if (Object.keys(senderInfo).length > 0) {
         body.senderCustomerInfo = senderInfo;
       }
