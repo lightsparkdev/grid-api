@@ -1,0 +1,39 @@
+type: object
+description: Exchange rates grouped by destination currency code.
+required:
+  - sourceCurrency
+  - sendingAmount
+  - destinationCurrencies
+  - updatedAt
+properties:
+  sourceCurrency:
+    $ref: ../common/Currency.yaml
+  sendingAmount:
+    type: integer
+    format: int64
+    description: Sending amount in the smallest unit of the source currency.
+    minimum: 0
+    example: 10000
+  destinationCurrencies:
+    type: object
+    description: Map keyed by destination ISO 4217 currency code.
+    propertyNames:
+      pattern: '^[A-Z]{3}$'
+    additionalProperties:
+      $ref: ../common/Currency.yaml
+    example:
+      MXN:
+        code: MXN
+        decimals: 2
+        name: Mexican Peso
+        symbol: "$"
+      EUR:
+        code: EUR
+        decimals: 2
+        name: Euro
+        symbol: "EUR"
+  updatedAt:
+    type: string
+    format: date-time
+    description: Timestamp when this exchange rate map was last refreshed.
+    example: "2025-02-05T12:00:00Z"

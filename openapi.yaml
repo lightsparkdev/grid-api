@@ -264,6 +264,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /exchange-rates-new:
+    get:
+      summary: Get exchange rates (currency map)
+      description: |
+        Retrieve cached exchange rates grouped by destination currency code.
+        This endpoint is intended to validate map-style response modeling where destination
+        currency codes are dynamic keys (for example, `destinationCurrencies["MXN"]`).
+      operationId: getExchangeRatesNew
+      tags:
+        - Exchange Rates
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: sourceCurrency
+          in: query
+          description: Filter by source currency code (e.g., USD)
+          required: false
+          schema:
+            type: string
+          example: USD
+        - name: sendingAmount
+          in: query
+          description: Sending amount in the smallest unit of the source currency.
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 10000
+          example: 10000
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExchangeRatesNew'
+              examples:
+                destinationCurrencyMap:
+                  summary: Exchange rates grouped by destination currency code
+                  value:
+                    data:
+                      sourceCurrency:
+                        code: USD
+                        decimals: 2
+                        name: US Dollar
+                        symbol: $
+                      sendingAmount: 10000
+                      destinationCurrencies:
+                        MXN:
+                          code: MXN
+                          decimals: 2
+                          name: Mexican Peso
+                          symbol: $
+                        EUR:
+                          code: EUR
+                          decimals: 2
+                          name: Euro
+                          symbol: EUR
+                      updatedAt: '2025-02-05T12:00:00Z'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers:
     post:
       summary: Add a new customer
@@ -4322,6 +4405,46 @@ components:
           type: string
           format: date-time
           description: Timestamp when this exchange rate was last refreshed
+          example: '2025-02-05T12:00:00Z'
+    ExchangeRatesNew:
+      type: object
+      description: Exchange rates grouped by destination currency code.
+      required:
+        - sourceCurrency
+        - sendingAmount
+        - destinationCurrencies
+        - updatedAt
+      properties:
+        sourceCurrency:
+          $ref: '#/components/schemas/Currency'
+        sendingAmount:
+          type: integer
+          format: int64
+          description: Sending amount in the smallest unit of the source currency.
+          minimum: 0
+          example: 10000
+        destinationCurrencies:
+          type: object
+          description: Map keyed by destination ISO 4217 currency code.
+          propertyNames:
+            pattern: ^[A-Z]{3}$
+          additionalProperties:
+            $ref: '#/components/schemas/Currency'
+          example:
+            MXN:
+              code: MXN
+              decimals: 2
+              name: Mexican Peso
+              symbol: $
+            EUR:
+              code: EUR
+              decimals: 2
+              name: Euro
+              symbol: EUR
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when this exchange rate map was last refreshed.
           example: '2025-02-05T12:00:00Z'
     CustomerType:
       type: string

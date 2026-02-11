@@ -90,6 +90,8 @@ paths:
     $ref: paths/platform/config.yaml
   /exchange-rates:
     $ref: paths/exchange-rates/exchange_rates.yaml
+  /exchange-rates-new:
+    $ref: paths/exchange-rates/exchange_rates_new.yaml
   /customers:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
