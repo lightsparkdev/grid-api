@@ -1,11 +1,11 @@
 type: object
 required:
-- bankName
 - accountNumber
+- routingNumber
 properties:
-  bankName:
-    type: string
-    description: The bank name of the bank
   accountNumber:
     type: string
     description: The account number of the bank
+  routingNumber:
+    type: string
+    description: The routing number of the bank

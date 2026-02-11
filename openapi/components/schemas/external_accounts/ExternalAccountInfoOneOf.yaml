@@ -1,36 +1,76 @@
 oneOf:
-  - title: US Account
-    $ref: ./UsAccountExternalAccountInfo.yaml
-  - title: CLABE Account
-    $ref: ./ClabeAccountExternalAccountInfo.yaml
-  - title: PIX Account
-    $ref: ./PixAccountExternalAccountInfo.yaml
-  - title: IBAN Account
-    $ref: ./IbanAccountExternalAccountInfo.yaml
-  - title: UPI Account
-    $ref: ./UpiAccountExternalAccountInfo.yaml
-  - title: NGN Account
-    $ref: ./NgnAccountExternalAccountInfo.yaml
-  - title: CAD Account
-    $ref: ./CadAccountExternalAccountInfo.yaml
-  - title: GBP Account
-    $ref: ./GbpAccountExternalAccountInfo.yaml
-  - title: PHP Account
-    $ref: ./PhpAccountExternalAccountInfo.yaml
-  - title: SGD Account
-    $ref: ./SgdAccountExternalAccountInfo.yaml
-  - title: Spark Wallet
-    $ref: ./SparkWalletExternalAccountInfo.yaml
-  - title: Lightning
-    $ref: ./LightningExternalAccountInfo.yaml
-  - title: Solana Wallet
-    $ref: ./SolanaWalletExternalAccountInfo.yaml
-  - title: Tron Wallet
-    $ref: ./TronWalletExternalAccountInfo.yaml
-  - title: Polygon Wallet
-    $ref: ./PolygonWalletExternalAccountInfo.yaml
-  - title: Base Wallet
-    $ref: ./BaseWalletExternalAccountInfo.yaml
+- title: US Account
+  $ref: ./UsAccountExternalAccountInfo.yaml
+- title: CLABE Account
+  $ref: ./ClabeAccountExternalAccountInfo.yaml
+- title: PIX Account
+  $ref: ./PixAccountExternalAccountInfo.yaml
+- title: IBAN Account
+  $ref: ./IbanAccountExternalAccountInfo.yaml
+- title: UPI Account
+  $ref: ./UpiAccountExternalAccountInfo.yaml
+- title: NGN Account
+  $ref: ./NgnAccountExternalAccountInfo.yaml
+- title: CAD Account
+  $ref: ./CadAccountExternalAccountInfo.yaml
+- title: GBP Account
+  $ref: ./GbpAccountExternalAccountInfo.yaml
+- title: PHP Account
+  $ref: ./PhpAccountExternalAccountInfo.yaml
+- title: SGD Account
+  $ref: ./SgdAccountExternalAccountInfo.yaml
+- title: Spark Wallet
+  $ref: ./SparkWalletExternalAccountInfo.yaml
+- title: Lightning
+  $ref: ./LightningExternalAccountInfo.yaml
+- title: Solana Wallet
+  $ref: ./SolanaWalletExternalAccountInfo.yaml
+- title: Tron Wallet
+  $ref: ./TronWalletExternalAccountInfo.yaml
+- title: Polygon Wallet
+  $ref: ./PolygonWalletExternalAccountInfo.yaml
+- title: Base Wallet
+  $ref: ./BaseWalletExternalAccountInfo.yaml
+- title: BrlExternalAccountInfo
+  $ref: ./BrlExternalAccountInfo.yaml
+- title: CadExternalAccountInfo
+  $ref: ./CadExternalAccountInfo.yaml
+- title: ClabeExternalAccountInfo
+  $ref: ./ClabeExternalAccountInfo.yaml
+- title: DkkExternalAccountInfo
+  $ref: ./DkkExternalAccountInfo.yaml
+- title: GbpExternalAccountInfo
+  $ref: ./GbpExternalAccountInfo.yaml
+- title: HkdExternalAccountInfo
+  $ref: ./HkdExternalAccountInfo.yaml
+- title: IbanExternalAccountInfo
+  $ref: ./IbanExternalAccountInfo.yaml
+- title: IdrExternalAccountInfo
+  $ref: ./IdrExternalAccountInfo.yaml
+- title: InrExternalAccountInfo
+  $ref: ./InrExternalAccountInfo.yaml
+- title: MxnExternalAccountInfo
+  $ref: ./MxnExternalAccountInfo.yaml
+- title: MyrExternalAccountInfo
+  $ref: ./MyrExternalAccountInfo.yaml
+- title: NgnExternalAccountInfo
+  $ref: ./NgnExternalAccountInfo.yaml
+- title: PhpExternalAccountInfo
+  $ref: ./PhpExternalAccountInfo.yaml
+- title: PixExternalAccountInfo
+  $ref: ./PixExternalAccountInfo.yaml
+- title: SgdExternalAccountInfo
+  $ref: ./SgdExternalAccountInfo.yaml
+- title: ThbExternalAccountInfo
+  $ref: ./ThbExternalAccountInfo.yaml
+- title: UpiExternalAccountInfo
+  $ref: ./UpiExternalAccountInfo.yaml
+- title: UsExternalAccountInfo
+  $ref: ./UsExternalAccountInfo.yaml
+- title: UsdExternalAccountInfo
+  $ref: ./UsdExternalAccountInfo.yaml
+- title: VndExternalAccountInfo
+  $ref: ./VndExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -50,3 +90,18 @@ discriminator:
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
+    BRL_ACCOUNT: ./BrlExternalAccountInfo.yaml
+    CLABE_ACCOUNT: ./ClabeExternalAccountInfo.yaml
+    DKK_ACCOUNT: ./DkkExternalAccountInfo.yaml
+    HKD_ACCOUNT: ./HkdExternalAccountInfo.yaml
+    IBAN_ACCOUNT: ./IbanExternalAccountInfo.yaml
+    IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml
+    INR_ACCOUNT: ./InrExternalAccountInfo.yaml
+    LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
+    MXN_ACCOUNT: ./MxnExternalAccountInfo.yaml
+    MYR_ACCOUNT: ./MyrExternalAccountInfo.yaml
+    PIX_ACCOUNT: ./PixExternalAccountInfo.yaml
+    THB_ACCOUNT: ./ThbExternalAccountInfo.yaml
+    UPI_ACCOUNT: ./UpiExternalAccountInfo.yaml
+    USD_ACCOUNT: ./UsdExternalAccountInfo.yaml
+    VND_ACCOUNT: ./VndExternalAccountInfo.yaml
