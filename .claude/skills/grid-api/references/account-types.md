@@ -2,8 +2,6 @@
 
 This reference maps countries/regions to their required account types and fields for sending payments via the Grid API.
 
-**Note:** The CLI validates date formats (YYYY-MM-DD) and currency codes before making API calls. Invalid input will return a clear error message without hitting the API.
-
 ## Account Type Summary
 
 | Country/Region | Account Type | Currency | Primary Identifier |
@@ -31,30 +29,45 @@ This reference maps countries/regions to their required account types and fields
 ### Mexico (CLABE)
 
 **Individual beneficiary:**
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency MXN \
-  --account-type CLABE \
-  --clabe <18-digit-clabe> \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name" \
-  --beneficiary-birth-date "1990-01-15" \
-  --beneficiary-nationality MX
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "MXN",
+    "accountType": "CLABE",
+    "clabeNumber": "<18-digit-clabe>",
+    "beneficiaryType": "INDIVIDUAL",
+    "beneficiary": {
+      "fullName": "Full Name",
+      "birthDate": "1990-01-15",
+      "nationality": "MX"
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 **Business beneficiary:**
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency MXN \
-  --account-type CLABE \
-  --clabe <18-digit-clabe> \
-  --beneficiary-type BUSINESS \
-  --beneficiary-name "Company Legal Name"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "MXN",
+    "accountType": "CLABE",
+    "clabeNumber": "<18-digit-clabe>",
+    "beneficiaryType": "BUSINESS",
+    "beneficiary": {
+      "legalName": "Company Legal Name"
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 Required fields:
+
 - `clabeNumber`: 18-digit CLABE number (validates with check digit)
 - For individuals: `fullName`, `birthDate`, `nationality` (ALL THREE REQUIRED)
 - For businesses: `legalName`
@@ -62,16 +75,23 @@ Required fields:
 ### Brazil (PIX)
 
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency BRL \
-  --account-type PIX \
-  --pix-key "cpf:12345678901" \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "BRL",
+    "accountType": "PIX",
+    "pixKey": "12345678901",
+    "beneficiaryType": "INDIVIDUAL",
+    "beneficiary": {
+      "fullName": "Full Name"
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 PIX key formats:
+
 - CPF: 11 digits (e.g., `12345678901`)
 - CNPJ: 14 digits (e.g., `12345678901234`)
 - Email: valid email address
@@ -81,16 +101,24 @@ PIX key formats:
 ### Europe (IBAN)
 
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency EUR \
-  --account-type IBAN \
-  --iban "DE89370400440532013000" \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name" \
-  --beneficiary-address-line1 "123 Street" \
-  --beneficiary-address-city "Berlin" \
-  --beneficiary-address-country DE
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "EUR",
+    "accountType": "IBAN",
+    "iban": "DE89370400440532013000",
+    "beneficiaryType": "INDIVIDUAL",
+    "beneficiary": {
+      "fullName": "Full Name",
+      "address": {
+        "line1": "123 Street",
+        "city": "Berlin",
+        "country": "DE"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 IBAN format: Country code (2) + Check digits (2) + BBAN (up to 30)
@@ -98,23 +126,32 @@ IBAN format: Country code (2) + Check digits (2) + BBAN (up to 30)
 ### United States (US_ACCOUNT)
 
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency USD \
-  --account-type US_ACCOUNT \
-  --routing-number "123456789" \
-  --account-number "12345678901" \
-  --account-category CHECKING \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name" \
-  --beneficiary-address-line1 "123 Main St" \
-  --beneficiary-address-city "San Francisco" \
-  --beneficiary-address-state CA \
-  --beneficiary-address-postal "94105" \
-  --beneficiary-address-country US
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "USD",
+    "accountType": "US_ACCOUNT",
+    "routingNumber": "123456789",
+    "accountNumber": "12345678901",
+    "accountCategory": "CHECKING",
+    "beneficiaryType": "INDIVIDUAL",
+    "beneficiary": {
+      "fullName": "Full Name",
+      "address": {
+        "line1": "123 Main St",
+        "city": "San Francisco",
+        "state": "CA",
+        "postalCode": "94105",
+        "country": "US"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 Required fields:
+
 - `routingNumber`: 9-digit ABA routing number
 - `accountNumber`: Bank account number
 - `accountCategory`: CHECKING or SAVINGS
@@ -122,13 +159,19 @@ Required fields:
 ### India (UPI)
 
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency INR \
-  --account-type UPI \
-  --upi-id "user@okbank" \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "INR",
+    "accountType": "UPI",
+    "upiId": "user@okbank",
+    "beneficiaryType": "INDIVIDUAL",
+    "beneficiary": {
+      "fullName": "Full Name"
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 UPI ID format: `username@bankhandle` (e.g., `john@okaxis`, `jane@ybl`)
@@ -136,29 +179,37 @@ UPI ID format: `username@bankhandle` (e.g., `john@okaxis`, `jane@ybl`)
 ### Nigeria (NGN_ACCOUNT)
 
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency NGN \
-  --account-type NGN_ACCOUNT \
-  --account-number "1234567890" \
-  --bank-name "GTBank" \
-  --purpose GOODS_OR_SERVICES \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Full Name" \
-  --beneficiary-birth-date "1990-05-15" \
-  --beneficiary-nationality NG
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "NGN",
+    "accountType": "NGN_ACCOUNT",
+    "accountNumber": "1234567890",
+    "bankName": "GTBank",
+    "purposeOfPayment": "GOODS_OR_SERVICES",
+    "beneficiaryType": "INDIVIDUAL",
+    "beneficiary": {
+      "fullName": "Full Name",
+      "birthDate": "1990-05-15",
+      "nationality": "NG"
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 Required fields:
+
 - `accountNumber`: 10-digit account number
 - `bankName`: Bank name (e.g., "GTBank", "Zenith Bank", "Access Bank")
 - `purposeOfPayment`: Purpose code (e.g., `GOODS_OR_SERVICES`)
 - For individuals: `fullName`, `birthDate`, `nationality`
 - For businesses: `legalName`
 
-**IMPORTANT**: Use `--bank-name` (NOT `--bank-code`). Use the bank's display name.
+**IMPORTANT**: Use `bankName` (NOT `bankCode`). Use the bank's display name.
 
 Common Nigerian banks:
+
 - GTBank
 - Zenith Bank
 - United Bank for Africa
@@ -168,41 +219,55 @@ Common Nigerian banks:
 ### Crypto Wallets
 
 #### Spark Wallet (Bitcoin)
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency BTC \
-  --account-type SPARK_WALLET \
-  --address "spark1..."
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "BTC",
+    "accountType": "SPARK_WALLET",
+    "address": "spark1..."
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 #### Solana Wallet (USDC)
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id <id> \
-  --currency USDC \
-  --account-type SOLANA_WALLET \
-  --address "..."
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "USDC",
+    "accountType": "SOLANA_WALLET",
+    "address": "..."
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 ## Beneficiary Information
 
 **CRITICAL**: All external accounts require beneficiary information. The required fields depend on the beneficiary type.
 
-### For Individuals (--beneficiary-type INDIVIDUAL)
-**All three fields are REQUIRED:**
-- `--beneficiary-name`: Full legal name
-- `--beneficiary-birth-date`: Date of birth (YYYY-MM-DD format)
-- `--beneficiary-nationality`: 2-letter ISO country code (e.g., NG, MX, IN, US)
-- `--beneficiary-address-*`: Optional but recommended
+### For Individuals (beneficiaryType: "INDIVIDUAL")
 
-### For Businesses (--beneficiary-type BUSINESS)
-- `--beneficiary-name`: Registered business/legal name (REQUIRED)
-- `--beneficiary-address-*`: Business address (optional)
+**All three fields are REQUIRED in the `beneficiary` object:**
+
+- `fullName`: Full legal name
+- `birthDate`: Date of birth (YYYY-MM-DD format)
+- `nationality`: 2-letter ISO country code (e.g., NG, MX, IN, US)
+- `address`: Optional but recommended (object with `line1`, `city`, `state`, `postalCode`, `country`)
+
+### For Businesses (beneficiaryType: "BUSINESS")
+
+- `legalName`: Registered business/legal name (REQUIRED)
+- `address`: Business address (optional)
 
 ## Sandbox Testing
 
 In sandbox mode, use these account number patterns to test scenarios:
+
 - Numbers ending in **002**: Insufficient funds
 - Numbers ending in **003**: Account closed/invalid
 - Numbers ending in **004**: Transfer rejected
