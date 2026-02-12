@@ -1,9 +1,14 @@
 type: object
 required:
+- beneficiaryType
 - birthDate
 - fullName
 - nationality
 properties:
+  beneficiaryType:
+    type: string
+    enum:
+    - INDIVIDUAL
   fullName:
     type: string
     description: The full name of the beneficiary

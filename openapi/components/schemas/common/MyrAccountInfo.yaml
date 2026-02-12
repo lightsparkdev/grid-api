@@ -1,8 +1,13 @@
 type: object
 required:
+- accountType
 - bankName
 - accountNumber
 properties:
+  accountType:
+    type: string
+    enum:
+    - MYR_ACCOUNT
   bankName:
     type: string
     description: The bank name of the bank

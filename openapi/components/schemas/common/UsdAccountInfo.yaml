@@ -1,8 +1,13 @@
 type: object
 required:
+- accountType
 - accountNumber
 - routingNumber
 properties:
+  accountType:
+    type: string
+    enum:
+    - USD_ACCOUNT
   accountNumber:
     type: string
     description: The account number of the bank

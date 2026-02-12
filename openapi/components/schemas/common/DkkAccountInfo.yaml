@@ -1,7 +1,12 @@
 type: object
 required:
+- accountType
 - iban
 properties:
+  accountType:
+    type: string
+    enum:
+    - DKK_ACCOUNT
   iban:
     type: string
     description: The IBAN of the bank

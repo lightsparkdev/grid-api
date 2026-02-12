@@ -1,7 +1,12 @@
 type: object
 required:
+- beneficiaryType
 - fullName
 properties:
+  beneficiaryType:
+    type: string
+    enum:
+    - INDIVIDUAL
   fullName:
     type: string
     description: The full name of the beneficiary

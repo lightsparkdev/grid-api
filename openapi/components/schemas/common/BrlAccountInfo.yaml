@@ -1,9 +1,14 @@
 type: object
 required:
+- accountType
 - pixKey
 - pixKeyType
 - taxId
 properties:
+  accountType:
+    type: string
+    enum:
+    - BRL_ACCOUNT
   pixKey:
     type: string
     description: The PIX key of the bank

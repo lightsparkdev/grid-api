@@ -5269,9 +5269,14 @@ components:
     GbpAccountInfo:
       type: object
       required:
+        - accountType
         - sortCode
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - GBP_ACCOUNT
         sortCode:
           type: string
           description: UK bank sort code (6 digits, may include hyphens)
@@ -5287,8 +5292,13 @@ components:
     GbpBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5429,9 +5439,14 @@ components:
     PhpAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - PHP_ACCOUNT
         bankName:
           type: string
           description: Name of the beneficiary's bank
@@ -5443,8 +5458,13 @@ components:
     PhpBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5513,10 +5533,15 @@ components:
     SgdAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - swiftCode
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - SGD_ACCOUNT
         bankName:
           type: string
           description: Name of the beneficiary's bank
@@ -5535,8 +5560,13 @@ components:
     SgdBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5671,8 +5701,13 @@ components:
     DkkAccountInfo:
       type: object
       required:
+        - accountType
         - iban
       properties:
+        accountType:
+          type: string
+          enum:
+            - DKK_ACCOUNT
         iban:
           type: string
           description: The IBAN of the bank
@@ -5682,8 +5717,13 @@ components:
     DkkBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5752,9 +5792,14 @@ components:
     HkdAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - HKD_ACCOUNT
         bankName:
           type: string
           description: The bank name of the bank
@@ -5764,8 +5809,13 @@ components:
     HkdBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5834,9 +5884,14 @@ components:
     IdrAccountInfo:
       type: object
       required:
+        - accountType
         - sortCode
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - IDR_ACCOUNT
         sortCode:
           type: string
           description: The sort code of the bank
@@ -5846,8 +5901,13 @@ components:
     IdrBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5916,16 +5976,26 @@ components:
     InrAccountInfo:
       type: object
       required:
+        - accountType
         - vpa
       properties:
+        accountType:
+          type: string
+          enum:
+            - INR_ACCOUNT
         vpa:
           type: string
           description: The VPA of the bank
     InrBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -5994,8 +6064,13 @@ components:
     MxnAccountInfo:
       type: object
       required:
+        - accountType
         - clabeNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - MXN_ACCOUNT
         clabeNumber:
           type: string
           description: The CLABE number of the bank
@@ -6006,8 +6081,13 @@ components:
     MxnBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -6076,9 +6156,14 @@ components:
     MyrAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - MYR_ACCOUNT
         bankName:
           type: string
           description: The bank name of the bank
@@ -6088,8 +6173,13 @@ components:
     MyrBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -6158,9 +6248,14 @@ components:
     ThbAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - THB_ACCOUNT
         bankName:
           type: string
           description: The bank name of the bank
@@ -6170,8 +6265,13 @@ components:
     ThbBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -6240,9 +6340,14 @@ components:
     UsdAccountInfo:
       type: object
       required:
+        - accountType
         - accountNumber
         - routingNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - USD_ACCOUNT
         accountNumber:
           type: string
           description: The account number of the bank
@@ -6252,10 +6357,15 @@ components:
     UsdBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - birthDate
         - fullName
         - nationality
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -6324,9 +6434,14 @@ components:
     VndAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - accountNumber
       properties:
+        accountType:
+          type: string
+          enum:
+            - VND_ACCOUNT
         bankName:
           type: string
           description: The bank name of the bank
@@ -6336,8 +6451,13 @@ components:
     VndBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
@@ -6430,10 +6550,15 @@ components:
     BrlAccountInfo:
       type: object
       required:
+        - accountType
         - pixKey
         - pixKeyType
         - taxId
       properties:
+        accountType:
+          type: string
+          enum:
+            - BRL_ACCOUNT
         pixKey:
           type: string
           description: The PIX key of the bank
@@ -6446,8 +6571,13 @@ components:
     BrlBeneficiary:
       type: object
       required:
+        - beneficiaryType
         - fullName
       properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary

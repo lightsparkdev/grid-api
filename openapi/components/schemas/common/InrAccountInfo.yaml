@@ -1,7 +1,12 @@
 type: object
 required:
+- accountType
 - vpa
 properties:
+  accountType:
+    type: string
+    enum:
+    - INR_ACCOUNT
   vpa:
     type: string
     description: The VPA of the bank

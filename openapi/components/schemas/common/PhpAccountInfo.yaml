@@ -1,8 +1,13 @@
 type: object
 required:
+- accountType
 - bankName
 - accountNumber
 properties:
+  accountType:
+    type: string
+    enum:
+    - PHP_ACCOUNT
   bankName:
     type: string
     description: Name of the beneficiary's bank

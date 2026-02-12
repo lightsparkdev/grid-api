@@ -1,7 +1,12 @@
 type: object
 required:
+- accountType
 - clabeNumber
 properties:
+  accountType:
+    type: string
+    enum:
+    - MXN_ACCOUNT
   clabeNumber:
     type: string
     description: The CLABE number of the bank

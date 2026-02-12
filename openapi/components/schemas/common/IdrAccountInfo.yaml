@@ -1,8 +1,13 @@
 type: object
 required:
+- accountType
 - sortCode
 - accountNumber
 properties:
+  accountType:
+    type: string
+    enum:
+    - IDR_ACCOUNT
   sortCode:
     type: string
     description: The sort code of the bank
