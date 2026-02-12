@@ -93,15 +93,13 @@ configure your credentials.
 
 ### Configure your credentials
 
-```bash
-# Build the CLI (first time only)
-cd cli && npm install && npm run build && cd ..
+To set your grid credentials, simply ask the agent to help you configure them:
 
-# Run interactive setup
-node cli/dist/index.js configure
+```
+Help me configure my Grid API credentials.
 ```
 
-This prompts for your API Token ID and Client Secret, validates them, and saves to `~/.grid-credentials`.
+It'll prompt you for your API Token ID and Client Secret, validate them, and save to `~/.grid-credentials` for future use.
 
 <Tip>
 Start in the sandbox environment to experiment safely. The Skill is great at generating fake account data to help you test different flows.
@@ -154,27 +152,9 @@ My external account creation is failing for a Nigerian bank account.
 What fields am I missing?
 ```
 
-## Using the Grid CLI
-
-The Grid API skill uses a CLI tool that can execute real API operations. You can also access the CLI directly by running `node cli/dist/index.js <command>`. Here are the key commands:
-
-| Command | What it does |
-|---------|-------------|
-| `customers list` | List all customers |
-| `customers create` | Create a new customer |
-| `accounts internal list` | List internal accounts |
-| `accounts external create` | Create a bank account or wallet |
-| `quotes create` | Get an exchange rate quote |
-| `quotes execute` | Execute a locked quote |
-| `transactions list` | List transactions |
-| `sandbox fund` | Fund a sandbox account for testing |
-
-All commands support `--format table` for human-readable output. Use aliases for speed: `cust`, `tx`, `acct`.
-
 ## Tips for best results
 
 1. **Be specific about your use case** — "Send a payout to Brazil via PIX" gets better results than "help me send money"
 2. **Start with the sandbox** — Ask the AI to use sandbox mode so you can experiment without real funds
 3. **Give context** — Paste the relevant docs page or point the AI to `/llms-full.txt` for full API context
 4. **Iterate on errors** — If an API call fails, paste the error and ask the AI to diagnose it
-5. **Use table format** — Ask for `--format table` output when exploring data
