@@ -19,6 +19,7 @@ application {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -32,7 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml:3.1.3")
 
     // Grid Kotlin SDK
-    implementation("com.lightspark.grid:lightspark-grid-kotlin:0.4.0")
+    implementation("com.grid.api:grid-kotlin:0.0.1")
 
     // JSON
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
