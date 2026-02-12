@@ -1,0 +1,9 @@
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/InrAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      $ref: ../common/InrBeneficiary.yaml
