@@ -5,7 +5,9 @@ required:
 properties:
   bankName:
     type: string
-    description: The bank name of the bank
+    description: Name of the beneficiary's bank
+    example: BDO Unibank
   accountNumber:
     type: string
-    description: The account number of the bank
+    description: Bank account number
+    example: '001234567890'

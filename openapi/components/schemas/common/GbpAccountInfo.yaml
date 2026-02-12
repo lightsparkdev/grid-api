@@ -5,7 +5,13 @@ required:
 properties:
   sortCode:
     type: string
-    description: The sort code of the bank
+    description: UK bank sort code (6 digits, may include hyphens)
+    example: '20-00-00'
+    pattern: '^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$'
   accountNumber:
     type: string
-    description: The account number of the bank
+    description: UK bank account number (8 digits)
+    example: '12345678'
+    minLength: 8
+    maxLength: 8
+    pattern: ^[0-9]{8}$
