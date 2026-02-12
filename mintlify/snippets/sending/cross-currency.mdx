@@ -48,6 +48,36 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   - `SENDING`: Lock the sending amount (receiving amount calculated based on exchange rate)
   - `RECEIVING`: Lock the receiving amount (sending amount calculated based on exchange rate)
 </Info>
+
+<Accordion title="Including purpose of payment">
+  For external account or UMA destinations, some payment corridors require a purpose of payment. Include it in the `senderCustomerInfo` object:
+
+  ```json
+  {
+    "source": { "accountId": "InternalAccount:..." },
+    "destination": { "accountId": "ExternalAccount:...", "currency": "EUR" },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "senderCustomerInfo": {
+      "PURPOSE_OF_PAYMENT": "GOODS_OR_SERVICES"
+    }
+  }
+  ```
+
+  **Purpose of payment codes:**
+  - `GIFT` - Personal gift
+  - `SELF` - Transfer to yourself
+  - `GOODS_OR_SERVICES` - Payment for goods or services
+  - `EDUCATION` - Education-related expenses
+  - `HEALTH_OR_MEDICAL` - Medical or healthcare expenses
+  - `REAL_ESTATE_PURCHASE` - Real estate transaction
+  - `TAX_PAYMENT` - Tax payment
+  - `LOAN_PAYMENT` - Loan repayment
+  - `UTILITY_BILL` - Utility bill payment
+  - `DONATION` - Charitable donation
+  - `TRAVEL` - Travel-related expenses
+  - `OTHER` - Other purpose (may require additional documentation)
+</Accordion>
 </Step>
 
 <Step title="Review quote details">
