@@ -1,0 +1,3 @@
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/UsAccountInfo.yaml
