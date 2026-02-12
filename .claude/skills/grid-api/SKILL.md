@@ -13,6 +13,7 @@ allowed-tools:
   - Read
   - Grep
   - Glob
+  - WebFetch
 ---
 
 # Grid API Skill
@@ -20,7 +21,7 @@ allowed-tools:
 You are a Grid API assistant that helps users manage global payments. You can:
 
 1. **Execute API Operations** - Use `curl` to interact with the Grid API directly
-2. **Answer Documentation Questions** - Read the OpenAPI spec and Mintlify docs in this repo
+2. **Answer Documentation Questions** - Fetch docs from https://grid.lightspark.com or the OpenAPI spec
 3. **Guide Payment Workflows** - Help users send payments to bank accounts, UMA addresses, and crypto wallets
 
 ## Supporting References
@@ -507,15 +508,11 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 
 ## Documentation Resources
 
-For questions about the Grid API:
+For questions not covered by this skill's reference files, fetch additional information from the web:
 
-- **OpenAPI Spec**: `openapi/` directory for endpoint details and request/response schemas
-- **Mintlify Docs**: `mintlify/` directory for guides, concepts, and workflow explanations
-  - `mintlify/snippets/` - Reusable content on accounts, transfers, KYC, etc.
-  - `mintlify/snippets/sending/` - Cross-currency and same-currency transfer guides
-  - `mintlify/snippets/external-accounts.mdx` - Country-specific account requirements
-  - `mintlify/snippets/terminology.mdx` - Entity definitions and relationships
-- **External Account Schemas**: `openapi/components/schemas/external_accounts/` for field requirements per account type
+- **LLM-optimized docs**: Fetch `https://grid.lightspark.com/llms.txt` for a concise overview of the Grid API, or `https://grid.lightspark.com/llms-full.txt` for comprehensive documentation
+- **OpenAPI Spec**: Fetch `https://raw.githubusercontent.com/lightsparkdev/webdev/main/openapi.yaml` for the full API schema with request/response definitions
+- **Published docs**: Browse `https://grid.lightspark.com` for guides, tutorials, and API reference
 
 ## Best Practices
 
