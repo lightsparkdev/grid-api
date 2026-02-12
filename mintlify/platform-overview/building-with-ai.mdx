@@ -2,7 +2,7 @@
 icon: "/images/icons/console-sparkle.svg"
 mode: "wide"
 title: "Building with AI"
-description: "Use AI coding assistants like Claude Code, Cursor, and Windsurf to explore, build, and debug with the Grid API"
+description: "Use AI coding assistants like Claude Code, Cursor, and Codex to explore, build, and debug with the Grid API"
 "og:image": "/images/og/og-get-started.png"
 ---
 
@@ -19,7 +19,7 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
   className="page-hero hidden dark:block"
 />
 
-Grid's documentation, OpenAPI spec, and CLI are designed to work with AI coding assistants like Claude Code, Cursor, and Windsurf. Whether you're exploring the API for the first time or building a production integration, AI tools can help you move faster.
+Grid's documentation, OpenAPI spec, and CLI are designed to work with AI coding assistants like Claude Code, Cursor, and Codex. Whether you're exploring the API for the first time or building a production integration, AI tools can help you move faster.
 
 ## What AI assistants can do with Grid
 
@@ -36,7 +36,7 @@ Grid's documentation, OpenAPI spec, and CLI are designed to work with AI coding 
     title="Execute API calls"
     color="#11A967"
   >
-    Use the Grid CLI to create customers, manage accounts, get quotes, and send payments directly from your AI assistant
+    Use the Grid Skill to create customers, manage accounts, get quotes, and send payments directly from your AI assistant
   </FeatureCard>
   <FeatureCard
     icon="/images/icons/arrow-path-right.svg"
@@ -54,16 +54,42 @@ Grid's documentation, OpenAPI spec, and CLI are designed to work with AI coding 
   </FeatureCard>
 </FeatureCardGrid>
 
-## Install the Grid API skill for Claude Code
+## AI-accessible documentation
 
-The Grid API skill gives [Claude Code](https://docs.anthropic.com/en/docs/claude-code) full access to the Grid API via a built-in CLI. Install it by cloning this repository:
+These Grid docs are automatically available to LLMs and AI tools in machine-readable formats — no configuration needed.
+
+### llms.txt
+
+Grid docs generate [llms.txt](https://llmstxt.org/) files that give AI tools a structured index of all documentation:
+
+- [`/llms.txt`](/llms.txt) — Concise index of all pages with titles and descriptions
+- [`/llms-full.txt`](/llms-full.txt) — Complete documentation content in a single file
+
+These are generated automatically and always up to date. Use `llms-full.txt` when you want to give an AI assistant full context about the Grid API in one shot.
+
+### Markdown export
+
+Each page in the Grid docs is automatically available as a Markdown file simply by adding `.md` to the end of the URL.
+
+For example, the [Building with AI](/platform-overview/building-with-ai) page is available as [`/platform-overview/building-with-ai.md`](/platform-overview/building-with-ai.md).
+
+<Tip>
+You can also copy any page's content as Markdown with the keyboard shortcut <kbd>Command</kbd> + <kbd>C</kbd> (<kbd>Ctrl</kbd> + <kbd>C</kbd> on Windows) and paste it directly into ChatGPT, Claude, or any AI assistant for context-aware help with your specific question.
+</Tip>
+
+## Install the Grid API agent skill
+
+The Grid API skill gives [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or another Skill-compatible agent full access to the Grid API via a built-in CLI. Install it with:
 
 ```bash
-git clone https://github.com/lightsparkdev/grid-api.git
-cd grid-api
+npx skills add lightsparkdev/grid-api
 ```
 
-Claude Code automatically detects the skill from the `.claude/skills/` directory. Once inside the repo, you can start asking questions or executing API operations immediately.
+Make sure to install it for whichever agent you're using. For example, if you're using Claude Code,
+you'll need to explicitly select Claude Code in the agent installation selection screen.
+
+Once installed, you can start asking questions immediately. To execute API operations, you'll need to
+configure your credentials.
 
 ### Configure your credentials
 
@@ -76,6 +102,10 @@ node cli/dist/index.js configure
 ```
 
 This prompts for your API Token ID and Client Secret, validates them, and saves to `~/.grid-credentials`.
+
+<Tip>
+Start in the sandbox environment to experiment safely. The Skill is great at generating fake account data to help you test different flows.
+</Tip>
 
 ## Example prompts
 
@@ -126,7 +156,7 @@ What fields am I missing?
 
 ## Using the Grid CLI
 
-The Grid API skill uses a CLI tool that can execute real API operations. Here are the key commands:
+The Grid API skill uses a CLI tool that can execute real API operations. You can also access the CLI directly by running `node cli/dist/index.js <command>`. Here are the key commands:
 
 | Command | What it does |
 |---------|-------------|
@@ -140,27 +170,6 @@ The Grid API skill uses a CLI tool that can execute real API operations. Here ar
 | `sandbox fund` | Fund a sandbox account for testing |
 
 All commands support `--format table` for human-readable output. Use aliases for speed: `cust`, `tx`, `acct`.
-
-<Tip>
-Start in the sandbox environment to experiment safely. Use `sandbox fund` to add test funds to any internal account.
-</Tip>
-
-## AI-accessible documentation
-
-Grid docs are automatically available to LLMs and AI tools in machine-readable formats — no configuration needed.
-
-### llms.txt
-
-Grid docs generate [llms.txt](https://llmstxt.org/) files that give AI tools a structured index of all documentation:
-
-- [`/llms.txt`](/llms.txt) — Concise index of all pages with titles and descriptions
-- [`/llms-full.txt`](/llms-full.txt) — Complete documentation content in a single file
-
-These are generated automatically and always up to date. Use `llms-full.txt` when you want to give an AI assistant full context about the Grid API in one shot.
-
-### Paste a docs page into any AI chat
-
-You can copy any page's content and paste it directly into ChatGPT, Claude, or any AI assistant for context-aware help with your specific question.
 
 ## Tips for best results
 
