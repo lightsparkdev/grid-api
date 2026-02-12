@@ -5237,16 +5237,10 @@ components:
         - UNDER_REVIEW
         - INACTIVE
       description: Status of an external account
-    UsAccountExternalAccountInfo:
+    UsExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/UsAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
     BaseExternalAccountInfo:
       type: object
       required:
@@ -5257,173 +5251,21 @@ components:
       discriminator:
         propertyName: accountType
         mapping:
-          US_ACCOUNT: '#/components/schemas/UsAccountExternalAccountInfo'
-          CLABE: '#/components/schemas/ClabeAccountExternalAccountInfo'
-          PIX: '#/components/schemas/PixAccountExternalAccountInfo'
-          IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
-          UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
+          US_ACCOUNT: '#/components/schemas/UsExternalAccountInfo'
+          NGN_ACCOUNT: '#/components/schemas/NgnExternalAccountInfo'
+          CAD_ACCOUNT: '#/components/schemas/CadExternalAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
-          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
-    IndividualBeneficiary:
-      allOf:
-        - $ref: '#/components/schemas/BaseBeneficiary'
-        - type: object
-          required:
-            - fullName
-            - birthDate
-            - nationality
-            - beneficiaryType
-          properties:
-            beneficiaryType:
-              type: string
-              enum:
-                - INDIVIDUAL
-            fullName:
-              type: string
-              description: Individual's full name
-              example: John Michael Doe
-            birthDate:
-              type: string
-              format: date
-              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-              example: '1990-01-15'
-            nationality:
-              type: string
-              description: Country code (ISO 3166-1 alpha-2)
-              example: US
-    BaseBeneficiary:
-      type: object
-      required:
-        - beneficiaryType
-      properties:
-        beneficiaryType:
-          $ref: '#/components/schemas/BeneficiaryType'
-        address:
-          $ref: '#/components/schemas/Address'
-      discriminator:
-        propertyName: beneficiaryType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
-          BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    BusinessBeneficiary:
-      allOf:
-        - $ref: '#/components/schemas/BaseBeneficiary'
-        - type: object
-          required:
-            - legalName
-            - beneficiaryType
-          properties:
-            beneficiaryType:
-              type: string
-              enum:
-                - BUSINESS
-            legalName:
-              type: string
-              description: Legal name of the business
-              example: Acme Corporation, Inc.
-            registrationNumber:
-              type: string
-              description: Business registration number
-              example: BRN-123456789
-            taxId:
-              type: string
-              description: Tax identification number
-              example: EIN-987654321
-    BeneficiaryType:
-      type: string
-      enum:
-        - INDIVIDUAL
-        - BUSINESS
-      description: Whether the beneficiary is an individual or a business entity
-      example: INDIVIDUAL
-    BeneficiaryOneOf:
-      oneOf:
-        - title: Individual Beneficiary
-          $ref: '#/components/schemas/IndividualBeneficiary'
-        - title: Business Beneficiary
-          $ref: '#/components/schemas/BusinessBeneficiary'
-      discriminator:
-        propertyName: beneficiaryType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
-          BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    ClabeAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/ClabeAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    PixAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PixAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    IbanAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/IbanAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    UpiAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UpiAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    NgnAccountExternalAccountInfo:
+    NgnExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/NgnAccountInfo'
-        - type: object
-          required:
-            - purposeOfPayment
-            - beneficiary
-          properties:
-            purposeOfPayment:
-              type: string
-              enum:
-                - GIFT
-                - SELF
-                - GOODS_OR_SERVICES
-                - EDUCATION
-                - HEALTH_OR_MEDICAL
-                - REAL_ESTATE_PURCHASE
-                - LOAN_PAYMENT
-                - TAX_PAYMENT
-                - UTILITY_BILL
-                - DONATION
-                - TRAVEL
-                - OTHER
-              description: Purpose of payment
-              example: GOODS_OR_SERVICES
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
     CadAccountInfo:
       type: object
       required:
@@ -5457,16 +5299,10 @@ components:
           minLength: 7
           maxLength: 12
           pattern: ^[0-9]{7,12}$
-    CadAccountExternalAccountInfo:
+    CadExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/CadAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
     GbpAccountInfo:
       type: object
       required:
@@ -5479,7 +5315,58 @@ components:
         accountNumber:
           type: string
           description: The account number of the bank
-    GbpAccountExternalAccountInfo:
+    GbpBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    GbpExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/GbpAccountInfo'
@@ -5488,7 +5375,7 @@ components:
             - beneficiary
           properties:
             beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+              $ref: '#/components/schemas/GbpBeneficiary'
     PhpAccountInfo:
       type: object
       required:
@@ -5501,7 +5388,58 @@ components:
         accountNumber:
           type: string
           description: The account number of the bank
-    PhpAccountExternalAccountInfo:
+    PhpBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    PhpExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PhpAccountInfo'
@@ -5510,7 +5448,7 @@ components:
             - beneficiary
           properties:
             beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+              $ref: '#/components/schemas/PhpBeneficiary'
     SgdAccountInfo:
       type: object
       required:
@@ -5523,7 +5461,58 @@ components:
         accountNumber:
           type: string
           description: The account number of the bank
-    SgdAccountExternalAccountInfo:
+    SgdBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    SgdExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SgdAccountInfo'
@@ -5532,38 +5521,11 @@ components:
             - beneficiary
           properties:
             beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+              $ref: '#/components/schemas/SgdBeneficiary'
     SparkWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
-    LightningInfo:
-      type: object
-      description: |
-        Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must be provided.
-      required:
-        - accountType
-      properties:
-        accountType:
-          type: string
-          enum:
-            - LIGHTNING
-        invoice:
-          type: string
-          description: 1-time use lightning bolt11 invoice payout destination
-          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-        bolt12:
-          type: string
-          description: A bolt12 offer which can be reused as a payment destination
-          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-        lightningAddress:
-          type: string
-          description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
-          example: john.doe@lightningwallet.com
-    LightningExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/LightningInfo'
     SolanaWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5584,21 +5546,31 @@ components:
       type: string
       enum:
         - US_ACCOUNT
-        - CLABE
-        - PIX
-        - IBAN
-        - UPI
         - NGN_ACCOUNT
         - CAD_ACCOUNT
         - GBP_ACCOUNT
         - PHP_ACCOUNT
         - SGD_ACCOUNT
         - SPARK_WALLET
-        - LIGHTNING
         - SOLANA_WALLET
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - BRL_ACCOUNT
+        - CLABE_ACCOUNT
+        - DKK_ACCOUNT
+        - HKD_ACCOUNT
+        - IBAN_ACCOUNT
+        - IDR_ACCOUNT
+        - INR_ACCOUNT
+        - LIGHTNING_ACCOUNT
+        - MXN_ACCOUNT
+        - MYR_ACCOUNT
+        - PIX_ACCOUNT
+        - THB_ACCOUNT
+        - UPI_ACCOUNT
+        - USD_ACCOUNT
+        - VND_ACCOUNT
       description: Type of external account or wallet
       example: US_ACCOUNT
     BrlAccountInfo:
@@ -5973,6 +5945,33 @@ components:
           properties:
             beneficiary:
               $ref: '#/components/schemas/InrBeneficiary'
+    LightningInfo:
+      type: object
+      description: |
+        Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must be provided.
+      required:
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - LIGHTNING
+        invoice:
+          type: string
+          description: 1-time use lightning bolt11 invoice payout destination
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+        bolt12:
+          type: string
+          description: A bolt12 offer which can be reused as a payment destination
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+        lightningAddress:
+          type: string
+          description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
+          example: john.doe@lightningwallet.com
+    LightningExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningInfo'
     MxnAccountInfo:
       type: object
       required:
@@ -6348,223 +6347,8 @@ components:
           properties:
             beneficiary:
               $ref: '#/components/schemas/VndBeneficiary'
-    CadExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfo'
-    GbpBeneficiary:
-      type: object
-      required:
-        - fullName
-      properties:
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          type: object
-          required:
-            - country
-            - line1
-            - postalCode
-          properties:
-            line1:
-              type: string
-              description: Address line 1
-            postalCode:
-              type: string
-              description: Postal code
-            country:
-              type: string
-              description: Country code
-            line2:
-              type: string
-              description: Address line 2
-            city:
-              type: string
-              description: City
-            state:
-              type: string
-              description: State or province
-    GbpExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GbpAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/GbpBeneficiary'
-    NgnExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/NgnAccountInfo'
-    PhpBeneficiary:
-      type: object
-      required:
-        - fullName
-      properties:
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          type: object
-          required:
-            - country
-            - line1
-            - postalCode
-          properties:
-            line1:
-              type: string
-              description: Address line 1
-            postalCode:
-              type: string
-              description: Postal code
-            country:
-              type: string
-              description: Country code
-            line2:
-              type: string
-              description: Address line 2
-            city:
-              type: string
-              description: City
-            state:
-              type: string
-              description: State or province
-    PhpExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PhpAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/PhpBeneficiary'
-    SgdBeneficiary:
-      type: object
-      required:
-        - fullName
-      properties:
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          type: object
-          required:
-            - country
-            - line1
-            - postalCode
-          properties:
-            line1:
-              type: string
-              description: Address line 1
-            postalCode:
-              type: string
-              description: Postal code
-            country:
-              type: string
-              description: Country code
-            line2:
-              type: string
-              description: Address line 2
-            city:
-              type: string
-              description: City
-            state:
-              type: string
-              description: State or province
-    SgdExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SgdAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/SgdBeneficiary'
-    UsExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UsAccountInfo'
     ExternalAccountInfoOneOf:
       oneOf:
-        - title: US Account
-          $ref: '#/components/schemas/UsAccountExternalAccountInfo'
-        - title: CLABE Account
-          $ref: '#/components/schemas/ClabeAccountExternalAccountInfo'
-        - title: PIX Account
-          $ref: '#/components/schemas/PixAccountExternalAccountInfo'
-        - title: IBAN Account
-          $ref: '#/components/schemas/IbanAccountExternalAccountInfo'
-        - title: UPI Account
-          $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
-        - title: NGN Account
-          $ref: '#/components/schemas/NgnAccountExternalAccountInfo'
-        - title: CAD Account
-          $ref: '#/components/schemas/CadAccountExternalAccountInfo'
-        - title: GBP Account
-          $ref: '#/components/schemas/GbpAccountExternalAccountInfo'
-        - title: PHP Account
-          $ref: '#/components/schemas/PhpAccountExternalAccountInfo'
-        - title: SGD Account
-          $ref: '#/components/schemas/SgdAccountExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
@@ -6620,18 +6404,13 @@ components:
       discriminator:
         propertyName: accountType
         mapping:
-          US_ACCOUNT: '#/components/schemas/UsAccountExternalAccountInfo'
-          CLABE: '#/components/schemas/ClabeAccountExternalAccountInfo'
-          PIX: '#/components/schemas/PixAccountExternalAccountInfo'
-          IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
-          UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
+          US_ACCOUNT: '#/components/schemas/UsExternalAccountInfo'
+          NGN_ACCOUNT: '#/components/schemas/NgnExternalAccountInfo'
+          CAD_ACCOUNT: '#/components/schemas/CadExternalAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
-          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'

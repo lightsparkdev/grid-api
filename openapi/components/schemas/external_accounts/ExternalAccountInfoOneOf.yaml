@@ -1,24 +1,4 @@
 oneOf:
-- title: US Account
-  $ref: ./UsAccountExternalAccountInfo.yaml
-- title: CLABE Account
-  $ref: ./ClabeAccountExternalAccountInfo.yaml
-- title: PIX Account
-  $ref: ./PixAccountExternalAccountInfo.yaml
-- title: IBAN Account
-  $ref: ./IbanAccountExternalAccountInfo.yaml
-- title: UPI Account
-  $ref: ./UpiAccountExternalAccountInfo.yaml
-- title: NGN Account
-  $ref: ./NgnAccountExternalAccountInfo.yaml
-- title: CAD Account
-  $ref: ./CadAccountExternalAccountInfo.yaml
-- title: GBP Account
-  $ref: ./GbpAccountExternalAccountInfo.yaml
-- title: PHP Account
-  $ref: ./PhpAccountExternalAccountInfo.yaml
-- title: SGD Account
-  $ref: ./SgdAccountExternalAccountInfo.yaml
 - title: Spark Wallet
   $ref: ./SparkWalletExternalAccountInfo.yaml
 - title: Lightning
@@ -74,18 +54,13 @@ oneOf:
 discriminator:
   propertyName: accountType
   mapping:
-    US_ACCOUNT: ./UsAccountExternalAccountInfo.yaml
-    CLABE: ./ClabeAccountExternalAccountInfo.yaml
-    PIX: ./PixAccountExternalAccountInfo.yaml
-    IBAN: ./IbanAccountExternalAccountInfo.yaml
-    UPI: ./UpiAccountExternalAccountInfo.yaml
-    NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
-    CAD_ACCOUNT: ./CadAccountExternalAccountInfo.yaml
-    GBP_ACCOUNT: ./GbpAccountExternalAccountInfo.yaml
-    PHP_ACCOUNT: ./PhpAccountExternalAccountInfo.yaml
-    SGD_ACCOUNT: ./SgdAccountExternalAccountInfo.yaml
+    US_ACCOUNT: ./UsExternalAccountInfo.yaml
+    NGN_ACCOUNT: ./NgnExternalAccountInfo.yaml
+    CAD_ACCOUNT: ./CadExternalAccountInfo.yaml
+    GBP_ACCOUNT: ./GbpExternalAccountInfo.yaml
+    PHP_ACCOUNT: ./PhpExternalAccountInfo.yaml
+    SGD_ACCOUNT: ./SgdExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
-    LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
