@@ -181,13 +181,15 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "MXN",
-    "accountType": "CLABE",
-    "clabeNumber": "<18-digit-number>",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name",
-      "birthDate": "1990-01-15",
-      "nationality": "MX"
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "<18-digit-number>",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "MX"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -198,11 +200,13 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "MXN",
-    "accountType": "CLABE",
-    "clabeNumber": "<18-digit-number>",
-    "beneficiaryType": "BUSINESS",
-    "beneficiary": {
-      "legalName": "Company Name"
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "<18-digit-number>",
+      "beneficiary": {
+        "beneficiaryType": "BUSINESS",
+        "legalName": "Company Name"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -213,13 +217,15 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "INR",
-    "accountType": "UPI",
-    "upiId": "name@bank",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Name",
-      "birthDate": "1990-01-15",
-      "nationality": "IN"
+    "accountInfo": {
+      "accountType": "UPI",
+      "vpa": "name@bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Name",
+        "birthDate": "1990-01-15",
+        "nationality": "IN"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -230,15 +236,17 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "NGN",
-    "accountType": "NGN_ACCOUNT",
-    "accountNumber": "<10-digit>",
-    "bankName": "GTBank",
-    "purposeOfPayment": "GOODS_OR_SERVICES",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Name",
-      "birthDate": "1990-01-15",
-      "nationality": "NG"
+    "accountInfo": {
+      "accountType": "NGN_ACCOUNT",
+      "accountNumber": "<10-digit>",
+      "bankName": "GTBank",
+      "purposeOfPayment": "GOODS_OR_SERVICES",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Name",
+        "birthDate": "1990-01-15",
+        "nationality": "NG"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .

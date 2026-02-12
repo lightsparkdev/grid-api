@@ -36,13 +36,15 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "MXN",
-    "accountType": "CLABE",
-    "clabeNumber": "<18-digit-clabe>",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name",
-      "birthDate": "1990-01-15",
-      "nationality": "MX"
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "<18-digit-clabe>",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "MX"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -56,11 +58,13 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "MXN",
-    "accountType": "CLABE",
-    "clabeNumber": "<18-digit-clabe>",
-    "beneficiaryType": "BUSINESS",
-    "beneficiary": {
-      "legalName": "Company Legal Name"
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "<18-digit-clabe>",
+      "beneficiary": {
+        "beneficiaryType": "BUSINESS",
+        "legalName": "Company Legal Name"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -80,11 +84,13 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "BRL",
-    "accountType": "PIX",
-    "pixKey": "12345678901",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name"
+    "accountInfo": {
+      "accountType": "PIX",
+      "pixKey": "12345678901",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -106,15 +112,17 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "EUR",
-    "accountType": "IBAN",
-    "iban": "DE89370400440532013000",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name",
-      "address": {
-        "line1": "123 Street",
-        "city": "Berlin",
-        "country": "DE"
+    "accountInfo": {
+      "accountType": "IBAN",
+      "iban": "DE89370400440532013000",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "address": {
+          "line1": "123 Street",
+          "city": "Berlin",
+          "country": "DE"
+        }
       }
     }
   }' \
@@ -131,19 +139,21 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "USD",
-    "accountType": "US_ACCOUNT",
-    "routingNumber": "123456789",
-    "accountNumber": "12345678901",
-    "accountCategory": "CHECKING",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name",
-      "address": {
-        "line1": "123 Main St",
-        "city": "San Francisco",
-        "state": "CA",
-        "postalCode": "94105",
-        "country": "US"
+    "accountInfo": {
+      "accountType": "US_ACCOUNT",
+      "routingNumber": "123456789",
+      "accountNumber": "12345678901",
+      "accountCategory": "CHECKING",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "address": {
+          "line1": "123 Main St",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
       }
     }
   }' \
@@ -164,11 +174,13 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "INR",
-    "accountType": "UPI",
-    "upiId": "user@okbank",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name"
+    "accountInfo": {
+      "accountType": "UPI",
+      "vpa": "user@okbank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -184,15 +196,17 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "NGN",
-    "accountType": "NGN_ACCOUNT",
-    "accountNumber": "1234567890",
-    "bankName": "GTBank",
-    "purposeOfPayment": "GOODS_OR_SERVICES",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Full Name",
-      "birthDate": "1990-05-15",
-      "nationality": "NG"
+    "accountInfo": {
+      "accountType": "NGN_ACCOUNT",
+      "accountNumber": "1234567890",
+      "bankName": "GTBank",
+      "purposeOfPayment": "GOODS_OR_SERVICES",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-05-15",
+        "nationality": "NG"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -226,8 +240,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "BTC",
-    "accountType": "SPARK_WALLET",
-    "address": "spark1..."
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1..."
+    }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
@@ -240,8 +256,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "<customerId>",
     "currency": "USDC",
-    "accountType": "SOLANA_WALLET",
-    "address": "..."
+    "accountInfo": {
+      "accountType": "SOLANA_WALLET",
+      "address": "..."
+    }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```

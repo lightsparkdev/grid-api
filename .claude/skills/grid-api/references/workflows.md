@@ -113,13 +113,15 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "Customer:xxx",
     "currency": "MXN",
-    "accountType": "CLABE",
-    "clabeNumber": "012345678901234567",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "Juan Garcia",
-      "birthDate": "1985-03-15",
-      "nationality": "MX"
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "012345678901234567",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Juan Garcia",
+        "birthDate": "1985-03-15",
+        "nationality": "MX"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
@@ -197,8 +199,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "Customer:xxx",
     "currency": "BTC",
-    "accountType": "SPARK_WALLET",
-    "address": "spark1..."
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1..."
+    }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
@@ -241,13 +245,15 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d '{
     "customerId": "Customer:xxx",
     "currency": "USD",
-    "accountType": "US_ACCOUNT",
-    "routingNumber": "123456789",
-    "accountNumber": "12345678901",
-    "accountCategory": "CHECKING",
-    "beneficiaryType": "INDIVIDUAL",
-    "beneficiary": {
-      "fullName": "John Doe"
+    "accountInfo": {
+      "accountType": "US_ACCOUNT",
+      "routingNumber": "123456789",
+      "accountNumber": "12345678901",
+      "accountCategory": "CHECKING",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "John Doe"
+      }
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
