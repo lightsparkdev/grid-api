@@ -2,6 +2,22 @@ plugins {
     kotlin("jvm") version "2.1.21"
     kotlin("plugin.serialization") version "2.1.21"
     id("io.ktor.plugin") version "3.1.3"
+    id("com.github.node-gradle.node") version "7.1.0"
+}
+
+node {
+    version.set("22.15.0")
+    download.set(true)
+    nodeProjectDir.set(file("../frontend"))
+}
+
+val npmBuild by tasks.register<com.github.gradle.node.npm.task.NpmTask>("npmBuild") {
+    dependsOn(tasks.named("npmInstall"))
+    args.set(listOf("run", "build"))
+}
+
+tasks.named("processResources") {
+    dependsOn("npmBuild")
 }
 
 kotlin {

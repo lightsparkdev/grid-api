@@ -4,6 +4,7 @@ import com.grid.sample.routes.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 
@@ -29,5 +30,8 @@ fun Application.module() {
         sandboxRoutes()
         webhookRoutes()
         sseRoutes()
+
+        // Serve frontend static files — must come last to avoid catching API routes
+        staticResources("/", "static")
     }
 }

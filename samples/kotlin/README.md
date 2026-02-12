@@ -38,7 +38,20 @@ Webhook events are streamed to the frontend in real time via Server-Sent Events 
 
 ## Running
 
-Start the backend and frontend in two separate terminals:
+### Option 1: Single command (recommended)
+
+The Gradle build automatically installs frontend dependencies, builds the React app, and serves it from the backend:
+
+```bash
+cd samples/kotlin
+./gradlew run
+```
+
+Open [http://localhost:8080](http://localhost:8080) in your browser.
+
+### Option 2: Separate dev servers (for frontend development)
+
+If you're iterating on the frontend, run them separately for hot reload:
 
 **Terminal 1 — Backend (port 8080):**
 
@@ -55,7 +68,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:5173](http://localhost:5173) in your browser. The Vite dev server proxies `/api` requests to the backend.
 
 ## Webhook Setup
 
