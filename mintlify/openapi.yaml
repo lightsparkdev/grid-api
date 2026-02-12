@@ -5472,24 +5472,13 @@ components:
       required:
         - sortCode
         - accountNumber
-        - accountType
       properties:
-        accountType:
-          type: string
-          enum:
-            - GBP_ACCOUNT
         sortCode:
           type: string
-          description: UK bank sort code (6 digits, may include hyphens)
-          example: 20-00-00
-          pattern: ^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$
+          description: The sort code of the bank
         accountNumber:
           type: string
-          description: UK bank account number (8 digits)
-          example: '12345678'
-          minLength: 8
-          maxLength: 8
-          pattern: ^[0-9]{8}$
+          description: The account number of the bank
     GbpAccountExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5505,20 +5494,13 @@ components:
       required:
         - bankName
         - accountNumber
-        - accountType
       properties:
-        accountType:
-          type: string
-          enum:
-            - PHP_ACCOUNT
         bankName:
           type: string
-          description: Name of the beneficiary's bank
-          example: BDO Unibank
+          description: The bank name of the bank
         accountNumber:
           type: string
-          description: Bank account number
-          example: '001234567890'
+          description: The account number of the bank
     PhpAccountExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5533,29 +5515,14 @@ components:
       type: object
       required:
         - bankName
-        - swiftCode
         - accountNumber
-        - accountType
       properties:
-        accountType:
-          type: string
-          enum:
-            - SGD_ACCOUNT
         bankName:
           type: string
-          description: Name of the beneficiary's bank
-          example: DBS Bank Ltd
-        swiftCode:
-          type: string
-          description: SWIFT/BIC code (8 or 11 characters)
-          example: DBSSSGSG
-          minLength: 8
-          maxLength: 11
-          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+          description: The bank name of the bank
         accountNumber:
           type: string
-          description: Bank account number
-          example: '0123456789'
+          description: The account number of the bank
     SgdAccountExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5634,6 +5601,1065 @@ components:
         - BASE_WALLET
       description: Type of external account or wallet
       example: US_ACCOUNT
+    BrlAccountInfo:
+      type: object
+      required:
+        - pixKey
+        - pixKeyType
+        - taxId
+      properties:
+        pixKey:
+          type: string
+          description: The PIX key of the bank
+        pixKeyType:
+          type: string
+          description: The type of PIX key of the bank
+        taxId:
+          type: string
+          description: The tax ID of the bank account
+    BrlBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    BrlExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BrlAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BrlBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ClabeExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ClabeAccountInfo'
+    DkkAccountInfo:
+      type: object
+      required:
+        - iban
+      properties:
+        iban:
+          type: string
+          description: The IBAN of the bank
+        swiftBic:
+          type: string
+          description: The SWIFT BIC of the bank
+    DkkBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    DkkExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/DkkAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/DkkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HkdAccountInfo:
+      type: object
+      required:
+        - bankName
+        - accountNumber
+      properties:
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    HkdBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    HkdExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HkdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HkdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HkdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    IbanExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/IbanAccountInfo'
+    IdrAccountInfo:
+      type: object
+      required:
+        - sortCode
+        - accountNumber
+      properties:
+        sortCode:
+          type: string
+          description: The sort code of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    IdrBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    IdrExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/IdrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/IdrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IdrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    InrAccountInfo:
+      type: object
+      required:
+        - vpa
+      properties:
+        vpa:
+          type: string
+          description: The VPA of the bank
+    InrBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    InrExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/InrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/InrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/InrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MxnAccountInfo:
+      type: object
+      required:
+        - clabeNumber
+      properties:
+        clabeNumber:
+          type: string
+          description: The CLABE number of the bank
+          example: '123456789012345678'
+          minLength: 18
+          maxLength: 18
+          pattern: ^[0-9]{18}$
+    MxnBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    MxnExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MxnAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MxnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MxnBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MyrAccountInfo:
+      type: object
+      required:
+        - bankName
+        - accountNumber
+      properties:
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    MyrBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    MyrExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MyrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MyrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MyrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PixExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PixAccountInfo'
+    ThbAccountInfo:
+      type: object
+      required:
+        - bankName
+        - accountNumber
+      properties:
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    ThbBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    ThbExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ThbAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ThbBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ThbBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    UpiExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/UpiAccountInfo'
+    UsdAccountInfo:
+      type: object
+      required:
+        - accountNumber
+        - routingNumber
+      properties:
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        routingNumber:
+          type: string
+          description: The routing number of the bank
+    UsdBeneficiary:
+      type: object
+      required:
+        - birthDate
+        - fullName
+        - nationality
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    UsdExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/UsdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/UsdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/UsdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    VndAccountInfo:
+      type: object
+      required:
+        - bankName
+        - accountNumber
+      properties:
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    VndBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    VndExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/VndAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/VndBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/VndBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CadExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CadAccountInfo'
+    GbpBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    GbpExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GbpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GbpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    NgnExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/NgnAccountInfo'
+    PhpBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    PhpExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PhpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PhpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    SgdBeneficiary:
+      type: object
+      required:
+        - fullName
+      properties:
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          type: object
+          required:
+            - country
+            - line1
+            - postalCode
+          properties:
+            line1:
+              type: string
+              description: Address line 1
+            postalCode:
+              type: string
+              description: Postal code
+            country:
+              type: string
+              description: Country code
+            line2:
+              type: string
+              description: Address line 2
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+    SgdExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SgdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SgdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    UsExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/UsAccountInfo'
     ExternalAccountInfoOneOf:
       oneOf:
         - title: US Account
@@ -5668,6 +6694,46 @@ components:
           $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - title: Base Wallet
           $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - title: Brl Account
+          $ref: '#/components/schemas/BrlExternalAccountInfo'
+        - title: Cad Account
+          $ref: '#/components/schemas/CadExternalAccountInfo'
+        - title: Clabe Account
+          $ref: '#/components/schemas/ClabeExternalAccountInfo'
+        - title: Dkk Account
+          $ref: '#/components/schemas/DkkExternalAccountInfo'
+        - title: Gbp Account
+          $ref: '#/components/schemas/GbpExternalAccountInfo'
+        - title: Hkd Account
+          $ref: '#/components/schemas/HkdExternalAccountInfo'
+        - title: Iban Account
+          $ref: '#/components/schemas/IbanExternalAccountInfo'
+        - title: Idr Account
+          $ref: '#/components/schemas/IdrExternalAccountInfo'
+        - title: Inr Account
+          $ref: '#/components/schemas/InrExternalAccountInfo'
+        - title: Mxn Account
+          $ref: '#/components/schemas/MxnExternalAccountInfo'
+        - title: Myr Account
+          $ref: '#/components/schemas/MyrExternalAccountInfo'
+        - title: Ngn Account
+          $ref: '#/components/schemas/NgnExternalAccountInfo'
+        - title: Php Account
+          $ref: '#/components/schemas/PhpExternalAccountInfo'
+        - title: Pix Account
+          $ref: '#/components/schemas/PixExternalAccountInfo'
+        - title: Sgd Account
+          $ref: '#/components/schemas/SgdExternalAccountInfo'
+        - title: Thb Account
+          $ref: '#/components/schemas/ThbExternalAccountInfo'
+        - title: Upi Account
+          $ref: '#/components/schemas/UpiExternalAccountInfo'
+        - title: Us Account
+          $ref: '#/components/schemas/UsExternalAccountInfo'
+        - title: Usd Account
+          $ref: '#/components/schemas/UsdExternalAccountInfo'
+        - title: Vnd Account
+          $ref: '#/components/schemas/VndExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -5687,6 +6753,21 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
+          CLABE_ACCOUNT: '#/components/schemas/ClabeExternalAccountInfo'
+          DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
+          HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
+          IBAN_ACCOUNT: '#/components/schemas/IbanExternalAccountInfo'
+          IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
+          INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
+          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
+          MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountInfo'
+          MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountInfo'
+          PIX_ACCOUNT: '#/components/schemas/PixExternalAccountInfo'
+          THB_ACCOUNT: '#/components/schemas/ThbExternalAccountInfo'
+          UPI_ACCOUNT: '#/components/schemas/UpiExternalAccountInfo'
+          USD_ACCOUNT: '#/components/schemas/UsdExternalAccountInfo'
+          VND_ACCOUNT: '#/components/schemas/VndExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
