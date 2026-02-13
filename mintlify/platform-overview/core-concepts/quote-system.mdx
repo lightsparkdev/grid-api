@@ -54,10 +54,11 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "currency": "BTC",
+      "destinationType": "ACCOUNT",
       "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
     },
     "lockedCurrencySide": "SENDING",
@@ -146,6 +147,7 @@ Source is an existing internal account with available balance:
 ```json
 {
   "source": {
+    "sourceType": "ACCOUNT",
     "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   }
 }
@@ -162,7 +164,9 @@ Source is the customer ID or the platform itself — Grid provides payment instr
 ```json
 {
   "source": {
-    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+    "sourceType": "REALTIME_FUNDING",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD"
   }
 }
 ```
@@ -247,8 +251,8 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-    "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR"},
+    "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+    "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100000,
     "immediatelyExecute": true
@@ -305,9 +309,11 @@ You can create an external account inline when creating a quote:
 ```json
 {
   "source": {
+    "sourceType": "ACCOUNT",
     "accountId": "InternalAccount:abc123"
   },
   "destination": {
+    "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
     "externalAccountDetails": {
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "EUR",

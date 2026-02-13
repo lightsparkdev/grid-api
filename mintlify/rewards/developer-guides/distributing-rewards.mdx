@@ -292,8 +292,8 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/transactions/{transactio
 
 ```json
 {
-  "source": { "accountId": "InternalAccount:..." },
-  "destination": { "externalAccountDetails": { ... } },
+  "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:..." },
+  "destination": { "destinationType": "EXTERNAL_ACCOUNT_DETAILS", "externalAccountDetails": { ... } },
   "lockedCurrencySide": "SENDING",
   "lockedCurrencyAmount": 100,
   "immediatelyExecute": true
@@ -304,8 +304,8 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/transactions/{transactio
 
 ```json
 {
-  "source": { "accountId": "InternalAccount:..." },
-  "destination": { "accountId": "ExternalAccount:..." },
+  "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:..." },
+  "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." },
   "lockedCurrencySide": "RECEIVING",
   "lockedCurrencyAmount": 1000,
   "immediatelyExecute": true
@@ -316,8 +316,8 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/transactions/{transactio
 
 ```json
 {
-  "source": { "accountId": "InternalAccount:..." },
-  "destination": { "accountId": "ExternalAccount:..." },
+  "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:..." },
+  "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." },
   "lockedCurrencySide": "SENDING",
   "lockedCurrencyAmount": 5000,
   "immediatelyExecute": false

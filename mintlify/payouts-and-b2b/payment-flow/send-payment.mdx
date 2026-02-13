@@ -185,11 +185,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-      "currency": "EUR"
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,

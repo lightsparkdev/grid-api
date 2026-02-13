@@ -143,12 +143,13 @@ In this guide, the entities map as follows:
     -H "Content-Type: application/json" \
     -d '{
       "source": {
+        "sourceType": "REALTIME_FUNDING",
         "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
         "currency": "USDC"
       },
       "destination": {
-        "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-        "currency": "MXN"
+        "destinationType": "ACCOUNT",
+        "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
       },
       "lockedCurrencySide": "SENDING",
       "lockedCurrencyAmount": 10000,
