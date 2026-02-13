@@ -34,7 +34,7 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$recipient@exa
 ```
 The response includes supported currencies and any required payer information fields.  
 
-If the receiver's VASP requires payer data, include it in `senderUserInfo` (applies to either tab).
+If the receiver's VASP requires payer data, include it in `senderCustomerInfo` (applies to either tab).
 ### Create a quote
 
 <CodeGroup>
@@ -44,12 +44,18 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
-    "sendingCurrencyCode": "USD",
-    "receivingCurrencyCode": "EUR",
+    "source": {
+      "sourceType": "REALTIME_FUNDING",
+      "currency": "USD"
+    },
+    "destination": {
+      "destinationType": "UMA_ADDRESS",
+      "umaAddress": "$recipient@example.com"
+    },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
     "description": "Invoice #1234 payment",
-    "senderUserInfo": { "FULL_NAME": "John Sender", "BIRTH_DATE": "1985-06-15" }
+    "senderCustomerInfo": { "FULL_NAME": "John Sender", "BIRTH_DATE": "1985-06-15" }
   }'
 ```
 
@@ -59,9 +65,14 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
-    "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
-    "sendingCurrencyCode": "USD",
-    "receivingCurrencyCode": "EUR",
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "destinationType": "UMA_ADDRESS",
+      "umaAddress": "$recipient@example.com"
+    },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
     "description": "UMA payment from prefunded balance"

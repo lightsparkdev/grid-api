@@ -68,8 +68,14 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
-    "sendingCurrencyCode": "MXN",
-    "receivingCurrencyCode": "USD",
+    "source": {
+      "sourceType": "REALTIME_FUNDING",
+      "currency": "MXN"
+    },
+    "destination": {
+      "destinationType": "UMA_ADDRESS",
+      "umaAddress": "$success.usd@sandbox.uma.money"
+    },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000
   }'
@@ -165,8 +171,14 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
-    "sendingCurrencyCode": "MXN",
-    "receivingCurrencyCode": "USD",
+    "source": {
+      "sourceType": "REALTIME_FUNDING",
+      "currency": "MXN"
+    },
+    "destination": {
+      "destinationType": "UMA_ADDRESS",
+      "umaAddress": "$success.usd@sandbox.uma.money"
+    },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000
   }'
