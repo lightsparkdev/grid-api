@@ -1,13 +1,13 @@
 type: object
 required:
-  - sortCode
-  - accountNumber
-  - accountType
+- accountType
+- sortCode
+- accountNumber
 properties:
   accountType:
     type: string
     enum:
-      - GBP_ACCOUNT
+    - GBP_ACCOUNT
   sortCode:
     type: string
     description: UK bank sort code (6 digits, may include hyphens)

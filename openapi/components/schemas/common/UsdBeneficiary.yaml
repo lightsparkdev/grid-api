@@ -1,0 +1,57 @@
+type: object
+required:
+- beneficiaryType
+- birthDate
+- fullName
+- nationality
+properties:
+  beneficiaryType:
+    type: string
+    enum:
+    - INDIVIDUAL
+  fullName:
+    type: string
+    description: The full name of the beneficiary
+  birthDate:
+    type: string
+    description: The birth date of the beneficiary
+  nationality:
+    type: string
+    description: The nationality of the beneficiary
+  email:
+    type: string
+    description: The email of the beneficiary
+  phoneNumber:
+    type: string
+    description: The phone number of the beneficiary
+  registrationNumber:
+    type: string
+    description: The registration number of the beneficiary
+  countryOfResidence:
+    type: string
+    description: The country of residence of the beneficiary
+  address:
+    type: object
+    required:
+    - country
+    - line1
+    - postalCode
+    properties:
+      line1:
+        type: string
+        description: Address line 1
+      postalCode:
+        type: string
+        description: Postal code
+      country:
+        type: string
+        description: Country code
+      line2:
+        type: string
+        description: Address line 2
+      city:
+        type: string
+        description: City
+      state:
+        type: string
+        description: State or province
