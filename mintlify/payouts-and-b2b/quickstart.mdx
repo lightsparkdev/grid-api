@@ -273,11 +273,12 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -d '{
     "lookupId": "LookupRequest:019542f5-b3e7-1d02-0000-000000000009", # ID from the lookup step
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" # USD internal account
     },
     "destination": {
-      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-      "currency": "MXN"
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 50000,

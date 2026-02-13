@@ -205,8 +205,8 @@ You'll receive `ACCOUNT_STATUS` webhooks as status changes.
     POST /quotes
 
     {
-      "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-      "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+      "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+      "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
       "lockedCurrencySide": "SENDING",
       "lockedCurrencyAmount": 100000
     }

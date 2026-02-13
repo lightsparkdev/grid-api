@@ -42,10 +42,11 @@ post:
             summary: Account to Account Transfer
             value:
               source:
+                sourceType: ACCOUNT
                 accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
               destination:
+                destinationType: ACCOUNT
                 accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                currency: EUR
               lockedCurrencySide: SENDING
               lockedCurrencyAmount: 10000
               description: 'Transfer between accounts, either internal or external.'
@@ -54,8 +55,10 @@ post:
             value:
               lookupId: LookupRequest:019542f5-b3e7-1d02-0000-000000000009
               source:
+                sourceType: ACCOUNT
                 accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
               destination:
+                destinationType: UMA_ADDRESS
                 umaAddress: $receiver@uma.domain.com
                 currency: EUR
               lockedCurrencySide: SENDING
@@ -65,9 +68,11 @@ post:
             summary: Real-time funding to Spark Wallet as an on-ramp flow. Immediate execution.
             value:
               source:
+                sourceType: REALTIME_FUNDING
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
                 currency: USD
               destination:
+                destinationType: EXTERNAL_ACCOUNT_DETAILS
                 externalAccountDetails:
                   customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                   currency: BTC

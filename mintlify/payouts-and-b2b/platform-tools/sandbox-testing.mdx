@@ -156,9 +156,11 @@ POST /quotes
 
 {
   "source": {
+    "sourceType": "ACCOUNT",
     "accountId": "InternalAccount:abc123"
   },
   "destination": {
+    "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
     "externalAccountDetails": {
       "customerId": "Customer:123",
       "currency": "EUR",
