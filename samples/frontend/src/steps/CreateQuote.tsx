@@ -4,12 +4,13 @@ import ResponsePanel from '../components/ResponsePanel'
 import { apiPost } from '../lib/api'
 
 interface Props {
+  customerId: string | null
   externalAccountId: string | null
   onComplete: (response: Record<string, unknown>) => void
   disabled: boolean
 }
 
-export default function CreateQuote({ externalAccountId, onComplete, disabled }: Props) {
+export default function CreateQuote({ customerId, externalAccountId, onComplete, disabled }: Props) {
   const [body, setBody] = useState('')
   const [response, setResponse] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -19,7 +20,8 @@ export default function CreateQuote({ externalAccountId, onComplete, disabled }:
     setBody(JSON.stringify({
       source: {
         sourceType: "REALTIME_FUNDING",
-        currency: "USDC"
+        currency: "USDC",
+        customerId: customerId ?? "<customer-id>"
       },
       destination: {
         destinationType: "ACCOUNT",
@@ -28,7 +30,7 @@ export default function CreateQuote({ externalAccountId, onComplete, disabled }:
       lockedCurrencyAmount: 1000,
       lockedCurrencySide: "SENDING"
     }, null, 2))
-  }, [externalAccountId])
+  }, [customerId, externalAccountId])
 
   const submit = async () => {
     setLoading(true)

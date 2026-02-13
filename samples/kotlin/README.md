@@ -9,16 +9,15 @@ This sample walks through a complete payout:
 1. **Create Customer** — Register an individual customer on the platform
 2. **Create External Account** — Link a USD bank account to the customer
 3. **Create Quote** — Get a real-time quote for USDC to USD conversion
-4. **Execute Quote** — Initiate the payment
-5. **Sandbox Fund** — Simulate funding to complete the transaction
+4. **Sandbox Fund** — Simulate funding to complete the transaction
 
 Webhook events are streamed to the frontend in real time via Server-Sent Events (SSE).
 
 ## Prerequisites
 
-- **Java 21+** ([Eclipse Temurin](https://adoptium.net/) recommended)
+- **Java 21+**
 - **Node.js 18+** (for the frontend)
-- **Grid API sandbox credentials** from [app.lightspark.com](https://app.lightspark.com)
+- **Grid API sandbox credentials** (Reach out to your contact at lightspark or sales@lightspark.com to get them)
 
 ## Setup
 
@@ -96,3 +95,17 @@ Browser (React)  →  Vite Dev Server (:5173)  →  Ktor Backend (:8080)  →  G
 ```
 
 The backend is a thin proxy — it holds your API credentials and translates JSON requests into Grid SDK calls. The frontend handles the step-by-step wizard flow.
+
+## Sample Requests
+
+Grid API calls are in `src/main/kotlin/com/grid/sample/routes/`:
+
+| File | Description |
+|------|-------------|
+| [`Customers.kt`](src/main/kotlin/com/grid/sample/routes/Customers.kt) | Create a customer via `clients.customers().create()` |
+| [`ExternalAccounts.kt`](src/main/kotlin/com/grid/sample/routes/ExternalAccounts.kt) | Link a bank account via `client.customers().externalAccounts().create()` |
+| [`Quotes.kt`](src/main/kotlin/com/grid/sample/routes/Quotes.kt) | Create a quote via `client.quotes().create()` |
+| [`Sandbox.kt`](src/main/kotlin/com/grid/sample/routes/Sandbox.kt) | Simulate funding via `client.sandbox().sendFunds()` |
+| [`Webhooks.kt`](src/main/kotlin/com/grid/sample/routes/Webhooks.kt) | Parse incoming webhooks via `client.webhooks().unwrap()` |
+
+Client initialization is in [`GridClientBuilder.kt`](src/main/kotlin/com/grid/sample/GridClientBuilder.kt).

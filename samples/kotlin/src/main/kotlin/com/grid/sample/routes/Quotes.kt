@@ -1,13 +1,12 @@
 package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.grid.api.models.quotes.BaseDestination
-import com.grid.api.models.quotes.BaseQuoteSource
-import com.grid.api.models.quotes.QuoteCreateParams
-import com.grid.api.models.quotes.QuoteSourceOneOf
-import com.grid.api.models.quotes.QuoteDestinationOneOf
+import com.lightspark.grid.models.quotes.QuoteCreateParams
+import com.lightspark.grid.models.quotes.QuoteSourceOneOf
+import com.lightspark.grid.models.quotes.QuoteDestinationOneOf
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
+import com.grid.sample.Log
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -19,6 +18,7 @@ fun Route.quoteRoutes() {
             try {
                 val body = call.receiveText()
                 val json = JsonUtils.mapper.readTree(body)
+                Log.incoming("POST", "/api/quotes", body)
 
                 val sourceNode = json.get("source")
                 val source = buildQuoteSource(sourceNode)
@@ -41,13 +41,14 @@ fun Route.quoteRoutes() {
                     }
                     .build()
 
+                Log.gridRequest("quotes.create", body)
                 val quote = GridClientBuilder.client.quotes().create(params)
-                call.respondText(
-                    JsonUtils.prettyPrint(quote),
-                    ContentType.Application.Json,
-                    HttpStatusCode.Created
-                )
+                val responseJson = JsonUtils.prettyPrint(quote)
+                Log.gridResponse("quotes.create", responseJson)
+
+                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
             } catch (e: Exception) {
+                Log.gridError("quotes.create", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,
@@ -65,13 +66,15 @@ fun Route.quoteRoutes() {
                         HttpStatusCode.BadRequest
                     )
 
+                Log.incoming("POST", "/api/quotes/$quoteId/execute")
+                Log.gridRequest("quotes.execute", "quoteId=$quoteId")
                 val quote = GridClientBuilder.client.quotes().execute(quoteId)
-                call.respondText(
-                    JsonUtils.prettyPrint(quote),
-                    ContentType.Application.Json,
-                    HttpStatusCode.OK
-                )
+                val responseJson = JsonUtils.prettyPrint(quote)
+                Log.gridResponse("quotes.execute", responseJson)
+
+                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.OK)
             } catch (e: Exception) {
+                Log.gridError("quotes.execute", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,
@@ -86,44 +89,36 @@ private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
     val sourceType = sourceNode.optText("sourceType")
 
     if (sourceType == "REALTIME_FUNDING" || sourceNode.has("currency")) {
-        return QuoteSourceOneOf.ofRealtimeFundingQuoteSource(
-            QuoteSourceOneOf.RealtimeFundingQuoteSource.builder()
-                .sourceType(BaseQuoteSource.SourceType.REALTIME_FUNDING)
-                .currency(sourceNode.get("currency").asText())
-                .apply {
-                    sourceNode.optText("customerId")?.let { customerId(it) }
-                }
-                .build()
-        )
-    }
-
-    return QuoteSourceOneOf.ofAccountQuoteSource(
-        QuoteSourceOneOf.AccountQuoteSource.builder()
-            .sourceType(BaseQuoteSource.SourceType.ACCOUNT)
-            .accountId(sourceNode.get("accountId").asText())
+        val realtimeSource = QuoteSourceOneOf.RealtimeFundingQuoteSource.builder()
+            .currency(sourceNode.get("currency").asText())
             .apply {
                 sourceNode.optText("customerId")?.let { customerId(it) }
             }
             .build()
-    )
+        return QuoteSourceOneOf.ofRealtimeFundingQuoteSource(realtimeSource)
+    }
+
+    val accountSource = QuoteSourceOneOf.AccountQuoteSource.builder()
+        .accountId(sourceNode.get("accountId").asText())
+        .apply {
+            sourceNode.optText("customerId")?.let { customerId(it) }
+        }
+        .build()
+    return QuoteSourceOneOf.ofAccountQuoteSource(accountSource)
 }
 
 private fun buildQuoteDestination(destNode: JsonNode): QuoteDestinationOneOf {
     if (destNode.has("umaAddress")) {
-        return QuoteDestinationOneOf.ofUmaAddressDestination(
-            QuoteDestinationOneOf.UmaAddressDestination.builder()
-                .destinationType(BaseDestination.DestinationType.UMA_ADDRESS)
-                .umaAddress(destNode.get("umaAddress").asText())
-                .build()
-        )
+        val umaDest = QuoteDestinationOneOf.UmaAddressDestination.builder()
+            .umaAddress(destNode.get("umaAddress").asText())
+            .build()
+        return QuoteDestinationOneOf.ofUmaAddressDestination(umaDest)
     }
 
-    return QuoteDestinationOneOf.ofAccountDestination(
-        QuoteDestinationOneOf.AccountDestination.builder()
-            .destinationType(BaseDestination.DestinationType.ACCOUNT)
-            .accountId(destNode.get("accountId").asText())
-            .build()
-    )
+    val accountDest = QuoteDestinationOneOf.AccountDestination.builder()
+        .accountId(destNode.get("accountId").asText())
+        .build()
+    return QuoteDestinationOneOf.ofAccountDestination(accountDest)
 }
 
 private fun JsonNode.optText(field: String): String? =

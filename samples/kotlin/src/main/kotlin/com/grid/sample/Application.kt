@@ -5,6 +5,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.http.content.*
+import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 
@@ -23,6 +24,15 @@ fun Application.module() {
         anyHost()
     }
     install(SSE)
+
+    intercept(ApplicationCallPipeline.Monitoring) {
+        val method = call.request.httpMethod.value
+        val path = call.request.path()
+        if (path.startsWith("/api/") && method != "OPTIONS") {
+            Log.incoming(method, path)
+        }
+    }
+
     routing {
         customerRoutes()
         externalAccountRoutes()

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 
 interface Step {
   title: string
@@ -12,12 +12,24 @@ interface StepWizardProps {
 }
 
 export default function StepWizard({ steps, activeStep }: StepWizardProps) {
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set())
+
+  const toggleStep = (index: number) => {
+    setExpandedSteps(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }
+
   return (
     <div className="space-y-4">
       {steps.map((step, i) => {
         const isCompleted = i < activeStep
         const isActive = i === activeStep
         const isFuture = i > activeStep
+        const isExpanded = expandedSteps.has(i)
 
         return (
           <div key={i} className={`rounded-lg border ${
@@ -25,7 +37,10 @@ export default function StepWizard({ steps, activeStep }: StepWizardProps) {
             isCompleted ? 'border-green-800 bg-gray-900/50' :
             'border-gray-800 bg-gray-900/30 opacity-50'
           }`}>
-            <div className="flex items-center gap-3 p-4">
+            <div
+              className={`flex items-center gap-3 p-4 ${isCompleted ? 'cursor-pointer select-none' : ''}`}
+              onClick={() => isCompleted && toggleStep(i)}
+            >
               <div className={`flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${
                 isCompleted ? 'bg-green-700 text-green-200' :
                 isActive ? 'bg-blue-600 text-white' :
@@ -41,9 +56,14 @@ export default function StepWizard({ steps, activeStep }: StepWizardProps) {
                   {step.summary}
                 </span>
               )}
+              {isCompleted && (
+                <span className={`text-xs text-gray-500 ${step.summary ? 'ml-2' : 'ml-auto'}`}>
+                  {isExpanded ? '\u25BC' : '\u25B6'}
+                </span>
+              )}
             </div>
-            {isActive && (
-              <div className="px-4 pb-4">
+            {(isActive || isCompleted) && (
+              <div className={`px-4 pb-4 ${isCompleted && !isExpanded ? 'hidden' : ''}`}>
                 {step.content}
               </div>
             )}

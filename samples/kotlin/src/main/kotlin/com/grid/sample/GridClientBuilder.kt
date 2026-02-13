@@ -1,11 +1,11 @@
 package com.grid.sample
 
-import com.grid.api.client.GridClient
-import com.grid.api.client.okhttp.GridOkHttpClient
+import com.lightspark.grid.client.LightsparkGridClient
+import com.lightspark.grid.client.okhttp.LightsparkGridOkHttpClient
 
 object GridClientBuilder {
-    val client: GridClient by lazy {
-        GridOkHttpClient.builder()
+    val client: LightsparkGridClient by lazy {
+        LightsparkGridOkHttpClient.builder()
             .username(Config.apiTokenId)
             .password(Config.apiClientSecret)
             .build()

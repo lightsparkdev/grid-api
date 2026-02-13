@@ -20,7 +20,7 @@ export default function ResponsePanel({ response, error }: ResponsePanelProps) {
       </button>
       {expanded && (
         <pre
-          className={`text-sm font-mono p-3 rounded-lg overflow-auto max-h-64 ${
+          className={`text-sm font-mono p-3 rounded-lg overflow-auto max-h-96 ${
             error
               ? 'bg-red-950 text-red-300 border border-red-800'
               : 'bg-gray-900 text-gray-300 border border-gray-700'

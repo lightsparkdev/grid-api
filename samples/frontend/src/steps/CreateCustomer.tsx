@@ -4,8 +4,18 @@ import ResponsePanel from '../components/ResponsePanel'
 import { apiPost } from '../lib/api'
 
 const DEFAULT_BODY = JSON.stringify({
+  platformCustomerId: `cust_${Math.random().toString(36).slice(2, 10)}`,
   customerType: "INDIVIDUAL",
-  platformCustomerId: `sample-customer-${Date.now()}`
+  fullName: "Jack Doe",
+  birthDate: "1992-03-25",
+  address: {
+    line1: "123 Pine Street",
+    line2: "Unit 501",
+    city: "Seattle",
+    state: "WA",
+    postalCode: "98101",
+    country: "US"
+  }
 }, null, 2)
 
 interface Props {

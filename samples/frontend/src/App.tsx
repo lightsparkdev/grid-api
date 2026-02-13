@@ -4,7 +4,6 @@ import WebhookStream from './components/WebhookStream'
 import CreateCustomer from './steps/CreateCustomer'
 import CreateExternalAccount from './steps/CreateExternalAccount'
 import CreateQuote from './steps/CreateQuote'
-import ExecuteQuote from './steps/ExecuteQuote'
 import SandboxFund from './steps/SandboxFund'
 
 export default function App() {
@@ -48,6 +47,7 @@ export default function App() {
       summary: quoteId ? `ID: ${quoteId}` : null,
       content: (
         <CreateQuote
+          customerId={customerId}
           externalAccountId={externalAccountId}
           disabled={activeStep !== 2}
           onComplete={(data) => {
@@ -58,23 +58,12 @@ export default function App() {
       ),
     },
     {
-      title: '4. Execute Quote',
-      summary: activeStep > 3 ? 'Executed' : null,
-      content: (
-        <ExecuteQuote
-          quoteId={quoteId}
-          disabled={activeStep !== 3}
-          onComplete={() => advance()}
-        />
-      ),
-    },
-    {
-      title: '5. Sandbox Fund',
-      summary: activeStep > 4 ? 'Funded' : null,
+      title: '4. Simulate Funding (Sandbox Only)',
+      summary: activeStep > 3 ? 'Funded' : null,
       content: (
         <SandboxFund
           quoteId={quoteId}
-          disabled={activeStep !== 4}
+          disabled={activeStep !== 3}
           onComplete={() => advance()}
         />
       ),
@@ -85,7 +74,7 @@ export default function App() {
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <header className="border-b border-gray-800 px-6 py-4">
         <h1 className="text-xl font-bold">Grid API Sample</h1>
-        <p className="text-sm text-gray-400">Payout flow: USDC &rarr; USD via external bank account</p>
+        <p className="text-sm text-gray-400">Send a real time payment to a US bank account funded with USDC</p>
       </header>
       <div className="flex">
         <main className="w-3/5 p-6 border-r border-gray-800 min-h-[calc(100vh-73px)]">

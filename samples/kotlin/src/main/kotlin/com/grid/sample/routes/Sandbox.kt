@@ -1,9 +1,10 @@
 package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.grid.api.models.sandbox.SandboxSendFundsParams
+import com.lightspark.grid.models.sandbox.SandboxSendFundsParams
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
+import com.grid.sample.Log
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -15,6 +16,7 @@ fun Route.sandboxRoutes() {
             try {
                 val body = call.receiveText()
                 val json = JsonUtils.mapper.readTree(body)
+                Log.incoming("POST", "/api/sandbox/send-funds", body)
 
                 val params = SandboxSendFundsParams.builder()
                     .quoteId(json.get("quoteId").asText())
@@ -26,13 +28,14 @@ fun Route.sandboxRoutes() {
                     }
                     .build()
 
+                Log.gridRequest("sandbox.sendFunds", body)
                 val response = GridClientBuilder.client.sandbox().sendFunds(params)
-                call.respondText(
-                    JsonUtils.prettyPrint(response),
-                    ContentType.Application.Json,
-                    HttpStatusCode.OK
-                )
+                val responseJson = JsonUtils.prettyPrint(response)
+                Log.gridResponse("sandbox.sendFunds", responseJson)
+
+                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.OK)
             } catch (e: Exception) {
+                Log.gridError("sandbox.sendFunds", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,

@@ -1,6 +1,6 @@
 # Grid API Samples
 
-Sample applications demonstrating the Grid API payout flow — creating a customer, linking a bank account, creating and executing a quote, and simulating funding in the sandbox.
+Sample applications demonstrating the Grid API payout flow — creating a customer, linking a bank account, creating a quote, and simulating funding in the sandbox.
 
 ## Structure
 
@@ -23,7 +23,6 @@ Each backend must implement the same API contract:
 | POST | `/api/customers` | Create a customer |
 | POST | `/api/customers/{id}/external-accounts` | Create an external account |
 | POST | `/api/quotes` | Create a quote |
-| POST | `/api/quotes/{id}/execute` | Execute a quote |
 | POST | `/api/sandbox/send-funds` | Simulate sandbox funding |
 | POST | `/api/webhooks` | Receive webhook events from Grid |
 | GET  | `/api/sse` | Stream webhook events to the frontend via SSE |

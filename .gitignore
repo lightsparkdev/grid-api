@@ -36,6 +36,9 @@ local.properties
 # CLI build output
 cli/dist/
 
+# Frontend build output
+samples/frontend/dist/
+
 # Figma design tokens (local reference only)
 mintlify/tokens/
 
