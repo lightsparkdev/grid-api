@@ -7,7 +7,7 @@ description: >
   "pay [UMA address]", "send to CLABE", "send to PIX", "send to IBAN", "send to UPI",
   "fund sandbox account", "test a payment", "on-ramp", "off-ramp", "convert crypto to fiat",
   "convert fiat to crypto", "look up UMA", "real-time quote", "JIT funding", or any payment
-  operations using the Grid API.
+  operations using the Grid API CLI.
 allowed-tools:
   - Bash
   - Read
@@ -18,10 +18,10 @@ allowed-tools:
 
 # Grid API Skill
 
-You are a Grid API assistant that helps users manage global payments. You can:
+Assist users with global payment operations via the Grid API. Core capabilities:
 
 1. **Execute API Operations** - Use `curl` to interact with the Grid API directly
-2. **Answer Documentation Questions** - Fetch docs from https://grid.lightspark.com or the OpenAPI spec
+2. **Answer Documentation Questions** - Fetch docs from <https://grid.lightspark.com/llms.txt> or the OpenAPI spec (<https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml>)
 3. **Guide Payment Workflows** - Help users send payments to bank accounts, UMA addresses, and crypto wallets
 
 ## Supporting References
@@ -79,7 +79,15 @@ export GRID_BASE_URL=$(jq -r '.baseUrl // "https://api.lightspark.com/grid/2025-
 ### Base URL
 
 - **Production**: `https://api.lightspark.com/grid/2025-10-13`
-- **Sandbox**: May use a different base URL — check `~/.grid-credentials` for the `baseUrl` field
+- **Dev or local**: May use a different base URL — check `~/.grid-credentials` for the `baseUrl` field
+
+### Documentation Resources
+
+For questions not covered by this skill's reference files, fetch additional information from the web:
+
+- **LLM-optimized docs**: Fetch `https://grid.lightspark.com/llms.txt` for a concise overview of the Grid API, or `https://grid.lightspark.com/llms-full.txt` for comprehensive documentation
+- **OpenAPI Spec**: Fetch `https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml` for the full API schema with request/response definitions
+- **Published docs**: Browse `https://grid.lightspark.com` for guides, tutorials, and API reference. Any page can use the `.md` suffix for a more agent-readable format.
 
 ## Making API Calls
 
@@ -139,10 +147,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   }' \
   "$GRID_BASE_URL/customers" | jq .
 
-# Update customer
+# Update customer (customerType is required)
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X PATCH -H "Content-Type: application/json" \
-  -d '{"fullName": "New Name"}' \
+  -d '{"customerType": "INDIVIDUAL", "fullName": "New Name"}' \
   "$GRID_BASE_URL/customers/<customerId>" | jq .
 
 # Delete customer
@@ -150,14 +158,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X DELETE \
   "$GRID_BASE_URL/customers/<customerId>" | jq .
 
-# Generate KYC link
+# Generate KYC link (GET with query params)
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  -X POST -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "<customerId>",
-    "redirectUrl": "https://example.com/callback"
-  }' \
-  "$GRID_BASE_URL/customers/kyc-link" | jq .
+  "$GRID_BASE_URL/customers/kyc-link?platformCustomerId=<platformCustomerId>&redirectUri=https://example.com/callback" | jq .
 ```
 
 ### Account Management
@@ -175,7 +178,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/external-accounts?customerId=<customerId>" | jq .
 
-# Create external account (Mexico CLABE - Individual)
+# Create external account (example: Mexico CLABE - Individual)
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
@@ -193,64 +196,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     }
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
-
-# Create external account (Mexico CLABE - Business)
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  -X POST -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "<customerId>",
-    "currency": "MXN",
-    "accountInfo": {
-      "accountType": "CLABE",
-      "clabeNumber": "<18-digit-number>",
-      "beneficiary": {
-        "beneficiaryType": "BUSINESS",
-        "legalName": "Company Name"
-      }
-    }
-  }' \
-  "$GRID_BASE_URL/customers/external-accounts" | jq .
-
-# Create external account (India UPI)
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  -X POST -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "<customerId>",
-    "currency": "INR",
-    "accountInfo": {
-      "accountType": "UPI",
-      "vpa": "name@bank",
-      "beneficiary": {
-        "beneficiaryType": "INDIVIDUAL",
-        "fullName": "Name",
-        "birthDate": "1990-01-15",
-        "nationality": "IN"
-      }
-    }
-  }' \
-  "$GRID_BASE_URL/customers/external-accounts" | jq .
-
-# Create external account (Nigeria - REQUIRES bankName and purposeOfPayment)
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  -X POST -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "<customerId>",
-    "currency": "NGN",
-    "accountInfo": {
-      "accountType": "NGN_ACCOUNT",
-      "accountNumber": "<10-digit>",
-      "bankName": "GTBank",
-      "purposeOfPayment": "GOODS_OR_SERVICES",
-      "beneficiary": {
-        "beneficiaryType": "INDIVIDUAL",
-        "fullName": "Name",
-        "birthDate": "1990-01-15",
-        "nationality": "NG"
-      }
-    }
-  }' \
-  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
+
+For all supported account types (PIX, IBAN, UPI, NGN, US, crypto wallets) and their field requirements, read `references/account-types.md`.
 
 ### Quotes (Cross-Currency Transfers)
 
@@ -324,8 +272,6 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   "$GRID_BASE_URL/quotes/<quoteId>" | jq .
 ```
 
-**IMPORTANT**: When specifying a destination account, you MUST also include `currency` in the destination object. This is required even though the external account already has a currency.
-
 ### Same-Currency Transfers
 
 ```bash
@@ -333,8 +279,8 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
-    "sourceAccountId": "<externalAccountId>",
-    "destinationAccountId": "<internalAccountId>",
+    "source": {"accountId": "<externalAccountId>"},
+    "destination": {"accountId": "<internalAccountId>"},
     "amount": 10000
   }' \
   "$GRID_BASE_URL/transfer-in" | jq .
@@ -343,8 +289,8 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
-    "sourceAccountId": "<internalAccountId>",
-    "destinationAccountId": "<externalAccountId>",
+    "source": {"accountId": "<internalAccountId>"},
+    "destination": {"accountId": "<externalAccountId>"},
     "amount": 10000
   }' \
   "$GRID_BASE_URL/transfer-out" | jq .
@@ -399,13 +345,18 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 # Simulate sending funds to a real-time quote
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
-  -d '{"quoteId": "<quoteId>", "currency": "<code>"}' \
+  -d '{"quoteId": "<quoteId>", "currencyCode": "<code>"}' \
   "$GRID_BASE_URL/sandbox/send" | jq .
 
 # Simulate receiving a UMA payment
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
-  -d '{"umaAddress": "<address>", "amount": 1000, "currency": "USD"}' \
+  -d '{
+    "senderUmaAddress": "$sender@sandbox.grid.uma.money",
+    "receiverUmaAddress": "<receiverAddress>",
+    "receivingCurrencyCode": "USD",
+    "receivingCurrencyAmount": 1000
+  }' \
   "$GRID_BASE_URL/sandbox/uma/receive" | jq .
 ```
 
@@ -444,85 +395,31 @@ Internal Account (USD) → External Account (USD)  [transfer-out]
 
 ## Interactive Payment Workflows
 
-When a user wants to send a payment, guide them through these steps:
+For step-by-step payment workflows, read `references/workflows.md`. Common workflows:
 
-### Sending to an UMA Address
-
-1. Look up the receiver:
-
-   ```bash
-   curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-     "$GRID_BASE_URL/receiver/uma/%24user%40domain.com" | jq .
-   ```
-
-2. Show supported currencies and any required payer data
-3. Create a quote with the appropriate source and destination
-4. Show exchange rate and fees from the quote response
-5. Ask for confirmation before executing
-6. Execute the quote
-
-### Sending to a Bank Account (International)
-
-1. Determine the destination country and use the appropriate account type:
-   - **Mexico**: CLABE (18 digits)
-   - **Brazil**: PIX (CPF 11 digits, CNPJ 14 digits, Email, Phone, or EVP 32 chars)
-   - **India**: UPI (VPA format: `user@bankhandle`)
-   - **Nigeria**: NGN_ACCOUNT (10-digit account + bank name + purpose)
-   - **Europe**: IBAN + SWIFT BIC
-   - **US**: Routing number (9 digits) + Account number
-   - **Crypto**: Spark wallet (`spark1...`), Solana/Base/Polygon/Tron addresses
-
-2. Collect required information:
-   - Account details specific to the type
-   - Beneficiary info (requirements vary by destination - check API response for errors)
-
-3. Create external account (see Account Management section for examples)
-
-4. Create quote showing exchange rate and fees
-
-5. Get confirmation and execute (or for JIT, show payment instructions)
+- **UMA Payment**: Receiver lookup -> Quote -> Confirm -> Execute
+- **International Bank Transfer**: Create external account -> Receiver lookup -> Quote -> Confirm -> Execute
+- **On-Ramp (Fiat to Crypto)**: Verify KYC -> Deposit fiat -> Create crypto external account -> Quote with `immediatelyExecute`
+- **Off-Ramp (Crypto to Fiat)**: Create fiat external account -> Deposit crypto -> Quote -> Execute
+- **Incoming Payment Handling**: List pending approvals -> Review -> Approve/Reject
 
 ### Real-Time / Just-in-Time Funded Transfers
 
-Use this flow when the user asks for a "realtime quote" or "just in time" funded transfer. The quote response includes `paymentInstructions` for how to fund the transfer.
+Use this flow when the user asks for a "realtime quote" or "just in time" funded transfer. Only use with instant settlement methods — do not use with slow methods like ACH since quotes expire quickly.
 
-**Key concept:** Real-time funding is about instant settlement, not currency type. Use this when funds will be provided at execution time via any instant payment method:
+**Compatible instant methods:**
 
 - **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon), USDT (Tron)
 - **Fiat:** RTP, SEPA Instant, and other instant payment rails
 
-**Important:** Only use real-time funding with instant settlement methods. Do not use with slow methods like ACH since quotes expire quickly.
+**Flow:**
 
 1. Create a quote with `sourceType: "REALTIME_FUNDING"`. Destination can be an internal account, external account, or UMA address.
+2. The response includes `paymentInstructions` with **multiple funding options simultaneously** (e.g., Lightning + Spark for BTC, Solana + Base + Polygon for USDC). Show all options to the user.
+3. **Auto-execution**: Once the user sends funds to ANY of the provided addresses, Grid automatically detects the deposit and executes at the locked rate. Do NOT call the execute endpoint for JIT quotes. Webhooks sent: `ACCOUNT_STATUS` on deposit, `OUTGOING_PAYMENT` on completion.
+4. **Quote expiration**: Quotes expire in 1-5 minutes. If expired, create a new quote.
 
-2. The response includes `paymentInstructions` with **multiple funding options simultaneously**:
-   - For BTC: Lightning invoice AND Spark wallet address
-   - For USDC: Solana wallet AND Base wallet AND Polygon wallet
-   - For fiat: RTP details or SEPA Instant details
-
-   The user can choose any one of these options to fund the quote.
-
-3. Show the user ALL payment options and the exchange rate. Let them choose their preferred method.
-
-4. **Auto-execution**: Once the user sends funds to ANY of the provided addresses, Grid automatically:
-   - Detects the deposit (monitors blockchain/payment rails)
-   - Executes the transfer at the locked exchange rate
-   - Credits the destination account
-   - Sends webhooks: `ACCOUNT_STATUS` on deposit, `OUTGOING_PAYMENT` on completion
-
-5. **No manual execution needed** - Do NOT call the execute endpoint for JIT quotes. The transfer executes automatically when funds are received.
-
-6. **Quote expiration**: Quotes expire in 1-5 minutes. If expired, create a new quote. Do not use slow settlement methods (ACH) with JIT funding.
-
-## Documentation Resources
-
-For questions not covered by this skill's reference files, fetch additional information from the web:
-
-- **LLM-optimized docs**: Fetch `https://grid.lightspark.com/llms.txt` for a concise overview of the Grid API, or `https://grid.lightspark.com/llms-full.txt` for comprehensive documentation
-- **OpenAPI Spec**: Fetch `https://raw.githubusercontent.com/lightsparkdev/webdev/main/openapi.yaml` for the full API schema with request/response definitions
-- **Published docs**: Browse `https://grid.lightspark.com` for guides, tutorials, and API reference
-
-## Best Practices
+## Best Practices and Common Pitfalls
 
 1. **Check platform config first**: Call `GET /config` to see supported currencies and required fields
 2. **Use smallest currency units**: All amounts are in cents/satoshis - use `decimals` field for display
@@ -530,28 +427,10 @@ For questions not covered by this skill's reference files, fetch additional info
 4. **Choose the right flow**: Use prefunded for immediate execution, JIT for crypto/instant rails
 5. **Pipe through jq**: Always append `| jq .` for readable output, or `| jq -r .field` to extract specific values
 6. **URL-encode special characters**: UMA addresses contain `$` — encode as `%24` in URL paths
-
-## Common Mistakes to Avoid
-
-### External Account Creation
-
-1. **Missing individual beneficiary fields**: For `beneficiaryType: "INDIVIDUAL"`, you MUST include in the `beneficiary` object:
-   - `fullName`
-   - `birthDate` (YYYY-MM-DD)
-   - `nationality` (2-letter country code)
-
-2. **Wrong field names**:
-   - Use `bankName` (NOT `bankCode`) for Nigerian accounts
-   - Use `purposeOfPayment` for Nigerian accounts (required)
-
-3. **Missing country-specific fields**:
-   - Nigeria (NGN_ACCOUNT): Requires `purposeOfPayment` (e.g., `GOODS_OR_SERVICES`)
-   - Brazil (PIX): Requires `pixKey`
-   - Europe (IBAN): Requires `swiftBic`
-
-### Quote Creation
-
-1. **Missing destination currency**: When specifying a destination account, you MUST also include `currency` in the destination object. This is required even though the external account already has a currency associated with it.
+7. **Always include destination currency in quotes**: When specifying a destination account, you MUST include `currency` in the destination object even though the external account already has a currency
+8. **Individual beneficiary fields are all required**: For `beneficiaryType: "INDIVIDUAL"`, you MUST include `fullName`, `birthDate` (YYYY-MM-DD), and `nationality` (2-letter code) in the `beneficiary` object
+9. **Use correct Nigerian field names**: Use `bankName` (NOT `bankCode`) and include `purposeOfPayment`
+10. **Don't forget country-specific required fields**: Brazil (PIX) requires `pixKey`, `pixKeyType`, and `taxId`; Europe (IBAN) requires `swiftBic`
 
 ## Error Handling
 

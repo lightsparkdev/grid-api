@@ -1,6 +1,6 @@
 # Grid API Endpoints Reference
 
-Quick reference for all Grid API endpoints. For full request/response schemas, fetch the OpenAPI spec from `https://raw.githubusercontent.com/lightsparkdev/webdev/main/openapi.yaml`.
+Quick reference for all Grid API endpoints. For full request/response schemas, fetch the OpenAPI spec from `https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml`.
 
 ## Base URL
 
@@ -64,10 +64,12 @@ Internal accounts are auto-created when customers are created based on platform 
 | POST | `/quotes/{quoteId}/execute` | Execute a pending quote |
 
 ### Quote Source Types
+
 - `source.accountId`: Internal account ID
 - `source.customerId` + `source.currency`: Customer-funded with payment instructions
 
 ### Quote Destination Types
+
 - `destination.accountId`: External account ID
 - `destination.umaAddress` + `destination.currency`: UMA address
 - `destination.externalAccountDetails`: Inline account creation
@@ -91,10 +93,12 @@ Returns: supported currencies, min/max amounts, required payer data fields.
 | POST | `/transactions/{transactionId}/reject` | Reject incoming payment |
 
 ### Transaction Types
+
 - `INCOMING`: Payment received
 - `OUTGOING`: Payment sent
 
 ### Transaction Statuses
+
 - `PENDING`: Awaiting processing
 - `PENDING_APPROVAL`: Needs approval (incoming)
 - `PROCESSING`: In progress
@@ -109,6 +113,7 @@ Returns: supported currencies, min/max amounts, required payer data fields.
 | POST | `/webhooks/test` | Send test webhook |
 
 ### Webhook Events
+
 - `incoming-payment`: Payment received
 - `outgoing-payment`: Payment status update
 - `kyc-status`: KYC status change
@@ -135,7 +140,9 @@ Returns: supported currencies, min/max amounts, required payer data fields.
 | POST | `/sandbox/internal-accounts/{accountId}/fund` | Fund account in sandbox |
 
 ### Sandbox Account Patterns
+
 Use these account number endings for testing:
+
 - `002`: Insufficient funds
 - `003`: Account closed/invalid
 - `004`: Transfer rejected
@@ -167,6 +174,7 @@ Use these account number endings for testing:
 ## Pagination
 
 List endpoints support cursor-based pagination:
+
 - `limit`: Max results (default 20, max 100)
 - `cursor`: Pagination cursor from previous response
 - Response includes `hasMore`, `nextCursor`, `totalCount`
