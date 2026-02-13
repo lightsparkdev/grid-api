@@ -252,8 +252,7 @@
             "pages": [
               "api-reference/environments",
               "api-reference/terminology",
-              "api-reference/authentication",
-              "api-reference/webhooks"
+              "api-reference/authentication"
             ]
           },
           {

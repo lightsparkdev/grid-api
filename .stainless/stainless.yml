@@ -109,7 +109,7 @@ resources:
           external_account: '#/components/schemas/ExternalAccount'
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
           lightning_external_account_info: "#/components/schemas/LightningExternalAccountInfo"
-          ngn_external_account_info: "#/components/schemas/NgnExternalAccountInfo"
+          ngn_account_external_account_info: "#/components/schemas/NgnAccountExternalAccountInfo"
           base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
           base_beneficiary: "#/components/schemas/BaseBeneficiary"
           beneficiary_one_of: "#/components/schemas/BeneficiaryOneOf"
