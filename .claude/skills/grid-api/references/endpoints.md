@@ -1,6 +1,6 @@
 # Grid API Endpoints Reference
 
-Quick reference for all Grid API endpoints. For full details, see `openapi/` directory.
+Quick reference for all Grid API endpoints. For full request/response schemas, fetch the OpenAPI spec from `https://raw.githubusercontent.com/lightsparkdev/webdev/main/openapi.yaml`.
 
 ## Base URL
 
