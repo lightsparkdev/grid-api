@@ -12,6 +12,10 @@ This reference maps countries/regions to their required account types and fields
 | United States | US_ACCOUNT | USD | Account + Routing number |
 | India | UPI | INR | UPI ID (user@bank) |
 | Nigeria | NGN_ACCOUNT | NGN | Account number + Bank code |
+| Canada | CAD_ACCOUNT | CAD | Bank code + Branch code + Account number |
+| United Kingdom | GBP_ACCOUNT | GBP | Sort code + Account number |
+| Philippines | PHP_ACCOUNT | PHP | Bank name + Account number |
+| Singapore | SGD_ACCOUNT | SGD | SWIFT code + Account number |
 
 ## Crypto/Wallet Types
 
@@ -87,6 +91,8 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     "accountInfo": {
       "accountType": "PIX",
       "pixKey": "12345678901",
+      "pixKeyType": "CPF",
+      "taxId": "12345678901",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Full Name"
@@ -95,6 +101,12 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
+
+Required fields:
+
+- `pixKey`: The PIX key value
+- `pixKeyType`: One of `CPF`, `CNPJ`, `EMAIL`, `PHONE`, `RANDOM`
+- `taxId`: Tax ID of the account holder
 
 PIX key formats:
 
@@ -115,12 +127,16 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     "accountInfo": {
       "accountType": "IBAN",
       "iban": "DE89370400440532013000",
+      "swiftBic": "COBADEFFXXX",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "DE",
         "address": {
           "line1": "123 Street",
           "city": "Berlin",
+          "postalCode": "10115",
           "country": "DE"
         }
       }
@@ -128,6 +144,11 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   }' \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
+
+Required fields:
+
+- `iban`: International Bank Account Number (15-34 characters)
+- `swiftBic`: SWIFT/BIC code (8 or 11 characters, pattern: `^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
 
 IBAN format: Country code (2) + Check digits (2) + BBAN (up to 30)
 
@@ -147,6 +168,8 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
         "address": {
           "line1": "123 Main St",
           "city": "San Francisco",
@@ -179,7 +202,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
       "vpa": "user@okbank",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
-        "fullName": "Full Name"
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "IN"
       }
     }
   }' \
@@ -229,6 +254,122 @@ Common Nigerian banks:
 - United Bank for Africa
 - Access Bank
 - First Bank of Nigeria
+
+### Canada (CAD_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "CAD",
+    "accountInfo": {
+      "accountType": "CAD_ACCOUNT",
+      "bankCode": "001",
+      "branchCode": "00012",
+      "accountNumber": "1234567",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "CA"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `bankCode`: 3-digit financial institution number
+- `branchCode`: 5-digit transit number
+- `accountNumber`: 7-12 digit account number
+
+### United Kingdom (GBP_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "GBP",
+    "accountInfo": {
+      "accountType": "GBP_ACCOUNT",
+      "sortCode": "12-34-56",
+      "accountNumber": "12345678",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "GB"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `sortCode`: 6-digit sort code (may include hyphens, e.g., `12-34-56`)
+- `accountNumber`: 8-digit account number
+
+### Philippines (PHP_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "PHP",
+    "accountInfo": {
+      "accountType": "PHP_ACCOUNT",
+      "bankName": "BDO Unibank",
+      "accountNumber": "1234567890",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "PH"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `bankName`: Name of the bank
+- `accountNumber`: Bank account number
+
+### Singapore (SGD_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "SGD",
+    "accountInfo": {
+      "accountType": "SGD_ACCOUNT",
+      "bankName": "DBS Bank",
+      "swiftCode": "DBSSSGSG",
+      "accountNumber": "1234567890",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "SG"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `bankName`: Name of the bank
+- `swiftCode`: SWIFT/BIC code (8 or 11 characters)
+- `accountNumber`: Bank account number
 
 ### Crypto Wallets
 
@@ -284,10 +425,4 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ## Sandbox Testing
 
-In sandbox mode, use these account number patterns to test scenarios:
-
-- Numbers ending in **002**: Insufficient funds
-- Numbers ending in **003**: Account closed/invalid
-- Numbers ending in **004**: Transfer rejected
-- Numbers ending in **005**: Timeout/delayed failure
-- Any other number: Success
+For sandbox account number patterns, see `references/endpoints.md` under "Sandbox Testing".
