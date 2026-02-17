@@ -1304,7 +1304,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/Transaction'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1398,7 +1398,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/Transaction'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -2062,7 +2062,7 @@ paths:
                     type: array
                     description: List of transactions matching the criteria
                     items:
-                      $ref: '#/components/schemas/TransactionOneOf'
+                      $ref: '#/components/schemas/Transaction'
                   hasMore:
                     type: boolean
                     description: Indicates if more results are available beyond this page
@@ -2112,7 +2112,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/Transaction'
         '401':
           description: Unauthorized
           content:
@@ -5242,43 +5242,6 @@ components:
         - UNDER_REVIEW
         - INACTIVE
       description: Status of an external account
-    BeneficiaryVerificationStatus:
-      type: string
-      enum:
-        - MATCHED
-        - PARTIAL_MATCH
-        - NOT_MATCHED
-        - UNSUPPORTED
-        - CHECKED_BY_RECEIVING_FI
-        - PENDING
-      description: |
-        The result of verifying the beneficiary name against the account holder name.
-
-        | Status | Description |
-        |--------|-------------|
-        | `MATCHED` | The beneficiary name is an exact match |
-        | `PARTIAL_MATCH` | The beneficiary name is a fuzzy match |
-        | `NOT_MATCHED` | The beneficiary name does not match |
-        | `UNSUPPORTED` | The payment rail does not support name verification |
-        | `CHECKED_BY_RECEIVING_FI` | Verification is deferred to the receiving financial institution (e.g. ACH) |
-        | `PENDING` | Verification is still in progress |
-    BeneficiaryVerifiedData:
-      type: object
-      properties:
-        fullName:
-          type: string
-          description: The verified full name of the account holder as returned by the payment rail
-          example: John Doe
-    UsAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UsAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
     BaseExternalAccountInfo:
       type: object
       required:
@@ -5289,22 +5252,95 @@ components:
       discriminator:
         propertyName: accountType
         mapping:
-          US_ACCOUNT: '#/components/schemas/UsAccountExternalAccountInfo'
-          CLABE: '#/components/schemas/ClabeAccountExternalAccountInfo'
-          PIX: '#/components/schemas/PixAccountExternalAccountInfo'
-          IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
-          UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
+          DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
+          HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
+          IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
+          INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
+          MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountInfo'
+          MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountInfo'
+          THB_ACCOUNT: '#/components/schemas/ThbExternalAccountInfo'
+          USD_ACCOUNT: '#/components/schemas/UsdExternalAccountInfo'
+          VND_ACCOUNT: '#/components/schemas/VndExternalAccountInfo'
+    GbpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - sortCode
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GBP_ACCOUNT
+        sortCode:
+          type: string
+          description: UK bank sort code (6 digits, may include hyphens)
+          example: 20-00-00
+          pattern: ^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$
+        accountNumber:
+          type: string
+          description: UK bank account number (8 digits)
+          example: '12345678'
+          minLength: 8
+          maxLength: 8
+          pattern: ^[0-9]{8}$
+    GbpBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BaseBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+      properties:
+        beneficiaryType:
+          $ref: '#/components/schemas/BeneficiaryType'
+        address:
+          $ref: '#/components/schemas/Address'
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+          BUSINESS: '#/components/schemas/BusinessBeneficiary'
     IndividualBeneficiary:
       allOf:
         - $ref: '#/components/schemas/BaseBeneficiary'
@@ -5332,20 +5368,6 @@ components:
               type: string
               description: Country code (ISO 3166-1 alpha-2)
               example: US
-    BaseBeneficiary:
-      type: object
-      required:
-        - beneficiaryType
-      properties:
-        beneficiaryType:
-          $ref: '#/components/schemas/BeneficiaryType'
-        address:
-          $ref: '#/components/schemas/Address'
-      discriminator:
-        propertyName: beneficiaryType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
-          BUSINESS: '#/components/schemas/BusinessBeneficiary'
     BusinessBeneficiary:
       allOf:
         - $ref: '#/components/schemas/BaseBeneficiary'
@@ -5377,152 +5399,7 @@ components:
         - BUSINESS
       description: Whether the beneficiary is an individual or a business entity
       example: INDIVIDUAL
-    BeneficiaryOneOf:
-      oneOf:
-        - title: Individual Beneficiary
-          $ref: '#/components/schemas/IndividualBeneficiary'
-        - title: Business Beneficiary
-          $ref: '#/components/schemas/BusinessBeneficiary'
-      discriminator:
-        propertyName: beneficiaryType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
-          BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    ClabeAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/ClabeAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    PixAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PixAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    IbanAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/IbanAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    UpiAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UpiAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    NgnAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/NgnAccountInfo'
-        - type: object
-          required:
-            - purposeOfPayment
-            - beneficiary
-          properties:
-            purposeOfPayment:
-              type: string
-              enum:
-                - GIFT
-                - SELF
-                - GOODS_OR_SERVICES
-                - EDUCATION
-                - HEALTH_OR_MEDICAL
-                - REAL_ESTATE_PURCHASE
-                - LOAN_PAYMENT
-                - TAX_PAYMENT
-                - UTILITY_BILL
-                - DONATION
-                - TRAVEL
-                - OTHER
-              description: Purpose of payment
-              example: GOODS_OR_SERVICES
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    CadAccountInfo:
-      type: object
-      required:
-        - bankCode
-        - branchCode
-        - accountNumber
-        - accountType
-      properties:
-        accountType:
-          type: string
-          enum:
-            - CAD_ACCOUNT
-        bankCode:
-          type: string
-          description: Canadian financial institution number (3 digits)
-          example: '001'
-          minLength: 3
-          maxLength: 3
-          pattern: ^[0-9]{3}$
-        branchCode:
-          type: string
-          description: Transit number identifying the branch (5 digits)
-          example: '00012'
-          minLength: 5
-          maxLength: 5
-          pattern: ^[0-9]{5}$
-        accountNumber:
-          type: string
-          description: Bank account number (7-12 digits)
-          example: '1234567'
-          minLength: 7
-          maxLength: 12
-          pattern: ^[0-9]{7,12}$
-    CadAccountExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
-    GbpAccountInfo:
-      type: object
-      required:
-        - sortCode
-        - accountNumber
-        - accountType
-      properties:
-        accountType:
-          type: string
-          enum:
-            - GBP_ACCOUNT
-        sortCode:
-          type: string
-          description: UK bank sort code (6 digits, may include hyphens)
-          example: 20-00-00
-          pattern: ^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$
-        accountNumber:
-          type: string
-          description: UK bank account number (8 digits)
-          example: '12345678'
-          minLength: 8
-          maxLength: 8
-          pattern: ^[0-9]{8}$
-    GbpAccountExternalAccountInfo:
+    GbpExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/GbpAccountInfo'
@@ -5531,13 +5408,22 @@ components:
             - beneficiary
           properties:
             beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GbpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     PhpAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - accountNumber
-        - accountType
       properties:
         accountType:
           type: string
@@ -5551,7 +5437,40 @@ components:
           type: string
           description: Bank account number
           example: '001234567890'
-    PhpAccountExternalAccountInfo:
+    PhpBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    PhpExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PhpAccountInfo'
@@ -5560,14 +5479,23 @@ components:
             - beneficiary
           properties:
             beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PhpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     SgdAccountInfo:
       type: object
       required:
+        - accountType
         - bankName
         - swiftCode
         - accountNumber
-        - accountType
       properties:
         accountType:
           type: string
@@ -5588,7 +5516,40 @@ components:
           type: string
           description: Bank account number
           example: '0123456789'
-    SgdAccountExternalAccountInfo:
+    SgdBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    SgdExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SgdAccountInfo'
@@ -5597,7 +5558,16 @@ components:
             - beneficiary
           properties:
             beneficiary:
-              $ref: '#/components/schemas/BeneficiaryOneOf'
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SgdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     SparkWalletExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5645,16 +5615,646 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+    BrlExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BrlAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BrlBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    DkkAccountInfo:
+      type: object
+      required:
+        - accountType
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - DKK_ACCOUNT
+        iban:
+          type: string
+          description: The IBAN of the bank
+        swiftBic:
+          type: string
+          description: The SWIFT BIC of the bank
+    DkkBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    DkkExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/DkkAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/DkkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HkdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - HKD_ACCOUNT
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    HkdBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    HkdExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HkdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HkdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HkdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    IdrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - sortCode
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - IDR_ACCOUNT
+        sortCode:
+          type: string
+          description: The sort code of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    IdrBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    IdrExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/IdrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/IdrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IdrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    InrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - vpa
+      properties:
+        accountType:
+          type: string
+          enum:
+            - INR_ACCOUNT
+        vpa:
+          type: string
+          description: The VPA of the bank
+    InrBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    InrExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/InrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/InrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/InrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MxnAccountInfo:
+      type: object
+      required:
+        - accountType
+        - clabeNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - MXN_ACCOUNT
+        clabeNumber:
+          type: string
+          description: The CLABE number of the bank
+          example: '123456789012345678'
+          minLength: 18
+          maxLength: 18
+          pattern: ^[0-9]{18}$
+    MxnBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    MxnExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MxnAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MxnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MxnBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MyrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - MYR_ACCOUNT
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    MyrBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    MyrExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MyrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MyrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MyrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ThbAccountInfo:
+      type: object
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - THB_ACCOUNT
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    ThbBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ThbExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ThbAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ThbBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ThbBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    UsdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - routingNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - USD_ACCOUNT
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        routingNumber:
+          type: string
+          description: The routing number of the bank
+    UsdBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - birthDate
+        - fullName
+        - nationality
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    UsdExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/UsdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/UsdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/UsdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    VndAccountInfo:
+      type: object
+      required:
+        - accountType
+        - bankName
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - VND_ACCOUNT
+        bankName:
+          type: string
+          description: The bank name of the bank
+        accountNumber:
+          type: string
+          description: The account number of the bank
+    VndBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    VndExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/VndAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/VndBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/VndBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountType:
       type: string
       enum:
-        - US_ACCOUNT
-        - CLABE
-        - PIX
-        - IBAN
-        - UPI
-        - NGN_ACCOUNT
-        - CAD_ACCOUNT
         - GBP_ACCOUNT
         - PHP_ACCOUNT
         - SGD_ACCOUNT
@@ -5664,30 +6264,100 @@ components:
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - BRL_ACCOUNT
+        - DKK_ACCOUNT
+        - HKD_ACCOUNT
+        - IDR_ACCOUNT
+        - INR_ACCOUNT
+        - MXN_ACCOUNT
+        - MYR_ACCOUNT
+        - THB_ACCOUNT
+        - USD_ACCOUNT
+        - VND_ACCOUNT
       description: Type of external account or wallet
-      example: US_ACCOUNT
+      example: GBP_ACCOUNT
+    BrlAccountInfo:
+      type: object
+      required:
+        - accountType
+        - pixKey
+        - pixKeyType
+        - taxId
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BRL_ACCOUNT
+        pixKey:
+          type: string
+          description: The PIX key of the bank
+        pixKeyType:
+          type: string
+          description: The type of PIX key of the bank
+        taxId:
+          type: string
+          description: The tax ID of the bank account
+    BrlBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
     ExternalAccountInfoOneOf:
       oneOf:
-        - title: US Account
-          $ref: '#/components/schemas/UsAccountExternalAccountInfo'
-        - title: CLABE Account
-          $ref: '#/components/schemas/ClabeAccountExternalAccountInfo'
-        - title: PIX Account
-          $ref: '#/components/schemas/PixAccountExternalAccountInfo'
-        - title: IBAN Account
-          $ref: '#/components/schemas/IbanAccountExternalAccountInfo'
-        - title: UPI Account
-          $ref: '#/components/schemas/UpiAccountExternalAccountInfo'
-        - title: NGN Account
-          $ref: '#/components/schemas/NgnAccountExternalAccountInfo'
-        - title: CAD Account
-          $ref: '#/components/schemas/CadAccountExternalAccountInfo'
+        - title: BRL Account
+          $ref: '#/components/schemas/BrlExternalAccountInfo'
+        - title: DKK Account
+          $ref: '#/components/schemas/DkkExternalAccountInfo'
         - title: GBP Account
-          $ref: '#/components/schemas/GbpAccountExternalAccountInfo'
+          $ref: '#/components/schemas/GbpExternalAccountInfo'
+        - title: HKD Account
+          $ref: '#/components/schemas/HkdExternalAccountInfo'
+        - title: IDR Account
+          $ref: '#/components/schemas/IdrExternalAccountInfo'
+        - title: INR Account
+          $ref: '#/components/schemas/InrExternalAccountInfo'
+        - title: MXN Account
+          $ref: '#/components/schemas/MxnExternalAccountInfo'
+        - title: MYR Account
+          $ref: '#/components/schemas/MyrExternalAccountInfo'
         - title: PHP Account
-          $ref: '#/components/schemas/PhpAccountExternalAccountInfo'
+          $ref: '#/components/schemas/PhpExternalAccountInfo'
         - title: SGD Account
-          $ref: '#/components/schemas/SgdAccountExternalAccountInfo'
+          $ref: '#/components/schemas/SgdExternalAccountInfo'
+        - title: THB Account
+          $ref: '#/components/schemas/ThbExternalAccountInfo'
+        - title: USD Account
+          $ref: '#/components/schemas/UsdExternalAccountInfo'
+        - title: VND Account
+          $ref: '#/components/schemas/VndExternalAccountInfo'
         - title: Spark Wallet
           $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - title: Lightning
@@ -5703,16 +6373,19 @@ components:
       discriminator:
         propertyName: accountType
         mapping:
-          US_ACCOUNT: '#/components/schemas/UsAccountExternalAccountInfo'
-          CLABE: '#/components/schemas/ClabeAccountExternalAccountInfo'
-          PIX: '#/components/schemas/PixAccountExternalAccountInfo'
-          IBAN: '#/components/schemas/IbanAccountExternalAccountInfo'
-          UPI: '#/components/schemas/UpiAccountExternalAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/NgnAccountExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadAccountExternalAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/GbpAccountExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpAccountExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdAccountExternalAccountInfo'
+          BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
+          DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
+          HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
+          IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
+          INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
+          MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountInfo'
+          MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
+          THB_ACCOUNT: '#/components/schemas/ThbExternalAccountInfo'
+          USD_ACCOUNT: '#/components/schemas/UsdExternalAccountInfo'
+          VND_ACCOUNT: '#/components/schemas/VndExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
@@ -5752,12 +6425,6 @@ components:
               type: boolean
               description: Whether this account is the default UMA deposit account for the customer. If true, incoming UMA payments to this customer's UMA address will be automatically deposited into this account instead of the primary internal account. False if not provided. Note that at most, one external account can be set as the default UMA deposit account for a customer. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
               example: false
-            beneficiaryVerificationStatus:
-              $ref: '#/components/schemas/BeneficiaryVerificationStatus'
-              description: The result of verifying the beneficiary name against the account holder name
-            beneficiaryVerifiedData:
-              $ref: '#/components/schemas/BeneficiaryVerifiedData'
-              description: Verified beneficiary data returned by the payment rail, if available
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountCreateRequest:
@@ -5838,32 +6505,6 @@ components:
             Optional Plaid account ID if the customer selected a specific account.
             If not provided, the default account will be used.
           example: plaid_account_id_123
-    IncomingTransaction:
-      allOf:
-        - $ref: '#/components/schemas/Transaction'
-        - type: object
-          required:
-            - type
-            - receivedAmount
-          properties:
-            type:
-              type: string
-              enum:
-                - INCOMING
-            source:
-              $ref: '#/components/schemas/TransactionSourceOneOf'
-            receivedAmount:
-              $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency
-            reconciliationInstructions:
-              $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Included for all transactions except those with "CREATED" status
-            rateDetails:
-              $ref: '#/components/schemas/IncomingRateDetails'
-              description: Details about the rate and fees for the transaction.
-            failureReason:
-              $ref: '#/components/schemas/IncomingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure.
     Transaction:
       type: object
       required:
@@ -5912,7 +6553,13 @@ components:
           description: Optional memo or description for the payment
           example: 'Payment for invoice #1234'
         counterpartyInformation:
-          $ref: '#/components/schemas/CounterpartyInformation'
+          type: object
+          description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
+          additionalProperties: true
+          example:
+            FULL_NAME: John Sender
+            BIRTH_DATE: '1985-06-15'
+            NATIONALITY: DE
       discriminator:
         propertyName: type
         mapping:
@@ -5951,7 +6598,6 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionSource'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
-          REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
     UmaAddressTransactionSource:
       allOf:
         - $ref: '#/components/schemas/BaseTransactionSource'
@@ -5969,27 +6615,6 @@ components:
               description: UMA address of the sender
               example: $sender@uma.domain.com
           description: UMA address source details
-    RealtimeFundingTransactionSource:
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionSource'
-        - type: object
-          required:
-            - currency
-            - sourceType
-          properties:
-            sourceType:
-              type: string
-              enum:
-                - REALTIME_FUNDING
-            customerId:
-              type: string
-              description: The customer on whose behalf the transaction was initiated.
-              example: Customer:019542f5-b3e7-1d02-0000-000000000009
-            currency:
-              type: string
-              description: Currency code for the funding source
-              example: USDC
-          description: Transaction was funded using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
     TransactionSourceType:
       type: string
       enum:
@@ -6004,14 +6629,86 @@ components:
           $ref: '#/components/schemas/AccountTransactionSource'
         - title: UMA Address Source
           $ref: '#/components/schemas/UmaAddressTransactionSource'
-        - title: Real-time Funding Source
-          $ref: '#/components/schemas/RealtimeFundingTransactionSource'
       discriminator:
         propertyName: sourceType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionSource'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
-          REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
+    ReconciliationInstructions:
+      type: object
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
+          example: UMA-Q12345-REF
+    IncomingRateDetails:
+      description: Details about the rate and fees for an incoming transaction.
+      type: object
+      required:
+        - gridApiMultiplier
+        - gridApiFixedFee
+        - gridApiVariableFeeRate
+        - gridApiVariableFeeAmount
+      properties:
+        gridApiMultiplier:
+          type: number
+          format: double
+          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
+          exclusiveMinimum: 0
+          example: 0.925
+        gridApiFixedFee:
+          type: integer
+          format: int64
+          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
+          minimum: 0
+          example: 10
+        gridApiVariableFeeRate:
+          type: number
+          format: double
+          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
+          exclusiveMinimum: 0
+          example: 0.003
+        gridApiVariableFeeAmount:
+          type: number
+          format: int64
+          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
+          minimum: 0
+          example: 30
+    IncomingTransactionFailureReason:
+      type: string
+      enum:
+        - LNURLP_FAILED
+        - PAY_REQUEST_FAILED
+        - PAYMENT_APPROVAL_WEBHOOK_ERROR
+        - PAYMENT_APPROVAL_TIMED_OUT
+        - OFFRAMP_FAILED
+        - MISSING_MANDATORY_PAYEE_DATA
+        - QUOTE_EXPIRED
+        - QUOTE_EXECUTION_FAILED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    IncomingTransaction:
+      allOf:
+        - $ref: '#/components/schemas/Transaction'
+        - type: object
+          required:
+            - receivedAmount
+          properties:
+            source:
+              $ref: '#/components/schemas/TransactionSourceOneOf'
+            receivedAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount received in the recipient's currency
+            reconciliationInstructions:
+              $ref: '#/components/schemas/ReconciliationInstructions'
+              description: Included for all transactions except those with "CREATED" status
+            rateDetails:
+              $ref: '#/components/schemas/IncomingRateDetails'
+              description: Details about the rate and fees for the transaction.
+            failureReason:
+              $ref: '#/components/schemas/IncomingTransactionFailureReason'
+              description: If the transaction failed, this field provides the reason for failure.
     Refund:
       type: object
       required:
@@ -6094,14 +6791,10 @@ components:
         - $ref: '#/components/schemas/Transaction'
         - type: object
           required:
-            - type
             - sentAmount
+            - paymentInstructions
             - source
           properties:
-            type:
-              type: string
-              enum:
-                - OUTGOING
             source:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             sentAmount:
@@ -6125,6 +6818,10 @@ components:
               type: string
               description: The ID of the quote that was used to trigger this payment
               example: Quote:019542f5-b3e7-1d02-0000-000000000006
+            originalTransactionId:
+              type: string
+              description: ID of the original transaction that this transaction is retrying, if applicable
+              example: Transaction:019542f5-b3e7-1d02-0000-000000000003
             paymentInstructions:
               type: array
               description: Payment instructions for executing the payment.
@@ -6154,26 +6851,12 @@ components:
         - CREATED
         - PENDING
         - PROCESSING
-        - SENT
         - COMPLETED
         - REJECTED
         - FAILED
         - REFUNDED
         - EXPIRED
-      description: |
-        Status of a payment transaction.
-
-        | Status | Description |
-        |--------|-------------|
-        | `CREATED` | Initial lookup has been created |
-        | `PENDING` | Quote has been created |
-        | `PROCESSING` | Funding has been received and payment initiated |
-        | `SENT` | Cross border settlement has been initiated |
-        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
-        | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
-        | `FAILED` | An error occurred during payment |
-        | `REFUNDED` | Payment was unable to complete and refunded |
-        | `EXPIRED` | Quote has expired |
+      description: Status of a payment transaction
     AccountTransactionDestination:
       allOf:
         - $ref: '#/components/schemas/BaseTransactionDestination'
@@ -6207,7 +6890,6 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
     UmaAddressTransactionDestination:
       allOf:
         - $ref: '#/components/schemas/BaseTransactionDestination'
@@ -6225,27 +6907,11 @@ components:
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
           description: UMA address destination details
-    ExternalAccountDetailsTransactionDestination:
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionDestination'
-        - type: object
-          required:
-            - externalAccountDetails
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT_DETAILS
-            externalAccountDetails:
-              $ref: '#/components/schemas/ExternalAccountCreateRequest'
-          description: Transaction destination where external account details were provided inline at quote creation rather than using a pre-registered external account.
     TransactionDestinationType:
       type: string
       enum:
         - ACCOUNT
         - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
       description: Type of transaction destination
       example: ACCOUNT
     TransactionDestinationOneOf:
@@ -6254,87 +6920,11 @@ components:
           $ref: '#/components/schemas/AccountTransactionDestination'
         - title: UMA Address Destination
           $ref: '#/components/schemas/UmaAddressTransactionDestination'
-        - title: External Account Details Destination
-          $ref: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
-    CounterpartyInformation:
-      type: object
-      description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
-      additionalProperties: true
-      example:
-        FULL_NAME: John Sender
-        BIRTH_DATE: '1985-06-15'
-        NATIONALITY: DE
-    ReconciliationInstructions:
-      type: object
-      required:
-        - reference
-      properties:
-        reference:
-          type: string
-          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
-          example: UMA-Q12345-REF
-    IncomingRateDetails:
-      description: Details about the rate and fees for an incoming transaction.
-      type: object
-      required:
-        - gridApiMultiplier
-        - gridApiFixedFee
-        - gridApiVariableFeeRate
-        - gridApiVariableFeeAmount
-      properties:
-        gridApiMultiplier:
-          type: number
-          format: double
-          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
-          exclusiveMinimum: 0
-          example: 0.925
-        gridApiFixedFee:
-          type: integer
-          format: int64
-          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
-          minimum: 0
-          example: 10
-        gridApiVariableFeeRate:
-          type: number
-          format: double
-          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
-          exclusiveMinimum: 0
-          example: 0.003
-        gridApiVariableFeeAmount:
-          type: number
-          format: int64
-          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
-          minimum: 0
-          example: 30
-    IncomingTransactionFailureReason:
-      type: string
-      enum:
-        - LNURLP_FAILED
-        - PAY_REQUEST_FAILED
-        - PAYMENT_APPROVAL_WEBHOOK_ERROR
-        - PAYMENT_APPROVAL_TIMED_OUT
-        - OFFRAMP_FAILED
-        - MISSING_MANDATORY_PAYEE_DATA
-        - QUOTE_EXPIRED
-        - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
-    TransactionOneOf:
-      oneOf:
-        - title: Incoming Transaction
-          $ref: '#/components/schemas/IncomingTransaction'
-        - title: Outgoing Transaction
-          $ref: '#/components/schemas/OutgoingTransaction'
-      discriminator:
-        propertyName: type
-        mapping:
-          INCOMING: '#/components/schemas/IncomingTransaction'
-          OUTGOING: '#/components/schemas/OutgoingTransaction'
     CurrencyPreference:
       type: object
       required:
@@ -6457,7 +7047,7 @@ components:
             accountId:
               type: string
               description: Source account identifier
-              example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
             customerId:
               type: string
               description: Required when funding from an FBO account to identify the customer on whose behalf the transaction is being initiated.  Otherwise, will default to the customerId of the account owner.
@@ -6613,7 +7203,7 @@ components:
     Quote:
       type: object
       required:
-        - id
+        - quoteId
         - status
         - expiresAt
         - createdAt
@@ -6627,7 +7217,7 @@ components:
         - feesIncluded
         - transactionId
       properties:
-        id:
+        quoteId:
           type: string
           description: Unique identifier for this quote
           example: Quote:019542f5-b3e7-1d02-0000-000000000006
@@ -6710,22 +7300,6 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
-    PurposeOfPayment:
-      type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies such as India.
-      enum:
-        - GIFT
-        - SELF
-        - GOODS_OR_SERVICES
-        - EDUCATION
-        - HEALTH_OR_MEDICAL
-        - REAL_ESTATE_PURCHASE
-        - TAX_PAYMENT
-        - LOAN_PAYMENT
-        - UTILITY_BILL
-        - DONATION
-        - TRAVEL
-        - OTHER
     QuoteRequest:
       type: object
       required:
@@ -6755,16 +7329,12 @@ components:
           example: 1000
         immediatelyExecute:
           type: boolean
-          description: |-
-            Whether to immediately execute the quote after creation. If true, the quote will be executed and the transaction will be created at the current exchange rate. It should only be used if you don't want to lock and view rate details before executing the quote. If you are executing a pre-existing quote, use the `/quotes/{quoteId}/execute` endpoint instead. This is false by default.
-            This can only be used for quotes with a `source` which is either an internal account, or has direct pull functionality (e.g. ACH pull with an external account).
+          description: Whether to immediately execute the quote after creation. If true, the quote will be executed and the transaction will be created at the current exchange rate. It should only be used if you don't want to lock and view rate details before executing the quote. If you are executing a pre-existing quote, use the `/quotes/{quoteId}/execute` endpoint instead. This is false by default.
           example: false
         description:
           type: string
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
-        purposeOfPayment:
-          $ref: '#/components/schemas/PurposeOfPayment'
         senderCustomerInfo:
           type: object
           additionalProperties: true
@@ -6822,11 +7392,11 @@ components:
     BulkCustomerImportJob:
       type: object
       required:
-        - id
+        - jobId
         - status
         - progress
       properties:
-        id:
+        jobId:
           type: string
           description: Unique identifier for the bulk import job
           example: Job:019542f5-b3e7-1d02-0000-000000000006
@@ -7075,7 +7645,7 @@ components:
       type: object
       required:
         - timestamp
-        - id
+        - webhookId
         - type
       properties:
         timestamp:
@@ -7083,7 +7653,7 @@ components:
           format: date-time
           description: ISO8601 timestamp when the webhook was sent (can be used to prevent replay attacks)
           example: '2025-08-15T14:32:00Z'
-        id:
+        webhookId:
           type: string
           description: Unique identifier for this webhook delivery (can be used for idempotency)
           example: Webhook:019542f5-b3e7-1d02-0000-000000000007

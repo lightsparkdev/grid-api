@@ -7,12 +7,10 @@ properties:
   accountType:
     type: string
     enum:
-    - PHP_ACCOUNT
+    - MYR_ACCOUNT
   bankName:
     type: string
-    description: Name of the beneficiary's bank
-    example: BDO Unibank
+    description: The bank name of the bank
   accountNumber:
     type: string
-    description: Bank account number
-    example: '001234567890'
+    description: The account number of the bank

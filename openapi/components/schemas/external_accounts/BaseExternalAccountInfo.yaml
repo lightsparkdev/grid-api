@@ -7,19 +7,22 @@ properties:
 discriminator:
   propertyName: accountType
   mapping:
-    US_ACCOUNT: ./UsAccountExternalAccountInfo.yaml
-    CLABE: ./ClabeAccountExternalAccountInfo.yaml
-    PIX: ./PixAccountExternalAccountInfo.yaml
-    IBAN: ./IbanAccountExternalAccountInfo.yaml
-    UPI: ./UpiAccountExternalAccountInfo.yaml
-    NGN_ACCOUNT: ./NgnAccountExternalAccountInfo.yaml
-    CAD_ACCOUNT: ./CadAccountExternalAccountInfo.yaml
-    GBP_ACCOUNT: ./GbpAccountExternalAccountInfo.yaml
-    PHP_ACCOUNT: ./PhpAccountExternalAccountInfo.yaml
-    SGD_ACCOUNT: ./SgdAccountExternalAccountInfo.yaml
+    GBP_ACCOUNT: ./GbpExternalAccountInfo.yaml
+    PHP_ACCOUNT: ./PhpExternalAccountInfo.yaml
+    SGD_ACCOUNT: ./SgdExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
+    BRL_ACCOUNT: ./BrlExternalAccountInfo.yaml
+    DKK_ACCOUNT: ./DkkExternalAccountInfo.yaml
+    HKD_ACCOUNT: ./HkdExternalAccountInfo.yaml
+    IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml
+    INR_ACCOUNT: ./InrExternalAccountInfo.yaml
+    MXN_ACCOUNT: ./MxnExternalAccountInfo.yaml
+    MYR_ACCOUNT: ./MyrExternalAccountInfo.yaml
+    THB_ACCOUNT: ./ThbExternalAccountInfo.yaml
+    USD_ACCOUNT: ./UsdExternalAccountInfo.yaml
+    VND_ACCOUNT: ./VndExternalAccountInfo.yaml

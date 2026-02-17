@@ -1,0 +1,15 @@
+type: object
+required:
+- accountType
+- iban
+properties:
+  accountType:
+    type: string
+    enum:
+    - DKK_ACCOUNT
+  iban:
+    type: string
+    description: The IBAN of the bank
+  swiftBic:
+    type: string
+    description: The SWIFT BIC of the bank
