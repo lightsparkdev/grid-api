@@ -1,9 +1,0 @@
-allOf:
-  - $ref: ./BaseExternalAccountInfo.yaml
-  - $ref: ../common/PhpAccountInfo.yaml
-  - type: object
-    required:
-      - beneficiary
-    properties:
-      beneficiary:
-        $ref: ./BeneficiaryOneOf.yaml
