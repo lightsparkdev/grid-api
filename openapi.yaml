@@ -5853,13 +5853,7 @@ components:
           description: Optional memo or description for the payment
           example: 'Payment for invoice #1234'
         counterpartyInformation:
-          type: object
-          description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
-          additionalProperties: true
-          example:
-            FULL_NAME: John Sender
-            BIRTH_DATE: '1985-06-15'
-            NATIONALITY: DE
+          $ref: '#/components/schemas/CounterpartyInformation'
       discriminator:
         propertyName: type
         mapping:
@@ -6225,6 +6219,14 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+    CounterpartyInformation:
+      type: object
+      description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
+      additionalProperties: true
+      example:
+        FULL_NAME: John Sender
+        BIRTH_DATE: '1985-06-15'
+        NATIONALITY: DE
     CurrencyPreference:
       type: object
       required:
