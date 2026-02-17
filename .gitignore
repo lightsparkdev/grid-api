@@ -48,3 +48,6 @@ figma-*.md
 
 # Personal todo files
 TODO-*.md
+
+# Icon build script (local tool, requires license key)
+scripts/export-icons.js
