@@ -434,7 +434,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 
 ## Error Handling
 
-API responses follow this structure on success:
+Single-resource responses:
 
 ```json
 {
@@ -443,6 +443,19 @@ API responses follow this structure on success:
   ...
 }
 ```
+
+List responses return results in a `data` array with pagination fields:
+
+```json
+{
+  "data": [ ... ],
+  "hasMore": true,
+  "nextCursor": "...",
+  "totalCount": 42
+}
+```
+
+Use `jq '.data[]'` to iterate results or `jq '[.data[] | select(.currency == "NGN")]'` to filter.
 
 On error:
 
