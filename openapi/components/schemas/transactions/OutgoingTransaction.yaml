@@ -31,11 +31,6 @@ allOf:
         type: string
         description: The ID of the quote that was used to trigger this payment
         example: Quote:019542f5-b3e7-1d02-0000-000000000006
-      originalTransactionId:
-        type: string
-        description: >-
-          ID of the original transaction that this transaction is retrying, if applicable
-        example: Transaction:019542f5-b3e7-1d02-0000-000000000003
       paymentInstructions:
         type: array
         description: Payment instructions for executing the payment.
