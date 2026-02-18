@@ -121,7 +121,7 @@ paths:
       summary: List fee rules
       description: |
         Retrieve all platform fee rules. Returns the complete set of configured rules. Since the maximum number of rules is bounded by the number of transaction types (5), pagination is not required.
-      operationId: listFeeRules
+      operationId: getFeeRules
       tags:
         - Platform Fee Rules
       security:
@@ -156,6 +156,72 @@ paths:
                       $ref: '#/components/schemas/FeeRule'
         '400':
           description: Bad request — invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fee-rules/report:
+    get:
+      summary: Get monthly fee report
+      description: |
+        Retrieve an aggregated summary of platform fees collected during a specific month, broken down by transaction type. Covers only transaction-based fees that were collected in real time during settlement.
+
+        The report includes the total fees collected and a per-transaction-type breakdown with transaction counts.
+      operationId: getFeeReport
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Reporting month in YYYY-MM format. Defaults to the current month.
+          required: false
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}$
+            example: 2026-02
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeReport'
+              examples:
+                monthlyReport:
+                  summary: February 2026 fee report
+                  value:
+                    month: 2026-02
+                    totalPlatformFeesCollected: 128450
+                    currency: USD
+                    lines:
+                      - transactionType: TRANSFER_OUT
+                        transactionCount: 245
+                        platformFeesCollected: 62500
+                        currency: USD
+                      - transactionType: CROSS_BORDER_PAYOUT
+                        transactionCount: 97
+                        platformFeesCollected: 51300
+                        currency: USD
+                      - transactionType: RAMP_OFF
+                        transactionCount: 58
+                        platformFeesCollected: 14650
+                        currency: USD
+        '400':
+          description: Invalid month format
           content:
             application/json:
               schema:
@@ -293,72 +359,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /fee-rules/report:
-    get:
-      summary: Get monthly fee report
-      description: |
-        Retrieve an aggregated summary of platform fees collected during a specific month, broken down by transaction type. Covers only transaction-based fees that were collected in real time during settlement.
-
-        The report includes the total fees collected and a per-transaction-type breakdown with transaction counts.
-      operationId: getFeeReport
-      tags:
-        - Platform Fee Rules
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: month
-          in: query
-          description: Reporting month in YYYY-MM format. Defaults to the current month.
-          required: false
-          schema:
-            type: string
-            pattern: ^\d{4}-\d{2}$
-            example: 2026-02
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeeReport'
-              examples:
-                monthlyReport:
-                  summary: February 2026 fee report
-                  value:
-                    month: 2026-02
-                    totalPlatformFeesCollected: 128450
-                    currency: USD
-                    lines:
-                      - transactionType: TRANSFER_OUT
-                        transactionCount: 245
-                        platformFeesCollected: 62500
-                        currency: USD
-                      - transactionType: CROSS_BORDER_PAYOUT
-                        transactionCount: 97
-                        platformFeesCollected: 51300
-                        currency: USD
-                      - transactionType: RAMP_OFF
-                        transactionCount: 58
-                        platformFeesCollected: 14650
-                        currency: USD
-        '400':
-          description: Invalid month format
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
         '500':
           description: Internal service error
           content:
@@ -4517,6 +4517,61 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    FeeReportLine:
+      type: object
+      description: Aggregated platform fee revenue for a single transaction type within a reporting period.
+      required:
+        - transactionType
+        - transactionCount
+        - platformFeesCollected
+        - currency
+      properties:
+        transactionType:
+          $ref: '#/components/schemas/FeeTransactionType'
+        transactionCount:
+          type: integer
+          description: Number of settled transactions that incurred this fee
+          minimum: 0
+          example: 342
+        platformFeesCollected:
+          type: integer
+          format: int64
+          description: Total platform fees collected for this transaction type in the smallest unit of the reporting currency (USD cents).
+          minimum: 0
+          example: 51300
+        currency:
+          type: string
+          description: ISO 4217 currency code for the reporting currency. Currently always USD.
+          example: USD
+    FeeReport:
+      type: object
+      description: Monthly summary of platform fee revenue, broken down by transaction type. Covers fees collected in real time during transaction settlement within the specified month.
+      required:
+        - month
+        - totalPlatformFeesCollected
+        - currency
+        - lines
+      properties:
+        month:
+          type: string
+          description: Reporting month in YYYY-MM format.
+          pattern: ^\d{4}-\d{2}$
+          example: 2026-02
+        totalPlatformFeesCollected:
+          type: integer
+          format: int64
+          description: Total platform fees collected across all transaction types in the smallest unit of the reporting currency (USD cents).
+          minimum: 0
+          example: 128450
+        currency:
+          type: string
+          description: ISO 4217 currency code for the reporting currency. Currently always USD.
+          example: USD
+        lines:
+          type: array
+          description: Per-transaction-type breakdown of collected fees
+          items:
+            $ref: '#/components/schemas/FeeReportLine'
     Error404:
       type: object
       required:
@@ -4582,61 +4637,6 @@ components:
           type: boolean
           description: Enable or disable the fee rule
           example: false
-    FeeReportLine:
-      type: object
-      description: Aggregated platform fee revenue for a single transaction type within a reporting period.
-      required:
-        - transactionType
-        - transactionCount
-        - platformFeesCollected
-        - currency
-      properties:
-        transactionType:
-          $ref: '#/components/schemas/FeeTransactionType'
-        transactionCount:
-          type: integer
-          description: Number of settled transactions that incurred this fee
-          minimum: 0
-          example: 342
-        platformFeesCollected:
-          type: integer
-          format: int64
-          description: Total platform fees collected for this transaction type in the smallest unit of the reporting currency (USD cents).
-          minimum: 0
-          example: 51300
-        currency:
-          type: string
-          description: ISO 4217 currency code for the reporting currency. Currently always USD.
-          example: USD
-    FeeReport:
-      type: object
-      description: Monthly summary of platform fee revenue, broken down by transaction type. Covers fees collected in real time during transaction settlement within the specified month.
-      required:
-        - month
-        - totalPlatformFeesCollected
-        - currency
-        - lines
-      properties:
-        month:
-          type: string
-          description: Reporting month in YYYY-MM format.
-          pattern: ^\d{4}-\d{2}$
-          example: 2026-02
-        totalPlatformFeesCollected:
-          type: integer
-          format: int64
-          description: Total platform fees collected across all transaction types in the smallest unit of the reporting currency (USD cents).
-          minimum: 0
-          example: 128450
-        currency:
-          type: string
-          description: ISO 4217 currency code for the reporting currency. Currently always USD.
-          example: USD
-        lines:
-          type: array
-          description: Per-transaction-type breakdown of collected fees
-          items:
-            $ref: '#/components/schemas/FeeReportLine'
     CustomerInfoFieldName:
       type: string
       enum:

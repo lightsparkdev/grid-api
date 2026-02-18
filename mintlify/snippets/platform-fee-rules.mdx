@@ -1,5 +1,3 @@
-import { gridBaseUrl } from '/snippets/variables.mdx';
-
 Platform fee rules let you define the markup your platform charges customers on
 each transaction type. Fees are layered on top of Lightspark and counterparty
 fees, and collected in real time during settlement.
@@ -143,6 +141,12 @@ curl https://api.lightspark.com/grid/2025-10-13/fee-rules/report?month=2026-02 \
       "transactionType": "TRANSFER_OUT",
       "transactionCount": 245,
       "platformFeesCollected": 62500,
+      "currency": "USD"
+    },
+    {
+      "transactionType": "RAMP_OFF",
+      "transactionCount": 58,
+      "platformFeesCollected": 14650,
       "currency": "USD"
     }
   ]

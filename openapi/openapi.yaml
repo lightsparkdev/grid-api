@@ -93,10 +93,10 @@ components:
 paths:
   /fee-rules:
     $ref: paths/fee-rules/fee_rules.yaml
-  /fee-rules/{feeRuleId}:
-    $ref: paths/fee-rules/fee_rules_{feeRuleId}.yaml
   /fee-rules/report:
     $ref: paths/fee-rules/fee_rules_report.yaml
+  /fee-rules/{feeRuleId}:
+    $ref: paths/fee-rules/fee_rules_{feeRuleId}.yaml
   /config:
     $ref: paths/platform/config.yaml
   /exchange-rates:

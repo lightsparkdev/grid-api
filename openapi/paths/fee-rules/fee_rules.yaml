@@ -88,7 +88,7 @@ get:
     Retrieve all platform fee rules. Returns the complete set of configured
     rules. Since the maximum number of rules is bounded by the number of
     transaction types (5), pagination is not required.
-  operationId: listFeeRules
+  operationId: getFeeRules
   tags:
     - Platform Fee Rules
   security:
