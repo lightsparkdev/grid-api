@@ -1,0 +1,27 @@
+type: object
+description: >-
+  Partial update for an existing fee rule. Only provided fields are updated.
+  The transactionType and feeType cannot be changed — delete and recreate
+  the rule instead.
+properties:
+  fixedFee:
+    type: integer
+    format: int64
+    description: >-
+      Updated fixed fee in the smallest unit of USD (cents). Must be
+      between 0 and 10000.
+    minimum: 0
+    maximum: 10000
+    example: 200
+  variableFeeRate:
+    type: number
+    format: double
+    description: >-
+      Updated variable fee as a decimal rate. Must be between 0 and 0.20.
+    minimum: 0
+    maximum: 0.20
+    example: 0.01
+  enabled:
+    type: boolean
+    description: Enable or disable the fee rule
+    example: false

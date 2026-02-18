@@ -1,0 +1,59 @@
+type: object
+description: >-
+  A platform fee rule defines the markup a platform charges its customers
+  on a specific transaction type, on top of Lightspark and counterparty fees.
+  Rules are evaluated at quote creation and the resulting platform fee is
+  collected in real time during settlement.
+required:
+  - id
+  - transactionType
+  - feeType
+  - enabled
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier
+    readOnly: true
+    example: FeeRule:019c6a2b-4f8e-7d01-0000-000000000001
+  transactionType:
+    $ref: ./FeeTransactionType.yaml
+  feeType:
+    $ref: ./FeeRuleType.yaml
+  fixedFee:
+    type: integer
+    format: int64
+    description: >-
+      Fixed fee in the smallest unit of USD (cents). Applied per transaction.
+      Required when feeType is FIXED or HYBRID.
+    minimum: 0
+    example: 150
+  variableFeeRate:
+    type: number
+    format: double
+    description: >-
+      Variable fee as a decimal rate of the transaction amount
+      (e.g., 0.005 = 0.5%). Applied to the sending amount at quote creation.
+      Required when feeType is PERCENTAGE or HYBRID.
+    minimum: 0
+    maximum: 0.20
+    example: 0.005
+  enabled:
+    type: boolean
+    description: >-
+      Whether this fee rule is actively applied to new transactions. Disabled
+      rules are retained for reporting but do not affect new quotes.
+    example: true
+  createdAt:
+    type: string
+    format: date-time
+    description: When the fee rule was created
+    readOnly: true
+    example: '2026-01-15T00:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the fee rule was last modified
+    readOnly: true
+    example: '2026-02-01T12:30:00Z'

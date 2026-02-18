@@ -1,0 +1,30 @@
+type: object
+description: >-
+  Aggregated platform fee revenue for a single transaction type within a
+  reporting period.
+required:
+  - transactionType
+  - transactionCount
+  - platformFeesCollected
+  - currency
+properties:
+  transactionType:
+    $ref: ./FeeTransactionType.yaml
+  transactionCount:
+    type: integer
+    description: Number of settled transactions that incurred this fee
+    minimum: 0
+    example: 342
+  platformFeesCollected:
+    type: integer
+    format: int64
+    description: >-
+      Total platform fees collected for this transaction type in the smallest
+      unit of the reporting currency (USD cents).
+    minimum: 0
+    example: 51300
+  currency:
+    type: string
+    description: >-
+      ISO 4217 currency code for the reporting currency. Currently always USD.
+    example: USD

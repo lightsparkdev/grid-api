@@ -1,0 +1,130 @@
+parameters:
+  - name: feeRuleId
+    in: path
+    description: System-generated unique fee rule identifier
+    required: true
+    schema:
+      type: string
+    example: FeeRule:019c6a2b-4f8e-7d01-0000-000000000001
+get:
+  summary: Get fee rule by ID
+  description: Retrieve a single platform fee rule by its system-generated ID.
+  operationId: getFeeRuleById
+  tags:
+    - Platform Fee Rules
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fee_rules/FeeRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee rule not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update a fee rule
+  description: >
+    Partially update an existing fee rule. Only the provided fields are
+    modified. The `transactionType` and `feeType` cannot be changed — delete
+    and recreate the rule instead.
+  operationId: updateFeeRule
+  tags:
+    - Platform Fee Rules
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/fee_rules/FeeRulePatchRequest.yaml
+        examples:
+          disableRule:
+            summary: Disable a fee rule
+            value:
+              enabled: false
+          updateFee:
+            summary: Update fixed fee amount
+            value:
+              fixedFee: 200
+  responses:
+    '200':
+      description: Fee rule updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fee_rules/FeeRule.yaml
+    '400':
+      description: Invalid input — fee amounts out of range
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee rule not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete a fee rule
+  description: >
+    Delete a platform fee rule. Future transactions of this type will no longer
+    include a platform markup. Transactions already in progress or settled are
+    unaffected.
+  operationId: deleteFeeRule
+  tags:
+    - Platform Fee Rules
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Fee rule deleted successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee rule not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,164 @@
+import { gridBaseUrl } from '/snippets/variables.mdx';
+
+Platform fee rules let you define the markup your platform charges customers on
+each transaction type. Fees are layered on top of Lightspark and counterparty
+fees, and collected in real time during settlement.
+
+## How platform fees work
+
+When a customer initiates a transaction, Grid evaluates your fee rules and
+includes the platform markup in the quote. At settlement, the platform fee is
+siphoned from the transaction amount and credited to your platform subledger.
+
+The total fee a customer sees is the sum of three layers:
+
+| Layer | Source | Configurable? |
+|-------|--------|---------------|
+| Network/rail fees | Counterparty institution | No |
+| Lightspark fees | Grid API | No |
+| Platform markup | Your fee rules | Yes |
+
+Platform fee fields appear alongside existing fee fields in quote and
+transaction `rateDetails`:
+
+- `platformFixedFee` — your fixed fee in USD cents
+- `platformVariableFeeRate` — your variable rate as a decimal (e.g., 0.005 = 0.5%)
+- `platformVariableFeeAmount` — the calculated variable fee amount
+
+## Supported transaction types
+
+You can configure one fee rule per transaction type:
+
+| Transaction type | Description |
+|------------------|-------------|
+| `TRANSFER_IN` | Fiat or crypto transfer in (same currency) |
+| `TRANSFER_OUT` | Fiat or crypto transfer out (same currency) |
+| `RAMP_ON` | Fiat-to-crypto conversion |
+| `RAMP_OFF` | Crypto-to-fiat conversion |
+| `CROSS_BORDER_PAYOUT` | Cross-border payment via UMA or external account |
+
+## Fee types
+
+Each rule uses one of three fee types:
+
+| Fee type | Fields required | Example |
+|----------|----------------|---------|
+| `FIXED` | `fixedFee` | $1.50 flat per transaction |
+| `PERCENTAGE` | `variableFeeRate` | 0.5% of transaction amount |
+| `HYBRID` | `fixedFee` + `variableFeeRate` | $1.50 + 0.5% |
+
+## Create a fee rule
+
+<Steps>
+<Step title="Choose a transaction type and fee structure">
+
+Decide which transaction type to charge and whether to use a fixed fee,
+percentage, or both.
+
+</Step>
+
+<Step title="Create the rule">
+
+```bash cURL
+curl -X POST https://api.lightspark.com/grid/2025-10-13/fee-rules \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transactionType": "CROSS_BORDER_PAYOUT",
+    "feeType": "HYBRID",
+    "fixedFee": 150,
+    "variableFeeRate": 0.005
+  }'
+```
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": "FeeRule:019c6a2b-4f8e-7d01-0000-000000000001",
+  "transactionType": "CROSS_BORDER_PAYOUT",
+  "feeType": "HYBRID",
+  "fixedFee": 150,
+  "variableFeeRate": 0.005,
+  "enabled": true,
+  "createdAt": "2026-02-15T00:00:00Z",
+  "updatedAt": "2026-02-15T00:00:00Z"
+}
+```
+</ResponseExample>
+
+<Check>
+The rule is active immediately. New quotes for cross-border payouts will include
+your platform markup in `rateDetails`.
+</Check>
+
+</Step>
+</Steps>
+
+## Update a fee rule
+
+Use `PATCH` to update the fee amounts or enable/disable a rule. You cannot
+change the `transactionType` or `feeType` — delete and recreate the rule
+instead.
+
+```bash cURL
+curl -X PATCH https://api.lightspark.com/grid/2025-10-13/fee-rules/FeeRule:019c6a2b-4f8e-7d01-0000-000000000001 \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"fixedFee": 200}'
+```
+
+To temporarily disable a rule without deleting it:
+
+```bash cURL
+curl -X PATCH https://api.lightspark.com/grid/2025-10-13/fee-rules/FeeRule:019c6a2b-4f8e-7d01-0000-000000000001 \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": false}'
+```
+
+## View fee revenue
+
+Retrieve a monthly summary of collected platform fees, broken down by
+transaction type:
+
+```bash cURL
+curl https://api.lightspark.com/grid/2025-10-13/fee-rules/report?month=2026-02 \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+<ResponseExample>
+```json 200 OK
+{
+  "month": "2026-02",
+  "totalPlatformFeesCollected": 128450,
+  "currency": "USD",
+  "lines": [
+    {
+      "transactionType": "CROSS_BORDER_PAYOUT",
+      "transactionCount": 97,
+      "platformFeesCollected": 51300,
+      "currency": "USD"
+    },
+    {
+      "transactionType": "TRANSFER_OUT",
+      "transactionCount": 245,
+      "platformFeesCollected": 62500,
+      "currency": "USD"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Constraints
+
+- One rule per transaction type (attempting to create a duplicate returns `409`)
+- Fixed fees: 0–10,000 cents ($0–$100.00)
+- Variable rates: 0–0.20 (0%–20%)
+- Fee collection currency is always USD
+- Disabled rules are retained for reporting but do not affect new quotes
+
+<Warning>
+Changes to fee rules take effect on new quotes only. Transactions already in
+progress or settled are unaffected.
+</Warning>

@@ -1,0 +1,141 @@
+post:
+  summary: Create a fee rule
+  description: >
+    Create a platform fee rule for a specific transaction type. The rule defines
+    the markup your platform charges customers on top of Lightspark and
+    counterparty fees. Only one rule per transaction type is allowed.
+
+
+    Fee rules are evaluated at quote creation time. The resulting platform fee is
+    included in the quote's `rateDetails` and collected in real time during
+    settlement — no manual reconciliation is needed.
+
+
+    **Fee types:**
+
+    - `FIXED` — a flat amount per transaction (requires `fixedFee`)
+
+    - `PERCENTAGE` — a rate of the transaction amount (requires `variableFeeRate`)
+
+    - `HYBRID` — both a fixed amount and a percentage rate (requires both)
+  operationId: createFeeRule
+  tags:
+    - Platform Fee Rules
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/fee_rules/FeeRuleCreateRequest.yaml
+        examples:
+          fixedFee:
+            summary: Fixed fee of $1.50 on transfers out
+            value:
+              transactionType: TRANSFER_OUT
+              feeType: FIXED
+              fixedFee: 150
+          percentageFee:
+            summary: 0.5% fee on cross-border payouts
+            value:
+              transactionType: CROSS_BORDER_PAYOUT
+              feeType: PERCENTAGE
+              variableFeeRate: 0.005
+          hybridFee:
+            summary: $1.50 + 0.5% on off-ramps
+            value:
+              transactionType: RAMP_OFF
+              feeType: HYBRID
+              fixedFee: 150
+              variableFeeRate: 0.005
+  responses:
+    '201':
+      description: Fee rule created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fee_rules/FeeRule.yaml
+    '400':
+      description: >-
+        Invalid input — missing required fields, invalid feeType, or fee
+        amounts out of range
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: A fee rule for this transaction type already exists
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List fee rules
+  description: >
+    Retrieve all platform fee rules. Returns the complete set of configured
+    rules. Since the maximum number of rules is bounded by the number of
+    transaction types (5), pagination is not required.
+  operationId: listFeeRules
+  tags:
+    - Platform Fee Rules
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: transactionType
+      in: query
+      description: Filter by transaction type
+      required: false
+      schema:
+        $ref: ../../components/schemas/fee_rules/FeeTransactionType.yaml
+    - name: enabled
+      in: query
+      description: Filter by enabled status
+      required: false
+      schema:
+        type: boolean
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                description: List of platform fee rules
+                items:
+                  $ref: ../../components/schemas/fee_rules/FeeRule.yaml
+    '400':
+      description: Bad request — invalid query parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

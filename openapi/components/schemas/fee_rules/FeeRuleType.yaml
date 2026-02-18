@@ -1,0 +1,10 @@
+type: string
+description: >-
+  Determines which fee components apply. FIXED charges a flat amount per
+  transaction. PERCENTAGE charges a rate of the transaction amount.
+  HYBRID applies both a fixed amount and a percentage rate.
+enum:
+  - FIXED
+  - PERCENTAGE
+  - HYBRID
+example: HYBRID

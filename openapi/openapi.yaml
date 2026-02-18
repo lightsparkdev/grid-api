@@ -35,6 +35,11 @@ tags:
     description: Endpoints to trigger test cases in sandbox
   - name: API Tokens
     description: Endpoints to programmatically manage API tokens
+  - name: Platform Fee Rules
+    description: >-
+      Configure the markup your platform charges customers on each transaction
+      type. Platform fees are layered on top of Lightspark and counterparty
+      fees and collected in real time during settlement.
   - name: Exchange Rates
     description: >-
       Endpoints for retrieving cached foreign exchange rates. Rates are cached
@@ -86,6 +91,12 @@ components:
         - $ref: components/schemas/errors/Error500.yaml
         - $ref: components/schemas/errors/Error501.yaml
 paths:
+  /fee-rules:
+    $ref: paths/fee-rules/fee_rules.yaml
+  /fee-rules/{feeRuleId}:
+    $ref: paths/fee-rules/fee_rules_{feeRuleId}.yaml
+  /fee-rules/report:
+    $ref: paths/fee-rules/fee_rules_report.yaml
   /config:
     $ref: paths/platform/config.yaml
   /exchange-rates:

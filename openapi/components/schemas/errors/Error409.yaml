@@ -16,9 +16,11 @@ properties:
       |------------|-------------|
       | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
       | UMA_ADDRESS_EXISTS | UMA address already exists |
+      | FEE_RULE_EXISTS | A fee rule for this transaction type already exists |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
       - UMA_ADDRESS_EXISTS
+      - FEE_RULE_EXISTS
   message:
     type: string
     description: Error message
