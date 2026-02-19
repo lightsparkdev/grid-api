@@ -8,7 +8,7 @@ edition: 2025-10-10
 organization:
   # Name of your organization or company, used to determine the name of the client
   # and headings.
-  name: grid
+  name: Lightspark Grid
   # Link to your API documentation.
   docs: 'grid.lightspark.com'
   # Contact email for bug reports, questions, and support requests.
@@ -22,16 +22,31 @@ targets:
     #
     # [docs]: https://www.stainless.com/docs/reference/editions
     edition: typescript.2025-10-10
+    package_name: "@lightsparkdev/grid"
+    production_repo: lightsparkdev/grid-js-sdk
+    publish:
+      npm:
+        auth_method: oidc
+      # jsr:
+      #   package_name: "@lightsparkdev/grid"
+    options:
+      mcp_server:
+        host:
+          stainless: true
+        package_name: "@lightsparkdev/grid-mcp"
+  kotlin:
+    edition: kotlin.2025-10-08
+    reverse_domain: com.lightspark.grid
+    production_repo: lightsparkdev/grid-kotlin-sdk
+    publish:
+      maven:
+        sonatype_platform: portal
+  python:
+    edition: python.2025-11-20
     package_name: grid
     production_repo: null
     publish:
-      npm: false
-  kotlin:
-    edition: kotlin.2025-10-08
-    reverse_domain: com.grid.api
-    production_repo: null
-    publish:
-      maven: false
+      pypi: false
 
 # `environments` are a map of the name of the environment (e.g. "sandbox",
 # "production") to the corresponding url to use.
@@ -65,15 +80,15 @@ resources:
 
   customers:
     models:
-      customer_type: '#/components/schemas/CustomerType'
-      individual_customer: '#/components/schemas/IndividualCustomer'
+      # customer_type: '#/components/schemas/CustomerType'
+      # individual_customer: '#/components/schemas/IndividualCustomer'
       customer: '#/components/schemas/Customer'
-      address: '#/components/schemas/Address'
-      ultimate_beneficial_owner: '#/components/schemas/UltimateBeneficialOwner'
-      business_customer: '#/components/schemas/BusinessCustomer'
-      business_customer_fields: "#/components/schemas/BusinessCustomerFields"
-      business_info: "#/components/schemas/BusinessInfo"
-      individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
+      # address: '#/components/schemas/Address'
+      # ultimate_beneficial_owner: '#/components/schemas/UltimateBeneficialOwner'
+      # business_customer: '#/components/schemas/BusinessCustomer'
+      # business_customer_fields: "#/components/schemas/BusinessCustomerFields"
+      # business_info: "#/components/schemas/BusinessInfo"
+      # individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
       customer_one_of: "#/components/schemas/CustomerOneOf"
       customer_create: "#/components/schemas/CustomerCreateRequest"
       customer_update: "#/components/schemas/CustomerUpdateRequest"
@@ -94,24 +109,28 @@ resources:
     subresources:
       external_accounts:
         models:
-          us_account_info: '#/components/schemas/UsAccountInfo'
-          pix_account_info: '#/components/schemas/PixAccountInfo'
-          iban_account_info: '#/components/schemas/IbanAccountInfo'
-          upi_account_info: '#/components/schemas/UpiAccountInfo'
-          spark_wallet_info: '#/components/schemas/SparkWalletInfo'
-          solana_wallet_info: '#/components/schemas/SolanaWalletInfo'
-          tron_wallet_info: '#/components/schemas/TronWalletInfo'
-          polygon_wallet_info: '#/components/schemas/PolygonWalletInfo'
-          clabe_account_info: '#/components/schemas/ClabeAccountInfo'
-          base_wallet_info: '#/components/schemas/BaseWalletInfo'
-          individual_beneficiary: '#/components/schemas/IndividualBeneficiary'
-          business_beneficiary: '#/components/schemas/BusinessBeneficiary'
+          us_account_info: '#/components/schemas/UsAccountExternalAccountInfo'
+          clabe_account_info: '#/components/schemas/ClabeAccountExternalAccountInfo'
+          pix_account_info: '#/components/schemas/PixAccountExternalAccountInfo'
+          iban_account_info: '#/components/schemas/IbanAccountExternalAccountInfo'
+          upi_account_info: '#/components/schemas/UpiAccountExternalAccountInfo'
+          ngn_account_info: '#/components/schemas/NgnAccountExternalAccountInfo'
+          cad_account_info: '#/components/schemas/CadAccountExternalAccountInfo'
+          gbp_account_info: '#/components/schemas/GbpAccountExternalAccountInfo'
+          php_account_info: '#/components/schemas/PhpAccountExternalAccountInfo'
+          sgd_account_info: '#/components/schemas/SgdAccountExternalAccountInfo'
+          spark_wallet_info: '#/components/schemas/SparkWalletExternalAccountInfo'
+          solana_wallet_info: '#/components/schemas/SolanaWalletExternalAccountInfo'
+          tron_wallet_info: '#/components/schemas/TronWalletExternalAccountInfo'
+          polygon_wallet_info: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          lightning_wallet_info: '#/components/schemas/LightningExternalAccountInfo'
+          base_wallet_info: '#/components/schemas/BaseWalletExternalAccountInfo'
+          # individual_beneficiary: '#/components/schemas/IndividualBeneficiary'
+          # business_beneficiary: '#/components/schemas/BusinessBeneficiary'
           external_account: '#/components/schemas/ExternalAccount'
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
-          lightning_external_account_info: "#/components/schemas/LightningExternalAccountInfo"
-          ngn_external_account_info: "#/components/schemas/NgnExternalAccountInfo"
-          base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
-          base_beneficiary: "#/components/schemas/BaseBeneficiary"
+          # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
+          # base_beneficiary: "#/components/schemas/BaseBeneficiary"
           beneficiary_one_of: "#/components/schemas/BeneficiaryOneOf"
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
         methods:
@@ -179,6 +198,8 @@ resources:
   transactions:
     models:
       transaction_type: '#/components/schemas/TransactionType'
+      transaction_destination_one_of: '#/components/schemas/TransactionDestinationOneOf'
+      counterparty_information: '#/components/schemas/CounterpartyInformation'
       incoming_transaction: '#/components/schemas/IncomingTransaction'
       transaction_status: '#/components/schemas/TransactionStatus'
       base_transaction_source: "#/components/schemas/BaseTransactionSource"
@@ -191,7 +212,10 @@ resources:
 
   webhooks:
     methods:
-      send_test: post /webhooks/test
+      unwrap:
+        type: webhook_unwrap
+        discriminator: type
+      
 
   invitations:
     models:
@@ -206,6 +230,7 @@ resources:
   sandbox:
     methods:
       send_funds: post /sandbox/send
+      send_test_webhook: post /webhooks/test
     subresources:
       uma:
         methods:
@@ -255,7 +280,7 @@ client_settings:
         security_scheme: BasicAuth
         role: username
       description: API token authentication using format `<api token id>:<api client secret>`
-      read_env: GRID_USERNAME
+      read_env: GRID_CLIENT_ID
     password:
       type: string
       nullable: false
@@ -263,7 +288,7 @@ client_settings:
         security_scheme: BasicAuth
         role: password
       description: API token authentication using format `<api token id>:<api client secret>`
-      read_env: GRID_PASSWORD
+      read_env: GRID_CLIENT_SECRET
     webhook_signature:
       type: string
       nullable: true
@@ -279,7 +304,7 @@ client_settings:
         4. Verify the signature using the public key and the hash
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-      read_env: GRID_WEBHOOK_SIGNATURE
+      read_env: GRID_WEBHOOK_PUBKEY
 
 # `readme` is used to configure the code snippets that will be rendered in the
 # README.md of various SDKs. In particular, you can change the `headline`
@@ -288,11 +313,11 @@ readme:
   example_requests:
     default:
       type: request
-      endpoint: get /config
+      endpoint: post /quotes
       params: {}
     headline:
       type: request
-      endpoint: get /config
+      endpoint: post /quotes
       params: {}
     pagination:
       type: request
@@ -326,66 +351,61 @@ pagination:
 openapi:
   code_samples: mintlify
   transformations:
-    - command: splitSchemasByEnumProperty
-      reason: Split error schemas with multiple enum values into distinct ones
-      args:
-        unionPath: AllErrors
-        enumProperty: code
-    # ── customerType: IndividualCustomerFields / BusinessCustomerFields ──
-    - command: remove
-      reason: >-
-        Remove inline customerType enums from customer fields schemas to avoid
-        conflicting types when allOf merges them with base schemas (Customer,
-        CustomerCreateRequest, CustomerUpdateRequest) that define customerType
-        via the shared CustomerType $ref
-      args:
-        target:
-          - "$.components.schemas.IndividualCustomerFields.properties"
-          - "$.components.schemas.BusinessCustomerFields.properties"
-        keys: [ "customerType" ]
+    # # ── customerType: IndividualCustomerFields / BusinessCustomerFields ──
+    # - command: remove
+    #   reason: >-
+    #     Remove inline customerType enums from customer fields schemas to avoid
+    #     conflicting types when allOf merges them with base schemas (Customer,
+    #     CustomerCreateRequest, CustomerUpdateRequest) that define customerType
+    #     via the shared CustomerType $ref
+    #   args:
+    #     target:
+    #       - "$.components.schemas.IndividualCustomerFields.properties"
+    #       - "$.components.schemas.BusinessCustomerFields.properties"
+    #     keys: [ "customerType" ]
 
-    # ── accountType: common account info schemas ──
-    - command: remove
-      reason: >-
-        Remove inline accountType enums from common account info schemas to
-        avoid conflicting types when allOf merges them with
-        BaseExternalAccountInfo or BasePaymentAccountInfo, which define
-        accountType via shared $ref enums
-      args:
-        target:
-          - "$.components.schemas.UsAccountInfo.properties"
-          - "$.components.schemas.ClabeAccountInfo.properties"
-          - "$.components.schemas.PixAccountInfo.properties"
-          - "$.components.schemas.IbanAccountInfo.properties"
-          - "$.components.schemas.UpiAccountInfo.properties"
-          - "$.components.schemas.NgnAccountInfo.properties"
-          - "$.components.schemas.CadAccountInfo.properties"
-          - "$.components.schemas.GbpAccountInfo.properties"
-          - "$.components.schemas.PhpAccountInfo.properties"
-          - "$.components.schemas.SgdAccountInfo.properties"
-          - "$.components.schemas.SparkWalletInfo.properties"
-          - "$.components.schemas.LightningInfo.properties"
-          - "$.components.schemas.SolanaWalletInfo.properties"
-          - "$.components.schemas.TronWalletInfo.properties"
-          - "$.components.schemas.PolygonWalletInfo.properties"
-          - "$.components.schemas.BaseWalletInfo.properties"
-        keys: [ "accountType" ]
+    # # ── accountType: common account info schemas ──
+    # - command: remove
+    #   reason: >-
+    #     Remove inline accountType enums from common account info schemas to
+    #     avoid conflicting types when allOf merges them with
+    #     BaseExternalAccountInfo or BasePaymentAccountInfo, which define
+    #     accountType via shared $ref enums
+    #   args:
+    #     target:
+    #       - "$.components.schemas.UsAccountInfo.properties"
+    #       - "$.components.schemas.ClabeAccountInfo.properties"
+    #       - "$.components.schemas.PixAccountInfo.properties"
+    #       - "$.components.schemas.IbanAccountInfo.properties"
+    #       - "$.components.schemas.UpiAccountInfo.properties"
+    #       - "$.components.schemas.NgnAccountInfo.properties"
+    #       - "$.components.schemas.CadAccountInfo.properties"
+    #       - "$.components.schemas.GbpAccountInfo.properties"
+    #       - "$.components.schemas.PhpAccountInfo.properties"
+    #       - "$.components.schemas.SgdAccountInfo.properties"
+    #       - "$.components.schemas.SparkWalletInfo.properties"
+    #       - "$.components.schemas.LightningInfo.properties"
+    #       - "$.components.schemas.SolanaWalletInfo.properties"
+    #       - "$.components.schemas.TronWalletInfo.properties"
+    #       - "$.components.schemas.PolygonWalletInfo.properties"
+    #       - "$.components.schemas.BaseWalletInfo.properties"
+    #     keys: [ "accountType" ]
 
-    # ── sourceType: transaction and quote source schemas ──
-    - command: remove
-      reason: >-
-        Remove inline sourceType enums from transaction and quote source
-        allOf variants to avoid conflicting types with their base schemas
-        which define sourceType via shared $ref enums
-      args:
-        target:
-          - "$.components.schemas.AccountTransactionSource.allOf[1].properties"
-          - "$.components.schemas.UmaAddressTransactionSource.allOf[1].properties"
-          - "$.components.schemas.AccountQuoteSource.allOf[1].properties"
-          - "$.components.schemas.RealtimeFundingQuoteSource.allOf[1].properties"
-        keys: [ "sourceType" ]
+    # # ── sourceType: transaction and quote source schemas ──
+    # - command: remove
+    #   reason: >-
+    #     Remove inline sourceType enums from transaction and quote source
+    #     allOf variants to avoid conflicting types with their base schemas
+    #     which define sourceType via shared $ref enums
+    #   args:
+    #     target:
+    #       - "$.components.schemas.AccountTransactionSource.allOf[1].properties"
+    #       - "$.components.schemas.UmaAddressTransactionSource.allOf[1].properties"
+    #       - "$.components.schemas.AccountQuoteSource.allOf[1].properties"
+    #       - "$.components.schemas.RealtimeFundingQuoteSource.allOf[1].properties"
+    #     keys: [ "sourceType" ]
 
-    # ── destinationType: transaction and quote destination schemas ──
+    # ── destinationType: transaction destination schemas ──
     - command: remove
       reason: >-
         Remove inline destinationType enums from transaction and quote
@@ -393,35 +413,129 @@ openapi:
         base schemas which define destinationType via shared $ref enums
       args:
         target:
-          - "$.components.schemas.AccountTransactionDestination.allOf[1].properties"
-          - "$.components.schemas.UmaAddressTransactionDestination.allOf[1].properties"
-          - "$.components.schemas.AccountDestination.allOf[1].properties"
-          - "$.components.schemas.UmaAddressDestination.allOf[1].properties"
-          - "$.components.schemas.ExternalAccountDetailsDestination.allOf[1].properties"
-        keys: [ "destinationType" ]
+          - "$.components.schemas.AccountTransactionDestination.allOf[0]"
+          - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
+        keys: [ "$ref" ]
 
-    # ── beneficiaryType: beneficiary schemas ──
+    # # ── beneficiaryType: beneficiary schemas ──
+    # - command: remove
+    #   reason: >-
+    #     Remove inline beneficiaryType enums from beneficiary allOf variants
+    #     to avoid conflicting types with BaseBeneficiary which defines
+    #     beneficiaryType via a shared $ref enum
+    #   args:
+    #     target:
+    #       - "$.components.schemas.IndividualBeneficiary.allOf[1].properties"
+    #       - "$.components.schemas.BusinessBeneficiary.allOf[1].properties"
+    #     keys: [ "beneficiaryType" ]
+    # ── customerType: remove from base schemas ──
     - command: remove
       reason: >-
-        Remove inline beneficiaryType enums from beneficiary allOf variants
-        to avoid conflicting types with BaseBeneficiary which defines
-        beneficiaryType via a shared $ref enum
+        Remove customerType $ref from base schemas so the inline single-value
+        enums in IndividualCustomerFields/BusinessCustomerFields become the
+        sole definition, avoiding allOf type conflicts
       args:
         target:
-          - "$.components.schemas.IndividualBeneficiary.allOf[1].properties"
-          - "$.components.schemas.BusinessBeneficiary.allOf[1].properties"
-        keys: [ "beneficiaryType" ]
+          - "$.components.schemas.Customer.properties"
+          - "$.components.schemas.CustomerCreateRequest.properties"
+          - "$.components.schemas.CustomerUpdateRequest.properties"
+        keys: [ "customerType" ]
 
-errors:
-  union:
-    source: AllErrors
-    discriminator: code
-    status_property: status
+    # ── accountType: remove from base schemas ──
+    - command: remove
+      reason: >-
+        Remove accountType $ref from base schemas so the inline single-value
+        enums in each account info variant become the sole definition,
+        enabling structural matching to distinguish them
+      args:
+        target:
+          - "$.components.schemas.BaseExternalAccountInfo.properties"
+          - "$.components.schemas.BasePaymentAccountInfo.properties"
+        keys: [ "accountType" ]
+
+    # ── sourceType: remove from base schemas ──
+    - command: remove
+      reason: >-
+        Remove sourceType $ref from base schemas so the inline single-value
+        enums in each source variant become the sole definition
+      args:
+        target:
+          - "$.components.schemas.BaseTransactionSource.properties"
+          - "$.components.schemas.BaseQuoteSource.properties"
+        keys: [ "sourceType" ]
+
+    # ── destinationType: remove from base schemas ──
+    - command: remove
+      reason: >-
+        Remove destinationType $ref from base schemas so the inline
+        single-value enums in each destination variant become the sole definition
+      args:
+        target:
+          - "$.components.schemas.BaseTransactionDestination.properties"
+          - "$.components.schemas.BaseDestination.properties"
+        keys: [ "destinationType" ]
+
+    # ── Remove $ref to BasePaymentAccountInfo from payment account variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to BasePaymentAccountInfo from payment account variants
+        because the base schema becomes an empty object (no properties) after
+        stripping the accountType discriminator, which causes TS2312 errors
+      args:
+        target:
+          - "$.components.schemas.PaymentClabeAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentUsAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentPixAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentIbanAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentUpiAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentNgnAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentSparkWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentLightningInvoiceInfo.allOf[0]"
+          - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentTronWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── Remove $ref to BaseQuoteSource from quote source variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to BaseQuoteSource from quote source variants
+        because the base schema becomes an empty object after stripping sourceType
+      args:
+        target:
+          - "$.components.schemas.AccountQuoteSource.allOf[0]"
+          - "$.components.schemas.RealtimeFundingQuoteSource.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── Remove $ref to BaseDestination from destination variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to BaseDestination from destination variants
+        because the base schema becomes an empty object after stripping destinationType
+      args:
+        target:
+          - "$.components.schemas.AccountDestination.allOf[0]"
+          - "$.components.schemas.UmaAddressDestination.allOf[0]"
+          - "$.components.schemas.ExternalAccountDetailsDestination.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── beneficiaryType: remove from base schema ──
+    - command: remove
+      reason: >-
+        Remove beneficiaryType $ref from base schema so the inline
+        single-value enums in each beneficiary variant become the sole definition
+      args:
+        target:
+          - "$.components.schemas.BaseBeneficiary.properties"
+        keys: [ "beneficiaryType" ]
 
 codeflow:
   detect_breaking_changes: true
+  release_environment: npm
 diagnostics:
   ignored:
     Schema/ObjectHasNoProperties:
       - pagination.0.response.data.items
     Schema/EnumHasOneMember: true
+    Schema/RequiredPropertyNotDefined: true
