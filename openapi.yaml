@@ -5242,6 +5242,33 @@ components:
         - UNDER_REVIEW
         - INACTIVE
       description: Status of an external account
+    BeneficiaryVerificationStatus:
+      type: string
+      enum:
+        - MATCHED
+        - PARTIAL_MATCH
+        - NOT_MATCHED
+        - UNSUPPORTED
+        - CHECKED_BY_RECEIVING_FI
+        - PENDING
+      description: |
+        The result of verifying the beneficiary name against the account holder name.
+
+        | Status | Description |
+        |--------|-------------|
+        | `MATCHED` | The beneficiary name is an exact match |
+        | `PARTIAL_MATCH` | The beneficiary name is a fuzzy match |
+        | `NOT_MATCHED` | The beneficiary name does not match |
+        | `UNSUPPORTED` | The payment rail does not support name verification |
+        | `CHECKED_BY_RECEIVING_FI` | Verification is deferred to the receiving financial institution (e.g. ACH) |
+        | `PENDING` | Verification is still in progress |
+    BeneficiaryVerifiedData:
+      type: object
+      properties:
+        fullName:
+          type: string
+          description: The verified full name of the account holder as returned by the payment rail
+          example: John Doe
     UsAccountExternalAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
@@ -5725,6 +5752,12 @@ components:
               type: boolean
               description: Whether this account is the default UMA deposit account for the customer. If true, incoming UMA payments to this customer's UMA address will be automatically deposited into this account instead of the primary internal account. False if not provided. Note that at most, one external account can be set as the default UMA deposit account for a customer. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
               example: false
+            beneficiaryVerificationStatus:
+              $ref: '#/components/schemas/BeneficiaryVerificationStatus'
+              description: The result of verifying the beneficiary name against the account holder name
+            beneficiaryVerifiedData:
+              $ref: '#/components/schemas/BeneficiaryVerifiedData'
+              description: Verified beneficiary data returned by the payment rail, if available
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountCreateRequest:
