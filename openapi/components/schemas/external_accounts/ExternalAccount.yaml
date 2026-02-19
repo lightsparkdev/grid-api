@@ -34,5 +34,11 @@ allOf:
           False if not provided. Note that at most, one external account can be set as the default UMA deposit account for a customer.
           If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
         example: false
+      beneficiaryVerificationStatus:
+        $ref: ./BeneficiaryVerificationStatus.yaml
+        description: The result of verifying the beneficiary name against the account holder name
+      beneficiaryVerifiedData:
+        $ref: ./BeneficiaryVerifiedData.yaml
+        description: Verified beneficiary data returned by the payment rail, if available
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml

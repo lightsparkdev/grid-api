@@ -1,0 +1,6 @@
+type: object
+properties:
+  fullName:
+    type: string
+    description: The verified full name of the account holder as returned by the payment rail
+    example: John Doe
