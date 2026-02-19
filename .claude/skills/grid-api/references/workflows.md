@@ -1,46 +1,61 @@
 # Common Payment Workflows
 
-This reference describes common payment workflows using the Grid API CLI.
+This reference describes common payment workflows using the Grid API.
 
-**Tip:** Use command aliases for faster typing: `cust` (customers), `tx` (transactions), `acct` (accounts).
-
-**Tip:** Add `--format table` to any list command for human-readable output.
+**Tip:** Pipe all curl output through `jq .` for readable JSON, or `jq -r .field` to extract specific values.
 
 ## Workflow 1: Send Payment to UMA Address
 
-Use this when the user wants to send money to an UMA address like `$alice@example.com`.
+Use this when the user wants to send money to a UMA address like `$alice@example.com`.
 
 ### Steps
 
 1. **Look up the receiver**
+
 ```bash
-node cli/dist/index.js receiver lookup-uma "\$alice@example.com"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/receiver/uma/%24alice%40example.com" | jq .
 ```
 
 This returns:
+
 - Supported currencies
 - Min/max amounts per currency
 - Required payer data fields
 
 2. **Check sender's balance**
+
 ```bash
-node cli/dist/index.js acct internal list --customer-id <customerId> --format table
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/customers/internal-accounts?customerId=<customerId>" | jq .
 ```
 
 Identify the internal account with sufficient balance.
 
 3. **Create a quote**
+
 ```bash
-node cli/dist/index.js quotes create \
-  --source-account InternalAccount:xxx \
-  --dest-uma "\$alice@example.com" \
-  --dest-currency USD \
-  --amount 10000 \
-  --lock-side SENDING \
-  --description "Payment for services"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:xxx"
+    },
+    "destination": {
+      "destinationType": "UMA_ADDRESS",
+      "umaAddress": "$alice@example.com",
+      "currency": "USD"
+    },
+    "lockedCurrencyAmount": 10000,
+    "lockedCurrencySide": "SENDING",
+    "description": "Payment for services"
+  }' \
+  "$GRID_BASE_URL/quotes" | jq .
 ```
 
 The response includes:
+
 - `sendingAmount` and `sendingCurrency`
 - `receivingAmount` and `receivingCurrency`
 - `exchangeRate`
@@ -52,13 +67,18 @@ The response includes:
 Example: "You're sending $100.00 USD. The recipient will receive €92.15 EUR (rate: 0.9215). Fee: $1.50. Confirm?"
 
 5. **Execute the quote**
+
 ```bash
-node cli/dist/index.js quotes execute Quote:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST \
+  "$GRID_BASE_URL/quotes/Quote:xxx/execute" | jq .
 ```
 
 6. **Monitor the transaction**
+
 ```bash
-node cli/dist/index.js tx list --status PROCESSING --format table
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/transactions?status=PROCESSING" | jq .
 ```
 
 ## Workflow 2: Send Payment to International Bank Account
@@ -72,52 +92,79 @@ Use this when the user wants to send money to a bank account in another country.
 Ask the user: "Which country is the bank account in?"
 
 Refer to `account-types.md` for:
+
 - Required account type (CLABE, PIX, IBAN, etc.)
 - Required fields
 
 2. **Collect account details interactively**
 
 For Mexico (CLABE):
+
 - Ask for 18-digit CLABE number
 - Ask for beneficiary name
 - Ask for beneficiary birth date
 - Ask for beneficiary nationality
 
 3. **Create the external account**
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id Customer:xxx \
-  --currency MXN \
-  --account-type CLABE \
-  --clabe 012345678901234567 \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "Juan Garcia" \
-  --beneficiary-birth-date "1985-03-15" \
-  --beneficiary-nationality MX
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:xxx",
+    "currency": "MXN",
+    "accountInfo": {
+      "accountType": "CLABE",
+      "clabeNumber": "012345678901234567",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Juan Garcia",
+        "birthDate": "1985-03-15",
+        "nationality": "MX"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 4. **Look up the account to get payment capabilities**
+
 ```bash
-node cli/dist/index.js receiver lookup-account ExternalAccount:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/receiver/external-account/ExternalAccount:xxx" | jq .
 ```
 
 5. **Create a quote**
+
 ```bash
-node cli/dist/index.js quotes create \
-  --source-account InternalAccount:xxx \
-  --dest-account ExternalAccount:xxx \
-  --dest-currency MXN \
-  --amount 100000 \
-  --lock-side RECEIVING
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:xxx"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:xxx",
+      "currency": "MXN"
+    },
+    "lockedCurrencyAmount": 100000,
+    "lockedCurrencySide": "RECEIVING"
+  }' \
+  "$GRID_BASE_URL/quotes" | jq .
 ```
 
-Note: `--lock-side RECEIVING` means the recipient gets exactly this amount.
+Note: `lockedCurrencySide: "RECEIVING"` means the recipient gets exactly this amount.
 
 6. **Show exchange details and confirm**
 
 7. **Execute the quote**
+
 ```bash
-node cli/dist/index.js quotes execute Quote:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST \
+  "$GRID_BASE_URL/quotes/Quote:xxx/execute" | jq .
 ```
 
 ## Workflow 3: On-Ramp (Fiat to Crypto)
@@ -127,8 +174,10 @@ Use this when a customer wants to convert fiat to cryptocurrency.
 ### Steps
 
 1. **Ensure customer has completed KYC**
+
 ```bash
-node cli/dist/index.js customers get Customer:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/customers/Customer:xxx" | jq .
 ```
 
 Check `kycStatus` is `APPROVED`.
@@ -136,31 +185,51 @@ Check `kycStatus` is `APPROVED`.
 2. **Customer deposits fiat to their internal account**
 
 Show customer the `paymentInstructions` from their internal account:
+
 ```bash
-node cli/dist/index.js accounts internal list --customer-id Customer:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:xxx" | jq .
 ```
 
 3. **Create external account for crypto destination**
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id Customer:xxx \
-  --currency BTC \
-  --account-type SPARK_WALLET \
-  --address "spark1..."
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:xxx",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1..."
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 4. **Create and execute quote for conversion**
+
 ```bash
-node cli/dist/index.js quotes create \
-  --source-account InternalAccount:xxx \
-  --dest-account ExternalAccount:xxx \
-  --dest-currency BTC \
-  --amount 10000000 \
-  --lock-side SENDING \
-  --immediate
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:xxx"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:xxx",
+      "currency": "BTC"
+    },
+    "lockedCurrencyAmount": 10000000,
+    "lockedCurrencySide": "SENDING",
+    "immediatelyExecute": true
+  }' \
+  "$GRID_BASE_URL/quotes" | jq .
 ```
 
-The `--immediate` flag executes the quote instantly.
+The `immediatelyExecute: true` flag executes the quote instantly.
 
 ## Workflow 4: Off-Ramp (Crypto to Fiat)
 
@@ -169,16 +238,27 @@ Use this when a customer wants to convert cryptocurrency to fiat.
 ### Steps
 
 1. **Create fiat external account for payout**
+
 ```bash
-node cli/dist/index.js accounts external create \
-  --customer-id Customer:xxx \
-  --currency USD \
-  --account-type US_ACCOUNT \
-  --routing-number "123456789" \
-  --account-number "12345678901" \
-  --account-category CHECKING \
-  --beneficiary-type INDIVIDUAL \
-  --beneficiary-name "John Doe"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:xxx",
+    "currency": "USD",
+    "accountInfo": {
+      "accountType": "US_ACCOUNT",
+      "routingNumber": "123456789",
+      "accountNumber": "12345678901",
+      "accountCategory": "CHECKING",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "John Doe",
+        "birthDate": "1990-01-15",
+        "nationality": "US"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
 2. **Customer sends crypto to their internal account**
@@ -186,13 +266,24 @@ node cli/dist/index.js accounts external create \
 Provide the deposit address from their BTC internal account.
 
 3. **Create and execute quote for conversion**
+
 ```bash
-node cli/dist/index.js quotes create \
-  --source-account InternalAccount:xxx \
-  --dest-account ExternalAccount:xxx \
-  --dest-currency USD \
-  --amount 50000 \
-  --lock-side RECEIVING
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:xxx"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:xxx",
+      "currency": "USD"
+    },
+    "lockedCurrencyAmount": 50000,
+    "lockedCurrencySide": "RECEIVING"
+  }' \
+  "$GRID_BASE_URL/quotes" | jq .
 ```
 
 ## Workflow 5: Handle Incoming Payment
@@ -202,22 +293,32 @@ Use this when your platform receives an incoming payment that needs approval.
 ### Steps
 
 1. **List pending incoming transactions**
+
 ```bash
-node cli/dist/index.js transactions list --type INCOMING --status PENDING_APPROVAL
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/transactions?type=INCOMING&status=PENDING_APPROVAL" | jq .
 ```
 
 2. **Review transaction details**
+
 ```bash
-node cli/dist/index.js transactions get Transaction:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/transactions/Transaction:xxx" | jq .
 ```
 
 3. **Approve or reject**
+
 ```bash
 # Approve
-node cli/dist/index.js transactions approve Transaction:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST \
+  "$GRID_BASE_URL/transactions/Transaction:xxx/approve" | jq .
 
 # Or reject
-node cli/dist/index.js transactions reject Transaction:xxx --reason "Suspicious activity"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"reason": "Suspicious activity"}' \
+  "$GRID_BASE_URL/transactions/Transaction:xxx/reject" | jq .
 ```
 
 ## Workflow 6: Bulk Customer Onboarding
@@ -233,16 +334,20 @@ The API supports bulk customer creation via CSV upload.
    - birthDate
    - address fields
 
-2. **Upload CSV** (this endpoint isn't in the CLI, use curl):
+2. **Upload CSV**
+
 ```bash
-curl -X POST https://api.lightspark.com/grid/2025-10-13/customers/bulk/csv \
-  -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  -F "file=@customers.csv"
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST \
+  -F "file=@customers.csv" \
+  "$GRID_BASE_URL/customers/bulk/csv" | jq .
 ```
 
 3. **Check job status**
+
 ```bash
-node cli/dist/index.js customers bulk-status <jobId>
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/customers/bulk/jobs/<jobId>" | jq .
 ```
 
 ## Error Recovery
@@ -250,17 +355,21 @@ node cli/dist/index.js customers bulk-status <jobId>
 ### Quote Expired
 
 If a quote expires before execution:
+
 1. Create a new quote with the same parameters
 2. Note: Exchange rates may have changed
 
 ### Transaction Failed
 
 Check transaction status for failure reason:
+
 ```bash
-node cli/dist/index.js transactions get Transaction:xxx
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  "$GRID_BASE_URL/transactions/Transaction:xxx" | jq .
 ```
 
 Common failure reasons:
+
 - Insufficient funds
 - Invalid account details
 - Compliance rejection
@@ -269,6 +378,7 @@ Common failure reasons:
 ### Retry with Different Account
 
 If a bank account is rejected, try:
+
 1. Verify account details are correct
 2. Create a new external account with corrected details
 3. Create new quote with the new account

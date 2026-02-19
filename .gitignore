@@ -36,6 +36,9 @@ local.properties
 # CLI build output
 cli/dist/
 
+# Frontend build output
+samples/frontend/dist/
+
 # Figma design tokens (local reference only)
 mintlify/tokens/
 
@@ -48,3 +51,6 @@ figma-*.md
 
 # Personal todo files
 TODO-*.md
+
+# Icon build script (local tool, requires license key)
+scripts/export-icons.js

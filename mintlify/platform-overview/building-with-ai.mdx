@@ -1,0 +1,160 @@
+---
+icon: "/images/icons/console-sparkle.svg"
+mode: "wide"
+title: "Building with AI"
+description: "Use AI coding assistants like Claude Code, Cursor, and Codex to explore, build, and debug with the Grid API"
+"og:image": "/images/og/og-get-started.png"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<img
+  src="/images/heroes/hero-building-with-ai-light.svg"
+  alt="Building with AI hero"
+  className="page-hero block dark:hidden"
+/>
+<img
+  src="/images/heroes/hero-building-with-ai-dark.svg"
+  alt="Building with AI hero"
+  className="page-hero hidden dark:block"
+/>
+
+Grid's documentation, OpenAPI spec, and CLI are designed to work with AI coding assistants like Claude Code, Cursor, and Codex. Whether you're exploring the API for the first time or building a production integration, AI tools can help you move faster.
+
+## What AI assistants can do with Grid
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard
+    icon="/images/icons/magnifying-glass.svg"
+    title="Explore the API"
+    color="#00B3E0"
+  >
+    Ask questions about endpoints, request/response schemas, supported currencies, and payment rails
+  </FeatureCard>
+  <FeatureCard
+    icon="/images/icons/prompt.svg"
+    title="Execute API calls"
+    color="#11A967"
+  >
+    Use the Grid Skill to create customers, manage accounts, get quotes, and send payments directly from your AI assistant
+  </FeatureCard>
+  <FeatureCard
+    icon="/images/icons/arrow-path-right.svg"
+    title="Guide workflows"
+    color="#F77D26"
+  >
+    Get step-by-step guidance for multi-step flows like international payouts, on/off-ramps, and KYC onboarding
+  </FeatureCard>
+  <FeatureCard
+    icon="/images/icons/bug.svg"
+    title="Debug issues"
+    color="#CF00A7"
+  >
+    Troubleshoot error codes, validate account details, and diagnose failed transactions
+  </FeatureCard>
+</FeatureCardGrid>
+
+## AI-accessible documentation
+
+These Grid docs are automatically available to LLMs and AI tools in machine-readable formats — no configuration needed.
+
+### llms.txt
+
+Grid docs generate [llms.txt](https://llmstxt.org/) files that give AI tools a structured index of all documentation:
+
+- [`/llms.txt`](/llms.txt) — Concise index of all pages with titles and descriptions
+- [`/llms-full.txt`](/llms-full.txt) — Complete documentation content in a single file
+
+These are generated automatically and always up to date. Use `llms-full.txt` when you want to give an AI assistant full context about the Grid API in one shot.
+
+### Markdown export
+
+Each page in the Grid docs is automatically available as a Markdown file simply by adding `.md` to the end of the URL.
+
+For example, the [Building with AI](/platform-overview/building-with-ai) page is available as [`/platform-overview/building-with-ai.md`](/platform-overview/building-with-ai.md).
+
+<Tip>
+You can also copy any page's content as Markdown with the keyboard shortcut <kbd>Command</kbd> + <kbd>C</kbd> (<kbd>Ctrl</kbd> + <kbd>C</kbd> on Windows) and paste it directly into ChatGPT, Claude, or any AI assistant for context-aware help with your specific question.
+</Tip>
+
+## Install the Grid API agent skill
+
+The Grid API skill gives [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or another Skill-compatible agent full access to the Grid API via a built-in CLI. Install it with:
+
+```bash
+npx skills add lightsparkdev/grid-api
+```
+
+Make sure to install it for whichever agent you're using. For example, if you're using Claude Code,
+you'll need to explicitly select Claude Code in the agent installation selection screen.
+
+Once installed, you can start asking questions immediately. To execute API operations, you'll need to
+configure your credentials.
+
+### Configure your credentials
+
+To set your grid credentials, simply ask the agent to help you configure them:
+
+```
+Help me configure my Grid API credentials.
+```
+
+It'll prompt you for your API Token ID and Client Secret, validate them, and save to `~/.grid-credentials` for future use.
+
+<Tip>
+Start in the sandbox environment to experiment safely. The Skill is great at generating fake account data to help you test different flows.
+</Tip>
+
+## Example prompts
+
+Try these prompts in Claude Code or paste them into your AI assistant of choice:
+
+### Getting started
+```
+What currencies does Grid support? Show me the coverage by country.
+```
+```
+Walk me through the steps to send a payout from USD to MXN via CLABE.
+```
+
+### Payouts
+```
+Create an external account for a bank in Mexico using CLABE, then create
+a quote to send $500 USD and show me the exchange rate before executing.
+```
+```
+Send $100 to $alice@example.com via UMA. Show me the exchange rate first.
+```
+
+### On/off-ramps
+```
+Help me set up a fiat-to-crypto on-ramp. I want to convert USD to BTC
+using a Spark wallet.
+```
+```
+I need to off-ramp USDC to a US bank account. Walk me through the full flow.
+```
+
+### Account management
+```
+List all my customers and their KYC status in a table.
+```
+```
+Create a new individual customer and generate a KYC onboarding link.
+```
+
+### Debugging
+```
+I'm getting QUOTE_EXPIRED errors. What's happening and how do I fix it?
+```
+```
+My external account creation is failing for a Nigerian bank account.
+What fields am I missing?
+```
+
+## Tips for best results
+
+1. **Be specific about your use case** — "Send a payout to Brazil via PIX" gets better results than "help me send money"
+2. **Start with the sandbox** — Ask the AI to use sandbox mode so you can experiment without real funds
+3. **Give context** — Paste the relevant docs page or point the AI to `/llms-full.txt` for full API context
+4. **Iterate on errors** — If an API call fails, paste the error and ask the AI to diagnose it
