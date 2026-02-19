@@ -1,0 +1,16 @@
+allOf:
+  - $ref: ./BaseTransactionDestination.yaml
+  - type: object
+    required:
+      - externalAccountDetails
+      - destinationType
+    properties:
+      destinationType:
+        type: string
+        enum:
+          - EXTERNAL_ACCOUNT_DETAILS
+      externalAccountDetails:
+        $ref: ../external_accounts/ExternalAccountCreateRequest.yaml
+    description: >-
+      Transaction destination where external account details were provided
+      inline at quote creation rather than using a pre-registered external account.

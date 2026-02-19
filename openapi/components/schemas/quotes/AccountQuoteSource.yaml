@@ -12,7 +12,7 @@ allOf:
       accountId:
         type: string
         description: Source account identifier
-        example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
       customerId:
         type: string
         description: Required when funding from an FBO account to identify the customer on whose behalf the transaction is being initiated.  Otherwise, will default to the customerId of the account owner.

@@ -13,3 +13,4 @@ discriminator:
   mapping:
     ACCOUNT: ./AccountTransactionSource.yaml
     UMA_ADDRESS: ./UmaAddressTransactionSource.yaml
+    REALTIME_FUNDING: ./RealtimeFundingTransactionSource.yaml

@@ -71,7 +71,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/transactions/Transaction.yaml
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
     '400':
       description: Bad request - Invalid parameters
       content:
