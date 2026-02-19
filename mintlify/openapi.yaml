@@ -38,9 +38,333 @@ tags:
     description: Endpoints to trigger test cases in sandbox
   - name: API Tokens
     description: Endpoints to programmatically manage API tokens
+  - name: Platform Fee Rules
+    description: Configure the markup your platform charges customers on each transaction type. Platform fees are layered on top of Lightspark and counterparty fees and collected in real time during settlement.
   - name: Exchange Rates
     description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
 paths:
+  /fee-rules:
+    post:
+      summary: Create a fee rule
+      description: |
+        Create a platform fee rule for a specific transaction type. The rule defines the markup your platform charges customers on top of Lightspark and counterparty fees. Only one rule per transaction type is allowed.
+
+        Fee rules are evaluated at quote creation time. The resulting platform fee is included in the quote's `rateDetails` and collected in real time during settlement — no manual reconciliation is needed.
+
+        **Fee types:**
+        - `FIXED` — a flat amount per transaction (requires `fixedFee`)
+        - `PERCENTAGE` — a rate of the transaction amount (requires `variableFeeRate`)
+        - `HYBRID` — both a fixed amount and a percentage rate (requires both)
+      operationId: createFeeRule
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeRuleCreateRequest'
+            examples:
+              fixedFee:
+                summary: Fixed fee of $1.50 on transfers out
+                value:
+                  transactionType: TRANSFER_OUT
+                  feeType: FIXED
+                  fixedFee: 150
+              percentageFee:
+                summary: 0.5% fee on cross-border payouts
+                value:
+                  transactionType: CROSS_BORDER_PAYOUT
+                  feeType: PERCENTAGE
+                  variableFeeRate: 0.005
+              hybridFee:
+                summary: $1.50 + 0.5% on off-ramps
+                value:
+                  transactionType: RAMP_OFF
+                  feeType: HYBRID
+                  fixedFee: 150
+                  variableFeeRate: 0.005
+      responses:
+        '201':
+          description: Fee rule created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeRule'
+        '400':
+          description: Invalid input — missing required fields, invalid feeType, or fee amounts out of range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: A fee rule for this transaction type already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List fee rules
+      description: |
+        Retrieve all platform fee rules. Returns the complete set of configured rules. Since the maximum number of rules is bounded by the number of transaction types (5), pagination is not required.
+      operationId: getFeeRules
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: transactionType
+          in: query
+          description: Filter by transaction type
+          required: false
+          schema:
+            $ref: '#/components/schemas/FeeTransactionType'
+        - name: enabled
+          in: query
+          description: Filter by enabled status
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    description: List of platform fee rules
+                    items:
+                      $ref: '#/components/schemas/FeeRule'
+        '400':
+          description: Bad request — invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fee-rules/report:
+    get:
+      summary: Get monthly fee report
+      description: |
+        Retrieve an aggregated summary of platform fees collected during a specific month, broken down by transaction type. Covers only transaction-based fees that were collected in real time during settlement.
+
+        The report includes the total fees collected and a per-transaction-type breakdown with transaction counts.
+      operationId: getFeeReport
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Reporting month in YYYY-MM format. Defaults to the current month.
+          required: false
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}$
+            example: 2026-02
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeReport'
+              examples:
+                monthlyReport:
+                  summary: February 2026 fee report
+                  value:
+                    month: 2026-02
+                    totalPlatformFeesCollected: 128450
+                    currency: USD
+                    lines:
+                      - transactionType: TRANSFER_OUT
+                        transactionCount: 245
+                        platformFeesCollected: 62500
+                        currency: USD
+                      - transactionType: CROSS_BORDER_PAYOUT
+                        transactionCount: 97
+                        platformFeesCollected: 51300
+                        currency: USD
+                      - transactionType: RAMP_OFF
+                        transactionCount: 58
+                        platformFeesCollected: 14650
+                        currency: USD
+        '400':
+          description: Invalid month format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fee-rules/{feeRuleId}:
+    parameters:
+      - name: feeRuleId
+        in: path
+        description: System-generated unique fee rule identifier
+        required: true
+        schema:
+          type: string
+        example: FeeRule:019c6a2b-4f8e-7d01-0000-000000000001
+    get:
+      summary: Get fee rule by ID
+      description: Retrieve a single platform fee rule by its system-generated ID.
+      operationId: getFeeRuleById
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee rule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a fee rule
+      description: |
+        Partially update an existing fee rule. Only the provided fields are modified. The `transactionType` and `feeType` cannot be changed — delete and recreate the rule instead.
+      operationId: updateFeeRule
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeRulePatchRequest'
+            examples:
+              disableRule:
+                summary: Disable a fee rule
+                value:
+                  enabled: false
+              updateFee:
+                summary: Update fixed fee amount
+                value:
+                  fixedFee: 200
+      responses:
+        '200':
+          description: Fee rule updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeRule'
+        '400':
+          description: Invalid input — fee amounts out of range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee rule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete a fee rule
+      description: |
+        Delete a platform fee rule. Future transactions of this type will no longer include a platform markup. Transactions already in progress or settled are unaffected.
+      operationId: deleteFeeRule
+      tags:
+        - Platform Fee Rules
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Fee rule deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee rule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /config:
     get:
       summary: Get platform configuration
@@ -3924,6 +4248,395 @@ components:
         - $ref: '#/components/schemas/Error424'
         - $ref: '#/components/schemas/Error500'
         - $ref: '#/components/schemas/Error501'
+    FeeTransactionType:
+      type: string
+      description: The type of transaction the fee rule applies to. Platform fee rules are scoped to a single transaction type — only one rule per type is allowed.
+      enum:
+        - TRANSFER_IN
+        - TRANSFER_OUT
+        - RAMP_ON
+        - RAMP_OFF
+        - CROSS_BORDER_PAYOUT
+      example: CROSS_BORDER_PAYOUT
+    FeeRuleType:
+      type: string
+      description: Determines which fee components apply. FIXED charges a flat amount per transaction. PERCENTAGE charges a rate of the transaction amount. HYBRID applies both a fixed amount and a percentage rate.
+      enum:
+        - FIXED
+        - PERCENTAGE
+        - HYBRID
+      example: HYBRID
+    FeeRule:
+      type: object
+      description: A platform fee rule defines the markup a platform charges its customers on a specific transaction type, on top of Lightspark and counterparty fees. Rules are evaluated at quote creation and the resulting platform fee is collected in real time during settlement.
+      required:
+        - id
+        - transactionType
+        - feeType
+        - enabled
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier
+          readOnly: true
+          example: FeeRule:019c6a2b-4f8e-7d01-0000-000000000001
+        transactionType:
+          $ref: '#/components/schemas/FeeTransactionType'
+        feeType:
+          $ref: '#/components/schemas/FeeRuleType'
+        fixedFee:
+          type: integer
+          format: int64
+          description: Fixed fee in the smallest unit of USD (cents). Applied per transaction. Required when feeType is FIXED or HYBRID.
+          minimum: 0
+          example: 150
+        variableFeeRate:
+          type: number
+          format: double
+          description: Variable fee as a decimal rate of the transaction amount (e.g., 0.005 = 0.5%). Applied to the sending amount at quote creation. Required when feeType is PERCENTAGE or HYBRID.
+          minimum: 0
+          maximum: 0.2
+          example: 0.005
+        enabled:
+          type: boolean
+          description: Whether this fee rule is actively applied to new transactions. Disabled rules are retained for reporting but do not affect new quotes.
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: When the fee rule was created
+          readOnly: true
+          example: '2026-01-15T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the fee rule was last modified
+          readOnly: true
+          example: '2026-02-01T12:30:00Z'
+    Error400:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 400
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | INVALID_INPUT | Invalid input provided |
+            | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
+            | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
+            | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
+            | INVALID_UMA_ADDRESS | UMA address format is invalid |
+            | INVITATION_CANCELLED | Invitation has been cancelled |
+            | QUOTE_REQUEST_FAILED | An issue occurred during the quote process; this is retryable |
+            | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid |
+            | INVALID_RECEIVER | Receiver is invalid |
+            | PARSE_PAYREQ_RESPONSE_ERROR | Error parsing receiver PayReq response |
+            | CERT_CHAIN_INVALID | Counterparty certificate chain is invalid |
+            | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
+            | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
+            | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
+            | SENDER_NOT_ACCEPTED | Sender is not accepted |
+            | AMOUNT_OUT_OF_RANGE | Amount is out of range |
+            | INVALID_CURRENCY | Currency is invalid |
+            | INVALID_TIMESTAMP | Timestamp is invalid |
+            | INVALID_NONCE | Nonce is invalid |
+            | INVALID_REQUEST_FORMAT | Request format is invalid |
+            | INVALID_BANK_ACCOUNT | Bank account is invalid |
+            | SELF_PAYMENT | Self payment not allowed |
+            | LOOKUP_REQUEST_FAILED | Lookup request failed |
+            | PARSE_LNURLP_RESPONSE_ERROR | Error parsing LNURLP response |
+            | INVALID_AMOUNT | Amount is invalid |
+            | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
+            | WEBHOOK_DELIVERY_ERROR | Webhook delivery error |
+            | INVALID_FEE_RULE | Fee rule input is invalid (missing fields, amounts out of range, or wrong feeType/field combination) |
+            | INVALID_MONTH_FORMAT | Month parameter must be in YYYY-MM format |
+          enum:
+            - INVALID_INPUT
+            - MISSING_MANDATORY_USER_INFO
+            - INVITATION_ALREADY_CLAIMED
+            - INVITATIONS_NOT_CONFIGURED
+            - INVALID_UMA_ADDRESS
+            - INVITATION_CANCELLED
+            - QUOTE_REQUEST_FAILED
+            - INVALID_PAYREQ_RESPONSE
+            - INVALID_RECEIVER
+            - PARSE_PAYREQ_RESPONSE_ERROR
+            - CERT_CHAIN_INVALID
+            - CERT_CHAIN_EXPIRED
+            - INVALID_PUBKEY_FORMAT
+            - MISSING_REQUIRED_UMA_PARAMETERS
+            - SENDER_NOT_ACCEPTED
+            - AMOUNT_OUT_OF_RANGE
+            - INVALID_CURRENCY
+            - INVALID_TIMESTAMP
+            - INVALID_NONCE
+            - INVALID_REQUEST_FORMAT
+            - INVALID_BANK_ACCOUNT
+            - SELF_PAYMENT
+            - LOOKUP_REQUEST_FAILED
+            - PARSE_LNURLP_RESPONSE_ERROR
+            - INVALID_AMOUNT
+            - WEBHOOK_ENDPOINT_NOT_SET
+            - WEBHOOK_DELIVERY_ERROR
+            - INVALID_FEE_RULE
+            - INVALID_MONTH_FORMAT
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error401:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 401
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | UNAUTHORIZED | Issue with API credentials |
+            | INVALID_SIGNATURE | Signature header is invalid |
+          enum:
+            - UNAUTHORIZED
+            - INVALID_SIGNATURE
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error500:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 500
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | GRID_SWITCH_ERROR | Grid switch error |
+            | INTERNAL_ERROR | Internal server or UMA error |
+          enum:
+            - GRID_SWITCH_ERROR
+            - INTERNAL_ERROR
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    FeeRuleCreateRequest:
+      type: object
+      description: Request body for creating a new platform fee rule.
+      required:
+        - transactionType
+        - feeType
+      properties:
+        transactionType:
+          $ref: '#/components/schemas/FeeTransactionType'
+        feeType:
+          $ref: '#/components/schemas/FeeRuleType'
+        fixedFee:
+          type: integer
+          format: int64
+          description: Fixed fee in the smallest unit of USD (cents). Required when feeType is FIXED or HYBRID. Must be between 0 and 10000 ($100.00).
+          minimum: 0
+          maximum: 10000
+          example: 150
+        variableFeeRate:
+          type: number
+          format: double
+          description: Variable fee as a decimal rate (e.g., 0.005 = 0.5%). Required when feeType is PERCENTAGE or HYBRID. Must be between 0 and 0.20 (20%).
+          minimum: 0
+          maximum: 0.2
+          example: 0.005
+        enabled:
+          type: boolean
+          description: Whether the rule should be active immediately. Defaults to true.
+          default: true
+          example: true
+    Error409:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 409
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
+            | UMA_ADDRESS_EXISTS | UMA address already exists |
+            | FEE_RULE_EXISTS | A fee rule for this transaction type already exists |
+          enum:
+            - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
+            - UMA_ADDRESS_EXISTS
+            - FEE_RULE_EXISTS
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    FeeReportLine:
+      type: object
+      description: Aggregated platform fee revenue for a single transaction type within a reporting period.
+      required:
+        - transactionType
+        - transactionCount
+        - platformFeesCollected
+        - currency
+      properties:
+        transactionType:
+          $ref: '#/components/schemas/FeeTransactionType'
+        transactionCount:
+          type: integer
+          description: Number of settled transactions that incurred this fee
+          minimum: 0
+          example: 342
+        platformFeesCollected:
+          type: integer
+          format: int64
+          description: Total platform fees collected for this transaction type in the smallest unit of the reporting currency (USD cents).
+          minimum: 0
+          example: 51300
+        currency:
+          type: string
+          description: ISO 4217 currency code for the reporting currency. Currently always USD.
+          example: USD
+    FeeReport:
+      type: object
+      description: Monthly summary of platform fee revenue, broken down by transaction type. Covers fees collected in real time during transaction settlement within the specified month.
+      required:
+        - month
+        - totalPlatformFeesCollected
+        - currency
+        - lines
+      properties:
+        month:
+          type: string
+          description: Reporting month in YYYY-MM format.
+          pattern: ^\d{4}-\d{2}$
+          example: 2026-02
+        totalPlatformFeesCollected:
+          type: integer
+          format: int64
+          description: Total platform fees collected across all transaction types in the smallest unit of the reporting currency (USD cents).
+          minimum: 0
+          example: 128450
+        currency:
+          type: string
+          description: ISO 4217 currency code for the reporting currency. Currently always USD.
+          example: USD
+        lines:
+          type: array
+          description: Per-transaction-type breakdown of collected fees
+          items:
+            $ref: '#/components/schemas/FeeReportLine'
+    Error404:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 404
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | TRANSACTION_NOT_FOUND | Transaction not found |
+            | INVITATION_NOT_FOUND | Invitation not found |
+            | USER_NOT_FOUND | Customer not found |
+            | QUOTE_NOT_FOUND | Quote not found |
+            | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
+            | TOKEN_NOT_FOUND | Token not found |
+            | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
+            | REFERENCE_NOT_FOUND | Reference not found |
+            | FEE_RULE_NOT_FOUND | Fee rule not found |
+          enum:
+            - TRANSACTION_NOT_FOUND
+            - INVITATION_NOT_FOUND
+            - USER_NOT_FOUND
+            - QUOTE_NOT_FOUND
+            - LOOKUP_REQUEST_NOT_FOUND
+            - TOKEN_NOT_FOUND
+            - BULK_UPLOAD_JOB_NOT_FOUND
+            - REFERENCE_NOT_FOUND
+            - FEE_RULE_NOT_FOUND
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    FeeRulePatchRequest:
+      type: object
+      description: Partial update for an existing fee rule. Only provided fields are updated. The transactionType and feeType cannot be changed — delete and recreate the rule instead.
+      properties:
+        fixedFee:
+          type: integer
+          format: int64
+          description: Updated fixed fee in the smallest unit of USD (cents). Must be between 0 and 10000.
+          minimum: 0
+          maximum: 10000
+          example: 200
+        variableFeeRate:
+          type: number
+          format: double
+          description: Updated variable fee as a decimal rate. Must be between 0 and 0.20.
+          minimum: 0
+          maximum: 0.2
+          example: 0.01
+        enabled:
+          type: boolean
+          description: Enable or disable the fee rule
+          example: false
     CustomerInfoFieldName:
       type: string
       enum:
@@ -4073,143 +4786,6 @@ components:
           description: Last update timestamp
           readOnly: true
           example: '2025-06-15T12:30:45Z'
-    Error401:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 401
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | UNAUTHORIZED | Issue with API credentials |
-            | INVALID_SIGNATURE | Signature header is invalid |
-          enum:
-            - UNAUTHORIZED
-            - INVALID_SIGNATURE
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
-    Error500:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 500
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | GRID_SWITCH_ERROR | Grid switch error |
-            | INTERNAL_ERROR | Internal server or UMA error |
-          enum:
-            - GRID_SWITCH_ERROR
-            - INTERNAL_ERROR
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
-    Error400:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 400
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | INVALID_INPUT | Invalid input provided |
-            | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
-            | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
-            | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
-            | INVALID_UMA_ADDRESS | UMA address format is invalid |
-            | INVITATION_CANCELLED | Invitation has been cancelled |
-            | QUOTE_REQUEST_FAILED | An issue occurred during the quote process; this is retryable |
-            | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid |
-            | INVALID_RECEIVER | Receiver is invalid |
-            | PARSE_PAYREQ_RESPONSE_ERROR | Error parsing receiver PayReq response |
-            | CERT_CHAIN_INVALID | Counterparty certificate chain is invalid |
-            | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
-            | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
-            | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
-            | SENDER_NOT_ACCEPTED | Sender is not accepted |
-            | AMOUNT_OUT_OF_RANGE | Amount is out of range |
-            | INVALID_CURRENCY | Currency is invalid |
-            | INVALID_TIMESTAMP | Timestamp is invalid |
-            | INVALID_NONCE | Nonce is invalid |
-            | INVALID_REQUEST_FORMAT | Request format is invalid |
-            | INVALID_BANK_ACCOUNT | Bank account is invalid |
-            | SELF_PAYMENT | Self payment not allowed |
-            | LOOKUP_REQUEST_FAILED | Lookup request failed |
-            | PARSE_LNURLP_RESPONSE_ERROR | Error parsing LNURLP response |
-            | INVALID_AMOUNT | Amount is invalid |
-            | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
-            | WEBHOOK_DELIVERY_ERROR | Webhook delivery error |
-          enum:
-            - INVALID_INPUT
-            - MISSING_MANDATORY_USER_INFO
-            - INVITATION_ALREADY_CLAIMED
-            - INVITATIONS_NOT_CONFIGURED
-            - INVALID_UMA_ADDRESS
-            - INVITATION_CANCELLED
-            - QUOTE_REQUEST_FAILED
-            - INVALID_PAYREQ_RESPONSE
-            - INVALID_RECEIVER
-            - PARSE_PAYREQ_RESPONSE_ERROR
-            - CERT_CHAIN_INVALID
-            - CERT_CHAIN_EXPIRED
-            - INVALID_PUBKEY_FORMAT
-            - MISSING_REQUIRED_UMA_PARAMETERS
-            - SENDER_NOT_ACCEPTED
-            - AMOUNT_OUT_OF_RANGE
-            - INVALID_CURRENCY
-            - INVALID_TIMESTAMP
-            - INVALID_NONCE
-            - INVALID_REQUEST_FORMAT
-            - INVALID_BANK_ACCOUNT
-            - SELF_PAYMENT
-            - LOOKUP_REQUEST_FAILED
-            - PARSE_LNURLP_RESPONSE_ERROR
-            - INVALID_AMOUNT
-            - WEBHOOK_ENDPOINT_NOT_SET
-            - WEBHOOK_DELIVERY_ERROR
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     Error501:
       type: object
       required:
@@ -4620,76 +5196,6 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
-    Error409:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 409
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
-            | UMA_ADDRESS_EXISTS | UMA address already exists |
-          enum:
-            - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
-            - UMA_ADDRESS_EXISTS
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
-    Error404:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 404
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | TRANSACTION_NOT_FOUND | Transaction not found |
-            | INVITATION_NOT_FOUND | Invitation not found |
-            | USER_NOT_FOUND | Customer not found |
-            | QUOTE_NOT_FOUND | Quote not found |
-            | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
-            | TOKEN_NOT_FOUND | Token not found |
-            | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
-            | REFERENCE_NOT_FOUND | Reference not found |
-          enum:
-            - TRANSACTION_NOT_FOUND
-            - INVITATION_NOT_FOUND
-            - USER_NOT_FOUND
-            - QUOTE_NOT_FOUND
-            - LOOKUP_REQUEST_NOT_FOUND
-            - TOKEN_NOT_FOUND
-            - BULK_UPLOAD_JOB_NOT_FOUND
-            - REFERENCE_NOT_FOUND
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     Error410:
       type: object
       required:
@@ -6003,6 +6509,24 @@ components:
           description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
           minimum: 0
           example: 30
+        platformFixedFee:
+          type: integer
+          format: int64
+          description: The fixed fee configured by the platform for this transaction type, in the smallest unit of USD (cents). Only present when the platform has an active fee rule for this transaction type.
+          minimum: 0
+          example: 150
+        platformVariableFeeRate:
+          type: number
+          format: double
+          description: The variable fee rate configured by the platform as a decimal (e.g., 0.005 = 0.5%). Only present when the platform has an active fee rule for this transaction type.
+          minimum: 0
+          example: 0.005
+        platformVariableFeeAmount:
+          type: integer
+          format: int64
+          description: The calculated variable fee amount from the platform's fee rule, in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times platformVariableFeeRate. Only present when the platform has an active fee rule for this transaction type.
+          minimum: 0
+          example: 50
     IncomingTransactionFailureReason:
       type: string
       enum:
@@ -6103,6 +6627,24 @@ components:
           description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the sending currency (eg. cents). This is the sending amount times gridApiVariableFeeRate.
           minimum: 0
           example: 30
+        platformFixedFee:
+          type: integer
+          format: int64
+          description: The fixed fee configured by the platform for this transaction type, in the smallest unit of USD (cents). Only present when the platform has an active fee rule for this transaction type.
+          minimum: 0
+          example: 150
+        platformVariableFeeRate:
+          type: number
+          format: double
+          description: The variable fee rate configured by the platform as a decimal (e.g., 0.005 = 0.5%). Only present when the platform has an active fee rule for this transaction type.
+          minimum: 0
+          example: 0.005
+        platformVariableFeeAmount:
+          type: integer
+          format: int64
+          description: The calculated variable fee amount from the platform's fee rule, in the smallest unit of the sending currency (eg. cents). This is the sending amount times platformVariableFeeRate. Only present when the platform has an active fee rule for this transaction type.
+          minimum: 0
+          example: 50
     OutgoingTransactionFailureReason:
       type: string
       enum:

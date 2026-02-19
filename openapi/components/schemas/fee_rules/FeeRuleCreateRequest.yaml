@@ -1,0 +1,34 @@
+type: object
+description: Request body for creating a new platform fee rule.
+required:
+  - transactionType
+  - feeType
+properties:
+  transactionType:
+    $ref: ./FeeTransactionType.yaml
+  feeType:
+    $ref: ./FeeRuleType.yaml
+  fixedFee:
+    type: integer
+    format: int64
+    description: >-
+      Fixed fee in the smallest unit of USD (cents). Required when feeType
+      is FIXED or HYBRID. Must be between 0 and 10000 ($100.00).
+    minimum: 0
+    maximum: 10000
+    example: 150
+  variableFeeRate:
+    type: number
+    format: double
+    description: >-
+      Variable fee as a decimal rate (e.g., 0.005 = 0.5%). Required when
+      feeType is PERCENTAGE or HYBRID. Must be between 0 and 0.20 (20%).
+    minimum: 0
+    maximum: 0.20
+    example: 0.005
+  enabled:
+    type: boolean
+    description: >-
+      Whether the rule should be active immediately. Defaults to true.
+    default: true
+    example: true

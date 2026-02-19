@@ -1,0 +1,35 @@
+type: object
+description: >-
+  Monthly summary of platform fee revenue, broken down by transaction type.
+  Covers fees collected in real time during transaction settlement within the
+  specified month.
+required:
+  - month
+  - totalPlatformFeesCollected
+  - currency
+  - lines
+properties:
+  month:
+    type: string
+    description: >-
+      Reporting month in YYYY-MM format.
+    pattern: '^\d{4}-\d{2}$'
+    example: '2026-02'
+  totalPlatformFeesCollected:
+    type: integer
+    format: int64
+    description: >-
+      Total platform fees collected across all transaction types in the
+      smallest unit of the reporting currency (USD cents).
+    minimum: 0
+    example: 128450
+  currency:
+    type: string
+    description: >-
+      ISO 4217 currency code for the reporting currency. Currently always USD.
+    example: USD
+  lines:
+    type: array
+    description: Per-transaction-type breakdown of collected fees
+    items:
+      $ref: ./FeeReportLine.yaml

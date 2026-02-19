@@ -41,6 +41,8 @@ properties:
       | INVALID_AMOUNT | Amount is invalid |
       | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
       | WEBHOOK_DELIVERY_ERROR | Webhook delivery error |
+      | INVALID_FEE_RULE | Fee rule input is invalid (missing fields, amounts out of range, or wrong feeType/field combination) |
+      | INVALID_MONTH_FORMAT | Month parameter must be in YYYY-MM format |
     enum:
       - INVALID_INPUT
       - MISSING_MANDATORY_USER_INFO
@@ -69,6 +71,8 @@ properties:
       - INVALID_AMOUNT
       - WEBHOOK_ENDPOINT_NOT_SET
       - WEBHOOK_DELIVERY_ERROR
+      - INVALID_FEE_RULE
+      - INVALID_MONTH_FORMAT
   message:
     type: string
     description: Error message

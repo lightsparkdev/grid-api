@@ -39,3 +39,31 @@ properties:
       receiving amount times gridApiVariableFeeRate.
     minimum: 0
     example: 30
+  platformFixedFee:
+    type: integer
+    format: int64
+    description: >-
+      The fixed fee configured by the platform for this transaction type, in the
+      smallest unit of USD (cents). Only present when the platform has an active
+      fee rule for this transaction type.
+    minimum: 0
+    example: 150
+  platformVariableFeeRate:
+    type: number
+    format: double
+    description: >-
+      The variable fee rate configured by the platform as a decimal
+      (e.g., 0.005 = 0.5%). Only present when the platform has an active
+      fee rule for this transaction type.
+    minimum: 0
+    example: 0.005
+  platformVariableFeeAmount:
+    type: integer
+    format: int64
+    description: >-
+      The calculated variable fee amount from the platform's fee rule, in the
+      smallest unit of the receiving currency (eg. cents). This is the receiving
+      amount times platformVariableFeeRate. Only present when the platform has
+      an active fee rule for this transaction type.
+    minimum: 0
+    example: 50

@@ -1,0 +1,12 @@
+type: string
+description: >-
+  The type of transaction the fee rule applies to. Platform fee rules
+  are scoped to a single transaction type — only one rule per type is
+  allowed.
+enum:
+  - TRANSFER_IN
+  - TRANSFER_OUT
+  - RAMP_ON
+  - RAMP_OFF
+  - CROSS_BORDER_PAYOUT
+example: CROSS_BORDER_PAYOUT

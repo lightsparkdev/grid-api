@@ -101,6 +101,7 @@
           {
             "group": "Platform Tools",
             "pages": [
+              "payouts-and-b2b/platform-tools/fee-rules",
               "payouts-and-b2b/platform-tools/webhooks",
               "payouts-and-b2b/platform-tools/sandbox-testing",
               "payouts-and-b2b/platform-tools/postman-collection"
@@ -146,6 +147,7 @@
           {
             "group": "Platform Tools",
             "pages": [
+              "ramps/platform-tools/fee-rules",
               "ramps/platform-tools/webhooks",
               "ramps/platform-tools/sandbox-testing",
               "ramps/platform-tools/postman-collection"
@@ -189,6 +191,7 @@
           {
             "group": "Platform Tools",
             "pages": [
+              "rewards/platform-tools/fee-rules",
               "rewards/platform-tools/webhooks",
               "rewards/platform-tools/sandbox-testing",
               "rewards/platform-tools/postman-collection"
@@ -237,6 +240,7 @@
           {
             "group": "Platform Tools",
             "pages": [
+              "global-p2p/platform-tools/fee-rules",
               "global-p2p/platform-tools/webhooks",
               "global-p2p/platform-tools/sandbox-testing",
               "global-p2p/platform-tools/postman-collection",

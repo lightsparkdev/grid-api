@@ -22,6 +22,7 @@ properties:
       | TOKEN_NOT_FOUND | Token not found |
       | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
       | REFERENCE_NOT_FOUND | Reference not found |
+      | FEE_RULE_NOT_FOUND | Fee rule not found |
     enum:
       - TRANSACTION_NOT_FOUND
       - INVITATION_NOT_FOUND
@@ -31,6 +32,7 @@ properties:
       - TOKEN_NOT_FOUND
       - BULK_UPLOAD_JOB_NOT_FOUND
       - REFERENCE_NOT_FOUND
+      - FEE_RULE_NOT_FOUND
   message:
     type: string
     description: Error message

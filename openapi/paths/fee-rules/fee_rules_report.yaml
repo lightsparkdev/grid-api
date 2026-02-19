@@ -1,0 +1,70 @@
+get:
+  summary: Get monthly fee report
+  description: >
+    Retrieve an aggregated summary of platform fees collected during a specific
+    month, broken down by transaction type. Covers only transaction-based fees
+    that were collected in real time during settlement.
+
+
+    The report includes the total fees collected and a per-transaction-type
+    breakdown with transaction counts.
+  operationId: getFeeReport
+  tags:
+    - Platform Fee Rules
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: month
+      in: query
+      description: >-
+        Reporting month in YYYY-MM format. Defaults to the current month.
+      required: false
+      schema:
+        type: string
+        pattern: '^\d{4}-\d{2}$'
+        example: '2026-02'
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fee_rules/FeeReport.yaml
+          examples:
+            monthlyReport:
+              summary: February 2026 fee report
+              value:
+                month: '2026-02'
+                totalPlatformFeesCollected: 128450
+                currency: USD
+                lines:
+                  - transactionType: TRANSFER_OUT
+                    transactionCount: 245
+                    platformFeesCollected: 62500
+                    currency: USD
+                  - transactionType: CROSS_BORDER_PAYOUT
+                    transactionCount: 97
+                    platformFeesCollected: 51300
+                    currency: USD
+                  - transactionType: RAMP_OFF
+                    transactionCount: 58
+                    platformFeesCollected: 14650
+                    currency: USD
+    '400':
+      description: Invalid month format
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
