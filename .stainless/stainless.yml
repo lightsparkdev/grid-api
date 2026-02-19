@@ -400,6 +400,32 @@ openapi:
           - "$.components.schemas.ExternalAccountDetailsDestination.allOf[1].properties"
         keys: [ "destinationType" ]
 
+    # ── BaseExternalAccountInfo: ExternalAccountInfo allOf schemas ──
+    - command: remove
+      reason: >-
+        Remove BaseExternalAccountInfo allOf reference from ExternalAccountInfo
+        schemas to avoid conflicting types when allOf merges them with the
+        base schema
+      args:
+        target:
+          - "$.components.schemas.UsAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.ClabeAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.PixAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.IbanAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.UpiAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.NgnAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.CadAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.GbpAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.PhpAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.SgdAccountExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.SparkWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.LightningExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.SolanaWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.TronWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.PolygonWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.BaseWalletExternalAccountInfo.allOf[0]"
+        keys: [ "$ref" ]
+
     # ── beneficiaryType: beneficiary schemas ──
     - command: remove
       reason: >-
