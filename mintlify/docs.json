@@ -259,7 +259,7 @@
           },
           {
             "group": "API documentation",
-            "openapi": "openapi.yaml"
+            "openapi": "https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml"
           }
         ]
       }
