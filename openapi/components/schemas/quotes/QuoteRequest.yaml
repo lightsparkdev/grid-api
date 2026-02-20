@@ -44,6 +44,8 @@ properties:
     type: string
     description: Optional description/memo for the transfer
     example: 'Invoice #1234 payment'
+  purposeOfPayment:
+    $ref: ./PurposeOfPayment.yaml
   senderCustomerInfo:
     type: object
     additionalProperties: true
