@@ -79,7 +79,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/external_accounts/ExternalAccountCreateRequest.yaml
+          $ref: ../../components/schemas/external_accounts/PlatformExternalAccountCreateRequest.yaml
         examples:
           usBankAccount:
             summary: Create external US bank account
