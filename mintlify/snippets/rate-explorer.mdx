@@ -1,0 +1,132 @@
+export const RATE_DATA = {
+  USD: [
+    { currency: 'MXN', flag: '🇲🇽', name: 'Mexican Peso', gridRate: 17.142, wiseRate: 17.018 },
+    { currency: 'PHP', flag: '🇵🇭', name: 'Philippine Peso', gridRate: 55.831, wiseRate: 55.412 },
+    { currency: 'BRL', flag: '🇧🇷', name: 'Brazilian Real', gridRate: 5.694, wiseRate: 5.651 },
+    { currency: 'INR', flag: '🇮🇳', name: 'Indian Rupee', gridRate: 83.912, wiseRate: 83.284 },
+    { currency: 'GBP', flag: '🇬🇧', name: 'British Pound', gridRate: 0.7891, wiseRate: 0.7834 },
+    { currency: 'EUR', flag: '🇪🇺', name: 'Euro', gridRate: 0.9213, wiseRate: 0.9142 },
+    { currency: 'NGN', flag: '🇳🇬', name: 'Nigerian Naira', gridRate: 1542.50, wiseRate: 1530.80 },
+    { currency: 'KES', flag: '🇰🇪', name: 'Kenyan Shilling', gridRate: 129.45, wiseRate: 128.37 },
+  ],
+  EUR: [
+    { currency: 'USD', flag: '🇺🇸', name: 'US Dollar', gridRate: 1.0854, wiseRate: 1.0773 },
+    { currency: 'GBP', flag: '🇬🇧', name: 'British Pound', gridRate: 0.8565, wiseRate: 0.8501 },
+    { currency: 'MXN', flag: '🇲🇽', name: 'Mexican Peso', gridRate: 18.607, wiseRate: 18.453 },
+  ],
+  GBP: [
+    { currency: 'USD', flag: '🇺🇸', name: 'US Dollar', gridRate: 1.2673, wiseRate: 1.2580 },
+    { currency: 'EUR', flag: '🇪🇺', name: 'Euro', gridRate: 1.1675, wiseRate: 1.1589 },
+  ],
+};
+
+export const SOURCE_OPTIONS = [
+  { value: 'USD', flag: '🇺🇸', label: 'USD — US Dollar' },
+  { value: 'EUR', flag: '🇪🇺', label: 'EUR — Euro' },
+  { value: 'GBP', flag: '🇬🇧', label: 'GBP — British Pound' },
+];
+
+export const formatNumber = (num, decimals) => {
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+};
+
+export const RateExplorer = () => {
+  const [sourceCurrency, setSourceCurrency] = React.useState('USD');
+  const [amount, setAmount] = React.useState(1000);
+
+  const corridors = RATE_DATA[sourceCurrency] || [];
+
+  const getDecimals = (rate) => {
+    if (rate >= 100) return 2;
+    if (rate >= 1) return 4;
+    return 4;
+  };
+
+  return (
+    <div className="rate-explorer not-prose">
+      <div className="rate-explorer-controls">
+        <div className="rate-explorer-field">
+          <label className="rate-explorer-label">Source currency</label>
+          <select
+            className="rate-explorer-select"
+            value={sourceCurrency}
+            onChange={(e) => setSourceCurrency(e.target.value)}
+          >
+            {SOURCE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.flag} {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="rate-explorer-field">
+          <label className="rate-explorer-label">Send amount</label>
+          <div className="rate-explorer-input-wrapper">
+            <span className="rate-explorer-input-prefix">{sourceCurrency}</span>
+            <input
+              type="number"
+              className="rate-explorer-input"
+              value={amount}
+              min={1}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setAmount(val > 0 ? val : 1);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rate-explorer-table-wrapper">
+        <table className="rate-explorer-table">
+          <thead>
+            <tr>
+              <th>Destination</th>
+              <th>Grid rate</th>
+              <th>You receive</th>
+              <th>Wise rate</th>
+              <th>Wise receives</th>
+              <th>You save</th>
+            </tr>
+          </thead>
+          <tbody>
+            {corridors.map((row) => {
+              const gridReceive = amount * row.gridRate;
+              const wiseReceive = amount * row.wiseRate;
+              const savings = gridReceive - wiseReceive;
+              const decimals = getDecimals(row.gridRate);
+              const receiveDecimals = row.gridRate >= 100 ? 0 : 2;
+              return (
+                <tr key={row.currency} className="rate-explorer-row">
+                  <td className="rate-explorer-dest">
+                    <span className="rate-explorer-flag">{row.flag}</span>
+                    <span className="rate-explorer-currency-code">{row.currency}</span>
+                    <span className="rate-explorer-currency-name">{row.name}</span>
+                  </td>
+                  <td className="rate-explorer-rate">{formatNumber(row.gridRate, decimals)}</td>
+                  <td className="rate-explorer-receive">
+                    {formatNumber(gridReceive, receiveDecimals)} {row.currency}
+                  </td>
+                  <td className="rate-explorer-rate rate-explorer-wise">{formatNumber(row.wiseRate, decimals)}</td>
+                  <td className="rate-explorer-receive rate-explorer-wise">
+                    {formatNumber(wiseReceive, receiveDecimals)} {row.currency}
+                  </td>
+                  <td className={`rate-explorer-savings ${savings > 0 ? 'positive' : ''}`}>
+                    {savings > 0 ? '+' : ''}{formatNumber(savings, receiveDecimals)} {row.currency}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rate-explorer-disclaimer">
+        Sample rates for illustration only. Actual rates are provided in real time via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
+      </div>
+    </div>
+  );
+};

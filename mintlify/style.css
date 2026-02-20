@@ -3963,3 +3963,307 @@ html.dark .trusted-by-logo {
 html.dark .homepage-divider {
   border-color: var(--ls-white-06);
 }
+
+/* ===========================================
+   Rate Explorer
+   =========================================== */
+
+.rate-explorer {
+  width: 100%;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  overflow: hidden;
+}
+
+html.dark .rate-explorer {
+  background: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+/* Controls row */
+.rate-explorer-controls {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 0.5px solid var(--ls-black-10);
+}
+
+html.dark .rate-explorer-controls {
+  border-color: var(--ls-white-06);
+}
+
+@media (max-width: 640px) {
+  .rate-explorer-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.rate-explorer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rate-explorer-label {
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 16px;
+  color: var(--ls-gray-500);
+  font-feature-settings: "salt" 1;
+}
+
+.rate-explorer-select {
+  height: 36px;
+  padding: 0 32px 0 10px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%237C7C7C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+html.dark .rate-explorer-select {
+  color: var(--ls-gray-050);
+  background-color: var(--ls-gray-800);
+  border-color: var(--ls-white-06);
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23989898' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.rate-explorer-select:focus {
+  outline: none;
+  border-color: var(--ls-sky-500);
+  box-shadow: 0 0 0 1px var(--ls-sky-500);
+}
+
+.rate-explorer-input-wrapper {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  overflow: hidden;
+}
+
+html.dark .rate-explorer-input-wrapper {
+  background: var(--ls-gray-800);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-input-wrapper:focus-within {
+  border-color: var(--ls-sky-500);
+  box-shadow: 0 0 0 1px var(--ls-sky-500);
+}
+
+.rate-explorer-input-prefix {
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 450;
+  font-family: "Suisse Intl Mono", monospace;
+  color: var(--ls-gray-400);
+  border-right: 0.5px solid var(--ls-black-10);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+html.dark .rate-explorer-input-prefix {
+  color: var(--ls-gray-400);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-input {
+  flex: 1;
+  height: 100%;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: transparent;
+  border: none;
+  outline: none;
+  min-width: 80px;
+}
+
+html.dark .rate-explorer-input {
+  color: var(--ls-gray-050);
+}
+
+/* Remove number input spinners */
+.rate-explorer-input::-webkit-outer-spin-button,
+.rate-explorer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rate-explorer-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Table */
+.rate-explorer-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rate-explorer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+  font-feature-settings: "salt" 1;
+}
+
+.rate-explorer-table thead th {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 16px;
+  color: var(--ls-gray-400);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 0.5px solid var(--ls-black-10);
+  background: var(--ls-gray-025);
+}
+
+html.dark .rate-explorer-table thead th {
+  color: var(--ls-gray-400);
+  border-color: var(--ls-white-06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.rate-explorer-table tbody td {
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--ls-black-06);
+  white-space: nowrap;
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-table tbody td {
+  border-color: var(--ls-white-04);
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rate-explorer-row:hover td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+html.dark .rate-explorer-row:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Destination cell */
+.rate-explorer-dest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rate-explorer-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.rate-explorer-currency-code {
+  font-weight: 500;
+  font-family: "Suisse Intl Mono", monospace;
+  font-size: 13px;
+}
+
+.rate-explorer-currency-name {
+  color: var(--ls-gray-400);
+  font-size: 13px;
+}
+
+/* Rate columns */
+.rate-explorer-rate {
+  font-family: "Suisse Intl Mono", monospace;
+  font-size: 13px;
+}
+
+.rate-explorer-receive {
+  font-family: "Suisse Intl Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rate-explorer-wise {
+  color: var(--ls-gray-400) !important;
+}
+
+html.dark .rate-explorer-wise {
+  color: var(--ls-gray-500) !important;
+}
+
+/* Savings column */
+.rate-explorer-savings {
+  font-family: "Suisse Intl Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ls-gray-400);
+}
+
+.rate-explorer-savings.positive {
+  color: var(--ls-green-600);
+}
+
+/* Disclaimer */
+.rate-explorer-disclaimer {
+  padding: 12px 20px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ls-gray-400);
+  border-top: 0.5px solid var(--ls-black-06);
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-disclaimer {
+  border-color: var(--ls-white-04);
+}
+
+.rate-explorer-disclaimer a {
+  color: var(--ls-sky-500);
+  text-decoration: none;
+}
+
+.rate-explorer-disclaimer a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .rate-explorer-table {
+    font-size: 13px;
+  }
+
+  .rate-explorer-table thead th,
+  .rate-explorer-table tbody td {
+    padding: 10px 12px;
+  }
+
+  .rate-explorer-currency-name {
+    display: none;
+  }
+
+  .rate-explorer-disclaimer {
+    padding: 10px 12px;
+  }
+}
