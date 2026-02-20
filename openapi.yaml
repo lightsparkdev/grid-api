@@ -7576,6 +7576,22 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    PurposeOfPayment:
+      type: string
+      description: The purpose of the payment. This may be required when sending to certain geographies such as India.
+      enum:
+        - GIFT
+        - SELF
+        - GOODS_OR_SERVICES
+        - EDUCATION
+        - HEALTH_OR_MEDICAL
+        - REAL_ESTATE_PURCHASE
+        - TAX_PAYMENT
+        - LOAN_PAYMENT
+        - UTILITY_BILL
+        - DONATION
+        - TRAVEL
+        - OTHER
     QuoteRequest:
       type: object
       required:
@@ -7613,6 +7629,8 @@ components:
           type: string
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
         senderCustomerInfo:
           type: object
           additionalProperties: true
