@@ -1,0 +1,66 @@
+---
+title: "Flow Builder"
+description: "Design your payment flow and get the API calls for your exact use case"
+mode: "custom"
+---
+
+export const FlowBuilderEmbed = () => {
+  const [src, setSrc] = React.useState(null);
+
+  React.useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setSrc('http://localhost:3000/?embed=true&theme=' + (isDark ? 'dark' : 'light'));
+
+    let ignoreNextMutation = false;
+
+    const sendTheme = () => {
+      const t = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const iframe = document.getElementById('flow-builder-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
+      }
+    };
+
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'theme-request') {
+        sendTheme();
+        return;
+      }
+      if (e.data && e.data.type === 'theme-sync') {
+        const isDark = document.documentElement.classList.contains('dark');
+        const wantsDark = e.data.theme === 'dark';
+        if (isDark !== wantsDark) {
+          ignoreNextMutation = true;
+          document.documentElement.classList.toggle('dark');
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    const obs = new MutationObserver(() => {
+      if (ignoreNextMutation) { ignoreNextMutation = false; return; }
+      sendTheme();
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      obs.disconnect();
+    };
+  }, []);
+
+  if (!src) return null;
+
+  return (
+    <iframe
+      id="flow-builder-iframe"
+      src={src}
+      title="Grid Flow Builder"
+      allow="clipboard-write"
+    />
+  );
+};
+
+<div id="flow-builder-container">
+  <FlowBuilderEmbed />
+</div>
