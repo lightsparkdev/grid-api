@@ -50,7 +50,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Info>
 
 <Accordion title="Including purpose of payment">
-  For external account or UMA destinations, some payment corridors require a purpose of payment. Include it in the `senderCustomerInfo` object:
+  For external account or UMA destinations, some payment corridors require a purpose of payment. Include the `purposeOfPayment` field in the quote request:
 
   ```json
   {
@@ -58,9 +58,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
     "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
-    "senderCustomerInfo": {
-      "PURPOSE_OF_PAYMENT": "GOODS_OR_SERVICES"
-    }
+    "purposeOfPayment": "GOODS_OR_SERVICES"
   }
   ```
 
