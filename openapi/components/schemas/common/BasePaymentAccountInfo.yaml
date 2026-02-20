@@ -11,6 +11,7 @@ discriminator:
     BRL_ACCOUNT: ./PaymentBrlAccountInfo.yaml
     MXN_ACCOUNT: ./PaymentMxnAccountInfo.yaml
     DKK_ACCOUNT: ./PaymentDkkAccountInfo.yaml
+    EUR_ACCOUNT: ./PaymentEurAccountInfo.yaml
     INR_ACCOUNT: ./PaymentInrAccountInfo.yaml
     NGN_ACCOUNT: ./PaymentNgnAccountInfo.yaml
     CAD_ACCOUNT: ./PaymentCadAccountInfo.yaml

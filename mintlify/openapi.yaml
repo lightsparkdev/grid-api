@@ -4791,6 +4791,7 @@ components:
           BRL_ACCOUNT: '#/components/schemas/PaymentBrlAccountInfo'
           MXN_ACCOUNT: '#/components/schemas/PaymentMxnAccountInfo'
           DKK_ACCOUNT: '#/components/schemas/PaymentDkkAccountInfo'
+          EUR_ACCOUNT: '#/components/schemas/PaymentEurAccountInfo'
           INR_ACCOUNT: '#/components/schemas/PaymentInrAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/PaymentNgnAccountInfo'
           CAD_ACCOUNT: '#/components/schemas/PaymentCadAccountInfo'
@@ -4925,6 +4926,70 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/DkkAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    EurAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - EUR_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - AT
+              - BE
+              - CY
+              - EE
+              - FI
+              - FR
+              - DE
+              - GR
+              - IE
+              - IT
+              - LV
+              - LT
+              - LU
+              - MT
+              - NL
+              - PT
+              - SK
+              - SI
+              - ES
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - SEPA
+        iban:
+          type: string
+          description: International Bank Account Number
+          example: DE89370400440532013000
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$
+        bic:
+          type: string
+          description: Bank Identifier Code (SWIFT code)
+          example: COBADEFFXXX
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    PaymentEurAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/EurAccountInfo'
         - type: object
           required:
             - reference
@@ -5591,6 +5656,7 @@ components:
         - BRL_ACCOUNT
         - MXN_ACCOUNT
         - DKK_ACCOUNT
+        - EUR_ACCOUNT
         - INR_ACCOUNT
         - NGN_ACCOUNT
         - CAD_ACCOUNT
@@ -5667,6 +5733,8 @@ components:
               $ref: '#/components/schemas/PaymentMxnAccountInfo'
             - title: DKK Account
               $ref: '#/components/schemas/PaymentDkkAccountInfo'
+            - title: EUR Account
+              $ref: '#/components/schemas/PaymentEurAccountInfo'
             - title: INR Account
               $ref: '#/components/schemas/PaymentInrAccountInfo'
             - title: NGN Account
@@ -5708,6 +5776,7 @@ components:
               BRL_ACCOUNT: '#/components/schemas/PaymentBrlAccountInfo'
               MXN_ACCOUNT: '#/components/schemas/PaymentMxnAccountInfo'
               DKK_ACCOUNT: '#/components/schemas/PaymentDkkAccountInfo'
+              EUR_ACCOUNT: '#/components/schemas/PaymentEurAccountInfo'
               INR_ACCOUNT: '#/components/schemas/PaymentInrAccountInfo'
               NGN_ACCOUNT: '#/components/schemas/PaymentNgnAccountInfo'
               CAD_ACCOUNT: '#/components/schemas/PaymentCadAccountInfo'
@@ -5815,6 +5884,7 @@ components:
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
+          EUR_ACCOUNT: '#/components/schemas/EurExternalAccountInfo'
           HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
           IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
           INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
@@ -6126,6 +6196,58 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EurBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    EurExternalAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EurAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EurBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EurBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     HkdBeneficiary:
       type: object
@@ -6559,6 +6681,7 @@ components:
         - BASE_WALLET
         - BRL_ACCOUNT
         - DKK_ACCOUNT
+        - EUR_ACCOUNT
         - HKD_ACCOUNT
         - IDR_ACCOUNT
         - INR_ACCOUNT
@@ -6608,6 +6731,8 @@ components:
           $ref: '#/components/schemas/BrlExternalAccountInfo'
         - title: DKK Account
           $ref: '#/components/schemas/DkkExternalAccountInfo'
+        - title: EUR Account
+          $ref: '#/components/schemas/EurExternalAccountInfo'
         - title: GBP Account
           $ref: '#/components/schemas/GbpExternalAccountInfo'
         - title: HKD Account
@@ -6647,6 +6772,7 @@ components:
         mapping:
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
+          EUR_ACCOUNT: '#/components/schemas/EurExternalAccountInfo'
           GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
           HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
           IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'

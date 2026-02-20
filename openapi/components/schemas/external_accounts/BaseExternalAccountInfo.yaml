@@ -18,6 +18,7 @@ discriminator:
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
     BRL_ACCOUNT: ./BrlExternalAccountInfo.yaml
     DKK_ACCOUNT: ./DkkExternalAccountInfo.yaml
+    EUR_ACCOUNT: ./EurExternalAccountInfo.yaml
     HKD_ACCOUNT: ./HkdExternalAccountInfo.yaml
     IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml
     INR_ACCOUNT: ./InrExternalAccountInfo.yaml
