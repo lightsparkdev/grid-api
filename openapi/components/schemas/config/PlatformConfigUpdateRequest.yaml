@@ -1,0 +1,12 @@
+type: object
+properties:
+  umaDomain:
+    type: string
+    example: mycompany.com
+  webhookEndpoint:
+    type: string
+    example: https://api.mycompany.com/webhooks/uma
+  supportedCurrencies:
+    type: array
+    items:
+      $ref: ./PlatformCurrencyConfig.yaml

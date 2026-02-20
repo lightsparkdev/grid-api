@@ -26,19 +26,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          required:
-            - amount
-          properties:
-            amount:
-              type: integer
-              format: int64
-              description: >-
-                Amount to add in the smallest unit of the account's currency (e.g.,
-                cents for USD/EUR, satoshis for BTC)
-              exclusiveMinimum: 0
-              maximum: 100000000000
-              example: 100000
+          $ref: ../../components/schemas/sandbox/SandboxFundRequest.yaml
         examples:
           fundUSDAccount:
             summary: Fund USD internal account with $1,000

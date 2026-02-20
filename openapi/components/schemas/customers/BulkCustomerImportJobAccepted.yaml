@@ -1,0 +1,14 @@
+type: object
+required:
+  - jobId
+  - status
+properties:
+  jobId:
+    type: string
+    description: Unique identifier for the bulk import job
+    example: Job:019542f5-b3e7-1d02-0000-000000000006
+  status:
+    type: string
+    enum:
+      - PENDING
+      - PROCESSING

@@ -11,21 +11,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          title: tokenCreate
-          properties:
-            name:
-              type: string
-              description: Name of the token to help identify it
-              example: Sandbox read-only
-            permissions:
-              type: array
-              description: A list of permissions to grant to the token
-              items:
-                $ref: ../../components/schemas/tokens/Permission.yaml
-          required:
-            - name
-            - permissions
+          $ref: ../../components/schemas/tokens/ApiTokenCreateRequest.yaml
   responses:
     '201':
       description: API token created successfully

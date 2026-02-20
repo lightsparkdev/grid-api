@@ -23,15 +23,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          properties:
-            receiverCustomerInfo:
-              type: object
-              additionalProperties: true
-              description: >-
-                Information about the recipient, provided by the platform if
-                requested in the original webhook via
-                `requestedReceiverCustomerInfoFields`.
+          $ref: ../../components/schemas/transactions/ApprovePaymentRequest.yaml
   responses:
     '200':
       description: Payment approved successfully

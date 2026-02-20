@@ -25,20 +25,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              kycUrl:
-                type: string
-                description: A hosted KYC link for your customer to complete KYC
-                example: "https://example.com/redirect"
-              platformCustomerId:
-                type: string
-                description: The platform id of the customer to onboard
-                example: 019542f5-b3e7-1d02-0000-000000000001
-              customerId:
-                type: string
-                description: The customer id of the newly created customer on the system
-                example: Customer:019542f5-b3e7-1d02-0000-000000000001
+            $ref: ../../components/schemas/customers/KycLinkResponse.yaml
     '401':
       description: Unauthorized
       content:

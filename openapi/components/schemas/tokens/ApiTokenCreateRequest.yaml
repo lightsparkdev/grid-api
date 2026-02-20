@@ -1,0 +1,14 @@
+type: object
+required:
+  - name
+  - permissions
+properties:
+  name:
+    type: string
+    description: Name of the token to help identify it
+    example: Sandbox read-only
+  permissions:
+    type: array
+    description: A list of permissions to grant to the token
+    items:
+      $ref: ./Permission.yaml
