@@ -1,7 +1,7 @@
 type: object
 required:
   - timestamp
-  - webhookId
+  - id
   - type
 properties:
   timestamp:
@@ -11,7 +11,7 @@ properties:
       ISO8601 timestamp when the webhook was sent (can be used to
       prevent replay attacks)
     example: '2025-08-15T14:32:00Z'
-  webhookId:
+  id:
     type: string
     description: >-
       Unique identifier for this webhook delivery (can be used for

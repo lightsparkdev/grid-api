@@ -6613,7 +6613,7 @@ components:
     Quote:
       type: object
       required:
-        - quoteId
+        - id
         - status
         - expiresAt
         - createdAt
@@ -6627,7 +6627,7 @@ components:
         - feesIncluded
         - transactionId
       properties:
-        quoteId:
+        id:
           type: string
           description: Unique identifier for this quote
           example: Quote:019542f5-b3e7-1d02-0000-000000000006
@@ -6822,11 +6822,11 @@ components:
     BulkCustomerImportJob:
       type: object
       required:
-        - jobId
+        - id
         - status
         - progress
       properties:
-        jobId:
+        id:
           type: string
           description: Unique identifier for the bulk import job
           example: Job:019542f5-b3e7-1d02-0000-000000000006
@@ -7075,7 +7075,7 @@ components:
       type: object
       required:
         - timestamp
-        - webhookId
+        - id
         - type
       properties:
         timestamp:
@@ -7083,7 +7083,7 @@ components:
           format: date-time
           description: ISO8601 timestamp when the webhook was sent (can be used to prevent replay attacks)
           example: '2025-08-15T14:32:00Z'
-        webhookId:
+        id:
           type: string
           description: Unique identifier for this webhook delivery (can be used for idempotency)
           example: Webhook:019542f5-b3e7-1d02-0000-000000000007
