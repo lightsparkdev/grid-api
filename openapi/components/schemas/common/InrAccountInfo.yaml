@@ -1,12 +1,27 @@
 type: object
 required:
 - accountType
+- countries
+- paymentRails
 - vpa
 properties:
   accountType:
     type: string
     enum:
     - INR_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - IN
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - UPI
+      - IMPS
   vpa:
     type: string
     description: The VPA of the bank

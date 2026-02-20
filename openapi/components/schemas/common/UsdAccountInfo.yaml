@@ -1,6 +1,8 @@
 type: object
 required:
 - accountType
+- countries
+- paymentRails
 - accountNumber
 - routingNumber
 properties:
@@ -8,6 +10,21 @@ properties:
     type: string
     enum:
     - USD_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - US
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - ACH
+      - WIRE
+      - RTP
+      - FEDNOW
   accountNumber:
     type: string
     description: The account number of the bank

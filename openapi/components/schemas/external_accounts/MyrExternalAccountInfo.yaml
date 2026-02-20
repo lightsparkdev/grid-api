@@ -10,9 +10,9 @@ allOf:
       - title: Individual Beneficiary
         $ref: ../common/MyrBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ./BusinessBeneficiary.yaml
+        $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
           INDIVIDUAL: ../common/MyrBeneficiary.yaml
-          BUSINESS: ./BusinessBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

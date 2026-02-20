@@ -1,0 +1,29 @@
+type: object
+required:
+- beneficiaryType
+- legalName
+properties:
+  beneficiaryType:
+    type: string
+    enum:
+    - BUSINESS
+  legalName:
+    type: string
+    description: The legal name of the business
+  registrationNumber:
+    type: string
+    description: The registration number of the business
+  taxId:
+    type: string
+    description: The tax identification number of the business
+  email:
+    type: string
+    description: The email of the beneficiary
+  phoneNumber:
+    type: string
+    description: The phone number of the beneficiary
+  countryOfResidence:
+    type: string
+    description: The country of residence of the beneficiary
+  address:
+    $ref: ./Address.yaml

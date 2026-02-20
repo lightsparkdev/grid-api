@@ -10,9 +10,9 @@ allOf:
       - title: Individual Beneficiary
         $ref: ../common/HkdBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ./BusinessBeneficiary.yaml
+        $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
           INDIVIDUAL: ../common/HkdBeneficiary.yaml
-          BUSINESS: ./BusinessBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml
