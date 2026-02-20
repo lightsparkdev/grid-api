@@ -1,6 +1,8 @@
 type: object
 required:
 - accountType
+- countries
+- paymentRails
 - sortCode
 - accountNumber
 properties:
@@ -8,6 +10,18 @@ properties:
     type: string
     enum:
     - GBP_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - GB
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - FASTER_PAYMENTS
   sortCode:
     type: string
     description: UK bank sort code (6 digits, may include hyphens)

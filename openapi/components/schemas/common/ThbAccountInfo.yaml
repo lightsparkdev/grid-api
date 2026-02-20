@@ -1,6 +1,8 @@
 type: object
 required:
 - accountType
+- countries
+- paymentRails
 - bankName
 - accountNumber
 properties:
@@ -8,6 +10,18 @@ properties:
     type: string
     enum:
     - THB_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - TH
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - BANK_TRANSFER
   bankName:
     type: string
     description: The bank name of the bank

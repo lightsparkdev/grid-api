@@ -14,16 +14,36 @@ properties:
     example: true
   accountOrWalletInfo:
     oneOf:
-      - title: CLABE Account
-        $ref: ../common/PaymentClabeAccountInfo.yaml
-      - title: US Bank Account
-        $ref: ../common/PaymentUsAccountInfo.yaml
-      - title: PIX Account
-        $ref: ../common/PaymentPixAccountInfo.yaml
-      - title: IBAN Account
-        $ref: ../common/PaymentIbanAccountInfo.yaml
-      - title: UPI Account
-        $ref: ../common/PaymentUpiAccountInfo.yaml
+      - title: USD Bank Account
+        $ref: ../common/PaymentUsdAccountInfo.yaml
+      - title: BRL Account
+        $ref: ../common/PaymentBrlAccountInfo.yaml
+      - title: MXN Account
+        $ref: ../common/PaymentMxnAccountInfo.yaml
+      - title: DKK Account
+        $ref: ../common/PaymentDkkAccountInfo.yaml
+      - title: INR Account
+        $ref: ../common/PaymentInrAccountInfo.yaml
+      - title: NGN Account
+        $ref: ../common/PaymentNgnAccountInfo.yaml
+      - title: CAD Account
+        $ref: ../common/PaymentCadAccountInfo.yaml
+      - title: GBP Account
+        $ref: ../common/PaymentGbpAccountInfo.yaml
+      - title: HKD Account
+        $ref: ../common/PaymentHkdAccountInfo.yaml
+      - title: IDR Account
+        $ref: ../common/PaymentIdrAccountInfo.yaml
+      - title: MYR Account
+        $ref: ../common/PaymentMyrAccountInfo.yaml
+      - title: PHP Account
+        $ref: ../common/PaymentPhpAccountInfo.yaml
+      - title: SGD Account
+        $ref: ../common/PaymentSgdAccountInfo.yaml
+      - title: THB Account
+        $ref: ../common/PaymentThbAccountInfo.yaml
+      - title: VND Account
+        $ref: ../common/PaymentVndAccountInfo.yaml
       - title: Spark Wallet
         $ref: ../common/PaymentSparkWalletInfo.yaml
       - title: Lightning Invoice
@@ -39,11 +59,21 @@ properties:
     discriminator:
       propertyName: accountType
       mapping:
-        CLABE: ../common/PaymentClabeAccountInfo.yaml
-        US_ACCOUNT: ../common/PaymentUsAccountInfo.yaml
-        PIX: ../common/PaymentPixAccountInfo.yaml
-        IBAN: ../common/PaymentIbanAccountInfo.yaml
-        UPI: ../common/PaymentUpiAccountInfo.yaml
+        USD_ACCOUNT: ../common/PaymentUsdAccountInfo.yaml
+        BRL_ACCOUNT: ../common/PaymentBrlAccountInfo.yaml
+        MXN_ACCOUNT: ../common/PaymentMxnAccountInfo.yaml
+        DKK_ACCOUNT: ../common/PaymentDkkAccountInfo.yaml
+        INR_ACCOUNT: ../common/PaymentInrAccountInfo.yaml
+        NGN_ACCOUNT: ../common/PaymentNgnAccountInfo.yaml
+        CAD_ACCOUNT: ../common/PaymentCadAccountInfo.yaml
+        GBP_ACCOUNT: ../common/PaymentGbpAccountInfo.yaml
+        HKD_ACCOUNT: ../common/PaymentHkdAccountInfo.yaml
+        IDR_ACCOUNT: ../common/PaymentIdrAccountInfo.yaml
+        MYR_ACCOUNT: ../common/PaymentMyrAccountInfo.yaml
+        PHP_ACCOUNT: ../common/PaymentPhpAccountInfo.yaml
+        SGD_ACCOUNT: ../common/PaymentSgdAccountInfo.yaml
+        THB_ACCOUNT: ../common/PaymentThbAccountInfo.yaml
+        VND_ACCOUNT: ../common/PaymentVndAccountInfo.yaml
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
         SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml

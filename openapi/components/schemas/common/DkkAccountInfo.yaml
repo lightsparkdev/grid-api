@@ -1,12 +1,27 @@
 type: object
 required:
 - accountType
+- countries
+- paymentRails
 - iban
 properties:
   accountType:
     type: string
     enum:
     - DKK_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - DK
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - SEPA
+      - SEPA_INSTANT
   iban:
     type: string
     description: The IBAN of the bank

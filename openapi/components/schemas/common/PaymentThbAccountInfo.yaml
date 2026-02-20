@@ -1,6 +1,6 @@
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./IbanAccountInfo.yaml
+  - $ref: ./ThbAccountInfo.yaml
   - type: object
     required:
       - reference
