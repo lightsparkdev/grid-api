@@ -298,6 +298,10 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
 - Quote is created and executed in one API call
 - Best for: Rewards distribution, micro-payments, time-sensitive transfers
 
+<Info>
+`immediatelyExecute` can only be used for quotes with a source that is either an internal account or has direct pull functionality (e.g., ACH pull with an external account).
+</Info>
+
 <Warning>
 Customer doesn't see rate before execution. If you want to lock a quote and confirm fees and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
 </Warning>
