@@ -9,7 +9,7 @@ export const FlowBuilderEmbed = () => {
 
   React.useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
-    setSrc('http://localhost:3000/?embed=true&theme=' + (isDark ? 'dark' : 'light'));
+    setSrc('https://grid-visualizer-opal.vercel.app/?embed=true&theme=' + (isDark ? 'dark' : 'light'));
 
     let ignoreNextMutation = false;
 
