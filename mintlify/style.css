@@ -96,6 +96,7 @@
   --ls-sky-500: #00B3E0;
   --ls-teal-500: #44DDB5;
   --ls-green-600: #11A967;
+  --ls-green-400: #4ADE80;
   --ls-yellow-600: #E09000;
   --ls-orange-500: #F77D26;
   --ls-pink-800: #A90087;
@@ -4046,6 +4047,10 @@ html.dark .rate-explorer-select {
   box-shadow: 0 0 0 1px var(--ls-sky-500);
 }
 
+.rate-explorer-corridor-select {
+  min-width: 220px;
+}
+
 .rate-explorer-input-wrapper {
   display: flex;
   align-items: center;
@@ -4114,7 +4119,243 @@ html.dark .rate-explorer-input {
   -moz-appearance: textfield;
 }
 
-/* Table */
+/* Summary banner */
+.rate-explorer-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(16, 185, 129, 0.04);
+  border-bottom: 0.5px solid var(--ls-black-10);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ls-gray-600);
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-summary {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: var(--ls-white-06);
+  color: var(--ls-gray-300);
+}
+
+.rate-explorer-summary strong {
+  color: var(--ls-gray-950);
+  font-weight: 550;
+}
+
+html.dark .rate-explorer-summary strong {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-summary-dot {
+  color: var(--ls-gray-300);
+}
+
+html.dark .rate-explorer-summary-dot {
+  color: var(--ls-gray-600);
+}
+
+/* Currency filter bar */
+.rate-explorer-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--ls-black-10);
+}
+
+html.dark .rate-explorer-filter {
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-filter-label {
+  font-size: 13px;
+  font-weight: 400;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-400);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.rate-explorer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rate-explorer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 18px;
+  color: var(--ls-gray-700);
+  background: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: 100px;
+  white-space: nowrap;
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-chip {
+  color: var(--ls-gray-200);
+  background: var(--ls-gray-800);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ls-gray-400);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.rate-explorer-chip-remove:hover {
+  color: var(--ls-gray-700);
+  background: var(--ls-black-06);
+}
+
+html.dark .rate-explorer-chip-remove:hover {
+  color: var(--ls-gray-200);
+  background: var(--ls-white-06);
+}
+
+.rate-explorer-search-wrapper {
+  position: relative;
+}
+
+.rate-explorer-search {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  outline: none;
+  min-width: 140px;
+}
+
+html.dark .rate-explorer-search {
+  color: var(--ls-gray-050);
+  background: var(--ls-gray-800);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-search:focus {
+  border-color: var(--ls-sky-500);
+  box-shadow: 0 0 0 1px var(--ls-sky-500);
+}
+
+.rate-explorer-search::placeholder {
+  color: var(--ls-gray-400);
+}
+
+.rate-explorer-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 260px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 50;
+}
+
+html.dark .rate-explorer-dropdown {
+  background: var(--ls-gray-850);
+  border-color: var(--ls-white-06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.rate-explorer-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-dropdown-item {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-dropdown-item:hover {
+  background: var(--ls-gray-050);
+}
+
+html.dark .rate-explorer-dropdown-item:hover {
+  background: var(--ls-gray-800);
+}
+
+.rate-explorer-filter-actions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.rate-explorer-filter-btn {
+  font-size: 13px;
+  font-weight: 450;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-sky-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.rate-explorer-filter-btn:hover {
+  text-decoration: underline;
+}
+
+/* Reset Mintlify's auto-injected table wrapper — scoped to rate-explorer only */
+.rate-explorer [data-table-wrapper] {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.rate-explorer [data-table-wrapper] > div {
+  padding: 0 !important;
+}
+
+/* Table — override #content table td/th { font-size: 15px !important } */
+#content .rate-explorer-table thead th {
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+#content .rate-explorer-table tbody td {
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
 .rate-explorer-table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -4123,7 +4364,7 @@ html.dark .rate-explorer-input {
 .rate-explorer-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 20px;
   font-feature-settings: "salt" 1;
 }
@@ -4170,6 +4411,14 @@ html.dark .rate-explorer-row:hover td {
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* Empty state */
+.rate-explorer-empty {
+  text-align: center;
+  color: var(--ls-gray-400) !important;
+  padding: 32px 20px !important;
+  white-space: normal !important;
+}
+
 /* Destination cell */
 .rate-explorer-dest {
   display: flex;
@@ -4185,44 +4434,95 @@ html.dark .rate-explorer-row:hover td {
 .rate-explorer-currency-code {
   font-weight: 500;
   font-family: "Suisse Intl Mono", monospace;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .rate-explorer-currency-name {
   color: var(--ls-gray-400);
-  font-size: 13px;
+  font-size: 14px;
 }
 
-/* Rate columns */
-.rate-explorer-rate {
+/* Grid receive cell (primary column) */
+.rate-explorer-grid-receive {
+  vertical-align: middle;
+}
+
+.rate-explorer-receive-amount {
   font-family: "Suisse Intl Mono", monospace;
   font-size: 13px;
+  font-weight: 600;
+  color: var(--ls-gray-950);
 }
 
-.rate-explorer-receive {
+html.dark .rate-explorer-receive-amount {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-rate-subtitle {
+  font-family: "Suisse Intl Mono", monospace;
+  font-size: 11px;
+  color: var(--ls-gray-400);
+  margin-top: 0;
+}
+
+html.dark .rate-explorer-rate-subtitle {
+  color: var(--ls-gray-500);
+}
+
+/* Competitor cells (Bank est. and Wise) */
+.rate-explorer-competitor {
   font-family: "Suisse Intl Mono", monospace;
   font-size: 13px;
-  font-weight: 500;
-}
-
-.rate-explorer-wise {
   color: var(--ls-gray-400) !important;
 }
 
-html.dark .rate-explorer-wise {
+html.dark .rate-explorer-competitor {
   color: var(--ls-gray-500) !important;
 }
 
-/* Savings column */
-.rate-explorer-savings {
+/* Grid advantage cell */
+.rate-explorer-advantage {
   font-family: "Suisse Intl Mono", monospace;
   font-size: 13px;
   font-weight: 500;
-  color: var(--ls-gray-400);
+  color: var(--ls-green-600) !important;
+  white-space: nowrap;
 }
 
-.rate-explorer-savings.positive {
-  color: var(--ls-green-600);
+html.dark .rate-explorer-advantage {
+  color: var(--ls-green-400) !important;
+}
+
+/* Week cell in historical table */
+.rate-explorer-week {
+  font-size: 13px;
+  font-weight: 450;
+  white-space: nowrap;
+}
+
+/* Historical section heading */
+.rate-explorer-historical-heading {
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+
+.rate-explorer-historical-heading h3 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+  color: var(--ls-gray-950);
+  margin: 0 0 4px;
+}
+
+html.dark .rate-explorer-historical-heading h3 {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-historical-heading p {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ls-gray-500);
+  margin: 0;
 }
 
 /* Disclaimer */
@@ -4265,5 +4565,30 @@ html.dark .rate-explorer-disclaimer {
 
   .rate-explorer-disclaimer {
     padding: 10px 12px;
+  }
+
+  .rate-explorer-summary {
+    padding: 10px 12px;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .rate-explorer-rate-subtitle {
+    font-size: 10px;
+  }
+
+  .rate-explorer-historical-heading {
+    margin-top: 24px;
+    margin-bottom: 12px;
+  }
+
+  .rate-explorer-filter {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .rate-explorer-filter-actions {
+    margin-left: 0;
+    width: 100%;
   }
 }
