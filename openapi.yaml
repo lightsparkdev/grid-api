@@ -1304,7 +1304,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
+                $ref: '#/components/schemas/TransactionOneOf'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1398,7 +1398,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
+                $ref: '#/components/schemas/TransactionOneOf'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -2062,7 +2062,7 @@ paths:
                     type: array
                     description: List of transactions matching the criteria
                     items:
-                      $ref: '#/components/schemas/Transaction'
+                      $ref: '#/components/schemas/TransactionOneOf'
                   hasMore:
                     type: boolean
                     description: Indicates if more results are available beyond this page
@@ -2112,7 +2112,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
+                $ref: '#/components/schemas/TransactionOneOf'
         '401':
           description: Unauthorized
           content:
@@ -5838,6 +5838,32 @@ components:
             Optional Plaid account ID if the customer selected a specific account.
             If not provided, the default account will be used.
           example: plaid_account_id_123
+    IncomingTransaction:
+      allOf:
+        - $ref: '#/components/schemas/Transaction'
+        - type: object
+          required:
+            - type
+            - receivedAmount
+          properties:
+            type:
+              type: string
+              enum:
+                - INCOMING
+            source:
+              $ref: '#/components/schemas/TransactionSourceOneOf'
+            receivedAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount received in the recipient's currency
+            reconciliationInstructions:
+              $ref: '#/components/schemas/ReconciliationInstructions'
+              description: Included for all transactions except those with "CREATED" status
+            rateDetails:
+              $ref: '#/components/schemas/IncomingRateDetails'
+              description: Details about the rate and fees for the transaction.
+            failureReason:
+              $ref: '#/components/schemas/IncomingTransactionFailureReason'
+              description: If the transaction failed, this field provides the reason for failure.
     Transaction:
       type: object
       required:
@@ -5925,6 +5951,7 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionSource'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
+          REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
     UmaAddressTransactionSource:
       allOf:
         - $ref: '#/components/schemas/BaseTransactionSource'
@@ -5942,6 +5969,27 @@ components:
               description: UMA address of the sender
               example: $sender@uma.domain.com
           description: UMA address source details
+    RealtimeFundingTransactionSource:
+      allOf:
+        - $ref: '#/components/schemas/BaseTransactionSource'
+        - type: object
+          required:
+            - currency
+            - sourceType
+          properties:
+            sourceType:
+              type: string
+              enum:
+                - REALTIME_FUNDING
+            customerId:
+              type: string
+              description: The customer on whose behalf the transaction was initiated.
+              example: Customer:019542f5-b3e7-1d02-0000-000000000009
+            currency:
+              type: string
+              description: Currency code for the funding source
+              example: USDC
+          description: Transaction was funded using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
     TransactionSourceType:
       type: string
       enum:
@@ -5956,86 +6004,14 @@ components:
           $ref: '#/components/schemas/AccountTransactionSource'
         - title: UMA Address Source
           $ref: '#/components/schemas/UmaAddressTransactionSource'
+        - title: Real-time Funding Source
+          $ref: '#/components/schemas/RealtimeFundingTransactionSource'
       discriminator:
         propertyName: sourceType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionSource'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
-    ReconciliationInstructions:
-      type: object
-      required:
-        - reference
-      properties:
-        reference:
-          type: string
-          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
-          example: UMA-Q12345-REF
-    IncomingRateDetails:
-      description: Details about the rate and fees for an incoming transaction.
-      type: object
-      required:
-        - gridApiMultiplier
-        - gridApiFixedFee
-        - gridApiVariableFeeRate
-        - gridApiVariableFeeAmount
-      properties:
-        gridApiMultiplier:
-          type: number
-          format: double
-          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
-          exclusiveMinimum: 0
-          example: 0.925
-        gridApiFixedFee:
-          type: integer
-          format: int64
-          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
-          minimum: 0
-          example: 10
-        gridApiVariableFeeRate:
-          type: number
-          format: double
-          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
-          exclusiveMinimum: 0
-          example: 0.003
-        gridApiVariableFeeAmount:
-          type: number
-          format: int64
-          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
-          minimum: 0
-          example: 30
-    IncomingTransactionFailureReason:
-      type: string
-      enum:
-        - LNURLP_FAILED
-        - PAY_REQUEST_FAILED
-        - PAYMENT_APPROVAL_WEBHOOK_ERROR
-        - PAYMENT_APPROVAL_TIMED_OUT
-        - OFFRAMP_FAILED
-        - MISSING_MANDATORY_PAYEE_DATA
-        - QUOTE_EXPIRED
-        - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
-    IncomingTransaction:
-      allOf:
-        - $ref: '#/components/schemas/Transaction'
-        - type: object
-          required:
-            - receivedAmount
-          properties:
-            source:
-              $ref: '#/components/schemas/TransactionSourceOneOf'
-            receivedAmount:
-              $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency
-            reconciliationInstructions:
-              $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Included for all transactions except those with "CREATED" status
-            rateDetails:
-              $ref: '#/components/schemas/IncomingRateDetails'
-              description: Details about the rate and fees for the transaction.
-            failureReason:
-              $ref: '#/components/schemas/IncomingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure.
+          REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
     Refund:
       type: object
       required:
@@ -6118,10 +6094,14 @@ components:
         - $ref: '#/components/schemas/Transaction'
         - type: object
           required:
+            - type
             - sentAmount
-            - paymentInstructions
             - source
           properties:
+            type:
+              type: string
+              enum:
+                - OUTGOING
             source:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             sentAmount:
@@ -6174,12 +6154,26 @@ components:
         - CREATED
         - PENDING
         - PROCESSING
+        - SENT
         - COMPLETED
         - REJECTED
         - FAILED
         - REFUNDED
         - EXPIRED
-      description: Status of a payment transaction
+      description: |
+        Status of a payment transaction.
+
+        | Status | Description |
+        |--------|-------------|
+        | `CREATED` | Initial lookup has been created |
+        | `PENDING` | Quote has been created |
+        | `PROCESSING` | Funding has been received and payment initiated |
+        | `SENT` | Cross border settlement has been initiated |
+        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
+        | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
+        | `FAILED` | An error occurred during payment |
+        | `REFUNDED` | Payment was unable to complete and refunded |
+        | `EXPIRED` | Quote has expired |
     AccountTransactionDestination:
       allOf:
         - $ref: '#/components/schemas/BaseTransactionDestination'
@@ -6213,6 +6207,7 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
     UmaAddressTransactionDestination:
       allOf:
         - $ref: '#/components/schemas/BaseTransactionDestination'
@@ -6230,11 +6225,27 @@ components:
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
           description: UMA address destination details
+    ExternalAccountDetailsTransactionDestination:
+      allOf:
+        - $ref: '#/components/schemas/BaseTransactionDestination'
+        - type: object
+          required:
+            - externalAccountDetails
+            - destinationType
+          properties:
+            destinationType:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT_DETAILS
+            externalAccountDetails:
+              $ref: '#/components/schemas/ExternalAccountCreateRequest'
+          description: Transaction destination where external account details were provided inline at quote creation rather than using a pre-registered external account.
     TransactionDestinationType:
       type: string
       enum:
         - ACCOUNT
         - UMA_ADDRESS
+        - EXTERNAL_ACCOUNT_DETAILS
       description: Type of transaction destination
       example: ACCOUNT
     TransactionDestinationOneOf:
@@ -6243,11 +6254,14 @@ components:
           $ref: '#/components/schemas/AccountTransactionDestination'
         - title: UMA Address Destination
           $ref: '#/components/schemas/UmaAddressTransactionDestination'
+        - title: External Account Details Destination
+          $ref: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
     CounterpartyInformation:
       type: object
       description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
@@ -6256,6 +6270,71 @@ components:
         FULL_NAME: John Sender
         BIRTH_DATE: '1985-06-15'
         NATIONALITY: DE
+    ReconciliationInstructions:
+      type: object
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
+          example: UMA-Q12345-REF
+    IncomingRateDetails:
+      description: Details about the rate and fees for an incoming transaction.
+      type: object
+      required:
+        - gridApiMultiplier
+        - gridApiFixedFee
+        - gridApiVariableFeeRate
+        - gridApiVariableFeeAmount
+      properties:
+        gridApiMultiplier:
+          type: number
+          format: double
+          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
+          exclusiveMinimum: 0
+          example: 0.925
+        gridApiFixedFee:
+          type: integer
+          format: int64
+          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
+          minimum: 0
+          example: 10
+        gridApiVariableFeeRate:
+          type: number
+          format: double
+          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
+          exclusiveMinimum: 0
+          example: 0.003
+        gridApiVariableFeeAmount:
+          type: number
+          format: int64
+          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
+          minimum: 0
+          example: 30
+    IncomingTransactionFailureReason:
+      type: string
+      enum:
+        - LNURLP_FAILED
+        - PAY_REQUEST_FAILED
+        - PAYMENT_APPROVAL_WEBHOOK_ERROR
+        - PAYMENT_APPROVAL_TIMED_OUT
+        - OFFRAMP_FAILED
+        - MISSING_MANDATORY_PAYEE_DATA
+        - QUOTE_EXPIRED
+        - QUOTE_EXECUTION_FAILED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    TransactionOneOf:
+      oneOf:
+        - title: Incoming Transaction
+          $ref: '#/components/schemas/IncomingTransaction'
+        - title: Outgoing Transaction
+          $ref: '#/components/schemas/OutgoingTransaction'
+      discriminator:
+        propertyName: type
+        mapping:
+          INCOMING: '#/components/schemas/IncomingTransaction'
+          OUTGOING: '#/components/schemas/OutgoingTransaction'
     CurrencyPreference:
       type: object
       required:
@@ -6378,7 +6457,7 @@ components:
             accountId:
               type: string
               description: Source account identifier
-              example: InternalAccount:85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
             customerId:
               type: string
               description: Required when funding from an FBO account to identify the customer on whose behalf the transaction is being initiated.  Otherwise, will default to the customerId of the account owner.
@@ -6534,7 +6613,7 @@ components:
     Quote:
       type: object
       required:
-        - quoteId
+        - id
         - status
         - expiresAt
         - createdAt
@@ -6548,7 +6627,7 @@ components:
         - feesIncluded
         - transactionId
       properties:
-        quoteId:
+        id:
           type: string
           description: Unique identifier for this quote
           example: Quote:019542f5-b3e7-1d02-0000-000000000006
@@ -6743,11 +6822,11 @@ components:
     BulkCustomerImportJob:
       type: object
       required:
-        - jobId
+        - id
         - status
         - progress
       properties:
-        jobId:
+        id:
           type: string
           description: Unique identifier for the bulk import job
           example: Job:019542f5-b3e7-1d02-0000-000000000006
@@ -6996,7 +7075,7 @@ components:
       type: object
       required:
         - timestamp
-        - webhookId
+        - id
         - type
       properties:
         timestamp:
@@ -7004,7 +7083,7 @@ components:
           format: date-time
           description: ISO8601 timestamp when the webhook was sent (can be used to prevent replay attacks)
           example: '2025-08-15T14:32:00Z'
-        webhookId:
+        id:
           type: string
           description: Unique identifier for this webhook delivery (can be used for idempotency)
           example: Webhook:019542f5-b3e7-1d02-0000-000000000007

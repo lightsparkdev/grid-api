@@ -2,8 +2,13 @@ allOf:
   - $ref: ./Transaction.yaml
   - type: object
     required:
+      - type
       - receivedAmount
     properties:
+      type:
+        type: string
+        enum:
+          - INCOMING
       source:
         $ref: ./TransactionSourceOneOf.yaml
       receivedAmount:

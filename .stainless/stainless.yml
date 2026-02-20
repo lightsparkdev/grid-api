@@ -417,18 +417,18 @@ openapi:
           - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
         keys: [ "$ref" ]
 
-    # # ── beneficiaryType: beneficiary schemas ──
-    # - command: remove
-    #   reason: >-
-    #     Remove inline beneficiaryType enums from beneficiary allOf variants
-    #     to avoid conflicting types with BaseBeneficiary which defines
-    #     beneficiaryType via a shared $ref enum
-    #   args:
-    #     target:
-    #       - "$.components.schemas.IndividualBeneficiary.allOf[1].properties"
-    #       - "$.components.schemas.BusinessBeneficiary.allOf[1].properties"
-    #     keys: [ "beneficiaryType" ]
-    # ── customerType: remove from base schemas ──
+    # ── type: transaction base schema ──
+    - command: remove
+      reason: >-
+        Remove inline type enum from Transaction base schema to avoid
+        conflicting types when allOf merges with IncomingTransaction and
+        OutgoingTransaction which define type as single-value enums
+      args:
+        target:
+          - "$.components.schemas.Transaction.properties"
+        keys: [ "type" ]
+
+    # ── beneficiaryType: beneficiary schemas ──
     - command: remove
       reason: >-
         Remove customerType $ref from base schemas so the inline single-value
