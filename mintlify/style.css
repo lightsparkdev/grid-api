@@ -4047,10 +4047,6 @@ html.dark .rate-explorer-select {
   box-shadow: 0 0 0 1px var(--ls-sky-500);
 }
 
-.rate-explorer-corridor-select {
-  min-width: 220px;
-}
-
 .rate-explorer-input-wrapper {
   display: flex;
   align-items: center;
@@ -4469,19 +4465,24 @@ html.dark .rate-explorer-rate-subtitle {
   color: var(--ls-gray-500);
 }
 
-/* Competitor cells (Bank est. and Wise) */
-.rate-explorer-competitor {
+/* Mid-market column */
+.rate-explorer-mid-market {
+  vertical-align: middle;
+}
+
+.rate-explorer-mid-amount {
   font-family: "Suisse Intl Mono", monospace;
   font-size: 13px;
-  color: var(--ls-gray-400) !important;
+  font-weight: 400;
+  color: var(--ls-gray-500);
 }
 
-html.dark .rate-explorer-competitor {
-  color: var(--ls-gray-500) !important;
+html.dark .rate-explorer-mid-amount {
+  color: var(--ls-gray-400);
 }
 
-/* Grid advantage cell */
-.rate-explorer-advantage {
+/* Spread column */
+.rate-explorer-spread {
   font-family: "Suisse Intl Mono", monospace;
   font-size: 13px;
   font-weight: 500;
@@ -4489,40 +4490,8 @@ html.dark .rate-explorer-competitor {
   white-space: nowrap;
 }
 
-html.dark .rate-explorer-advantage {
+html.dark .rate-explorer-spread {
   color: var(--ls-green-400) !important;
-}
-
-/* Week cell in historical table */
-.rate-explorer-week {
-  font-size: 13px;
-  font-weight: 450;
-  white-space: nowrap;
-}
-
-/* Historical section heading */
-.rate-explorer-historical-heading {
-  margin-top: 32px;
-  margin-bottom: 16px;
-}
-
-.rate-explorer-historical-heading h3 {
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 28px;
-  color: var(--ls-gray-950);
-  margin: 0 0 4px;
-}
-
-html.dark .rate-explorer-historical-heading h3 {
-  color: var(--ls-gray-050);
-}
-
-.rate-explorer-historical-heading p {
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--ls-gray-500);
-  margin: 0;
 }
 
 /* Disclaimer */
@@ -4575,11 +4544,6 @@ html.dark .rate-explorer-disclaimer {
 
   .rate-explorer-rate-subtitle {
     font-size: 10px;
-  }
-
-  .rate-explorer-historical-heading {
-    margin-top: 24px;
-    margin-bottom: 12px;
   }
 
   .rate-explorer-filter {
