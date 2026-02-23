@@ -1,64 +1,77 @@
 ---
-title: "Sample Rates"
-description: "Explore Grid's competitive FX rates across popular corridors"
-icon: "/images/icons/coins.svg"
+title: "FX Rates"
+description: "Compare Grid's FX rates against major providers across 40+ corridors"
+icon: "/images/icons/globe.svg"
 "og:image": "/images/og/og-get-started.png"
 mode: "wide"
 ---
 
 export const CURRENCIES = [
-  { code: 'USD', flag: '🇺🇸', name: 'US Dollar', region: 'Americas', usdMid: 1, gridSpread: 0 },
-  { code: 'CAD', flag: '🇨🇦', name: 'Canadian Dollar', region: 'Americas', usdMid: 1.362, gridSpread: 0.35 },
-  { code: 'MXN', flag: '🇲🇽', name: 'Mexican Peso', region: 'Americas', usdMid: 17.45, gridSpread: 0.5 },
-  { code: 'BRL', flag: '🇧🇷', name: 'Brazilian Real', region: 'Americas', usdMid: 5.05, gridSpread: 0.55 },
-  { code: 'CRC', flag: '🇨🇷', name: 'Costa Rican Colón', region: 'Americas', usdMid: 512, gridSpread: 0.8 },
-  { code: 'EUR', flag: '🇪🇺', name: 'Euro', region: 'Europe', usdMid: 0.921, gridSpread: 0.25 },
-  { code: 'GBP', flag: '🇬🇧', name: 'British Pound', region: 'Europe', usdMid: 0.791, gridSpread: 0.25 },
-  { code: 'CHF', flag: '🇨🇭', name: 'Swiss Franc', region: 'Europe', usdMid: 0.881, gridSpread: 0.3 },
-  { code: 'DKK', flag: '🇩🇰', name: 'Danish Krone', region: 'Europe', usdMid: 6.87, gridSpread: 0.3 },
-  { code: 'SEK', flag: '🇸🇪', name: 'Swedish Krona', region: 'Europe', usdMid: 10.45, gridSpread: 0.4 },
-  { code: 'NOK', flag: '🇳🇴', name: 'Norwegian Krone', region: 'Europe', usdMid: 10.55, gridSpread: 0.4 },
-  { code: 'CZK', flag: '🇨🇿', name: 'Czech Koruna', region: 'Europe', usdMid: 23.15, gridSpread: 0.45 },
-  { code: 'HUF', flag: '🇭🇺', name: 'Hungarian Forint', region: 'Europe', usdMid: 362, gridSpread: 0.5 },
-  { code: 'PLN', flag: '🇵🇱', name: 'Polish Zloty', region: 'Europe', usdMid: 4.02, gridSpread: 0.45 },
-  { code: 'RON', flag: '🇷🇴', name: 'Romanian Leu', region: 'Europe', usdMid: 4.58, gridSpread: 0.5 },
-  { code: 'BGN', flag: '🇧🇬', name: 'Bulgarian Lev', region: 'Europe', usdMid: 1.80, gridSpread: 0.45 },
-  { code: 'ISK', flag: '🇮🇸', name: 'Icelandic Króna', region: 'Europe', usdMid: 138, gridSpread: 0.8 },
-  { code: 'NGN', flag: '🇳🇬', name: 'Nigerian Naira', region: 'Africa', usdMid: 1550, gridSpread: 0.8 },
-  { code: 'KES', flag: '🇰🇪', name: 'Kenyan Shilling', region: 'Africa', usdMid: 129.5, gridSpread: 0.7 },
-  { code: 'ZAR', flag: '🇿🇦', name: 'South African Rand', region: 'Africa', usdMid: 18.5, gridSpread: 0.5 },
-  { code: 'GHS', flag: '🇬🇭', name: 'Ghanaian Cedi', region: 'Africa', usdMid: 14.8, gridSpread: 0.9 },
-  { code: 'UGX', flag: '🇺🇬', name: 'Ugandan Shilling', region: 'Africa', usdMid: 3750, gridSpread: 0.9 },
-  { code: 'TZS', flag: '🇹🇿', name: 'Tanzanian Shilling', region: 'Africa', usdMid: 2530, gridSpread: 0.9 },
-  { code: 'ZMW', flag: '🇿🇲', name: 'Zambian Kwacha', region: 'Africa', usdMid: 26.5, gridSpread: 1.0 },
-  { code: 'MWK', flag: '🇲🇼', name: 'Malawian Kwacha', region: 'Africa', usdMid: 1730, gridSpread: 1.1 },
-  { code: 'XOF', flag: '🇸🇳', name: 'West African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.8 },
-  { code: 'XAF', flag: '🇨🇲', name: 'Central African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.85 },
-  { code: 'CDF', flag: '🇨🇩', name: 'Congolese Franc', region: 'Africa', usdMid: 2780, gridSpread: 1.2 },
-  { code: 'BWP', flag: '🇧🇼', name: 'Botswana Pula', region: 'Africa', usdMid: 13.6, gridSpread: 0.9 },
-  { code: 'INR', flag: '🇮🇳', name: 'Indian Rupee', region: 'Asia-Pacific', usdMid: 83.5, gridSpread: 0.45 },
-  { code: 'PHP', flag: '🇵🇭', name: 'Philippine Peso', region: 'Asia-Pacific', usdMid: 56.2, gridSpread: 0.5 },
-  { code: 'IDR', flag: '🇮🇩', name: 'Indonesian Rupiah', region: 'Asia-Pacific', usdMid: 15650, gridSpread: 0.7 },
-  { code: 'SGD', flag: '🇸🇬', name: 'Singapore Dollar', region: 'Asia-Pacific', usdMid: 1.34, gridSpread: 0.3 },
-  { code: 'HKD', flag: '🇭🇰', name: 'Hong Kong Dollar', region: 'Asia-Pacific', usdMid: 7.81, gridSpread: 0.2 },
-  { code: 'CNY', flag: '🇨🇳', name: 'Chinese Yuan', region: 'Asia-Pacific', usdMid: 7.24, gridSpread: 0.6 },
-  { code: 'KRW', flag: '🇰🇷', name: 'South Korean Won', region: 'Asia-Pacific', usdMid: 1325, gridSpread: 0.45 },
-  { code: 'THB', flag: '🇹🇭', name: 'Thai Baht', region: 'Asia-Pacific', usdMid: 35.2, gridSpread: 0.5 },
-  { code: 'VND', flag: '🇻🇳', name: 'Vietnamese Dong', region: 'Asia-Pacific', usdMid: 25200, gridSpread: 0.8 },
-  { code: 'MYR', flag: '🇲🇾', name: 'Malaysian Ringgit', region: 'Asia-Pacific', usdMid: 4.65, gridSpread: 0.5 },
-  { code: 'LKR', flag: '🇱🇰', name: 'Sri Lankan Rupee', region: 'Asia-Pacific', usdMid: 298, gridSpread: 0.9 },
+  { code: 'USD', flag: '🇺🇸', name: 'US Dollar', region: 'Americas', usdMid: 1, gridSpread: 0, wiseSpread: 0 },
+  { code: 'CAD', flag: '🇨🇦', name: 'Canadian Dollar', region: 'Americas', usdMid: 1.362, gridSpread: 0.35, wiseSpread: 0.55 },
+  { code: 'MXN', flag: '🇲🇽', name: 'Mexican Peso', region: 'Americas', usdMid: 17.45, gridSpread: 0.5, wiseSpread: 0.95 },
+  { code: 'BRL', flag: '🇧🇷', name: 'Brazilian Real', region: 'Americas', usdMid: 5.05, gridSpread: 0.55, wiseSpread: 1.00 },
+  { code: 'CRC', flag: '🇨🇷', name: 'Costa Rican Colón', region: 'Americas', usdMid: 512, gridSpread: 0.8, wiseSpread: 1.60 },
+  { code: 'EUR', flag: '🇪🇺', name: 'Euro', region: 'Europe', usdMid: 0.921, gridSpread: 0.25, wiseSpread: 0.55 },
+  { code: 'GBP', flag: '🇬🇧', name: 'British Pound', region: 'Europe', usdMid: 0.791, gridSpread: 0.25, wiseSpread: 0.55 },
+  { code: 'CHF', flag: '🇨🇭', name: 'Swiss Franc', region: 'Europe', usdMid: 0.881, gridSpread: 0.3, wiseSpread: 0.55 },
+  { code: 'DKK', flag: '🇩🇰', name: 'Danish Krone', region: 'Europe', usdMid: 6.87, gridSpread: 0.3, wiseSpread: 0.55 },
+  { code: 'SEK', flag: '🇸🇪', name: 'Swedish Krona', region: 'Europe', usdMid: 10.45, gridSpread: 0.4, wiseSpread: 0.90 },
+  { code: 'NOK', flag: '🇳🇴', name: 'Norwegian Krone', region: 'Europe', usdMid: 10.55, gridSpread: 0.4, wiseSpread: 0.90 },
+  { code: 'CZK', flag: '🇨🇿', name: 'Czech Koruna', region: 'Europe', usdMid: 23.15, gridSpread: 0.45, wiseSpread: 0.95 },
+  { code: 'HUF', flag: '🇭🇺', name: 'Hungarian Forint', region: 'Europe', usdMid: 362, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'PLN', flag: '🇵🇱', name: 'Polish Zloty', region: 'Europe', usdMid: 4.02, gridSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'RON', flag: '🇷🇴', name: 'Romanian Leu', region: 'Europe', usdMid: 4.58, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'BGN', flag: '🇧🇬', name: 'Bulgarian Lev', region: 'Europe', usdMid: 1.80, gridSpread: 0.45, wiseSpread: 0.95 },
+  { code: 'ISK', flag: '🇮🇸', name: 'Icelandic Króna', region: 'Europe', usdMid: 138, gridSpread: 0.8, wiseSpread: 1.50 },
+  { code: 'NGN', flag: '🇳🇬', name: 'Nigerian Naira', region: 'Africa', usdMid: 1550, gridSpread: 0.8, wiseSpread: 2.50 },
+  { code: 'KES', flag: '🇰🇪', name: 'Kenyan Shilling', region: 'Africa', usdMid: 129.5, gridSpread: 0.7, wiseSpread: 2.00 },
+  { code: 'ZAR', flag: '🇿🇦', name: 'South African Rand', region: 'Africa', usdMid: 18.5, gridSpread: 0.5, wiseSpread: 0.95 },
+  { code: 'GHS', flag: '🇬🇭', name: 'Ghanaian Cedi', region: 'Africa', usdMid: 14.8, gridSpread: 0.9, wiseSpread: 2.50 },
+  { code: 'UGX', flag: '🇺🇬', name: 'Ugandan Shilling', region: 'Africa', usdMid: 3750, gridSpread: 0.9, wiseSpread: 2.80 },
+  { code: 'TZS', flag: '🇹🇿', name: 'Tanzanian Shilling', region: 'Africa', usdMid: 2530, gridSpread: 0.9, wiseSpread: 2.50 },
+  { code: 'ZMW', flag: '🇿🇲', name: 'Zambian Kwacha', region: 'Africa', usdMid: 26.5, gridSpread: 1.0, wiseSpread: 2.80 },
+  { code: 'MWK', flag: '🇲🇼', name: 'Malawian Kwacha', region: 'Africa', usdMid: 1730, gridSpread: 1.1, wiseSpread: 3.00 },
+  { code: 'XOF', flag: '🇸🇳', name: 'West African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.8, wiseSpread: 2.00 },
+  { code: 'XAF', flag: '🇨🇲', name: 'Central African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.85, wiseSpread: 2.00 },
+  { code: 'CDF', flag: '🇨🇩', name: 'Congolese Franc', region: 'Africa', usdMid: 2780, gridSpread: 1.2, wiseSpread: 3.00 },
+  { code: 'BWP', flag: '🇧🇼', name: 'Botswana Pula', region: 'Africa', usdMid: 13.6, gridSpread: 0.9, wiseSpread: 2.00 },
+  { code: 'INR', flag: '🇮🇳', name: 'Indian Rupee', region: 'Asia-Pacific', usdMid: 83.5, gridSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'PHP', flag: '🇵🇭', name: 'Philippine Peso', region: 'Asia-Pacific', usdMid: 56.2, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'IDR', flag: '🇮🇩', name: 'Indonesian Rupiah', region: 'Asia-Pacific', usdMid: 15650, gridSpread: 0.7, wiseSpread: 1.10 },
+  { code: 'SGD', flag: '🇸🇬', name: 'Singapore Dollar', region: 'Asia-Pacific', usdMid: 1.34, gridSpread: 0.3, wiseSpread: 0.55 },
+  { code: 'HKD', flag: '🇭🇰', name: 'Hong Kong Dollar', region: 'Asia-Pacific', usdMid: 7.81, gridSpread: 0.2, wiseSpread: 0.50 },
+  { code: 'CNY', flag: '🇨🇳', name: 'Chinese Yuan', region: 'Asia-Pacific', usdMid: 7.24, gridSpread: 0.6, wiseSpread: 1.10 },
+  { code: 'KRW', flag: '🇰🇷', name: 'South Korean Won', region: 'Asia-Pacific', usdMid: 1325, gridSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'THB', flag: '🇹🇭', name: 'Thai Baht', region: 'Asia-Pacific', usdMid: 35.2, gridSpread: 0.5, wiseSpread: 0.95 },
+  { code: 'VND', flag: '🇻🇳', name: 'Vietnamese Dong', region: 'Asia-Pacific', usdMid: 25200, gridSpread: 0.8, wiseSpread: 1.10 },
+  { code: 'MYR', flag: '🇲🇾', name: 'Malaysian Ringgit', region: 'Asia-Pacific', usdMid: 4.65, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'LKR', flag: '🇱🇰', name: 'Sri Lankan Rupee', region: 'Asia-Pacific', usdMid: 298, gridSpread: 0.9, wiseSpread: 1.80 },
 ];
+
+export const CURRENCY_TO_COUNTRY = {
+  USD: 'us', CAD: 'ca', MXN: 'mx', BRL: 'br', CRC: 'cr',
+  EUR: 'eu', GBP: 'gb', CHF: 'ch', DKK: 'dk', SEK: 'se',
+  NOK: 'no', CZK: 'cz', HUF: 'hu', PLN: 'pl', RON: 'ro',
+  BGN: 'bg', ISK: 'is', NGN: 'ng', KES: 'ke', ZAR: 'za',
+  GHS: 'gh', UGX: 'ug', TZS: 'tz', ZMW: 'zm', MWK: 'mw',
+  XOF: 'sn', XAF: 'cm', CDF: 'cd', BWP: 'bw',
+  INR: 'in', PHP: 'ph', IDR: 'id', SGD: 'sg', HKD: 'hk',
+  CNY: 'cn', KRW: 'kr', THB: 'th', VND: 'vn', MYR: 'my', LKR: 'lk',
+};
+
+export const flagUrl = (code) =>
+  'https://hatscripts.github.io/circle-flags/flags/' + (CURRENCY_TO_COUNTRY[code] || code.slice(0, 2).toLowerCase()) + '.svg';
 
 export const SOURCE_CODES = ['USD', 'EUR', 'GBP', 'CAD', 'SGD', 'HKD'];
 
 export const SOURCE_OPTIONS = SOURCE_CODES.map(code => {
   const c = CURRENCIES.find(x => x.code === code);
-  return { value: code, flag: c.flag, label: code + ' \u2014 ' + c.name };
+  return { value: code, label: code + ' \u2014 ' + c.name };
 });
 
-export const POPULAR_CODES = ['USD', 'EUR', 'GBP', 'CAD', 'MXN', 'BRL', 'INR', 'PHP', 'NGN', 'KES'];
-
 export const formatNumber = (num, decimals) => {
+  if (typeof num !== 'number' || !isFinite(num)) return '\u2014';
   return num.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -77,46 +90,304 @@ export const getReceiveDecimals = (rate) => {
   return 2;
 };
 
-export const RateExplorer = () => {
-  const [sourceCurrency, setSourceCurrency] = React.useState('USD');
-  const [amount, setAmount] = React.useState(10000);
-  const [selectedCodes, setSelectedCodes] = React.useState(POPULAR_CODES);
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [liveRates, setLiveRates] = React.useState(null);
-  const [rateSource, setRateSource] = React.useState(null);
+export const WISE_API_BASE = 'https://api.transferwise.com/v4/comparisons/';
+
+export const CACHE_TTL = 30 * 60 * 1000;
+export const STALE_TTL = 2 * 60 * 60 * 1000;
+export const BATCH_SIZE = 10;
+
+export const bucketAmount = (amt) => {
+  if (amt < 1000) return Math.max(100, Math.round(amt / 100) * 100);
+  if (amt < 10000) return Math.round(amt / 500) * 500;
+  return Math.round(amt / 1000) * 1000;
+};
+
+export const fetchBatch = (items, batchSize, fetchFn) => {
+  const results = [];
+  let i = 0;
+  const next = () => {
+    if (i >= items.length) return Promise.resolve(results);
+    const batch = items.slice(i, i + batchSize);
+    i += batchSize;
+    return Promise.allSettled(batch.map(fetchFn)).then(batchResults => {
+      results.push.apply(results, batchResults);
+      return next();
+    });
+  };
+  return next();
+};
+
+export const processWiseResults = (results, targets, sendAmount) => {
+  const newData = {};
+  const providerFreq = {};
+  var anySuccess = false;
+  results.forEach((result, idx) => {
+    const val = result.status === 'fulfilled' ? result.value : null;
+    if (!val || !val.data) return;
+    const target = val.target || targets[idx];
+    const data = val.data;
+    if (!data.providers || !Array.isArray(data.providers)) return;
+    anySuccess = true;
+    var midRate = null;
+    data.providers.forEach(p => {
+      if (p.quotes && p.quotes.length > 0 && p.quotes[0].isConsideredMidMarketRate) {
+        midRate = p.quotes[0].rate;
+      }
+    });
+    var midReceive = midRate && typeof midRate === 'number' ? sendAmount * midRate : null;
+    const providers = [];
+    data.providers.forEach(p => {
+      if (!p.quotes || p.quotes.length === 0 || !p.name) return;
+      var q = p.quotes[0];
+      if (typeof q.receivedAmount === 'number') {
+        providers.push({
+          name: p.name,
+          receivedAmount: q.receivedAmount,
+          fee: typeof q.fee === 'number' ? q.fee : 0,
+        });
+        if (p.name !== 'Wise') {
+          providerFreq[p.name] = (providerFreq[p.name] || 0) + 1;
+        }
+      }
+    });
+    newData[target] = { providers: providers, midReceive: midReceive };
+  });
+  const sorted = Object.entries(providerFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(entry => entry[0]);
+  return { data: newData, providers: sorted, anySuccess: anySuccess };
+};
+
+export const formatAmountInput = (num) => {
+  if (!num && num !== 0) return '';
+  return Number(num).toLocaleString('en-US');
+};
+
+export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCurrency, dropdownQuery, setDropdownQuery, setShowDropdown }) => {
+  const listRef = React.useRef(null);
+  const [scrollState, setScrollState] = React.useState('top');
+
+  const updateScroll = React.useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const canScroll = el.scrollHeight > el.clientHeight + 1;
+    if (!canScroll) { setScrollState('none'); return; }
+    const atTop = el.scrollTop < 2;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 2;
+    if (atTop) setScrollState('top');
+    else if (atBottom) setScrollState('bottom');
+    else setScrollState('middle');
+  }, []);
 
   React.useEffect(() => {
-    const fetchGridRates = () =>
-      fetch('https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCurrency=USD')
+    updateScroll();
+  }, [currencies.length, updateScroll]);
+
+  const masks = {
+    none: undefined,
+    top: 'linear-gradient(to bottom, black calc(100% - 40px), transparent 100%)',
+    bottom: 'linear-gradient(to bottom, transparent 0%, black 40px)',
+    middle: 'linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)',
+  };
+  const mask = masks[scrollState];
+
+  return (
+    <div className="rate-explorer-dropdown">
+      <div className="rate-explorer-dropdown-search-row">
+        <img src="/images/icons/magnifying-glass.svg" width="16" height="16" alt="" className="rate-explorer-dropdown-search-icon" />
+        <input
+          type="text"
+          className="rate-explorer-dropdown-search"
+          placeholder={'Search ' + currencies.length + ' currencies...'}
+          value={dropdownQuery}
+          onChange={(e) => { setDropdownQuery(e.target.value); setHighlightIdx(-1); }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setHighlightIdx(i => Math.min(i + 1, currencies.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setHighlightIdx(i => Math.max(i - 1, -1));
+            } else if (e.key === 'Enter' && currencies.length > 0) {
+              e.preventDefault();
+              const idx = highlightIdx >= 0 ? highlightIdx : 0;
+              addCurrency(currencies[idx].code);
+            } else if (e.key === 'Escape') {
+              setShowDropdown(false);
+              setDropdownQuery('');
+            }
+          }}
+          autoFocus
+        />
+      </div>
+      <div
+        ref={listRef}
+        className="rate-explorer-dropdown-list"
+        onScroll={updateScroll}
+        style={mask ? { WebkitMaskImage: mask, maskImage: mask } : undefined}
+      >
+        {currencies.map((c, idx) => (
+          <button key={c.code} className={'rate-explorer-dropdown-item' + (idx === highlightIdx ? ' rate-explorer-dropdown-item-active' : '')} onClick={() => addCurrency(c.code)} onMouseEnter={() => setHighlightIdx(idx)}>
+            <img src={flagUrl(c.code)} width="20" height="20" alt="" className="rate-explorer-flag-img" />
+            <span className="rate-explorer-dropdown-code">{c.code}</span>
+            <span className="rate-explorer-dropdown-name">{c.name}</span>
+          </button>
+        ))}
+        {currencies.length === 0 && (
+          <div className="rate-explorer-dropdown-empty">No currencies found</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const RateExplorer = () => {
+  const [sourceCurrency, setSourceCurrency] = React.useState('USD');
+  const [amount, setAmount] = React.useState(1000);
+  const [amountDisplay, setAmountDisplay] = React.useState('1,000');
+  const [selectedCurrencies, setSelectedCurrencies] = React.useState([]);
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const [dropdownQuery, setDropdownQuery] = React.useState('');
+  const [highlightIdx, setHighlightIdx] = React.useState(-1);
+  const [competitorData, setCompetitorData] = React.useState({});
+  const [topProviders, setTopProviders] = React.useState([]);
+  const [viewMode, setViewMode] = React.useState('bps');
+  const [liveRates, setLiveRates] = React.useState(null);
+  const [debouncedAmount, setDebouncedAmount] = React.useState(1000);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const containerRef = React.useRef(null);
+  const dropdownRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedAmount(amount), 1200);
+    return () => clearTimeout(timer);
+  }, [amount]);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+
+  React.useEffect(() => {
+    if (!isVisible) return;
+    fetch('https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCurrency=USD')
+      .then(res => {
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+      })
+      .then(json => {
+        if (json && json.data && json.data.length > 0) {
+          const rates = {};
+          json.data.forEach(r => {
+            rates[r.destinationCurrency.code] = String(r.exchangeRate);
+          });
+          setLiveRates(rates);
+        }
+      })
+      .catch(() => {});
+  }, [isVisible]);
+
+  React.useEffect(() => {
+    if (!isVisible) return;
+    const bucketed = bucketAmount(debouncedAmount);
+    const cacheKey = 'wise_' + sourceCurrency + '_' + bucketed;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.ts) {
+          const age = Date.now() - parsed.ts;
+          if (age < CACHE_TTL) {
+            setCompetitorData(parsed.data);
+            setTopProviders(parsed.providers);
+            return;
+          }
+          if (age < STALE_TTL) {
+            setCompetitorData(parsed.data);
+            setTopProviders(parsed.providers);
+          }
+        }
+      }
+    } catch (e) {}
+    const targets = CURRENCIES.filter(c => c.code !== sourceCurrency).map(c => c.code);
+    const fetchOne = (dest) =>
+      fetch(WISE_API_BASE + '?sourceCurrency=' + sourceCurrency + '&targetCurrency=' + dest + '&sendAmount=' + bucketed)
         .then(res => {
           if (!res.ok) throw new Error(res.status);
           return res.json();
         })
-        .then(json => {
-          if (json && json.data && json.data.length > 0) {
-            const rates = {};
-            json.data.forEach(r => {
-              rates[r.destinationCurrency.code] = String(r.exchangeRate);
-            });
-            setLiveRates(rates);
-            setRateSource('grid');
-          } else {
-            throw new Error('empty');
-          }
-        });
+        .then(json => ({ target: dest, data: json }))
+        .catch(() => ({ target: dest, data: null }));
+    fetchBatch(targets, BATCH_SIZE, fetchOne).then(results => {
+      const processed = processWiseResults(results, targets, bucketed);
+      setCompetitorData(processed.data);
+      setTopProviders(processed.providers);
+      if (processed.anySuccess) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: processed.data, providers: processed.providers }));
+        } catch (e) {}
+      }
+    }).catch(() => {});
+  }, [sourceCurrency, debouncedAmount, isVisible]);
 
-    const fetchCoinbaseRates = () =>
-      fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD')
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.data && data.data.rates) {
-            setLiveRates(data.data.rates);
-            setRateSource('coinbase');
-          }
-        });
-
-    fetchGridRates().catch(() => fetchCoinbaseRates().catch(() => {}));
+  React.useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+        setDropdownQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  const handleAmountChange = (e) => {
+    const raw = e.target.value.replace(/,/g, '');
+    if (raw === '') { setAmount(1); setAmountDisplay(''); return; }
+    const val = parseFloat(raw);
+    if (!isNaN(val) && val > 0) {
+      setAmount(val);
+      setAmountDisplay(formatAmountInput(val));
+    }
+  };
+
+  const handleAmountBlur = () => {
+    setAmountDisplay(formatAmountInput(amount));
+  };
+
+  const handleAmountFocus = (e) => {
+    setAmountDisplay(String(amount));
+    setTimeout(() => e.target.select(), 0);
+  };
+
+  const addCurrency = (code) => {
+    if (!selectedCurrencies.includes(code)) {
+      setSelectedCurrencies([...selectedCurrencies, code]);
+    }
+    setShowDropdown(false);
+    setDropdownQuery('');
+  };
+
+  const removeCurrency = (code) => {
+    setSelectedCurrencies(selectedCurrencies.filter(c => c !== code));
+  };
+
+  const clearCurrencies = () => {
+    setSelectedCurrencies([]);
+  };
 
   const getUsdMid = (code) => {
     if (code === 'USD') return 1;
@@ -127,229 +398,248 @@ export const RateExplorer = () => {
 
   const sourceUsdMid = getUsdMid(sourceCurrency);
   const destinations = CURRENCIES.filter(c => c.code !== sourceCurrency);
-  const activeCodes = selectedCodes.filter(c => c !== sourceCurrency);
+  const hasLiveData = Object.keys(competitorData).length > 0;
+  const displayProviders = hasLiveData ? topProviders : [];
 
   const allCorridors = destinations.map(dest => {
     const destUsdMid = getUsdMid(dest.code);
     const midRate = destUsdMid / sourceUsdMid;
-    const gridRate = midRate * (1 - dest.gridSpread / 100);
-    const gridReceive = amount * gridRate;
-    const midReceive = amount * midRate;
-    const spread = dest.gridSpread;
+    const cd = competitorData[dest.code];
+    const midReceive = cd && cd.midReceive ? cd.midReceive : debouncedAmount * midRate;
+    const gridBps = Math.round(dest.gridSpread * 100);
+    const gridReceive = midReceive * (1 - dest.gridSpread / 100);
+    const providers = {};
+    if (cd && cd.providers) {
+      cd.providers.forEach(p => {
+        const pBps = midReceive > 0
+          ? Math.round(((midReceive - p.receivedAmount) / midReceive) * 10000)
+          : 0;
+        providers[p.name] = {
+          receivedAmount: p.receivedAmount,
+          bps: pBps,
+        };
+      });
+    }
+    if (!providers['Wise']) {
+      const wiseRate = midRate * (1 - dest.wiseSpread / 100);
+      providers['Wise'] = {
+        receivedAmount: debouncedAmount * wiseRate,
+        bps: Math.round(dest.wiseSpread * 100),
+      };
+    }
     return {
-      code: dest.code, flag: dest.flag, name: dest.name,
-      midRate, gridRate, gridReceive, midReceive, spread,
+      code: dest.code, name: dest.name,
+      midRate: midRate, midReceive: midReceive,
+      gridReceive: gridReceive, gridBps: gridBps,
+      providers: providers, gridSpread: dest.gridSpread,
     };
   });
 
-  const corridors = allCorridors.filter(c => activeCodes.includes(c.code));
+  const corridors = selectedCurrencies.length > 0
+    ? allCorridors.filter(c => selectedCurrencies.includes(c.code))
+    : allCorridors;
 
-  const avgGridPct = corridors.length > 0
-    ? corridors.reduce((s, c) => s + (c.gridRate / c.midRate) * 100, 0) / corridors.length : 0;
-  const avgSpread = corridors.length > 0
-    ? corridors.reduce((s, c) => s + c.spread, 0) / corridors.length : 0;
-
-  const isCustomized = selectedCodes.length !== POPULAR_CODES.length ||
-    !POPULAR_CODES.every(c => selectedCodes.includes(c));
-
-  const addableCurrencies = destinations.filter(c => !selectedCodes.includes(c.code));
-  const searchMatches = searchQuery.length > 0 ? addableCurrencies.filter(c =>
-    c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ).slice(0, 8) : [];
-
-  const addCurrency = (code) => {
-    setSelectedCodes([...selectedCodes, code]);
-    setSearchQuery('');
-  };
-
-  const removeCurrency = (code) => {
-    setSelectedCodes(selectedCodes.filter(c => c !== code));
-  };
-
-  const showAll = () => {
-    setSelectedCodes(CURRENCIES.map(c => c.code));
-  };
-
-  const resetSelection = () => {
-    setSelectedCodes(POPULAR_CODES);
-  };
+  const dropdownCurrencies = CURRENCIES.filter(c =>
+    c.code !== sourceCurrency && !selectedCurrencies.includes(c.code)
+  ).filter(c =>
+    !dropdownQuery || c.code.toLowerCase().includes(dropdownQuery.toLowerCase()) || c.name.toLowerCase().includes(dropdownQuery.toLowerCase())
+  );
 
   return (
-    <div>
+    <div ref={containerRef}>
       <div className="rate-explorer not-prose">
-        <div className="rate-explorer-controls">
-          <div className="rate-explorer-field">
-            <label className="rate-explorer-label">You send</label>
-            <select
-              className="rate-explorer-select"
-              value={sourceCurrency}
-              onChange={(e) => setSourceCurrency(e.target.value)}
-            >
-              {SOURCE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.flag} {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="rate-explorer-field">
-            <label className="rate-explorer-label">Amount</label>
+        <div className="rate-explorer-header">
+          <div className="rate-explorer-header-left">
+            <span className="rate-explorer-header-label">Send</span>
             <div className="rate-explorer-input-wrapper">
-              <span className="rate-explorer-input-prefix">{sourceCurrency}</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 className="rate-explorer-input"
-                value={amount}
-                min={1}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setAmount(val > 0 ? val : 1);
-                }}
+                value={amountDisplay}
+                onChange={handleAmountChange}
+                onBlur={handleAmountBlur}
+                onFocus={handleAmountFocus}
               />
             </div>
+            <div className="rate-explorer-source-trigger">
+              <img src={flagUrl(sourceCurrency)} width="16" height="16" alt="" className="rate-explorer-flag-img" />
+              <select
+                className="rate-explorer-source-select"
+                value={sourceCurrency}
+                onChange={(e) => setSourceCurrency(e.target.value)}
+              >
+                {SOURCE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <span className="rate-explorer-source-label">{sourceCurrency}</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
           </div>
-        </div>
-
-        <div className="rate-explorer-summary">
-          <span className="rate-explorer-summary-stat">
-            <strong>Grid</strong> delivers <strong>{avgGridPct.toFixed(1)}%</strong> of mid-market rate
-          </span>
-          <span className="rate-explorer-summary-dot">{'\u00b7'}</span>
-          <span className="rate-explorer-summary-stat">
-            Average spread: <strong>{avgSpread.toFixed(2)}%</strong> across {corridors.length} corridors
-          </span>
-        </div>
-
-        <div className="rate-explorer-filter">
-          {isCustomized ? (
-            <>
-              <div className="rate-explorer-chips">
-                {activeCodes.map(code => {
-                  const c = CURRENCIES.find(x => x.code === code);
-                  if (!c) return null;
-                  return (
-                    <span key={code} className="rate-explorer-chip">
-                      {c.flag} {code}
-                      <button
-                        className="rate-explorer-chip-remove"
-                        onClick={() => removeCurrency(code)}
-                        aria-label={'Remove ' + code}
-                      >{'\u00d7'}</button>
-                    </span>
-                  );
-                })}
-              </div>
-              <div className="rate-explorer-search-wrapper">
-                <input
-                  type="text"
-                  className="rate-explorer-search"
-                  placeholder="Add currency..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchMatches.length > 0 && (
-                  <div className="rate-explorer-dropdown">
-                    {searchMatches.map(c => (
-                      <div
-                        key={c.code}
-                        className="rate-explorer-dropdown-item"
-                        onMouseDown={(e) => { e.preventDefault(); addCurrency(c.code); }}
-                      >
-                        <span className="rate-explorer-flag">{c.flag}</span>
-                        <span className="rate-explorer-currency-code">{c.code}</span>
-                        <span className="rate-explorer-currency-name">{c.name}</span>
-                      </div>
-                    ))}
+          <div className="rate-explorer-header-mid">
+            <span className="rate-explorer-header-label">to</span>
+            {selectedCurrencies.map(code => {
+              const cur = CURRENCIES.find(c => c.code === code);
+              return (
+                <div key={code} className="rate-explorer-chip">
+                  <div className="rate-explorer-chip-info">
+                    <img src={flagUrl(code)} width="16" height="16" alt="" className="rate-explorer-flag-img" />
+                    <span className="rate-explorer-chip-code">{code}</span>
                   </div>
-                )}
-              </div>
-              <div className="rate-explorer-filter-actions">
-                <button className="rate-explorer-filter-btn" onClick={resetSelection}>Reset</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <span className="rate-explorer-filter-label">Showing top 10 corridors</span>
-              <div className="rate-explorer-search-wrapper">
-                <input
-                  type="text"
-                  className="rate-explorer-search"
-                  placeholder="Add currency..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  <button className="rate-explorer-chip-dismiss" onClick={() => removeCurrency(code)} aria-label={'Remove ' + code}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  </button>
+                </div>
+              );
+            })}
+            <div className="rate-explorer-dropdown-anchor" ref={dropdownRef}>
+              {selectedCurrencies.length === 0 ? (
+                <button className="rate-explorer-dest-trigger" onClick={() => { setShowDropdown(!showDropdown); setHighlightIdx(-1); }}>
+                  <span className="rate-explorer-dest-placeholder">Select currency</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              ) : (
+                <button className="rate-explorer-add-btn" onClick={() => { setShowDropdown(!showDropdown); setHighlightIdx(-1); }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1V9M1 5H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <span>Add</span>
+                </button>
+              )}
+              {showDropdown && (
+                <DropdownList
+                  currencies={dropdownCurrencies}
+                  highlightIdx={highlightIdx}
+                  setHighlightIdx={setHighlightIdx}
+                  addCurrency={addCurrency}
+                  dropdownQuery={dropdownQuery}
+                  setDropdownQuery={setDropdownQuery}
+                  setShowDropdown={setShowDropdown}
                 />
-                {searchMatches.length > 0 && (
-                  <div className="rate-explorer-dropdown">
-                    {searchMatches.map(c => (
-                      <div
-                        key={c.code}
-                        className="rate-explorer-dropdown-item"
-                        onMouseDown={(e) => { e.preventDefault(); addCurrency(c.code); }}
-                      >
-                        <span className="rate-explorer-flag">{c.flag}</span>
-                        <span className="rate-explorer-currency-code">{c.code}</span>
-                        <span className="rate-explorer-currency-name">{c.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="rate-explorer-filter-actions">
-                <button className="rate-explorer-filter-btn" onClick={showAll}>Show all</button>
-              </div>
-            </>
-          )}
+              )}
+            </div>
+          </div>
+          <div className="rate-explorer-header-right">
+            {selectedCurrencies.length > 0 && (
+              <button className="rate-explorer-clear-btn" onClick={clearCurrencies}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                <span>Clear</span>
+              </button>
+            )}
+            <div className="rate-explorer-toggle">
+              <button
+                className={'rate-explorer-toggle-btn' + (viewMode === 'bps' ? ' active' : '')}
+                onClick={() => setViewMode('bps')}
+              >Cost (bps)</button>
+              <button
+                className={'rate-explorer-toggle-btn' + (viewMode === 'amount' ? ' active' : '')}
+                onClick={() => setViewMode('amount')}
+              >Amount received</button>
+            </div>
+          </div>
         </div>
 
         <div className="rate-explorer-table-wrapper">
           <table className="rate-explorer-table">
             <thead>
               <tr>
-                <th>Destination</th>
-                <th>Recipient gets (Grid)</th>
-                <th>Mid-market</th>
-                <th>Spread</th>
+                <th className="rate-explorer-th-dest">Destination currency</th>
+                <th className="rate-explorer-th-grid"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="rate-explorer-grid-icon"><path d="M10.2462 1.99902V7.87605H13.7538V1.99902H22V10.2452H16.123V13.7529H22V21.999H13.7538V16.122H10.2462V21.999H2V13.7529H7.87702V10.2452H2V1.99902H10.2462ZM16.123 19.6299H19.6309V16.122H16.123V19.6299ZM4.36915 19.6299H7.87702V16.122H4.36915V19.6299ZM10.2462 13.7529H13.7538V10.2452H10.2462V13.7529ZM16.123 7.87605H19.6309V4.36817H16.123V7.87605ZM4.36915 7.87605H7.87702V4.36817H4.36915V7.87605Z" fill="currentColor"/></svg>Grid</th>
+                <th>Wise</th>
+                {displayProviders.map((name) => (
+                  <th key={name}>{name}</th>
+                ))}
+                <th className="rate-explorer-th-delta">Grid delta</th>
               </tr>
             </thead>
             <tbody>
               {corridors.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="rate-explorer-empty">
-                    No currencies selected. Use the search above to add corridors.
+                  <td colSpan={4 + displayProviders.length} className="rate-explorer-empty">
+                    No corridors match your selection.
                   </td>
                 </tr>
               )}
               {corridors.map((row) => {
-                const rateDec = getRateDecimals(row.midRate);
                 const recDec = getReceiveDecimals(row.midRate);
+                const wise = row.providers['Wise'];
+                var bestBps = row.gridBps;
+                var bestKey = 'Grid';
+                if (wise && wise.bps >= 0 && wise.bps < bestBps) { bestBps = wise.bps; bestKey = 'Wise'; }
+                displayProviders.forEach(name => {
+                  var p = row.providers[name];
+                  if (p && p.bps >= 0 && p.bps < bestBps) { bestBps = p.bps; bestKey = name; }
+                });
+                var bestCompBps = null;
+                var bestCompReceive = null;
+                if (wise && wise.bps >= 0) { bestCompBps = wise.bps; bestCompReceive = wise.receivedAmount; }
+                displayProviders.forEach(name => {
+                  var p = row.providers[name];
+                  if (p && p.bps >= 0 && (bestCompBps === null || p.bps < bestCompBps)) {
+                    bestCompBps = p.bps;
+                    bestCompReceive = p.receivedAmount;
+                  }
+                });
+                const bpsDelta = bestCompBps !== null ? bestCompBps - row.gridBps : null;
+                const amtDelta = bestCompReceive !== null ? row.gridReceive - bestCompReceive : null;
                 return (
                   <tr key={row.code} className="rate-explorer-row">
-                    <td>
+                    <td className="rate-explorer-td-dest">
                       <div className="rate-explorer-dest">
-                        <span className="rate-explorer-flag">{row.flag}</span>
-                        <span className="rate-explorer-currency-code">{row.code}</span>
-                        <span className="rate-explorer-currency-name">{row.name}</span>
+                        <img src={flagUrl(row.code)} width="28" height="28" alt="" className="rate-explorer-flag-circle" />
+                        <div className="rate-explorer-dest-text">
+                          <span className="rate-explorer-currency-code">{row.code}</span>
+                          <span className="rate-explorer-currency-name">{row.name}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="rate-explorer-grid-receive">
-                      <div className="rate-explorer-receive-amount">
-                        {formatNumber(row.gridReceive, recDec)} {row.code}
-                      </div>
-                      <div className="rate-explorer-rate-subtitle">
-                        Rate: {formatNumber(row.gridRate, rateDec)}
-                      </div>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Grid' ? ' rate-explorer-provider-best' : '')}>
+                      {viewMode === 'bps' ? (
+                        <span className="rate-explorer-provider-amount">{row.gridBps} bps</span>
+                      ) : (
+                        <span className="rate-explorer-provider-amount">{formatNumber(row.gridReceive, recDec)} {row.code}</span>
+                      )}
                     </td>
-                    <td className="rate-explorer-mid-market">
-                      <div className="rate-explorer-mid-amount">
-                        {formatNumber(row.midReceive, recDec)} {row.code}
-                      </div>
-                      <div className="rate-explorer-rate-subtitle">
-                        Rate: {formatNumber(row.midRate, rateDec)}
-                      </div>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Wise' ? ' rate-explorer-provider-best' : '')}>
+                      {wise ? (
+                        viewMode === 'bps' ? (
+                          wise.bps >= 0 ? (
+                            <span className="rate-explorer-provider-amount">{wise.bps} bps</span>
+                          ) : (
+                            <span className="rate-explorer-na">{'\u2014'}</span>
+                          )
+                        ) : (
+                          <span className="rate-explorer-provider-amount">{formatNumber(wise.receivedAmount, recDec)} {row.code}</span>
+                        )
+                      ) : (
+                        <span className="rate-explorer-na">{'\u2014'}</span>
+                      )}
                     </td>
-                    <td className="rate-explorer-spread">
-                      {row.spread.toFixed(2)}%
+                    {displayProviders.map((name) => {
+                      const provider = row.providers[name];
+                      return (
+                        <td key={name} className={'rate-explorer-provider-cell' + (bestKey === name ? ' rate-explorer-provider-best' : '')}>
+                          {provider ? (
+                            viewMode === 'bps' ? (
+                              provider.bps >= 0 ? (
+                                <span className="rate-explorer-provider-amount">{provider.bps} bps</span>
+                              ) : (
+                                <span className="rate-explorer-na">{'\u2014'}</span>
+                              )
+                            ) : (
+                              <span className="rate-explorer-provider-amount">{formatNumber(provider.receivedAmount, recDec)} {row.code}</span>
+                            )
+                          ) : (
+                            <span className="rate-explorer-na">{'\u2014'}</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className={'rate-explorer-delta' + (viewMode === 'bps' ? (bpsDelta !== null && bpsDelta > 0 ? ' rate-explorer-delta-positive' : bpsDelta !== null && bpsDelta < 0 ? ' rate-explorer-delta-negative' : '') : (amtDelta !== null && amtDelta > 0 ? ' rate-explorer-delta-positive' : amtDelta !== null && amtDelta < 0 ? ' rate-explorer-delta-negative' : ''))}>
+                      {viewMode === 'bps' ? (
+                        bpsDelta !== null ? (bpsDelta > 0 ? '+' + bpsDelta + ' bps' : bpsDelta < 0 ? bpsDelta + ' bps' : '0 bps') : '\u2014'
+                      ) : (
+                        amtDelta !== null ? (amtDelta > 0 ? '+' + formatNumber(amtDelta, recDec) : amtDelta < 0 ? formatNumber(amtDelta, recDec) : '0') : '\u2014'
+                      )}
                     </td>
                   </tr>
                 );
@@ -359,18 +649,11 @@ export const RateExplorer = () => {
         </div>
 
         <div className="rate-explorer-disclaimer">
-          {rateSource === 'grid' ? (
-            <>Live mid-market rates via Grid. </>
-          ) : rateSource === 'coinbase' ? (
-            <>Live mid-market rates via Coinbase. </>
-          ) : null}
-          Sample rates for illustration only. Actual rates are provided in real time via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
+          Grid rates reflect standard published pricing (not personalized quotes). Competitor rates are live via public comparison data and include all fees. Actual rates may vary. Get real-time Grid quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
         </div>
       </div>
     </div>
   );
 };
-
-Grid provides competitive, real-time FX rates across a wide range of currency corridors. Use the explorer below to see how Grid's rates compare to the mid-market rate across popular corridors.
 
 <RateExplorer />
