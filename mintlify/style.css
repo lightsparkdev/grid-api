@@ -3986,16 +3986,18 @@ html.dark .homepage-divider {
   max-width: 100% !important;
 }
 
-/* Add padding to content and pagination since the container lost its padding */
+/* Restore padding on everything except the rate explorer itself */
 #content-container:has(.rate-explorer) #header,
-#content-container:has(.rate-explorer) #pagination {
+#content-container:has(.rate-explorer) #pagination,
+#content-container:has(.rate-explorer) #content-area > :not(#content) {
   padding-left: 48px !important;
   padding-right: 48px !important;
 }
 
 @media (max-width: 1023px) {
   #content-container:has(.rate-explorer) #header,
-  #content-container:has(.rate-explorer) #pagination {
+  #content-container:has(.rate-explorer) #pagination,
+  #content-container:has(.rate-explorer) #content-area > :not(#content) {
     padding-left: 24px !important;
     padding-right: 24px !important;
   }
