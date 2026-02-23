@@ -3989,7 +3989,6 @@ html.dark .homepage-divider {
 
 /* Restore padding on everything except the rate explorer itself */
 #content-container:has(#rate-explorer-page) #header,
-#content-container:has(#rate-explorer-page) #pagination,
 #content-container:has(#rate-explorer-page) #content-area > :not(#content) {
   padding-left: 48px !important;
   padding-right: 48px !important;
@@ -3997,7 +3996,6 @@ html.dark .homepage-divider {
 
 @media (max-width: 1023px) {
   #content-container:has(#rate-explorer-page) #header,
-  #content-container:has(#rate-explorer-page) #pagination,
   #content-container:has(#rate-explorer-page) #content-area > :not(#content) {
     padding-left: 24px !important;
     padding-right: 24px !important;
