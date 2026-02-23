@@ -4004,6 +4004,15 @@ html.dark .homepage-divider {
   }
 }
 
+/* Hide static placeholder once the React component mounts */
+#rate-explorer-static {
+  margin-top: 40px;
+}
+
+#content:has(.rate-explorer) #rate-explorer-static {
+  display: none;
+}
+
 .rate-explorer {
   width: 100%;
   margin-top: 40px;
@@ -4500,6 +4509,16 @@ html.dark .rate-explorer-toggle-btn.active {
   padding: 0 !important;
 }
 
+/* Override Mintlify's injected [&_td]:min-w-[150px] and min-w-full/w-full */
+.rate-explorer-table {
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.rate-explorer-table td {
+  min-width: 0 !important;
+}
+
 /* Override #content table td/th font-size */
 #content .rate-explorer-table thead th {
   font-size: 14px !important;
@@ -4516,8 +4535,12 @@ html.dark .rate-explorer-toggle-btn.active {
   -webkit-overflow-scrolling: touch;
 }
 
+.rate-explorer-table-wrapper [data-table-wrapper] {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .rate-explorer-table {
-  width: 100%;
   border-collapse: collapse;
   font-size: 14px;
   line-height: 20px;
@@ -4534,6 +4557,7 @@ html.dark .rate-explorer-toggle-btn.active {
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
+  width: 1%;
   border-bottom: 0.5px solid var(--ls-black-10);
 }
 
@@ -4543,7 +4567,7 @@ html.dark .rate-explorer-table thead th {
 }
 
 .rate-explorer-th-dest {
-  min-width: 240px;
+  width: auto;
 }
 
 .rate-explorer-grid-icon {
@@ -4565,6 +4589,7 @@ html.dark .rate-explorer-table thead th {
 
 .rate-explorer-th-delta {
   text-align: right !important;
+  width: 1%;
 }
 
 .rate-explorer-table tbody td {
@@ -4642,6 +4667,8 @@ html.dark .rate-explorer-currency-code {
 /* ---------- Provider cells ---------- */
 .rate-explorer-provider-cell {
   vertical-align: middle;
+  width: 1%;
+  white-space: nowrap;
 }
 
 /* Best provider highlight */
@@ -4691,6 +4718,7 @@ html.dark .rate-explorer-na {
   color: var(--ls-gray-400) !important;
   font-family: "Suisse Intl", sans-serif;
   white-space: nowrap;
+  width: 1%;
 }
 
 .rate-explorer-delta-positive {
@@ -4774,6 +4802,20 @@ html.dark .rate-explorer-skeleton-row {
 .rate-explorer-skeleton-cell {
   height: 14px;
   border-radius: 4px;
+}
+
+.rate-explorer-skeleton-bar {
+  height: 14px;
+  width: 56px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--ls-black-04) 25%, transparent 50%, var(--ls-black-04) 75%);
+  background-size: 200% 100%;
+  animation: rate-explorer-shimmer 1.5s ease-in-out infinite;
+}
+
+html.dark .rate-explorer-skeleton-bar {
+  background: linear-gradient(90deg, var(--ls-white-06) 25%, transparent 50%, var(--ls-white-06) 75%);
+  background-size: 200% 100%;
 }
 
 /* ---------- Mobile responsive ---------- */

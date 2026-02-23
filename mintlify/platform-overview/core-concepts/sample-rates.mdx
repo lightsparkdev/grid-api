@@ -96,6 +96,32 @@ export const CACHE_TTL = 30 * 60 * 1000;
 export const STALE_TTL = 2 * 60 * 60 * 1000;
 export const BATCH_SIZE = 10;
 
+export const getStripeFxBps = (source, dest) => {
+  const majorPairs = ['USD-EUR','USD-GBP','EUR-USD','GBP-USD','EUR-GBP','GBP-EUR'];
+  if (majorPairs.includes(source + '-' + dest)) return 50;
+  if (source === 'USD') return 100;
+  return 200;
+};
+
+export const STRIPE_CB_BPS = {
+  USD: 25, GBP: 25, EUR: 25, CAD: 25, MXN: 25, CHF: 25,
+  NOK: 25, SEK: 25, CZK: 25, HUF: 25, BGN: 25, ISK: 25,
+  DKK: 50, HKD: 50, IDR: 50, PLN: 50, SGD: 50, ZAR: 50, THB: 50,
+  INR: 75, KES: 75, RON: 75,
+};
+
+export const STRIPE_FIXED_FEE = 1.50;
+
+export const getStripeTotalBps = (source, dest, sendAmount) => {
+  const fxBps = getStripeFxBps(source, dest);
+  const cbBps = STRIPE_CB_BPS[dest] || 100;
+  const fixedBps = sendAmount > 0 ? Math.round(STRIPE_FIXED_FEE / sendAmount * 10000) : 0;
+  return fxBps + cbBps + fixedBps;
+};
+
+export const AIRWALLEX_MAJORS = ['USD','EUR','GBP','JPY','CHF','AUD','NZD','CAD','HKD','SGD','CNY'];
+export const getAirwallexBps = (dest) => AIRWALLEX_MAJORS.includes(dest) ? 50 : 100;
+
 export const bucketAmount = (amt) => {
   if (amt < 1000) return Math.max(100, Math.round(amt / 100) * 100);
   if (amt < 10000) return Math.round(amt / 500) * 500;
@@ -144,6 +170,7 @@ export const processWiseResults = (results, targets, sendAmount) => {
           name: p.name,
           receivedAmount: q.receivedAmount,
           fee: typeof q.fee === 'number' ? q.fee : 0,
+          type: p.type || 'unknown',
         });
         if (p.name !== 'Wise') {
           providerFreq[p.name] = (providerFreq[p.name] || 0) + 1;
@@ -154,7 +181,7 @@ export const processWiseResults = (results, targets, sendAmount) => {
   });
   const sorted = Object.entries(providerFreq)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
+    .slice(0, 2)
     .map(entry => entry[0]);
   return { data: newData, providers: sorted, anySuccess: anySuccess };
 };
@@ -242,6 +269,73 @@ export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCur
   );
 };
 
+export const SkeletonTable = ({ cols }) => (
+  <div className="rate-explorer-table-wrapper">
+    <table className="rate-explorer-table">
+      <thead>
+        <tr>
+          <th className="rate-explorer-th-dest">Destination currency</th>
+          <th className="rate-explorer-th-grid"><span className="rate-explorer-grid-icon" />Grid</th>
+          {cols.map((name, i) => <th key={i}>{name}</th>)}
+          <th className="rate-explorer-th-delta">Grid delta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {CURRENCIES.filter(c => c.code !== 'USD').slice(0, 40).map((c) => (
+          <tr key={c.code} className="rate-explorer-row">
+            <td className="rate-explorer-td-dest">
+              <div className="rate-explorer-dest">
+                <img src={flagUrl(c.code)} width="28" height="28" alt="" className="rate-explorer-flag-img" />
+                <div className="rate-explorer-dest-text">
+                  <span className="rate-explorer-currency-code">{c.code}</span>
+                  <span className="rate-explorer-currency-name">{c.name}</span>
+                </div>
+              </div>
+            </td>
+            <td className="rate-explorer-provider-cell"><div className="rate-explorer-skeleton-bar" /></td>
+            {cols.map((_, i) => <td key={i} className="rate-explorer-provider-cell"><div className="rate-explorer-skeleton-bar" /></td>)}
+            <td className="rate-explorer-delta"><div className="rate-explorer-skeleton-bar" style={{marginLeft: 'auto'}} /></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+export const StaticPlaceholder = () => (
+  <div id="rate-explorer-static" className="not-prose">
+    <div className="rate-explorer-header">
+      <div className="rate-explorer-header-left">
+        <span className="rate-explorer-header-label">Send</span>
+        <div className="rate-explorer-input-wrapper">
+          <input type="text" className="rate-explorer-input" value="1,000" readOnly />
+        </div>
+        <div className="rate-explorer-source-trigger">
+          <img src="https://hatscripts.github.io/circle-flags/flags/us.svg" width="16" height="16" alt="" className="rate-explorer-flag-img" />
+          <span className="rate-explorer-source-label">USD</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      </div>
+      <div className="rate-explorer-header-mid">
+        <span className="rate-explorer-header-label">to</span>
+        <div className="rate-explorer-dropdown-anchor">
+          <button className="rate-explorer-dest-trigger">
+            <span className="rate-explorer-dest-placeholder">Select currency</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div className="rate-explorer-header-right">
+        <div className="rate-explorer-toggle">
+          <button className="rate-explorer-toggle-btn active">Cost (bps)</button>
+          <button className="rate-explorer-toggle-btn">Amount received</button>
+        </div>
+      </div>
+    </div>
+    <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Avg Bank']} />
+  </div>
+);
+
 export const RateExplorer = () => {
   const [sourceCurrency, setSourceCurrency] = React.useState('USD');
   const [amount, setAmount] = React.useState(1000);
@@ -252,6 +346,7 @@ export const RateExplorer = () => {
   const [highlightIdx, setHighlightIdx] = React.useState(-1);
   const [competitorData, setCompetitorData] = React.useState({});
   const [topProviders, setTopProviders] = React.useState([]);
+  const [competitorDone, setCompetitorDone] = React.useState(false);
   const [viewMode, setViewMode] = React.useState('bps');
   const [liveRates, setLiveRates] = React.useState(() => {
     try {
@@ -328,6 +423,7 @@ export const RateExplorer = () => {
           if (age < CACHE_TTL) {
             setCompetitorData(parsed.data);
             setTopProviders(parsed.providers);
+            setCompetitorDone(true);
             return;
           }
           if (age < STALE_TTL) {
@@ -350,12 +446,13 @@ export const RateExplorer = () => {
       const processed = processWiseResults(results, targets, bucketed);
       setCompetitorData(processed.data);
       setTopProviders(processed.providers);
+      setCompetitorDone(true);
       if (processed.anySuccess) {
         try {
           sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: processed.data, providers: processed.providers }));
         } catch (e) {}
       }
-    }).catch(() => {});
+    }).catch(() => { setCompetitorDone(true); });
   }, [sourceCurrency, debouncedAmount, isVisible]);
 
   React.useEffect(() => {
@@ -442,11 +539,28 @@ export const RateExplorer = () => {
         bps: Math.round(dest.wiseSpread * 100),
       };
     }
+    const stripeBps = getStripeTotalBps(sourceCurrency, dest.code, debouncedAmount);
+    const stripeReceive = midReceive * (1 - stripeBps / 10000);
+    const airwallexBps = getAirwallexBps(dest.code);
+    const airwallexReceive = midReceive * (1 - airwallexBps / 10000);
+    let bankAvgBps = null;
+    let bankAvgReceive = null;
+    if (cd && cd.providers) {
+      const banks = cd.providers.filter(p => p.type === 'bank');
+      if (banks.length > 0) {
+        const avgReceived = banks.reduce((sum, b) => sum + b.receivedAmount, 0) / banks.length;
+        bankAvgReceive = avgReceived;
+        bankAvgBps = midReceive > 0 ? Math.round(((midReceive - avgReceived) / midReceive) * 10000) : 0;
+      }
+    }
     return {
       code: dest.code, name: dest.name,
       midRate: midRate, midReceive: midReceive,
       gridReceive: gridReceive, gridBps: gridBps,
       providers: providers, gridSpread: dest.gridSpread,
+      stripeBps: stripeBps, stripeReceive: stripeReceive,
+      airwallexBps: airwallexBps, airwallexReceive: airwallexReceive,
+      bankAvgBps: bankAvgBps, bankAvgReceive: bankAvgReceive,
     };
   });
 
@@ -552,35 +666,29 @@ export const RateExplorer = () => {
           </div>
         </div>
 
-        {liveRates === null ? (
-          <div>
-            {Array(40).fill(0).map((_, i) => (
-              <div key={i} className="rate-explorer-skeleton-row">
-                <div className="rate-explorer-skeleton-flag" />
-                <div className="rate-explorer-skeleton-cell" style={{width: 80}} />
-                <div style={{flex: 1}} />
-                <div className="rate-explorer-skeleton-cell" style={{width: 56}} />
-                <div className="rate-explorer-skeleton-cell" style={{width: 56}} />
-              </div>
-            ))}
-          </div>) : (
+        {liveRates === null || !competitorDone ? (
+          <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Avg Bank']} />
+        ) : (
         <div className="rate-explorer-table-wrapper">
           <table className="rate-explorer-table">
             <thead>
               <tr>
                 <th className="rate-explorer-th-dest">Destination currency</th>
                 <th className="rate-explorer-th-grid"><span className="rate-explorer-grid-icon" />Grid</th>
+                <th>Stripe</th>
+                <th>Airwallex</th>
                 <th>Wise</th>
                 {displayProviders.map((name) => (
                   <th key={name}>{name}</th>
                 ))}
+                <th>Avg Bank</th>
                 <th className="rate-explorer-th-delta">Grid delta</th>
               </tr>
             </thead>
             <tbody>
               {corridors.length === 0 && (
                 <tr>
-                  <td colSpan={4 + displayProviders.length} className="rate-explorer-empty">
+                  <td colSpan={7 + displayProviders.length} className="rate-explorer-empty">
                     No corridors match your selection.
                   </td>
                 </tr>
@@ -590,14 +698,19 @@ export const RateExplorer = () => {
                 const wise = row.providers['Wise'];
                 let bestBps = row.gridBps;
                 let bestKey = 'Grid';
+                if (row.stripeBps < bestBps) { bestBps = row.stripeBps; bestKey = 'Stripe'; }
+                if (row.airwallexBps < bestBps) { bestBps = row.airwallexBps; bestKey = 'Airwallex'; }
                 if (wise && wise.bps >= 0 && wise.bps < bestBps) { bestBps = wise.bps; bestKey = 'Wise'; }
                 displayProviders.forEach(name => {
                   const p = row.providers[name];
                   if (p && p.bps >= 0 && p.bps < bestBps) { bestBps = p.bps; bestKey = name; }
                 });
+                if (row.bankAvgBps !== null && row.bankAvgBps < bestBps) { bestBps = row.bankAvgBps; bestKey = 'BankAvg'; }
                 let bestCompBps = null;
                 let bestCompReceive = null;
-                if (wise && wise.bps >= 0) { bestCompBps = wise.bps; bestCompReceive = wise.receivedAmount; }
+                if (row.stripeBps >= 0) { bestCompBps = row.stripeBps; bestCompReceive = row.stripeReceive; }
+                if (row.airwallexBps >= 0 && (bestCompBps === null || row.airwallexBps < bestCompBps)) { bestCompBps = row.airwallexBps; bestCompReceive = row.airwallexReceive; }
+                if (wise && wise.bps >= 0 && (bestCompBps === null || wise.bps < bestCompBps)) { bestCompBps = wise.bps; bestCompReceive = wise.receivedAmount; }
                 displayProviders.forEach(name => {
                   const p = row.providers[name];
                   if (p && p.bps >= 0 && (bestCompBps === null || p.bps < bestCompBps)) {
@@ -605,6 +718,7 @@ export const RateExplorer = () => {
                     bestCompReceive = p.receivedAmount;
                   }
                 });
+                if (row.bankAvgBps !== null && (bestCompBps === null || row.bankAvgBps < bestCompBps)) { bestCompBps = row.bankAvgBps; bestCompReceive = row.bankAvgReceive; }
                 const bpsDelta = bestCompBps !== null ? bestCompBps - row.gridBps : null;
                 const amtDelta = bestCompReceive !== null ? row.gridReceive - bestCompReceive : null;
                 return (
@@ -623,6 +737,20 @@ export const RateExplorer = () => {
                         <span className="rate-explorer-provider-amount">{row.gridBps} bps</span>
                       ) : (
                         <span className="rate-explorer-provider-amount">{formatNumber(row.gridReceive, recDec)} {row.code}</span>
+                      )}
+                    </td>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Stripe' ? ' rate-explorer-provider-best' : '')}>
+                      {viewMode === 'bps' ? (
+                        <span className="rate-explorer-provider-amount">{row.stripeBps} bps</span>
+                      ) : (
+                        <span className="rate-explorer-provider-amount">{formatNumber(row.stripeReceive, recDec)} {row.code}</span>
+                      )}
+                    </td>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Airwallex' ? ' rate-explorer-provider-best' : '')}>
+                      {viewMode === 'bps' ? (
+                        <span className="rate-explorer-provider-amount">{row.airwallexBps} bps</span>
+                      ) : (
+                        <span className="rate-explorer-provider-amount">{formatNumber(row.airwallexReceive, recDec)} {row.code}</span>
                       )}
                     </td>
                     <td className={'rate-explorer-provider-cell' + (bestKey === 'Wise' ? ' rate-explorer-provider-best' : '')}>
@@ -660,6 +788,17 @@ export const RateExplorer = () => {
                         </td>
                       );
                     })}
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'BankAvg' ? ' rate-explorer-provider-best' : '')}>
+                      {row.bankAvgBps !== null ? (
+                        viewMode === 'bps' ? (
+                          <span className="rate-explorer-provider-amount">{row.bankAvgBps} bps</span>
+                        ) : (
+                          <span className="rate-explorer-provider-amount">{formatNumber(row.bankAvgReceive, recDec)} {row.code}</span>
+                        )
+                      ) : (
+                        <span className="rate-explorer-na">{'\u2014'}</span>
+                      )}
+                    </td>
                     <td className={'rate-explorer-delta' + (viewMode === 'bps' ? (bpsDelta !== null && bpsDelta > 0 ? ' rate-explorer-delta-positive' : bpsDelta !== null && bpsDelta < 0 ? ' rate-explorer-delta-negative' : '') : (amtDelta !== null && amtDelta > 0 ? ' rate-explorer-delta-positive' : amtDelta !== null && amtDelta < 0 ? ' rate-explorer-delta-negative' : ''))}>
                       {viewMode === 'bps' ? (
                         bpsDelta !== null ? (bpsDelta > 0 ? '+' + bpsDelta + ' bps' : bpsDelta < 0 ? bpsDelta + ' bps' : '0 bps') : '\u2014'
@@ -676,7 +815,7 @@ export const RateExplorer = () => {
         )}
 
         <div className="rate-explorer-disclaimer">
-          Grid rates reflect standard published pricing (not personalized quotes). Competitor rates are live via public comparison data and include all fees. Actual rates may vary. Get real-time Grid quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
+          Grid rates reflect standard published pricing (not personalized quotes). Wise and dynamic provider rates are live via public comparison data and include all fees. Stripe and Airwallex costs are based on published pricing schedules, not live API data. Avg Bank is the average of bank-type providers from comparison data. Actual rates may vary. Get real-time Grid quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
         </div>
       </div>
     </div>
@@ -684,4 +823,5 @@ export const RateExplorer = () => {
 };
 
 <div id="rate-explorer-page" style={{display:'none'}} />
+<StaticPlaceholder />
 <RateExplorer />
