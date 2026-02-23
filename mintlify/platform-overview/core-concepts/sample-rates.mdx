@@ -253,7 +253,18 @@ export const RateExplorer = () => {
   const [competitorData, setCompetitorData] = React.useState({});
   const [topProviders, setTopProviders] = React.useState([]);
   const [viewMode, setViewMode] = React.useState('bps');
-  const [liveRates, setLiveRates] = React.useState(null);
+  const [liveRates, setLiveRates] = React.useState(() => {
+    try {
+      const cached = sessionStorage.getItem('grid_live_rates');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) {
+          return parsed.rates;
+        }
+      }
+    } catch (e) {}
+    return null;
+  });
   const [debouncedAmount, setDebouncedAmount] = React.useState(1000);
   const [isVisible, setIsVisible] = React.useState(false);
   const containerRef = React.useRef(null);
@@ -282,21 +293,26 @@ export const RateExplorer = () => {
 
   React.useEffect(() => {
     if (!isVisible) return;
+    if (liveRates !== null) return;
     fetch('https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCurrency=USD')
       .then(res => {
         if (!res.ok) throw new Error(res.status);
         return res.json();
       })
       .then(json => {
+        const rates = {};
         if (json && json.data && json.data.length > 0) {
-          const rates = {};
           json.data.forEach(r => {
             rates[r.destinationCurrency.code] = String(r.exchangeRate);
           });
-          setLiveRates(rates);
         }
+        setLiveRates(rates);
+        try { sessionStorage.setItem('grid_live_rates', JSON.stringify({ ts: Date.now(), rates })); } catch (e) {}
       })
-      .catch(() => {});
+      .catch(() => {
+        setLiveRates({});
+        try { sessionStorage.setItem('grid_live_rates', JSON.stringify({ ts: Date.now(), rates: {} })); } catch (e) {}
+      });
   }, [isVisible]);
 
   React.useEffect(() => {
@@ -536,12 +552,24 @@ export const RateExplorer = () => {
           </div>
         </div>
 
+        {liveRates === null ? (
+          <div>
+            {Array(40).fill(0).map((_, i) => (
+              <div key={i} className="rate-explorer-skeleton-row">
+                <div className="rate-explorer-skeleton-flag" />
+                <div className="rate-explorer-skeleton-cell" style={{width: 80}} />
+                <div style={{flex: 1}} />
+                <div className="rate-explorer-skeleton-cell" style={{width: 56}} />
+                <div className="rate-explorer-skeleton-cell" style={{width: 56}} />
+              </div>
+            ))}
+          </div>) : (
         <div className="rate-explorer-table-wrapper">
           <table className="rate-explorer-table">
             <thead>
               <tr>
                 <th className="rate-explorer-th-dest">Destination currency</th>
-                <th className="rate-explorer-th-grid"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="rate-explorer-grid-icon"><path d="M10.2462 1.99902V7.87605H13.7538V1.99902H22V10.2452H16.123V13.7529H22V21.999H13.7538V16.122H10.2462V21.999H2V13.7529H7.87702V10.2452H2V1.99902H10.2462ZM16.123 19.6299H19.6309V16.122H16.123V19.6299ZM4.36915 19.6299H7.87702V16.122H4.36915V19.6299ZM10.2462 13.7529H13.7538V10.2452H10.2462V13.7529ZM16.123 7.87605H19.6309V4.36817H16.123V7.87605ZM4.36915 7.87605H7.87702V4.36817H4.36915V7.87605Z" fill="currentColor"/></svg>Grid</th>
+                <th className="rate-explorer-th-grid"><span className="rate-explorer-grid-icon" />Grid</th>
                 <th>Wise</th>
                 {displayProviders.map((name) => (
                   <th key={name}>{name}</th>
@@ -636,7 +664,7 @@ export const RateExplorer = () => {
                       {viewMode === 'bps' ? (
                         bpsDelta !== null ? (bpsDelta > 0 ? '+' + bpsDelta + ' bps' : bpsDelta < 0 ? bpsDelta + ' bps' : '0 bps') : '\u2014'
                       ) : (
-                        amtDelta !== null ? (amtDelta > 0 ? '+' + formatNumber(amtDelta, recDec) : amtDelta < 0 ? formatNumber(amtDelta, recDec) : '0') : '\u2014'
+                        amtDelta !== null ? (amtDelta > 0 ? '+' + formatNumber(amtDelta, recDec) + ' ' + row.code : amtDelta < 0 ? formatNumber(amtDelta, recDec) + ' ' + row.code : '0 ' + row.code) : '\u2014'
                       )}
                     </td>
                   </tr>
@@ -645,6 +673,7 @@ export const RateExplorer = () => {
             </tbody>
           </table>
         </div>
+        )}
 
         <div className="rate-explorer-disclaimer">
           Grid rates reflect standard published pricing (not personalized quotes). Competitor rates are live via public comparison data and include all fees. Actual rates may vary. Get real-time Grid quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
@@ -654,4 +683,5 @@ export const RateExplorer = () => {
   );
 };
 
+<div id="rate-explorer-page" style={{display:'none'}} />
 <RateExplorer />

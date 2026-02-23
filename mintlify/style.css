@@ -3974,30 +3974,31 @@ html.dark .homepage-divider {
    Rate Explorer
    =========================================== */
 
-/* Full-width: remove container padding so .rate-explorer spans edge-to-edge.
-   Then restore normal width on the page header and pagination. */
-#content-container:has(.rate-explorer) {
+/* Full-width: A hidden marker div (#rate-explorer-page) is placed in the MDX
+   as static content so it's server-rendered in the initial HTML. This lets the
+   :has() selector match on the very first paint — no hydration flash. */
+#content-container:has(#rate-explorer-page) {
   max-width: 100% !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
 
-#content-container:has(.rate-explorer) > div[class*="max-w"] {
+#content-container:has(#rate-explorer-page) > div[class*="max-w"] {
   max-width: 100% !important;
 }
 
 /* Restore padding on everything except the rate explorer itself */
-#content-container:has(.rate-explorer) #header,
-#content-container:has(.rate-explorer) #pagination,
-#content-container:has(.rate-explorer) #content-area > :not(#content) {
+#content-container:has(#rate-explorer-page) #header,
+#content-container:has(#rate-explorer-page) #pagination,
+#content-container:has(#rate-explorer-page) #content-area > :not(#content) {
   padding-left: 48px !important;
   padding-right: 48px !important;
 }
 
 @media (max-width: 1023px) {
-  #content-container:has(.rate-explorer) #header,
-  #content-container:has(.rate-explorer) #pagination,
-  #content-container:has(.rate-explorer) #content-area > :not(#content) {
+  #content-container:has(#rate-explorer-page) #header,
+  #content-container:has(#rate-explorer-page) #pagination,
+  #content-container:has(#rate-explorer-page) #content-area > :not(#content) {
     padding-left: 24px !important;
     padding-right: 24px !important;
   }
@@ -4547,10 +4548,19 @@ html.dark .rate-explorer-table thead th {
 
 .rate-explorer-grid-icon {
   display: inline-block;
+  width: 13px;
+  height: 13px;
   vertical-align: middle;
   position: relative;
   top: -1px;
-  margin-right: 1px;
+  margin-right: 2px;
+  background: currentColor;
+  -webkit-mask-image: url('/images/icons/grid-icon.svg');
+  mask-image: url('/images/icons/grid-icon.svg');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 .rate-explorer-th-delta {
@@ -4716,6 +4726,54 @@ html.dark .rate-explorer-disclaimer {
 
 .rate-explorer-disclaimer a:hover {
   text-decoration: underline;
+}
+
+/* ---------- Skeleton loader ---------- */
+@keyframes rate-explorer-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.rate-explorer-skeleton-cell,
+.rate-explorer-skeleton-flag {
+  background: linear-gradient(90deg, var(--ls-black-04) 25%, transparent 50%, var(--ls-black-04) 75%);
+  background-size: 200% 100%;
+  animation: rate-explorer-shimmer 1.5s ease-in-out infinite;
+}
+
+html.dark .rate-explorer-skeleton-cell,
+html.dark .rate-explorer-skeleton-flag {
+  background: linear-gradient(90deg, var(--ls-white-06) 25%, transparent 50%, var(--ls-white-06) 75%);
+  background-size: 200% 100%;
+}
+
+.rate-explorer-skeleton-row {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  gap: 20px;
+  border-bottom: 0.5px solid var(--ls-black-06);
+}
+
+html.dark .rate-explorer-skeleton-row {
+  border-color: var(--ls-white-04);
+}
+
+.rate-explorer-skeleton-row:last-child {
+  border-bottom: none;
+}
+
+.rate-explorer-skeleton-flag {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rate-explorer-skeleton-cell {
+  height: 14px;
+  border-radius: 4px;
 }
 
 /* ---------- Mobile responsive ---------- */
