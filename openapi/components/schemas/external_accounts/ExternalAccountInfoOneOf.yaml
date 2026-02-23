@@ -3,6 +3,8 @@ oneOf:
   $ref: ./BrlExternalAccountInfo.yaml
 - title: DKK Account
   $ref: ./DkkExternalAccountInfo.yaml
+- title: EUR Account
+  $ref: ./EurExternalAccountInfo.yaml
 - title: GBP Account
   $ref: ./GbpExternalAccountInfo.yaml
 - title: HKD Account
@@ -42,6 +44,7 @@ discriminator:
   mapping:
     BRL_ACCOUNT: ./BrlExternalAccountInfo.yaml
     DKK_ACCOUNT: ./DkkExternalAccountInfo.yaml
+    EUR_ACCOUNT: ./EurExternalAccountInfo.yaml
     GBP_ACCOUNT: ./GbpExternalAccountInfo.yaml
     HKD_ACCOUNT: ./HkdExternalAccountInfo.yaml
     IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml

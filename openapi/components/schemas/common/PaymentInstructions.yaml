@@ -22,6 +22,8 @@ properties:
         $ref: ../common/PaymentMxnAccountInfo.yaml
       - title: DKK Account
         $ref: ../common/PaymentDkkAccountInfo.yaml
+      - title: EUR Account
+        $ref: ../common/PaymentEurAccountInfo.yaml
       - title: INR Account
         $ref: ../common/PaymentInrAccountInfo.yaml
       - title: NGN Account
@@ -63,6 +65,7 @@ properties:
         BRL_ACCOUNT: ../common/PaymentBrlAccountInfo.yaml
         MXN_ACCOUNT: ../common/PaymentMxnAccountInfo.yaml
         DKK_ACCOUNT: ../common/PaymentDkkAccountInfo.yaml
+        EUR_ACCOUNT: ../common/PaymentEurAccountInfo.yaml
         INR_ACCOUNT: ../common/PaymentInrAccountInfo.yaml
         NGN_ACCOUNT: ../common/PaymentNgnAccountInfo.yaml
         CAD_ACCOUNT: ../common/PaymentCadAccountInfo.yaml
