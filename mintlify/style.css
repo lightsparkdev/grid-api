@@ -4157,12 +4157,6 @@ html.dark .rate-explorer-source-label {
   display: block;
 }
 
-.rate-explorer-flag-circle {
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: block;
-}
-
 /* ---------- Destination trigger / placeholder ---------- */
 .rate-explorer-dest-trigger {
   display: flex;
@@ -4549,10 +4543,6 @@ html.dark .rate-explorer-table thead th {
   min-width: 240px;
 }
 
-.rate-explorer-th-grid {
-  /* Icon + text inline with no gap */
-}
-
 .rate-explorer-grid-icon {
   display: inline-block;
   vertical-align: middle;
@@ -4609,10 +4599,6 @@ html.dark .rate-explorer-row:hover td.rate-explorer-provider-best {
 }
 
 /* ---------- Destination cell ---------- */
-.rate-explorer-td-dest {
-  width: 200px;
-}
-
 .rate-explorer-dest {
   display: flex;
   align-items: center;
@@ -4622,7 +4608,6 @@ html.dark .rate-explorer-row:hover td.rate-explorer-provider-best {
 .rate-explorer-dest-text {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .rate-explorer-currency-code {
@@ -4735,16 +4720,11 @@ html.dark .rate-explorer-disclaimer {
 @media (max-width: 768px) {
   .rate-explorer-header {
     padding: 10px 12px;
-    padding-right: 12px;
     flex-direction: column;
     align-items: stretch;
   }
 
   .rate-explorer-header-left {
-    flex-wrap: wrap;
-  }
-
-  .rate-explorer-header-mid {
     flex-wrap: wrap;
   }
 
