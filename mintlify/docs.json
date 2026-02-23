@@ -29,8 +29,8 @@
     }
   },
   "favicon": {
-    "light": "/favicon-dark.svg",
-    "dark": "/favicon-light.svg"
+    "light": "/favicon-light.svg",
+    "dark": "/favicon-dark.svg"
   },
   "navigation": {
     "tabs": [
