@@ -3,30 +3,28 @@ required:
 - accountType
 - countries
 - paymentRails
-- bankName
-- accountNumber
+- clabeNumber
 properties:
   accountType:
     type: string
     enum:
-    - PHP_ACCOUNT
+    - MXN_ACCOUNT
   countries:
     type: array
     items:
       type: string
       enum:
-      - PH
+      - MX
   paymentRails:
     type: array
     items:
       type: string
       enum:
-      - BANK_TRANSFER
-  bankName:
+      - SPEI
+  clabeNumber:
     type: string
-    description: Name of the beneficiary's bank
-    example: BDO Unibank
-  accountNumber:
-    type: string
-    description: Bank account number
-    example: '001234567890'
+    description: The CLABE number of the bank
+    example: '123456789012345678'
+    minLength: 18
+    maxLength: 18
+    pattern: ^[0-9]{18}$

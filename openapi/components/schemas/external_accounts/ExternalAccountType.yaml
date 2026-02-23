@@ -1,12 +1,5 @@
 type: string
 enum:
-  - US_ACCOUNT
-  - CLABE
-  - PIX
-  - IBAN
-  - UPI
-  - NGN_ACCOUNT
-  - CAD_ACCOUNT
   - GBP_ACCOUNT
   - PHP_ACCOUNT
   - SGD_ACCOUNT
@@ -16,5 +9,16 @@ enum:
   - TRON_WALLET
   - POLYGON_WALLET
   - BASE_WALLET
+  - BRL_ACCOUNT
+  - DKK_ACCOUNT
+  - EUR_ACCOUNT
+  - HKD_ACCOUNT
+  - IDR_ACCOUNT
+  - INR_ACCOUNT
+  - MXN_ACCOUNT
+  - MYR_ACCOUNT
+  - THB_ACCOUNT
+  - USD_ACCOUNT
+  - VND_ACCOUNT
 description: Type of external account or wallet
-example: US_ACCOUNT
+example: GBP_ACCOUNT

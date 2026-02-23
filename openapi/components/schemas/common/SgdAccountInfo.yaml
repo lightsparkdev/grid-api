@@ -1,14 +1,30 @@
 type: object
 required:
-  - bankName
-  - swiftCode
-  - accountNumber
-  - accountType
+- accountType
+- countries
+- paymentRails
+- bankName
+- swiftCode
+- accountNumber
 properties:
   accountType:
     type: string
     enum:
-      - SGD_ACCOUNT
+    - SGD_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - SG
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - PAYNOW
+      - FAST
+      - BANK_TRANSFER
   bankName:
     type: string
     description: Name of the beneficiary's bank

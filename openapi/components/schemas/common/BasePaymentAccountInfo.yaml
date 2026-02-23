@@ -7,12 +7,22 @@ properties:
 discriminator:
   propertyName: accountType
   mapping:
-    CLABE: ./PaymentClabeAccountInfo.yaml
-    US_ACCOUNT: ./PaymentUsAccountInfo.yaml
-    PIX: ./PaymentPixAccountInfo.yaml
-    IBAN: ./PaymentIbanAccountInfo.yaml
-    UPI: ./PaymentUpiAccountInfo.yaml
+    USD_ACCOUNT: ./PaymentUsdAccountInfo.yaml
+    BRL_ACCOUNT: ./PaymentBrlAccountInfo.yaml
+    MXN_ACCOUNT: ./PaymentMxnAccountInfo.yaml
+    DKK_ACCOUNT: ./PaymentDkkAccountInfo.yaml
+    EUR_ACCOUNT: ./PaymentEurAccountInfo.yaml
+    INR_ACCOUNT: ./PaymentInrAccountInfo.yaml
     NGN_ACCOUNT: ./PaymentNgnAccountInfo.yaml
+    CAD_ACCOUNT: ./PaymentCadAccountInfo.yaml
+    GBP_ACCOUNT: ./PaymentGbpAccountInfo.yaml
+    HKD_ACCOUNT: ./PaymentHkdAccountInfo.yaml
+    IDR_ACCOUNT: ./PaymentIdrAccountInfo.yaml
+    MYR_ACCOUNT: ./PaymentMyrAccountInfo.yaml
+    PHP_ACCOUNT: ./PaymentPhpAccountInfo.yaml
+    SGD_ACCOUNT: ./PaymentSgdAccountInfo.yaml
+    THB_ACCOUNT: ./PaymentThbAccountInfo.yaml
+    VND_ACCOUNT: ./PaymentVndAccountInfo.yaml
     SPARK_WALLET: ./PaymentSparkWalletInfo.yaml
     LIGHTNING: ./PaymentLightningInvoiceInfo.yaml
     SOLANA_WALLET: ./PaymentSolanaWalletInfo.yaml

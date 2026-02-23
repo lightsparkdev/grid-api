@@ -1,11 +1,21 @@
 type: string
 enum:
-  - CLABE
-  - US_ACCOUNT
-  - PIX
-  - IBAN
-  - UPI
+  - USD_ACCOUNT
+  - BRL_ACCOUNT
+  - MXN_ACCOUNT
+  - DKK_ACCOUNT
+  - EUR_ACCOUNT
+  - INR_ACCOUNT
   - NGN_ACCOUNT
+  - CAD_ACCOUNT
+  - GBP_ACCOUNT
+  - HKD_ACCOUNT
+  - IDR_ACCOUNT
+  - MYR_ACCOUNT
+  - PHP_ACCOUNT
+  - SGD_ACCOUNT
+  - THB_ACCOUNT
+  - VND_ACCOUNT
   - SPARK_WALLET
   - LIGHTNING
   - SOLANA_WALLET
@@ -13,4 +23,4 @@ enum:
   - POLYGON_WALLET
   - BASE_WALLET
 description: Type of payment account or wallet
-example: US_ACCOUNT
+example: USD_ACCOUNT

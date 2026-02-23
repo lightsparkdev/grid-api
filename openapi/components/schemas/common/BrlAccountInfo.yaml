@@ -1,0 +1,34 @@
+type: object
+required:
+- accountType
+- countries
+- paymentRails
+- pixKey
+- pixKeyType
+- taxId
+properties:
+  accountType:
+    type: string
+    enum:
+    - BRL_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - BR
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - PIX
+  pixKey:
+    type: string
+    description: The PIX key of the bank
+  pixKeyType:
+    type: string
+    description: The type of PIX key of the bank
+  taxId:
+    type: string
+    description: The tax ID of the bank account

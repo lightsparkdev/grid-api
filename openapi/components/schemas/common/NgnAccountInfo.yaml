@@ -1,13 +1,27 @@
 type: object
 required:
+  - accountType
+  - countries
+  - paymentRails
   - accountNumber
   - bankName
-  - accountType
 properties:
   accountType:
     type: string
     enum:
       - NGN_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - NG
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - BANK_TRANSFER
   accountNumber:
     type: string
     description: Nigerian bank account number

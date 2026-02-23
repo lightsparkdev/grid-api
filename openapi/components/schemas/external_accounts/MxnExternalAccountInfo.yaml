@@ -1,0 +1,18 @@
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/MxnAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/MxnBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/MxnBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

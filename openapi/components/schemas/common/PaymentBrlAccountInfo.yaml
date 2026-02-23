@@ -1,0 +1,3 @@
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./BrlAccountInfo.yaml

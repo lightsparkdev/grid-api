@@ -109,16 +109,19 @@ resources:
     subresources:
       external_accounts:
         models:
-          us_account_info: '#/components/schemas/UsAccountExternalAccountInfo'
-          clabe_account_info: '#/components/schemas/ClabeAccountExternalAccountInfo'
-          pix_account_info: '#/components/schemas/PixAccountExternalAccountInfo'
-          iban_account_info: '#/components/schemas/IbanAccountExternalAccountInfo'
-          upi_account_info: '#/components/schemas/UpiAccountExternalAccountInfo'
-          ngn_account_info: '#/components/schemas/NgnAccountExternalAccountInfo'
-          cad_account_info: '#/components/schemas/CadAccountExternalAccountInfo'
-          gbp_account_info: '#/components/schemas/GbpAccountExternalAccountInfo'
-          php_account_info: '#/components/schemas/PhpAccountExternalAccountInfo'
-          sgd_account_info: '#/components/schemas/SgdAccountExternalAccountInfo'
+          usd_account_info: '#/components/schemas/UsdExternalAccountInfo'
+          brl_account_info: '#/components/schemas/BrlExternalAccountInfo'
+          mxn_account_info: '#/components/schemas/MxnExternalAccountInfo'
+          dkk_account_info: '#/components/schemas/DkkExternalAccountInfo'
+          inr_account_info: '#/components/schemas/InrExternalAccountInfo'
+          gbp_account_info: '#/components/schemas/GbpExternalAccountInfo'
+          hkd_account_info: '#/components/schemas/HkdExternalAccountInfo'
+          idr_account_info: '#/components/schemas/IdrExternalAccountInfo'
+          myr_account_info: '#/components/schemas/MyrExternalAccountInfo'
+          php_account_info: '#/components/schemas/PhpExternalAccountInfo'
+          sgd_account_info: '#/components/schemas/SgdExternalAccountInfo'
+          thb_account_info: '#/components/schemas/ThbExternalAccountInfo'
+          vnd_account_info: '#/components/schemas/VndExternalAccountInfo'
           spark_wallet_info: '#/components/schemas/SparkWalletExternalAccountInfo'
           solana_wallet_info: '#/components/schemas/SolanaWalletExternalAccountInfo'
           tron_wallet_info: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -483,12 +486,22 @@ openapi:
         stripping the accountType discriminator, which causes TS2312 errors
       args:
         target:
-          - "$.components.schemas.PaymentClabeAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentUsAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentPixAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentIbanAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentUpiAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentUsdAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentBrlAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentMxnAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentDkkAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentEurAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentInrAccountInfo.allOf[0]"
           - "$.components.schemas.PaymentNgnAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentCadAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentGbpAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentHkdAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentIdrAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentMyrAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentPhpAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentSgdAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentThbAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentVndAccountInfo.allOf[0]"
           - "$.components.schemas.PaymentSparkWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentLightningInvoiceInfo.allOf[0]"
           - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"
@@ -519,16 +532,6 @@ openapi:
           - "$.components.schemas.UmaAddressDestination.allOf[0]"
           - "$.components.schemas.ExternalAccountDetailsDestination.allOf[0]"
         keys: [ "$ref" ]
-
-    # ── beneficiaryType: remove from base schema ──
-    - command: remove
-      reason: >-
-        Remove beneficiaryType $ref from base schema so the inline
-        single-value enums in each beneficiary variant become the sole definition
-      args:
-        target:
-          - "$.components.schemas.BaseBeneficiary.properties"
-        keys: [ "beneficiaryType" ]
 
 codeflow:
   detect_breaking_changes: true
