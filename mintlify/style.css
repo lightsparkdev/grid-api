@@ -2643,9 +2643,17 @@ html.dark #api-playground-2-operation-page [data-component-part="tab-button"][da
   background-color: var(--ls-gray-075) !important;
 }
 
+#content .rate-explorer-table tbody tr:hover {
+  background-color: transparent !important;
+}
+
 html.dark #content table tbody tr:hover,
 html.dark .prose table tbody tr:hover {
   background-color: var(--ls-white-02) !important;
+}
+
+html.dark #content .rate-explorer-table tbody tr:hover {
+  background-color: transparent !important;
 }
 
 /* ===========================================
@@ -4005,6 +4013,12 @@ html.dark .homepage-divider {
 /* Hide static placeholder once the React component mounts */
 #rate-explorer-static {
   margin-top: 40px;
+  border-top: 0.5px solid var(--ls-black-10);
+  border-bottom: 0.5px solid var(--ls-black-10);
+}
+
+html.dark #rate-explorer-static {
+  border-color: var(--ls-white-06);
 }
 
 #content:has(.rate-explorer) #rate-explorer-static {
@@ -4031,13 +4045,22 @@ html.dark .rate-explorer {
   gap: 8px;
   padding: 12px 20px;
   padding-right: 340px;
-  position: relative;
   background: var(--ls-gray-025);
   border-bottom: 0.5px solid var(--ls-black-10);
+  position: sticky;
+  top: var(--re-navbar-h, 0px);
+  z-index: 11;
+  transition: transform 0.25s ease, margin-bottom 0.25s ease;
+}
+
+.rate-explorer-header.re-header-hidden {
+  transform: translateY(-100%);
+  margin-bottom: calc(-1 * var(--re-header-h, 0px));
+  pointer-events: none;
 }
 
 html.dark .rate-explorer-header {
-  background: var(--ls-white-02);
+  background: var(--ls-gray-950);
   border-color: var(--ls-white-06);
 }
 
@@ -4370,6 +4393,10 @@ html.dark .rate-explorer-dropdown-search-row {
   opacity: 0.4;
 }
 
+html.dark .rate-explorer-dropdown-search-icon {
+  filter: invert(1);
+}
+
 .rate-explorer-dropdown-search {
   width: 100%;
   padding: 0;
@@ -4511,6 +4538,7 @@ html.dark .rate-explorer-toggle-btn.active {
 .rate-explorer-table {
   width: auto !important;
   min-width: 0 !important;
+  overflow: clip;
 }
 
 .rate-explorer-table td {
@@ -4529,13 +4557,13 @@ html.dark .rate-explorer-toggle-btn.active {
 }
 
 .rate-explorer-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: clip;
 }
 
 .rate-explorer-table-wrapper [data-table-wrapper] {
   margin: 0 !important;
   padding: 0 !important;
+  overflow-x: clip !important;
 }
 
 .rate-explorer-table {
@@ -4556,16 +4584,52 @@ html.dark .rate-explorer-toggle-btn.active {
   vertical-align: middle;
   white-space: nowrap;
   width: 1%;
-  border-bottom: 0.5px solid var(--ls-black-10);
+  box-shadow: inset 0 -0.5px 0 var(--ls-black-10);
+  position: sticky;
+  top: calc(var(--re-thead-top, 0px) - 1px);
+  z-index: 10;
+  background: var(--ls-gray-025);
+  transition: top 0.25s ease;
 }
 
 html.dark .rate-explorer-table thead th {
   color: var(--ls-gray-400);
-  border-color: var(--ls-white-06);
+  box-shadow: inset 0 -0.5px 0 var(--ls-white-06);
+  background: var(--ls-gray-950);
 }
+
 
 .rate-explorer-th-dest {
   width: auto;
+}
+
+.rate-explorer-col-grid {
+  border-left: 0.5px solid var(--ls-black-10);
+  border-right: 0.5px solid var(--ls-black-10);
+}
+
+.rate-explorer-table thead th.rate-explorer-col-grid {
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-col-grid {
+  border-left-color: var(--ls-white-06);
+  border-right-color: var(--ls-white-06);
+}
+
+html.dark .rate-explorer-table thead th.rate-explorer-col-grid {
+  color: var(--ls-gray-200);
+}
+
+.rate-explorer-grid-logo {
+  height: 13px;
+  width: auto;
+  min-width: fit-content;
+  vertical-align: middle;
+}
+
+html.dark .rate-explorer-grid-logo {
+  filter: invert(1) brightness(0.87);
 }
 
 .rate-explorer-grid-icon {
@@ -4583,6 +4647,56 @@ html.dark .rate-explorer-table thead th {
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
+}
+
+.rate-explorer-bank-icon {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  margin-right: 2px;
+  color: currentColor;
+}
+
+.rate-explorer-provider-logo {
+  height: 24px;
+  width: auto;
+  min-width: fit-content;
+  vertical-align: middle;
+}
+
+html.dark .rate-explorer-provider-logo {
+  filter: brightness(0.82);
+}
+
+.rate-explorer-table tbody td {
+  position: relative;
+}
+
+.rate-explorer-table tbody td:hover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -9999px;
+  bottom: -9999px;
+  background: var(--ls-black-02);
+  pointer-events: none;
+  z-index: -1;
+}
+
+html.dark .rate-explorer-table tbody td:hover::after {
+  background: var(--ls-white-02);
+}
+
+.rate-explorer-table thead th.re-col-hover {
+  background: var(--ls-gray-075);
+}
+
+html.dark .rate-explorer-table thead th.re-col-hover {
+  background: var(--ls-gray-925);
 }
 
 .rate-explorer-th-delta {
@@ -4610,7 +4724,7 @@ html.dark .rate-explorer-table tbody td {
 
 /* Row hover */
 .rate-explorer-row:hover td {
-  background: var(--ls-black-04);
+  background: var(--ls-black-02);
 }
 
 .rate-explorer-row:hover td.rate-explorer-provider-best {
@@ -4618,7 +4732,7 @@ html.dark .rate-explorer-table tbody td {
 }
 
 html.dark .rate-explorer-row:hover td {
-  background: var(--ls-white-04);
+  background: var(--ls-white-02);
 }
 
 html.dark .rate-explorer-row:hover td.rate-explorer-provider-best {
@@ -4671,11 +4785,11 @@ html.dark .rate-explorer-currency-code {
 
 /* Best provider highlight */
 .rate-explorer-provider-best {
-  background: rgba(17, 169, 103, 0.04);
+  /* background: rgba(17, 169, 103, 0.04); */
 }
 
 html.dark .rate-explorer-provider-best {
-  background: rgba(74, 222, 128, 0.06);
+  /* background: rgba(74, 222, 128, 0.06); */
 }
 
 .rate-explorer-provider-best .rate-explorer-provider-amount {
@@ -4818,10 +4932,30 @@ html.dark .rate-explorer-skeleton-bar {
 
 /* ---------- Mobile responsive ---------- */
 @media (max-width: 768px) {
+  .rate-explorer-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rate-explorer-table-wrapper [data-table-wrapper] {
+    overflow-x: auto !important;
+  }
+
   .rate-explorer-header {
-    padding: 10px 12px;
+    position: relative;
+    top: auto;
+    z-index: auto;
+    box-shadow: none;
+    transform: none !important;
+    padding: 10px 20px;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .rate-explorer-table thead th {
+    position: relative;
+    top: auto;
+    z-index: auto;
   }
 
   .rate-explorer-header-left {
@@ -4848,8 +4982,8 @@ html.dark .rate-explorer-skeleton-bar {
 
   .rate-explorer-table thead th,
   .rate-explorer-table tbody td {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
   .rate-explorer-delta,
@@ -4858,7 +4992,7 @@ html.dark .rate-explorer-skeleton-bar {
   }
 
   .rate-explorer-disclaimer {
-    padding: 10px 12px;
+    padding: 10px 20px;
   }
 
   .rate-explorer-provider-amount {
