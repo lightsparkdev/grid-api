@@ -1648,6 +1648,7 @@ div.callout,
 [data-testid="code-group-select"] {
   border-radius: var(--ls-radius-md) !important;
   padding: 0 !important;
+  overflow: hidden !important;
   border: 0.5px solid var(--ls-black-10) !important;
 }
 
