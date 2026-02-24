@@ -587,6 +587,16 @@ html.dark .navbar-link svg {
   transition: none !important;
 }
 
+/* Remove dark background behind chat area (sticky container + pseudo-elements) */
+div:has(> .chat-assistant-floating-input) {
+  background: transparent !important;
+}
+
+div:has(> .chat-assistant-floating-input)::before,
+.chat-assistant-floating-input > div::before {
+  background: transparent !important;
+}
+
 /* Mobile assistant bar placeholder - make transparent so it doesn't cover content */
 #assistant-bar-placeholder {
   background: transparent !important;
@@ -602,6 +612,14 @@ html.dark .navbar-link svg {
 
   .chat-assistant-floating-input {
     width: calc(100% + 16px) !important;
+  }
+}
+
+/* Desktop: constrain chat bar to 384px and center */
+@media (min-width: 640px) {
+  .chat-assistant-floating-input {
+    max-width: 384px !important;
+    margin: 0 auto !important;
   }
 }
 
