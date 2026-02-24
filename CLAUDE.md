@@ -13,7 +13,7 @@ Grid is an API for global payments across fiat, stablecoins, and Bitcoin.
 - Use snippets from `mintlify/snippets/` instead of duplicating content across use cases
 - Follow writing standards in `mintlify/CLAUDE.md` for all documentation content
 - MDX files require frontmatter with `title` and `description`
-- Do not use `React.useEffect` in MDX — it breaks Mintlify's acorn parser. `React.useState` is fine.
+- React hooks (`useState`, `useEffect`, etc.) work in MDX. If the acorn parser throws, it's usually a JS expression issue (e.g., template literals in JSX curlies), not the hook itself.
 
 ## Commands
 
