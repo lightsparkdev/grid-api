@@ -212,7 +212,7 @@ export const BankIcon = () => (
 );
 
 export const ProviderTh = ({ name }) => {
-  if (name === 'Avg Bank') return <><BankIcon />Avg Bank</>;
+  if (name === 'Bank avg.') return <><BankIcon />Bank avg.</>;
   const src = PROVIDER_LOGOS[name];
   if (!src) return name;
   return <img src={src} alt={name} className="rate-explorer-provider-logo" />;
@@ -359,7 +359,7 @@ export const StaticPlaceholder = () => (
         </div>
       </div>
     </div>
-    <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Avg Bank']} />
+    <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Bank avg.']} />
   </div>
 );
 
@@ -809,7 +809,7 @@ export const RateExplorer = () => {
         </div>
 
         {liveRates === null || !competitorDone ? (
-          <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Avg Bank']} />
+          <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Bank avg.']} />
         ) : (
         <div className="rate-explorer-table-wrapper">
           <table className="rate-explorer-table">
@@ -823,7 +823,7 @@ export const RateExplorer = () => {
                 {displayProviders.map((name) => (
                   <th key={name}><ProviderTh name={name} /></th>
                 ))}
-                <th><BankIcon />Avg Bank</th>
+                <th><BankIcon />Bank avg.</th>
                 <th className="rate-explorer-th-delta"><span className="rate-explorer-grid-icon" />delta</th>
               </tr>
             </thead>
@@ -957,7 +957,7 @@ export const RateExplorer = () => {
         )}
 
         <div className="rate-explorer-disclaimer">
-          Grid rates reflect standard published pricing (not personalized quotes). Wise and dynamic provider rates are live via public comparison data and include all fees. Stripe and Airwallex costs are based on published pricing schedules, not live API data. Avg Bank is the average of bank-type providers from comparison data. Actual rates may vary. Get real-time Grid quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
+          Grid rates reflect standard published pricing, not personalized quotes. Stripe and Airwallex costs are based on published pricing schedules, not live API data. Wise and other provider rates are live via public comparison data and include all fees. Bank avg. is the average of bank-type providers from comparison data. Actual rates may vary — get real-time quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
         </div>
       </div>
     </div>
