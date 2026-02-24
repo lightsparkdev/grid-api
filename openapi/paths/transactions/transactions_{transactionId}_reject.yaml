@@ -23,14 +23,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          properties:
-            reason:
-              type: string
-              description: >-
-                Optional reason for rejecting the payment. This is just for
-                debugging purposes or can be used for a platform's own purposes.
-              example: RESTRICTED_JURISDICTION
+          $ref: ../../components/schemas/transactions/RejectPaymentRequest.yaml
   responses:
     '200':
       description: Payment rejected successfully

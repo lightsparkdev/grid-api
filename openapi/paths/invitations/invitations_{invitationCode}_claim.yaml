@@ -33,14 +33,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          required:
-            - inviteeUma
-          properties:
-            inviteeUma:
-              type: string
-              description: The UMA address of the customer claiming the invitation
-              example: $invitee@uma.domain
+          $ref: ../../components/schemas/invitations/UmaInvitationClaimRequest.yaml
   responses:
     '200':
       description: Invitation claimed successfully

@@ -82,18 +82,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                umaDomain:
-                  type: string
-                  example: mycompany.com
-                webhookEndpoint:
-                  type: string
-                  example: https://api.mycompany.com/webhooks/uma
-                supportedCurrencies:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/PlatformCurrencyConfig'
+              $ref: '#/components/schemas/PlatformConfigUpdateRequest'
             example:
               umaDomain: mycompany.com
               webhookEndpoint: https://api.mycompany.com/webhooks/uma
@@ -644,20 +633,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  kycUrl:
-                    type: string
-                    description: A hosted KYC link for your customer to complete KYC
-                    example: https://example.com/redirect
-                  platformCustomerId:
-                    type: string
-                    description: The platform id of the customer to onboard
-                    example: 019542f5-b3e7-1d02-0000-000000000001
-                  customerId:
-                    type: string
-                    description: The customer id of the newly created customer on the system
-                    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+                $ref: '#/components/schemas/KycLinkResponse'
         '401':
           description: Unauthorized
           content:
@@ -1259,36 +1235,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - source
-                - destination
-              properties:
-                source:
-                  type: object
-                  required:
-                    - accountId
-                  properties:
-                    accountId:
-                      type: string
-                      description: Reference to an external account ID
-                      example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  description: Source external account details
-                destination:
-                  type: object
-                  required:
-                    - accountId
-                  properties:
-                    accountId:
-                      type: string
-                      description: Reference to an internal account ID
-                      example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  description: Destination internal account details
-                amount:
-                  type: integer
-                  format: int64
-                  description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-                  example: 12550
+              $ref: '#/components/schemas/TransferInRequest'
             examples:
               transferIn:
                 summary: Transfer from external to internal account
@@ -1353,36 +1300,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - source
-                - destination
-              properties:
-                source:
-                  type: object
-                  required:
-                    - accountId
-                  properties:
-                    accountId:
-                      type: string
-                      description: Reference to an internal account ID
-                      example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  description: Source internal account details
-                destination:
-                  type: object
-                  required:
-                    - accountId
-                  properties:
-                    accountId:
-                      type: string
-                      description: Reference to an external account ID
-                      example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  description: Destination external account details
-                amount:
-                  type: integer
-                  format: int64
-                  description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-                  example: 12550
+              $ref: '#/components/schemas/TransferOutRequest'
             examples:
               transferOut:
                 summary: Transfer from internal to external account
@@ -2154,12 +2072,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                receiverCustomerInfo:
-                  type: object
-                  additionalProperties: true
-                  description: Information about the recipient, provided by the platform if requested in the original webhook via `requestedReceiverCustomerInfoFields`.
+              $ref: '#/components/schemas/ApprovePaymentRequest'
       responses:
         '200':
           description: Payment approved successfully
@@ -2220,12 +2133,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                reason:
-                  type: string
-                  description: Optional reason for rejecting the payment. This is just for debugging purposes or can be used for a platform's own purposes.
-                  example: RESTRICTED_JURISDICTION
+              $ref: '#/components/schemas/RejectPaymentRequest'
       responses:
         '200':
           description: Payment rejected successfully
@@ -2374,20 +2282,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - jobId
-                  - status
-                properties:
-                  jobId:
-                    type: string
-                    description: Unique identifier for the bulk import job
-                    example: Job:019542f5-b3e7-1d02-0000-000000000006
-                  status:
-                    type: string
-                    enum:
-                      - PENDING
-                      - PROCESSING
+                $ref: '#/components/schemas/BulkCustomerImportJobAccepted'
         '401':
           description: Unauthorized
           content:
@@ -2464,33 +2359,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - inviterUma
-              properties:
-                inviterUma:
-                  type: string
-                  description: The UMA address of the customer creating the invitation
-                  example: $inviter@uma.domain
-                firstName:
-                  type: string
-                  description: First name of the invitee to show as part of the invite
-                  example: Alice
-                amountToSend:
-                  description: |
-                    An amount to send (in the smallest unit of the customer's currency) to the invitee when the invitation is claimed.
-                    This is optional and if not provided, the invitee will not receive any amount. Note that the actual sending of
-                    the amount must be done by the inviter platform once the INVITATION_CLAIMED webhook is received. If the inviter
-                    platform either does not send the payment or the payment fails, the invitee will not receive this amount. This
-                    field is primarily used for display purposes on the claiming side of the invitation.
-                  type: integer
-                  format: int64
-                  example: 12550
-                expiresAt:
-                  type: string
-                  format: date-time
-                  description: When the invitation expires (if at all)
-                  example: '2025-09-01T14:30:00Z'
+              $ref: '#/components/schemas/UmaInvitationCreateRequest'
       responses:
         '201':
           description: Invitation created successfully
@@ -2587,14 +2456,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - inviteeUma
-              properties:
-                inviteeUma:
-                  type: string
-                  description: The UMA address of the customer claiming the invitation
-                  example: $invitee@uma.domain
+              $ref: '#/components/schemas/UmaInvitationClaimRequest'
       responses:
         '200':
           description: Invitation claimed successfully
@@ -2704,25 +2566,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - quoteId
-                - currencyCode
-              properties:
-                quoteId:
-                  type: string
-                  description: The unique identifier of the quote
-                  example: Quote:019542f5-b3e7-1d02-0000-000000000006
-                currencyCode:
-                  type: string
-                  description: Currency code for the funds to be sent
-                  example: USD
-                currencyAmount:
-                  type: integer
-                  format: int64
-                  description: The amount to send in the smallest unit of the currency (eg. cents). If not provided, the amount will be derived from the quote.
-                  exclusiveMinimum: 0
-                  example: 1000
+              $ref: '#/components/schemas/SandboxSendRequest'
       responses:
         '200':
           description: Funds received successfully
@@ -2776,34 +2620,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - senderUmaAddress
-                - receivingCurrencyCode
-                - receivingCurrencyAmount
-              properties:
-                senderUmaAddress:
-                  type: string
-                  description: UMA address of the sender from the sandbox
-                  example: $success.usd@sandbox.grid.uma.money
-                receiverUmaAddress:
-                  type: string
-                  description: UMA address of the receiver (optional if customerId is provided)
-                  example: $receiver@uma.domain
-                customerId:
-                  type: string
-                  description: System ID of the receiver (optional if receiverUmaAddress is provided)
-                  example: Customer:019542f5-b3e7-1d02-0000-000000000001
-                receivingCurrencyCode:
-                  type: string
-                  description: The currency code for the receiving amount
-                  example: USD
-                receivingCurrencyAmount:
-                  type: integer
-                  format: int64
-                  description: The amount to be received in the smallest unit of the currency (eg. cents)
-                  exclusiveMinimum: 0
-                  example: 1000
+              $ref: '#/components/schemas/SandboxUmaReceiveRequest'
       responses:
         '200':
           description: Payment triggered successfully
@@ -2865,17 +2682,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - amount
-              properties:
-                amount:
-                  type: integer
-                  format: int64
-                  description: Amount to add in the smallest unit of the account's currency (e.g., cents for USD/EUR, satoshis for BTC)
-                  exclusiveMinimum: 0
-                  maximum: 100000000000
-                  example: 100000
+              $ref: '#/components/schemas/SandboxFundRequest'
             examples:
               fundUSDAccount:
                 summary: Fund USD internal account with $1,000
@@ -3025,21 +2832,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              title: tokenCreate
-              properties:
-                name:
-                  type: string
-                  description: Name of the token to help identify it
-                  example: Sandbox read-only
-                permissions:
-                  type: array
-                  description: A list of permissions to grant to the token
-                  items:
-                    $ref: '#/components/schemas/Permission'
-              required:
-                - name
-                - permissions
+              $ref: '#/components/schemas/ApiTokenCreateRequest'
       responses:
         '201':
           description: API token created successfully
@@ -4131,6 +3924,19 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    PlatformConfigUpdateRequest:
+      type: object
+      properties:
+        umaDomain:
+          type: string
+          example: mycompany.com
+        webhookEndpoint:
+          type: string
+          example: https://api.mycompany.com/webhooks/uma
+        supportedCurrencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformCurrencyConfig'
     Error400:
       type: object
       required:
@@ -4752,6 +4558,21 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    KycLinkResponse:
+      type: object
+      properties:
+        kycUrl:
+          type: string
+          description: A hosted KYC link for your customer to complete KYC
+          example: https://example.com/redirect
+        platformCustomerId:
+          type: string
+          description: The platform id of the customer to onboard
+          example: 019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          description: The customer id of the newly created customer on the system
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
     CurrencyAmount:
       type: object
       required:
@@ -6923,6 +6744,37 @@ components:
             Optional Plaid account ID if the customer selected a specific account.
             If not provided, the default account will be used.
           example: plaid_account_id_123
+    TransferInRequest:
+      type: object
+      required:
+        - source
+        - destination
+      properties:
+        source:
+          type: object
+          required:
+            - accountId
+          properties:
+            accountId:
+              type: string
+              description: Reference to an external account ID
+              example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+          description: Source external account details
+        destination:
+          type: object
+          required:
+            - accountId
+          properties:
+            accountId:
+              type: string
+              description: Reference to an internal account ID
+              example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          description: Destination internal account details
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
     IncomingTransaction:
       allOf:
         - $ref: '#/components/schemas/Transaction'
@@ -7420,6 +7272,37 @@ components:
         mapping:
           INCOMING: '#/components/schemas/IncomingTransaction'
           OUTGOING: '#/components/schemas/OutgoingTransaction'
+    TransferOutRequest:
+      type: object
+      required:
+        - source
+        - destination
+      properties:
+        source:
+          type: object
+          required:
+            - accountId
+          properties:
+            accountId:
+              type: string
+              description: Reference to an internal account ID
+              example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          description: Source internal account details
+        destination:
+          type: object
+          required:
+            - accountId
+          properties:
+            accountId:
+              type: string
+              description: Reference to an external account ID
+              example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+          description: Destination external account details
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
     CurrencyPreference:
       type: object
       required:
@@ -7861,6 +7744,20 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    ApprovePaymentRequest:
+      type: object
+      properties:
+        receiverCustomerInfo:
+          type: object
+          additionalProperties: true
+          description: Information about the recipient, provided by the platform if requested in the original webhook via `requestedReceiverCustomerInfoFields`.
+    RejectPaymentRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional reason for rejecting the payment. This is just for debugging purposes or can be used for a platform's own purposes.
+          example: RESTRICTED_JURISDICTION
     TestWebhookResponse:
       type: object
       required:
@@ -7878,6 +7775,21 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    BulkCustomerImportJobAccepted:
+      type: object
+      required:
+        - jobId
+        - status
+      properties:
+        jobId:
+          type: string
+          description: Unique identifier for the bulk import job
+          example: Job:019542f5-b3e7-1d02-0000-000000000006
+        status:
+          type: string
+          enum:
+            - PENDING
+            - PROCESSING
     GridError:
       type: object
       title: GridError
@@ -7958,6 +7870,34 @@ components:
           format: date-time
           description: Timestamp when the job completed (only present for COMPLETED or FAILED status)
           example: '2025-08-15T14:32:00Z'
+    UmaInvitationCreateRequest:
+      type: object
+      required:
+        - inviterUma
+      properties:
+        inviterUma:
+          type: string
+          description: The UMA address of the customer creating the invitation
+          example: $inviter@uma.domain
+        firstName:
+          type: string
+          description: First name of the invitee to show as part of the invite
+          example: Alice
+        amountToSend:
+          description: |
+            An amount to send (in the smallest unit of the customer's currency) to the invitee when the invitation is claimed.
+            This is optional and if not provided, the invitee will not receive any amount. Note that the actual sending of
+            the amount must be done by the inviter platform once the INVITATION_CLAIMED webhook is received. If the inviter
+            platform either does not send the payment or the payment fails, the invitee will not receive this amount. This
+            field is primarily used for display purposes on the claiming side of the invitation.
+          type: integer
+          format: int64
+          example: 12550
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the invitation expires (if at all)
+          example: '2025-09-01T14:30:00Z'
     UmaInvitation:
       type: object
       required:
@@ -8016,6 +7956,15 @@ components:
           description: |-
             The amount to send to the invitee when the invitation is claimed. This is optional and if not provided, the invitee will not receive any amount. Note that the actual sending of the amount must be done by the inviter platform once the INVITATION_CLAIMED webhook is received. If the inviter platform either does not send the payment or the payment fails, the invitee will not receive this amount. This field is primarily used for display purposes on the claiming side of the invitation.
             This field is useful for "send-by-link" style customer flows where an inviter can send a payment simply by sharing a link without knowing the receiver's UMA address. Note that these sends can only be sender-locked, meaning that the sender will not know ahead of time how much the receiver will receive in the receiving currency.
+    UmaInvitationClaimRequest:
+      type: object
+      required:
+        - inviteeUma
+      properties:
+        inviteeUma:
+          type: string
+          description: The UMA address of the customer claiming the invitation
+          example: $invitee@uma.domain
     Error403:
       type: object
       required:
@@ -8049,6 +7998,67 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    SandboxSendRequest:
+      type: object
+      required:
+        - quoteId
+        - currencyCode
+      properties:
+        quoteId:
+          type: string
+          description: The unique identifier of the quote
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
+        currencyCode:
+          type: string
+          description: Currency code for the funds to be sent
+          example: USD
+        currencyAmount:
+          type: integer
+          format: int64
+          description: The amount to send in the smallest unit of the currency (eg. cents). If not provided, the amount will be derived from the quote.
+          exclusiveMinimum: 0
+          example: 1000
+    SandboxUmaReceiveRequest:
+      type: object
+      required:
+        - senderUmaAddress
+        - receivingCurrencyCode
+        - receivingCurrencyAmount
+      properties:
+        senderUmaAddress:
+          type: string
+          description: UMA address of the sender from the sandbox
+          example: $success.usd@sandbox.grid.uma.money
+        receiverUmaAddress:
+          type: string
+          description: UMA address of the receiver (optional if customerId is provided)
+          example: $receiver@uma.domain
+        customerId:
+          type: string
+          description: System ID of the receiver (optional if receiverUmaAddress is provided)
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        receivingCurrencyCode:
+          type: string
+          description: The currency code for the receiving amount
+          example: USD
+        receivingCurrencyAmount:
+          type: integer
+          format: int64
+          description: The amount to be received in the smallest unit of the currency (eg. cents)
+          exclusiveMinimum: 0
+          example: 1000
+    SandboxFundRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount to add in the smallest unit of the account's currency (e.g., cents for USD/EUR, satoshis for BTC)
+          exclusiveMinimum: 0
+          maximum: 100000000000
+          example: 100000
     UmaProvider:
       type: object
       properties:
@@ -8138,6 +8148,21 @@ components:
           format: date-time
           description: Last update timestamp
           example: '2025-07-21T17:32:28Z'
+    ApiTokenCreateRequest:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+          description: Name of the token to help identify it
+          example: Sandbox read-only
+        permissions:
+          type: array
+          description: A list of permissions to grant to the token
+          items:
+            $ref: '#/components/schemas/Permission'
     IncomingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

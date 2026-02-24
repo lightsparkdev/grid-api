@@ -38,18 +38,7 @@ patch:
     content:
       application/json:
         schema:
-          type: object
-          properties:
-            umaDomain:
-              type: string
-              example: mycompany.com
-            webhookEndpoint:
-              type: string
-              example: https://api.mycompany.com/webhooks/uma
-            supportedCurrencies:
-              type: array
-              items:
-                $ref: ../../components/schemas/config/PlatformCurrencyConfig.yaml
+          $ref: ../../components/schemas/config/PlatformConfigUpdateRequest.yaml
         example:
           umaDomain: mycompany.com
           webhookEndpoint: https://api.mycompany.com/webhooks/uma

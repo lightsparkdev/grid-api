@@ -12,42 +12,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          required:
-            - inviterUma
-          properties:
-            inviterUma:
-              type: string
-              description: The UMA address of the customer creating the invitation
-              example: $inviter@uma.domain
-            firstName:
-              type: string
-              description: First name of the invitee to show as part of the invite
-              example: Alice
-            amountToSend:
-              description: >
-                An amount to send (in the smallest unit of the customer's currency)
-                to the invitee when the invitation is claimed.
-
-                This is optional and if not provided, the invitee will not
-                receive any amount. Note that the actual sending of
-
-                the amount must be done by the inviter platform once the
-                INVITATION_CLAIMED webhook is received. If the inviter
-
-                platform either does not send the payment or the payment fails,
-                the invitee will not receive this amount. This
-
-                field is primarily used for display purposes on the claiming
-                side of the invitation.
-              type: integer
-              format: int64
-              example: 12550
-            expiresAt:
-              type: string
-              format: date-time
-              description: When the invitation expires (if at all)
-              example: '2025-09-01T14:30:00Z'
+          $ref: ../../components/schemas/invitations/UmaInvitationCreateRequest.yaml
   responses:
     '201':
       description: Invitation created successfully

@@ -24,38 +24,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          required:
-            - source
-            - destination
-          properties:
-            source:
-              type: object
-              required:
-                - accountId
-              properties:
-                accountId:
-                  type: string
-                  description: Reference to an external account ID
-                  example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-              description: Source external account details
-            destination:
-              type: object
-              required:
-                - accountId
-              properties:
-                accountId:
-                  type: string
-                  description: Reference to an internal account ID
-                  example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-              description: Destination internal account details
-            amount:
-              type: integer
-              format: int64
-              description: >-
-                Amount in the smallest unit of the currency (e.g., cents for USD/EUR,
-                satoshis for BTC)
-              example: 12550
+          $ref: ../../components/schemas/transfers/TransferInRequest.yaml
         examples:
           transferIn:
             summary: Transfer from external to internal account

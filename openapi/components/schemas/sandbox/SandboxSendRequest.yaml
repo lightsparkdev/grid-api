@@ -1,0 +1,21 @@
+type: object
+required:
+  - quoteId
+  - currencyCode
+properties:
+  quoteId:
+    type: string
+    description: The unique identifier of the quote
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+  currencyCode:
+    type: string
+    description: Currency code for the funds to be sent
+    example: USD
+  currencyAmount:
+    type: integer
+    format: int64
+    description: >-
+      The amount to send in the smallest unit of the currency (eg.
+      cents). If not provided, the amount will be derived from the quote.
+    exclusiveMinimum: 0
+    example: 1000
