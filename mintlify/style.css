@@ -2536,57 +2536,79 @@ html.dark #content ul:has([data-component-part="tab-button"]) {
 /* Inactive tab */
 [data-component-part="tab-button"][data-active="false"] {
   color: var(--ls-gray-500) !important;
+  border-color: transparent !important;
+}
+
+[data-component-part="tab-button"][data-active="false"]:hover {
+  color: var(--ls-gray-700) !important;
+  border-color: var(--ls-gray-300) !important;
 }
 
 html.dark [data-component-part="tab-button"][data-active="false"] {
   color: var(--ls-gray-600) !important;
 }
 
-/* --- Wrap overflowing tab lists instead of horizontal scroll --- */
+html.dark [data-component-part="tab-button"][data-active="false"]:hover {
+  color: var(--ls-gray-400) !important;
+  border-color: var(--ls-gray-700) !important;
+}
 
-[data-component-part="tabs-list"] {
+/* Active tab */
+[data-component-part="tab-button"][data-active="true"] {
+  color: var(--ls-gray-950) !important;
+  border-color: var(--ls-gray-950) !important;
+}
+
+html.dark [data-component-part="tab-button"][data-active="true"] {
+  color: var(--ls-white) !important;
+  border-color: var(--ls-gray-100) !important;
+}
+
+/* --- API Reference: Wrap overflowing tab lists with pill-style buttons --- */
+
+#api-playground-2-operation-page [data-component-part="tabs-list"] {
   flex-wrap: wrap !important;
   overflow-x: visible !important;
-  gap: 4px !important;
+  gap: 6px !important;
   border-bottom: none !important;
   padding: 16px 0 0 0 !important;
 }
 
-/* Pill-style tab buttons */
-[data-component-part="tab-button"] {
-  border-bottom: none !important;
+#api-playground-2-operation-page [data-component-part="tab-button"] {
+  border: 0.5px solid transparent !important;
   border-radius: 6px !important;
   padding: 4px 14px !important;
   margin-bottom: 0 !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
 
-[data-component-part="tab-button"][data-active="false"] {
+#api-playground-2-operation-page [data-component-part="tab-button"][data-active="false"] {
   border-color: transparent !important;
   background: var(--ls-black-02) !important;
 }
 
-html.dark [data-component-part="tab-button"][data-active="false"] {
+html.dark #api-playground-2-operation-page [data-component-part="tab-button"][data-active="false"] {
   background: var(--ls-white-02) !important;
 }
 
-[data-component-part="tab-button"][data-active="false"]:hover {
+#api-playground-2-operation-page [data-component-part="tab-button"][data-active="false"]:hover {
   border-color: transparent !important;
-  background: var(--ls-gray-075) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
-html.dark [data-component-part="tab-button"][data-active="false"]:hover {
+html.dark #api-playground-2-operation-page [data-component-part="tab-button"][data-active="false"]:hover {
   border-color: transparent !important;
-  background: var(--ls-white-06) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
-[data-component-part="tab-button"][data-active="true"] {
-  border-color: transparent !important;
-  background: var(--ls-gray-100) !important;
+#api-playground-2-operation-page [data-component-part="tab-button"][data-active="true"] {
+  border: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+  background: var(--ls-white) !important;
   color: var(--ls-gray-950) !important;
 }
 
-html.dark [data-component-part="tab-button"][data-active="true"] {
-  border-color: transparent !important;
+html.dark #api-playground-2-operation-page [data-component-part="tab-button"][data-active="true"] {
+  border: 0.5px solid rgba(255, 255, 255, 0.1) !important;
   background: var(--ls-white-10) !important;
   color: var(--ls-white) !important;
 }
