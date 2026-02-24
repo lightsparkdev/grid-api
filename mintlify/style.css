@@ -4626,6 +4626,8 @@ html.dark .rate-explorer-table thead th.rate-explorer-col-grid {
   width: auto;
   min-width: fit-content;
   vertical-align: middle;
+  border-radius: 0;
+  pointer-events: none;
 }
 
 html.dark .rate-explorer-grid-logo {
@@ -4639,7 +4641,7 @@ html.dark .rate-explorer-grid-logo {
   vertical-align: middle;
   position: relative;
   top: -1px;
-  margin-right: 2px;
+  margin-right: 4px;
   background: currentColor;
   -webkit-mask-image: url('/images/icons/grid-icon.svg');
   mask-image: url('/images/icons/grid-icon.svg');
@@ -4651,12 +4653,12 @@ html.dark .rate-explorer-grid-logo {
 
 .rate-explorer-bank-icon {
   display: inline-block;
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   vertical-align: middle;
   position: relative;
   top: -1px;
-  margin-right: 2px;
+  margin-right: 4px;
   color: currentColor;
 }
 
@@ -4665,6 +4667,8 @@ html.dark .rate-explorer-grid-logo {
   width: auto;
   min-width: fit-content;
   vertical-align: middle;
+  border-radius: 0;
+  pointer-events: none;
 }
 
 html.dark .rate-explorer-provider-logo {
@@ -4785,11 +4789,11 @@ html.dark .rate-explorer-currency-code {
 
 /* Best provider highlight */
 .rate-explorer-provider-best {
-  /* background: rgba(17, 169, 103, 0.04); */
+  background: rgba(17, 169, 103, 0.04);
 }
 
 html.dark .rate-explorer-provider-best {
-  /* background: rgba(74, 222, 128, 0.06); */
+  background: rgba(74, 222, 128, 0.06);
 }
 
 .rate-explorer-provider-best .rate-explorer-provider-amount {
@@ -4800,15 +4804,31 @@ html.dark .rate-explorer-provider-best .rate-explorer-provider-amount {
   color: var(--ls-green-400);
 }
 
-/* Amount/bps text in provider cells — default is gray */
+.rate-explorer-provider-best.rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-green-600);
+}
+
+html.dark .rate-explorer-provider-best.rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-green-400);
+}
+
+/* Amount/bps text in provider cells */
 .rate-explorer-provider-amount {
   font-family: "Suisse Intl", sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: var(--ls-gray-950);
+  color: var(--ls-gray-500);
 }
 
 html.dark .rate-explorer-provider-amount {
+  color: var(--ls-gray-500);
+}
+
+.rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-col-grid .rate-explorer-provider-amount {
   color: var(--ls-gray-050);
 }
 
