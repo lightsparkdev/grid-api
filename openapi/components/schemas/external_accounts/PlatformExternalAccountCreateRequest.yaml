@@ -1,0 +1,15 @@
+type: object
+required:
+  - currency
+  - accountInfo
+properties:
+  currency:
+    type: string
+    description: The ISO 4217 currency code
+    example: USD
+  platformAccountId:
+    type: string
+    description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
+    example: ext_acc_123456
+  accountInfo:
+    $ref: ./ExternalAccountInfoOneOf.yaml
