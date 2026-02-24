@@ -2564,6 +2564,42 @@ html.dark [data-component-part="tab-button"][data-active="true"] {
   border-color: var(--ls-gray-100) !important;
 }
 
+/* --- Horizontal scroll affordance for tab lists --- */
+
+[data-component-part="tabs-list"] {
+  --fade-size: 32px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-component-part="tabs-list"].is-scrollable {
+  cursor: grab;
+}
+
+[data-component-part="tabs-list"].is-dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+[data-component-part="tab-button"] {
+  cursor: pointer !important;
+}
+
+[data-component-part="tabs-list"].scroll-fade-right {
+  mask-image: linear-gradient(to right, black calc(100% - var(--fade-size)), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--fade-size)), transparent);
+}
+
+[data-component-part="tabs-list"].scroll-fade-left {
+  mask-image: linear-gradient(to left, black calc(100% - var(--fade-size)), transparent);
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - var(--fade-size)), transparent);
+}
+
+[data-component-part="tabs-list"].scroll-fade-both {
+  mask-image: linear-gradient(to right, transparent, black var(--fade-size), black calc(100% - var(--fade-size)), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black var(--fade-size), black calc(100% - var(--fade-size)), transparent);
+}
+
 /* ===========================================
    Tables
    =========================================== */
