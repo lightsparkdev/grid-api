@@ -5733,6 +5733,7 @@ components:
                   INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CadBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6202,6 +6203,7 @@ components:
                   INDIVIDUAL: '#/components/schemas/MyrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     NgnBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
