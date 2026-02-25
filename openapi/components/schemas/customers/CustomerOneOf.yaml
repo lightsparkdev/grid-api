@@ -1,8 +1,6 @@
 oneOf:
-  - title: Individual Customer
-    $ref: ./IndividualCustomer.yaml
-  - title: Business Customer
-    $ref: ./BusinessCustomer.yaml
+  - $ref: ./IndividualCustomer.yaml
+  - $ref: ./BusinessCustomer.yaml
 discriminator:
   propertyName: customerType
   mapping:

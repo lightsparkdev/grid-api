@@ -14,50 +14,28 @@ properties:
     example: true
   accountOrWalletInfo:
     oneOf:
-      - title: USD Bank Account
-        $ref: ../common/PaymentUsdAccountInfo.yaml
-      - title: BRL Account
-        $ref: ../common/PaymentBrlAccountInfo.yaml
-      - title: MXN Account
-        $ref: ../common/PaymentMxnAccountInfo.yaml
-      - title: DKK Account
-        $ref: ../common/PaymentDkkAccountInfo.yaml
-      - title: EUR Account
-        $ref: ../common/PaymentEurAccountInfo.yaml
-      - title: INR Account
-        $ref: ../common/PaymentInrAccountInfo.yaml
-      - title: NGN Account
-        $ref: ../common/PaymentNgnAccountInfo.yaml
-      - title: CAD Account
-        $ref: ../common/PaymentCadAccountInfo.yaml
-      - title: GBP Account
-        $ref: ../common/PaymentGbpAccountInfo.yaml
-      - title: HKD Account
-        $ref: ../common/PaymentHkdAccountInfo.yaml
-      - title: IDR Account
-        $ref: ../common/PaymentIdrAccountInfo.yaml
-      - title: MYR Account
-        $ref: ../common/PaymentMyrAccountInfo.yaml
-      - title: PHP Account
-        $ref: ../common/PaymentPhpAccountInfo.yaml
-      - title: SGD Account
-        $ref: ../common/PaymentSgdAccountInfo.yaml
-      - title: THB Account
-        $ref: ../common/PaymentThbAccountInfo.yaml
-      - title: VND Account
-        $ref: ../common/PaymentVndAccountInfo.yaml
-      - title: Spark Wallet
-        $ref: ../common/PaymentSparkWalletInfo.yaml
-      - title: Lightning Invoice
-        $ref: ../common/PaymentLightningInvoiceInfo.yaml
-      - title: Solana Wallet
-        $ref: ../common/PaymentSolanaWalletInfo.yaml
-      - title: Tron Wallet
-        $ref: ../common/PaymentTronWalletInfo.yaml
-      - title: Polygon Wallet
-        $ref: ../common/PaymentPolygonWalletInfo.yaml
-      - title: Base Wallet
-        $ref: ../common/PaymentBaseWalletInfo.yaml
+      - $ref: ../common/PaymentUsdAccountInfo.yaml
+      - $ref: ../common/PaymentBrlAccountInfo.yaml
+      - $ref: ../common/PaymentMxnAccountInfo.yaml
+      - $ref: ../common/PaymentDkkAccountInfo.yaml
+      - $ref: ../common/PaymentEurAccountInfo.yaml
+      - $ref: ../common/PaymentInrAccountInfo.yaml
+      - $ref: ../common/PaymentNgnAccountInfo.yaml
+      - $ref: ../common/PaymentCadAccountInfo.yaml
+      - $ref: ../common/PaymentGbpAccountInfo.yaml
+      - $ref: ../common/PaymentHkdAccountInfo.yaml
+      - $ref: ../common/PaymentIdrAccountInfo.yaml
+      - $ref: ../common/PaymentMyrAccountInfo.yaml
+      - $ref: ../common/PaymentPhpAccountInfo.yaml
+      - $ref: ../common/PaymentSgdAccountInfo.yaml
+      - $ref: ../common/PaymentThbAccountInfo.yaml
+      - $ref: ../common/PaymentVndAccountInfo.yaml
+      - $ref: ../common/PaymentSparkWalletInfo.yaml
+      - $ref: ../common/PaymentLightningInvoiceInfo.yaml
+      - $ref: ../common/PaymentSolanaWalletInfo.yaml
+      - $ref: ../common/PaymentTronWalletInfo.yaml
+      - $ref: ../common/PaymentPolygonWalletInfo.yaml
+      - $ref: ../common/PaymentBaseWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:

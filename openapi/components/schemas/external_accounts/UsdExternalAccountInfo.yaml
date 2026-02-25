@@ -1,3 +1,4 @@
+title: USD Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/UsdAccountInfo.yaml
@@ -7,10 +8,8 @@ allOf:
   properties:
     beneficiary:
       oneOf:
-      - title: Individual Beneficiary
-        $ref: ../common/UsdBeneficiary.yaml
-      - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+      - $ref: ../common/UsdBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:

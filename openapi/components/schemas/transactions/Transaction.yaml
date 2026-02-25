@@ -48,8 +48,3 @@ properties:
     example: 'Payment for invoice #1234'
   counterpartyInformation:
     $ref: ./CounterpartyInformation.yaml
-discriminator:
-  propertyName: type
-  mapping:
-    INCOMING: ./IncomingTransaction.yaml
-    OUTGOING: ./OutgoingTransaction.yaml

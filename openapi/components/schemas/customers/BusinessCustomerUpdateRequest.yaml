@@ -1,3 +1,4 @@
+title: Business Customer Update Request
 allOf:
   - $ref: ./CustomerUpdateRequest.yaml
   - $ref: ./BusinessCustomerFields.yaml

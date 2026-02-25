@@ -16,8 +16,3 @@ properties:
       If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer.
       This is an optional identifier to route payments to the customer.
     example: $john.doe@uma.domain.com
-discriminator:
-  propertyName: customerType
-  mapping:
-    INDIVIDUAL: ./IndividualCustomerCreateRequest.yaml
-    BUSINESS: ./BusinessCustomerCreateRequest.yaml

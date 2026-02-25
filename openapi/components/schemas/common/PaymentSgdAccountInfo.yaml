@@ -1,3 +1,4 @@
+title: SGD Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./SgdAccountInfo.yaml

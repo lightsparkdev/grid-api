@@ -1,3 +1,4 @@
+title: VND Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/VndAccountInfo.yaml
@@ -7,10 +8,8 @@ allOf:
   properties:
     beneficiary:
       oneOf:
-      - title: Individual Beneficiary
-        $ref: ../common/VndBeneficiary.yaml
-      - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+      - $ref: ../common/VndBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:

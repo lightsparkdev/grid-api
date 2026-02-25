@@ -1,3 +1,4 @@
+title: Individual Customer Create Request
 allOf:
   - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./IndividualCustomerFields.yaml

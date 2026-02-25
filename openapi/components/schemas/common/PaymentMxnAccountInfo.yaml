@@ -1,3 +1,4 @@
+title: MXN Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./MxnAccountInfo.yaml

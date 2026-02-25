@@ -1,3 +1,4 @@
+title: Business Customer Create Request
 allOf:
   - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./BusinessCustomerFields.yaml

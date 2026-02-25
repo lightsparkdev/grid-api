@@ -1,3 +1,4 @@
+title: UMA Address
 allOf:
   - $ref: ./BaseDestination.yaml
   - type: object

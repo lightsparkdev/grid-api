@@ -1,3 +1,4 @@
+title: Real-time Funding Source
 allOf:
   - $ref: ./BaseTransactionSource.yaml
   - type: object

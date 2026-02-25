@@ -1,3 +1,4 @@
+title: THB Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./ThbAccountInfo.yaml

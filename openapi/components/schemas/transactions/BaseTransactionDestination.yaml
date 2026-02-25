@@ -8,9 +8,3 @@ properties:
     type: string
     description: Currency code for the destination
     example: EUR
-discriminator:
-  propertyName: destinationType
-  mapping:
-    ACCOUNT: ./AccountTransactionDestination.yaml
-    UMA_ADDRESS: ./UmaAddressTransactionDestination.yaml
-    EXTERNAL_ACCOUNT_DETAILS: ./ExternalAccountDetailsTransactionDestination.yaml

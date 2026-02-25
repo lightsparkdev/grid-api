@@ -1,3 +1,4 @@
+title: IDR Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./IdrAccountInfo.yaml

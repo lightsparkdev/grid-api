@@ -1,3 +1,4 @@
+title: Individual Customer
 allOf:
   - $ref: ./Customer.yaml
   - $ref: ./IndividualCustomerFields.yaml

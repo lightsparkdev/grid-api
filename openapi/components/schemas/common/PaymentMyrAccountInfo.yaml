@@ -1,3 +1,4 @@
+title: MYR Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./MyrAccountInfo.yaml

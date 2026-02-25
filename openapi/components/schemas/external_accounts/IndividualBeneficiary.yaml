@@ -1,3 +1,4 @@
+title: Individual Beneficiary
 allOf:
   - $ref: ./BaseBeneficiary.yaml
   - type: object

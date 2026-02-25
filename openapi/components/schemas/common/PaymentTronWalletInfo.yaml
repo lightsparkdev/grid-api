@@ -1,3 +1,4 @@
+title: Tron Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./TronWalletInfo.yaml

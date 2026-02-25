@@ -1,3 +1,4 @@
+title: Lightning Invoice
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - type: object

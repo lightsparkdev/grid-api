@@ -19,16 +19,7 @@ get:
       content:
         application/json:
           schema:
-            oneOf:
-              - title: Individual Customer
-                $ref: ../../components/schemas/customers/IndividualCustomer.yaml
-              - title: Business Customer
-                $ref: ../../components/schemas/customers/BusinessCustomer.yaml
-            discriminator:
-              propertyName: customerType
-              mapping:
-                INDIVIDUAL: ../../components/schemas/customers/IndividualCustomer.yaml
-                BUSINESS: ../../components/schemas/customers/BusinessCustomer.yaml
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '401':
       description: Unauthorized
       content:
@@ -94,16 +85,7 @@ patch:
       content:
         application/json:
           schema:
-            oneOf:
-              - title: Individual Customer
-                $ref: ../../components/schemas/customers/IndividualCustomer.yaml
-              - title: Business Customer
-                $ref: ../../components/schemas/customers/BusinessCustomer.yaml
-            discriminator:
-              propertyName: customerType
-              mapping:
-                INDIVIDUAL: ../../components/schemas/customers/IndividualCustomer.yaml
-                BUSINESS: ../../components/schemas/customers/BusinessCustomer.yaml
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '400':
       description: Bad request
       content:
@@ -142,16 +124,7 @@ delete:
       content:
         application/json:
           schema:
-            oneOf:
-              - title: Individual Customer
-                $ref: ../../components/schemas/customers/IndividualCustomer.yaml
-              - title: Business Customer
-                $ref: ../../components/schemas/customers/BusinessCustomer.yaml
-            discriminator:
-              propertyName: customerType
-              mapping:
-                INDIVIDUAL: ../../components/schemas/customers/IndividualCustomer.yaml
-                BUSINESS: ../../components/schemas/customers/BusinessCustomer.yaml
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '401':
       description: Unauthorized
       content:

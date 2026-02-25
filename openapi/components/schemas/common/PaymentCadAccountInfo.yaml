@@ -1,3 +1,4 @@
+title: CAD Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./CadAccountInfo.yaml

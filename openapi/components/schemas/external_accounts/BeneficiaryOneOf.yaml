@@ -1,8 +1,6 @@
 oneOf:
-  - title: Individual Beneficiary
-    $ref: ./IndividualBeneficiary.yaml
-  - title: Business Beneficiary
-    $ref: ../common/BusinessBeneficiary.yaml
+  - $ref: ./IndividualBeneficiary.yaml
+  - $ref: ../common/BusinessBeneficiary.yaml
 discriminator:
   propertyName: beneficiaryType
   mapping:

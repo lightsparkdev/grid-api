@@ -4,26 +4,3 @@ required:
 properties:
   accountType:
     $ref: ./ExternalAccountType.yaml
-discriminator:
-  propertyName: accountType
-  mapping:
-    GBP_ACCOUNT: ./GbpExternalAccountInfo.yaml
-    PHP_ACCOUNT: ./PhpExternalAccountInfo.yaml
-    SGD_ACCOUNT: ./SgdExternalAccountInfo.yaml
-    SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
-    LIGHTNING: ./LightningExternalAccountInfo.yaml
-    SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
-    TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
-    POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
-    BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
-    BRL_ACCOUNT: ./BrlExternalAccountInfo.yaml
-    DKK_ACCOUNT: ./DkkExternalAccountInfo.yaml
-    EUR_ACCOUNT: ./EurExternalAccountInfo.yaml
-    HKD_ACCOUNT: ./HkdExternalAccountInfo.yaml
-    IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml
-    INR_ACCOUNT: ./InrExternalAccountInfo.yaml
-    MXN_ACCOUNT: ./MxnExternalAccountInfo.yaml
-    MYR_ACCOUNT: ./MyrExternalAccountInfo.yaml
-    THB_ACCOUNT: ./ThbExternalAccountInfo.yaml
-    USD_ACCOUNT: ./UsdExternalAccountInfo.yaml
-    VND_ACCOUNT: ./VndExternalAccountInfo.yaml
