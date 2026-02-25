@@ -3979,6 +3979,108 @@ html.dark .homepage-divider {
 }
 
 /* ===========================================
+   FX Rates Pricing Banner
+   =========================================== */
+
+.fx-rates-pricing-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 20px 24px;
+  margin: 0 40px;
+  border-radius: var(--ls-radius-md);
+  border: 0.5px solid var(--ls-white-10);
+  overflow: hidden;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fx-rates-pricing-banner-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/fx-rates/contact-sales-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.03);
+  transition: transform 0.4s ease, filter 0.3s ease;
+  z-index: 0;
+}
+
+.fx-rates-pricing-banner:hover .fx-rates-pricing-banner-bg {
+  transform: scale(1);
+  filter: brightness(0.92);
+}
+
+.fx-rates-pricing-banner-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 24px;
+}
+
+.fx-rates-pricing-banner-text {
+  display: flex;
+  flex-direction: column;
+  color: white;
+  font-size: 14px;
+  line-height: 20px;
+  font-feature-settings: "salt" 1;
+}
+
+.fx-rates-pricing-banner-subtext {
+  opacity: 0.5;
+}
+
+.fx-rates-pricing-banner-button {
+  padding: 0 16px;
+  height: 36px;
+  min-width: 36px;
+  background: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+  border-radius: var(--ls-radius-sm);
+  font-size: 14px;
+  font-weight: 450 !important;
+  line-height: 20px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.fx-rates-pricing-banner-button:hover {
+  background: var(--ls-white);
+}
+
+html.dark .fx-rates-pricing-banner-button {
+  background: var(--ls-gray-950);
+  color: var(--ls-gray-050);
+}
+
+html.dark .fx-rates-pricing-banner-button:hover {
+  background: var(--ls-gray-900);
+}
+
+@media (max-width: 1023px) {
+  .fx-rates-pricing-banner {
+    margin: 0 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .fx-rates-pricing-banner {
+    gap: 16px;
+  }
+}
+
+/* ===========================================
    Rate Explorer
    =========================================== */
 
