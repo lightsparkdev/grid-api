@@ -4244,7 +4244,6 @@ html.dark .rate-explorer-input {
 
 /* ---------- Source currency trigger ---------- */
 .rate-explorer-source-trigger {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -4254,19 +4253,13 @@ html.dark .rate-explorer-input {
   border: 0.5px solid var(--ls-black-10);
   border-radius: var(--ls-radius-sm);
   cursor: pointer;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
 }
 
 html.dark .rate-explorer-source-trigger {
   background: var(--ls-gray-850);
   border-color: var(--ls-white-06);
-}
-
-.rate-explorer-source-select {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  font-size: 14px;
 }
 
 .rate-explorer-source-label {
@@ -4568,6 +4561,35 @@ html.dark .rate-explorer-dropdown-item-active {
   font-size: 13px;
   color: var(--ls-gray-400);
   text-align: center;
+}
+
+.rate-explorer-dropdown-item-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rate-explorer-dropdown-item-disabled:hover {
+  background: none;
+}
+
+html.dark .rate-explorer-dropdown-item-disabled:hover {
+  background: none;
+}
+
+.rate-explorer-dropdown-divider {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ls-gray-400);
+  padding: 8px 12px 4px;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  border-top: 0.5px solid var(--ls-black-06);
+  margin-top: 4px;
+}
+
+html.dark .rate-explorer-dropdown-divider {
+  color: var(--ls-gray-500);
+  border-color: var(--ls-white-06);
 }
 
 /* ---------- View toggle ---------- */

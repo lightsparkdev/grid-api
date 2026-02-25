@@ -218,9 +218,14 @@ export const ProviderTh = ({ name }) => {
   return <img src={src} alt={name} className="rate-explorer-provider-logo" />;
 };
 
-export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCurrency, dropdownQuery, setDropdownQuery, setShowDropdown }) => {
+export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCurrency, dropdownQuery, setDropdownQuery, setShowDropdown, disabledCodes }) => {
   const listRef = React.useRef(null);
   const [scrollState, setScrollState] = React.useState('top');
+  const disabled = disabledCodes || new Set();
+  const hasDisabled = disabled.size > 0;
+  const enabledItems = hasDisabled ? currencies.filter(c => !disabled.has(c.code)) : currencies;
+  const disabledItems = hasDisabled ? currencies.filter(c => disabled.has(c.code)) : [];
+  const sortedCurrencies = hasDisabled ? [...enabledItems, ...disabledItems] : currencies;
 
   const updateScroll = React.useCallback(() => {
     const el = listRef.current;
@@ -259,14 +264,16 @@ export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCur
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault();
-              setHighlightIdx(i => Math.min(i + 1, currencies.length - 1));
+              setHighlightIdx(i => Math.min(i + 1, sortedCurrencies.length - 1));
             } else if (e.key === 'ArrowUp') {
               e.preventDefault();
               setHighlightIdx(i => Math.max(i - 1, -1));
-            } else if (e.key === 'Enter' && currencies.length > 0) {
+            } else if (e.key === 'Enter' && sortedCurrencies.length > 0) {
               e.preventDefault();
               const idx = highlightIdx >= 0 ? highlightIdx : 0;
-              addCurrency(currencies[idx].code);
+              if (!disabled.has(sortedCurrencies[idx].code)) {
+                addCurrency(sortedCurrencies[idx].code);
+              }
             } else if (e.key === 'Escape') {
               setShowDropdown(false);
               setDropdownQuery('');
@@ -281,14 +288,33 @@ export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCur
         onScroll={updateScroll}
         style={mask ? { WebkitMaskImage: mask, maskImage: mask } : undefined}
       >
-        {currencies.map((c, idx) => (
-          <button key={c.code} className={'rate-explorer-dropdown-item' + (idx === highlightIdx ? ' rate-explorer-dropdown-item-active' : '')} onClick={() => addCurrency(c.code)} onMouseEnter={() => setHighlightIdx(idx)}>
+        {enabledItems.map((c, idx) => (
+          <button
+            key={c.code}
+            className={'rate-explorer-dropdown-item' + (idx === highlightIdx ? ' rate-explorer-dropdown-item-active' : '')}
+            onClick={() => addCurrency(c.code)}
+            onMouseEnter={() => setHighlightIdx(idx)}
+          >
             <img src={flagUrl(c.code)} width="20" height="20" alt="" className="rate-explorer-flag-img" />
             <span className="rate-explorer-dropdown-code">{c.code}</span>
             <span className="rate-explorer-dropdown-name">{c.name}</span>
           </button>
         ))}
-        {currencies.length === 0 && (
+        {disabledItems.length > 0 && (
+          <div className="rate-explorer-dropdown-divider">Coming soon</div>
+        )}
+        {disabledItems.map((c, idx) => (
+          <button
+            key={c.code}
+            className={'rate-explorer-dropdown-item rate-explorer-dropdown-item-disabled' + ((idx + enabledItems.length) === highlightIdx ? ' rate-explorer-dropdown-item-active' : '')}
+            onMouseEnter={() => setHighlightIdx(idx + enabledItems.length)}
+          >
+            <img src={flagUrl(c.code)} width="20" height="20" alt="" className="rate-explorer-flag-img" />
+            <span className="rate-explorer-dropdown-code">{c.code}</span>
+            <span className="rate-explorer-dropdown-name">{c.name}</span>
+          </button>
+        ))}
+        {sortedCurrencies.length === 0 && (
           <div className="rate-explorer-dropdown-empty">No currencies found</div>
         )}
       </div>
@@ -414,10 +440,14 @@ export const RateExplorer = () => {
     } catch (e) {}
     return null;
   });
+  const [showSourceDropdown, setShowSourceDropdown] = React.useState(false);
+  const [sourceDropdownQuery, setSourceDropdownQuery] = React.useState('');
+  const [sourceHighlightIdx, setSourceHighlightIdx] = React.useState(-1);
   const [debouncedAmount, setDebouncedAmount] = React.useState(1000);
   const [isVisible, setIsVisible] = React.useState(false);
   const containerRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
+  const sourceDropdownRef = React.useRef(null);
   const explorerRef = React.useRef(null);
   const headerBarRef = React.useRef(null);
 
@@ -516,6 +546,10 @@ export const RateExplorer = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowDropdown(false);
         setDropdownQuery('');
+      }
+      if (sourceDropdownRef.current && !sourceDropdownRef.current.contains(e.target)) {
+        setShowSourceDropdown(false);
+        setSourceDropdownQuery('');
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -716,6 +750,20 @@ export const RateExplorer = () => {
     !dropdownQuery || c.code.toLowerCase().includes(dropdownQuery.toLowerCase()) || c.name.toLowerCase().includes(dropdownQuery.toLowerCase())
   );
 
+  const sourceDropdownCurrencies = CURRENCIES.filter(c =>
+    !sourceDropdownQuery || c.code.toLowerCase().includes(sourceDropdownQuery.toLowerCase()) || c.name.toLowerCase().includes(sourceDropdownQuery.toLowerCase())
+  );
+
+  const disabledSourceCodes = new Set(
+    CURRENCIES.filter(c => !SOURCE_CODES.includes(c.code)).map(c => c.code)
+  );
+
+  const selectSource = (code) => {
+    setSourceCurrency(code);
+    setShowSourceDropdown(false);
+    setSourceDropdownQuery('');
+  };
+
   return (
     <div ref={containerRef}>
       <div ref={explorerRef} className="rate-explorer not-prose">
@@ -733,19 +781,24 @@ export const RateExplorer = () => {
                 onFocus={handleAmountFocus}
               />
             </div>
-            <div className="rate-explorer-source-trigger">
-              <img src={flagUrl(sourceCurrency)} width="16" height="16" alt="" className="rate-explorer-flag-img" />
-              <select
-                className="rate-explorer-source-select"
-                value={sourceCurrency}
-                onChange={(e) => setSourceCurrency(e.target.value)}
-              >
-                {SOURCE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <span className="rate-explorer-source-label">{sourceCurrency}</span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <div className="rate-explorer-dropdown-anchor" ref={sourceDropdownRef}>
+              <button className="rate-explorer-source-trigger" onClick={() => { setShowSourceDropdown(!showSourceDropdown); setSourceHighlightIdx(-1); }}>
+                <img src={flagUrl(sourceCurrency)} width="16" height="16" alt="" className="rate-explorer-flag-img" />
+                <span className="rate-explorer-source-label">{sourceCurrency}</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              {showSourceDropdown && (
+                <DropdownList
+                  currencies={sourceDropdownCurrencies}
+                  highlightIdx={sourceHighlightIdx}
+                  setHighlightIdx={setSourceHighlightIdx}
+                  addCurrency={selectSource}
+                  dropdownQuery={sourceDropdownQuery}
+                  setDropdownQuery={setSourceDropdownQuery}
+                  setShowDropdown={setShowSourceDropdown}
+                  disabledCodes={disabledSourceCodes}
+                />
+              )}
             </div>
           </div>
           <div className="rate-explorer-header-mid">
