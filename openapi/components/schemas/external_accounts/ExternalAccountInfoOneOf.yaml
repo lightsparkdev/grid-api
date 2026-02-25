@@ -1,48 +1,26 @@
 oneOf:
-- title: BRL Account
-  $ref: ./BrlExternalAccountInfo.yaml
-- title: CAD Account
-  $ref: ./CadExternalAccountInfo.yaml
-- title: DKK Account
-  $ref: ./DkkExternalAccountInfo.yaml
-- title: EUR Account
-  $ref: ./EurExternalAccountInfo.yaml
-- title: GBP Account
-  $ref: ./GbpExternalAccountInfo.yaml
-- title: HKD Account
-  $ref: ./HkdExternalAccountInfo.yaml
-- title: IDR Account
-  $ref: ./IdrExternalAccountInfo.yaml
-- title: INR Account
-  $ref: ./InrExternalAccountInfo.yaml
-- title: MXN Account
-  $ref: ./MxnExternalAccountInfo.yaml
-- title: MYR Account
-  $ref: ./MyrExternalAccountInfo.yaml
-- title: NGN Account
-  $ref: ./NgnExternalAccountInfo.yaml
-- title: PHP Account
-  $ref: ./PhpExternalAccountInfo.yaml
-- title: SGD Account
-  $ref: ./SgdExternalAccountInfo.yaml
-- title: THB Account
-  $ref: ./ThbExternalAccountInfo.yaml
-- title: USD Account
-  $ref: ./UsdExternalAccountInfo.yaml
-- title: VND Account
-  $ref: ./VndExternalAccountInfo.yaml
-- title: Spark Wallet
-  $ref: ./SparkWalletExternalAccountInfo.yaml
-- title: Lightning
-  $ref: ./LightningExternalAccountInfo.yaml
-- title: Solana Wallet
-  $ref: ./SolanaWalletExternalAccountInfo.yaml
-- title: Tron Wallet
-  $ref: ./TronWalletExternalAccountInfo.yaml
-- title: Polygon Wallet
-  $ref: ./PolygonWalletExternalAccountInfo.yaml
-- title: Base Wallet
-  $ref: ./BaseWalletExternalAccountInfo.yaml
+- $ref: ./BrlExternalAccountInfo.yaml
+- $ref: ./CadExternalAccountInfo.yaml
+- $ref: ./DkkExternalAccountInfo.yaml
+- $ref: ./EurExternalAccountInfo.yaml
+- $ref: ./GbpExternalAccountInfo.yaml
+- $ref: ./HkdExternalAccountInfo.yaml
+- $ref: ./IdrExternalAccountInfo.yaml
+- $ref: ./InrExternalAccountInfo.yaml
+- $ref: ./MxnExternalAccountInfo.yaml
+- $ref: ./MyrExternalAccountInfo.yaml
+- $ref: ./NgnExternalAccountInfo.yaml
+- $ref: ./PhpExternalAccountInfo.yaml
+- $ref: ./SgdExternalAccountInfo.yaml
+- $ref: ./ThbExternalAccountInfo.yaml
+- $ref: ./UsdExternalAccountInfo.yaml
+- $ref: ./VndExternalAccountInfo.yaml
+- $ref: ./SparkWalletExternalAccountInfo.yaml
+- $ref: ./LightningExternalAccountInfo.yaml
+- $ref: ./SolanaWalletExternalAccountInfo.yaml
+- $ref: ./TronWalletExternalAccountInfo.yaml
+- $ref: ./PolygonWalletExternalAccountInfo.yaml
+- $ref: ./BaseWalletExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:

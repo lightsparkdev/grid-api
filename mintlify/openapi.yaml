@@ -5733,6 +5733,7 @@ components:
                   INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CadBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -5776,10 +5777,8 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/CadBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/CadBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6202,6 +6201,7 @@ components:
                   INDIVIDUAL: '#/components/schemas/MyrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     NgnBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6245,10 +6245,8 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/NgnBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/NgnBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6571,50 +6569,28 @@ components:
         - $ref: '#/components/schemas/BaseWalletInfo'
     ExternalAccountInfoOneOf:
       oneOf:
-        - title: BRL Account
-          $ref: '#/components/schemas/BrlExternalAccountInfo'
-        - title: CAD Account
-          $ref: '#/components/schemas/CadExternalAccountInfo'
-        - title: DKK Account
-          $ref: '#/components/schemas/DkkExternalAccountInfo'
-        - title: EUR Account
-          $ref: '#/components/schemas/EurExternalAccountInfo'
-        - title: GBP Account
-          $ref: '#/components/schemas/GbpExternalAccountInfo'
-        - title: HKD Account
-          $ref: '#/components/schemas/HkdExternalAccountInfo'
-        - title: IDR Account
-          $ref: '#/components/schemas/IdrExternalAccountInfo'
-        - title: INR Account
-          $ref: '#/components/schemas/InrExternalAccountInfo'
-        - title: MXN Account
-          $ref: '#/components/schemas/MxnExternalAccountInfo'
-        - title: MYR Account
-          $ref: '#/components/schemas/MyrExternalAccountInfo'
-        - title: NGN Account
-          $ref: '#/components/schemas/NgnExternalAccountInfo'
-        - title: PHP Account
-          $ref: '#/components/schemas/PhpExternalAccountInfo'
-        - title: SGD Account
-          $ref: '#/components/schemas/SgdExternalAccountInfo'
-        - title: THB Account
-          $ref: '#/components/schemas/ThbExternalAccountInfo'
-        - title: USD Account
-          $ref: '#/components/schemas/UsdExternalAccountInfo'
-        - title: VND Account
-          $ref: '#/components/schemas/VndExternalAccountInfo'
-        - title: Spark Wallet
-          $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
-        - title: Lightning
-          $ref: '#/components/schemas/LightningExternalAccountInfo'
-        - title: Solana Wallet
-          $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
-        - title: Tron Wallet
-          $ref: '#/components/schemas/TronWalletExternalAccountInfo'
-        - title: Polygon Wallet
-          $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
-        - title: Base Wallet
-          $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BrlExternalAccountInfo'
+        - $ref: '#/components/schemas/CadExternalAccountInfo'
+        - $ref: '#/components/schemas/DkkExternalAccountInfo'
+        - $ref: '#/components/schemas/EurExternalAccountInfo'
+        - $ref: '#/components/schemas/GbpExternalAccountInfo'
+        - $ref: '#/components/schemas/HkdExternalAccountInfo'
+        - $ref: '#/components/schemas/IdrExternalAccountInfo'
+        - $ref: '#/components/schemas/InrExternalAccountInfo'
+        - $ref: '#/components/schemas/MxnExternalAccountInfo'
+        - $ref: '#/components/schemas/MyrExternalAccountInfo'
+        - $ref: '#/components/schemas/NgnExternalAccountInfo'
+        - $ref: '#/components/schemas/PhpExternalAccountInfo'
+        - $ref: '#/components/schemas/SgdExternalAccountInfo'
+        - $ref: '#/components/schemas/ThbExternalAccountInfo'
+        - $ref: '#/components/schemas/UsdExternalAccountInfo'
+        - $ref: '#/components/schemas/VndExternalAccountInfo'
+        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningExternalAccountInfo'
+        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
