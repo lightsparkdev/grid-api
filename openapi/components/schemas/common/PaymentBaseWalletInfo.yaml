@@ -1,3 +1,4 @@
+title: Base Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./BaseWalletInfo.yaml

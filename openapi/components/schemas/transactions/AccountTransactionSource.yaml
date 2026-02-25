@@ -1,3 +1,4 @@
+title: Account Source
 allOf:
   - $ref: ./BaseTransactionSource.yaml
   - type: object

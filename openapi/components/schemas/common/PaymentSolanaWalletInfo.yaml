@@ -1,3 +1,4 @@
+title: Solana Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./SolanaWalletInfo.yaml

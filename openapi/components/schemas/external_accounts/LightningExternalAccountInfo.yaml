@@ -1,3 +1,4 @@
+title: Lightning
 allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/LightningInfo.yaml

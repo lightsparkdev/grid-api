@@ -1,3 +1,4 @@
+title: Account
 allOf:
   - $ref: ./BaseDestination.yaml
   - type: object

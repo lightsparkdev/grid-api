@@ -1,3 +1,4 @@
+title: USD Bank Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./UsdAccountInfo.yaml

@@ -6,8 +6,3 @@ properties:
     $ref: ./BeneficiaryType.yaml
   address:
     $ref: ../common/Address.yaml
-discriminator:
-  propertyName: beneficiaryType
-  mapping:
-    INDIVIDUAL: ./IndividualBeneficiary.yaml
-    BUSINESS: ../common/BusinessBeneficiary.yaml

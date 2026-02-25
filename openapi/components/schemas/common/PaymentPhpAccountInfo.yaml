@@ -1,3 +1,4 @@
+title: PHP Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./PhpAccountInfo.yaml

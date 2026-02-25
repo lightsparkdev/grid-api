@@ -1,3 +1,4 @@
+title: UMA Address Source
 allOf:
   - $ref: ./BaseTransactionSource.yaml
   - type: object

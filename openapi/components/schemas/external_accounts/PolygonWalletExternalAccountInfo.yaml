@@ -1,3 +1,4 @@
+title: Polygon Wallet
 allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/PolygonWalletInfo.yaml

@@ -1,3 +1,4 @@
+title: BRL Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/BrlAccountInfo.yaml
@@ -7,10 +8,8 @@ allOf:
   properties:
     beneficiary:
       oneOf:
-      - title: Individual Beneficiary
-        $ref: ../common/BrlBeneficiary.yaml
-      - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+      - $ref: ../common/BrlBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:

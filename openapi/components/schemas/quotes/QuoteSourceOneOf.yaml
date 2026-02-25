@@ -1,8 +1,6 @@
 oneOf:
-  - title: Account
-    $ref: ./AccountQuoteSource.yaml
-  - title: Real-time Funding
-    $ref: ./RealtimeFundingQuoteSource.yaml
+  - $ref: ./AccountQuoteSource.yaml
+  - $ref: ./RealtimeFundingQuoteSource.yaml
 discriminator:
   propertyName: sourceType
   mapping:

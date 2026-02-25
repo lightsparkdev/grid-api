@@ -1,3 +1,4 @@
+title: VND Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./VndAccountInfo.yaml

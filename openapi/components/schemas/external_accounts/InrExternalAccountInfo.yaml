@@ -1,3 +1,4 @@
+title: INR Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/InrAccountInfo.yaml
@@ -7,10 +8,8 @@ allOf:
   properties:
     beneficiary:
       oneOf:
-      - title: Individual Beneficiary
-        $ref: ../common/InrBeneficiary.yaml
-      - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+      - $ref: ../common/InrBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:

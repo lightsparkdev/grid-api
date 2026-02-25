@@ -1,8 +1,6 @@
 oneOf:
-  - title: Individual Customer Update Request
-    $ref: ./IndividualCustomerUpdateRequest.yaml
-  - title: Business Customer Update Request
-    $ref: ./BusinessCustomerUpdateRequest.yaml
+  - $ref: ./IndividualCustomerUpdateRequest.yaml
+  - $ref: ./BusinessCustomerUpdateRequest.yaml
 discriminator:
   propertyName: customerType
   mapping:

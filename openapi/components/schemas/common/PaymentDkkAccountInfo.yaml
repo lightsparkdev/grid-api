@@ -1,3 +1,4 @@
+title: DKK Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./DkkAccountInfo.yaml

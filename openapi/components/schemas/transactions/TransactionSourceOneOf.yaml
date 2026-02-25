@@ -1,10 +1,7 @@
 oneOf:
-  - title: Account Source
-    $ref: ./AccountTransactionSource.yaml
-  - title: UMA Address Source
-    $ref: ./UmaAddressTransactionSource.yaml
-  - title: Real-time Funding Source
-    $ref: ./RealtimeFundingTransactionSource.yaml
+  - $ref: ./AccountTransactionSource.yaml
+  - $ref: ./UmaAddressTransactionSource.yaml
+  - $ref: ./RealtimeFundingTransactionSource.yaml
 discriminator:
   propertyName: sourceType
   mapping:

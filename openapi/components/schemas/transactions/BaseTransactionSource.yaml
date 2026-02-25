@@ -8,9 +8,3 @@ properties:
     type: string
     description: Currency code for the source
     example: USD
-discriminator:
-  propertyName: sourceType
-  mapping:
-    ACCOUNT: ./AccountTransactionSource.yaml
-    UMA_ADDRESS: ./UmaAddressTransactionSource.yaml
-    REALTIME_FUNDING: ./RealtimeFundingTransactionSource.yaml

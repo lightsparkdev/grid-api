@@ -1,3 +1,4 @@
+title: Business Customer
 allOf:
   - $ref: ./Customer.yaml
   - $ref: ./BusinessCustomerFields.yaml
