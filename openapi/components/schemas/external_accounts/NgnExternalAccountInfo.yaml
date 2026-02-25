@@ -1,3 +1,4 @@
+title: NGN Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/NgnAccountInfo.yaml

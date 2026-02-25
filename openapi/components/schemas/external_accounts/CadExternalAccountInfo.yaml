@@ -1,3 +1,4 @@
+title: CAD Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/CadAccountInfo.yaml

@@ -5766,6 +5766,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     CadExternalAccountInfo:
+      title: CAD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/CadAccountInfo'
@@ -6234,6 +6235,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     NgnExternalAccountInfo:
+      title: NGN Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/NgnAccountInfo'
