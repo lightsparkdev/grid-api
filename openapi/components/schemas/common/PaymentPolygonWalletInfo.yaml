@@ -1,3 +1,4 @@
+title: Polygon Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./PolygonWalletInfo.yaml

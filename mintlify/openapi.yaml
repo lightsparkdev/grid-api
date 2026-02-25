@@ -448,16 +448,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - title: Individual Customer
-                    $ref: '#/components/schemas/IndividualCustomer'
-                  - title: Business Customer
-                    $ref: '#/components/schemas/BusinessCustomer'
-                discriminator:
-                  propertyName: customerType
-                  mapping:
-                    INDIVIDUAL: '#/components/schemas/IndividualCustomer'
-                    BUSINESS: '#/components/schemas/BusinessCustomer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '401':
           description: Unauthorized
           content:
@@ -523,16 +514,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - title: Individual Customer
-                    $ref: '#/components/schemas/IndividualCustomer'
-                  - title: Business Customer
-                    $ref: '#/components/schemas/BusinessCustomer'
-                discriminator:
-                  propertyName: customerType
-                  mapping:
-                    INDIVIDUAL: '#/components/schemas/IndividualCustomer'
-                    BUSINESS: '#/components/schemas/BusinessCustomer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '400':
           description: Bad request
           content:
@@ -571,16 +553,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - title: Individual Customer
-                    $ref: '#/components/schemas/IndividualCustomer'
-                  - title: Business Customer
-                    $ref: '#/components/schemas/BusinessCustomer'
-                discriminator:
-                  propertyName: customerType
-                  mapping:
-                    INDIVIDUAL: '#/components/schemas/IndividualCustomer'
-                    BUSINESS: '#/components/schemas/BusinessCustomer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '401':
           description: Unauthorized
           content:
@@ -4141,10 +4114,18 @@ components:
         - BUSINESS
       description: Whether the customer is an individual or a business entity
       example: INDIVIDUAL
-    IndividualCustomer:
-      allOf:
-        - $ref: '#/components/schemas/Customer'
-        - $ref: '#/components/schemas/IndividualCustomerFields'
+    KycStatus:
+      type: string
+      enum:
+        - APPROVED
+        - REJECTED
+        - PENDING_REVIEW
+        - EXPIRED
+        - CANCELED
+        - MANUALLY_APPROVED
+        - MANUALLY_REJECTED
+      description: The current KYC status of a customer
+      example: APPROVED
     Customer:
       type: object
       required:
@@ -4186,11 +4167,6 @@ components:
           description: Whether the customer is marked as deleted
           example: false
           readOnly: true
-      discriminator:
-        propertyName: customerType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualCustomer'
-          BUSINESS: '#/components/schemas/BusinessCustomer'
     Address:
       type: object
       required:
@@ -4222,6 +4198,35 @@ components:
           type: string
           description: Country code (ISO 3166-1 alpha-2)
           example: US
+    IndividualCustomerFields:
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: Individual's full name
+          example: John Michael Doe
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+          example: '1990-01-15'
+        nationality:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2)
+          example: US
+        address:
+          $ref: '#/components/schemas/Address'
+    IndividualCustomer:
+      title: Individual Customer
+      allOf:
+        - $ref: '#/components/schemas/Customer'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -4328,6 +4333,7 @@ components:
           description: Tax identification number
           example: EIN-987654321
     BusinessCustomer:
+      title: Business Customer
       allOf:
         - $ref: '#/components/schemas/Customer'
         - $ref: '#/components/schemas/BusinessCustomerFields'
@@ -4335,57 +4341,15 @@ components:
           properties:
             businessInfo:
               $ref: '#/components/schemas/BusinessInfo'
-    KycStatus:
-      type: string
-      enum:
-        - APPROVED
-        - REJECTED
-        - PENDING_REVIEW
-        - EXPIRED
-        - CANCELED
-        - MANUALLY_APPROVED
-        - MANUALLY_REJECTED
-      description: The current KYC status of a customer
-      example: APPROVED
-    IndividualCustomerFields:
-      type: object
-      required:
-        - customerType
-      properties:
-        customerType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: Individual's full name
-          example: John Michael Doe
-        birthDate:
-          type: string
-          format: date
-          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-          example: '1990-01-15'
-        nationality:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-          example: US
-        address:
-          $ref: '#/components/schemas/Address'
     CustomerOneOf:
       oneOf:
-        - title: Individual Customer
-          $ref: '#/components/schemas/IndividualCustomer'
-        - title: Business Customer
-          $ref: '#/components/schemas/BusinessCustomer'
+        - $ref: '#/components/schemas/IndividualCustomer'
+        - $ref: '#/components/schemas/BusinessCustomer'
       discriminator:
         propertyName: customerType
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomer'
           BUSINESS: '#/components/schemas/BusinessCustomer'
-    IndividualCustomerCreateRequest:
-      allOf:
-        - $ref: '#/components/schemas/CustomerCreateRequest'
-        - $ref: '#/components/schemas/IndividualCustomerFields'
     CustomerCreateRequest:
       type: object
       required:
@@ -4402,12 +4366,13 @@ components:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
-      discriminator:
-        propertyName: customerType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
-          BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
+    IndividualCustomerCreateRequest:
+      title: Individual Customer Create Request
+      allOf:
+        - $ref: '#/components/schemas/CustomerCreateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
     BusinessCustomerCreateRequest:
+      title: Business Customer Create Request
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/BusinessCustomerFields'
@@ -4417,10 +4382,8 @@ components:
               $ref: '#/components/schemas/BusinessInfo'
     CustomerCreateRequestOneOf:
       oneOf:
-        - title: Individual Customer Create Request
-          $ref: '#/components/schemas/IndividualCustomerCreateRequest'
-        - title: Business Customer Create Request
-          $ref: '#/components/schemas/BusinessCustomerCreateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerCreateRequest'
+        - $ref: '#/components/schemas/BusinessCustomerCreateRequest'
       discriminator:
         propertyName: customerType
         mapping:
@@ -4523,10 +4486,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    IndividualCustomerUpdateRequest:
-      allOf:
-        - $ref: '#/components/schemas/CustomerUpdateRequest'
-        - $ref: '#/components/schemas/IndividualCustomerFields'
     CustomerUpdateRequest:
       type: object
       required:
@@ -4538,21 +4497,20 @@ components:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
-      discriminator:
-        propertyName: customerType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
-          BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    IndividualCustomerUpdateRequest:
+      title: Individual Customer Update Request
+      allOf:
+        - $ref: '#/components/schemas/CustomerUpdateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
     BusinessCustomerUpdateRequest:
+      title: Business Customer Update Request
       allOf:
         - $ref: '#/components/schemas/CustomerUpdateRequest'
         - $ref: '#/components/schemas/BusinessCustomerFields'
     CustomerUpdateRequestOneOf:
       oneOf:
-        - title: Individual Customer Update Request
-          $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
-        - title: Business Customer Update Request
-          $ref: '#/components/schemas/BusinessCustomerUpdateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
+        - $ref: '#/components/schemas/BusinessCustomerUpdateRequest'
       discriminator:
         propertyName: customerType
         mapping:
@@ -4586,7 +4544,76 @@ components:
           example: 12550
         currency:
           $ref: '#/components/schemas/Currency'
+    PaymentAccountType:
+      type: string
+      enum:
+        - USD_ACCOUNT
+        - BRL_ACCOUNT
+        - MXN_ACCOUNT
+        - DKK_ACCOUNT
+        - EUR_ACCOUNT
+        - INR_ACCOUNT
+        - NGN_ACCOUNT
+        - CAD_ACCOUNT
+        - GBP_ACCOUNT
+        - HKD_ACCOUNT
+        - IDR_ACCOUNT
+        - MYR_ACCOUNT
+        - PHP_ACCOUNT
+        - SGD_ACCOUNT
+        - THB_ACCOUNT
+        - VND_ACCOUNT
+        - SPARK_WALLET
+        - LIGHTNING
+        - SOLANA_WALLET
+        - TRON_WALLET
+        - POLYGON_WALLET
+        - BASE_WALLET
+      description: Type of payment account or wallet
+      example: USD_ACCOUNT
+    BasePaymentAccountInfo:
+      type: object
+      required:
+        - accountType
+      properties:
+        accountType:
+          $ref: '#/components/schemas/PaymentAccountType'
+    UsdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - accountNumber
+        - routingNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - USD_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - US
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - ACH
+              - WIRE
+              - RTP
+              - FEDNOW
+        accountNumber:
+          type: string
+          description: The account number of the bank
+        routingNumber:
+          type: string
+          description: The routing number of the bank
     PaymentUsdAccountInfo:
+      title: USD Bank Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/UsdAccountInfo'
@@ -4598,38 +4625,6 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    BasePaymentAccountInfo:
-      type: object
-      required:
-        - accountType
-      properties:
-        accountType:
-          $ref: '#/components/schemas/PaymentAccountType'
-      discriminator:
-        propertyName: accountType
-        mapping:
-          USD_ACCOUNT: '#/components/schemas/PaymentUsdAccountInfo'
-          BRL_ACCOUNT: '#/components/schemas/PaymentBrlAccountInfo'
-          MXN_ACCOUNT: '#/components/schemas/PaymentMxnAccountInfo'
-          DKK_ACCOUNT: '#/components/schemas/PaymentDkkAccountInfo'
-          EUR_ACCOUNT: '#/components/schemas/PaymentEurAccountInfo'
-          INR_ACCOUNT: '#/components/schemas/PaymentInrAccountInfo'
-          NGN_ACCOUNT: '#/components/schemas/PaymentNgnAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/PaymentCadAccountInfo'
-          GBP_ACCOUNT: '#/components/schemas/PaymentGbpAccountInfo'
-          HKD_ACCOUNT: '#/components/schemas/PaymentHkdAccountInfo'
-          IDR_ACCOUNT: '#/components/schemas/PaymentIdrAccountInfo'
-          MYR_ACCOUNT: '#/components/schemas/PaymentMyrAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PaymentPhpAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/PaymentSgdAccountInfo'
-          THB_ACCOUNT: '#/components/schemas/PaymentThbAccountInfo'
-          VND_ACCOUNT: '#/components/schemas/PaymentVndAccountInfo'
-          SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
-          LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
-          SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
-          TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
-          POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
-          BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
     BrlAccountInfo:
       type: object
       required:
@@ -4666,6 +4661,7 @@ components:
           type: string
           description: The tax ID of the bank account
     PaymentBrlAccountInfo:
+      title: BRL Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/BrlAccountInfo'
@@ -4701,6 +4697,7 @@ components:
           maxLength: 18
           pattern: ^[0-9]{18}$
     PaymentMxnAccountInfo:
+      title: MXN Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/MxnAccountInfo'
@@ -4744,6 +4741,7 @@ components:
           type: string
           description: The SWIFT BIC of the bank
     PaymentDkkAccountInfo:
+      title: DKK Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/DkkAccountInfo'
@@ -4806,6 +4804,7 @@ components:
           type: string
           description: The SWIFT BIC of the bank
     PaymentEurAccountInfo:
+      title: EUR Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/EurAccountInfo'
@@ -4846,6 +4845,7 @@ components:
           type: string
           description: The VPA of the bank
     PaymentInrAccountInfo:
+      title: INR Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/InrAccountInfo'
@@ -4886,6 +4886,7 @@ components:
           description: Name of the bank
           example: First Bank of Nigeria
     PaymentNgnAccountInfo:
+      title: NGN Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/NgnAccountInfo'
@@ -4945,6 +4946,7 @@ components:
           maxLength: 12
           pattern: ^[0-9]{7,12}$
     PaymentCadAccountInfo:
+      title: CAD Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/CadAccountInfo'
@@ -4994,6 +4996,7 @@ components:
           maxLength: 8
           pattern: ^[0-9]{8}$
     PaymentGbpAccountInfo:
+      title: GBP Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/GbpAccountInfo'
@@ -5037,6 +5040,7 @@ components:
           type: string
           description: The account number of the bank
     PaymentHkdAccountInfo:
+      title: HKD Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/HkdAccountInfo'
@@ -5080,6 +5084,7 @@ components:
           type: string
           description: The account number of the bank
     PaymentIdrAccountInfo:
+      title: IDR Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/IdrAccountInfo'
@@ -5123,6 +5128,7 @@ components:
           type: string
           description: The account number of the bank
     PaymentMyrAccountInfo:
+      title: MYR Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/MyrAccountInfo'
@@ -5168,6 +5174,7 @@ components:
           description: Bank account number
           example: '001234567890'
     PaymentPhpAccountInfo:
+      title: PHP Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/PhpAccountInfo'
@@ -5223,6 +5230,7 @@ components:
           description: Bank account number
           example: '0123456789'
     PaymentSgdAccountInfo:
+      title: SGD Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/SgdAccountInfo'
@@ -5266,6 +5274,7 @@ components:
           type: string
           description: The account number of the bank
     PaymentThbAccountInfo:
+      title: THB Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/ThbAccountInfo'
@@ -5309,6 +5318,7 @@ components:
           type: string
           description: The account number of the bank
     PaymentVndAccountInfo:
+      title: VND Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/VndAccountInfo'
@@ -5335,6 +5345,7 @@ components:
           description: Spark wallet address
           example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
     PaymentSparkWalletInfo:
+      title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
@@ -5353,6 +5364,7 @@ components:
               description: Invoice for the payment
               example: sparkrt1pgss8ter0fhc4c220f3zftmpz49h8wqte8eg3m5zkrraplgc048jucgszg3ssqgjzqqekv73mmh842yj7drsjwh7t7tz5zt8wf5kghm5v4ehggszppjp5s80cg3qjdzc55g2567tn3lj705hdsr577tg8ah795mlnt6807y657qhkmgfkf9w75p4wz3l8vhua85zdn6ryj32zuj0p00pv2l5z4u47mw6h4s
     PaymentLightningInvoiceInfo:
+      title: Lightning Invoice
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - type: object
@@ -5382,6 +5394,7 @@ components:
           description: Solana wallet address
           example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
     PaymentSolanaWalletInfo:
+      title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
@@ -5408,6 +5421,7 @@ components:
           description: Tron wallet address
           example: TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL
     PaymentTronWalletInfo:
+      title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
@@ -5433,6 +5447,7 @@ components:
           description: Polygon eth wallet address
           example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
     PaymentPolygonWalletInfo:
+      title: Polygon Wallet
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
@@ -5458,6 +5473,7 @@ components:
           description: Base eth wallet address
           example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
     PaymentBaseWalletInfo:
+      title: Base Wallet
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
@@ -5468,67 +5484,6 @@ components:
               description: Type of asset
               enum:
                 - USDC
-    PaymentAccountType:
-      type: string
-      enum:
-        - USD_ACCOUNT
-        - BRL_ACCOUNT
-        - MXN_ACCOUNT
-        - DKK_ACCOUNT
-        - EUR_ACCOUNT
-        - INR_ACCOUNT
-        - NGN_ACCOUNT
-        - CAD_ACCOUNT
-        - GBP_ACCOUNT
-        - HKD_ACCOUNT
-        - IDR_ACCOUNT
-        - MYR_ACCOUNT
-        - PHP_ACCOUNT
-        - SGD_ACCOUNT
-        - THB_ACCOUNT
-        - VND_ACCOUNT
-        - SPARK_WALLET
-        - LIGHTNING
-        - SOLANA_WALLET
-        - TRON_WALLET
-        - POLYGON_WALLET
-        - BASE_WALLET
-      description: Type of payment account or wallet
-      example: USD_ACCOUNT
-    UsdAccountInfo:
-      type: object
-      required:
-        - accountType
-        - countries
-        - paymentRails
-        - accountNumber
-        - routingNumber
-      properties:
-        accountType:
-          type: string
-          enum:
-            - USD_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - US
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - ACH
-              - WIRE
-              - RTP
-              - FEDNOW
-        accountNumber:
-          type: string
-          description: The account number of the bank
-        routingNumber:
-          type: string
-          description: The routing number of the bank
     PaymentInstructions:
       type: object
       required:
@@ -5544,50 +5499,28 @@ components:
           example: true
         accountOrWalletInfo:
           oneOf:
-            - title: USD Bank Account
-              $ref: '#/components/schemas/PaymentUsdAccountInfo'
-            - title: BRL Account
-              $ref: '#/components/schemas/PaymentBrlAccountInfo'
-            - title: MXN Account
-              $ref: '#/components/schemas/PaymentMxnAccountInfo'
-            - title: DKK Account
-              $ref: '#/components/schemas/PaymentDkkAccountInfo'
-            - title: EUR Account
-              $ref: '#/components/schemas/PaymentEurAccountInfo'
-            - title: INR Account
-              $ref: '#/components/schemas/PaymentInrAccountInfo'
-            - title: NGN Account
-              $ref: '#/components/schemas/PaymentNgnAccountInfo'
-            - title: CAD Account
-              $ref: '#/components/schemas/PaymentCadAccountInfo'
-            - title: GBP Account
-              $ref: '#/components/schemas/PaymentGbpAccountInfo'
-            - title: HKD Account
-              $ref: '#/components/schemas/PaymentHkdAccountInfo'
-            - title: IDR Account
-              $ref: '#/components/schemas/PaymentIdrAccountInfo'
-            - title: MYR Account
-              $ref: '#/components/schemas/PaymentMyrAccountInfo'
-            - title: PHP Account
-              $ref: '#/components/schemas/PaymentPhpAccountInfo'
-            - title: SGD Account
-              $ref: '#/components/schemas/PaymentSgdAccountInfo'
-            - title: THB Account
-              $ref: '#/components/schemas/PaymentThbAccountInfo'
-            - title: VND Account
-              $ref: '#/components/schemas/PaymentVndAccountInfo'
-            - title: Spark Wallet
-              $ref: '#/components/schemas/PaymentSparkWalletInfo'
-            - title: Lightning Invoice
-              $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
-            - title: Solana Wallet
-              $ref: '#/components/schemas/PaymentSolanaWalletInfo'
-            - title: Tron Wallet
-              $ref: '#/components/schemas/PaymentTronWalletInfo'
-            - title: Polygon Wallet
-              $ref: '#/components/schemas/PaymentPolygonWalletInfo'
-            - title: Base Wallet
-              $ref: '#/components/schemas/PaymentBaseWalletInfo'
+            - $ref: '#/components/schemas/PaymentUsdAccountInfo'
+            - $ref: '#/components/schemas/PaymentBrlAccountInfo'
+            - $ref: '#/components/schemas/PaymentMxnAccountInfo'
+            - $ref: '#/components/schemas/PaymentDkkAccountInfo'
+            - $ref: '#/components/schemas/PaymentEurAccountInfo'
+            - $ref: '#/components/schemas/PaymentInrAccountInfo'
+            - $ref: '#/components/schemas/PaymentNgnAccountInfo'
+            - $ref: '#/components/schemas/PaymentCadAccountInfo'
+            - $ref: '#/components/schemas/PaymentGbpAccountInfo'
+            - $ref: '#/components/schemas/PaymentHkdAccountInfo'
+            - $ref: '#/components/schemas/PaymentIdrAccountInfo'
+            - $ref: '#/components/schemas/PaymentMyrAccountInfo'
+            - $ref: '#/components/schemas/PaymentPhpAccountInfo'
+            - $ref: '#/components/schemas/PaymentSgdAccountInfo'
+            - $ref: '#/components/schemas/PaymentThbAccountInfo'
+            - $ref: '#/components/schemas/PaymentVndAccountInfo'
+            - $ref: '#/components/schemas/PaymentSparkWalletInfo'
+            - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
+            - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
+            - $ref: '#/components/schemas/PaymentTronWalletInfo'
+            - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
+            - $ref: '#/components/schemas/PaymentBaseWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -5682,6 +5615,31 @@ components:
           type: string
           description: The verified full name of the account holder as returned by the payment rail
           example: John Doe
+    ExternalAccountType:
+      type: string
+      enum:
+        - GBP_ACCOUNT
+        - PHP_ACCOUNT
+        - SGD_ACCOUNT
+        - SPARK_WALLET
+        - LIGHTNING
+        - SOLANA_WALLET
+        - TRON_WALLET
+        - POLYGON_WALLET
+        - BASE_WALLET
+        - BRL_ACCOUNT
+        - DKK_ACCOUNT
+        - EUR_ACCOUNT
+        - HKD_ACCOUNT
+        - IDR_ACCOUNT
+        - INR_ACCOUNT
+        - MXN_ACCOUNT
+        - MYR_ACCOUNT
+        - THB_ACCOUNT
+        - USD_ACCOUNT
+        - VND_ACCOUNT
+      description: Type of external account or wallet
+      example: GBP_ACCOUNT
     BaseExternalAccountInfo:
       type: object
       required:
@@ -5689,30 +5647,8 @@ components:
       properties:
         accountType:
           $ref: '#/components/schemas/ExternalAccountType'
-      discriminator:
-        propertyName: accountType
-        mapping:
-          GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
-          PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
-          SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
-          SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
-          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
-          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
-          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
-          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
-          BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
-          BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
-          DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
-          EUR_ACCOUNT: '#/components/schemas/EurExternalAccountInfo'
-          HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
-          IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
-          INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
-          MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountInfo'
-          MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountInfo'
-          THB_ACCOUNT: '#/components/schemas/ThbExternalAccountInfo'
-          USD_ACCOUNT: '#/components/schemas/UsdExternalAccountInfo'
-          VND_ACCOUNT: '#/components/schemas/VndExternalAccountInfo'
-    GbpBeneficiary:
+    BrlBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -5746,6 +5682,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     BusinessBeneficiary:
+      title: Business Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -5775,177 +5712,8 @@ components:
           description: The country of residence of the beneficiary
         address:
           $ref: '#/components/schemas/Address'
-    GbpExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GbpAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/GbpBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    PhpBeneficiary:
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    PhpExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PhpAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/PhpBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    SgdBeneficiary:
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    SgdExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SgdAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/SgdBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    SparkWalletExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SparkWalletInfo'
-    LightningInfo:
-      type: object
-      description: |
-        Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must be provided.
-      required:
-        - accountType
-      properties:
-        accountType:
-          type: string
-          enum:
-            - LIGHTNING
-        invoice:
-          type: string
-          description: 1-time use lightning bolt11 invoice payout destination
-          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-        bolt12:
-          type: string
-          description: A bolt12 offer which can be reused as a payment destination
-          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-        lightningAddress:
-          type: string
-          description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
-          example: john.doe@lightningwallet.com
-    LightningExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/LightningInfo'
-    SolanaWalletExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SolanaWalletInfo'
-    TronWalletExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/TronWalletInfo'
-    PolygonWalletExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PolygonWalletInfo'
-    BaseWalletExternalAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BaseWalletInfo'
     BrlExternalAccountInfo:
+      title: BRL Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BrlAccountInfo'
@@ -5955,16 +5723,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/BrlBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/BrlBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     DkkBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -5998,6 +5765,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     DkkExternalAccountInfo:
+      title: DKK Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/DkkAccountInfo'
@@ -6007,16 +5775,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/DkkBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/DkkBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     EurBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6050,6 +5817,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     EurExternalAccountInfo:
+      title: EUR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EurAccountInfo'
@@ -6059,16 +5827,67 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/EurBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/EurBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/EurBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GbpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GbpExternalAccountInfo:
+      title: GBP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GbpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/GbpBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     HkdBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6102,6 +5921,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     HkdExternalAccountInfo:
+      title: HKD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/HkdAccountInfo'
@@ -6111,16 +5931,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/HkdBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/HkdBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/HkdBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     IdrBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6154,6 +5973,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     IdrExternalAccountInfo:
+      title: IDR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/IdrAccountInfo'
@@ -6163,16 +5983,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/IdrBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/IdrBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/IdrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     InrBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6206,6 +6025,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     InrExternalAccountInfo:
+      title: INR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/InrAccountInfo'
@@ -6215,16 +6035,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/InrBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/InrBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/InrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     MxnBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6258,6 +6077,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     MxnExternalAccountInfo:
+      title: MXN Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/MxnAccountInfo'
@@ -6267,16 +6087,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/MxnBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/MxnBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/MxnBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     MyrBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6310,6 +6129,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     MyrExternalAccountInfo:
+      title: MYR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/MyrAccountInfo'
@@ -6319,16 +6139,119 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/MyrBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/MyrBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/MyrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PhpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    PhpExternalAccountInfo:
+      title: PHP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PhpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/PhpBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    SgdBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    SgdExternalAccountInfo:
+      title: SGD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SgdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/SgdBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ThbBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6362,6 +6285,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     ThbExternalAccountInfo:
+      title: THB Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/ThbAccountInfo'
@@ -6371,16 +6295,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/ThbBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/ThbBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ThbBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     UsdBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6416,6 +6339,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     UsdExternalAccountInfo:
+      title: USD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/UsdAccountInfo'
@@ -6425,16 +6349,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/UsdBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/UsdBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/UsdBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     VndBeneficiary:
+      title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
@@ -6468,6 +6391,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
     VndExternalAccountInfo:
+      title: VND Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/VndAccountInfo'
@@ -6477,115 +6401,88 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/VndBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                - $ref: '#/components/schemas/VndBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/VndBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    ExternalAccountType:
-      type: string
-      enum:
-        - GBP_ACCOUNT
-        - PHP_ACCOUNT
-        - SGD_ACCOUNT
-        - SPARK_WALLET
-        - LIGHTNING
-        - SOLANA_WALLET
-        - TRON_WALLET
-        - POLYGON_WALLET
-        - BASE_WALLET
-        - BRL_ACCOUNT
-        - DKK_ACCOUNT
-        - EUR_ACCOUNT
-        - HKD_ACCOUNT
-        - IDR_ACCOUNT
-        - INR_ACCOUNT
-        - MXN_ACCOUNT
-        - MYR_ACCOUNT
-        - THB_ACCOUNT
-        - USD_ACCOUNT
-        - VND_ACCOUNT
-      description: Type of external account or wallet
-      example: GBP_ACCOUNT
-    BrlBeneficiary:
+    SparkWalletExternalAccountInfo:
+      title: Spark Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SparkWalletInfo'
+    LightningInfo:
       type: object
+      description: |
+        Lightning payment destination. Exactly one of `invoice`, `bolt12`, or `lightningAddress` must be provided.
       required:
-        - beneficiaryType
-        - fullName
+        - accountType
       properties:
-        beneficiaryType:
+        accountType:
           type: string
           enum:
-            - INDIVIDUAL
-        fullName:
+            - LIGHTNING
+        invoice:
           type: string
-          description: The full name of the beneficiary
-        birthDate:
+          description: 1-time use lightning bolt11 invoice payout destination
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+        bolt12:
           type: string
-          description: The birth date of the beneficiary
-        nationality:
+          description: A bolt12 offer which can be reused as a payment destination
+          example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+        lightningAddress:
           type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
+          description: A lightning address which can be used as a payment destination. Note that for UMA addresses, no external account is needed. You can use the UMA address directly as a destination.
+          example: john.doe@lightningwallet.com
+    LightningExternalAccountInfo:
+      title: Lightning
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningInfo'
+    SolanaWalletExternalAccountInfo:
+      title: Solana Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SolanaWalletInfo'
+    TronWalletExternalAccountInfo:
+      title: Tron Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TronWalletInfo'
+    PolygonWalletExternalAccountInfo:
+      title: Polygon Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PolygonWalletInfo'
+    BaseWalletExternalAccountInfo:
+      title: Base Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BaseWalletInfo'
     ExternalAccountInfoOneOf:
       oneOf:
-        - title: BRL Account
-          $ref: '#/components/schemas/BrlExternalAccountInfo'
-        - title: DKK Account
-          $ref: '#/components/schemas/DkkExternalAccountInfo'
-        - title: EUR Account
-          $ref: '#/components/schemas/EurExternalAccountInfo'
-        - title: GBP Account
-          $ref: '#/components/schemas/GbpExternalAccountInfo'
-        - title: HKD Account
-          $ref: '#/components/schemas/HkdExternalAccountInfo'
-        - title: IDR Account
-          $ref: '#/components/schemas/IdrExternalAccountInfo'
-        - title: INR Account
-          $ref: '#/components/schemas/InrExternalAccountInfo'
-        - title: MXN Account
-          $ref: '#/components/schemas/MxnExternalAccountInfo'
-        - title: MYR Account
-          $ref: '#/components/schemas/MyrExternalAccountInfo'
-        - title: PHP Account
-          $ref: '#/components/schemas/PhpExternalAccountInfo'
-        - title: SGD Account
-          $ref: '#/components/schemas/SgdExternalAccountInfo'
-        - title: THB Account
-          $ref: '#/components/schemas/ThbExternalAccountInfo'
-        - title: USD Account
-          $ref: '#/components/schemas/UsdExternalAccountInfo'
-        - title: VND Account
-          $ref: '#/components/schemas/VndExternalAccountInfo'
-        - title: Spark Wallet
-          $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
-        - title: Lightning
-          $ref: '#/components/schemas/LightningExternalAccountInfo'
-        - title: Solana Wallet
-          $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
-        - title: Tron Wallet
-          $ref: '#/components/schemas/TronWalletExternalAccountInfo'
-        - title: Polygon Wallet
-          $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
-        - title: Base Wallet
-          $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BrlExternalAccountInfo'
+        - $ref: '#/components/schemas/DkkExternalAccountInfo'
+        - $ref: '#/components/schemas/EurExternalAccountInfo'
+        - $ref: '#/components/schemas/GbpExternalAccountInfo'
+        - $ref: '#/components/schemas/HkdExternalAccountInfo'
+        - $ref: '#/components/schemas/IdrExternalAccountInfo'
+        - $ref: '#/components/schemas/InrExternalAccountInfo'
+        - $ref: '#/components/schemas/MxnExternalAccountInfo'
+        - $ref: '#/components/schemas/MyrExternalAccountInfo'
+        - $ref: '#/components/schemas/PhpExternalAccountInfo'
+        - $ref: '#/components/schemas/SgdExternalAccountInfo'
+        - $ref: '#/components/schemas/ThbExternalAccountInfo'
+        - $ref: '#/components/schemas/UsdExternalAccountInfo'
+        - $ref: '#/components/schemas/VndExternalAccountInfo'
+        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningExternalAccountInfo'
+        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -6775,32 +6672,122 @@ components:
           format: int64
           description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
           example: 12550
-    IncomingTransaction:
+    TransactionStatus:
+      type: string
+      enum:
+        - CREATED
+        - PENDING
+        - PROCESSING
+        - SENT
+        - COMPLETED
+        - REJECTED
+        - FAILED
+        - REFUNDED
+        - EXPIRED
+      description: |
+        Status of a payment transaction.
+
+        | Status | Description |
+        |--------|-------------|
+        | `CREATED` | Initial lookup has been created |
+        | `PENDING` | Quote has been created |
+        | `PROCESSING` | Funding has been received and payment initiated |
+        | `SENT` | Cross border settlement has been initiated |
+        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
+        | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
+        | `FAILED` | An error occurred during payment |
+        | `REFUNDED` | Payment was unable to complete and refunded |
+        | `EXPIRED` | Quote has expired |
+    TransactionDestinationType:
+      type: string
+      enum:
+        - ACCOUNT
+        - UMA_ADDRESS
+        - EXTERNAL_ACCOUNT_DETAILS
+      description: Type of transaction destination
+      example: ACCOUNT
+    BaseTransactionDestination:
+      type: object
+      required:
+        - destinationType
+      properties:
+        destinationType:
+          $ref: '#/components/schemas/TransactionDestinationType'
+        currency:
+          type: string
+          description: Currency code for the destination
+          example: EUR
+    AccountTransactionDestination:
+      title: Account Destination
       allOf:
-        - $ref: '#/components/schemas/Transaction'
+        - $ref: '#/components/schemas/BaseTransactionDestination'
         - type: object
           required:
-            - type
-            - receivedAmount
+            - accountId
+            - destinationType
           properties:
-            type:
+            destinationType:
               type: string
               enum:
-                - INCOMING
-            source:
-              $ref: '#/components/schemas/TransactionSourceOneOf'
-            receivedAmount:
-              $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency
-            reconciliationInstructions:
-              $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Included for all transactions except those with "CREATED" status
-            rateDetails:
-              $ref: '#/components/schemas/IncomingRateDetails'
-              description: Details about the rate and fees for the transaction.
-            failureReason:
-              $ref: '#/components/schemas/IncomingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure.
+                - ACCOUNT
+            accountId:
+              type: string
+              description: Destination account identifier
+              example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          description: Destination account details
+    UmaAddressTransactionDestination:
+      title: UMA Address Destination
+      allOf:
+        - $ref: '#/components/schemas/BaseTransactionDestination'
+        - type: object
+          required:
+            - umaAddress
+            - destinationType
+          properties:
+            destinationType:
+              type: string
+              enum:
+                - UMA_ADDRESS
+            umaAddress:
+              type: string
+              description: UMA address of the recipient
+              example: $receiver@uma.domain.com
+          description: UMA address destination details
+    ExternalAccountDetailsTransactionDestination:
+      title: External Account Details Destination
+      allOf:
+        - $ref: '#/components/schemas/BaseTransactionDestination'
+        - type: object
+          required:
+            - externalAccountDetails
+            - destinationType
+          properties:
+            destinationType:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT_DETAILS
+            externalAccountDetails:
+              $ref: '#/components/schemas/ExternalAccountCreateRequest'
+          description: Transaction destination where external account details were provided inline at quote creation rather than using a pre-registered external account.
+    TransactionDestinationOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/AccountTransactionDestination'
+        - $ref: '#/components/schemas/UmaAddressTransactionDestination'
+        - $ref: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          ACCOUNT: '#/components/schemas/AccountTransactionDestination'
+          UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
+    CounterpartyInformation:
+      type: object
+      description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
+      additionalProperties: true
+      example:
+        FULL_NAME: John Sender
+        BIRTH_DATE: '1985-06-15'
+        NATIONALITY: DE
     Transaction:
       type: object
       required:
@@ -6850,12 +6837,27 @@ components:
           example: 'Payment for invoice #1234'
         counterpartyInformation:
           $ref: '#/components/schemas/CounterpartyInformation'
-      discriminator:
-        propertyName: type
-        mapping:
-          INCOMING: '#/components/schemas/IncomingTransaction'
-          OUTGOING: '#/components/schemas/OutgoingTransaction'
+    TransactionSourceType:
+      type: string
+      enum:
+        - ACCOUNT
+        - UMA_ADDRESS
+        - REALTIME_FUNDING
+      description: Type of transaction source
+      example: ACCOUNT
+    BaseTransactionSource:
+      type: object
+      required:
+        - sourceType
+      properties:
+        sourceType:
+          $ref: '#/components/schemas/TransactionSourceType'
+        currency:
+          type: string
+          description: Currency code for the source
+          example: USD
     AccountTransactionSource:
+      title: Account Source
       allOf:
         - $ref: '#/components/schemas/BaseTransactionSource'
         - type: object
@@ -6872,24 +6874,8 @@ components:
               description: Source account identifier
               example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
           description: Source account details
-    BaseTransactionSource:
-      type: object
-      required:
-        - sourceType
-      properties:
-        sourceType:
-          $ref: '#/components/schemas/TransactionSourceType'
-        currency:
-          type: string
-          description: Currency code for the source
-          example: USD
-      discriminator:
-        propertyName: sourceType
-        mapping:
-          ACCOUNT: '#/components/schemas/AccountTransactionSource'
-          UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
-          REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
     UmaAddressTransactionSource:
+      title: UMA Address Source
       allOf:
         - $ref: '#/components/schemas/BaseTransactionSource'
         - type: object
@@ -6907,6 +6893,7 @@ components:
               example: $sender@uma.domain.com
           description: UMA address source details
     RealtimeFundingTransactionSource:
+      title: Real-time Funding Source
       allOf:
         - $ref: '#/components/schemas/BaseTransactionSource'
         - type: object
@@ -6927,28 +6914,98 @@ components:
               description: Currency code for the funding source
               example: USDC
           description: Transaction was funded using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
-    TransactionSourceType:
-      type: string
-      enum:
-        - ACCOUNT
-        - UMA_ADDRESS
-        - REALTIME_FUNDING
-      description: Type of transaction source
-      example: ACCOUNT
     TransactionSourceOneOf:
       oneOf:
-        - title: Account Source
-          $ref: '#/components/schemas/AccountTransactionSource'
-        - title: UMA Address Source
-          $ref: '#/components/schemas/UmaAddressTransactionSource'
-        - title: Real-time Funding Source
-          $ref: '#/components/schemas/RealtimeFundingTransactionSource'
+        - $ref: '#/components/schemas/AccountTransactionSource'
+        - $ref: '#/components/schemas/UmaAddressTransactionSource'
+        - $ref: '#/components/schemas/RealtimeFundingTransactionSource'
       discriminator:
         propertyName: sourceType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionSource'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
           REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
+    ReconciliationInstructions:
+      type: object
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
+          example: UMA-Q12345-REF
+    IncomingRateDetails:
+      description: Details about the rate and fees for an incoming transaction.
+      type: object
+      required:
+        - gridApiMultiplier
+        - gridApiFixedFee
+        - gridApiVariableFeeRate
+        - gridApiVariableFeeAmount
+      properties:
+        gridApiMultiplier:
+          type: number
+          format: double
+          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
+          exclusiveMinimum: 0
+          example: 0.925
+        gridApiFixedFee:
+          type: integer
+          format: int64
+          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
+          minimum: 0
+          example: 10
+        gridApiVariableFeeRate:
+          type: number
+          format: double
+          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
+          exclusiveMinimum: 0
+          example: 0.003
+        gridApiVariableFeeAmount:
+          type: number
+          format: int64
+          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
+          minimum: 0
+          example: 30
+    IncomingTransactionFailureReason:
+      type: string
+      enum:
+        - LNURLP_FAILED
+        - PAY_REQUEST_FAILED
+        - PAYMENT_APPROVAL_WEBHOOK_ERROR
+        - PAYMENT_APPROVAL_TIMED_OUT
+        - OFFRAMP_FAILED
+        - MISSING_MANDATORY_PAYEE_DATA
+        - QUOTE_EXPIRED
+        - QUOTE_EXECUTION_FAILED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    IncomingTransaction:
+      title: Incoming Transaction
+      allOf:
+        - $ref: '#/components/schemas/Transaction'
+        - type: object
+          required:
+            - type
+            - receivedAmount
+          properties:
+            type:
+              type: string
+              enum:
+                - INCOMING
+            source:
+              $ref: '#/components/schemas/TransactionSourceOneOf'
+            receivedAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount received in the recipient's currency
+            reconciliationInstructions:
+              $ref: '#/components/schemas/ReconciliationInstructions'
+              description: Included for all transactions except those with "CREATED" status
+            rateDetails:
+              $ref: '#/components/schemas/IncomingRateDetails'
+              description: Details about the rate and fees for the transaction.
+            failureReason:
+              $ref: '#/components/schemas/IncomingTransactionFailureReason'
+              description: If the transaction failed, this field provides the reason for failure.
     Refund:
       type: object
       required:
@@ -7027,6 +7084,7 @@ components:
         - TIMEOUT
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
     OutgoingTransaction:
+      title: Outgoing Transaction
       allOf:
         - $ref: '#/components/schemas/Transaction'
         - type: object
@@ -7085,188 +7143,10 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
-    TransactionStatus:
-      type: string
-      enum:
-        - CREATED
-        - PENDING
-        - PROCESSING
-        - SENT
-        - COMPLETED
-        - REJECTED
-        - FAILED
-        - REFUNDED
-        - EXPIRED
-      description: |
-        Status of a payment transaction.
-
-        | Status | Description |
-        |--------|-------------|
-        | `CREATED` | Initial lookup has been created |
-        | `PENDING` | Quote has been created |
-        | `PROCESSING` | Funding has been received and payment initiated |
-        | `SENT` | Cross border settlement has been initiated |
-        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
-        | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
-        | `FAILED` | An error occurred during payment |
-        | `REFUNDED` | Payment was unable to complete and refunded |
-        | `EXPIRED` | Quote has expired |
-    AccountTransactionDestination:
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionDestination'
-        - type: object
-          required:
-            - accountId
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - ACCOUNT
-            accountId:
-              type: string
-              description: Destination account identifier
-              example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-          description: Destination account details
-    BaseTransactionDestination:
-      type: object
-      required:
-        - destinationType
-      properties:
-        destinationType:
-          $ref: '#/components/schemas/TransactionDestinationType'
-        currency:
-          type: string
-          description: Currency code for the destination
-          example: EUR
-      discriminator:
-        propertyName: destinationType
-        mapping:
-          ACCOUNT: '#/components/schemas/AccountTransactionDestination'
-          UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
-    UmaAddressTransactionDestination:
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionDestination'
-        - type: object
-          required:
-            - umaAddress
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - UMA_ADDRESS
-            umaAddress:
-              type: string
-              description: UMA address of the recipient
-              example: $receiver@uma.domain.com
-          description: UMA address destination details
-    ExternalAccountDetailsTransactionDestination:
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionDestination'
-        - type: object
-          required:
-            - externalAccountDetails
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT_DETAILS
-            externalAccountDetails:
-              $ref: '#/components/schemas/ExternalAccountCreateRequest'
-          description: Transaction destination where external account details were provided inline at quote creation rather than using a pre-registered external account.
-    TransactionDestinationType:
-      type: string
-      enum:
-        - ACCOUNT
-        - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
-      description: Type of transaction destination
-      example: ACCOUNT
-    TransactionDestinationOneOf:
-      oneOf:
-        - title: Account Destination
-          $ref: '#/components/schemas/AccountTransactionDestination'
-        - title: UMA Address Destination
-          $ref: '#/components/schemas/UmaAddressTransactionDestination'
-        - title: External Account Details Destination
-          $ref: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
-      discriminator:
-        propertyName: destinationType
-        mapping:
-          ACCOUNT: '#/components/schemas/AccountTransactionDestination'
-          UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
-    CounterpartyInformation:
-      type: object
-      description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
-      additionalProperties: true
-      example:
-        FULL_NAME: John Sender
-        BIRTH_DATE: '1985-06-15'
-        NATIONALITY: DE
-    ReconciliationInstructions:
-      type: object
-      required:
-        - reference
-      properties:
-        reference:
-          type: string
-          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
-          example: UMA-Q12345-REF
-    IncomingRateDetails:
-      description: Details about the rate and fees for an incoming transaction.
-      type: object
-      required:
-        - gridApiMultiplier
-        - gridApiFixedFee
-        - gridApiVariableFeeRate
-        - gridApiVariableFeeAmount
-      properties:
-        gridApiMultiplier:
-          type: number
-          format: double
-          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
-          exclusiveMinimum: 0
-          example: 0.925
-        gridApiFixedFee:
-          type: integer
-          format: int64
-          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
-          minimum: 0
-          example: 10
-        gridApiVariableFeeRate:
-          type: number
-          format: double
-          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
-          exclusiveMinimum: 0
-          example: 0.003
-        gridApiVariableFeeAmount:
-          type: number
-          format: int64
-          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
-          minimum: 0
-          example: 30
-    IncomingTransactionFailureReason:
-      type: string
-      enum:
-        - LNURLP_FAILED
-        - PAY_REQUEST_FAILED
-        - PAYMENT_APPROVAL_WEBHOOK_ERROR
-        - PAYMENT_APPROVAL_TIMED_OUT
-        - OFFRAMP_FAILED
-        - MISSING_MANDATORY_PAYEE_DATA
-        - QUOTE_EXPIRED
-        - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
     TransactionOneOf:
       oneOf:
-        - title: Incoming Transaction
-          $ref: '#/components/schemas/IncomingTransaction'
-        - title: Outgoing Transaction
-          $ref: '#/components/schemas/OutgoingTransaction'
+        - $ref: '#/components/schemas/IncomingTransaction'
+        - $ref: '#/components/schemas/OutgoingTransaction'
       discriminator:
         propertyName: type
         mapping:
@@ -7410,7 +7290,22 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    QuoteSourceType:
+      type: string
+      enum:
+        - ACCOUNT
+        - REALTIME_FUNDING
+      description: Type of quote funding source
+      example: ACCOUNT
+    BaseQuoteSource:
+      type: object
+      required:
+        - sourceType
+      properties:
+        sourceType:
+          $ref: '#/components/schemas/QuoteSourceType'
     AccountQuoteSource:
+      title: Account
       allOf:
         - $ref: '#/components/schemas/BaseQuoteSource'
         - type: object
@@ -7431,19 +7326,8 @@ components:
               description: Required when funding from an FBO account to identify the customer on whose behalf the transaction is being initiated.  Otherwise, will default to the customerId of the account owner.
               example: Customer:019542f5-b3e7-1d02-0000-000000000001
           description: Source account details
-    BaseQuoteSource:
-      type: object
-      required:
-        - sourceType
-      properties:
-        sourceType:
-          $ref: '#/components/schemas/QuoteSourceType'
-      discriminator:
-        propertyName: sourceType
-        mapping:
-          ACCOUNT: '#/components/schemas/AccountQuoteSource'
-          REALTIME_FUNDING: '#/components/schemas/RealtimeFundingQuoteSource'
     RealtimeFundingQuoteSource:
+      title: Real-time Funding
       allOf:
         - $ref: '#/components/schemas/BaseQuoteSource'
         - type: object
@@ -7464,25 +7348,32 @@ components:
               description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: USD
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
-    QuoteSourceType:
-      type: string
-      enum:
-        - ACCOUNT
-        - REALTIME_FUNDING
-      description: Type of quote funding source
-      example: ACCOUNT
     QuoteSourceOneOf:
       oneOf:
-        - title: Account
-          $ref: '#/components/schemas/AccountQuoteSource'
-        - title: Real-time Funding
-          $ref: '#/components/schemas/RealtimeFundingQuoteSource'
+        - $ref: '#/components/schemas/AccountQuoteSource'
+        - $ref: '#/components/schemas/RealtimeFundingQuoteSource'
       discriminator:
         propertyName: sourceType
         mapping:
           ACCOUNT: '#/components/schemas/AccountQuoteSource'
           REALTIME_FUNDING: '#/components/schemas/RealtimeFundingQuoteSource'
+    DestinationType:
+      type: string
+      enum:
+        - ACCOUNT
+        - UMA_ADDRESS
+        - EXTERNAL_ACCOUNT_DETAILS
+      description: Type of payment destination
+      example: ACCOUNT
+    BaseDestination:
+      type: object
+      required:
+        - destinationType
+      properties:
+        destinationType:
+          $ref: '#/components/schemas/DestinationType'
     AccountDestination:
+      title: Account
       allOf:
         - $ref: '#/components/schemas/BaseDestination'
         - type: object
@@ -7499,20 +7390,8 @@ components:
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
           description: Destination account details
-    BaseDestination:
-      type: object
-      required:
-        - destinationType
-      properties:
-        destinationType:
-          $ref: '#/components/schemas/DestinationType'
-      discriminator:
-        propertyName: destinationType
-        mapping:
-          ACCOUNT: '#/components/schemas/AccountDestination'
-          UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsDestination'
     UmaAddressDestination:
+      title: UMA Address
       allOf:
         - $ref: '#/components/schemas/BaseDestination'
         - type: object
@@ -7542,6 +7421,7 @@ components:
               example: EUR
           description: UMA address destination details
     ExternalAccountDetailsDestination:
+      title: External Account Details
       allOf:
         - $ref: '#/components/schemas/BaseDestination'
         - type: object
@@ -7556,22 +7436,11 @@ components:
             externalAccountDetails:
               $ref: '#/components/schemas/ExternalAccountCreateRequest'
           description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination. See the external accounts endpoints for test values in sandbox mode.
-    DestinationType:
-      type: string
-      enum:
-        - ACCOUNT
-        - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
-      description: Type of payment destination
-      example: ACCOUNT
     QuoteDestinationOneOf:
       oneOf:
-        - title: Account
-          $ref: '#/components/schemas/AccountDestination'
-        - title: UMA Address
-          $ref: '#/components/schemas/UmaAddressDestination'
-        - title: External Account Details
-          $ref: '#/components/schemas/ExternalAccountDetailsDestination'
+        - $ref: '#/components/schemas/AccountDestination'
+        - $ref: '#/components/schemas/UmaAddressDestination'
+        - $ref: '#/components/schemas/ExternalAccountDetailsDestination'
       discriminator:
         propertyName: destinationType
         mapping:

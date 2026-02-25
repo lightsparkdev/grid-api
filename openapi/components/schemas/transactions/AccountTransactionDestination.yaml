@@ -1,3 +1,4 @@
+title: Account Destination
 allOf:
   - $ref: ./BaseTransactionDestination.yaml
   - type: object

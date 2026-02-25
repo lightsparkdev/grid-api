@@ -1,3 +1,4 @@
+title: UMA Address Destination
 allOf:
   - $ref: ./BaseTransactionDestination.yaml
   - type: object

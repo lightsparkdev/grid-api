@@ -1,8 +1,6 @@
 oneOf:
-  - title: Incoming Transaction
-    $ref: ./IncomingTransaction.yaml
-  - title: Outgoing Transaction
-    $ref: ./OutgoingTransaction.yaml
+  - $ref: ./IncomingTransaction.yaml
+  - $ref: ./OutgoingTransaction.yaml
 discriminator:
   propertyName: type
   mapping:

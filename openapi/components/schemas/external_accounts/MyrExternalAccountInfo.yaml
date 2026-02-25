@@ -1,3 +1,4 @@
+title: MYR Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
 - $ref: ../common/MyrAccountInfo.yaml
@@ -7,10 +8,8 @@ allOf:
   properties:
     beneficiary:
       oneOf:
-      - title: Individual Beneficiary
-        $ref: ../common/MyrBeneficiary.yaml
-      - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+      - $ref: ../common/MyrBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:

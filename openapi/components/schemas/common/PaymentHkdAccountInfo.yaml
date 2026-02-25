@@ -1,3 +1,4 @@
+title: HKD Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./HkdAccountInfo.yaml

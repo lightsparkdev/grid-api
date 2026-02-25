@@ -1,3 +1,4 @@
+title: Spark Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./SparkWalletInfo.yaml

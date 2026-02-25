@@ -1,3 +1,4 @@
+title: Real-time Funding
 allOf:
   - $ref: ./BaseQuoteSource.yaml
   - type: object

@@ -40,8 +40,3 @@ properties:
     description: Whether the customer is marked as deleted
     example: false
     readOnly: true
-discriminator:
-  propertyName: customerType
-  mapping:
-    INDIVIDUAL: ./IndividualCustomer.yaml
-    BUSINESS: ./BusinessCustomer.yaml

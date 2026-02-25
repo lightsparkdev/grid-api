@@ -1,3 +1,4 @@
+title: Outgoing Transaction
 allOf:
   - $ref: ./Transaction.yaml
   - type: object
