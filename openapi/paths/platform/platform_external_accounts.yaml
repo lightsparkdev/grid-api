@@ -86,7 +86,11 @@ post:
             value:
               currency: USD
               accountInfo:
-                accountType: US_ACCOUNT
+                accountType: USD_ACCOUNT
+                countries:
+                  - US
+                paymentRails:
+                  - ACH
                 accountNumber: "12345678901"
                 routingNumber: "123456789"
                 accountCategory: CHECKING

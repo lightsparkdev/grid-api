@@ -870,7 +870,11 @@ paths:
                   customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                   currency: USD
                   accountInfo:
-                    accountType: US_ACCOUNT
+                    accountType: USD_ACCOUNT
+                    countries:
+                      - US
+                    paymentRails:
+                      - ACH
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
                     accountCategory: CHECKING
@@ -1006,7 +1010,11 @@ paths:
                 value:
                   currency: USD
                   accountInfo:
-                    accountType: US_ACCOUNT
+                    accountType: USD_ACCOUNT
+                    countries:
+                      - US
+                    paymentRails:
+                      - ACH
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
                     accountCategory: CHECKING
