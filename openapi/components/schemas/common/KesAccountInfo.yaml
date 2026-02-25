@@ -1,0 +1,34 @@
+type: object
+required:
+  - accountType
+  - countries
+  - paymentRails
+  - phoneNumber
+  - provider
+properties:
+  accountType:
+    type: string
+    enum:
+      - KES_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - KE
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - MOBILE_MONEY
+  phoneNumber:
+    type: string
+    description: Kenyan mobile money phone number
+    example: '+254712345678'
+    pattern: ^\+254[0-9]{9}$
+  provider:
+    type: string
+    description: Mobile money provider
+    enum:
+      - M-PESA
