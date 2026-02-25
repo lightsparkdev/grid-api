@@ -275,6 +275,72 @@ discriminator:
     BUSINESS: '#/components/schemas/BusinessCustomer'
 ```
 
+#### Discriminator placement: OneOf wrapper only
+
+The `discriminator` block must only appear on the **OneOf wrapper** schema, never on the base schema. If both the base and wrapper define a discriminator, Mintlify renders duplicate type options in the UI.
+
+```yaml
+# ✅ Correct — discriminator on the OneOf wrapper only
+# ExternalAccountInfoOneOf.yaml
+oneOf:
+  - $ref: ./UsdExternalAccountInfo.yaml
+  - $ref: ./EurExternalAccountInfo.yaml
+discriminator:
+  propertyName: accountType
+  mapping:
+    USD_ACCOUNT: ./UsdExternalAccountInfo.yaml
+    EUR_ACCOUNT: ./EurExternalAccountInfo.yaml
+
+# BaseExternalAccountInfo.yaml — NO discriminator here
+type: object
+properties:
+  accountType:
+    type: string
+```
+
+```yaml
+# ❌ Wrong — discriminator on both base and wrapper causes duplicate rendering
+# BaseExternalAccountInfo.yaml
+type: object
+properties:
+  accountType:
+    type: string
+discriminator:          # ← remove this
+  propertyName: accountType
+  mapping: ...
+```
+
+#### Titles must be inside the schema, not next to `$ref`
+
+In OpenAPI, properties that are siblings to `$ref` are ignored. A `title:` placed next to `$ref:` in a `oneOf` entry will be silently dropped, so Mintlify won't display it.
+
+Instead, place `title:` as the **first line** of the referenced schema file.
+
+```yaml
+# ✅ Correct — title inside the referenced schema
+# CustomerOneOf.yaml
+oneOf:
+  - $ref: ./IndividualCustomer.yaml
+  - $ref: ./BusinessCustomer.yaml
+
+# IndividualCustomer.yaml
+title: Individual Customer    # ← title goes here
+allOf:
+  - $ref: ./Customer.yaml
+  - ...
+```
+
+```yaml
+# ❌ Wrong — title as $ref sibling is ignored by OpenAPI parsers
+oneOf:
+  - title: Individual Customer   # ← ignored
+    $ref: ./IndividualCustomer.yaml
+  - title: Business Customer     # ← ignored
+    $ref: ./BusinessCustomer.yaml
+```
+
+When adding a new variant schema to a `oneOf`, always add a `title:` as the first line of the variant file.
+
 #### Three-layer discriminator pattern
 
 We use a three-layer pattern for discriminated unions:
