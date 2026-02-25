@@ -111,6 +111,7 @@ resources:
         models:
           usd_account_info: '#/components/schemas/UsdExternalAccountInfo'
           brl_account_info: '#/components/schemas/BrlExternalAccountInfo'
+          cad_account_info: '#/components/schemas/CadExternalAccountInfo'
           mxn_account_info: '#/components/schemas/MxnExternalAccountInfo'
           dkk_account_info: '#/components/schemas/DkkExternalAccountInfo'
           inr_account_info: '#/components/schemas/InrExternalAccountInfo'
@@ -118,6 +119,7 @@ resources:
           hkd_account_info: '#/components/schemas/HkdExternalAccountInfo'
           idr_account_info: '#/components/schemas/IdrExternalAccountInfo'
           myr_account_info: '#/components/schemas/MyrExternalAccountInfo'
+          ngn_account_info: '#/components/schemas/NgnExternalAccountInfo'
           php_account_info: '#/components/schemas/PhpExternalAccountInfo'
           sgd_account_info: '#/components/schemas/SgdExternalAccountInfo'
           thb_account_info: '#/components/schemas/ThbExternalAccountInfo'
