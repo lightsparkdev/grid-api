@@ -183,6 +183,79 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 </Tab>
 
+<Tab title="Nigeria">
+**NGN Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "NGN",
+    "platformAccountId": "ng_bank_001",
+    "accountInfo": {
+      "accountType": "NGN_ACCOUNT",
+      "accountNumber": "0123456789",
+      "bankName": "First Bank of Nigeria",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Chukwuemeka Okonkwo",
+        "birthDate": "1990-06-20",
+        "nationality": "NG",
+        "address": {
+          "line1": "15 Marina Street",
+          "city": "Lagos",
+          "state": "Lagos",
+          "postalCode": "100001",
+          "country": "NG"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Account number must be exactly 10 digits.
+</Note>
+</Tab>
+
+<Tab title="Canada">
+**CAD Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "CAD",
+    "platformAccountId": "ca_bank_001",
+    "accountInfo": {
+      "accountType": "CAD_ACCOUNT",
+      "bankCode": "001",
+      "branchCode": "00012",
+      "accountNumber": "1234567",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Emily Thompson",
+        "birthDate": "1988-09-12",
+        "nationality": "CA",
+        "address": {
+          "line1": "456 Queen Street West",
+          "city": "Toronto",
+          "state": "ON",
+          "postalCode": "M5V 2B3",
+          "country": "CA"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Bank code is 3 digits, branch code is 5 digits, account number is 7-12 digits.
+</Note>
+</Tab>
+
 <Tab title="Cryptocurrency">
 **Bitcoin Lightning (Spark Wallet)**
 
@@ -320,6 +393,22 @@ if (!/^\d{9}$/.test(routingNumber)) {
 // CLABE: exactly 18 digits
 if (!/^\d{18}$/.test(clabeNumber)) {
   throw new Error("Invalid CLABE number");
+}
+
+// NGN: exactly 10-digit account number
+if (!/^\d{10}$/.test(ngnAccountNumber)) {
+  throw new Error("Invalid Nigerian account number");
+}
+
+// CAD: 3-digit bank code, 5-digit branch code, 7-12 digit account number
+if (!/^\d{3}$/.test(bankCode)) {
+  throw new Error("Invalid bank code");
+}
+if (!/^\d{5}$/.test(branchCode)) {
+  throw new Error("Invalid branch code");
+}
+if (!/^\d{7,12}$/.test(cadAccountNumber)) {
+  throw new Error("Invalid Canadian account number");
 }
 ```
 
