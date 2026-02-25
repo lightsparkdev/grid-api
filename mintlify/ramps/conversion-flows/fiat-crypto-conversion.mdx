@@ -210,16 +210,25 @@ app.post("/webhooks/grid", async (req, res) => {
 
 ## Immediate execution
 
-For instant on-ramps (e.g., reward payouts), use `immediatelyExecute: true`:
+For instant on-ramps (e.g., reward payouts), use `immediatelyExecute: true` with an internal account source:
 
 ```javascript
 const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
   method: "POST",
   body: JSON.stringify({
-    source: { customerId: "Customer:...", currency: "USD" },
+    source: {
+      sourceType: "ACCOUNT",
+      accountId: "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    },
     destination: {
+      destinationType: "EXTERNAL_ACCOUNT_DETAILS",
       externalAccountDetails: {
-        /* wallet details */
+        customerId: "Customer:...",
+        currency: "BTC",
+        accountInfo: {
+          accountType: "SPARK_WALLET",
+          address: "spark1...",
+        },
       },
     },
     lockedCurrencySide: "RECEIVING",
@@ -228,6 +237,10 @@ const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
   }),
 }).then((r) => r.json());
 ```
+
+<Info>
+`immediatelyExecute` can only be used with sources that are either internal accounts or external accounts with direct pull functionality (e.g., ACH pull).
+</Info>
 
 ## Best practices
 
