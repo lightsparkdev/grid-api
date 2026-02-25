@@ -96,6 +96,7 @@
   --ls-sky-500: #00B3E0;
   --ls-teal-500: #44DDB5;
   --ls-green-600: #11A967;
+  --ls-green-400: #4ADE80;
   --ls-yellow-600: #E09000;
   --ls-orange-500: #F77D26;
   --ls-pink-800: #A90087;
@@ -255,6 +256,11 @@ strong, b, th,
 [data-component-part="tab-button"] {
   font-weight: 500 !important;
   letter-spacing: normal !important;
+}
+
+/* Eyebrow: muted gray instead of primary color */
+.eyebrow {
+  color: var(--ls-gray-400) !important;
 }
 
 /* Page title and H2s: Regular weight (400) */
@@ -2637,9 +2643,17 @@ html.dark #api-playground-2-operation-page [data-component-part="tab-button"][da
   background-color: var(--ls-gray-075) !important;
 }
 
+#content .rate-explorer-table tbody tr:hover {
+  background-color: transparent !important;
+}
+
 html.dark #content table tbody tr:hover,
 html.dark .prose table tbody tr:hover {
   background-color: var(--ls-white-02) !important;
+}
+
+html.dark #content .rate-explorer-table tbody tr:hover {
+  background-color: transparent !important;
 }
 
 /* ===========================================
@@ -3962,4 +3976,1170 @@ html.dark .trusted-by-logo {
 
 html.dark .homepage-divider {
   border-color: var(--ls-white-06);
+}
+
+/* ===========================================
+   FX Rates Pricing Banner
+   =========================================== */
+
+.fx-rates-pricing-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 20px 24px;
+  margin: 0 40px;
+  border-radius: var(--ls-radius-md);
+  border: 0.5px solid var(--ls-white-10);
+  overflow: hidden;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fx-rates-pricing-banner-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/fx-rates/contact-sales-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.03);
+  transition: transform 0.4s ease, filter 0.3s ease;
+  z-index: 0;
+}
+
+.fx-rates-pricing-banner:hover .fx-rates-pricing-banner-bg {
+  transform: scale(1);
+  filter: brightness(0.92);
+}
+
+.fx-rates-pricing-banner-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 24px;
+}
+
+.fx-rates-pricing-banner-text {
+  display: flex;
+  flex-direction: column;
+  color: white;
+  font-size: 14px;
+  line-height: 20px;
+  font-feature-settings: "salt" 1;
+}
+
+.fx-rates-pricing-banner-subtext {
+  opacity: 0.5;
+}
+
+.fx-rates-pricing-banner-button {
+  padding: 0 16px;
+  height: 36px;
+  min-width: 36px;
+  background: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+  border-radius: var(--ls-radius-sm);
+  font-size: 14px;
+  font-weight: 450 !important;
+  line-height: 20px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.fx-rates-pricing-banner-button:hover {
+  background: var(--ls-white);
+}
+
+html.dark .fx-rates-pricing-banner-button {
+  background: var(--ls-gray-950);
+  color: var(--ls-gray-050);
+}
+
+html.dark .fx-rates-pricing-banner-button:hover {
+  background: var(--ls-gray-900);
+}
+
+@media (max-width: 1023px) {
+  .fx-rates-pricing-banner {
+    margin: 0 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .fx-rates-pricing-banner {
+    gap: 16px;
+  }
+}
+
+/* ===========================================
+   Rate Explorer
+   =========================================== */
+
+/* Full-width: A hidden marker div (#rate-explorer-page) is placed in the MDX
+   as static content so it's server-rendered in the initial HTML. This lets the
+   :has() selector match on the very first paint — no hydration flash. */
+#content-container:has(#rate-explorer-page) {
+  max-width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#content-container:has(#rate-explorer-page) > div[class*="max-w"] {
+  max-width: 100% !important;
+}
+
+/* Restore padding on everything except the rate explorer itself */
+#content-container:has(#rate-explorer-page) #header,
+#content-container:has(#rate-explorer-page) #content-area > :not(#content) {
+  padding-left: 48px !important;
+  padding-right: 48px !important;
+}
+
+@media (max-width: 1023px) {
+  #content-container:has(#rate-explorer-page) #header,
+  #content-container:has(#rate-explorer-page) #content-area > :not(#content) {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+/* Hide static placeholder once the React component mounts */
+#rate-explorer-static {
+  margin-top: 40px;
+  border-top: 0.5px solid var(--ls-black-10);
+  border-bottom: 0.5px solid var(--ls-black-10);
+}
+
+html.dark #rate-explorer-static {
+  border-color: var(--ls-white-06);
+}
+
+#content:has(.rate-explorer) #rate-explorer-static {
+  display: none;
+}
+
+.rate-explorer {
+  width: 100%;
+  margin-top: 40px;
+  background: transparent;
+  border-top: 0.5px solid var(--ls-black-10);
+  border-bottom: 0.5px solid var(--ls-black-10);
+}
+
+html.dark .rate-explorer {
+  border-color: var(--ls-white-06);
+}
+
+/* ---------- Header bar ---------- */
+.rate-explorer-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  padding-right: 340px;
+  background: var(--ls-gray-025);
+  border-bottom: 0.5px solid var(--ls-black-10);
+  position: sticky;
+  top: var(--re-navbar-h, 0px);
+  z-index: 11;
+  transition: transform 0.25s ease, margin-bottom 0.25s ease;
+}
+
+.rate-explorer-header.re-header-hidden {
+  transform: translateY(-100%);
+  margin-bottom: calc(-1 * var(--re-header-h, 0px));
+  pointer-events: none;
+}
+
+html.dark .rate-explorer-header {
+  background: var(--ls-gray-950);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rate-explorer-header-mid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rate-explorer-header-right {
+  position: absolute;
+  right: 20px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rate-explorer-header-label {
+  font-size: 14px !important;
+  font-weight: 450 !important;
+  line-height: 20px !important;
+  color: var(--ls-gray-950);
+  font-feature-settings: "salt" 1;
+  white-space: nowrap;
+}
+
+html.dark .rate-explorer-header-label {
+  color: var(--ls-gray-050);
+}
+
+/* ---------- Amount input ---------- */
+.rate-explorer-input-wrapper {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  overflow: hidden;
+}
+
+html.dark .rate-explorer-input-wrapper {
+  background: var(--ls-gray-850);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-input-wrapper:focus-within {
+  border-color: var(--ls-sky-500);
+  box-shadow: 0 0 0 1px var(--ls-sky-500);
+}
+
+.rate-explorer-input {
+  width: 124px;
+  height: 100%;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: transparent;
+  border: none;
+  text-align: left;
+  outline: none;
+}
+
+html.dark .rate-explorer-input {
+  color: var(--ls-gray-050);
+}
+
+/* ---------- Source currency trigger ---------- */
+.rate-explorer-source-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px 0 12px;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  cursor: pointer;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-source-trigger {
+  background: var(--ls-gray-850);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-source-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ls-gray-950);
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-source-label {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-chevron {
+  color: var(--ls-gray-400);
+  flex-shrink: 0;
+}
+
+/* ---------- Flag images ---------- */
+.rate-explorer-flag-img {
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* ---------- Destination trigger / placeholder ---------- */
+.rate-explorer-dest-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px 0 12px;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  cursor: pointer;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-dest-trigger {
+  background: var(--ls-gray-850);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-dest-placeholder {
+  font-size: 14px;
+  color: var(--ls-gray-500);
+  white-space: nowrap;
+}
+
+/* ---------- Currency chips ---------- */
+.rate-explorer-chip {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  overflow: hidden;
+}
+
+html.dark .rate-explorer-chip {
+  background: var(--ls-gray-800);
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-chip-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.rate-explorer-chip-code {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ls-gray-950);
+  line-height: 20px;
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-chip-code {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-chip-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 36px;
+  padding: 0 6px;
+  background: none;
+  border: none;
+  border-left: 0.5px solid var(--ls-black-06);
+  cursor: pointer;
+  color: var(--ls-gray-400);
+  transition: color 0.1s;
+}
+
+html.dark .rate-explorer-chip-dismiss {
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-chip-dismiss:hover {
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-chip-dismiss:hover {
+  color: var(--ls-gray-050);
+}
+
+/* ---------- Add / Clear buttons ---------- */
+.rate-explorer-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 12px !important;
+  font-weight: 450 !important;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: none;
+  border: 0.5px dashed var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+html.dark .rate-explorer-add-btn {
+  color: var(--ls-gray-050);
+  border-color: var(--ls-white-10);
+}
+
+.rate-explorer-add-btn:hover {
+  background: var(--ls-gray-050);
+}
+
+html.dark .rate-explorer-add-btn:hover {
+  background: var(--ls-white-04);
+}
+
+.rate-explorer-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 12px !important;
+  font-weight: 450 !important;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rate-explorer-clear-btn:hover {
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-clear-btn:hover {
+  color: var(--ls-gray-050);
+}
+
+/* ---------- Dropdown ---------- */
+.rate-explorer-dropdown-anchor {
+  position: relative;
+}
+
+@keyframes rate-explorer-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rate-explorer-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 260px;
+  max-height: 424px;
+  background: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: rate-explorer-dropdown-in 0.15s ease-out;
+}
+
+html.dark .rate-explorer-dropdown {
+  background: var(--ls-gray-900);
+  border-color: var(--ls-white-10);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.rate-explorer-dropdown-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 0.5px solid var(--ls-black-06);
+}
+
+html.dark .rate-explorer-dropdown-search-row {
+  border-color: var(--ls-white-06);
+}
+
+.rate-explorer-dropdown-search-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+html.dark .rate-explorer-dropdown-search-icon {
+  filter: invert(1);
+}
+
+.rate-explorer-dropdown-search {
+  width: 100%;
+  padding: 0;
+  font-size: 13px;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+html.dark .rate-explorer-dropdown-search {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-dropdown-search::placeholder {
+  color: var(--ls-gray-400);
+}
+
+.rate-explorer-dropdown-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.rate-explorer-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-950);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+html.dark .rate-explorer-dropdown-item {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-dropdown-item:hover,
+.rate-explorer-dropdown-item-active {
+  background: var(--ls-black-04);
+}
+
+html.dark .rate-explorer-dropdown-item:hover,
+html.dark .rate-explorer-dropdown-item-active {
+  background: var(--ls-white-04);
+}
+
+.rate-explorer-dropdown-code {
+  font-weight: 500;
+  min-width: 32px;
+}
+
+.rate-explorer-dropdown-name {
+  color: var(--ls-gray-500);
+}
+
+.rate-explorer-dropdown-empty {
+  padding: 16px 12px;
+  font-size: 13px;
+  color: var(--ls-gray-400);
+  text-align: center;
+}
+
+.rate-explorer-dropdown-item-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rate-explorer-dropdown-item-disabled:hover {
+  background: none;
+}
+
+html.dark .rate-explorer-dropdown-item-disabled:hover {
+  background: none;
+}
+
+.rate-explorer-dropdown-divider {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ls-gray-400);
+  padding: 8px 12px 4px;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  border-top: 0.5px solid var(--ls-black-06);
+  margin-top: 4px;
+}
+
+html.dark .rate-explorer-dropdown-divider {
+  color: var(--ls-gray-500);
+  border-color: var(--ls-white-06);
+}
+
+/* ---------- View toggle ---------- */
+.rate-explorer-toggle {
+  display: flex;
+  background: var(--ls-gray-075);
+  border-radius: var(--ls-radius-sm);
+  padding: 4px;
+  gap: 6px;
+}
+
+html.dark .rate-explorer-toggle {
+  background: var(--ls-gray-800);
+}
+
+.rate-explorer-toggle-btn {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px !important;
+  font-weight: 450 !important;
+  line-height: 16px !important;
+  font-family: "Suisse Intl", sans-serif;
+  font-feature-settings: "salt" 1;
+  color: var(--ls-gray-500);
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: var(--ls-radius-xs);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  text-align: center;
+}
+
+.rate-explorer-toggle-btn:hover {
+  color: var(--ls-gray-600);
+}
+
+html.dark .rate-explorer-toggle-btn:hover {
+  color: var(--ls-gray-300);
+}
+
+.rate-explorer-toggle-btn.active {
+  color: var(--ls-gray-950);
+  background: var(--ls-gray-025);
+  border-color: var(--ls-black-10);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+html.dark .rate-explorer-toggle-btn.active {
+  color: var(--ls-gray-050);
+  background: var(--ls-gray-700);
+  border-color: var(--ls-white-06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- Table ---------- */
+
+/* Reset Mintlify's auto-injected table wrapper */
+.rate-explorer [data-table-wrapper] {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.rate-explorer [data-table-wrapper] > div {
+  padding: 0 !important;
+}
+
+/* Override Mintlify's injected [&_td]:min-w-[150px] and min-w-full/w-full */
+.rate-explorer-table {
+  width: auto !important;
+  min-width: 0 !important;
+  overflow: clip;
+}
+
+.rate-explorer-table td {
+  min-width: 0 !important;
+}
+
+/* Override #content table td/th font-size */
+#content .rate-explorer-table thead th {
+  font-size: 14px !important;
+  line-height: 18px !important;
+}
+
+#content .rate-explorer-table tbody td {
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.rate-explorer-table-wrapper {
+  overflow-x: clip;
+}
+
+.rate-explorer-table-wrapper [data-table-wrapper] {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: clip !important;
+}
+
+.rate-explorer-table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+  font-feature-settings: "salt" 1;
+}
+
+.rate-explorer-table thead th {
+  height: 48px;
+  padding: 0 20px;
+  font-size: 13px !important;
+  font-weight: 450 !important;
+  line-height: 18px !important;
+  color: var(--ls-gray-500);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 1%;
+  box-shadow: inset 0 -0.5px 0 var(--ls-black-10);
+  position: sticky;
+  top: calc(var(--re-thead-top, 0px) - 1px);
+  z-index: 10;
+  background: var(--ls-gray-025);
+  transition: top 0.25s ease;
+}
+
+html.dark .rate-explorer-table thead th {
+  color: var(--ls-gray-400);
+  box-shadow: inset 0 -0.5px 0 var(--ls-white-06);
+  background: var(--ls-gray-950);
+}
+
+
+.rate-explorer-th-dest {
+  width: auto;
+}
+
+.rate-explorer-col-grid {
+  border-left: 0.5px solid var(--ls-black-10);
+  border-right: 0.5px solid var(--ls-black-10);
+}
+
+.rate-explorer-table thead th.rate-explorer-col-grid {
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-col-grid {
+  border-left-color: var(--ls-white-06);
+  border-right-color: var(--ls-white-06);
+}
+
+html.dark .rate-explorer-table thead th.rate-explorer-col-grid {
+  color: var(--ls-gray-200);
+}
+
+.rate-explorer-grid-logo {
+  height: 13px;
+  width: auto;
+  min-width: fit-content;
+  vertical-align: middle;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+html.dark .rate-explorer-grid-logo {
+  filter: invert(1) brightness(0.87);
+}
+
+.rate-explorer-grid-icon {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  margin-right: 4px;
+  background: currentColor;
+  -webkit-mask-image: url('/images/icons/grid-icon.svg');
+  mask-image: url('/images/icons/grid-icon.svg');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.rate-explorer-bank-icon {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  margin-right: 4px;
+  color: currentColor;
+}
+
+.rate-explorer-provider-logo {
+  height: 24px;
+  width: auto;
+  min-width: fit-content;
+  vertical-align: middle;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+html.dark .rate-explorer-provider-logo {
+  filter: brightness(0.82);
+}
+
+.rate-explorer-table tbody td {
+  position: relative;
+}
+
+.rate-explorer-table tbody td:hover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -9999px;
+  bottom: -9999px;
+  background: var(--ls-black-02);
+  pointer-events: none;
+  z-index: -1;
+}
+
+html.dark .rate-explorer-table tbody td:hover::after {
+  background: var(--ls-white-02);
+}
+
+.rate-explorer-table thead th.re-col-hover {
+  background: var(--ls-gray-075);
+}
+
+html.dark .rate-explorer-table thead th.re-col-hover {
+  background: var(--ls-gray-925);
+}
+
+.rate-explorer-th-delta {
+  text-align: right !important;
+  width: 1%;
+}
+
+.rate-explorer-table tbody td {
+  padding: 0 20px;
+  height: 56px;
+  border-bottom: 0.5px solid var(--ls-black-06);
+  white-space: nowrap;
+  color: var(--ls-gray-950);
+  vertical-align: middle;
+}
+
+html.dark .rate-explorer-table tbody td {
+  border-color: var(--ls-white-04);
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Row hover */
+.rate-explorer-row:hover td {
+  background: var(--ls-black-02);
+}
+
+.rate-explorer-row:hover td.rate-explorer-provider-best {
+  background: rgba(17, 169, 103, 0.08);
+}
+
+html.dark .rate-explorer-row:hover td {
+  background: var(--ls-white-02);
+}
+
+html.dark .rate-explorer-row:hover td.rate-explorer-provider-best {
+  background: rgba(74, 222, 128, 0.10);
+}
+
+/* Empty state */
+.rate-explorer-empty {
+  text-align: center;
+  color: var(--ls-gray-400) !important;
+  padding: 32px 20px !important;
+  white-space: normal !important;
+}
+
+/* ---------- Destination cell ---------- */
+.rate-explorer-dest {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rate-explorer-dest-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.rate-explorer-currency-code {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-currency-code {
+  color: var(--ls-gray-050);
+}
+
+.rate-explorer-currency-name {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ls-gray-500);
+}
+
+/* ---------- Provider cells ---------- */
+.rate-explorer-provider-cell {
+  vertical-align: middle;
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Best provider highlight */
+.rate-explorer-provider-best {
+  background: rgba(17, 169, 103, 0.04);
+}
+
+html.dark .rate-explorer-provider-best {
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.rate-explorer-provider-best .rate-explorer-provider-amount {
+  color: var(--ls-green-600);
+}
+
+html.dark .rate-explorer-provider-best .rate-explorer-provider-amount {
+  color: var(--ls-green-400);
+}
+
+.rate-explorer-provider-best.rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-green-600);
+}
+
+html.dark .rate-explorer-provider-best.rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-green-400);
+}
+
+/* Amount/bps text in provider cells */
+.rate-explorer-provider-amount {
+  font-family: "Suisse Intl", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ls-gray-500);
+}
+
+html.dark .rate-explorer-provider-amount {
+  color: var(--ls-gray-500);
+}
+
+.rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-gray-950);
+}
+
+html.dark .rate-explorer-col-grid .rate-explorer-provider-amount {
+  color: var(--ls-gray-050);
+}
+
+/* N/A dash */
+.rate-explorer-na {
+  font-family: "Suisse Intl", sans-serif;
+  font-size: 14px;
+  color: var(--ls-gray-300);
+}
+
+html.dark .rate-explorer-na {
+  color: var(--ls-gray-600);
+}
+
+/* ---------- Delta column ---------- */
+.rate-explorer-delta {
+  text-align: right !important;
+  font-size: 13px !important;
+  color: var(--ls-gray-400) !important;
+  font-family: "Suisse Intl", sans-serif;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.rate-explorer-delta-positive {
+  color: var(--ls-green-600) !important;
+}
+
+html.dark .rate-explorer-delta-positive {
+  color: var(--ls-green-400) !important;
+}
+
+.rate-explorer-delta-negative {
+  color: var(--ls-orange-500) !important;
+}
+
+/* ---------- Disclaimer ---------- */
+.rate-explorer-disclaimer {
+  padding: 12px 20px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ls-gray-400);
+  border-top: 0.5px solid var(--ls-black-06);
+  font-feature-settings: "salt" 1;
+}
+
+html.dark .rate-explorer-disclaimer {
+  border-color: var(--ls-white-04);
+}
+
+.rate-explorer-disclaimer a {
+  color: var(--ls-sky-500);
+  text-decoration: none;
+}
+
+.rate-explorer-disclaimer a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Skeleton loader ---------- */
+@keyframes rate-explorer-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.rate-explorer-skeleton-cell,
+.rate-explorer-skeleton-flag {
+  background: linear-gradient(90deg, var(--ls-black-04) 25%, transparent 50%, var(--ls-black-04) 75%);
+  background-size: 200% 100%;
+  animation: rate-explorer-shimmer 1.5s ease-in-out infinite;
+}
+
+html.dark .rate-explorer-skeleton-cell,
+html.dark .rate-explorer-skeleton-flag {
+  background: linear-gradient(90deg, var(--ls-white-06) 25%, transparent 50%, var(--ls-white-06) 75%);
+  background-size: 200% 100%;
+}
+
+.rate-explorer-skeleton-row {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  gap: 20px;
+  border-bottom: 0.5px solid var(--ls-black-06);
+}
+
+html.dark .rate-explorer-skeleton-row {
+  border-color: var(--ls-white-04);
+}
+
+.rate-explorer-skeleton-row:last-child {
+  border-bottom: none;
+}
+
+.rate-explorer-skeleton-flag {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rate-explorer-skeleton-cell {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.rate-explorer-skeleton-bar {
+  height: 14px;
+  width: 56px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--ls-black-04) 25%, transparent 50%, var(--ls-black-04) 75%);
+  background-size: 200% 100%;
+  animation: rate-explorer-shimmer 1.5s ease-in-out infinite;
+}
+
+html.dark .rate-explorer-skeleton-bar {
+  background: linear-gradient(90deg, var(--ls-white-06) 25%, transparent 50%, var(--ls-white-06) 75%);
+  background-size: 200% 100%;
+}
+
+/* ---------- Mobile responsive ---------- */
+@media (max-width: 768px) {
+  .rate-explorer-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rate-explorer-table-wrapper [data-table-wrapper] {
+    overflow-x: auto !important;
+  }
+
+  .rate-explorer-header {
+    position: relative;
+    top: auto;
+    z-index: auto;
+    box-shadow: none;
+    transform: none !important;
+    padding: 10px 20px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rate-explorer-table thead th {
+    position: relative;
+    top: auto;
+    z-index: auto;
+  }
+
+  .rate-explorer-header-left {
+    flex-wrap: wrap;
+  }
+
+  .rate-explorer-header-right {
+    position: static;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .rate-explorer-toggle {
+    flex: 1;
+  }
+
+  .rate-explorer-toggle-btn {
+    flex: 1;
+  }
+
+  .rate-explorer-th-dest {
+    min-width: 0;
+  }
+
+  .rate-explorer-table thead th,
+  .rate-explorer-table tbody td {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .rate-explorer-delta,
+  .rate-explorer-th-delta {
+    display: none;
+  }
+
+  .rate-explorer-disclaimer {
+    padding: 10px 20px;
+  }
+
+  .rate-explorer-provider-amount {
+    font-size: 13px;
+  }
 }

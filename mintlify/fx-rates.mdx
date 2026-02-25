@@ -1,0 +1,1035 @@
+---
+title: "FX Rates"
+description: "Compare Grid's FX rates against major providers across 40+ corridors"
+icon: "/images/icons/globe.svg"
+"og:image": "/images/og/og-fx-rates.png"
+mode: "wide"
+---
+
+export const CURRENCIES = [
+  { code: 'USD', name: 'US Dollar', region: 'Americas', usdMid: 1, gridSpread: 0, wiseSpread: 0 },
+  { code: 'CAD', name: 'Canadian Dollar', region: 'Americas', usdMid: 1.362, gridSpread: 0.35, wiseSpread: 0.55 },
+  { code: 'MXN', name: 'Mexican Peso', region: 'Americas', usdMid: 17.45, gridSpread: 0.5, wiseSpread: 0.95 },
+  { code: 'BRL', name: 'Brazilian Real', region: 'Americas', usdMid: 5.05, gridSpread: 0.55, wiseSpread: 1.00 },
+  { code: 'CRC', name: 'Costa Rican Colón', region: 'Americas', usdMid: 512, gridSpread: 0.8, wiseSpread: 1.60 },
+  { code: 'EUR', name: 'Euro', region: 'Europe', usdMid: 0.921, gridSpread: 0.25, wiseSpread: 0.55 },
+  { code: 'GBP', name: 'British Pound', region: 'Europe', usdMid: 0.791, gridSpread: 0.25, wiseSpread: 0.55 },
+  { code: 'CHF', name: 'Swiss Franc', region: 'Europe', usdMid: 0.881, gridSpread: 0.3, wiseSpread: 0.55 },
+  { code: 'DKK', name: 'Danish Krone', region: 'Europe', usdMid: 6.87, gridSpread: 0.3, wiseSpread: 0.55 },
+  { code: 'SEK', name: 'Swedish Krona', region: 'Europe', usdMid: 10.45, gridSpread: 0.4, wiseSpread: 0.90 },
+  { code: 'NOK', name: 'Norwegian Krone', region: 'Europe', usdMid: 10.55, gridSpread: 0.4, wiseSpread: 0.90 },
+  { code: 'CZK', name: 'Czech Koruna', region: 'Europe', usdMid: 23.15, gridSpread: 0.45, wiseSpread: 0.95 },
+  { code: 'HUF', name: 'Hungarian Forint', region: 'Europe', usdMid: 362, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'PLN', name: 'Polish Zloty', region: 'Europe', usdMid: 4.02, gridSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'RON', name: 'Romanian Leu', region: 'Europe', usdMid: 4.58, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'BGN', name: 'Bulgarian Lev', region: 'Europe', usdMid: 1.80, gridSpread: 0.45, wiseSpread: 0.95 },
+  { code: 'ISK', name: 'Icelandic Króna', region: 'Europe', usdMid: 138, gridSpread: 0.8, wiseSpread: 1.50 },
+  { code: 'NGN', name: 'Nigerian Naira', region: 'Africa', usdMid: 1550, gridSpread: 0.8, wiseSpread: 2.50 },
+  { code: 'KES', name: 'Kenyan Shilling', region: 'Africa', usdMid: 129.5, gridSpread: 0.7, wiseSpread: 2.00 },
+  { code: 'ZAR', name: 'South African Rand', region: 'Africa', usdMid: 18.5, gridSpread: 0.5, wiseSpread: 0.95 },
+  { code: 'GHS', name: 'Ghanaian Cedi', region: 'Africa', usdMid: 14.8, gridSpread: 0.9, wiseSpread: 2.50 },
+  { code: 'UGX', name: 'Ugandan Shilling', region: 'Africa', usdMid: 3750, gridSpread: 0.9, wiseSpread: 2.80 },
+  { code: 'TZS', name: 'Tanzanian Shilling', region: 'Africa', usdMid: 2530, gridSpread: 0.9, wiseSpread: 2.50 },
+  { code: 'ZMW', name: 'Zambian Kwacha', region: 'Africa', usdMid: 26.5, gridSpread: 1.0, wiseSpread: 2.80 },
+  { code: 'MWK', name: 'Malawian Kwacha', region: 'Africa', usdMid: 1730, gridSpread: 1.1, wiseSpread: 3.00 },
+  { code: 'XOF', name: 'West African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.8, wiseSpread: 2.00 },
+  { code: 'XAF', name: 'Central African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.85, wiseSpread: 2.00 },
+  { code: 'CDF', name: 'Congolese Franc', region: 'Africa', usdMid: 2780, gridSpread: 1.2, wiseSpread: 3.00 },
+  { code: 'BWP', name: 'Botswana Pula', region: 'Africa', usdMid: 13.6, gridSpread: 0.9, wiseSpread: 2.00 },
+  { code: 'INR', name: 'Indian Rupee', region: 'Asia-Pacific', usdMid: 83.5, gridSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'PHP', name: 'Philippine Peso', region: 'Asia-Pacific', usdMid: 56.2, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'IDR', name: 'Indonesian Rupiah', region: 'Asia-Pacific', usdMid: 15650, gridSpread: 0.7, wiseSpread: 1.10 },
+  { code: 'SGD', name: 'Singapore Dollar', region: 'Asia-Pacific', usdMid: 1.34, gridSpread: 0.3, wiseSpread: 0.55 },
+  { code: 'HKD', name: 'Hong Kong Dollar', region: 'Asia-Pacific', usdMid: 7.81, gridSpread: 0.2, wiseSpread: 0.50 },
+  { code: 'CNY', name: 'Chinese Yuan', region: 'Asia-Pacific', usdMid: 7.24, gridSpread: 0.6, wiseSpread: 1.10 },
+  { code: 'KRW', name: 'South Korean Won', region: 'Asia-Pacific', usdMid: 1325, gridSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'THB', name: 'Thai Baht', region: 'Asia-Pacific', usdMid: 35.2, gridSpread: 0.5, wiseSpread: 0.95 },
+  { code: 'VND', name: 'Vietnamese Dong', region: 'Asia-Pacific', usdMid: 25200, gridSpread: 0.8, wiseSpread: 1.10 },
+  { code: 'MYR', name: 'Malaysian Ringgit', region: 'Asia-Pacific', usdMid: 4.65, gridSpread: 0.5, wiseSpread: 1.00 },
+  { code: 'LKR', name: 'Sri Lankan Rupee', region: 'Asia-Pacific', usdMid: 298, gridSpread: 0.9, wiseSpread: 1.80 },
+];
+
+export const CURRENCY_TO_COUNTRY = {
+  USD: 'us', CAD: 'ca', MXN: 'mx', BRL: 'br', CRC: 'cr',
+  EUR: 'eu', GBP: 'gb', CHF: 'ch', DKK: 'dk', SEK: 'se',
+  NOK: 'no', CZK: 'cz', HUF: 'hu', PLN: 'pl', RON: 'ro',
+  BGN: 'bg', ISK: 'is', NGN: 'ng', KES: 'ke', ZAR: 'za',
+  GHS: 'gh', UGX: 'ug', TZS: 'tz', ZMW: 'zm', MWK: 'mw',
+  XOF: 'sn', XAF: 'cm', CDF: 'cd', BWP: 'bw',
+  INR: 'in', PHP: 'ph', IDR: 'id', SGD: 'sg', HKD: 'hk',
+  CNY: 'cn', KRW: 'kr', THB: 'th', VND: 'vn', MYR: 'my', LKR: 'lk',
+};
+
+export const flagUrl = (code) =>
+  'https://hatscripts.github.io/circle-flags/flags/' + (CURRENCY_TO_COUNTRY[code] || code.slice(0, 2).toLowerCase()) + '.svg';
+
+export const SOURCE_CODES = ['USD', 'EUR', 'GBP', 'CAD', 'SGD', 'HKD'];
+
+export const SOURCE_OPTIONS = SOURCE_CODES.map(code => {
+  const c = CURRENCIES.find(x => x.code === code);
+  return { value: code, label: code + ' \u2014 ' + c.name };
+});
+
+export const formatNumber = (num, decimals) => {
+  if (typeof num !== 'number' || !isFinite(num)) return '\u2014';
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+};
+
+export const getRateDecimals = (rate) => {
+  if (rate >= 1000) return 0;
+  if (rate >= 100) return 2;
+  if (rate >= 1) return 3;
+  return 4;
+};
+
+export const getReceiveDecimals = (rate) => {
+  if (rate >= 100) return 0;
+  return 2;
+};
+
+export const WISE_API_BASE = 'https://api.transferwise.com/v4/comparisons/';
+
+export const CACHE_TTL = 30 * 60 * 1000;
+export const STALE_TTL = 2 * 60 * 60 * 1000;
+export const BATCH_SIZE = 10;
+
+export const getStripeFxBps = (source, dest) => {
+  const majorPairs = ['USD-EUR','USD-GBP','EUR-USD','GBP-USD','EUR-GBP','GBP-EUR'];
+  if (majorPairs.includes(source + '-' + dest)) return 50;
+  if (source === 'USD') return 100;
+  return 200;
+};
+
+export const STRIPE_CB_BPS = {
+  USD: 25, GBP: 25, EUR: 25, CAD: 25, MXN: 25, CHF: 25,
+  NOK: 25, SEK: 25, CZK: 25, HUF: 25, BGN: 25, ISK: 25,
+  DKK: 50, HKD: 50, IDR: 50, PLN: 50, SGD: 50, ZAR: 50, THB: 50,
+  INR: 75, KES: 75, RON: 75,
+};
+
+export const STRIPE_FIXED_FEE = 1.50;
+
+export const getStripeTotalBps = (source, dest, sendAmount) => {
+  const fxBps = getStripeFxBps(source, dest);
+  const cbBps = STRIPE_CB_BPS[dest] || 100;
+  const fixedBps = sendAmount > 0 ? Math.round(STRIPE_FIXED_FEE / sendAmount * 10000) : 0;
+  return fxBps + cbBps + fixedBps;
+};
+
+export const AIRWALLEX_MAJORS = ['USD','EUR','GBP','JPY','CHF','AUD','NZD','CAD','HKD','SGD','CNY'];
+export const getAirwallexBps = (dest) => AIRWALLEX_MAJORS.includes(dest) ? 50 : 100;
+
+export const bucketAmount = (amt) => {
+  if (amt < 1000) return Math.max(100, Math.round(amt / 100) * 100);
+  if (amt < 10000) return Math.round(amt / 500) * 500;
+  return Math.round(amt / 1000) * 1000;
+};
+
+export const fetchBatch = (items, batchSize, fetchFn) => {
+  const results = [];
+  let i = 0;
+  const next = () => {
+    if (i >= items.length) return Promise.resolve(results);
+    const batch = items.slice(i, i + batchSize);
+    i += batchSize;
+    return Promise.allSettled(batch.map(fetchFn)).then(batchResults => {
+      results.push(...batchResults);
+      return next();
+    });
+  };
+  return next();
+};
+
+export const processWiseResults = (results, targets, sendAmount) => {
+  const newData = {};
+  const providerFreq = {};
+  let anySuccess = false;
+  results.forEach((result, idx) => {
+    const val = result.status === 'fulfilled' ? result.value : null;
+    if (!val || !val.data) return;
+    const target = val.target || targets[idx];
+    const data = val.data;
+    if (!data.providers || !Array.isArray(data.providers)) return;
+    anySuccess = true;
+    let midRate = null;
+    data.providers.forEach(p => {
+      if (p.quotes && p.quotes.length > 0 && p.quotes[0].isConsideredMidMarketRate) {
+        midRate = p.quotes[0].rate;
+      }
+    });
+    const midReceive = midRate && typeof midRate === 'number' ? sendAmount * midRate : null;
+    const providers = [];
+    data.providers.forEach(p => {
+      if (!p.quotes || p.quotes.length === 0 || !p.name) return;
+      const q = p.quotes[0];
+      if (typeof q.receivedAmount === 'number') {
+        providers.push({
+          name: p.name,
+          receivedAmount: q.receivedAmount,
+          fee: typeof q.fee === 'number' ? q.fee : 0,
+          type: p.type || 'unknown',
+        });
+        if (p.name !== 'Wise') {
+          providerFreq[p.name] = (providerFreq[p.name] || 0) + 1;
+        }
+      }
+    });
+    newData[target] = { providers: providers, midReceive: midReceive };
+  });
+  const sorted = Object.entries(providerFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(entry => entry[0]);
+  return { data: newData, providers: sorted, anySuccess: anySuccess };
+};
+
+export const formatAmountInput = (num) => {
+  if (!num && num !== 0) return '';
+  return Number(num).toLocaleString('en-US');
+};
+
+export const PROVIDER_LOGOS = {
+  Stripe: '/images/icons/stripe.svg',
+  Airwallex: '/images/icons/airwallex.svg',
+  Wise: '/images/icons/wise.svg',
+  Remitly: '/images/icons/remitly.svg',
+  PayPal: '/images/icons/paypal.svg',
+  'Western Union': '/images/icons/western-union.svg',
+  OFX: '/images/icons/ofx.svg',
+  InstaReM: '/images/icons/instarem.svg',
+  Instarem: '/images/icons/instarem.svg',
+  'BNP Paribas': '/images/icons/bnp.svg',
+  Xoom: '/images/icons/xoom.svg',
+};
+
+export const BankIcon = () => (
+  <svg className="rate-explorer-bank-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13.3528 3.18339C12.5021 2.75365 11.4979 2.75365 10.6472 3.18339L3.45605 6.81636C3.02304 7.03512 2.75 7.47896 2.75 7.9641C2.75 8.67427 3.32571 9.24998 4.03588 9.24998H19.9641C20.6743 9.24998 21.25 8.67427 21.25 7.9641C21.25 7.47896 20.977 7.03512 20.5439 6.81636L13.3528 3.18339Z" strokeLinecap="square" /><path d="M20.8594 19.0774C21.0517 19.6543 20.6223 20.25 20.0143 20.25H3.98627C3.37821 20.25 2.94884 19.6543 3.14113 19.0774C3.5049 17.9861 4.52619 17.25 5.67655 17.25H18.324C19.4743 17.25 20.4956 17.9861 20.8594 19.0774Z" strokeLinecap="square" /><path d="M19.25 9.25V17.25" strokeLinecap="square" /><path d="M15.25 17.25V9.25" strokeLinecap="square" /><path d="M4.75 9.25V17.25" strokeLinecap="square" /><path d="M8.75 17.25V9.25" strokeLinecap="square" />
+  </svg>
+);
+
+export const ProviderTh = ({ name }) => {
+  if (name === 'Bank avg.') return <><BankIcon />Bank avg.</>;
+  const src = PROVIDER_LOGOS[name];
+  if (!src) return name;
+  return <img src={src} alt={name} className="rate-explorer-provider-logo" />;
+};
+
+export const DropdownList = ({ currencies, highlightIdx, setHighlightIdx, addCurrency, dropdownQuery, setDropdownQuery, setShowDropdown, disabledCodes }) => {
+  const listRef = React.useRef(null);
+  const [scrollState, setScrollState] = React.useState('top');
+  const disabled = disabledCodes || new Set();
+  const hasDisabled = disabled.size > 0;
+  const enabledItems = hasDisabled ? currencies.filter(c => !disabled.has(c.code)) : currencies;
+  const disabledItems = hasDisabled ? currencies.filter(c => disabled.has(c.code)) : [];
+  const sortedCurrencies = hasDisabled ? [...enabledItems, ...disabledItems] : currencies;
+
+  const updateScroll = React.useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const canScroll = el.scrollHeight > el.clientHeight + 1;
+    if (!canScroll) { setScrollState('none'); return; }
+    const atTop = el.scrollTop < 2;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 2;
+    if (atTop) setScrollState('top');
+    else if (atBottom) setScrollState('bottom');
+    else setScrollState('middle');
+  }, []);
+
+  React.useEffect(() => {
+    updateScroll();
+  }, [currencies.length, updateScroll]);
+
+  const masks = {
+    none: undefined,
+    top: 'linear-gradient(to bottom, black calc(100% - 40px), transparent 100%)',
+    bottom: 'linear-gradient(to bottom, transparent 0%, black 40px)',
+    middle: 'linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)',
+  };
+  const mask = masks[scrollState];
+
+  return (
+    <div className="rate-explorer-dropdown">
+      <div className="rate-explorer-dropdown-search-row">
+        <img src="/images/icons/magnifying-glass.svg" width="16" height="16" alt="" className="rate-explorer-dropdown-search-icon" />
+        <input
+          type="text"
+          className="rate-explorer-dropdown-search"
+          placeholder={'Search ' + currencies.length + ' currencies...'}
+          value={dropdownQuery}
+          onChange={(e) => { setDropdownQuery(e.target.value); setHighlightIdx(-1); }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setHighlightIdx(i => Math.min(i + 1, sortedCurrencies.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setHighlightIdx(i => Math.max(i - 1, -1));
+            } else if (e.key === 'Enter' && sortedCurrencies.length > 0) {
+              e.preventDefault();
+              const idx = highlightIdx >= 0 ? highlightIdx : 0;
+              if (!disabled.has(sortedCurrencies[idx].code)) {
+                addCurrency(sortedCurrencies[idx].code);
+              }
+            } else if (e.key === 'Escape') {
+              setShowDropdown(false);
+              setDropdownQuery('');
+            }
+          }}
+          autoFocus
+        />
+      </div>
+      <div
+        ref={listRef}
+        className="rate-explorer-dropdown-list"
+        onScroll={updateScroll}
+        style={mask ? { WebkitMaskImage: mask, maskImage: mask } : undefined}
+      >
+        {enabledItems.map((c, idx) => (
+          <button
+            key={c.code}
+            className={'rate-explorer-dropdown-item' + (idx === highlightIdx ? ' rate-explorer-dropdown-item-active' : '')}
+            onClick={() => addCurrency(c.code)}
+            onMouseEnter={() => setHighlightIdx(idx)}
+          >
+            <img src={flagUrl(c.code)} width="20" height="20" alt="" className="rate-explorer-flag-img" />
+            <span className="rate-explorer-dropdown-code">{c.code}</span>
+            <span className="rate-explorer-dropdown-name">{c.name}</span>
+          </button>
+        ))}
+        {disabledItems.length > 0 && (
+          <div className="rate-explorer-dropdown-divider">Coming soon</div>
+        )}
+        {disabledItems.map((c, idx) => (
+          <button
+            key={c.code}
+            className={'rate-explorer-dropdown-item rate-explorer-dropdown-item-disabled' + ((idx + enabledItems.length) === highlightIdx ? ' rate-explorer-dropdown-item-active' : '')}
+            onMouseEnter={() => setHighlightIdx(idx + enabledItems.length)}
+          >
+            <img src={flagUrl(c.code)} width="20" height="20" alt="" className="rate-explorer-flag-img" />
+            <span className="rate-explorer-dropdown-code">{c.code}</span>
+            <span className="rate-explorer-dropdown-name">{c.name}</span>
+          </button>
+        ))}
+        {sortedCurrencies.length === 0 && (
+          <div className="rate-explorer-dropdown-empty">No currencies found</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const SkeletonTable = ({ cols }) => (
+  <div className="rate-explorer-table-wrapper">
+    <table className="rate-explorer-table">
+      <thead>
+        <tr>
+          <th className="rate-explorer-th-dest">Destination currency</th>
+          <th className="rate-explorer-th-grid rate-explorer-col-grid"><img src="/logo/grid-logo.svg" alt="Grid" className="rate-explorer-grid-logo" /></th>
+          {cols.map((name, i) => <th key={i}>{name ? <ProviderTh name={name} /> : <div className="rate-explorer-skeleton-bar" />}</th>)}
+          <th className="rate-explorer-th-delta"><span className="rate-explorer-grid-icon" />delta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {CURRENCIES.filter(c => c.code !== 'USD').slice(0, 40).map((c) => (
+          <tr key={c.code} className="rate-explorer-row">
+            <td className="rate-explorer-td-dest">
+              <div className="rate-explorer-dest">
+                <img src={flagUrl(c.code)} width="28" height="28" alt="" className="rate-explorer-flag-img" />
+                <div className="rate-explorer-dest-text">
+                  <span className="rate-explorer-currency-code">{c.code}</span>
+                  <span className="rate-explorer-currency-name">{c.name}</span>
+                </div>
+              </div>
+            </td>
+            <td className="rate-explorer-provider-cell rate-explorer-col-grid"><div className="rate-explorer-skeleton-bar" /></td>
+            {cols.map((_, i) => <td key={i} className="rate-explorer-provider-cell"><div className="rate-explorer-skeleton-bar" /></td>)}
+            <td className="rate-explorer-delta"><div className="rate-explorer-skeleton-bar" style={{marginLeft: 'auto'}} /></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+export const StaticPlaceholder = () => (
+  <div id="rate-explorer-static" className="not-prose">
+    <div className="rate-explorer-header">
+      <div className="rate-explorer-header-left">
+        <span className="rate-explorer-header-label">Send</span>
+        <div className="rate-explorer-input-wrapper">
+          <input type="text" className="rate-explorer-input" value="1,000" readOnly />
+        </div>
+        <div className="rate-explorer-source-trigger">
+          <img src="https://hatscripts.github.io/circle-flags/flags/us.svg" width="16" height="16" alt="" className="rate-explorer-flag-img" />
+          <span className="rate-explorer-source-label">USD</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      </div>
+      <div className="rate-explorer-header-mid">
+        <span className="rate-explorer-header-label">to</span>
+        <div className="rate-explorer-dropdown-anchor">
+          <button className="rate-explorer-dest-trigger">
+            <span className="rate-explorer-dest-placeholder">Select currency</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div className="rate-explorer-header-right">
+        <div className="rate-explorer-toggle">
+          <button className="rate-explorer-toggle-btn active">Cost (bps)</button>
+          <button className="rate-explorer-toggle-btn">Amount received</button>
+        </div>
+      </div>
+    </div>
+    <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Bank avg.']} />
+  </div>
+);
+
+export const RateExplorer = () => {
+  const [sourceCurrency, setSourceCurrency] = React.useState('USD');
+  const [amount, setAmount] = React.useState(1000);
+  const [amountDisplay, setAmountDisplay] = React.useState('1,000');
+  const [selectedCurrencies, setSelectedCurrencies] = React.useState([]);
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const [dropdownQuery, setDropdownQuery] = React.useState('');
+  const [highlightIdx, setHighlightIdx] = React.useState(-1);
+  const [competitorData, setCompetitorData] = React.useState(() => {
+    try {
+      var cached = sessionStorage.getItem('wise_USD_1000');
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) return parsed.data;
+      }
+    } catch (e) {}
+    return {};
+  });
+  const [topProviders, setTopProviders] = React.useState(() => {
+    try {
+      var cached = sessionStorage.getItem('wise_USD_1000');
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) return parsed.providers;
+      }
+    } catch (e) {}
+    return [];
+  });
+  const [competitorDone, setCompetitorDone] = React.useState(() => {
+    try {
+      var cached = sessionStorage.getItem('wise_USD_1000');
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) return true;
+      }
+    } catch (e) {}
+    return false;
+  });
+  const [viewMode, setViewMode] = React.useState('bps');
+  const [liveRates, setLiveRates] = React.useState(() => {
+    try {
+      const cached = sessionStorage.getItem('grid_live_rates');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) {
+          return parsed.rates;
+        }
+      }
+    } catch (e) {}
+    return null;
+  });
+  const [showSourceDropdown, setShowSourceDropdown] = React.useState(false);
+  const [sourceDropdownQuery, setSourceDropdownQuery] = React.useState('');
+  const [sourceHighlightIdx, setSourceHighlightIdx] = React.useState(-1);
+  const [debouncedAmount, setDebouncedAmount] = React.useState(1000);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const containerRef = React.useRef(null);
+  const dropdownRef = React.useRef(null);
+  const sourceDropdownRef = React.useRef(null);
+  const explorerRef = React.useRef(null);
+  const headerBarRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedAmount(amount), 1200);
+    return () => clearTimeout(timer);
+  }, [amount]);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isVisible) return;
+    if (liveRates !== null) return;
+    fetch('https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCurrency=USD')
+      .then(res => {
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+      })
+      .then(json => {
+        const rates = {};
+        if (json && json.data && json.data.length > 0) {
+          json.data.forEach(r => {
+            rates[r.destinationCurrency.code] = String(r.exchangeRate);
+          });
+        }
+        setLiveRates(rates);
+        try { sessionStorage.setItem('grid_live_rates', JSON.stringify({ ts: Date.now(), rates })); } catch (e) {}
+      })
+      .catch(() => {
+        setLiveRates({});
+        try { sessionStorage.setItem('grid_live_rates', JSON.stringify({ ts: Date.now(), rates: {} })); } catch (e) {}
+      });
+  }, [isVisible]);
+
+  React.useEffect(() => {
+    if (!isVisible) return;
+    const bucketed = bucketAmount(debouncedAmount);
+    const cacheKey = 'wise_' + sourceCurrency + '_' + bucketed;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.ts) {
+          const age = Date.now() - parsed.ts;
+          if (age < CACHE_TTL) {
+            setCompetitorData(parsed.data);
+            setTopProviders(parsed.providers);
+            setCompetitorDone(true);
+            return;
+          }
+          if (age < STALE_TTL) {
+            setCompetitorData(parsed.data);
+            setTopProviders(parsed.providers);
+          }
+        }
+      }
+    } catch (e) {}
+    const targets = CURRENCIES.filter(c => c.code !== sourceCurrency).map(c => c.code);
+    const fetchOne = (dest) =>
+      fetch(WISE_API_BASE + '?sourceCurrency=' + sourceCurrency + '&targetCurrency=' + dest + '&sendAmount=' + bucketed)
+        .then(res => {
+          if (!res.ok) throw new Error(res.status);
+          return res.json();
+        })
+        .then(json => ({ target: dest, data: json }))
+        .catch(() => ({ target: dest, data: null }));
+    fetchBatch(targets, BATCH_SIZE, fetchOne).then(results => {
+      const processed = processWiseResults(results, targets, bucketed);
+      setCompetitorData(processed.data);
+      setTopProviders(processed.providers);
+      setCompetitorDone(true);
+      if (processed.anySuccess) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: processed.data, providers: processed.providers }));
+        } catch (e) {}
+      }
+    }).catch(() => { setCompetitorDone(true); });
+  }, [sourceCurrency, debouncedAmount, isVisible]);
+
+  React.useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+        setDropdownQuery('');
+      }
+      if (sourceDropdownRef.current && !sourceDropdownRef.current.contains(e.target)) {
+        setShowSourceDropdown(false);
+        setSourceDropdownQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  React.useEffect(() => {
+    const el = explorerRef.current;
+    const header = headerBarRef.current;
+    if (!el || !header) return;
+    const navbar = document.querySelector('#navbar');
+
+    const getNavH = () => navbar ? navbar.getBoundingClientRect().bottom : 0;
+
+    const updateVars = () => {
+      const navH = getNavH();
+      const hH = header.offsetHeight;
+      el.style.setProperty('--re-navbar-h', navH + 'px');
+      el.style.setProperty('--re-header-h', hH + 'px');
+      el.style.setProperty('--re-thead-top', (navH + hH) + 'px');
+    };
+
+    requestAnimationFrame(updateVars);
+
+    const ro = new ResizeObserver(updateVars);
+    ro.observe(header);
+    if (navbar) ro.observe(navbar);
+
+    var lastY = window.scrollY;
+    var hidden = false;
+    var DIR_THRESHOLD = 5;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+
+      const navH = getNavH();
+      const hH = header.offsetHeight;
+      const elRect = el.getBoundingClientRect();
+
+      if (elRect.top >= navH) {
+        if (hidden) {
+          header.classList.remove('re-header-hidden');
+          hidden = false;
+        }
+        el.style.setProperty('--re-thead-top', (navH + hH) + 'px');
+        return;
+      }
+
+      if (delta > DIR_THRESHOLD && !hidden) {
+        header.classList.add('re-header-hidden');
+        hidden = true;
+        el.style.setProperty('--re-thead-top', navH + 'px');
+      } else if (delta < -DIR_THRESHOLD && hidden) {
+        header.classList.remove('re-header-hidden');
+        hidden = false;
+        el.style.setProperty('--re-thead-top', (navH + hH) + 'px');
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      header.classList.remove('re-header-hidden');
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const el = explorerRef.current;
+    if (!el) return;
+    var prevTh = null;
+    const onOver = (e) => {
+      const td = e.target.closest('td');
+      if (!td) return;
+      const table = td.closest('table');
+      if (!table) return;
+      const th = table.querySelector('thead tr').children[td.cellIndex];
+      if (th === prevTh) return;
+      if (prevTh) prevTh.classList.remove('re-col-hover');
+      if (th) th.classList.add('re-col-hover');
+      prevTh = th;
+    };
+    const onLeave = () => {
+      if (prevTh) { prevTh.classList.remove('re-col-hover'); prevTh = null; }
+    };
+    el.addEventListener('mouseover', onOver);
+    el.addEventListener('mouseleave', onLeave);
+    return () => { el.removeEventListener('mouseover', onOver); el.removeEventListener('mouseleave', onLeave); };
+  }, []);
+
+  const handleAmountChange = (e) => {
+    const raw = e.target.value.replace(/,/g, '');
+    if (raw === '') { setAmount(1); setAmountDisplay(''); return; }
+    const val = parseFloat(raw);
+    if (!isNaN(val) && val > 0) {
+      setAmount(val);
+      setAmountDisplay(formatAmountInput(val));
+    }
+  };
+
+  const handleAmountBlur = () => {
+    setAmountDisplay(formatAmountInput(amount));
+  };
+
+  const handleAmountFocus = (e) => {
+    setAmountDisplay(String(amount));
+    setTimeout(() => e.target.select(), 0);
+  };
+
+  const addCurrency = (code) => {
+    if (!selectedCurrencies.includes(code)) {
+      setSelectedCurrencies([...selectedCurrencies, code]);
+    }
+    setShowDropdown(false);
+    setDropdownQuery('');
+  };
+
+  const removeCurrency = (code) => {
+    setSelectedCurrencies(selectedCurrencies.filter(c => c !== code));
+  };
+
+  const clearCurrencies = () => {
+    setSelectedCurrencies([]);
+  };
+
+  const getUsdMid = (code) => {
+    if (code === 'USD') return 1;
+    if (liveRates && liveRates[code]) return parseFloat(liveRates[code]);
+    const fallback = CURRENCIES.find(c => c.code === code);
+    return fallback ? fallback.usdMid : null;
+  };
+
+  const sourceUsdMid = getUsdMid(sourceCurrency);
+  const destinations = CURRENCIES.filter(c => c.code !== sourceCurrency);
+  const hasLiveData = Object.keys(competitorData).length > 0;
+  const displayProviders = hasLiveData ? topProviders : [];
+
+  const allCorridors = destinations.map(dest => {
+    const destUsdMid = getUsdMid(dest.code);
+    const midRate = destUsdMid / sourceUsdMid;
+    const cd = competitorData[dest.code];
+    const midReceive = cd && cd.midReceive ? cd.midReceive : debouncedAmount * midRate;
+    const gridBps = Math.round(dest.gridSpread * 100);
+    const gridReceive = midReceive * (1 - dest.gridSpread / 100);
+    const providers = {};
+    if (cd && cd.providers) {
+      cd.providers.forEach(p => {
+        const pBps = midReceive > 0
+          ? Math.round(((midReceive - p.receivedAmount) / midReceive) * 10000)
+          : 0;
+        providers[p.name] = {
+          receivedAmount: p.receivedAmount,
+          bps: pBps,
+        };
+      });
+    }
+    if (!providers['Wise']) {
+      const wiseRate = midRate * (1 - dest.wiseSpread / 100);
+      providers['Wise'] = {
+        receivedAmount: debouncedAmount * wiseRate,
+        bps: Math.round(dest.wiseSpread * 100),
+      };
+    }
+    const stripeBps = getStripeTotalBps(sourceCurrency, dest.code, debouncedAmount);
+    const stripeReceive = midReceive * (1 - stripeBps / 10000);
+    const airwallexBps = getAirwallexBps(dest.code);
+    const airwallexReceive = midReceive * (1 - airwallexBps / 10000);
+    let bankAvgBps = null;
+    let bankAvgReceive = null;
+    if (cd && cd.providers) {
+      const banks = cd.providers.filter(p => p.type === 'bank');
+      if (banks.length > 0) {
+        const avgReceived = banks.reduce((sum, b) => sum + b.receivedAmount, 0) / banks.length;
+        bankAvgReceive = avgReceived;
+        bankAvgBps = midReceive > 0 ? Math.round(((midReceive - avgReceived) / midReceive) * 10000) : 0;
+      }
+    }
+    return {
+      code: dest.code, name: dest.name,
+      midRate: midRate, midReceive: midReceive,
+      gridReceive: gridReceive, gridBps: gridBps,
+      providers: providers, gridSpread: dest.gridSpread,
+      stripeBps: stripeBps, stripeReceive: stripeReceive,
+      airwallexBps: airwallexBps, airwallexReceive: airwallexReceive,
+      bankAvgBps: bankAvgBps, bankAvgReceive: bankAvgReceive,
+    };
+  });
+
+  const corridors = selectedCurrencies.length > 0
+    ? allCorridors.filter(c => selectedCurrencies.includes(c.code))
+    : allCorridors;
+
+  const dropdownCurrencies = CURRENCIES.filter(c =>
+    c.code !== sourceCurrency && !selectedCurrencies.includes(c.code)
+  ).filter(c =>
+    !dropdownQuery || c.code.toLowerCase().includes(dropdownQuery.toLowerCase()) || c.name.toLowerCase().includes(dropdownQuery.toLowerCase())
+  );
+
+  const sourceDropdownCurrencies = CURRENCIES.filter(c =>
+    !sourceDropdownQuery || c.code.toLowerCase().includes(sourceDropdownQuery.toLowerCase()) || c.name.toLowerCase().includes(sourceDropdownQuery.toLowerCase())
+  );
+
+  const disabledSourceCodes = new Set(
+    CURRENCIES.filter(c => !SOURCE_CODES.includes(c.code)).map(c => c.code)
+  );
+
+  const selectSource = (code) => {
+    setSourceCurrency(code);
+    setShowSourceDropdown(false);
+    setSourceDropdownQuery('');
+  };
+
+  return (
+    <div ref={containerRef}>
+      <div ref={explorerRef} className="rate-explorer not-prose">
+        <div ref={headerBarRef} className="rate-explorer-header">
+          <div className="rate-explorer-header-left">
+            <span className="rate-explorer-header-label">Send</span>
+            <div className="rate-explorer-input-wrapper">
+              <input
+                type="text"
+                inputMode="numeric"
+                className="rate-explorer-input"
+                value={amountDisplay}
+                onChange={handleAmountChange}
+                onBlur={handleAmountBlur}
+                onFocus={handleAmountFocus}
+              />
+            </div>
+            <div className="rate-explorer-dropdown-anchor" ref={sourceDropdownRef}>
+              <button className="rate-explorer-source-trigger" onClick={() => { setShowSourceDropdown(!showSourceDropdown); setSourceHighlightIdx(-1); }}>
+                <img src={flagUrl(sourceCurrency)} width="16" height="16" alt="" className="rate-explorer-flag-img" />
+                <span className="rate-explorer-source-label">{sourceCurrency}</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              {showSourceDropdown && (
+                <DropdownList
+                  currencies={sourceDropdownCurrencies}
+                  highlightIdx={sourceHighlightIdx}
+                  setHighlightIdx={setSourceHighlightIdx}
+                  addCurrency={selectSource}
+                  dropdownQuery={sourceDropdownQuery}
+                  setDropdownQuery={setSourceDropdownQuery}
+                  setShowDropdown={setShowSourceDropdown}
+                  disabledCodes={disabledSourceCodes}
+                />
+              )}
+            </div>
+          </div>
+          <div className="rate-explorer-header-mid">
+            <span className="rate-explorer-header-label">to</span>
+            {selectedCurrencies.map(code => {
+              return (
+                <div key={code} className="rate-explorer-chip">
+                  <div className="rate-explorer-chip-info">
+                    <img src={flagUrl(code)} width="16" height="16" alt="" className="rate-explorer-flag-img" />
+                    <span className="rate-explorer-chip-code">{code}</span>
+                  </div>
+                  <button className="rate-explorer-chip-dismiss" onClick={() => removeCurrency(code)} aria-label={'Remove ' + code}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  </button>
+                </div>
+              );
+            })}
+            <div className="rate-explorer-dropdown-anchor" ref={dropdownRef}>
+              {selectedCurrencies.length === 0 ? (
+                <button className="rate-explorer-dest-trigger" onClick={() => { setShowDropdown(!showDropdown); setHighlightIdx(-1); }}>
+                  <span className="rate-explorer-dest-placeholder">Select currency</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rate-explorer-chevron"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              ) : (
+                <button className="rate-explorer-add-btn" onClick={() => { setShowDropdown(!showDropdown); setHighlightIdx(-1); }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1V9M1 5H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <span>Add</span>
+                </button>
+              )}
+              {showDropdown && (
+                <DropdownList
+                  currencies={dropdownCurrencies}
+                  highlightIdx={highlightIdx}
+                  setHighlightIdx={setHighlightIdx}
+                  addCurrency={addCurrency}
+                  dropdownQuery={dropdownQuery}
+                  setDropdownQuery={setDropdownQuery}
+                  setShowDropdown={setShowDropdown}
+                />
+              )}
+            </div>
+          </div>
+          <div className="rate-explorer-header-right">
+            {selectedCurrencies.length > 0 && (
+              <button className="rate-explorer-clear-btn" onClick={clearCurrencies}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                <span>Clear</span>
+              </button>
+            )}
+            <div className="rate-explorer-toggle">
+              <button
+                className={'rate-explorer-toggle-btn' + (viewMode === 'bps' ? ' active' : '')}
+                onClick={() => setViewMode('bps')}
+              >Cost (bps)</button>
+              <button
+                className={'rate-explorer-toggle-btn' + (viewMode === 'amount' ? ' active' : '')}
+                onClick={() => setViewMode('amount')}
+              >Amount received</button>
+            </div>
+          </div>
+        </div>
+
+        {liveRates === null || !competitorDone ? (
+          <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Bank avg.']} />
+        ) : (
+        <div className="rate-explorer-table-wrapper">
+          <table className="rate-explorer-table">
+            <thead>
+              <tr>
+                <th className="rate-explorer-th-dest">Destination currency</th>
+                <th className="rate-explorer-th-grid rate-explorer-col-grid"><img src="/logo/grid-logo.svg" alt="Grid" className="rate-explorer-grid-logo" /></th>
+                <th><ProviderTh name="Stripe" /></th>
+                <th><ProviderTh name="Airwallex" /></th>
+                <th><ProviderTh name="Wise" /></th>
+                {displayProviders.map((name) => (
+                  <th key={name}><ProviderTh name={name} /></th>
+                ))}
+                <th><BankIcon />Bank avg.</th>
+                <th className="rate-explorer-th-delta"><span className="rate-explorer-grid-icon" />delta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {corridors.length === 0 && (
+                <tr>
+                  <td colSpan={7 + displayProviders.length} className="rate-explorer-empty">
+                    No corridors match your selection.
+                  </td>
+                </tr>
+              )}
+              {corridors.map((row) => {
+                const recDec = getReceiveDecimals(row.midRate);
+                const wise = row.providers['Wise'];
+                let bestBps = row.gridBps;
+                let bestKey = 'Grid';
+                if (row.stripeBps < bestBps) { bestBps = row.stripeBps; bestKey = 'Stripe'; }
+                if (row.airwallexBps < bestBps) { bestBps = row.airwallexBps; bestKey = 'Airwallex'; }
+                if (wise && wise.bps >= 0 && wise.bps < bestBps) { bestBps = wise.bps; bestKey = 'Wise'; }
+                displayProviders.forEach(name => {
+                  const p = row.providers[name];
+                  if (p && p.bps >= 0 && p.bps < bestBps) { bestBps = p.bps; bestKey = name; }
+                });
+                if (row.bankAvgBps !== null && row.bankAvgBps < bestBps) { bestBps = row.bankAvgBps; bestKey = 'BankAvg'; }
+                let bestCompBps = null;
+                let bestCompReceive = null;
+                if (row.stripeBps >= 0) { bestCompBps = row.stripeBps; bestCompReceive = row.stripeReceive; }
+                if (row.airwallexBps >= 0 && (bestCompBps === null || row.airwallexBps < bestCompBps)) { bestCompBps = row.airwallexBps; bestCompReceive = row.airwallexReceive; }
+                if (wise && wise.bps >= 0 && (bestCompBps === null || wise.bps < bestCompBps)) { bestCompBps = wise.bps; bestCompReceive = wise.receivedAmount; }
+                displayProviders.forEach(name => {
+                  const p = row.providers[name];
+                  if (p && p.bps >= 0 && (bestCompBps === null || p.bps < bestCompBps)) {
+                    bestCompBps = p.bps;
+                    bestCompReceive = p.receivedAmount;
+                  }
+                });
+                if (row.bankAvgBps !== null && (bestCompBps === null || row.bankAvgBps < bestCompBps)) { bestCompBps = row.bankAvgBps; bestCompReceive = row.bankAvgReceive; }
+                const bpsDelta = bestCompBps !== null ? bestCompBps - row.gridBps : null;
+                const amtDelta = bestCompReceive !== null ? row.gridReceive - bestCompReceive : null;
+                return (
+                  <tr key={row.code} className="rate-explorer-row">
+                    <td className="rate-explorer-td-dest">
+                      <div className="rate-explorer-dest">
+                        <img src={flagUrl(row.code)} width="28" height="28" alt="" className="rate-explorer-flag-img" />
+                        <div className="rate-explorer-dest-text">
+                          <span className="rate-explorer-currency-code">{row.code}</span>
+                          <span className="rate-explorer-currency-name">{row.name}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={'rate-explorer-provider-cell rate-explorer-col-grid' + (bestKey === 'Grid' ? ' rate-explorer-provider-best' : '')}>
+                      {viewMode === 'bps' ? (
+                        <span className="rate-explorer-provider-amount">{row.gridBps} bps</span>
+                      ) : (
+                        <span className="rate-explorer-provider-amount">{formatNumber(row.gridReceive, recDec)} {row.code}</span>
+                      )}
+                    </td>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Stripe' ? ' rate-explorer-provider-best' : '')}>
+                      {viewMode === 'bps' ? (
+                        <span className="rate-explorer-provider-amount">{row.stripeBps} bps</span>
+                      ) : (
+                        <span className="rate-explorer-provider-amount">{formatNumber(row.stripeReceive, recDec)} {row.code}</span>
+                      )}
+                    </td>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Airwallex' ? ' rate-explorer-provider-best' : '')}>
+                      {viewMode === 'bps' ? (
+                        <span className="rate-explorer-provider-amount">{row.airwallexBps} bps</span>
+                      ) : (
+                        <span className="rate-explorer-provider-amount">{formatNumber(row.airwallexReceive, recDec)} {row.code}</span>
+                      )}
+                    </td>
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'Wise' ? ' rate-explorer-provider-best' : '')}>
+                      {wise ? (
+                        viewMode === 'bps' ? (
+                          wise.bps >= 0 ? (
+                            <span className="rate-explorer-provider-amount">{wise.bps} bps</span>
+                          ) : (
+                            <span className="rate-explorer-na">{'\u2014'}</span>
+                          )
+                        ) : (
+                          <span className="rate-explorer-provider-amount">{formatNumber(wise.receivedAmount, recDec)} {row.code}</span>
+                        )
+                      ) : (
+                        <span className="rate-explorer-na">{'\u2014'}</span>
+                      )}
+                    </td>
+                    {displayProviders.map((name) => {
+                      const provider = row.providers[name];
+                      return (
+                        <td key={name} className={'rate-explorer-provider-cell' + (bestKey === name ? ' rate-explorer-provider-best' : '')}>
+                          {provider ? (
+                            viewMode === 'bps' ? (
+                              provider.bps >= 0 ? (
+                                <span className="rate-explorer-provider-amount">{provider.bps} bps</span>
+                              ) : (
+                                <span className="rate-explorer-na">{'\u2014'}</span>
+                              )
+                            ) : (
+                              <span className="rate-explorer-provider-amount">{formatNumber(provider.receivedAmount, recDec)} {row.code}</span>
+                            )
+                          ) : (
+                            <span className="rate-explorer-na">{'\u2014'}</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className={'rate-explorer-provider-cell' + (bestKey === 'BankAvg' ? ' rate-explorer-provider-best' : '')}>
+                      {row.bankAvgBps !== null ? (
+                        viewMode === 'bps' ? (
+                          <span className="rate-explorer-provider-amount">{row.bankAvgBps} bps</span>
+                        ) : (
+                          <span className="rate-explorer-provider-amount">{formatNumber(row.bankAvgReceive, recDec)} {row.code}</span>
+                        )
+                      ) : (
+                        <span className="rate-explorer-na">{'\u2014'}</span>
+                      )}
+                    </td>
+                    <td className={'rate-explorer-delta' + (viewMode === 'bps' ? (bpsDelta !== null && bpsDelta > 0 ? ' rate-explorer-delta-positive' : bpsDelta !== null && bpsDelta < 0 ? ' rate-explorer-delta-negative' : '') : (amtDelta !== null && amtDelta > 0 ? ' rate-explorer-delta-positive' : amtDelta !== null && amtDelta < 0 ? ' rate-explorer-delta-negative' : ''))}>
+                      {viewMode === 'bps' ? (
+                        bpsDelta !== null ? (bpsDelta > 0 ? '+' + bpsDelta + ' bps' : bpsDelta < 0 ? bpsDelta + ' bps' : '0 bps') : '\u2014'
+                      ) : (
+                        amtDelta !== null ? (amtDelta > 0 ? '+' + formatNumber(amtDelta, recDec) + ' ' + row.code : amtDelta < 0 ? formatNumber(amtDelta, recDec) + ' ' + row.code : '0 ' + row.code) : '\u2014'
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        )}
+
+        <div className="rate-explorer-disclaimer">
+          Grid rates reflect standard published pricing, not personalized quotes. Stripe and Airwallex costs are based on published pricing schedules, not live API data. Wise and other provider rates are live via public comparison data and include all fees. Bank avg. is the average of bank-type providers from comparison data. Actual rates may vary — get real-time quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+<div className="not-prose">
+  <a href="https://www.lightspark.com/contact" className="fx-rates-pricing-banner">
+    <div className="fx-rates-pricing-banner-bg"></div>
+    <div className="fx-rates-pricing-banner-content">
+      <div className="fx-rates-pricing-banner-text">
+        <span>Get custom pricing</span>
+        <span className="fx-rates-pricing-banner-subtext">Standard rates shown</span>
+      </div>
+      <span className="fx-rates-pricing-banner-button">Contact sales</span>
+    </div>
+  </a>
+</div>
+
+<div id="rate-explorer-page" style={{display:'none'}} />
+<StaticPlaceholder />
+<RateExplorer />
