@@ -1,0 +1,17 @@
+title: TZS Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/TzsAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - $ref: ../common/TzsBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/TzsBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

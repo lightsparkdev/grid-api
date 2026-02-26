@@ -16,11 +16,16 @@ enum:
   - HKD_ACCOUNT
   - IDR_ACCOUNT
   - INR_ACCOUNT
+  - KES_ACCOUNT
   - MXN_ACCOUNT
   - MYR_ACCOUNT
   - NGN_ACCOUNT
+  - RWF_ACCOUNT
   - THB_ACCOUNT
+  - TZS_ACCOUNT
   - USD_ACCOUNT
   - VND_ACCOUNT
+  - ZAR_ACCOUNT
+  - ZMW_ACCOUNT
 description: Type of external account or wallet
 example: GBP_ACCOUNT

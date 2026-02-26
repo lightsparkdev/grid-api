@@ -5642,12 +5642,17 @@ components:
         - HKD_ACCOUNT
         - IDR_ACCOUNT
         - INR_ACCOUNT
+        - KES_ACCOUNT
         - MXN_ACCOUNT
         - MYR_ACCOUNT
         - NGN_ACCOUNT
+        - RWF_ACCOUNT
         - THB_ACCOUNT
+        - TZS_ACCOUNT
         - USD_ACCOUNT
         - VND_ACCOUNT
+        - ZAR_ACCOUNT
+        - ZMW_ACCOUNT
       description: Type of external account or wallet
       example: GBP_ACCOUNT
     BaseExternalAccountInfo:
@@ -6104,6 +6109,93 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/InrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    KesAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - KES_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - KE
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Kenyan mobile money phone number
+          example: '+254712345678'
+          pattern: ^\+254[0-9]{9}$
+        provider:
+          type: string
+          description: Mobile money provider
+          enum:
+            - M-PESA
+    KesBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    KesExternalAccountInfo:
+      title: KES Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/KesAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/KesBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/KesBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     MxnBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6312,6 +6404,94 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    RwfAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - RWF_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - RW
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Rwandan mobile money phone number
+          example: '+250781234567'
+          pattern: ^\+250[0-9]{9}$
+        provider:
+          type: string
+          description: Mobile money provider
+          enum:
+            - MTN
+            - AIRTEL
+    RwfBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    RwfExternalAccountInfo:
+      title: RWF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/RwfAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/RwfBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/RwfBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     SgdBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6415,6 +6595,94 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ThbBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    TzsAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TZS_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - TZ
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Tanzanian mobile money phone number
+          example: '+255712345678'
+          pattern: ^\+255[0-9]{9}$
+        provider:
+          type: string
+          description: Mobile money provider
+          enum:
+            - AIRTEL
+            - VODACOM
+    TzsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    TzsExternalAccountInfo:
+      title: TZS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TzsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/TzsBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/TzsBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     UsdBeneficiary:
       title: Individual Beneficiary
@@ -6522,6 +6790,184 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/VndBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ZarAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - accountNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ZAR_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - ZA
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: South African bank account number
+          example: '1234567890'
+          minLength: 9
+          maxLength: 13
+          pattern: ^[0-9]{9,13}$
+        bankName:
+          type: string
+          description: Name of the bank
+          example: Standard Bank
+    ZarBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ZarExternalAccountInfo:
+      title: ZAR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ZarAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/ZarBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ZarBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ZmwAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ZMW_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - ZM
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Zambian mobile money phone number
+          example: '+260971234567'
+          pattern: ^\+260[0-9]{9}$
+        provider:
+          type: string
+          description: Mobile money provider
+          enum:
+            - TNM
+            - AIRTEL
+            - ZAMTEL
+            - MTN
+    ZmwBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ZmwExternalAccountInfo:
+      title: ZMW Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ZmwAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - $ref: '#/components/schemas/ZmwBeneficiary'
+                - $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ZmwBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
@@ -6585,14 +7031,19 @@ components:
         - $ref: '#/components/schemas/HkdExternalAccountInfo'
         - $ref: '#/components/schemas/IdrExternalAccountInfo'
         - $ref: '#/components/schemas/InrExternalAccountInfo'
+        - $ref: '#/components/schemas/KesExternalAccountInfo'
         - $ref: '#/components/schemas/MxnExternalAccountInfo'
         - $ref: '#/components/schemas/MyrExternalAccountInfo'
         - $ref: '#/components/schemas/NgnExternalAccountInfo'
         - $ref: '#/components/schemas/PhpExternalAccountInfo'
+        - $ref: '#/components/schemas/RwfExternalAccountInfo'
         - $ref: '#/components/schemas/SgdExternalAccountInfo'
         - $ref: '#/components/schemas/ThbExternalAccountInfo'
+        - $ref: '#/components/schemas/TzsExternalAccountInfo'
         - $ref: '#/components/schemas/UsdExternalAccountInfo'
         - $ref: '#/components/schemas/VndExternalAccountInfo'
+        - $ref: '#/components/schemas/ZarExternalAccountInfo'
+        - $ref: '#/components/schemas/ZmwExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
@@ -6610,14 +7061,19 @@ components:
           HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
           IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
           INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
+          KES_ACCOUNT: '#/components/schemas/KesExternalAccountInfo'
           MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountInfo'
           MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/NgnExternalAccountInfo'
           PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
+          RWF_ACCOUNT: '#/components/schemas/RwfExternalAccountInfo'
           SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
           THB_ACCOUNT: '#/components/schemas/ThbExternalAccountInfo'
+          TZS_ACCOUNT: '#/components/schemas/TzsExternalAccountInfo'
           USD_ACCOUNT: '#/components/schemas/UsdExternalAccountInfo'
           VND_ACCOUNT: '#/components/schemas/VndExternalAccountInfo'
+          ZAR_ACCOUNT: '#/components/schemas/ZarExternalAccountInfo'
+          ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
