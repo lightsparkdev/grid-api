@@ -1,0 +1,27 @@
+# Suisse Font Metrics
+
+---
+globs: src/tokens/_fonts.scss
+---
+
+## Font Metric Overrides
+
+Suisse Intl has non-standard vertical metrics that cause an oversized caret in input fields. This is corrected with `@font-face` descriptor overrides:
+
+| Descriptor | Value |
+|------------|-------|
+| `ascent-override` | 85% |
+| `descent-override` | 15% |
+| `line-gap-override` | 0% |
+
+Applied to all weights: Regular (400), Book (450), Medium (500).
+
+## Do
+
+- Import `_fonts.scss` in consuming apps
+- Keep overrides on all `@font-face` declarations
+
+## Do Not
+
+- Remove the override values
+- Add new Suisse weights without these overrides

@@ -1,0 +1,73 @@
+---
+description: Origin design system conventions and workflow
+alwaysApply: true
+---
+
+# Origin Design System
+
+> Quick reference for AI agents working on this project.
+
+## Quick Setup
+
+```bash
+npm install --legacy-peer-deps   # Install dependencies
+npm run dev                       # Start dev server
+npm run figma:styles              # Sync text styles + effects from Figma
+npm run tokens:build              # Build color/spacing tokens
+```
+
+## Project Overview
+
+**Origin** is a design system using:
+- **Base UI** for component behavior/accessibility
+- **Figma API** for styles (text, effects) and CSS extraction
+- **Central Icons** for iconography
+
+## Key Directories
+
+| Path | Purpose |
+|------|---------|
+| `src/components/` | React components |
+| `src/tokens/_variables.scss` | Color, spacing, sizing tokens |
+| `src/tokens/_text-styles.scss` | Typography mixins (generated) |
+| `src/tokens/_effects.scss` | Shadow variables (generated) |
+| `src/tokens/_typography.scss` | Global text classes + reset |
+| `tools/figma-styles/` | Figma REST API style fetcher |
+
+## Commands
+
+```bash
+npm run dev              # Next.js dev server
+npm run storybook        # Storybook
+npm run build            # Production build
+npm run figma:styles     # Sync text styles + effects from Figma
+npm run figma:node       # Fetch CSS from any Figma node (fallback for MCP)
+npm run tokens:build     # Build color/spacing tokens
+npm run test             # Playwright component tests
+npm run test:unit        # Vitest unit tests (fast)
+npm run test:all         # Run both test suites
+npm run lint             # ESLint
+```
+
+## Token Sources
+
+| Token Type | Source | File |
+|------------|--------|------|
+| Colors, spacing | Figma Variables export | `_variables.scss` |
+| Typography | Figma Text Styles (API) | `_text-styles.scss` |
+| Shadows | Figma Effect Styles (API) | `_effects.scss` |
+
+## Do / Do Not
+
+- **Do** use Base UI for interactive elements
+- **Do** use `@include` mixins for typography
+- **Do** use `var(--token)` for all values
+- **Do** run `npm run figma:styles` after Figma style changes
+- **Do not** hardcode colors, spacing, shadows, z-index
+- **Do not** edit generated files (`_text-styles.scss`, `_effects.scss`)
+- **Do not** use emojis in code or console output
+- **Do not** add decorative comment dividers
+
+## Full Context
+
+See `CONTEXT.md` for complete project history.

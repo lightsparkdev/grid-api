@@ -1,0 +1,260 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 475px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-secondary);
+  border-right: var(--stroke-xs) solid var(--border-tertiary);
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-975);
+  }
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl);
+  padding-right: var(--spacing-2xl);
+  flex-shrink: 0;
+  color: var(--text-primary);
+
+  :global([data-embed='true']) & {
+    display: none;
+  }
+}
+
+.headerLink {
+  @include label;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-feature-settings: 'salt' 1;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.sidebarContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-4xl);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.sidebarContentInner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.sidebarFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl) var(--spacing-xl);
+  padding-right: var(--spacing-2xl);
+  flex-shrink: 0;
+
+  :global([data-embed='true']) & {
+    border-top: var(--stroke-xs) solid var(--border-tertiary);
+    padding: 16px 28px;
+  }
+}
+
+.rightPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.rightPanelScroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// Hidden on desktop — mobile-only elements
+.mobileResultsHeader,
+.mobileFloatingBtn,
+.mobileViewBtn {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .layout {
+    display: block;
+    height: auto;
+    overflow: visible;
+
+    &[data-mobile-view='results'] {
+      .sidebar {
+        display: none;
+      }
+    }
+
+    &[data-mobile-view='wizard'] {
+      .rightPanel {
+        display: none;
+      }
+    }
+  }
+
+  .sidebar {
+    width: 100%;
+    min-height: 100dvh;
+    border-right: none;
+    overflow: visible;
+  }
+
+  .sidebarContent {
+    padding: var(--spacing-xl);
+    overflow: visible;
+  }
+
+  .sidebarHeader {
+    padding: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
+
+  .sidebarFooter {
+    padding: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+
+    :global([data-embed='true']) & {
+      display: none;
+    }
+  }
+
+  .rightPanel {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    padding-top: 52px;
+
+    :global([data-embed='true']) & {
+      padding-top: 0;
+    }
+  }
+
+  .rightPanelScroll {
+    overflow: visible;
+    height: auto;
+  }
+
+  // Fixed header in results view with lockup logo
+  // Hidden in embed mode via data-embed attribute on <html>
+  .mobileResultsHeader {
+    :global([data-embed='true']) & {
+      display: none !important;
+    }
+    display: flex;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    height: 52px;
+    padding: 0 var(--spacing-md);
+    background: var(--surface-primary);
+    border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+    color: var(--text-primary);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-950);
+    }
+
+    svg {
+      height: 24px;
+      width: auto;
+    }
+  }
+
+  // Floating pill button at bottom — hides on scroll down, shows on scroll up
+  .mobileFloatingBtn {
+    @include label-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    position: fixed;
+    bottom: var(--spacing-xl);
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    z-index: 100;
+    height: 44px;
+    padding: 0 var(--spacing-lg);
+    background: color-mix(in srgb, var(--surface-primary) 70%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-primary);
+    border: var(--stroke-xs) solid var(--border-tertiary);
+    border-radius: var(--corner-radius-md);
+    box-shadow: var(--shadow-md);
+    font-feature-settings: 'salt' 1;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 200ms ease;
+
+    &:active {
+      transform: translateX(-50%) scale(0.96);
+    }
+
+    svg path {
+      vector-effect: non-scaling-stroke;
+    }
+  }
+
+  .mobileFloatingBtnHidden {
+    transform: translateX(-50%) translateY(calc(100% + var(--spacing-xl) + 20px));
+  }
+
+  // Inline "View flow and code" button in wizard view
+  .mobileViewBtn {
+    @include label;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    width: 100%;
+    height: 52px;
+    background: var(--surface-inverted);
+    color: var(--text-surface);
+    border: none;
+    border-radius: var(--corner-radius-md);
+    font-feature-settings: 'salt' 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 150ms ease;
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    svg path {
+      vector-effect: non-scaling-stroke;
+    }
+  }
+}

@@ -1,0 +1,412 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.wrapper {
+  position: relative;
+}
+
+// Card — matches Figma node 1413:19347
+// Vertical auto-layout, no gap, overflow clip
+.card {
+  corner-shape: squircle;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 200px;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+  transition: border-color 150ms ease, background 150ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+
+  &:has(.cardButton:hover) {
+    border-color: var(--border-secondary);
+  }
+}
+
+.cardFilled {
+  // reserved
+}
+
+// Container — matches Figma node 1413:19348
+// Border-bottom separates from tabs
+.cardButton {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 80px;
+  padding: var(--spacing-md);
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  position: relative;
+
+  .cardFilled & {
+    border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: -2px;
+  }
+
+  &:active {
+    transform: scale(0.99);
+
+    .cardFilled & {
+      transform: none;
+    }
+  }
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.iconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--surface-primary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-sm);
+  color: var(--icon-primary);
+  flex-shrink: 0;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  @include label;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.hint {
+  @include body;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.flagBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--surface-primary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-sm);
+  flex-shrink: 0;
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+}
+
+.flagImg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--corner-radius-round);
+  corner-shape: round;
+  object-fit: cover;
+}
+
+.filledContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.currencyName {
+  @include label;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.currencySubtitle {
+  @include body;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+// Rail / network badge — matches Figma node 1418:20242
+// Third child in the Container flex row, auto-centered with siblings
+.railBadgeWrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.railBadge {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 var(--spacing-xs);
+  background: var(--color-alpha-black-04);
+  border-radius: var(--corner-radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-alpha-white-06);
+  }
+
+  &:hover {
+    background: var(--color-alpha-black-06);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-10);
+    }
+  }
+
+  svg * {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.railBadgeStatic {
+  composes: railBadge;
+  cursor: default;
+
+  &:hover {
+    background: var(--color-alpha-black-04);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-06);
+    }
+  }
+}
+
+.railBadgeLabel {
+  @include btn-sm;
+  padding: 0 var(--spacing-3xs);
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+// Network dropdown backdrop (invisible click-away)
+.networkMenuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+// Network dropdown menu — portaled to body to escape overflow: clip
+.networkMenuPortal {
+  position: fixed;
+  min-width: 160px;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-sm);
+  corner-shape: squircle;
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-3xs);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3xs);
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+}
+
+.networkMenuItem {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--corner-radius-xs);
+  cursor: pointer;
+  @include label-sm;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+  transition: background 100ms ease;
+
+  &:hover {
+    background: var(--surface-elevated);
+  }
+}
+
+.networkMenuItemActive {
+  background: var(--surface-secondary);
+}
+
+.networkMenuIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--corner-radius-round);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+// Tabs section — matches Figma node 1413:19355
+// 40px tall, no padding
+.tabs {
+  overflow: hidden;
+}
+
+// _List — matches Figma node 1418:20244
+// Horizontal layout, 0 gap, surface/base fill, no padding
+// Both tabs fill evenly (50/50)
+.tabList {
+  display: flex;
+  align-items: stretch;
+  height: 40px;
+  gap: 0;
+  background: var(--surface-base);
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+}
+
+// _Tab base — matches Figma nodes 1418:20245, 1418:20247
+// 40px tall, padding 0 spacing/md, no radius, flex: 1
+.tab {
+  all: unset;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 var(--spacing-md);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+// Active tab — no default fill, hover gets surface/elevated
+.tabActive {
+  composes: tab;
+
+  &:hover {
+    background: var(--surface-elevated);
+  }
+}
+
+// Inactive tab — no fill
+.tabInactive {
+  composes: tab;
+
+  &:hover {
+    background: var(--surface-elevated);
+  }
+}
+
+// Active tab label — label-sm (12px, Book/450, 16px lh), text/primary
+.tabLabelActive {
+  @include label-sm;
+  font-feature-settings: 'salt' 1;
+  text-align: center;
+}
+
+// Inactive tab label — body-sm (12px, Regular/400, 16px lh), text/tertiary
+.tabLabelInactive {
+  @include body-sm;
+  font-feature-settings: 'salt' 1;
+  text-align: center;
+}
+
+// Vertical divider — matches Figma node 1418:20246
+// 0-width vector, full height, border/tertiary stroke at stroke/xs
+.tabDivider {
+  width: 0;
+  align-self: stretch;
+  border-left: var(--stroke-xs) solid var(--border-tertiary);
+  flex-shrink: 0;
+}
+
+// Chevron between cards
+.chevron {
+  all: unset;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-primary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-round);
+  corner-shape: round;
+  color: var(--text-secondary);
+  z-index: 1;
+  pointer-events: none;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.chevronInteractive {
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+
+  &:hover {
+    background: var(--surface-elevated);
+    border-color: var(--border-secondary);
+    color: var(--text-primary);
+  }
+
+  &:active {
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+}
+
+// Tooltip
+.tooltipAnchor {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+.tooltip {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--surface-elevated);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-sm);
+  box-shadow: var(--shadow-md);
+  @include body-sm;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  margin-bottom: 8px;
+}

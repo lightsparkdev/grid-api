@@ -1,0 +1,121 @@
+// Figma: https://www.figma.com/design/3JvbUyTqbbPL8cCpwSX0j4/Origin-design-system?node-id=6338-2213
+
+@use '../../tokens/text-styles' as *;
+
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.svg {
+  display: block;
+  overflow: visible;
+}
+
+// Grid
+
+.gridLine {
+  stroke: var(--border-tertiary);
+  stroke-dasharray: 3 3;
+  stroke-width: var(--stroke-sm);
+}
+
+// Lines
+
+.lineAnimate {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: line-draw 800ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+// Cursor + active dots
+
+.cursorLine {
+  stroke: var(--border-tertiary);
+  stroke-width: var(--stroke-sm);
+  pointer-events: none;
+}
+
+.activeDot {
+  pointer-events: none;
+}
+
+// Axis labels
+
+.axisLabel {
+  @include label-xs;
+
+  fill: var(--text-secondary);
+}
+
+// Tooltip
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--surface-elevated);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-sm);
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+  white-space: nowrap;
+
+  &.tooltipSimple {
+    padding: var(--spacing-2xs) var(--spacing-xs);
+    background-color: var(--surface-primary);
+  }
+}
+
+.tooltipLabel {
+  @include body-sm;
+
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.tooltipItems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4xs);
+  min-width: 120px;
+}
+
+.tooltipItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.tooltipIndicator {
+  width: var(--spacing-xs);
+  height: var(--spacing-xs);
+  border-radius: var(--corner-radius-2xs);
+  flex-shrink: 0;
+}
+
+.tooltipName {
+  @include body-sm;
+
+  color: var(--text-secondary);
+}
+
+.tooltipValue {
+  @include body-sm;
+
+  color: var(--text-primary);
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}

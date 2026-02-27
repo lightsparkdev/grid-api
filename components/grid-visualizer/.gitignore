@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+.claude/
+.vercel
+refs/
+experiments/

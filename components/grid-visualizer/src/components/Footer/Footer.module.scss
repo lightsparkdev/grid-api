@@ -1,0 +1,153 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+// Hidden by default, shown in embed mode via CSS
+.coordsLabel {
+  display: none;
+  font-family: "Suisse Int'l Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-feature-settings: 'salt' 0, 'kern' 0 !important;
+  color: var(--color-gray-400);
+  margin-right: auto;
+
+  :global([data-theme='dark']) & {
+    color: var(--color-gray-700);
+  }
+
+  :global([data-embed='true']) & {
+    display: block;
+  }
+}
+
+.toggle {
+  all: unset;
+  box-sizing: border-box;
+  corner-shape: squircle;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4xs);
+  padding: var(--spacing-3xs);
+  background: var(--surface-secondary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  cursor: pointer;
+  transition: border-color 150ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+
+  &:hover {
+    border-color: var(--border-secondary);
+  }
+
+  // Match Mintlify sidebar toggle: 52x28 pill
+  :global([data-embed='true']) & {
+    width: 52px;
+    height: 28px;
+    padding: 4px;
+    gap: 2px;
+    border-radius: 9999px;
+    background: transparent;
+    border-color: rgba(0, 0, 0, 0.07);
+    justify-content: center;
+  }
+
+  :global([data-embed='true'][data-theme='dark']) & {
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+}
+
+.toggleItem {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--corner-radius-sm);
+  color: var(--icon-secondary);
+  transition: background 150ms ease, color 150ms ease;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+
+  // Embed mode: smaller items, CSS-only icon size and active state
+  :global([data-embed='true']) & {
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    color: #505050 !important; // Mintlify text-gray-600 (no matching Origin token)
+    background: none !important;
+
+    svg {
+      width: 12px !important;
+      height: 12px !important;
+    }
+  }
+
+  // CSS-only active state in embed mode (no React flash)
+  // !important ensures these beat the React-applied .toggleItemActive class
+  :global([data-embed='true'][data-theme='light']) &[data-mode='light'],
+  :global([data-embed='true'][data-theme='dark']) &[data-mode='dark'] {
+    color: #9F9F9F !important; // Mintlify text-gray-400 (no matching Origin token)
+  }
+
+  :global([data-embed='true'][data-theme='light']) &[data-mode='light'] {
+    background: rgba(229, 231, 235, 0.5) !important;
+  }
+
+  :global([data-embed='true'][data-theme='dark']) &[data-mode='dark'] {
+    background: #171717 !important;
+  }
+}
+
+.toggleItemActive {
+  background: var(--surface-elevated);
+  border-radius: var(--corner-radius-xs);
+  color: var(--icon-primary);
+
+  // In embed mode, color/bg handled by !important rules on .toggleItem above
+  :global([data-embed='true']) & {
+    border-radius: 9999px;
+  }
+}
+
+// Visible by default, hidden in embed mode
+.trailing {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  :global([data-embed='true']) & {
+    display: none;
+  }
+}
+
+.link {
+  @include label;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0 var(--spacing-4xs);
+  font-feature-settings: 'salt' 1;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.iconLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 var(--spacing-3xs);
+  border-radius: var(--corner-radius-sm);
+  color: var(--icon-secondary);
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--icon-primary);
+  }
+}

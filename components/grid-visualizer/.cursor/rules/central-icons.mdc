@@ -1,0 +1,29 @@
+---
+description: Central icon library import conventions
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Central Icons
+
+Always use the **radius-3, stroke-1.5** variant when importing from the central icon library:
+
+```tsx
+// ✅ GOOD
+import { IconConsole } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconConsole';
+
+// ❌ BAD — wrong radius
+import { IconConsole } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconConsole';
+```
+
+Apply `vector-effect: non-scaling-stroke` to all icon SVG paths via a wrapper class:
+
+```scss
+.icon {
+  display: flex;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+```

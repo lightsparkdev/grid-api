@@ -1,0 +1,132 @@
+---
+description: Rules for building custom components (Path C)
+globs:
+  - src/components/**/*.tsx
+  - src/components/**/*.scss
+alwaysApply: false
+---
+
+# Custom Components (Path C)
+
+Use when Base UI doesn't have the component.
+
+## Before Building
+
+1. Deep Figma analysis — follow `figma-analysis.mdc`
+2. Check Base UI docs: https://base-ui.com/llms.txt (confirm no match)
+3. Study WAI-ARIA APG for the pattern
+4. **Write tests first** — define expected behavior before implementation
+
+## Component Structure
+
+```tsx
+'use client';
+
+import * as React from 'react';
+import clsx from 'clsx';
+import styles from './Component.module.scss';
+
+export interface ComponentProps extends React.ComponentPropsWithoutRef<'div'> {
+  children?: React.ReactNode;
+}
+
+export const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
+  function Component(props, forwardedRef) {
+    const { className, children, ...elementProps } = props;
+
+    return (
+      <div
+        ref={forwardedRef}
+        className={clsx(styles.root, className)}
+        {...elementProps}
+      >
+        {children}
+      </div>
+    );
+  }
+);
+
+if (process.env.NODE_ENV !== 'production') {
+  Component.displayName = 'Component';
+}
+```
+
+## Compound Components
+
+Use context for state sharing:
+
+```tsx
+const ComponentContext = React.createContext<State | undefined>(undefined);
+
+function useComponentContext() {
+  const context = React.useContext(ComponentContext);
+  if (context === undefined) {
+    throw new Error('Component parts must be placed within <Component.Root>.');
+  }
+  return context;
+}
+```
+
+## Data Attributes (not classes)
+
+```tsx
+// State → data attributes
+<div data-checked={checked || undefined} data-disabled={disabled || undefined} />
+```
+
+```scss
+// Style with attribute selectors
+.root {
+  &[data-checked] { /* checked styles */ }
+  &[data-disabled] { /* disabled styles */ }
+}
+```
+
+## Base UI Utilities (Optional)
+
+Even without wrapping Base UI, you can use their utilities:
+
+### mergeProps
+
+Useful for custom components with render props or prop forwarding:
+
+```tsx
+import { mergeProps } from '@base-ui/react/merge-props';
+
+// In a custom component with render prop
+function CustomTrigger({ render, ...internalProps }) {
+  const element = render 
+    ? React.cloneElement(render, mergeProps(internalProps, render.props))
+    : <button {...internalProps} />;
+  return element;
+}
+```
+
+**Benefits over manual spreading:**
+- Event handlers chain (both execute) instead of override
+- className concatenates instead of replaces
+- style merges instead of replaces
+
+## Testing (TDD)
+
+Write tests before implementation. Playwright CT is sufficient for most custom components.
+
+**Test patterns:**
+- Use `page.getByRole()` or `page.getByText()` — not `component.locator('element')`
+
+Add unit tests (Vitest) only when there's complex logic:
+- State machines
+- Date/time calculations
+- Filtering/sorting algorithms
+
+## Checklist
+
+- [ ] Figma analysis complete
+- [ ] WAI-ARIA pattern followed
+- [ ] Tests written first
+- [ ] Implementation makes tests pass
+- [ ] forwardRef with named function
+- [ ] Props spread last
+- [ ] data-* attributes for state
+- [ ] Context throws helpful error
+- [ ] displayName in dev only
