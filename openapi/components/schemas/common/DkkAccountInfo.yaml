@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- countries
 - paymentRails
 - iban
 properties:
@@ -9,12 +8,6 @@ properties:
     type: string
     enum:
     - DKK_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - DK
   paymentRails:
     type: array
     items:

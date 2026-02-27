@@ -1,7 +1,6 @@
 type: object
 required:
   - accountType
-  - countries
   - paymentRails
   - bankCode
   - branchCode
@@ -11,12 +10,6 @@ properties:
     type: string
     enum:
       - CAD_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - CA
   paymentRails:
     type: array
     items:

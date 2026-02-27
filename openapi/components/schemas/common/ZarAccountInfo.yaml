@@ -1,7 +1,6 @@
 type: object
 required:
   - accountType
-  - countries
   - paymentRails
   - accountNumber
   - bankName
@@ -10,12 +9,6 @@ properties:
     type: string
     enum:
       - ZAR_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - ZA
   paymentRails:
     type: array
     items:
