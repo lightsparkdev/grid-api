@@ -23,7 +23,7 @@ Grid Visualizer is an interactive tool that helps integrators understand and get
 
 - **Next.js** 14 (App Router) / **React** 18 / **TypeScript** 5
 - **SCSS** with CSS Modules for component scoping
-- **@lightsparkdev/origin** — Lightspark's design system (local vendor package at `vendor/origin/`)
+- **@lightsparkdev/origin** — Lightspark's design system (npm package)
 - **@xyflow/react** — Flow diagram visualization
 - **motion** — Animations
 - **react-syntax-highlighter** — Code display (oneDark theme)
@@ -33,7 +33,7 @@ Grid Visualizer is an interactive tool that helps integrators understand and get
 
 ## Design System
 
-Uses Lightspark **Origin** (`vendor/origin/`). Tokens imported via SCSS in `src/app/globals.scss`.
+Uses Lightspark **Origin** (`@lightsparkdev/origin`). Tokens imported via SCSS in `src/app/globals.scss`.
 
 **Tokens in use:**
 - Colors: `--text-primary`, `--text-secondary`, `--text-tertiary`, `--surface-primary`, `--surface-secondary`
@@ -100,8 +100,6 @@ src/
 │   └── crypto.ts             # 3 crypto assets (BTC, USDC, USDT) with networks
 └── stubs/
     └── central-icons.js      # Icon package stub (license workaround)
-vendor/
-└── origin/                   # Lightspark Origin design system
 refs/                         # Internal reference screenshots (gitignored)
 ```
 
@@ -151,7 +149,7 @@ import { IconChevronBottom } from '@central-icons-react/round-outlined-radius-0-
 
 Props: `size` (number, default 24), `color` (string, default `currentColor`).
 
-The icon registry at `vendor/origin/src/components/Icon/icon-registry.ts` lists all available icon names. You can also use Origin's `CentralIcon` wrapper: `<CentralIcon name="IconChevronBottom" size={12} />`.
+You can also use Origin's `CentralIcon` wrapper: `<CentralIcon name="IconChevronBottom" size={12} />`.
 
 ## Design Principles
 
@@ -293,5 +291,5 @@ When building UI from Figma designs, use the figma-bridge MCP server. Tool prior
 
 - **Icon workaround**: `src/stubs/central-icons.js` stubs out `@central-icons-react` to avoid license issues. Webpack config in `next.config.mjs` does module replacement.
 - **Vercel**: `vercel.json` uses `--ignore-scripts` flag
-- **Origin transpiling**: `next.config.mjs` configures `transpilePackages` for the vendor Origin package
+- **Origin transpiling**: `next.config.mjs` configures `transpilePackages` for the Origin package
 - **Grid Docs path**: `/Users/patcapulong/Development/Projects/Grid Docs/mintlify`

@@ -13,7 +13,7 @@
     "@base-ui/utils": "^0.2.4",
     "@central-icons-react/round-filled-radius-3-stroke-1.5": "^1.1.135",
     "@central-icons-react/round-outlined-radius-3-stroke-1.5": "^1.1.135",
-    "@lightsparkdev/origin": "file:./vendor/origin",
+    "@lightsparkdev/origin": "^0.13.4",
     "circle-flags": "^2.8.2",
     "clsx": "^2.1.1",
     "match-sorter": "^8.2.0",
