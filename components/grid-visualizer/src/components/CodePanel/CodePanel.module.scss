@@ -1,0 +1,385 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.panel {
+  background: var(--surface-primary);
+  border-top: var(--stroke-xs) solid var(--border-tertiary);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-primary);
+}
+
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.headerTitle {
+  @include label;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3xs);
+}
+
+.copyAllBtn {
+  all: unset;
+  box-sizing: border-box;
+  @include label-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 var(--spacing-sm);
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+  cursor: pointer;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.audienceToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4xs);
+  padding: var(--spacing-3xs);
+  background: var(--surface-elevated);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+}
+
+.audienceTab {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  @include label-sm;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--spacing-xs);
+  border-radius: var(--corner-radius-xs);
+  cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  transition: background 150ms ease, color 150ms ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.audienceTabActive {
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  color: var(--text-primary);
+}
+
+.collapseBtn {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--corner-radius-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 150ms ease;
+
+  &:hover {
+    background: var(--color-alpha-black-04);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-06);
+    }
+  }
+}
+
+.chevronUp {
+  display: flex;
+  transition: transform 150ms ease;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.chevronDown {
+  display: flex;
+  transform: rotate(180deg);
+  transition: transform 150ms ease;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.content {
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.stepsContainer {
+  padding: var(--spacing-4xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+  max-width: 680px;
+}
+
+// Step component
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.stepBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-secondary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  flex-shrink: 0;
+
+  span {
+    @include label;
+    color: var(--text-primary);
+    text-align: center;
+  }
+}
+
+.stepTitle {
+  @include body;
+  color: var(--text-primary);
+}
+
+.stepContent {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.stepLineCol {
+  width: 28px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepLine {
+  width: var(--stroke-xs);
+  height: 100%;
+  background: var(--border-tertiary);
+}
+
+.stepCodeCol {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-4xl);
+}
+
+// Code block
+.codeBlock {
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: hidden;
+}
+
+.codeBlockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+}
+
+.codeBlockDesc {
+  @include label-sm;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.copyBtn {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--corner-radius-sm);
+  cursor: pointer;
+  color: var(--icon-tertiary);
+  transition: background 150ms ease;
+
+  &:hover {
+    background: var(--color-alpha-black-04);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-06);
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.copyIcon {
+  display: flex;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.codeBlockContent {
+  padding: var(--spacing-md);
+  overflow-x: auto;
+}
+
+.codePre {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-primary);
+  white-space: pre;
+  tab-size: 2;
+  font-feature-settings: 'salt' 1;
+}
+
+// Syntax highlighting
+.syntaxDefault {
+  color: #24292e;
+
+  :global([data-theme='dark']) & {
+    color: #e1e4e8;
+  }
+}
+
+.syntaxCommand {
+  color: #6f42c1;
+
+  :global([data-theme='dark']) & {
+    color: #b392f0;
+  }
+}
+
+.syntaxFlag {
+  color: #2b5581;
+
+  :global([data-theme='dark']) & {
+    color: #79b8ff;
+  }
+}
+
+.syntaxString {
+  color: #22863a;
+
+  :global([data-theme='dark']) & {
+    color: #85e89d;
+  }
+}
+
+@media (max-width: 767px) {
+  .panel {
+    flex: none;
+  }
+
+  .header {
+    position: sticky;
+    top: 52px;
+    z-index: 10;
+    background: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-950);
+    }
+
+    :global([data-embed='true']) & {
+      top: 0;
+    }
+  }
+
+  .content {
+    height: auto !important;
+    overflow: visible;
+  }
+
+  .stepsContainer {
+    padding: var(--spacing-md);
+    overflow-y: visible;
+    padding-bottom: 96px;
+  }
+
+  .steps {
+    max-width: 100%;
+  }
+
+  .collapseBtn {
+    display: none;
+  }
+}

@@ -1,0 +1,121 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.flag {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--corner-radius-round);
+  corner-shape: round;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.badge {
+  @include label-sm;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 var(--spacing-3xs);
+  background: var(--surface-secondary);
+  border-radius: var(--corner-radius-2xs);
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--spacing-xs);
+}
+
+.itemLeading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  flex: 1;
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.itemName {
+  @include label;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-feature-settings: 'salt' 1;
+}
+
+.itemRails {
+  @include body-sm;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-feature-settings: 'salt' 1;
+}
+
+// Footer
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.footerHint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.footerKeys {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4xs);
+}
+
+.footerLabel {
+  @include label-sm;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.kbd {
+  @include label-sm;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--spacing-3xs);
+  background: var(--surface-secondary);
+  border-radius: var(--corner-radius-2xs);
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+@media (max-width: 767px) {
+  .footerLeft,
+  .footerRight {
+    display: none;
+  }
+}

@@ -1,0 +1,92 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.divider {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  width: 100%;
+  transition: color 150ms ease;
+
+  &:hover .text {
+    color: var(--text-secondary);
+  }
+}
+
+.line {
+  flex: 1;
+  height: 0;
+  border-top: var(--stroke-xs) solid var(--border-tertiary);
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.text {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  transition: color 150ms ease;
+}
+
+.chevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-tertiary);
+  transition: transform 150ms ease;
+}
+
+.chevronUp {
+  transform: rotate(180deg);
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+}
+
+.flowItem {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  @include label-sm;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+
+  &:hover {
+    background: var(--surface-primary);
+    border-color: var(--border-secondary);
+
+    :global([data-theme='dark']) & {
+      background: var(--surface-secondary);
+    }
+  }
+}

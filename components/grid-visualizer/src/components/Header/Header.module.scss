@@ -1,0 +1,46 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--spacing-2xs);
+}
+
+.logo {
+  height: 38px;
+  width: auto;
+  color: var(--text-primary);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-left: 2px;
+}
+
+.subtitle {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: 32px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  letter-spacing: var(--font-tracking-tighter);
+  font-feature-settings: 'salt' 1, 'case' 1;
+}
+
+.description {
+  padding: 0 var(--spacing-xs);
+}
+
+.body {
+  @include body;
+  color: var(--text-secondary);
+  line-height: var(--font-leading-20);
+  font-feature-settings: 'salt' 1;
+  margin: 0;
+}
