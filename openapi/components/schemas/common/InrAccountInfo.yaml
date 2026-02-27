@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- countries
 - paymentRails
 - vpa
 properties:
@@ -9,12 +8,6 @@ properties:
     type: string
     enum:
     - INR_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - IN
   paymentRails:
     type: array
     items:

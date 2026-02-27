@@ -8,7 +8,7 @@ properties:
   accountType:
     type: string
     enum:
-      - NGN_ACCOUNT
+      - ZAR_ACCOUNT
   paymentRails:
     type: array
     items:
@@ -17,12 +17,12 @@ properties:
       - BANK_TRANSFER
   accountNumber:
     type: string
-    description: Nigerian bank account number
-    example: '0123456789'
-    minLength: 10
-    maxLength: 10
-    pattern: ^[0-9]{10}$
+    description: South African bank account number
+    example: '1234567890'
+    minLength: 9
+    maxLength: 13
+    pattern: ^[0-9]{9,13}$
   bankName:
     type: string
     description: Name of the bank
-    example: First Bank of Nigeria
+    example: Standard Bank

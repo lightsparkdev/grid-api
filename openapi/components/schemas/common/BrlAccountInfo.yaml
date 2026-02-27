@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- countries
 - paymentRails
 - pixKey
 - pixKeyType
@@ -11,12 +10,6 @@ properties:
     type: string
     enum:
     - BRL_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - BR
   paymentRails:
     type: array
     items:

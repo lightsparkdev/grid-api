@@ -125,8 +125,6 @@ post:
               currency: USD
               accountInfo:
                 accountType: USD_ACCOUNT
-                countries:
-                  - US
                 paymentRails:
                   - ACH
                 accountNumber: "12345678901"

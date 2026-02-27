@@ -1,0 +1,17 @@
+title: RWF Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/RwfAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - $ref: ../common/RwfBeneficiary.yaml
+      - $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/RwfBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

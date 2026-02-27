@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- countries
 - paymentRails
 - bankName
 - swiftCode
@@ -11,12 +10,6 @@ properties:
     type: string
     enum:
     - SGD_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - SG
   paymentRails:
     type: array
     items:

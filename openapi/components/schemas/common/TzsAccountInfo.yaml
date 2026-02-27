@@ -1,0 +1,28 @@
+type: object
+required:
+  - accountType
+  - paymentRails
+  - phoneNumber
+  - provider
+properties:
+  accountType:
+    type: string
+    enum:
+      - TZS_ACCOUNT
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - MOBILE_MONEY
+  phoneNumber:
+    type: string
+    description: Tanzanian mobile money phone number
+    example: '+255712345678'
+    pattern: ^\+255[0-9]{9}$
+  provider:
+    type: string
+    description: Mobile money provider
+    enum:
+      - AIRTEL
+      - VODACOM

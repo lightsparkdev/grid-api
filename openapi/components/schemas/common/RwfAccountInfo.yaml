@@ -1,0 +1,28 @@
+type: object
+required:
+  - accountType
+  - paymentRails
+  - phoneNumber
+  - provider
+properties:
+  accountType:
+    type: string
+    enum:
+      - RWF_ACCOUNT
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - MOBILE_MONEY
+  phoneNumber:
+    type: string
+    description: Rwandan mobile money phone number
+    example: '+250781234567'
+    pattern: ^\+250[0-9]{9}$
+  provider:
+    type: string
+    description: Mobile money provider
+    enum:
+      - MTN
+      - AIRTEL
