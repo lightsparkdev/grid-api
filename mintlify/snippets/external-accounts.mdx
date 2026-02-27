@@ -219,6 +219,182 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Note>
 </Tab>
 
+<Tab title="South Africa">
+**ZAR Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "ZAR",
+    "platformAccountId": "za_bank_001",
+    "accountInfo": {
+      "accountType": "ZAR_ACCOUNT",
+      "accountNumber": "1234567890",
+      "bankName": "Standard Bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Thabo Mbeki",
+        "birthDate": "1985-04-12",
+        "nationality": "ZA",
+        "address": {
+          "line1": "42 Nelson Mandela Drive",
+          "city": "Johannesburg",
+          "state": "Gauteng",
+          "postalCode": "2000",
+          "country": "ZA"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Account number must be 9-13 digits.
+</Note>
+</Tab>
+
+<Tab title="Kenya">
+**KES Mobile Money (M-PESA)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "KES",
+    "platformAccountId": "ke_mpesa_001",
+    "accountInfo": {
+      "accountType": "KES_ACCOUNT",
+      "phoneNumber": "+254712345678",
+      "provider": "M-PESA",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Wanjiku Kamau",
+        "birthDate": "1990-08-20",
+        "nationality": "KE",
+        "address": {
+          "line1": "Kenyatta Avenue 15",
+          "city": "Nairobi",
+          "postalCode": "00100",
+          "country": "KE"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+254XXXXXXXXX` (9 digits after country code). Provider must be `M-PESA`.
+</Note>
+</Tab>
+
+<Tab title="Tanzania">
+**TZS Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "TZS",
+    "platformAccountId": "tz_mobile_001",
+    "accountInfo": {
+      "accountType": "TZS_ACCOUNT",
+      "phoneNumber": "+255712345678",
+      "provider": "VODACOM",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Juma Hassan",
+        "birthDate": "1988-02-14",
+        "nationality": "TZ",
+        "address": {
+          "line1": "Samora Avenue 28",
+          "city": "Dar es Salaam",
+          "postalCode": "11101",
+          "country": "TZ"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+255XXXXXXXXX` (9 digits after country code). Providers: `AIRTEL` or `VODACOM`.
+</Note>
+</Tab>
+
+<Tab title="Zambia">
+**ZMW Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "ZMW",
+    "platformAccountId": "zm_mobile_001",
+    "accountInfo": {
+      "accountType": "ZMW_ACCOUNT",
+      "phoneNumber": "+260971234567",
+      "provider": "MTN",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Mwila Chanda",
+        "birthDate": "1992-11-05",
+        "nationality": "ZM",
+        "address": {
+          "line1": "Cairo Road 100",
+          "city": "Lusaka",
+          "postalCode": "10101",
+          "country": "ZM"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+260XXXXXXXXX` (9 digits after country code). Providers: `TNM`, `AIRTEL`, `ZAMTEL`, or `MTN`.
+</Note>
+</Tab>
+
+<Tab title="Rwanda">
+**RWF Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "RWF",
+    "platformAccountId": "rw_mobile_001",
+    "accountInfo": {
+      "accountType": "RWF_ACCOUNT",
+      "phoneNumber": "+250781234567",
+      "provider": "MTN",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Uwimana Diane",
+        "birthDate": "1995-06-30",
+        "nationality": "RW",
+        "address": {
+          "line1": "KN 5 Avenue",
+          "city": "Kigali",
+          "postalCode": "00100",
+          "country": "RW"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+250XXXXXXXXX` (9 digits after country code). Providers: `MTN` or `AIRTEL`.
+</Note>
+</Tab>
+
 <Tab title="Canada">
 **CAD Bank Transfer**
 
@@ -409,6 +585,25 @@ if (!/^\d{5}$/.test(branchCode)) {
 }
 if (!/^\d{7,12}$/.test(cadAccountNumber)) {
   throw new Error("Invalid Canadian account number");
+}
+
+// ZAR: 9-13 digit account number
+if (!/^\d{9,13}$/.test(zarAccountNumber)) {
+  throw new Error("Invalid South African account number");
+}
+
+// African mobile money phone numbers
+if (!/^\+254\d{9}$/.test(kesPhoneNumber)) {
+  throw new Error("Invalid Kenyan phone number");
+}
+if (!/^\+255\d{9}$/.test(tzsPhoneNumber)) {
+  throw new Error("Invalid Tanzanian phone number");
+}
+if (!/^\+260\d{9}$/.test(zmwPhoneNumber)) {
+  throw new Error("Invalid Zambian phone number");
+}
+if (!/^\+250\d{9}$/.test(rwfPhoneNumber)) {
+  throw new Error("Invalid Rwandan phone number");
 }
 ```
 
