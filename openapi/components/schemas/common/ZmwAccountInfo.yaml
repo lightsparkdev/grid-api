@@ -1,7 +1,6 @@
 type: object
 required:
   - accountType
-  - countries
   - paymentRails
   - phoneNumber
   - provider
@@ -10,12 +9,6 @@ properties:
     type: string
     enum:
       - ZMW_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - ZM
   paymentRails:
     type: array
     items:

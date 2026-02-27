@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- countries
 - paymentRails
 - bankName
 - accountNumber
@@ -10,12 +9,6 @@ properties:
     type: string
     enum:
     - HKD_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - HK
   paymentRails:
     type: array
     items:

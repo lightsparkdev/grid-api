@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- countries
 - paymentRails
 - iban
 properties:
@@ -9,31 +8,6 @@ properties:
     type: string
     enum:
     - EUR_ACCOUNT
-  countries:
-    type: array
-    items:
-      type: string
-      enum:
-      - AT
-      - BE
-      - CY
-      - DE
-      - EE
-      - ES
-      - FI
-      - FR
-      - GR
-      - HR
-      - IE
-      - IT
-      - LT
-      - LU
-      - LV
-      - MT
-      - NL
-      - PT
-      - SI
-      - SK
   paymentRails:
     type: array
     items:

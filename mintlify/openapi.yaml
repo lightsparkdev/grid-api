@@ -871,8 +871,6 @@ paths:
                   currency: USD
                   accountInfo:
                     accountType: USD_ACCOUNT
-                    countries:
-                      - US
                     paymentRails:
                       - ACH
                     accountNumber: '12345678901'
@@ -1011,8 +1009,6 @@ paths:
                   currency: USD
                   accountInfo:
                     accountType: USD_ACCOUNT
-                    countries:
-                      - US
                     paymentRails:
                       - ACH
                     accountNumber: '12345678901'
@@ -4590,7 +4586,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - accountNumber
         - routingNumber
@@ -4599,12 +4594,6 @@ components:
           type: string
           enum:
             - USD_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - US
         paymentRails:
           type: array
           items:
@@ -4637,7 +4626,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - pixKey
         - pixKeyType
@@ -4647,12 +4635,6 @@ components:
           type: string
           enum:
             - BRL_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - BR
         paymentRails:
           type: array
           items:
@@ -4677,7 +4659,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - clabeNumber
       properties:
@@ -4685,12 +4666,6 @@ components:
           type: string
           enum:
             - MXN_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - MX
         paymentRails:
           type: array
           items:
@@ -4721,7 +4696,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - iban
       properties:
@@ -4729,12 +4703,6 @@ components:
           type: string
           enum:
             - DKK_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - DK
         paymentRails:
           type: array
           items:
@@ -4765,7 +4733,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - iban
       properties:
@@ -4773,31 +4740,6 @@ components:
           type: string
           enum:
             - EUR_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - AT
-              - BE
-              - CY
-              - DE
-              - EE
-              - ES
-              - FI
-              - FR
-              - GR
-              - HR
-              - IE
-              - IT
-              - LT
-              - LU
-              - LV
-              - MT
-              - NL
-              - PT
-              - SI
-              - SK
         paymentRails:
           type: array
           items:
@@ -4828,7 +4770,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - vpa
       properties:
@@ -4836,12 +4777,6 @@ components:
           type: string
           enum:
             - INR_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - IN
         paymentRails:
           type: array
           items:
@@ -4861,7 +4796,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - accountNumber
         - bankName
@@ -4870,12 +4804,6 @@ components:
           type: string
           enum:
             - NGN_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - NG
         paymentRails:
           type: array
           items:
@@ -4910,7 +4838,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankCode
         - branchCode
@@ -4920,12 +4847,6 @@ components:
           type: string
           enum:
             - CAD_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - CA
         paymentRails:
           type: array
           items:
@@ -4970,7 +4891,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - sortCode
         - accountNumber
@@ -4979,12 +4899,6 @@ components:
           type: string
           enum:
             - GBP_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - GB
         paymentRails:
           type: array
           items:
@@ -5020,7 +4934,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankName
         - accountNumber
@@ -5029,12 +4942,6 @@ components:
           type: string
           enum:
             - HKD_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - HK
         paymentRails:
           type: array
           items:
@@ -5064,7 +4971,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - sortCode
         - accountNumber
@@ -5073,12 +4979,6 @@ components:
           type: string
           enum:
             - IDR_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - ID
         paymentRails:
           type: array
           items:
@@ -5108,7 +5008,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankName
         - accountNumber
@@ -5117,12 +5016,6 @@ components:
           type: string
           enum:
             - MYR_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - MY
         paymentRails:
           type: array
           items:
@@ -5152,7 +5045,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankName
         - accountNumber
@@ -5161,12 +5053,6 @@ components:
           type: string
           enum:
             - PHP_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - PH
         paymentRails:
           type: array
           items:
@@ -5198,7 +5084,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankName
         - swiftCode
@@ -5208,12 +5093,6 @@ components:
           type: string
           enum:
             - SGD_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - SG
         paymentRails:
           type: array
           items:
@@ -5254,7 +5133,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankName
         - accountNumber
@@ -5263,12 +5141,6 @@ components:
           type: string
           enum:
             - THB_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - TH
         paymentRails:
           type: array
           items:
@@ -5298,7 +5170,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - bankName
         - accountNumber
@@ -5307,12 +5178,6 @@ components:
           type: string
           enum:
             - VND_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - VN
         paymentRails:
           type: array
           items:
@@ -6113,7 +5978,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
@@ -6122,12 +5986,6 @@ components:
           type: string
           enum:
             - KES_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - KE
         paymentRails:
           type: array
           items:
@@ -6408,7 +6266,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
@@ -6417,12 +6274,6 @@ components:
           type: string
           enum:
             - RWF_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - RW
         paymentRails:
           type: array
           items:
@@ -6600,7 +6451,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
@@ -6609,12 +6459,6 @@ components:
           type: string
           enum:
             - TZS_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - TZ
         paymentRails:
           type: array
           items:
@@ -6794,7 +6638,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - accountNumber
         - bankName
@@ -6803,12 +6646,6 @@ components:
           type: string
           enum:
             - ZAR_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - ZA
         paymentRails:
           type: array
           items:
@@ -6882,7 +6719,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
@@ -6891,12 +6727,6 @@ components:
           type: string
           enum:
             - ZMW_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - ZM
         paymentRails:
           type: array
           items:
