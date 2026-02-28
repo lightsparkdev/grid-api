@@ -1,0 +1,22 @@
+{
+  "name": "grid-sample-typescript",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build:frontend": "cd ../frontend && npm install && npx vite build --outDir ../typescript/public --emptyOutDir",
+    "start": "npm run build:frontend && tsx src/index.ts",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@lightsparkdev/grid": "latest",
+    "express": "^5.1.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  }
+}
