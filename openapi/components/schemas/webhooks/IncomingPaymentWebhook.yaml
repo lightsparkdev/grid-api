@@ -2,20 +2,25 @@ allOf:
   - $ref: ./BaseWebhook.yaml
   - type: object
     required:
-      - transaction
+      - data
     properties:
-      transaction:
-        $ref: ../transactions/IncomingTransaction.yaml
+      data:
+        allOf:
+          - $ref: ../transactions/IncomingTransaction.yaml
+          - type: object
+            properties:
+              requestedReceiverCustomerInfoFields:
+                type: array
+                items:
+                  $ref: ../common/CounterpartyFieldDefinition.yaml
+                description: >-
+                  Information required by the sender's VASP about the recipient.
+                  Platform must provide these in the 200 OK response if approving.
+                  Note that this only includes fields which Grid does not
+                  already have from initial customer registration.
       type:
-        $ref: ./WebhookType.yaml
-        description: Type of webhook event
-        example: INCOMING_PAYMENT
-      requestedReceiverCustomerInfoFields:
-        type: array
-        items:
-          $ref: ../common/CounterpartyFieldDefinition.yaml
-        description: >-
-          Information required by the sender's VASP about the recipient.
-          Platform must provide these in the 200 OK response if approving.
-          Note that this only includes fields which Grid does not
-          already have from initial customer registration.
+        type: string
+        enum:
+          - INCOMING_PAYMENT.PENDING
+          - INCOMING_PAYMENT.COMPLETED
+          - INCOMING_PAYMENT.FAILED

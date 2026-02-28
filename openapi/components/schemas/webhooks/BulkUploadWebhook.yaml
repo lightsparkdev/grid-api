@@ -5,8 +5,9 @@ allOf:
       - data
     properties:
       data:
-        $ref: ../invitations/UmaInvitation.yaml
+        $ref: ../customers/BulkCustomerImportJob.yaml
       type:
         type: string
         enum:
-          - INVITATION.CLAIMED
+          - BULK_UPLOAD.COMPLETED
+          - BULK_UPLOAD.FAILED

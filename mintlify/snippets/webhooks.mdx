@@ -29,11 +29,11 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...
 
 app.post('/webhooks/uma', (req, res) => {
   const signatureHeader = req.header('X-Grid-Signature');
-  
+
   if (!signatureHeader) {
     return res.status(401).json({ error: 'Signature missing' });
   }
-  
+
   try {
     let signature: Buffer;
     try {
@@ -49,7 +49,7 @@ app.post('/webhooks/uma', (req, res) => {
       // If JSON parsing fails, treat as direct base64
       signature = Buffer.from(signatureHeader, "base64");
     }
-    
+
     // Create verifier with the public key and correct algorithm
     const verifier = crypto.createVerify("SHA256");
     const payload = await request.text();
@@ -65,22 +65,22 @@ app.post('/webhooks/uma', (req, res) => {
       },
       signature,
     );
-    
+
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
-    
+
     // Webhook is verified, process it based on type
     const webhookData = req.body;
-    
-    if (webhookData.type === 'INCOMING_PAYMENT') {
+
+    if (webhookData.type.startsWith('INCOMING_PAYMENT.')) {
       // Process incoming payment webhook
       // ...
-    } else if (webhookData.type === 'OUTGOING_PAYMENT') {
+    } else if (webhookData.type.startsWith('OUTGOING_PAYMENT.')) {
       // Process outgoing payment webhook
       // ...
     }
-    
+
     // Acknowledge receipt of the webhook
     return res.status(200).json({ received: true });
   } catch (error) {
@@ -121,19 +121,19 @@ def handle_webhook():
     signature = request.headers.get('X-Grid-Signature')
     if not signature:
         return jsonify({'error': 'Signature missing'}), 401
-    
+
     try:
         # Get the raw request body
         request_body = request.get_data()
-        
+
         # Create a SHA-256 hash of the request body
         hash_obj = hashes.Hash(hashes.SHA256())
         hash_obj.update(request_body)
         digest = hash_obj.finalize()
-        
+
         # Decode the base64 signature
         signature_bytes = base64.b64decode(signature)
-        
+
         # Verify the signature
         try:
             public_key.verify(
@@ -143,19 +143,19 @@ def handle_webhook():
             )
         except Exception as e:
             return jsonify({'error': 'Invalid signature'}), 401
-        
+
         # Webhook is verified, process it based on type
         webhook_data = request.json
-        
-        if webhook_data['type'] == 'INCOMING_PAYMENT':
+
+        if webhook_data['type'].startswith('INCOMING_PAYMENT.'):
             # Process incoming payment webhook
             # ...
             pass
-        elif webhook_data['type'] == 'OUTGOING_PAYMENT':
+        elif webhook_data['type'].startswith('OUTGOING_PAYMENT.'):
             # Process outgoing payment webhook
             # ...
             pass
-        
+
         # Acknowledge receipt of the webhook
         return jsonify({'received': True}), 200
     except Exception as e:
@@ -174,10 +174,10 @@ An example of the test webhook payload is shown below:
 
 ```json
 {
-  "test": true,
-  "timestamp": "2023-08-15T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
-  "type": "TEST"
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "type": "TEST",
+  "timestamp": "2025-08-15T14:32:00Z",
+  "data": {}
 }
 ```
 
@@ -187,7 +187,7 @@ You should verify the signature of the webhook using the Grid public key and the
 
 - **Always verify signatures**: Never process webhooks without verifying their signatures.
 - **Use HTTPS**: Ensure your webhook endpoint uses HTTPS to prevent man-in-the-middle attacks.
-- **Implement idempotency**: Use the `webhookId` field to prevent processing duplicate webhooks.
+- **Implement idempotency**: Use the `id` field to prevent processing duplicate webhooks.
 - **Timeout handling**: Implement proper timeout handling and respond to webhooks promptly.
 
 ## Retry Policy
@@ -196,10 +196,10 @@ The Grid API will retry webhooks with the following policy based on the webhook 
 
 | Webhook Type | Retry Policy | Notes |
 |-------------|-------------|-------|
-| TEST | No retries | Used for testing webhook configuration |
-| OUTGOING_PAYMENT | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| INCOMING_PAYMENT | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on: 409 (duplicate webhook) or PENDING status since it is served as an approval mechanism in-flow |
-| BULK_UPLOAD | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| INVITATION_CLAIMED | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| KYC_STATUS | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| ACCOUNT_STATUS | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `TEST` | No retries | Used for testing webhook configuration |
+| `OUTGOING_PAYMENT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `INCOMING_PAYMENT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on: 409 (duplicate webhook) or PENDING status since it is served as an approval mechanism in-flow |
+| `BULK_UPLOAD.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `INVITATION.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `CUSTOMER.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `ACCOUNT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
