@@ -233,6 +233,7 @@
   // Inline "View flow and code" button in wizard view
   .mobileViewBtn {
     @include label;
+    margin-top: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
