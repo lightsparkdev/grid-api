@@ -17,7 +17,6 @@ import { Agentation } from 'agentation';
 
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRight';
-import { AnimatePresence, motion } from 'motion/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import clsx from 'clsx';
 import styles from './page.module.scss';
@@ -151,19 +150,8 @@ export default function Home() {
         )}
 
         <div className={styles.sidebarContent}>
-            <div className={styles.sidebarContentInner} style={isComplete ? { gap: 'var(--spacing-sm)' } : undefined}>
-            <AnimatePresence>
-              {!state.send && !state.receive && (
-                <motion.div
-                  initial={{ height: 'auto', opacity: 1, marginBottom: 'var(--spacing-2xl)' }}
-                  exit={{ height: 0, opacity: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                  style={{ overflow: 'hidden' }}
-                >
-                  <Header />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className={styles.sidebarContentInner}>
+            <Header />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', isolation: 'isolate' }}>
@@ -216,7 +204,7 @@ export default function Home() {
               </button>
             )}
 
-            <div style={isComplete ? undefined : { marginTop: 'var(--spacing-2xl)' }}>
+            <div style={{ marginTop: isComplete ? '12px' : '24px' }}>
               <PopularFlows onSelect={(sendCode, receiveCode) => {
                 const s = lookupCurrency(sendCode);
                 const r = lookupCurrency(receiveCode);

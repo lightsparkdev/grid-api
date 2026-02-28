@@ -7,3 +7,4 @@ out/
 .vercel
 refs/
 experiments/
+.env*.local
