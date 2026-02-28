@@ -1483,6 +1483,233 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /receiver/destination-identifier:
+    post:
+      summary: Look up a receiving bank or wallet identifier.
+      description: |
+        Lookup a receiving bank or wallet identifier before attempting to send a payment.
+        This endpoint can look up various account identifiers like bank account/routing numbers, IBANs, CLABEs, PIX, UPI, etc. This endpoint can be used to determine if a payment can be sent to a given identifier, and if so, what fields are required about the payee before the payment can be completed (if any). Each possible route will include some basic information about the provider, as well as current exchange rates and minimum and maximum amounts that can be sent.
+      operationId: lookupDestinationIdentifier
+      tags:
+        - Cross-Currency Transfers
+      security:
+        - BasicAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - destinationDetails
+              properties:
+                senderUmaAddress:
+                  type: string
+                  description: UMA address of the sender (optional if customerId is provided)
+                customerId:
+                  type: string
+                  description: System ID of the sender (optional if senderUmaAddress is provided)
+                destinationDetails:
+                  oneOf:
+                    - title: US Bank Account Destination
+                      type: object
+                      required:
+                        - accountNumber
+                        - routingNumber
+                        - destinationType
+                      properties:
+                        accountNumber:
+                          type: string
+                          description: Account number
+                        routingNumber:
+                          type: string
+                          description: Routing number
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - US_BANK_ACCOUNT
+                    - title: IBAN Destination
+                      type: object
+                      required:
+                        - iban
+                        - destinationType
+                      properties:
+                        iban:
+                          type: string
+                          description: IBAN number.
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - IBAN
+                    - title: CLABE Destination
+                      type: object
+                      required:
+                        - clabe
+                        - destinationType
+                      properties:
+                        clabe:
+                          type: string
+                          description: CLABE number
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - CLABE
+                    - title: PIX Destination
+                      type: object
+                      required:
+                        - pixKey
+                        - pixKeyType
+                        - destinationType
+                      properties:
+                        pixKey:
+                          type: string
+                          description: PIX key
+                        pixKeyType:
+                          enum:
+                            - CPF
+                            - CNPJ
+                            - EMAIL
+                            - PHONE
+                            - RANDOM
+                          type: string
+                          description: Type of PIX key
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - PIX
+                    - title: UPI Destination
+                      type: object
+                      required:
+                        - vpa
+                        - destinationType
+                      properties:
+                        vpa:
+                          type: string
+                          description: Virtual Payment Address for UPI payments
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - UPI
+                    - title: UK Bank Account Destination
+                      type: object
+                      required:
+                        - accountNumber
+                        - sortCode
+                        - bankName
+                        - destinationType
+                      properties:
+                        accountNumber:
+                          type: string
+                          description: Account number
+                        sortCode:
+                          type: string
+                          description: Sort code
+                        bankName:
+                          type: string
+                          description: Name of the bank
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - UK_BANK_ACCOUNT
+                    - title: PH Bank Account Destination
+                      type: object
+                      required:
+                        - accountNumber
+                        - bankName
+                        - destinationType
+                      properties:
+                        accountNumber:
+                          type: string
+                          description: Account number
+                        bankName:
+                          type: string
+                          description: Name of the bank
+                        destinationType:
+                          type: string
+                          description: Type of destination
+                          enum:
+                            - PH_BANK_ACCOUNT
+                  discriminator:
+                    propertyName: destinationType
+      responses:
+        '200':
+          description: Successful lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/ReceiverLookupResponse'
+                    - type: object
+                      required:
+                        - receiverUmaAddress
+                        - requiredPayeeDataFields
+                        - destinationProviderType
+                      properties:
+                        receiverUmaAddress:
+                          type: string
+                          description: The UMA address that was looked up
+                          example: $receiver@uma.domain
+                        requiredPayeeDataFields:
+                          type: array
+                          description: Fields required by the receiving institution about the payee before payment can be completed. If no fields are required, this will be an empty array.
+                          items:
+                            $ref: '#/components/schemas/CounterpartyFieldDefinition'
+                        destinationProviderType:
+                          type: string
+                          enum:
+                            - UNKNOWN
+                            - RAIL_PSP_UNREGISTERED
+                            - RAIL_PSP_REGISTERED
+                            - OWNER_BANK
+                          description: |-
+                            The type of counterparty financial institution that will route the payment to the ultimate beneficiary. This describes the relationship between the counterparty and the ultimate beneficiary.
+                            - `RAIL_PSP_UNREGISTERED`: The counterparty is a PSP that can route to any identifier on the specified rail type. However, the PSP does not currently have a direct relationship with the ultimate beneficiary.
+                            - `RAIL_PSP_REGISTERED`: The counterparty is a PSP that has a direct relationship with the ultimate beneficiary, but may still just route to a separate bank account on their behalf.
+                            - `OWNER_BANK`: The counterparty is the actual bank or financial institution with the ultimate beneficiary as their direct customer. They control the account where funds will ultimately land.
+                          example: OWNER_BANK
+        '400':
+          description: Bad request - Missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: UMA address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '412':
+          description: Counterparty doesn't support UMA version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error412'
+        '424':
+          description: Counterparty issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error424'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /quotes/{quoteId}:
     get:
       summary: Get quote by ID

@@ -116,6 +116,8 @@ paths:
     $ref: paths/receiver/uma/receiver_uma_{receiverUmaAddress}.yaml
   /receiver/external-account/{accountId}:
     $ref: paths/receiver/external-account/receiver_external-account_{accountId}.yaml
+  /receiver/destination-identifier:
+    $ref: paths/receiver/destination-identifier/receiver_destination-identifier.yaml
   /quotes/{quoteId}:
     $ref: paths/quotes/quotes_{quoteId}.yaml
   /quotes:
