@@ -38,13 +38,16 @@ post:
     content:
       application/json:
         schema:
-          $ref: '../components/schemas/customers/BulkUploadWebhookRequest.yaml'
+          $ref: '../components/schemas/webhooks/BulkUploadWebhook.yaml'
         examples:
           completedUpload:
             summary: Successful bulk upload completion
             value:
-              bulkCustomerImportJob:
-                jobId: Job:019542f5-b3e7-1d02-0000-000000000006
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+              type: BULK_UPLOAD.COMPLETED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Job:019542f5-b3e7-1d02-0000-000000000006
                 status: COMPLETED
                 progress:
                   total: 5000
@@ -52,14 +55,14 @@ post:
                   successful: 5000
                   failed: 0
                 errors: []
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000008
-              type: BULK_UPLOAD
-              timestamp: '2025-08-15T14:32:00Z'
           failedUpload:
             summary: Failed bulk upload
             value:
-              bulkCustomerImportJob:
-                jobId: Job:019542f5-b3e7-1d02-0000-000000000006
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+              type: BULK_UPLOAD.FAILED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Job:019542f5-b3e7-1d02-0000-000000000006
                 status: FAILED
                 progress:
                   total: 5000
@@ -74,9 +77,6 @@ post:
                       details:
                         reason: missing_required_column
                         column: umaAddress
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000008
-              type: BULK_UPLOAD
-              timestamp: '2025-08-15T14:32:00Z'
   responses:
     '200':
       description: Webhook received successfully
@@ -93,7 +93,7 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      description: Conflict - Webhook has already been processed (duplicate id)
       content:
         application/json:
           schema:

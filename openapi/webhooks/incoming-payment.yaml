@@ -70,10 +70,18 @@ post:
           pendingPayment:
             summary: Pending payment example requiring approval
             value:
-              transaction:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: INCOMING_PAYMENT.PENDING
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                 status: PENDING
                 type: INCOMING
+                destination:
+                  destinationType: UMA_ADDRESS
+                  umaAddress: $recipient@uma.domain
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
                 senderUmaAddress: $sender@external.domain
                 receiverUmaAddress: $recipient@uma.domain
                 receivedAmount:
@@ -83,29 +91,32 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                platformCustomerId: 18d3e5f7b4a9c2
-                reconciliationInstructions:
-                  reference: REF-123456789
                 counterpartyInformation:
                   FULL_NAME: John Sender
                   BIRTH_DATE: '1985-06-15'
                   NATIONALITY: US
-              requestedReceiverCustomerInfoFields:
-                - name: NATIONALITY
-                  mandatory: true
-                - name: ADDRESS
-                  mandatory: false
-              timestamp: '2025-08-15T14:32:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-              type: INCOMING_PAYMENT
+                reconciliationInstructions:
+                  reference: REF-123456789
+                requestedReceiverCustomerInfoFields:
+                  - name: NATIONALITY
+                    mandatory: true
+                  - name: POSTAL_ADDRESS
+                    mandatory: false
           incomingCompletedPayment:
             summary: Completed payment notification
             value:
-              transaction:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: INCOMING_PAYMENT.COMPLETED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                 status: COMPLETED
                 type: INCOMING
+                destination:
+                  destinationType: UMA_ADDRESS
+                  umaAddress: $recipient@uma.domain
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
                 senderUmaAddress: $sender@external.domain
                 receiverUmaAddress: $recipient@uma.domain
                 receivedAmount:
@@ -115,16 +126,11 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                platformCustomerId: 18d3e5f7b4a9c2
                 settledAt: '2025-08-15T14:30:00Z'
                 createdAt: '2025-08-15T14:25:18Z'
                 description: Payment for services
                 reconciliationInstructions:
                   reference: REF-123456789
-              timestamp: '2025-08-15T14:32:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-              type: INCOMING_PAYMENT
   responses:
     '200':
       description: >
@@ -174,7 +180,7 @@ post:
           schema:
             $ref: ../components/schemas/webhooks/IncomingPaymentWebhookForbiddenResponse.yaml
     '409':
-      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      description: Conflict - Webhook has already been processed (duplicate id)
       content:
         application/json:
           schema:

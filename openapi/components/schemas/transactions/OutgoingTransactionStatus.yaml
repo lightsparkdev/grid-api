@@ -1,0 +1,17 @@
+type: string
+enum:
+  - PENDING
+  - EXPIRED
+  - PROCESSING
+  - COMPLETED
+  - FAILED
+description: |
+  Status of an outgoing payment transaction.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING` | Quote is pending confirmation |
+  | `EXPIRED` | Quote wasn't executed before expiry window |
+  | `PROCESSING` | Executing the quote after receiving funds |
+  | `COMPLETED` | Payout successfully reached the destination |
+  | `FAILED` | Something went wrong — accompanied by a `failureReason` |

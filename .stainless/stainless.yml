@@ -27,13 +27,14 @@ targets:
     publish:
       npm:
         auth_method: oidc
-      # jsr:
-      #   package_name: "@lightsparkdev/grid"
+      jsr:
+        package_name: "@lightsparkdev/grid"
     options:
       mcp_server:
+        package_name: "@lightsparkdev/grid-mcp"
+        enable_all_resources: true
         host:
           stainless: true
-        package_name: "@lightsparkdev/grid-mcp"
   kotlin:
     edition: kotlin.2025-10-08
     reverse_domain: com.lightspark.grid
@@ -109,21 +110,35 @@ resources:
     subresources:
       external_accounts:
         models:
-          usd_account_info: '#/components/schemas/UsdExternalAccountInfo'
-          brl_account_info: '#/components/schemas/BrlExternalAccountInfo'
-          cad_account_info: '#/components/schemas/CadExternalAccountInfo'
-          mxn_account_info: '#/components/schemas/MxnExternalAccountInfo'
-          dkk_account_info: '#/components/schemas/DkkExternalAccountInfo'
-          inr_account_info: '#/components/schemas/InrExternalAccountInfo'
-          gbp_account_info: '#/components/schemas/GbpExternalAccountInfo'
-          hkd_account_info: '#/components/schemas/HkdExternalAccountInfo'
-          idr_account_info: '#/components/schemas/IdrExternalAccountInfo'
-          myr_account_info: '#/components/schemas/MyrExternalAccountInfo'
-          ngn_account_info: '#/components/schemas/NgnExternalAccountInfo'
-          php_account_info: '#/components/schemas/PhpExternalAccountInfo'
-          sgd_account_info: '#/components/schemas/SgdExternalAccountInfo'
-          thb_account_info: '#/components/schemas/ThbExternalAccountInfo'
-          vnd_account_info: '#/components/schemas/VndExternalAccountInfo'
+          # New ExternalAccountInfo models (13)
+          brl_external_account_info: "#/components/schemas/BrlExternalAccountInfo"
+          dkk_external_account_info: "#/components/schemas/DkkExternalAccountInfo"
+          gbp_external_account_info: "#/components/schemas/GbpExternalAccountInfo"
+          hkd_external_account_info: "#/components/schemas/HkdExternalAccountInfo"
+          idr_external_account_info: "#/components/schemas/IdrExternalAccountInfo"
+          inr_external_account_info: "#/components/schemas/InrExternalAccountInfo"
+          mxn_external_account_info: "#/components/schemas/MxnExternalAccountInfo"
+          myr_external_account_info: "#/components/schemas/MyrExternalAccountInfo"
+          php_external_account_info: "#/components/schemas/PhpExternalAccountInfo"
+          sgd_external_account_info: "#/components/schemas/SgdExternalAccountInfo"
+          thb_external_account_info: "#/components/schemas/ThbExternalAccountInfo"
+          usd_external_account_info: "#/components/schemas/UsdExternalAccountInfo"
+          vnd_external_account_info: "#/components/schemas/VndExternalAccountInfo"
+
+          # New Beneficiary models (13)
+          brl_beneficiary: "#/components/schemas/BrlBeneficiary"
+          dkk_beneficiary: "#/components/schemas/DkkBeneficiary"
+          gbp_beneficiary: "#/components/schemas/GbpBeneficiary"
+          hkd_beneficiary: "#/components/schemas/HkdBeneficiary"
+          idr_beneficiary: "#/components/schemas/IdrBeneficiary"
+          inr_beneficiary: "#/components/schemas/InrBeneficiary"
+          mxn_beneficiary: "#/components/schemas/MxnBeneficiary"
+          myr_beneficiary: "#/components/schemas/MyrBeneficiary"
+          php_beneficiary: "#/components/schemas/PhpBeneficiary"
+          sgd_beneficiary: "#/components/schemas/SgdBeneficiary"
+          thb_beneficiary: "#/components/schemas/ThbBeneficiary"
+          usd_beneficiary: "#/components/schemas/UsdBeneficiary"
+          vnd_beneficiary: "#/components/schemas/VndBeneficiary"
           spark_wallet_info: '#/components/schemas/SparkWalletExternalAccountInfo'
           solana_wallet_info: '#/components/schemas/SolanaWalletExternalAccountInfo'
           tron_wallet_info: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -136,8 +151,10 @@ resources:
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
           # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
           # base_beneficiary: "#/components/schemas/BaseBeneficiary"
-          beneficiary_one_of: "#/components/schemas/BeneficiaryOneOf"
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
+          business_beneficiary: "#/components/schemas/BusinessBeneficiary"
+          address: "#/components/schemas/Address"
+          beneficiary_verified_data: "#/components/schemas/BeneficiaryVerifiedData"
         methods:
           list: get /customers/external-accounts
           create: post /customers/external-accounts
@@ -167,7 +184,7 @@ resources:
   transfer_in:
     models:
       transaction: '#/components/schemas/Transaction'
-      base_transaction_destination: "#/components/schemas/BaseTransactionDestination"
+      #base_transaction_destination: "#/components/schemas/BaseTransactionDestination"
     methods:
       create: post /transfer-in
 
@@ -189,10 +206,6 @@ resources:
       payment_instructions: '#/components/schemas/PaymentInstructions'
       outgoing_rate_details: '#/components/schemas/OutgoingRateDetails'
       quote: '#/components/schemas/Quote'
-      base_payment_account_info: "#/components/schemas/BasePaymentAccountInfo"
-      base_quote_source: "#/components/schemas/BaseQuoteSource"
-      quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
-      base_destination: "#/components/schemas/BaseDestination"
       quote_destination_one_of: "#/components/schemas/QuoteDestinationOneOf"
     methods:
       retrieve: get /quotes/{quoteId}
@@ -203,24 +216,17 @@ resources:
   transactions:
     models:
       transaction_type: '#/components/schemas/TransactionType'
-      transaction_destination_one_of: '#/components/schemas/TransactionDestinationOneOf'
-      counterparty_information: '#/components/schemas/CounterpartyInformation'
       incoming_transaction: '#/components/schemas/IncomingTransaction'
+      outgoing_transaction: '#/components/schemas/OutgoingTransaction'
       transaction_status: '#/components/schemas/TransactionStatus'
-      base_transaction_source: "#/components/schemas/BaseTransactionSource"
+      outgoing_transaction_status: '#/components/schemas/OutgoingTransactionStatus'
+      #base_transaction_source: "#/components/schemas/BaseTransactionSource"
       transaction_source_one_of: "#/components/schemas/TransactionSourceOneOf"
     methods:
       list: get /transactions
       retrieve: get /transactions/{transactionId}
       approve: post /transactions/{transactionId}/approve
       reject: post /transactions/{transactionId}/reject
-
-  webhooks:
-    methods:
-      unwrap:
-        type: webhook_unwrap
-        discriminator: type
-      
 
   invitations:
     models:
@@ -235,7 +241,7 @@ resources:
   sandbox:
     methods:
       send_funds: post /sandbox/send
-      send_test_webhook: post /webhooks/test
+      send_test: post /webhooks/test
     subresources:
       uma:
         methods:
@@ -264,6 +270,15 @@ resources:
       list:
         endpoint: get /exchange-rates
         paginated: false
+
+  webhooks:
+    methods:
+      unwrap:
+        type: webhook_unwrap
+        discriminator: type
+  $shared:
+    models:
+      bulk_customer_import_error_entry: "#/components/schemas/BulkCustomerImportErrorEntry"
 
 settings:
   # All generated integration tests that hit the prism mock http server are marked
@@ -410,30 +425,33 @@ openapi:
     #       - "$.components.schemas.RealtimeFundingQuoteSource.allOf[1].properties"
     #     keys: [ "sourceType" ]
 
-    # ── destinationType: transaction destination schemas ──
-    - command: remove
-      reason: >-
-        Remove inline destinationType enums from transaction and quote
-        destination allOf variants to avoid conflicting types with their
-        base schemas which define destinationType via shared $ref enums
-      args:
-        target:
-          - "$.components.schemas.AccountTransactionDestination.allOf[0]"
-          - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
-        keys: [ "$ref" ]
+    # # ── destinationType: transaction and quote destination schemas ──
+    # - command: remove
+    #   reason: >-
+    #     Remove inline destinationType enums from transaction and quote
+    #     destination allOf variants to avoid conflicting types with their
+    #     base schemas which define destinationType via shared $ref enums
+    #   args:
+    #     target:
+    #       - "$.components.schemas.AccountTransactionDestination.allOf[1].properties"
+    #       - "$.components.schemas.UmaAddressTransactionDestination.allOf[1].properties"
+    #       - "$.components.schemas.AccountDestination.allOf[1].properties"
+    #       - "$.components.schemas.UmaAddressDestination.allOf[1].properties"
+    #       - "$.components.schemas.ExternalAccountDetailsDestination.allOf[1].properties"
+    #     keys: [ "destinationType" ]
 
-    # ── type: transaction base schema ──
-    - command: remove
-      reason: >-
-        Remove inline type enum from Transaction base schema to avoid
-        conflicting types when allOf merges with IncomingTransaction and
-        OutgoingTransaction which define type as single-value enums
-      args:
-        target:
-          - "$.components.schemas.Transaction.properties"
-        keys: [ "type" ]
-
-    # ── beneficiaryType: beneficiary schemas ──
+    # # ── beneficiaryType: beneficiary schemas ──
+    # - command: remove
+    #   reason: >-
+    #     Remove inline beneficiaryType enums from beneficiary allOf variants
+    #     to avoid conflicting types with BaseBeneficiary which defines
+    #     beneficiaryType via a shared $ref enum
+    #   args:
+    #     target:
+    #       - "$.components.schemas.IndividualBeneficiary.allOf[1].properties"
+    #       - "$.components.schemas.BusinessBeneficiary.allOf[1].properties"
+    #     keys: [ "beneficiaryType" ]
+    # ── customerType: remove from base schemas ──
     - command: remove
       reason: >-
         Remove customerType $ref from base schemas so the inline single-value
@@ -488,22 +506,12 @@ openapi:
         stripping the accountType discriminator, which causes TS2312 errors
       args:
         target:
-          - "$.components.schemas.PaymentUsdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentBrlAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentMxnAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentDkkAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentEurAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentInrAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentClabeAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentUsAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentPixAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentIbanAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentUpiAccountInfo.allOf[0]"
           - "$.components.schemas.PaymentNgnAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentCadAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentGbpAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentHkdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentIdrAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentMyrAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentPhpAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentSgdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentThbAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentVndAccountInfo.allOf[0]"
           - "$.components.schemas.PaymentSparkWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentLightningInvoiceInfo.allOf[0]"
           - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"

@@ -1,0 +1,8 @@
+type: object
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: Reference to an internal account ID
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123

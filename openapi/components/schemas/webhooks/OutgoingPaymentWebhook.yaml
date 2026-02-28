@@ -2,11 +2,18 @@ allOf:
   - $ref: ./BaseWebhook.yaml
   - type: object
     required:
-      - transaction
+      - data
     properties:
-      transaction:
+      data:
         $ref: ../transactions/OutgoingTransaction.yaml
       type:
-        $ref: ./WebhookType.yaml
-        description: Type of webhook event
-        example: OUTGOING_PAYMENT
+        type: string
+        enum:
+          - OUTGOING_PAYMENT.PENDING
+          - OUTGOING_PAYMENT.PROCESSING
+          - OUTGOING_PAYMENT.COMPLETED
+          - OUTGOING_PAYMENT.FAILED
+          - OUTGOING_PAYMENT.EXPIRED
+          - OUTGOING_PAYMENT.REFUND_PENDING
+          - OUTGOING_PAYMENT.REFUND_COMPLETED
+          - OUTGOING_PAYMENT.REFUND_FAILED
