@@ -18,7 +18,7 @@ interface CurrencyPickerProps {
   excludeCode?: string;
 }
 
-const POPULAR_CODES = ['USD', 'BTC', 'USDC', 'EUR', 'GBP', 'MXN', 'NGN'];
+const POPULAR_CODES = ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC'];
 
 function getIconSrc(type: 'fiat' | 'crypto', code: string, countryCode?: string): string {
   if (type === 'fiat' && countryCode) {
@@ -133,16 +133,18 @@ function buildItems(
 ): CommandGroup[] {
   const fiatItems = currencies
     .filter((c) => c.code !== excludeCode)
-    .map((c) => buildFiatItem(c, onSelect));
+    .map((c) => buildFiatItem(c, onSelect))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   const cryptoItems = cryptoAssets
     .filter((a) => a.symbol !== excludeCode)
-    .map((a) => buildCryptoItem(a, onSelect));
+    .map((a) => buildCryptoItem(a, onSelect))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   const allItems = [...fiatItems, ...cryptoItems];
-  const popularItems = allItems.filter((item) =>
-    POPULAR_CODES.includes(item.id),
-  );
+  const popularItems = POPULAR_CODES
+    .map((code) => allItems.find((item) => item.id === code))
+    .filter((item): item is CommandItem => item !== undefined);
 
   const groups: CommandGroup[] = [
     { label: 'Popular', items: popularItems },
