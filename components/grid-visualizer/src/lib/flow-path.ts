@@ -48,6 +48,11 @@ function colorForCurrency(code: string, type: 'fiat' | 'crypto'): ActionColor {
   return 'btc';
 }
 
+function getRailLabel(sel: CurrencySelection): string {
+  if (sel.type === 'crypto' && sel.network) return sel.network;
+  return sel.accountLabel;
+}
+
 function getEndpointLabel(sel: CurrencySelection): string {
   if (sel.isInternal) {
     return `Grid ${sel.code} Account`;
@@ -55,7 +60,7 @@ function getEndpointLabel(sel: CurrencySelection): string {
   if (sel.type === 'fiat') {
     return `${getCountryName(sel.countryCode)} Bank Account`;
   }
-  return `${sel.name} Wallet`;
+  return sel.network ? `${sel.network} Wallet` : `${sel.name} Wallet`;
 }
 
 function getEndpointSublabel(sel: CurrencySelection): string {
@@ -230,11 +235,17 @@ export function buildFlowPath(
     let text: string;
 
     if (curr.type === 'endpoint' && !curr.isInternal && next.type === 'switch') {
-      // External source → switch: "Funds in via {rail}"
-      text = `Funds in via ${source.accountLabel}`;
+      const srcFiatData = source.type === 'fiat' ? currencies.find((c) => c.code === source.code) : null;
+      const srcRail = srcFiatData
+        ? (srcFiatData.instantRails[0] ?? srcFiatData.allRails[0] ?? source.accountLabel)
+        : (source.network ?? source.accountLabel);
+      text = `Funds in via ${srcRail}`;
     } else if (curr.type === 'switch' && next.type === 'endpoint' && !next.isInternal) {
-      // Switch → external dest: "Funds out via {rail}"
-      text = `Funds out via ${destination.accountLabel}`;
+      const dstFiatData = destination.type === 'fiat' ? currencies.find((c) => c.code === destination.code) : null;
+      const dstRail = dstFiatData
+        ? (dstFiatData.instantRails[0] ?? dstFiatData.allRails[0] ?? destination.accountLabel)
+        : (destination.network ?? destination.accountLabel);
+      text = `Funds out via ${dstRail}`;
     } else if (curr.type === 'switch' && next.type === 'switch') {
       // Switch → switch: Lightning bridge (always real-time)
       text = 'Real-time via Lightning Network';

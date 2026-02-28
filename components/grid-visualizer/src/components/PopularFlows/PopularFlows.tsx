@@ -21,7 +21,6 @@ export function PopularFlows({ onSelect }: PopularFlowsProps) {
         onClick={() => setExpanded(!expanded)}
         type="button"
       >
-        <span className={styles.line} />
         <span className={styles.content}>
           <span className={styles.text}>Or explore popular flows</span>
           <span className={clsx(styles.chevron, expanded && styles.chevronUp)}>

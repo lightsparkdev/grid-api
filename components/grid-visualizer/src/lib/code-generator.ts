@@ -133,7 +133,9 @@ export function generateSteps(
     });
   }
 
-  if (sourceIsExternal && canUseTransferIn) {
+  // Only register source for fiat pull-based (External mode).
+  // JIT and crypto sources don't need registration — Grid provides a deposit address.
+  if (sourceIsExternal && !jitFunding && source.type === 'fiat') {
     const spec = accountTypeSpecs[source.accountType];
     const accountInfo = buildAccountInfoBody(source);
     const extAccountBody: Record<string, unknown> = {
@@ -183,7 +185,7 @@ export function generateSteps(
         destination: {
           accountId: 'ExternalAccount:<external_account_id>',
         },
-        amount: 12550,
+        amount: 100,
       },
       note: `Amount is in the smallest unit of ${source.code} (e.g., cents for USD).`,
     });
@@ -207,7 +209,7 @@ export function generateSteps(
         destination: {
           accountId: 'InternalAccount:<internal_account_id>',
         },
-        amount: 12550,
+        amount: 100,
       },
       note: `Transfer-in pulls funds from the external source. Only available for pull-capable payment methods (e.g., ACH Pull). Amount is in smallest currency unit.`,
     });
@@ -272,7 +274,7 @@ export function generateSteps(
       source: quoteSource,
       destination: quoteDest,
       lockedCurrencySide: 'SENDING',
-      lockedCurrencyAmount: 100000,
+      lockedCurrencyAmount: 100,
     };
 
     const quoteDesc = isSameCurrency

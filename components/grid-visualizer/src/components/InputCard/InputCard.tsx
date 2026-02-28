@@ -8,19 +8,27 @@ import { currencies } from '@/data/currencies';
 import { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusLarge';
 import { IconChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronBottom';
 import { IconArrowsRepeat } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowsRepeat';
-import { IconChevronDownSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronDownSmall';
+import { IconChevronRightSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRightSmall';
 import { motion, AnimatePresence } from 'motion/react';
-import { TextMorph } from 'torph/react';
 import styles from './InputCard.module.scss';
 import clsx from 'clsx';
+
+const REGION_SHORT: Record<string, string> = {
+  USD: 'US', EUR: 'EU', GBP: 'UK', BRL: 'BR', MXN: 'MX', INR: 'IN',
+  NGN: 'NG', CAD: 'CA', PHP: 'PH', SGD: 'SG', XOF: 'West Africa',
+  XAF: 'Central Africa', GHS: 'GH', KES: 'KE', ZAR: 'ZA', BWP: 'BW',
+  TZS: 'TZ', UGX: 'UG', MWK: 'MW', ZMW: 'ZM', CNY: 'CN', HKD: 'HK',
+  IDR: 'ID', KRW: 'KR', MYR: 'MY', THB: 'TH', VND: 'VN', LKR: 'LK',
+  CRC: 'CR', CDF: 'CD',
+};
 
 interface InputCardProps {
   label: 'Source' | 'Destination';
   selection: CurrencySelection | null;
   region?: string | null;
   onCardClick: () => void;
-  onToggleInternal: () => void;
   onNetworkChange?: (acct: CryptoAccountType) => void;
+  onRegionClick?: () => void;
   autoFocus?: boolean;
 }
 
@@ -75,29 +83,6 @@ function getIconSrc(sel: CurrencySelection): string {
   return `/crypto/${sel.code.toLowerCase()}.svg`;
 }
 
-function getSubtitle(sel: CurrencySelection, region?: string | null): string {
-  if (sel.isInternal) {
-    return `Grid ${sel.code} account`;
-  }
-  if (sel.type === 'crypto') {
-    if (region) {
-      const regionName = REGION_SHORT[region] ?? region;
-      return `${sel.accountLabel} · ${regionName}`;
-    }
-    return sel.accountLabel;
-  }
-  return `${sel.code} Bank account`;
-}
-
-const REGION_SHORT: Record<string, string> = {
-  USD: 'US', EUR: 'EU', GBP: 'UK', BRL: 'BR', MXN: 'MX', INR: 'IN',
-  NGN: 'NG', CAD: 'CA', PHP: 'PH', SGD: 'SG', XOF: 'West Africa',
-  XAF: 'Central Africa', GHS: 'GH', KES: 'KE', ZAR: 'ZA', BWP: 'BW',
-  TZS: 'TZ', UGX: 'UG', MWK: 'MW', ZMW: 'ZM', CNY: 'CN', HKD: 'HK',
-  IDR: 'ID', KRW: 'KR', MYR: 'MY', THB: 'TH', VND: 'VN', LKR: 'LK',
-  CRC: 'CR', CDF: 'CD',
-};
-
 function getNetworkOptions(sel: CurrencySelection): CryptoAccountType[] | null {
   if (sel.type !== 'crypto') return null;
   const asset = cryptoAssets.find((a) => a.symbol === sel.code);
@@ -112,82 +97,11 @@ function getFiatRailLabel(sel: CurrencySelection): string | null {
   return fiat.instantRails[0] ?? fiat.allRails[0] ?? null;
 }
 
-const TOOLTIP_TEXT = {
-  external: 'External account outside Grid',
-  internal: 'Grid-managed balance account',
-};
-
-function AccountTab({
-  label,
-  isActive,
-  onClick,
-  tooltipText,
-}: {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-  tooltipText: string;
-}) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
-  const ref = useRef<HTMLButtonElement>(null);
-
-  const showTooltip = useCallback(() => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    setTooltip({ x: rect.left + rect.width / 2, y: rect.top });
-  }, []);
-
-  const hideTooltip = useCallback(() => setTooltip(null), []);
-
-  return (
-    <>
-      <button
-        ref={ref}
-        className={isActive ? styles.tabActive : styles.tabInactive}
-        onClick={(e) => {
-          e.stopPropagation();
-          setTooltip(null);
-          if (!isActive) onClick();
-        }}
-        onMouseEnter={showTooltip}
-        onMouseLeave={hideTooltip}
-        type="button"
-        tabIndex={-1}
-      >
-        <motion.span
-          className={isActive ? styles.tabLabelActive : styles.tabLabelInactive}
-          animate={{
-            color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
-          }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-        >
-          {label}
-        </motion.span>
-      </button>
-
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {tooltip && (
-            <div
-              className={styles.tooltipAnchor}
-              style={{ left: tooltip.x, top: tooltip.y }}
-            >
-              <motion.div
-                className={styles.tooltip}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-              >
-                {tooltipText}
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body,
-      )}
-    </>
-  );
+function getFiatRailOptions(sel: CurrencySelection): string[] | null {
+  if (sel.type !== 'fiat') return null;
+  const fiat = currencies.find((c) => c.code === sel.code);
+  if (!fiat || fiat.allRails.length <= 1) return null;
+  return fiat.allRails;
 }
 
 function NetworkDropdown({
@@ -216,23 +130,27 @@ function NetworkDropdown({
   }, [open]);
 
   return (
-    <div className={styles.railBadgeWrapper}>
+    <>
       <button
         ref={btnRef}
-        className={styles.railBadge}
+        className={styles.propertyRow}
         onClick={toggle}
         type="button"
         tabIndex={-1}
       >
-        <span className={styles.railBadgeLabel}>{selection.network}</span>
-        <IconChevronDownSmall size={12} />
+        <span className={styles.propertyLabel}>Network</span>
+        <span className={styles.propertyValue}>
+          <span>{selection.network}</span>
+          <span className={styles.propertyChevron}>
+            <IconChevronRightSmall size={16} />
+          </span>
+        </span>
       </button>
 
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {open && (
             <>
-              {/* Invisible backdrop to close on outside click */}
               <div
                 className={styles.networkMenuBackdrop}
                 onClick={() => setOpen(false)}
@@ -274,7 +192,95 @@ function NetworkDropdown({
         </AnimatePresence>,
         document.body,
       )}
-    </div>
+    </>
+  );
+}
+
+function RailDropdown({
+  selection,
+  options,
+}: {
+  selection: CurrencySelection;
+  options: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [selectedRail, setSelectedRail] = useState(() => {
+    const fiat = currencies.find((c) => c.code === selection.code);
+    return fiat?.instantRails[0] ?? fiat?.allRails[0] ?? options[0];
+  });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+
+  const toggle = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOpen((prev) => !prev);
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        className={styles.propertyRow}
+        onClick={toggle}
+        type="button"
+        tabIndex={-1}
+      >
+        <span className={styles.propertyLabel}>Rail</span>
+        <span className={styles.propertyValue}>
+          <span>{selectedRail}</span>
+          <span className={styles.propertyChevron}>
+            <IconChevronRightSmall size={16} />
+          </span>
+        </span>
+      </button>
+
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {open && (
+            <>
+              <div
+                className={styles.networkMenuBackdrop}
+                onClick={() => setOpen(false)}
+              />
+              <motion.div
+                className={styles.networkMenuPortal}
+                style={{ top: menuPos.top, right: menuPos.right }}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.12, ease: 'easeOut' }}
+              >
+                {options.map((rail) => (
+                  <button
+                    key={rail}
+                    className={clsx(
+                      styles.networkMenuItem,
+                      rail === selectedRail && styles.networkMenuItemActive,
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRail(rail);
+                      setOpen(false);
+                    }}
+                    type="button"
+                  >
+                    <span>{rail}</span>
+                  </button>
+                ))}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+    </>
   );
 }
 
@@ -283,12 +289,14 @@ export function InputCard({
   selection,
   region,
   onCardClick,
-  onToggleInternal,
   onNetworkChange,
+  onRegionClick,
   autoFocus,
 }: InputCardProps) {
   const isEmpty = !selection;
   const networkOptions = selection ? getNetworkOptions(selection) : null;
+  const fiatRail = selection ? getFiatRailLabel(selection) : null;
+  const fiatRailOptions = selection ? getFiatRailOptions(selection) : null;
 
   return (
     <motion.div
@@ -297,6 +305,7 @@ export function InputCard({
       transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <div className={clsx(styles.card, !isEmpty && styles.cardFilled)}>
+        {/* Currency header — clickable to open picker */}
         <button
           className={styles.cardButton}
           onClick={onCardClick}
@@ -323,7 +332,7 @@ export function InputCard({
               </motion.div>
             ) : (
               <motion.div
-                key={`${selection.code}-${selection.isInternal}`}
+                key={selection.code}
                 className={styles.container}
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -340,63 +349,75 @@ export function InputCard({
                 </div>
                 <div className={styles.filledContent}>
                   <span className={styles.currencyName}>{selection.name}</span>
-                  <span className={styles.currencySubtitle}>
-                    <TextMorph>{getSubtitle(selection, region)}</TextMorph>
-                  </span>
+                  <span className={styles.currencyCode}>{selection.code}</span>
                 </div>
-                {/* Network dropdown — inside the flex row, vertically centered with text */}
-                {networkOptions && onNetworkChange && (
-                  <NetworkDropdown
-                    selection={selection}
-                    options={networkOptions}
-                    onSelect={onNetworkChange}
-                  />
-                )}
-                {/* Static network badge for single-network crypto */}
-                {selection.type === 'crypto' && selection.network && !networkOptions && (
-                  <div className={styles.railBadgeStatic}>
-                    <span className={styles.railBadgeLabel}>{selection.network}</span>
-                  </div>
-                )}
-                {/* Static rail badge for fiat (external only) */}
-                {selection.type === 'fiat' && !selection.isInternal && (() => {
-                  const rail = getFiatRailLabel(selection);
-                  return rail ? (
-                    <div className={styles.railBadgeStatic}>
-                      <span className={styles.railBadgeLabel}>{rail}</span>
-                    </div>
-                  ) : null;
-                })()}
               </motion.div>
             )}
           </AnimatePresence>
         </button>
 
-        {/* Bottom tabs */}
+        {/* Property rows — below the currency header */}
         <AnimatePresence>
           {!isEmpty && (
             <motion.div
-              className={styles.tabs}
+              className={styles.propertyRows}
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 40, opacity: 1 }}
+              animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
             >
-              <div className={styles.tabList}>
-                <AccountTab
-                  label="External"
-                  isActive={!selection.isInternal}
-                  onClick={onToggleInternal}
-                  tooltipText={TOOLTIP_TEXT.external}
+              {/* Fiat: Rail row — dropdown when multiple rails available */}
+              {selection.type === 'fiat' && fiatRailOptions ? (
+                <RailDropdown
+                  key={selection.code}
+                  selection={selection}
+                  options={fiatRailOptions}
                 />
-                <div className={styles.tabDivider} />
-                <AccountTab
-                  label="Internal"
-                  isActive={selection.isInternal}
-                  onClick={onToggleInternal}
-                  tooltipText={TOOLTIP_TEXT.internal}
+              ) : selection.type === 'fiat' && fiatRail ? (
+                <div className={clsx(styles.propertyRow, styles.propertyRowStatic)}>
+                  <span className={styles.propertyLabel}>Rail</span>
+                  <span className={styles.propertyValue}>
+                    <span>{fiatRail}</span>
+                  </span>
+                </div>
+              ) : null}
+
+              {/* Crypto: Network row */}
+              {selection.type === 'crypto' && networkOptions && onNetworkChange ? (
+                <NetworkDropdown
+                  selection={selection}
+                  options={networkOptions}
+                  onSelect={onNetworkChange}
                 />
-              </div>
+              ) : selection.type === 'crypto' && selection.network ? (
+                <div className={clsx(styles.propertyRow, styles.propertyRowStatic)}>
+                  <span className={styles.propertyLabel}>Network</span>
+                  <span className={styles.propertyValue}>
+                    <span>{selection.network}</span>
+                  </span>
+                </div>
+              ) : null}
+
+              {/* Crypto source: Region row */}
+              {selection.type === 'crypto' && region !== undefined && region !== null && (
+                <button
+                  className={styles.propertyRow}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRegionClick?.();
+                  }}
+                  type="button"
+                  tabIndex={-1}
+                >
+                  <span className={styles.propertyLabel}>Region</span>
+                  <span className={styles.propertyValue}>
+                    <span>{REGION_SHORT[region] ?? region}</span>
+                    <span className={styles.propertyChevron}>
+                      <IconChevronRightSmall size={16} />
+                    </span>
+                  </span>
+                </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

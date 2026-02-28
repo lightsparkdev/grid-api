@@ -4,6 +4,7 @@ import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { Command } from '@lightsparkdev/origin';
 import type { CommandItem, CommandGroup } from '@lightsparkdev/origin';
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
+import { useCommandNav } from '@/hooks/useCommandNav';
 import { currencies } from '@/data/currencies';
 import { cryptoAssets } from '@/data/crypto';
 import type { CurrencySelection } from '@/lib/code-generator';
@@ -183,6 +184,8 @@ export function CurrencyPicker({
       input?.blur();
     });
   }, [open]);
+
+  useCommandNav(open);
 
   const renderItem = useMemo(
     () => (item: CommandItem) => {

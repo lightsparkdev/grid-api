@@ -21,7 +21,7 @@ export const cryptoAssets: CryptoAsset[] = [
     symbol: 'BTC',
     name: 'Bitcoin',
     accountTypes: [
-      { type: 'SPARK_WALLET', label: 'Spark Wallet', network: 'Spark' },
+      { type: 'SPARK_WALLET', label: 'Wallet', network: 'Spark' },
       { type: 'LIGHTNING', label: 'Lightning', network: 'Lightning' },
     ],
     examplePerson: { fullName: 'Satoshi Tanaka', nationality: 'JP' },
@@ -30,9 +30,9 @@ export const cryptoAssets: CryptoAsset[] = [
     symbol: 'USDC',
     name: 'USD Coin',
     accountTypes: [
-      { type: 'SOLANA_WALLET', label: 'Solana Wallet', network: 'Solana' },
-      { type: 'POLYGON_WALLET', label: 'Polygon Wallet', network: 'Polygon' },
-      { type: 'BASE_WALLET', label: 'Base Wallet', network: 'Base' },
+      { type: 'SOLANA_WALLET', label: 'Wallet', network: 'Solana' },
+      { type: 'POLYGON_WALLET', label: 'Wallet', network: 'Polygon' },
+      { type: 'BASE_WALLET', label: 'Wallet', network: 'Base' },
     ],
     examplePerson: { fullName: 'Alex Rivera', nationality: 'US' },
   },
@@ -40,7 +40,7 @@ export const cryptoAssets: CryptoAsset[] = [
     symbol: 'USDT',
     name: 'Tether',
     accountTypes: [
-      { type: 'TRON_WALLET', label: 'Tron Wallet', network: 'Tron' },
+      { type: 'TRON_WALLET', label: 'Wallet', network: 'Tron' },
     ],
     examplePerson: { fullName: 'Sam Chen', nationality: 'US' },
   },
@@ -48,7 +48,7 @@ export const cryptoAssets: CryptoAsset[] = [
     symbol: 'USDB',
     name: 'Bitcoin USD',
     accountTypes: [
-      { type: 'SPARK_WALLET', label: 'Spark Wallet', network: 'Spark' },
+      { type: 'SPARK_WALLET', label: 'Wallet', network: 'Spark' },
     ],
     examplePerson: { fullName: 'Jordan Lee', nationality: 'US' },
   },

@@ -5,8 +5,8 @@ import { useTheme } from '@/hooks/useTheme';
 import { usePanelCollapse } from '@/hooks/usePanelCollapse';
 import { Header } from '@/components/Header/Header';
 import { InputCard, CardChevron } from '@/components/InputCard/InputCard';
+import { FundingModelSection } from '@/components/FundingModelSection/FundingModelSection';
 import { RegionPicker } from '@/components/RegionPicker/RegionPicker';
-import { FundingToggle } from '@/components/FundingToggle/FundingToggle';
 import { PopularFlows } from '@/components/PopularFlows/PopularFlows';
 import { CurrencyPicker } from '@/components/CurrencyPicker/CurrencyPicker';
 import { EmptyCanvas } from '@/components/EmptyCanvas/EmptyCanvas';
@@ -17,8 +17,8 @@ import { Agentation } from 'agentation';
 
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRight';
-import { currencies } from '@/data/currencies';
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import clsx from 'clsx';
 import styles from './page.module.scss';
 
@@ -31,8 +31,7 @@ export default function Home() {
     setReceive,
     setSendNetwork,
     setReceiveNetwork,
-    toggleSendInternal,
-    toggleReceiveInternal,
+    setSourceFundingMode,
     swap,
     setSourceRegion,
     setDestRegion,
@@ -41,12 +40,10 @@ export default function Home() {
     closePicker,
   } = useFlowBuilder();
 
-  // Region picker state — opens after crypto source is selected.
-  // We hold the pending selection until the user picks a region, then commit both together.
+  // Region picker state — opened from the inline Region row on crypto cards
   const [regionTarget, setRegionTarget] = useState<'send' | 'receive' | null>(null);
-  const [pendingCryptoSend, setPendingCryptoSend] = useState<ReturnType<typeof lookupCurrency>>(null);
-  const regionCryptoCode = pendingCryptoSend?.code
-    ?? (regionTarget === 'send' ? state.send?.code : undefined);
+  const regionCryptoCode = regionTarget === 'send' ? state.send?.code : undefined;
+
   const [showAgentation, setShowAgentation] = useState(false);
   const [isEmbed, setIsEmbed] = useState(false);
   useEffect(() => {
@@ -90,7 +87,6 @@ export default function Home() {
 
   const { theme, setTheme } = useTheme();
 
-  // Theme change handler: also posts to parent when embedded
   const handleThemeChange = useCallback((t: 'light' | 'dark') => {
     setTheme(t);
     if (isEmbed) {
@@ -98,7 +94,6 @@ export default function Home() {
     }
   }, [setTheme, isEmbed]);
 
-  // Listen for theme sync from parent frame when embedded
   useEffect(() => {
     if (!isEmbed) return;
     const handler = (e: MessageEvent) => {
@@ -107,7 +102,6 @@ export default function Home() {
       }
     };
     window.addEventListener('message', handler);
-    // Tell parent we're ready to receive theme
     window.parent.postMessage({ type: 'theme-request' }, '*');
     return () => window.removeEventListener('message', handler);
   }, [isEmbed, setTheme]);
@@ -122,38 +116,13 @@ export default function Home() {
       : (isDark ? style.getPropertyValue('--color-gray-950') : style.getPropertyValue('--surface-primary'));
     const trimmed = color.trim();
     if (!trimmed) return;
-    // Update both media-specific meta tags so the correct one applies
     document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(meta => {
       meta.content = trimmed;
     });
   }, [mobileView, theme]);
+
   const { flowExpanded, codeExpanded, toggleFlow, toggleCode } =
     usePanelCollapse();
-
-  const [overrideFunding, setOverrideFunding] = useState<'jit' | 'pre-funded' | null>(null);
-
-  const effectiveFundingModel = overrideFunding ?? fundingModel;
-
-  const handleFundingToggle = useCallback(() => {
-    setOverrideFunding((prev) => {
-      if (prev === null) {
-        // First toggle: flip from inferred value
-        return fundingModel === 'jit' ? 'pre-funded' : 'jit';
-      }
-      return prev === 'jit' ? 'pre-funded' : 'jit';
-    });
-  }, [fundingModel]);
-
-  // Reset funding override when source currency changes (not on internal toggle — it hides anyway)
-  useEffect(() => {
-    setOverrideFunding(null);
-  }, [state.send?.code]);
-
-  const sourceInstantRails = useMemo(() => {
-    if (!state.send || state.send.type !== 'fiat') return [];
-    const fiat = currencies.find((c) => c.code === state.send!.code);
-    return fiat?.instantRails ?? [];
-  }, [state.send]);
 
   return (
     <main className={styles.layout} data-mobile-view={mobileView}>
@@ -182,18 +151,29 @@ export default function Home() {
         )}
 
         <div className={styles.sidebarContent}>
-          <div className={styles.sidebarContentInner}>
-            <Header />
+            <div className={styles.sidebarContentInner} style={isComplete ? { gap: 'var(--spacing-sm)' } : undefined}>
+            <AnimatePresence>
+              {!state.send && !state.receive && (
+                <motion.div
+                  initial={{ height: 'auto', opacity: 1, marginBottom: 'var(--spacing-2xl)' }}
+                  exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <Header />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', isolation: 'isolate' }}>
                 <InputCard
                   label="Source"
                   selection={state.send}
                   region={state.sourceRegion}
                   onCardClick={() => openPicker('send')}
-                  onToggleInternal={toggleSendInternal}
                   onNetworkChange={setSendNetwork}
+                  onRegionClick={() => setRegionTarget('send')}
                 />
                 <div style={{ position: 'relative', height: '8px' }}>
                   <CardChevron onSwap={state.send || state.receive ? swap : undefined} />
@@ -202,18 +182,15 @@ export default function Home() {
                   label="Destination"
                   selection={state.receive}
                   onCardClick={() => openPicker('receive')}
-                  onToggleInternal={toggleReceiveInternal}
                   onNetworkChange={setReceiveNetwork}
                 />
               </div>
 
-              {state.send && (
-                <FundingToggle
-                  fundingModel={effectiveFundingModel}
-                  jitEligible={state.send.jitEligible}
-                  isInternal={state.send.isInternal}
-                  onToggle={handleFundingToggle}
-                  instantRails={sourceInstantRails}
+              {state.send && state.receive && (
+                <FundingModelSection
+                  source={state.send}
+                  selectedMode={state.sourceFundingMode}
+                  onModeChange={setSourceFundingMode}
                 />
               )}
             </div>
@@ -239,12 +216,14 @@ export default function Home() {
               </button>
             )}
 
-            <PopularFlows onSelect={(sendCode, receiveCode) => {
-              const s = lookupCurrency(sendCode);
-              const r = lookupCurrency(receiveCode);
-              if (s) setSend(s);
-              if (r) setReceive(r);
-            }} />
+            <div style={isComplete ? undefined : { marginTop: 'var(--spacing-2xl)' }}>
+              <PopularFlows onSelect={(sendCode, receiveCode) => {
+                const s = lookupCurrency(sendCode);
+                const r = lookupCurrency(receiveCode);
+                if (s) setSend(s);
+                if (r) setReceive(r);
+              }} />
+            </div>
           </div>
         </div>
 
@@ -270,7 +249,7 @@ export default function Home() {
             <CodePanel
               send={state.send!}
               receive={state.receive!}
-              fundingModel={effectiveFundingModel}
+              fundingModel={fundingModel}
               audience={state.audience}
               onAudienceChange={setAudience}
               expanded={codeExpanded}
@@ -287,13 +266,7 @@ export default function Home() {
         onSelect={(sel) => {
           const target = state.pickerTarget;
           if (target === 'send') {
-            if (sel.type === 'crypto') {
-              // Don't commit yet — need region first
-              setPendingCryptoSend(sel);
-              setRegionTarget('send');
-            } else {
-              setSend(sel);
-            }
+            setSend(sel);
           } else {
             setReceive(sel);
           }
@@ -307,22 +280,17 @@ export default function Home() {
         }
       />
 
-      {/* Region picker modal — opens after crypto source is selected */}
+      {/* Region picker modal — opens from crypto card Region row */}
       <RegionPicker
         open={regionTarget !== null}
         cryptoCode={regionCryptoCode}
-        onClose={() => {
-          // User dismissed without picking — discard pending selection
-          setPendingCryptoSend(null);
-          setRegionTarget(null);
-        }}
+        onClose={() => setRegionTarget(null)}
         onSelect={(regionCode) => {
-          // Commit the pending crypto selection + region together
-          if (pendingCryptoSend) {
-            setSend(pendingCryptoSend);
+          if (regionTarget === 'send') {
+            setSourceRegion(regionCode);
+          } else if (regionTarget === 'receive') {
+            setDestRegion(regionCode);
           }
-          setSourceRegion(regionCode);
-          setPendingCryptoSend(null);
           setRegionTarget(null);
         }}
       />
@@ -338,7 +306,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Mobile results view: floating pill — hides on scroll down, shows on scroll up */}
+      {/* Mobile results view: floating pill */}
       {isComplete && mobileView === 'results' && (
         <button
           className={clsx(

@@ -1,0 +1,120 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  overflow: hidden;
+}
+
+// Divider — "Funding model" text + horizontal line
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--spacing-xs) 0;
+}
+
+.dividerLabel {
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 0;
+  border-top: var(--stroke-xs) solid var(--border-tertiary);
+}
+
+// Selector group — stacked options with shared border
+.selectorGroup {
+  corner-shape: squircle;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+}
+
+// Individual option
+.option {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--spacing-md);
+  min-width: 200px;
+  background: var(--surface-base);
+  cursor: pointer;
+  transition: background 100ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+
+  &:not(:last-child) {
+    border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+  }
+
+  &:hover {
+    background: var(--color-alpha-black-04);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-04);
+    }
+  }
+}
+
+.optionSelected {
+  // No extra background — selected state shown by checkmark
+}
+
+.optionIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--icon-tertiary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.optionTitle {
+  @include label-sm;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.optionDesc {
+  @include body-sm;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.optionCheck {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--status-success);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}

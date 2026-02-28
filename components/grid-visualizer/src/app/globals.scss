@@ -7,11 +7,13 @@
 :root {
   --action-bg: rgba(17, 169, 103, 0.08);
   --action-text: #118453;
+  --surface-hover: var(--color-alpha-black-04);
 }
 
 [data-theme='dark'] {
   --action-bg: rgba(17, 169, 103, 0.15);
   --action-text: #11a967;
+  --surface-hover: var(--color-alpha-white-06);
 }
 
 * {
@@ -59,6 +61,26 @@ body {
       background: var(--color-gray-975);
     }
   }
+}
+
+// Command modal height
+[role='dialog'] {
+  max-height: min(588px, 70vh) !important;
+}
+
+// base-ui Autocomplete: seamless mouse ↔ keyboard highlight handoff
+// Mouse mode (default): hover wins, keyboard highlight suppressed on non-hovered items
+[role='dialog']:not([data-keyboard-nav]) [role='option']:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+[role='dialog']:not([data-keyboard-nav]) [role='listbox']:hover [role='option'][data-highlighted]:not(:hover) {
+  background-color: transparent !important;
+}
+
+// Keyboard mode: data-highlighted wins, hover suppressed on non-highlighted items
+[role='dialog'][data-keyboard-nav] [role='option']:hover:not([data-highlighted]) {
+  background-color: transparent !important;
 }
 
 // Mobile: prevent iOS zoom on input focus (requires font-size >= 16px)
