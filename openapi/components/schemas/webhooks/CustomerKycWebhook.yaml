@@ -1,0 +1,16 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../customers/IndividualCustomer.yaml
+      type:
+        type: string
+        enum:
+          - CUSTOMER.KYC_APPROVED
+          - CUSTOMER.KYC_REJECTED
+          - CUSTOMER.KYC_SUBMITTED
+          - CUSTOMER.KYC_MANUALLY_APPROVED
+          - CUSTOMER.KYC_MANUALLY_REJECTED

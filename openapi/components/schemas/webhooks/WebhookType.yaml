@@ -1,12 +1,22 @@
 type: string
 enum:
-  - INCOMING_PAYMENT
-  - OUTGOING_PAYMENT
+  - OUTGOING_PAYMENT.COMPLETED
+  - OUTGOING_PAYMENT.FAILED
+  - OUTGOING_PAYMENT.REFUNDED
+  - INCOMING_PAYMENT.PENDING
+  - INCOMING_PAYMENT.COMPLETED
+  - INCOMING_PAYMENT.FAILED
+  - CUSTOMER.KYC_APPROVED
+  - CUSTOMER.KYC_REJECTED
+  - CUSTOMER.KYC_SUBMITTED
+  - CUSTOMER.KYC_MANUALLY_APPROVED
+  - CUSTOMER.KYC_MANUALLY_REJECTED
+  - ACCOUNT.BALANCE_UPDATED
+  - INVITATION.CLAIMED
+  - BULK_UPLOAD.COMPLETED
+  - BULK_UPLOAD.FAILED
   - TEST
-  - BULK_UPLOAD
-  - INVITATION_CLAIMED
-  - KYC_STATUS
-  - ACCOUNT_STATUS
 description: >-
-  Type of webhook event, used by the receiver to identify which webhook is being
-  received
+  Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot
+  identifies the resource, the part after identifies the event. This lets
+  consumers route purely on type without inspecting data.status.

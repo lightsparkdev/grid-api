@@ -2148,13 +2148,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /webhooks/test:
+  /sandbox/webhooks/test:
     post:
       summary: Send a test webhook
       description: Send a test webhook to the configured endpoint
       operationId: sendTestWebhook
       tags:
-        - Webhooks
+        - Sandbox
       security:
         - BasicAuth: []
       responses:
@@ -3059,7 +3059,10 @@ webhooks:
               pendingPayment:
                 summary: Pending payment example requiring approval
                 value:
-                  transaction:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  type: INCOMING_PAYMENT.PENDING
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: PENDING
                     type: INCOMING
@@ -3074,24 +3077,24 @@ webhooks:
                         decimals: 2
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
-                    reconciliationInstructions:
-                      reference: REF-123456789
                     counterpartyInformation:
                       FULL_NAME: John Sender
                       BIRTH_DATE: '1985-06-15'
                       NATIONALITY: US
-                  requestedReceiverCustomerInfoFields:
-                    - name: NATIONALITY
-                      mandatory: true
-                    - name: ADDRESS
-                      mandatory: false
-                  timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-                  type: INCOMING_PAYMENT
+                    reconciliationInstructions:
+                      reference: REF-123456789
+                    requestedReceiverCustomerInfoFields:
+                      - name: NATIONALITY
+                        mandatory: true
+                      - name: ADDRESS
+                        mandatory: false
               incomingCompletedPayment:
                 summary: Completed payment notification
                 value:
-                  transaction:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  type: INCOMING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: COMPLETED
                     type: INCOMING
@@ -3111,9 +3114,6 @@ webhooks:
                     description: Payment for services
                     reconciliationInstructions:
                       reference: REF-123456789
-                  timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-                  type: INCOMING_PAYMENT
       responses:
         '200':
           description: |
@@ -3150,7 +3150,7 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/IncomingPaymentWebhookForbiddenResponse'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
@@ -3180,7 +3180,7 @@ webhooks:
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
 
-        This webhook is informational only and is sent when an outgoing payment completes successfully or fails.
+        This webhook is informational only and is sent when an outgoing payment completes successfully, fails, or is refunded.
       operationId: outgoingPaymentWebhook
       tags:
         - Webhooks
@@ -3196,7 +3196,10 @@ webhooks:
               outgoingCompletedPayment:
                 summary: Completed outgoing payment
                 value:
-                  transaction:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  type: OUTGOING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: COMPLETED
                     type: OUTGOING
@@ -3218,30 +3221,20 @@ webhooks:
                         decimals: 2
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
-                    settlementTime: '2025-08-15T14:30:00Z'
-                    createdAt: '2025-08-15T14:25:18Z'
-                    description: 'Payment for invoice #1234'
                     exchangeRate: 0.92
                     quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
-                    paymentInstructions:
-                      - accountOrWalletInfo:
-                          reference: UMA-Q12345-REF
-                          accountType: US_ACCOUNT
-                          accountNumber: 987654321
-                          routingNumber: 123456789
-                          accountCategory: CHECKING
-                          bankName: Chase Bank
-                      - accountOrWalletInfo:
-                          accountType: SOLANA_WALLET
-                          assetType: USDC
-                          address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
-                  timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-                  type: OUTGOING_PAYMENT
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: 'Payment for invoice #1234'
+                    paymentInstructions: []
+                    rateDetails: {}
               failedPayment:
                 summary: Failed outgoing payment
                 value:
-                  transaction:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  type: OUTGOING_PAYMENT.FAILED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: FAILED
                     type: OUTGOING
@@ -3258,21 +3251,7 @@ webhooks:
                     platformCustomerId: 18d3e5f7b4a9c2
                     createdAt: '2025-08-15T14:25:18Z'
                     quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
-                    paymentInstructions:
-                      - accountOrWalletInfo:
-                          reference: UMA-Q12345-REF
-                          accountType: US_ACCOUNT
-                          accountNumber: 987654321
-                          routingNumber: 123456789
-                          accountCategory: CHECKING
-                          bankName: Chase Bank
-                      - accountOrWalletInfo:
-                          accountType: SOLANA_WALLET
-                          assetType: USDC
-                          address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
-                  timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-                  type: OUTGOING_PAYMENT
+                    failureReason: INSUFFICIENT_FUNDS
       responses:
         '200':
           description: Webhook received successfully
@@ -3289,7 +3268,7 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
@@ -3327,9 +3306,10 @@ webhooks:
               testWebhook:
                 summary: Test webhook example
                 value:
-                  timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000001
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000001
                   type: TEST
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data: {}
       responses:
         '200':
           description: Webhook received successfully. This confirms your webhook endpoint is properly configured.
@@ -3346,7 +3326,7 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
@@ -3379,12 +3359,15 @@ webhooks:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkUploadWebhookRequest'
+              $ref: '#/components/schemas/BulkUploadWebhook'
             examples:
               completedUpload:
                 summary: Successful bulk upload completion
                 value:
-                  bulkCustomerImportJob:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: BULK_UPLOAD.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
                     jobId: Job:019542f5-b3e7-1d02-0000-000000000006
                     status: COMPLETED
                     progress:
@@ -3393,13 +3376,13 @@ webhooks:
                       successful: 5000
                       failed: 0
                     errors: []
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000008
-                  type: BULK_UPLOAD
-                  timestamp: '2025-08-15T14:32:00Z'
               failedUpload:
                 summary: Failed bulk upload
                 value:
-                  bulkCustomerImportJob:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: BULK_UPLOAD.FAILED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
                     jobId: Job:019542f5-b3e7-1d02-0000-000000000006
                     status: FAILED
                     progress:
@@ -3415,9 +3398,6 @@ webhooks:
                           details:
                             reason: missing_required_column
                             column: umaAddress
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000008
-                  type: BULK_UPLOAD
-                  timestamp: '2025-08-15T14:32:00Z'
       responses:
         '200':
           description: Webhook received successfully
@@ -3434,7 +3414,7 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
@@ -3481,7 +3461,10 @@ webhooks:
               claimedInvitation:
                 summary: Invitation claimed notification
                 value:
-                  invitation:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: INVITATION.CLAIMED
+                  timestamp: '2025-09-01T15:45:00Z'
+                  data:
                     code: 019542f5
                     createdAt: '2025-09-01T14:30:00Z'
                     claimedAt: '2025-09-01T15:45:00Z'
@@ -3489,9 +3472,6 @@ webhooks:
                     inviteeUma: $invitee@uma.domain
                     status: CLAIMED
                     url: https://uma.me/i/019542f5
-                  timestamp: '2025-09-01T15:45:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000008
-                  type: INVITATION_CLAIMED
       responses:
         '200':
           description: Webhook received successfully
@@ -3508,7 +3488,7 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
@@ -3552,16 +3532,51 @@ webhooks:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/KycStatusWebhook'
+              $ref: '#/components/schemas/CustomerKycWebhook'
             examples:
               kycApprovedWebhook:
                 summary: When a customer KYC has been approved
                 value:
-                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                  kycStatus: APPROVED
-                  type: KYC_STATUS
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  type: CUSTOMER.KYC_APPROVED
                   timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  data:
+                    id: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 9f84e0c2a72c4fa
+                    customerType: INDIVIDUAL
+                    umaAddress: $john.doe@uma.domain.com
+                    kycStatus: APPROVED
+                    fullName: John Michael Doe
+                    birthDate: '1990-01-15'
+                    nationality: US
+                    address:
+                      line1: 123 Main Street
+                      line2: Apt 4B
+                      city: San Francisco
+                      state: CA
+                      postalCode: '94105'
+                      country: US
+                    createdAt: '2025-07-21T17:32:28Z'
+                    updatedAt: '2025-07-21T17:32:28Z'
+                    isDeleted: false
+              kycRejectedWebhook:
+                summary: When a customer KYC has been rejected
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: CUSTOMER.KYC_REJECTED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Customer:019542f5-b3e7-1d02-0000-000000000002
+                    platformCustomerId: 4b7c1e9d3f5a8e2
+                    customerType: INDIVIDUAL
+                    umaAddress: $jane.smith@uma.domain.com
+                    kycStatus: REJECTED
+                    fullName: Jane Smith
+                    birthDate: '1988-03-22'
+                    nationality: US
+                    createdAt: '2025-07-21T17:32:28Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+                    isDeleted: false
       responses:
         '200':
           description: |
@@ -3579,16 +3594,16 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
   account-status:
     post:
-      summary: Account status notification webhook
+      summary: Account balance update webhook
       description: |
-        Webhook that is called when the balance of an account changes
+        Webhook that is called when the balance of an account changes.
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -3601,7 +3616,7 @@ webhooks:
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
 
-        ### Account status
+        ### Account balance update
         When the balance of an internal account changes, we will push a notification with information on the account, the new balance, and who the account belongs to.
       operationId: accountStatusWebhook
       tags:
@@ -3618,8 +3633,19 @@ webhooks:
               balanceDecrease:
                 summary: A transaction just cleared a customer account and the balance has decreased
                 value:
-                  account:
-                    accountId: Account:019542f5-b3e7-1d02-0000-000000000005
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+                  type: ACCOUNT.BALANCE_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
                     oldBalance:
                       amount: 50000
                       currency:
@@ -3627,18 +3653,9 @@ webhooks:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
-                    newBalance:
-                      amount: 10000
-                      currency:
-                        code: USD
-                        name: United States Dollar
-                        symbol: $
-                        decimals: 2
-                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    platformCustomerId: 019542f5-b3e7-1d02-0000-000000000001
-                  timestamp: '2025-08-15T14:32:00Z'
-                  webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-                  type: ACCOUNT_STATUS
+                    fundingPaymentInstructions: []
+                    createdAt: '2025-08-01T10:00:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
       responses:
         '200':
           description: |
@@ -3656,7 +3673,7 @@ webhooks:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - Webhook has already been processed (duplicate webhookId)
+          description: Conflict - Webhook has already been processed (duplicate id)
           content:
             application/json:
               schema:
@@ -3673,7 +3690,6 @@ components:
       name: X-Grid-Signature
       description: |
         Secp256r1 (P-256) asymmetric signature of the webhook payload, which can be used to verify that the webhook was sent by Grid.
-
         To verify the signature:
         1. Get the Grid public key provided to you during integration
         2. Decode the base64 signature from the header
@@ -3682,18 +3698,6 @@ components:
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
   schemas:
-    AllErrors:
-      anyOf:
-        - $ref: '#/components/schemas/Error400'
-        - $ref: '#/components/schemas/Error401'
-        - $ref: '#/components/schemas/Error403'
-        - $ref: '#/components/schemas/Error404'
-        - $ref: '#/components/schemas/Error409'
-        - $ref: '#/components/schemas/Error410'
-        - $ref: '#/components/schemas/Error412'
-        - $ref: '#/components/schemas/Error424'
-        - $ref: '#/components/schemas/Error500'
-        - $ref: '#/components/schemas/Error501'
     CustomerInfoFieldName:
       type: string
       enum:
@@ -8492,127 +8496,72 @@ components:
           description: A list of permissions to grant to the token
           items:
             $ref: '#/components/schemas/Permission'
-    IncomingPaymentWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - transaction
-          properties:
-            transaction:
-              $ref: '#/components/schemas/IncomingTransaction'
-            type:
-              $ref: '#/components/schemas/WebhookType'
-              description: Type of webhook event
-              example: INCOMING_PAYMENT
-            requestedReceiverCustomerInfoFields:
-              type: array
-              items:
-                $ref: '#/components/schemas/CounterpartyFieldDefinition'
-              description: Information required by the sender's VASP about the recipient. Platform must provide these in the 200 OK response if approving. Note that this only includes fields which Grid does not already have from initial customer registration.
+    WebhookType:
+      type: string
+      enum:
+        - OUTGOING_PAYMENT.COMPLETED
+        - OUTGOING_PAYMENT.FAILED
+        - OUTGOING_PAYMENT.REFUNDED
+        - INCOMING_PAYMENT.PENDING
+        - INCOMING_PAYMENT.COMPLETED
+        - INCOMING_PAYMENT.FAILED
+        - CUSTOMER.KYC_APPROVED
+        - CUSTOMER.KYC_REJECTED
+        - CUSTOMER.KYC_SUBMITTED
+        - CUSTOMER.KYC_MANUALLY_APPROVED
+        - CUSTOMER.KYC_MANUALLY_REJECTED
+        - ACCOUNT.BALANCE_UPDATED
+        - INVITATION.CLAIMED
+        - BULK_UPLOAD.COMPLETED
+        - BULK_UPLOAD.FAILED
+        - TEST
+      description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
       type: object
       required:
         - timestamp
         - id
         - type
+        - data
       properties:
-        timestamp:
-          type: string
-          format: date-time
-          description: ISO8601 timestamp when the webhook was sent (can be used to prevent replay attacks)
-          example: '2025-08-15T14:32:00Z'
         id:
           type: string
           description: Unique identifier for this webhook delivery (can be used for idempotency)
           example: Webhook:019542f5-b3e7-1d02-0000-000000000007
         type:
           $ref: '#/components/schemas/WebhookType'
-          description: Type of webhook event
-      discriminator:
-        propertyName: type
-        mapping:
-          INCOMING_PAYMENT: '#/components/schemas/IncomingPaymentWebhook'
-          OUTGOING_PAYMENT: '#/components/schemas/OutgoingPaymentWebhook'
-          TEST: '#/components/schemas/TestWebhookRequest'
-          BULK_UPLOAD: '#/components/schemas/BulkUploadWebhookRequest'
-          INVITATION_CLAIMED: '#/components/schemas/InvitationClaimedWebhook'
-          KYC_STATUS: '#/components/schemas/KycStatusWebhook'
-    WebhookType:
-      type: string
-      enum:
-        - INCOMING_PAYMENT
-        - OUTGOING_PAYMENT
-        - TEST
-        - BULK_UPLOAD
-        - INVITATION_CLAIMED
-        - KYC_STATUS
-        - ACCOUNT_STATUS
-      description: Type of webhook event, used by the receiver to identify which webhook is being received
-    OutgoingPaymentWebhook:
+          description: Status-specific event type in OBJECT.EVENT dot-notation (e.g., OUTGOING_PAYMENT.COMPLETED)
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the webhook was sent
+          example: '2025-08-15T14:32:00Z'
+        data:
+          type: object
+          description: The resource object. Contains the full resource as the corresponding GET endpoint would return it.
+    IncomingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
         - type: object
           required:
-            - transaction
+            - data
           properties:
-            transaction:
-              $ref: '#/components/schemas/OutgoingTransaction'
-            type:
-              $ref: '#/components/schemas/WebhookType'
-              description: Type of webhook event
-              example: OUTGOING_PAYMENT
-    TestWebhookRequest:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          properties:
-            type:
-              $ref: '#/components/schemas/WebhookType'
-              description: Type of webhook event
-              example: TEST
-    BulkUploadWebhookRequest:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - bulkCustomerImportJob
-          properties:
-            bulkCustomerImportJob:
-              $ref: '#/components/schemas/BulkCustomerImportJob'
-            type:
-              $ref: '#/components/schemas/WebhookType'
-              description: Type of webhook event
-              example: BULK_UPLOAD
-    InvitationClaimedWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - invitation
-          properties:
-            invitation:
-              $ref: '#/components/schemas/UmaInvitation'
+            data:
+              allOf:
+                - $ref: '#/components/schemas/IncomingTransaction'
+                - type: object
+                  properties:
+                    requestedReceiverCustomerInfoFields:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/CounterpartyFieldDefinition'
+                      description: Information required by the sender's VASP about the recipient. Platform must provide these in the 200 OK response if approving. Note that this only includes fields which Grid does not already have from initial customer registration.
             type:
               type: string
               enum:
-                - INVITATION_CLAIMED
-              description: Type of webhook event
-              example: INVITATION_CLAIMED
-    KycStatusWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - customerId
-            - kycStatus
-          properties:
-            customerId:
-              type: string
-              description: System generated id of the customer
-              example: Customer:019542f5-b3e7-1d02-0000-000000000001
-            kycStatus:
-              $ref: '#/components/schemas/KycStatus'
+                - INCOMING_PAYMENT.PENDING
+                - INCOMING_PAYMENT.COMPLETED
+                - INCOMING_PAYMENT.FAILED
     IncomingPaymentWebhookResponse:
       type: object
       properties:
@@ -8642,25 +8591,90 @@ components:
               example:
                 - TAX_ID
                 - REGISTRATION_NUMBER
+    OutgoingPaymentWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/OutgoingTransaction'
+            type:
+              type: string
+              enum:
+                - OUTGOING_PAYMENT.COMPLETED
+                - OUTGOING_PAYMENT.FAILED
+                - OUTGOING_PAYMENT.REFUNDED
+    TestWebhookRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - TEST
+    BulkUploadWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/BulkCustomerImportJob'
+            type:
+              type: string
+              enum:
+                - BULK_UPLOAD.COMPLETED
+                - BULK_UPLOAD.FAILED
+    InvitationClaimedWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/UmaInvitation'
+            type:
+              type: string
+              enum:
+                - INVITATION.CLAIMED
+    CustomerKycWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/IndividualCustomer'
+            type:
+              type: string
+              enum:
+                - CUSTOMER.KYC_APPROVED
+                - CUSTOMER.KYC_REJECTED
+                - CUSTOMER.KYC_SUBMITTED
+                - CUSTOMER.KYC_MANUALLY_APPROVED
+                - CUSTOMER.KYC_MANUALLY_REJECTED
     AccountStatusWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
         - type: object
           required:
-            - accountId
+            - data
           properties:
-            accountId:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/InternalAccount'
+                - type: object
+                  properties:
+                    oldBalance:
+                      $ref: '#/components/schemas/CurrencyAmount'
+                      description: The account balance before the change
+            type:
               type: string
-              description: The id of the account whose balance has changed
-            oldBalance:
-              $ref: '#/components/schemas/CurrencyAmount'
-            newBalance:
-              $ref: '#/components/schemas/CurrencyAmount'
-            customerId:
-              type: string
-              description: The ID of the customer associated with the internal account
-              example: Customer:019542f5-b3e7-1d02-0000-000000000001
-            platformCustomerId:
-              type: string
-              description: The ID of the customer as associated in your platform
-              example: 019542f5-b3e7-1d02-0000-000000000001
+              enum:
+                - ACCOUNT.BALANCE_UPDATED

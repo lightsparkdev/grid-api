@@ -1,7 +1,7 @@
 post:
-  summary: Account status notification webhook
+  summary: Account balance update webhook
   description: >
-    Webhook that is called when the balance of an account changes
+    Webhook that is called when the balance of an account changes.
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -26,7 +26,7 @@ post:
     should be rejected.
 
 
-    ### Account status
+    ### Account balance update
 
     When the balance of an internal account changes, we will push a notification with information on the account, the new
     balance, and who the account belongs to.
@@ -47,8 +47,19 @@ post:
           balanceDecrease:
             summary: A transaction just cleared a customer account and the balance has decreased
             value:
-              account:
-                accountId: Account:019542f5-b3e7-1d02-0000-000000000005
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: ACCOUNT.BALANCE_UPDATED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                balance:
+                  amount: 10000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
                 oldBalance:
                   amount: 50000
                   currency:
@@ -56,18 +67,9 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                newBalance:
-                  amount: 10000
-                  currency:
-                    code: USD
-                    name: United States Dollar
-                    symbol: $
-                    decimals: 2
-                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                platformCustomerId: 019542f5-b3e7-1d02-0000-000000000001
-              timestamp: '2025-08-15T14:32:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-              type: ACCOUNT_STATUS
+                fundingPaymentInstructions: []
+                createdAt: '2025-08-01T10:00:00Z'
+                updatedAt: '2025-08-15T14:32:00Z'
   responses:
     '200':
       description: >
@@ -85,7 +87,7 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      description: Conflict - Webhook has already been processed (duplicate id)
       content:
         application/json:
           schema:

@@ -3,7 +3,7 @@ post:
   description: Send a test webhook to the configured endpoint
   operationId: sendTestWebhook
   tags:
-    - Webhooks
+    - Sandbox
   security:
     - BasicAuth: []
   responses:
