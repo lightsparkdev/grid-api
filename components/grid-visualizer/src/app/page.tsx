@@ -204,7 +204,7 @@ export default function Home() {
               </button>
             )}
 
-            <div style={{ marginTop: isComplete ? '12px' : '24px' }}>
+            <div style={{ marginTop: isComplete ? '10px' : '24px' }}>
               <PopularFlows onSelect={(sendCode, receiveCode) => {
                 const s = lookupCurrency(sendCode);
                 const r = lookupCurrency(receiveCode);
