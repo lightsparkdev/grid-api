@@ -4783,7 +4783,6 @@ components:
             type: string
             enum:
               - UPI
-              - IMPS
         vpa:
           type: string
           description: The VPA of the bank

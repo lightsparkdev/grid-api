@@ -72,7 +72,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'UPI',
     accountLabel: 'UPI',
     instantRails: ['UPI'],
-    allRails: ['UPI', 'IMPS'],
+    allRails: ['UPI'],
     examplePerson: { fullName: 'Priya Sharma', nationality: 'IN' },
   },
   {
