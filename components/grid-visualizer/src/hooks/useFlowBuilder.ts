@@ -13,6 +13,7 @@ export interface FlowBuilderState {
   sourceRegion: string | null; // fiat code e.g. 'USD' — only used when source is crypto
   destRegion: string | null;   // fiat code — only used when destination is crypto
   sourceFundingMode: SourceFundingMode;
+  sourceRail: string | null;   // selected fiat rail e.g. 'RTP' — null for crypto
   audience: 'human' | 'agent';
   pickerTarget: 'send' | 'receive' | null;
 }
@@ -23,6 +24,7 @@ type Action =
   | { type: 'SET_SEND_NETWORK'; payload: CryptoAccountType }
   | { type: 'SET_RECEIVE_NETWORK'; payload: CryptoAccountType }
   | { type: 'SET_SOURCE_FUNDING_MODE'; payload: SourceFundingMode }
+  | { type: 'SET_SOURCE_RAIL'; payload: string }
   | { type: 'SET_SOURCE_REGION'; payload: string }
   | { type: 'SET_DEST_REGION'; payload: string }
   | { type: 'SET_AUDIENCE'; payload: 'human' | 'agent' }
@@ -37,9 +39,16 @@ const initialState: FlowBuilderState = {
   sourceRegion: null,
   destRegion: null,
   sourceFundingMode: 'external',
+  sourceRail: null,
   audience: 'human',
   pickerTarget: null,
 };
+
+function getDefaultRail(code: string): string | null {
+  const fiat = currencies.find((c) => c.code === code);
+  if (!fiat) return null;
+  return fiat.instantRails[0] ?? fiat.allRails[0] ?? null;
+}
 
 function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
   switch (action.type) {
@@ -49,7 +58,8 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
         ? 'realtime'
         : 'external';
       const sourceRegion = send.type === 'crypto' ? (state.sourceRegion ?? 'USD') : null;
-      return { ...state, send, sourceFundingMode, sourceRegion, pickerTarget: null };
+      const sourceRail = send.type === 'fiat' ? getDefaultRail(send.code) : null;
+      return { ...state, send, sourceFundingMode, sourceRegion, sourceRail, pickerTarget: null };
     }
     case 'SET_RECEIVE': {
       const receive = action.payload;
@@ -103,6 +113,8 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
       }
       return { ...state, send, sourceFundingMode: mode };
     }
+    case 'SET_SOURCE_RAIL':
+      return { ...state, sourceRail: action.payload };
     case 'SET_SOURCE_REGION':
       return { ...state, sourceRegion: action.payload };
     case 'SET_DEST_REGION':
@@ -114,12 +126,14 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
     case 'CLOSE_PICKER':
       return { ...state, pickerTarget: null };
     case 'SWAP': {
+      const newSend = state.receive;
       return {
         ...state,
-        send: state.receive,
+        send: newSend,
         receive: state.send,
         sourceRegion: state.destRegion,
         destRegion: state.sourceRegion,
+        sourceRail: newSend?.type === 'fiat' ? getDefaultRail(newSend.code) : null,
       };
     }
     case 'RESET':
@@ -199,6 +213,11 @@ export function useFlowBuilder() {
     [],
   );
 
+  const setSourceRail = useCallback(
+    (rail: string) => dispatch({ type: 'SET_SOURCE_RAIL', payload: rail }),
+    [],
+  );
+
   const setSourceRegion = useCallback(
     (code: string) => dispatch({ type: 'SET_SOURCE_REGION', payload: code }),
     [],
@@ -236,6 +255,7 @@ export function useFlowBuilder() {
     setSendNetwork,
     setReceiveNetwork,
     setSourceFundingMode,
+    setSourceRail,
     setSourceRegion,
     setDestRegion,
     setAudience,

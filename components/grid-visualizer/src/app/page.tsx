@@ -31,6 +31,7 @@ export default function Home() {
     setSendNetwork,
     setReceiveNetwork,
     setSourceFundingMode,
+    setSourceRail,
     swap,
     setSourceRegion,
     setDestRegion,
@@ -161,6 +162,7 @@ export default function Home() {
                   region={state.sourceRegion}
                   onCardClick={() => openPicker('send')}
                   onNetworkChange={setSendNetwork}
+                  onRailChange={setSourceRail}
                   onRegionClick={() => setRegionTarget('send')}
                 />
                 <div style={{ position: 'relative', height: '8px' }}>
@@ -238,6 +240,7 @@ export default function Home() {
               send={state.send!}
               receive={state.receive!}
               fundingModel={fundingModel}
+              sourceRail={state.sourceRail}
               audience={state.audience}
               onAudienceChange={setAudience}
               expanded={codeExpanded}

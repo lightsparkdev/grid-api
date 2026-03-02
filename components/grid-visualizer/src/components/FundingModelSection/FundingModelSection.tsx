@@ -28,7 +28,7 @@ const FIAT_OPTIONS: FundingOption[] = [
     mode: 'realtime',
     icon: IconZap,
     title: 'Just-in-time',
-    description: 'Funded when the payment is initiated',
+    description: 'Funded from an outside bank account',
   },
   {
     mode: 'internal',
@@ -43,7 +43,7 @@ const CRYPTO_OPTIONS: FundingOption[] = [
     mode: 'realtime',
     icon: IconZap,
     title: 'Just-in-time',
-    description: 'Funded when the payment is initiated',
+    description: 'Funded from an outside wallet',
   },
   {
     mode: 'internal',

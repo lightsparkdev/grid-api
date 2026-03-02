@@ -1,4 +1,5 @@
 import { accountTypeSpecs } from '@/data/account-types';
+import { currencies } from '@/data/currencies';
 
 export interface ExamplePerson {
   fullName: string;
@@ -27,6 +28,7 @@ export interface ApiStep {
   headers: Record<string, string>;
   body?: Record<string, unknown>;
   note?: string;
+  isInstructional?: boolean;
 }
 
 const BASE_URL = 'https://api.lightspark.com/grid/2025-10-13';
@@ -59,6 +61,20 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
   return info;
 }
 
+function getJitPaymentMethod(source: CurrencySelection, sourceRail: string | null): string {
+  if (source.type === 'crypto') {
+    return 'crypto transfer';
+  }
+  if (sourceRail) {
+    return `${sourceRail} transfer`;
+  }
+  const fiat = currencies.find((c) => c.code === source.code);
+  if (fiat && fiat.instantRails.length > 0) {
+    return `${fiat.instantRails[0]} transfer`;
+  }
+  return 'bank transfer';
+}
+
 function getStepDescription(sel: CurrencySelection): string {
   if (sel.isInternal) {
     return `Grid internal ${sel.code} account`;
@@ -70,6 +86,7 @@ export function generateSteps(
   source: CurrencySelection,
   destination: CurrencySelection,
   fundingModel: 'jit' | 'pre-funded',
+  sourceRail?: string | null,
 ): ApiStep[] {
   const jitFunding = fundingModel === 'jit';
   const steps: ApiStep[] = [];
@@ -219,18 +236,6 @@ export function generateSteps(
 
   // Quote path: cross-currency, JIT, or other combinations
   if (needsQuote) {
-    if (sourceIsExternal && !jitFunding) {
-      steps.push({
-        step: stepNum++,
-        title: 'Fund internal account',
-        description: `${source.code} internal accounts`,
-        method: 'GET',
-        endpoint: `${BASE_URL}/platform/internal-accounts?currency=${source.code}`,
-        headers: { Authorization: AUTH_HEADER },
-        note: `Fund this internal account with ${source.code} before creating the quote. Grid will debit from this balance.`,
-      });
-    }
-
     if (sourceIsInternal && !jitFunding) {
       steps.push({
         step: stepNum++,
@@ -249,6 +254,11 @@ export function generateSteps(
         sourceType: 'REALTIME_FUNDING',
         currency: source.code,
         customerId: 'Customer:<customer_id>',
+      };
+    } else if (sourceIsExternal) {
+      quoteSource = {
+        sourceType: 'ACCOUNT',
+        accountId: 'ExternalAccount:<external_account_id>',
       };
     } else {
       quoteSource = {
@@ -294,7 +304,19 @@ export function generateSteps(
         : `lockedCurrencyAmount is in the smallest unit (e.g., cents). The quote locks the exchange rate for a short window.`,
     });
 
-    if (!jitFunding) {
+    if (jitFunding) {
+      const paymentMethod = getJitPaymentMethod(source, sourceRail ?? null);
+      steps.push({
+        step: stepNum++,
+        title: 'Trigger the payment',
+        description: `Send ${source.code} to complete the payment`,
+        method: '',
+        endpoint: '',
+        headers: {},
+        isInstructional: true,
+        note: `Trigger the payment by sending a ${paymentMethod} to the deposit address listed on the quote's \`paymentInstructions\`.`,
+      });
+    } else {
       steps.push({
         step: stepNum++,
         title: 'Execute quote',
@@ -350,8 +372,9 @@ export function formatCurl(step: ApiStep): string {
 }
 
 export function formatStepJson(step: ApiStep): string {
-  const { note, description, ...rest } = step;
+  const { note, description, isInstructional, ...rest } = step;
   void note;
   void description;
+  void isInstructional;
   return JSON.stringify(rest, null, 2);
 }

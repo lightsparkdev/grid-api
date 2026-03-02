@@ -28,6 +28,7 @@ interface InputCardProps {
   region?: string | null;
   onCardClick: () => void;
   onNetworkChange?: (acct: CryptoAccountType) => void;
+  onRailChange?: (rail: string) => void;
   onRegionClick?: () => void;
   autoFocus?: boolean;
 }
@@ -199,9 +200,11 @@ function NetworkDropdown({
 function RailDropdown({
   selection,
   options,
+  onSelect,
 }: {
   selection: CurrencySelection;
   options: string[];
+  onSelect?: (rail: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedRail, setSelectedRail] = useState(() => {
@@ -267,6 +270,7 @@ function RailDropdown({
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedRail(rail);
+                      onSelect?.(rail);
                       setOpen(false);
                     }}
                     type="button"
@@ -290,6 +294,7 @@ export function InputCard({
   region,
   onCardClick,
   onNetworkChange,
+  onRailChange,
   onRegionClick,
   autoFocus,
 }: InputCardProps) {
@@ -372,6 +377,7 @@ export function InputCard({
                   key={selection.code}
                   selection={selection}
                   options={fiatRailOptions}
+                  onSelect={onRailChange}
                 />
               ) : selection.type === 'fiat' && fiatRail ? (
                 <div className={clsx(styles.propertyRow, styles.propertyRowStatic)}>

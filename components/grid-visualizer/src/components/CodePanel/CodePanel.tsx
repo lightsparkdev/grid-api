@@ -18,6 +18,7 @@ interface CodePanelProps {
   send: CurrencySelection;
   receive: CurrencySelection;
   fundingModel: 'jit' | 'pre-funded';
+  sourceRail?: string | null;
   audience: 'human' | 'agent';
   onAudienceChange: (audience: 'human' | 'agent') => void;
   expanded: boolean;
@@ -189,6 +190,25 @@ function CodeBlock({ step, isHuman }: { step: ApiStep; isHuman: boolean }) {
   );
 }
 
+function InstructionalBlock({ step }: { step: ApiStep }) {
+  const parts = (step.note ?? '').split(/(`[^`]+`)/g);
+  return (
+    <div className={styles.instructionalBlock}>
+      <p className={styles.instructionalNote}>
+        {parts.map((part, i) =>
+          part.startsWith('`') && part.endsWith('`') ? (
+            <code key={i} className={styles.instructionalCode}>
+              {part.slice(1, -1)}
+            </code>
+          ) : (
+            <span key={i}>{part}</span>
+          ),
+        )}
+      </p>
+    </div>
+  );
+}
+
 function CodeStep({
   step,
   isHuman,
@@ -211,7 +231,11 @@ function CodeStep({
           {!isLast && <div className={styles.stepLine} />}
         </div>
         <div className={styles.stepCodeCol}>
-          <CodeBlock step={step} isHuman={isHuman} />
+          {step.isInstructional ? (
+            <InstructionalBlock step={step} />
+          ) : (
+            <CodeBlock step={step} isHuman={isHuman} />
+          )}
         </div>
       </div>
     </div>
@@ -223,6 +247,7 @@ function CopyAllButton({ steps, isHuman }: { steps: ApiStep[]; isHuman: boolean 
 
   const handleCopyAll = useCallback(async () => {
     const allCode = steps
+      .filter((s) => !s.isInstructional)
       .map((s) => (isHuman ? formatCurl(s) : formatStepJson(s)))
       .join('\n\n');
     await navigator.clipboard.writeText(allCode);
@@ -245,16 +270,17 @@ export function CodePanel({
   send,
   receive,
   fundingModel,
+  sourceRail,
   audience,
   onAudienceChange,
   expanded,
 }: CodePanelProps) {
   const steps = useMemo(
-    () => generateSteps(send, receive, fundingModel),
-    [send, receive, fundingModel],
+    () => generateSteps(send, receive, fundingModel, sourceRail),
+    [send, receive, fundingModel, sourceRail],
   );
 
-  const stepsKey = `${send.code}-${send.accountType}-${send.isInternal}-${receive.code}-${receive.accountType}-${receive.isInternal}-${fundingModel}-${audience}`;
+  const stepsKey = `${send.code}-${send.accountType}-${send.isInternal}-${receive.code}-${receive.accountType}-${receive.isInternal}-${fundingModel}-${sourceRail}-${audience}`;
   const isHuman = audience === 'human';
 
   return (
