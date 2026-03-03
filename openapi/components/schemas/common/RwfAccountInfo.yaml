@@ -24,5 +24,4 @@ properties:
     type: string
     description: Mobile money provider
     enum:
-      - MTN
-      - AIRTEL
+      - MTN_Rwanda

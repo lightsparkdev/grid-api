@@ -24,7 +24,6 @@ properties:
     type: string
     description: Mobile money provider
     enum:
-      - TNM
-      - AIRTEL
-      - ZAMTEL
       - MTN
+      - TNM
+      - Airtel

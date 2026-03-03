@@ -31,5 +31,5 @@ properties:
     type: string
     description: Mobile money provider
     enum:
-      - AIRTEL
+      - Airtel
       - TNM
