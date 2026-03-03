@@ -6058,8 +6058,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - M-PESA
     KesBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6145,9 +6143,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - Airtel
-            - TNM
     MwkBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6434,8 +6429,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - MTN_Rwanda
     RwfBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6618,10 +6611,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - AIRTELMONEYTZ
-            - TIGO
-            - HALOPESA
     TzsBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6707,9 +6696,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - MTN
-            - AIRTEL
     UgxBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6903,17 +6889,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - Wave
-            - Free
-            - Free Money
-            - Orange Money
-            - Moov
-            - Mtn Mobile Money BJ
-            - Orange
-            - MTN
-            - Moov money
-            - Mtn Mobile Money
     XofBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -7073,10 +7048,6 @@ components:
         provider:
           type: string
           description: Mobile money provider
-          enum:
-            - MTN
-            - TNM
-            - Airtel
     ZmwBeneficiary:
       title: Individual Beneficiary
       type: object

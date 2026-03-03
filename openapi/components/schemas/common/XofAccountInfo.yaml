@@ -32,14 +32,3 @@ properties:
   provider:
     type: string
     description: Mobile money provider
-    enum:
-      - Wave
-      - Free
-      - Free Money
-      - Orange Money
-      - Moov
-      - Mtn Mobile Money BJ
-      - Orange
-      - MTN
-      - Moov money
-      - Mtn Mobile Money

@@ -23,5 +23,3 @@ properties:
   provider:
     type: string
     description: Mobile money provider
-    enum:
-      - MTN_Rwanda
