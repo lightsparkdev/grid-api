@@ -90,26 +90,26 @@ fun Route.quoteRoutes() {
     }
 }
 
-private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
+private fun buildQuoteSource(sourceNode: JsonNode): QuoteCreateParams.Source {
     val sourceType = sourceNode.optText("sourceType")
 
     if (sourceType == "REALTIME_FUNDING" || sourceNode.has("currency")) {
-        val realtimeSource = QuoteSourceOneOf.RealtimeFundingQuoteSource.builder()
+        val realtimeSource = QuoteCreateParams.Source.RealtimeFundingQuoteSource.builder()
             .currency(sourceNode.get("currency").asText())
             .apply {
                 sourceNode.optText("customerId")?.let { customerId(it) }
             }
             .build()
-        return QuoteSourceOneOf.ofRealtimeFundingQuoteSource(realtimeSource)
+        return QuoteCreateParams.Source.ofRealtimeFundingQuote(realtimeSource)
     }
 
-    val accountSource = QuoteSourceOneOf.AccountQuoteSource.builder()
+    val accountSource = QuoteCreateParams.Source.AccountQuoteSource.builder()
         .accountId(sourceNode.get("accountId").asText())
         .apply {
             sourceNode.optText("customerId")?.let { customerId(it) }
         }
         .build()
-    return QuoteSourceOneOf.ofAccountQuoteSource(accountSource)
+    return QuoteCreateParams.Source.ofAccountQuote(accountSource)
 }
 
 private fun buildQuoteDestination(destNode: JsonNode): QuoteDestinationOneOf {
