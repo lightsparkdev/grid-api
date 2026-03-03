@@ -1,6 +1,7 @@
 type: object
 required:
   - accountType
+  - countries
   - paymentRails
   - phoneNumber
   - provider
@@ -8,7 +9,15 @@ properties:
   accountType:
     type: string
     enum:
-      - TZS_ACCOUNT
+      - XOF_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - SN
+      - BJ
+      - CI
   paymentRails:
     type: array
     items:
@@ -17,9 +26,9 @@ properties:
       - MOBILE_MONEY
   phoneNumber:
     type: string
-    description: Tanzanian mobile money phone number
-    example: '+255712345678'
-    pattern: ^\+255[0-9]{9}$
+    description: West African mobile money phone number (Senegal, Benin, or Ivory Coast)
+    example: '+221781234567'
+    pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229[0-9]{8,9})$
   provider:
     type: string
     description: Mobile money provider

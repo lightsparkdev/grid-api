@@ -17,14 +17,17 @@ enum:
   - IDR_ACCOUNT
   - INR_ACCOUNT
   - KES_ACCOUNT
+  - MWK_ACCOUNT
   - MXN_ACCOUNT
   - MYR_ACCOUNT
   - NGN_ACCOUNT
   - RWF_ACCOUNT
   - THB_ACCOUNT
   - TZS_ACCOUNT
+  - UGX_ACCOUNT
   - USD_ACCOUNT
   - VND_ACCOUNT
+  - XOF_ACCOUNT
   - ZAR_ACCOUNT
   - ZMW_ACCOUNT
 description: Type of external account or wallet
