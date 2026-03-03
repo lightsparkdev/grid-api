@@ -1,7 +1,7 @@
 type: string
 description: >-
   The purpose of the payment. This may be required when sending to certain
-  geographies such as India.
+  geographies (e.g. India).
 enum:
   - GIFT
   - SELF

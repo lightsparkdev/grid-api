@@ -8261,7 +8261,7 @@ components:
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
     PurposeOfPayment:
       type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies such as India.
+      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
       enum:
         - GIFT
         - SELF

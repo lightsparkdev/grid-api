@@ -4,11 +4,13 @@ on:
   pull_request:
     paths-ignore:
       - 'openapi.yaml'
+      - 'openapi/**'
       - 'mintlify/**'
       - '.markdownlint.json'
   merge_group:
     paths-ignore:
       - 'openapi.yaml'
+      - 'openapi/**'
       - 'mintlify/**'
       - '.markdownlint.json'
 
