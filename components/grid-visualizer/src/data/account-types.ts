@@ -7,26 +7,28 @@ export interface AccountFieldSpec {
 export interface AccountTypeSpec {
   accountType: string;
   fields: AccountFieldSpec[];
+  paymentRails?: string[];
   beneficiaryRequired: boolean;
   purposeOfPaymentRequired?: boolean;
 }
 
 export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
-  US_ACCOUNT: {
-    accountType: 'US_ACCOUNT',
+  USD_ACCOUNT: {
+    accountType: 'USD_ACCOUNT',
     fields: [
       { name: 'accountNumber', example: '123456789' },
       { name: 'routingNumber', example: '021000021' },
-      { name: 'accountCategory', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
     ],
+    paymentRails: ['ACH', 'WIRE', 'RTP', 'FEDNOW'],
     beneficiaryRequired: true,
   },
-  IBAN: {
-    accountType: 'IBAN',
+  EUR_ACCOUNT: {
+    accountType: 'EUR_ACCOUNT',
     fields: [
       { name: 'iban', example: 'DE89370400440532013000' },
       { name: 'swiftBic', example: 'DEUTDEFF' },
     ],
+    paymentRails: ['SEPA', 'SEPA_INSTANT'],
     beneficiaryRequired: true,
   },
   GBP_ACCOUNT: {
@@ -35,29 +37,42 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'sortCode', example: '20-00-00' },
       { name: 'accountNumber', example: '12345678' },
     ],
+    paymentRails: ['FASTER_PAYMENTS'],
     beneficiaryRequired: true,
   },
-  PIX: {
-    accountType: 'PIX',
+  BRL_ACCOUNT: {
+    accountType: 'BRL_ACCOUNT',
     fields: [
       { name: 'pixKey', example: '55119876543210' },
       { name: 'pixKeyType', example: 'PHONE', description: 'CPF, CNPJ, EMAIL, PHONE, or RANDOM' },
       { name: 'taxId', example: '12345678901' },
     ],
+    paymentRails: ['PIX'],
     beneficiaryRequired: true,
   },
-  CLABE: {
-    accountType: 'CLABE',
+  MXN_ACCOUNT: {
+    accountType: 'MXN_ACCOUNT',
     fields: [
       { name: 'clabeNumber', example: '123456789012345678' },
     ],
+    paymentRails: ['SPEI'],
     beneficiaryRequired: true,
   },
-  UPI: {
-    accountType: 'UPI',
+  INR_ACCOUNT: {
+    accountType: 'INR_ACCOUNT',
     fields: [
       { name: 'vpa', example: 'customer@okbank' },
     ],
+    paymentRails: ['UPI', 'IMPS'],
+    beneficiaryRequired: true,
+  },
+  DKK_ACCOUNT: {
+    accountType: 'DKK_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'DK5000400440116243' },
+      { name: 'swiftBic', example: 'NDEADKKK' },
+    ],
+    paymentRails: ['SEPA', 'SEPA_INSTANT'],
     beneficiaryRequired: true,
   },
   NGN_ACCOUNT: {
@@ -66,6 +81,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '0123456789' },
       { name: 'bankName', example: 'First Bank of Nigeria' },
     ],
+    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
     purposeOfPaymentRequired: true,
   },
@@ -76,6 +92,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'branchCode', example: '00012' },
       { name: 'accountNumber', example: '1234567' },
     ],
+    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   PHP_ACCOUNT: {
@@ -84,6 +101,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'bankName', example: 'BDO Unibank' },
       { name: 'accountNumber', example: '001234567890' },
     ],
+    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   SGD_ACCOUNT: {
@@ -93,6 +111,103 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'swiftCode', example: 'DBSSSGSG' },
       { name: 'accountNumber', example: '0123456789' },
     ],
+    paymentRails: ['PAYNOW', 'FAST', 'BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  HKD_ACCOUNT: {
+    accountType: 'HKD_ACCOUNT',
+    fields: [
+      { name: 'bankName', example: 'HSBC Hong Kong' },
+      { name: 'accountNumber', example: '123456789012' },
+      { name: 'swiftCode', example: 'HSBCHKHHHKH' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  IDR_ACCOUNT: {
+    accountType: 'IDR_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'bankName', example: 'Bank Central Asia' },
+      { name: 'swiftCode', example: 'CENAIDJA' },
+      { name: 'phoneNumber', example: '+6281234567890' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  KES_ACCOUNT: {
+    accountType: 'KES_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+254712345678' },
+      { name: 'provider', example: 'M-PESA', description: 'Mobile money provider' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  MYR_ACCOUNT: {
+    accountType: 'MYR_ACCOUNT',
+    fields: [
+      { name: 'bankName', example: 'Maybank' },
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'swiftCode', example: 'MABORUMMYYY' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  RWF_ACCOUNT: {
+    accountType: 'RWF_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+250781234567' },
+      { name: 'provider', example: 'MTN', description: 'MTN or AIRTEL' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  THB_ACCOUNT: {
+    accountType: 'THB_ACCOUNT',
+    fields: [
+      { name: 'bankName', example: 'Bangkok Bank' },
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'swiftCode', example: 'BKKBTHBK' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  TZS_ACCOUNT: {
+    accountType: 'TZS_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+255712345678' },
+      { name: 'provider', example: 'VODACOM', description: 'AIRTEL or VODACOM' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  VND_ACCOUNT: {
+    accountType: 'VND_ACCOUNT',
+    fields: [
+      { name: 'bankName', example: 'Vietcombank' },
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'swiftCode', example: 'BFTVVNVX' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  ZAR_ACCOUNT: {
+    accountType: 'ZAR_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'bankName', example: 'Standard Bank' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  ZMW_ACCOUNT: {
+    accountType: 'ZMW_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+260971234567' },
+      { name: 'provider', example: 'MTN', description: 'TNM, AIRTEL, ZAMTEL, or MTN' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   SPARK_WALLET: {
@@ -137,23 +252,4 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
-  // --- Generic bank transfer account types (best-guess, confirm with API team) ---
-  ...Object.fromEntries(
-    [
-      'XOF_ACCOUNT', 'XAF_ACCOUNT', 'GHS_ACCOUNT', 'KES_ACCOUNT', 'ZAR_ACCOUNT',
-      'BWP_ACCOUNT', 'TZS_ACCOUNT', 'UGX_ACCOUNT', 'MWK_ACCOUNT', 'ZMW_ACCOUNT',
-      'CNY_ACCOUNT', 'HKD_ACCOUNT', 'IDR_ACCOUNT', 'KRW_ACCOUNT', 'MYR_ACCOUNT',
-      'THB_ACCOUNT', 'VND_ACCOUNT', 'LKR_ACCOUNT', 'CRC_ACCOUNT', 'CDF_ACCOUNT',
-    ].map((type) => [
-      type,
-      {
-        accountType: type,
-        fields: [
-          { name: 'accountNumber', example: '0123456789' },
-          { name: 'bankName', example: 'Local Bank' },
-        ],
-        beneficiaryRequired: true,
-      } satisfies AccountTypeSpec,
-    ]),
-  ),
 };

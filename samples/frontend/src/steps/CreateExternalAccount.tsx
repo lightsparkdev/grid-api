@@ -21,24 +21,23 @@ export default function CreateExternalAccount({ customerId, onComplete, disabled
       currency: "USD",
       platformAccountId: `acct_${Math.random().toString(36).slice(2, 10)}`,
       accountInfo: {
-        accountType: "US_ACCOUNT",
+        accountType: "USD_ACCOUNT",
+        paymentRails: ["ACH"],
         accountNumber: "12345678901",
         routingNumber: "123456789",
-        accountCategory: "CHECKING",
-        bankName: "Chase Bank"
-      },
-      beneficiary: {
-        beneficiaryType: "INDIVIDUAL",
-        fullName: "Jack Doe",
-        birthDate: "1992-03-25",
-        nationality: "US",
-        address: {
-          line1: "123 Pine Street",
-          line2: "Unit 501",
-          city: "Seattle",
-          state: "WA",
-          postalCode: "98101",
-          country: "US"
+        beneficiary: {
+          beneficiaryType: "INDIVIDUAL",
+          fullName: "Jack Doe",
+          birthDate: "1992-03-25",
+          nationality: "US",
+          address: {
+            line1: "123 Pine Street",
+            line2: "Unit 501",
+            city: "Seattle",
+            state: "WA",
+            postalCode: "98101",
+            country: "US"
+          }
         }
       }
     }, null, 2))

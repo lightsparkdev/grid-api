@@ -30,9 +30,9 @@ Webhook events are streamed to the frontend in real time via Server-Sent Events 
 2. Fill in your credentials in `.env`:
 
    ```bash
-   GRID_API_TOKEN_ID=your_api_token_id
-   GRID_API_CLIENT_SECRET=your_api_client_secret
-   GRID_WEBHOOK_PUBLIC_KEY=your_webhook_public_key
+   GRID_CLIENT_ID=your_grid_client_id
+   GRID_CLIENT_SECRET=your_grid_client_secret
+   GRID_WEBHOOK_PUBKEY=your_webhook_public_key
    ```
 
 ## Running
@@ -106,6 +106,6 @@ Grid API calls are in `src/main/kotlin/com/grid/sample/routes/`:
 | [`ExternalAccounts.kt`](src/main/kotlin/com/grid/sample/routes/ExternalAccounts.kt) | Link a bank account via `client.customers().externalAccounts().create()` |
 | [`Quotes.kt`](src/main/kotlin/com/grid/sample/routes/Quotes.kt) | Create a quote via `client.quotes().create()` |
 | [`Sandbox.kt`](src/main/kotlin/com/grid/sample/routes/Sandbox.kt) | Simulate funding via `client.sandbox().sendFunds()` |
-| [`Webhooks.kt`](src/main/kotlin/com/grid/sample/routes/Webhooks.kt) | Parse incoming webhooks via `client.webhooks().unwrap()` |
+| [`Webhooks.kt`](src/main/kotlin/com/grid/sample/routes/Webhooks.kt) | Verify and parse incoming webhooks via `WebhookUtils.verifyWebhookSignature()` |
 
 Client initialization is in [`GridClientBuilder.kt`](src/main/kotlin/com/grid/sample/GridClientBuilder.kt).
