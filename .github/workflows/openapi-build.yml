@@ -5,11 +5,13 @@ on:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
+      - 'openapi/**'
       - 'mintlify/**'
   pull_request:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
+      - 'openapi/**'
       - 'mintlify/**'
   # Allow manual triggering
   workflow_dispatch:
@@ -36,3 +38,11 @@ jobs:
 
       - name: Build documentation
         run: make build
+
+      - name: Check compiled OpenAPI is up to date
+        run: |
+          if ! git diff --exit-code openapi.yaml mintlify/openapi.yaml; then
+            echo "ERROR: Compiled openapi.yaml is out of sync with source files in openapi/."
+            echo "Run 'make build' locally and commit the result."
+            exit 1
+          fi
