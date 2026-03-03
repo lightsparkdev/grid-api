@@ -8,6 +8,7 @@ oneOf:
 - $ref: ./IdrExternalAccountInfo.yaml
 - $ref: ./InrExternalAccountInfo.yaml
 - $ref: ./KesExternalAccountInfo.yaml
+- $ref: ./MwkExternalAccountInfo.yaml
 - $ref: ./MxnExternalAccountInfo.yaml
 - $ref: ./MyrExternalAccountInfo.yaml
 - $ref: ./NgnExternalAccountInfo.yaml
@@ -16,8 +17,10 @@ oneOf:
 - $ref: ./SgdExternalAccountInfo.yaml
 - $ref: ./ThbExternalAccountInfo.yaml
 - $ref: ./TzsExternalAccountInfo.yaml
+- $ref: ./UgxExternalAccountInfo.yaml
 - $ref: ./UsdExternalAccountInfo.yaml
 - $ref: ./VndExternalAccountInfo.yaml
+- $ref: ./XofExternalAccountInfo.yaml
 - $ref: ./ZarExternalAccountInfo.yaml
 - $ref: ./ZmwExternalAccountInfo.yaml
 - $ref: ./SparkWalletExternalAccountInfo.yaml
@@ -38,6 +41,7 @@ discriminator:
     IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml
     INR_ACCOUNT: ./InrExternalAccountInfo.yaml
     KES_ACCOUNT: ./KesExternalAccountInfo.yaml
+    MWK_ACCOUNT: ./MwkExternalAccountInfo.yaml
     MXN_ACCOUNT: ./MxnExternalAccountInfo.yaml
     MYR_ACCOUNT: ./MyrExternalAccountInfo.yaml
     NGN_ACCOUNT: ./NgnExternalAccountInfo.yaml
@@ -46,8 +50,10 @@ discriminator:
     SGD_ACCOUNT: ./SgdExternalAccountInfo.yaml
     THB_ACCOUNT: ./ThbExternalAccountInfo.yaml
     TZS_ACCOUNT: ./TzsExternalAccountInfo.yaml
+    UGX_ACCOUNT: ./UgxExternalAccountInfo.yaml
     USD_ACCOUNT: ./UsdExternalAccountInfo.yaml
     VND_ACCOUNT: ./VndExternalAccountInfo.yaml
+    XOF_ACCOUNT: ./XofExternalAccountInfo.yaml
     ZAR_ACCOUNT: ./ZarExternalAccountInfo.yaml
     ZMW_ACCOUNT: ./ZmwExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
