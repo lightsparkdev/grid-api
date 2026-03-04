@@ -1,0 +1,7 @@
+type: string
+enum:
+  - PENDING
+  - OPEN
+  - CLOSED
+  - FROZEN
+description: Status of an internal account
