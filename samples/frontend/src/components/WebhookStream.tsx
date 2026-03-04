@@ -19,8 +19,10 @@ export default function WebhookStream() {
 
       es.onopen = () => setConnected(true)
       es.onmessage = (event) => {
+        const raw = event.data?.trim()
+        if (!raw || raw === 'heartbeat') return
         try {
-          const data = JSON.parse(event.data)
+          const data = JSON.parse(raw)
           if (data.type === 'connected') return
           setEvents((prev) => [{
             timestamp: Date.now(),
@@ -28,11 +30,7 @@ export default function WebhookStream() {
             raw: JSON.stringify(data, null, 2)
           }, ...prev])
         } catch {
-          setEvents((prev) => [{
-            timestamp: Date.now(),
-            type: 'raw',
-            raw: event.data
-          }, ...prev])
+          // Skip non-JSON messages (heartbeats, etc.)
         }
       }
       es.onerror = () => {
