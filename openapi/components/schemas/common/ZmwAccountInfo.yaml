@@ -1,14 +1,14 @@
 type: object
 required:
-  - accountType
-  - paymentRails
-  - phoneNumber
-  - provider
+- accountType
+- paymentRails
+- phoneNumber
+- provider
 properties:
   accountType:
     type: string
     enum:
-      - ZMW_ACCOUNT
+    - ZMW_ACCOUNT
   paymentRails:
     type: array
     items:
@@ -17,9 +17,7 @@ properties:
       - MOBILE_MONEY
   phoneNumber:
     type: string
-    description: Zambian mobile money phone number
-    example: '+260971234567'
-    pattern: ^\+260[0-9]{9}$
+    description: The phone number for the mobile money account
   provider:
     type: string
-    description: Mobile money provider
+    description: The mobile money provider
