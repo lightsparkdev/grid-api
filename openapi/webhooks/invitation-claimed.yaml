@@ -60,7 +60,10 @@ post:
           claimedInvitation:
             summary: Invitation claimed notification
             value:
-              invitation:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+              type: INVITATION.CLAIMED
+              timestamp: '2025-09-01T15:45:00Z'
+              data:
                 code: 019542f5
                 createdAt: '2025-09-01T14:30:00Z'
                 claimedAt: '2025-09-01T15:45:00Z'
@@ -68,9 +71,6 @@ post:
                 inviteeUma: $invitee@uma.domain
                 status: CLAIMED
                 url: https://uma.me/i/019542f5
-              timestamp: '2025-09-01T15:45:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000008
-              type: INVITATION_CLAIMED
   responses:
     '200':
       description: Webhook received successfully
@@ -87,7 +87,7 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      description: Conflict - Webhook has already been processed (duplicate id)
       content:
         application/json:
           schema:

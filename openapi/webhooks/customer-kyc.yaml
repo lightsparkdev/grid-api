@@ -51,16 +51,51 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../components/schemas/webhooks/KycStatusWebhook.yaml
+          $ref: ../components/schemas/webhooks/CustomerKycWebhook.yaml
         examples:
           kycApprovedWebhook:
             summary: When a customer KYC has been approved
             value:
-              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-              kycStatus: APPROVED
-              type: KYC_STATUS
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: CUSTOMER.KYC_APPROVED
               timestamp: '2025-08-15T14:32:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              data:
+                id: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 9f84e0c2a72c4fa
+                customerType: INDIVIDUAL
+                umaAddress: $john.doe@uma.domain.com
+                kycStatus: APPROVED
+                fullName: John Michael Doe
+                birthDate: '1990-01-15'
+                nationality: US
+                address:
+                  line1: 123 Main Street
+                  line2: Apt 4B
+                  city: San Francisco
+                  state: CA
+                  postalCode: '94105'
+                  country: US
+                createdAt: '2025-07-21T17:32:28Z'
+                updatedAt: '2025-07-21T17:32:28Z'
+                isDeleted: false
+          kycRejectedWebhook:
+            summary: When a customer KYC has been rejected
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+              type: CUSTOMER.KYC_REJECTED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Customer:019542f5-b3e7-1d02-0000-000000000002
+                platformCustomerId: 4b7c1e9d3f5a8e2
+                customerType: INDIVIDUAL
+                umaAddress: $jane.smith@uma.domain.com
+                kycStatus: REJECTED
+                fullName: Jane Smith
+                birthDate: '1988-03-22'
+                nationality: US
+                createdAt: '2025-07-21T17:32:28Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+                isDeleted: false
   responses:
     '200':
       description: >
@@ -78,7 +113,7 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      description: Conflict - Webhook has already been processed (duplicate id)
       content:
         application/json:
           schema:

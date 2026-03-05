@@ -5,8 +5,8 @@ allOf:
       - data
     properties:
       data:
-        $ref: ../invitations/UmaInvitation.yaml
+        $ref: ../customers/InternalAccount.yaml
       type:
         type: string
         enum:
-          - INVITATION.CLAIMED
+          - INTERNAL_ACCOUNT.BALANCE_UPDATED

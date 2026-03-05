@@ -4,24 +4,10 @@ required:
   - destination
 properties:
   source:
-    type: object
-    required:
-      - accountId
-    properties:
-      accountId:
-        type: string
-        description: Reference to an internal account ID
-        example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    $ref: ./InternalAccountReference.yaml
     description: Source internal account details
   destination:
-    type: object
-    required:
-      - accountId
-    properties:
-      accountId:
-        type: string
-        description: Reference to an external account ID
-        example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+    $ref: ./ExternalAccountReference.yaml
     description: Destination external account details
   amount:
     type: integer

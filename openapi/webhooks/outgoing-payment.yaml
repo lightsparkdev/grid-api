@@ -27,7 +27,7 @@ post:
 
 
     This webhook is informational only and is sent when an outgoing payment
-    completes successfully or fails.
+    completes successfully, fails, or is refunded.
   operationId: outgoingPaymentWebhook
   tags:
     - Webhooks
@@ -43,10 +43,21 @@ post:
           outgoingCompletedPayment:
             summary: Completed outgoing payment
             value:
-              transaction:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: OUTGOING_PAYMENT.COMPLETED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                 status: COMPLETED
                 type: OUTGOING
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
                 senderUmaAddress: $sender@uma.domain
                 receiverUmaAddress: $recipient@external.domain
                 sentAmount:
@@ -63,35 +74,37 @@ post:
                     name: Euro
                     symbol: €
                     decimals: 2
-                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                platformCustomerId: 18d3e5f7b4a9c2
-                settlementTime: '2025-08-15T14:30:00Z'
-                createdAt: '2025-08-15T14:25:18Z'
-                description: 'Payment for invoice #1234'
                 exchangeRate: 0.92
                 quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
-                paymentInstructions:
-                  - accountOrWalletInfo:
-                      reference: UMA-Q12345-REF
-                      accountType: US_ACCOUNT
-                      accountNumber: 987654321
-                      routingNumber: 123456789
-                      accountCategory: CHECKING
-                      bankName: Chase Bank
-                  - accountOrWalletInfo:
-                      accountType: SOLANA_WALLET
-                      assetType: USDC
-                      address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
-              timestamp: '2025-08-15T14:32:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-              type: OUTGOING_PAYMENT
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: 'Payment for invoice #1234'
+                paymentInstructions: []
+                rateDetails:
+                  counterpartyMultiplier: 1.08
+                  counterpartyFixedFee: 10
+                  gridApiMultiplier: 0.925
+                  gridApiFixedFee: 10
+                  gridApiVariableFeeRate: 0.003
+                  gridApiVariableFeeAmount: 30
           failedPayment:
             summary: Failed outgoing payment
             value:
-              transaction:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000007
+              type: OUTGOING_PAYMENT.FAILED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                 status: FAILED
                 type: OUTGOING
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
                 senderUmaAddress: $sender@uma.domain
                 receiverUmaAddress: $recipient@external.domain
                 sentAmount:
@@ -101,25 +114,9 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                platformCustomerId: 18d3e5f7b4a9c2
                 createdAt: '2025-08-15T14:25:18Z'
                 quoteId: Quote:019542f5-b3e7-1d02-0000-000000000006
-                paymentInstructions:
-                  - accountOrWalletInfo:
-                      reference: UMA-Q12345-REF
-                      accountType: US_ACCOUNT
-                      accountNumber: 987654321
-                      routingNumber: 123456789
-                      accountCategory: CHECKING
-                      bankName: Chase Bank
-                  - accountOrWalletInfo:
-                      accountType: SOLANA_WALLET
-                      assetType: USDC
-                      address: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
-              timestamp: '2025-08-15T14:32:00Z'
-              webhookId: Webhook:019542f5-b3e7-1d02-0000-000000000007
-              type: OUTGOING_PAYMENT
+                failureReason: QUOTE_EXECUTION_FAILED
   responses:
     '200':
       description: Webhook received successfully
@@ -136,7 +133,7 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - Webhook has already been processed (duplicate webhookId)
+      description: Conflict - Webhook has already been processed (duplicate id)
       content:
         application/json:
           schema:
