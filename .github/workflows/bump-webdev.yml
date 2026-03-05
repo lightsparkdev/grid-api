@@ -33,20 +33,33 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Check if openapi.yaml changed
+        id: check_diff
+        run: |
+          if ! diff -q grid-api/openapi.yaml webdev/grid-api/openapi.yaml > /dev/null 2>&1; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Copy updated OpenAPI spec
+        if: steps.check_diff.outputs.changed == 'true'
         run: cp grid-api/openapi.yaml webdev/grid-api/openapi.yaml
 
       - name: Build custom generator
+        if: steps.check_diff.outputs.changed == 'true'
         working-directory: webdev/umaaas-api/generators/python-typed
         run: mvn package -q -DskipTests
 
       - name: Download openapi-generator CLI
+        if: steps.check_diff.outputs.changed == 'true'
         run: |
           OG_VERSION=7.18.0
           curl -sL "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OG_VERSION}/openapi-generator-cli-${OG_VERSION}.jar" \
             -o /tmp/openapi-generator-cli.jar
 
       - name: Run code generation
+        if: steps.check_diff.outputs.changed == 'true'
         working-directory: webdev/grid-api
         run: |
           CUSTOM_JAR="../umaaas-api/generators/python-typed/target/python-alias-openapi-generator-1.0.0.jar"
@@ -81,6 +94,7 @@ jobs:
           fi
 
       - name: Bump patch version
+        if: steps.check_diff.outputs.changed == 'true'
         working-directory: webdev/grid-api
         run: |
           # Read current version from pyproject.toml
@@ -101,6 +115,7 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
 
       - name: Create pull request
+        if: steps.check_diff.outputs.changed == 'true'
         working-directory: webdev
         env:
           GH_TOKEN: ${{ secrets.WEBDEV_GITHUB_TOKEN }}
