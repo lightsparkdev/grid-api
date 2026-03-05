@@ -57,3 +57,5 @@ Bundled and linted with Redocly (`@redocly/cli`), configured in `.redocly.yaml`.
 1. Restart dev server: `pkill -f "mint.*dev" && cd mintlify && mint dev`
 2. Verify CLI version is 4.2.284
 3. Run `cd mintlify && mint openapi-check openapi.yaml`
+
+# Test
