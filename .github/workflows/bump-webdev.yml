@@ -119,6 +119,7 @@ jobs:
         working-directory: webdev
         env:
           GH_TOKEN: ${{ secrets.WEBDEV_GITHUB_TOKEN }}
+          HEAD_COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           BRANCH="grid-api/bump-v${NEW_VERSION}"
           COMMIT_SHA="${{ github.sha }}"
@@ -132,14 +133,9 @@ jobs:
           git diff --cached --quiet && echo "No changes to commit" && exit 0
 
           git commit -m "chore(grid-api): bump to v${NEW_VERSION} (${SHORT_SHA})"
-          git push origin "$BRANCH"
+          git push origin "$BRANCH" --force-with-lease
 
-          gh pr create \
-            --repo lightsparkdev/webdev \
-            --base main \
-            --head "$BRANCH" \
-            --title "chore(grid-api): bump to v${NEW_VERSION}" \
-            --body "$(cat <<EOF
+          PR_BODY="$(cat <<EOF
           ## Summary
 
           Auto-generated PR to update the Grid API Python SDK based on changes to [grid-api@${SHORT_SHA}](https://github.com/lightsparkdev/grid-api/commit/${COMMIT_SHA}).
@@ -148,6 +144,16 @@ jobs:
           - Regenerates Python SDK code
           - Bumps version from the previous release to \`${NEW_VERSION}\`
 
-          **Triggered by:** ${{ github.event.head_commit.message }}
+          **Triggered by:** ${HEAD_COMMIT_MSG}
           EOF
           )"
+
+          gh pr create \
+            --repo lightsparkdev/webdev \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(grid-api): bump to v${NEW_VERSION}" \
+            --body "$PR_BODY" || \
+          gh pr edit "$BRANCH" \
+            --repo lightsparkdev/webdev \
+            --body "$PR_BODY"
