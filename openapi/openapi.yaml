@@ -153,8 +153,8 @@ webhooks:
     $ref: webhooks/bulk-upload.yaml
   invitation-claimed:
     $ref: webhooks/invitation-claimed.yaml
-  kyc-status:
-    $ref: webhooks/customer-kyc.yaml
+  customer-update:
+    $ref: webhooks/customer-update.yaml
   internal-account-status:
     $ref: webhooks/internal-account-status.yaml
 security:

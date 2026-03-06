@@ -93,6 +93,32 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/quotes/Quote.yaml
+          example:
+            id: Quote:019542f5-b3e7-1d02-0000-000000000006
+            status: PENDING
+            createdAt: '2025-10-03T12:00:00Z'
+            expiresAt: '2025-10-03T12:05:00Z'
+            source:
+              sourceType: ACCOUNT
+              accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            destination:
+              destinationType: ACCOUNT
+              accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            sendingCurrency:
+              code: USD
+              name: United States Dollar
+              symbol: $
+              decimals: 2
+            receivingCurrency:
+              code: EUR
+              name: Euro
+              symbol: €
+              decimals: 2
+            totalSendingAmount: 10000
+            totalReceivingAmount: 9200
+            exchangeRate: 0.92
+            feesIncluded: 10
+            transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
     '400':
       description: Bad request - Missing or invalid parameters
       content:

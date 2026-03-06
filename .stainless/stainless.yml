@@ -81,18 +81,14 @@ resources:
 
   customers:
     models:
-      # customer_type: '#/components/schemas/CustomerType'
-      # individual_customer: '#/components/schemas/IndividualCustomer'
       customer: '#/components/schemas/Customer'
-      # address: '#/components/schemas/Address'
-      # ultimate_beneficial_owner: '#/components/schemas/UltimateBeneficialOwner'
-      # business_customer: '#/components/schemas/BusinessCustomer'
-      # business_customer_fields: "#/components/schemas/BusinessCustomerFields"
-      # business_info: "#/components/schemas/BusinessInfo"
-      # individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
       customer_one_of: "#/components/schemas/CustomerOneOf"
       customer_create: "#/components/schemas/CustomerCreateRequest"
       customer_update: "#/components/schemas/CustomerUpdateRequest"
+      customer_type: "#/components/schemas/CustomerType"
+      individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
+      business_customer_fields: "#/components/schemas/BusinessCustomerFields"
+      business_info: "#/components/schemas/BusinessInfo"
     methods:
       create:
         endpoint: post /customers
@@ -145,12 +141,8 @@ resources:
           polygon_wallet_info: '#/components/schemas/PolygonWalletExternalAccountInfo'
           lightning_wallet_info: '#/components/schemas/LightningExternalAccountInfo'
           base_wallet_info: '#/components/schemas/BaseWalletExternalAccountInfo'
-          # individual_beneficiary: '#/components/schemas/IndividualBeneficiary'
-          # business_beneficiary: '#/components/schemas/BusinessBeneficiary'
           external_account: '#/components/schemas/ExternalAccount'
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
-          # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
-          # base_beneficiary: "#/components/schemas/BaseBeneficiary"
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
           business_beneficiary: "#/components/schemas/BusinessBeneficiary"
           address: "#/components/schemas/Address"
@@ -175,6 +167,24 @@ resources:
             endpoint: get /platform/external-accounts
             paginated: false
           create: post /platform/external-accounts
+        models:
+          usd_account_info: "#/components/schemas/UsdAccountInfo"
+          brl_account_info: "#/components/schemas/BrlAccountInfo"
+          mxn_account_info: "#/components/schemas/MxnAccountInfo"
+          dkk_account_info: "#/components/schemas/DkkAccountInfo"
+          eur_account_info: "#/components/schemas/EurAccountInfo"
+          inr_account_info: "#/components/schemas/InrAccountInfo"
+          ngn_account_info: "#/components/schemas/NgnAccountInfo"
+          cad_account_info: "#/components/schemas/CadAccountInfo"
+          gbp_account_info: "#/components/schemas/GbpAccountInfo"
+          hkd_account_info: "#/components/schemas/HkdAccountInfo"
+          idr_account_info: "#/components/schemas/IdrAccountInfo"
+          myr_account_info: "#/components/schemas/MyrAccountInfo"
+          php_account_info: "#/components/schemas/PhpAccountInfo"
+          sgd_account_info: "#/components/schemas/SgdAccountInfo"
+          thb_account_info: "#/components/schemas/ThbAccountInfo"
+          vnd_account_info: "#/components/schemas/VndAccountInfo"
+          # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
 
   plaid:
     methods:
@@ -183,8 +193,10 @@ resources:
 
   transfer_in:
     models:
-      transaction: '#/components/schemas/Transaction'
-      #base_transaction_destination: "#/components/schemas/BaseTransactionDestination"
+      transaction: "#/components/schemas/TransactionOneOf"
+      base_transaction_destination: "#/components/schemas/BaseTransactionDestination"
+      external_account_reference: "#/components/schemas/ExternalAccountReference"
+      internal_account_reference: "#/components/schemas/InternalAccountReference"
     methods:
       create: post /transfer-in
 
@@ -207,6 +219,10 @@ resources:
       outgoing_rate_details: '#/components/schemas/OutgoingRateDetails'
       quote: '#/components/schemas/Quote'
       quote_destination_one_of: "#/components/schemas/QuoteDestinationOneOf"
+      # base_payment_account_info: "#/components/schemas/BasePaymentAccountInfo"
+      base_quote_source: "#/components/schemas/BaseQuoteSource"
+      quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
+      base_destination: "#/components/schemas/BaseDestination"
     methods:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
@@ -218,10 +234,12 @@ resources:
       transaction_type: '#/components/schemas/TransactionType'
       incoming_transaction: '#/components/schemas/IncomingTransaction'
       outgoing_transaction: '#/components/schemas/OutgoingTransaction'
-      transaction_status: '#/components/schemas/TransactionStatus'
       outgoing_transaction_status: '#/components/schemas/OutgoingTransactionStatus'
-      #base_transaction_source: "#/components/schemas/BaseTransactionSource"
+      transaction_status: '#/components/schemas/TransactionStatus'
+      base_transaction_source: "#/components/schemas/BaseTransactionSource"
       transaction_source_one_of: "#/components/schemas/TransactionSourceOneOf"
+      incoming_rate_details: "#/components/schemas/IncomingRateDetails"
+      reconciliation_instructions: "#/components/schemas/ReconciliationInstructions"
     methods:
       list: get /transactions
       retrieve: get /transactions/{transactionId}
@@ -241,7 +259,6 @@ resources:
   sandbox:
     methods:
       send_funds: post /sandbox/send
-      send_test: post /webhooks/test
     subresources:
       uma:
         methods:
@@ -251,6 +268,9 @@ resources:
           internal_account: '#/components/schemas/InternalAccount'
         methods:
           fund: post /sandbox/internal-accounts/{accountId}/fund
+      webhooks:
+        methods:
+          send_test: post /sandbox/webhooks/test
 
   uma_providers:
     methods:
@@ -275,7 +295,7 @@ resources:
     methods:
       unwrap:
         type: webhook_unwrap
-        discriminator: type
+
   $shared:
     models:
       bulk_customer_import_error_entry: "#/components/schemas/BulkCustomerImportErrorEntry"
@@ -334,11 +354,27 @@ readme:
     default:
       type: request
       endpoint: post /quotes
-      params: {}
+      params:
+        source:
+          sourceType: ACCOUNT
+          accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        destination:
+          destinationType: ACCOUNT
+          accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        lockedCurrencySide: SENDING
+        lockedCurrencyAmount: 10000
     headline:
       type: request
       endpoint: post /quotes
-      params: {}
+      params:
+        source:
+          sourceType: ACCOUNT
+          accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        destination:
+          destinationType: ACCOUNT
+          accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        lockedCurrencySide: SENDING
+        lockedCurrencyAmount: 10000
     pagination:
       type: request
       endpoint: get /customers
@@ -464,7 +500,7 @@ openapi:
           - "$.components.schemas.CustomerUpdateRequest.properties"
         keys: [ "customerType" ]
 
-    # ── accountType: remove from base schemas ──
+    # # ── accountType: remove from base schemas ──
     - command: remove
       reason: >-
         Remove accountType $ref from base schemas so the inline single-value
@@ -476,7 +512,7 @@ openapi:
           - "$.components.schemas.BasePaymentAccountInfo.properties"
         keys: [ "accountType" ]
 
-    # ── sourceType: remove from base schemas ──
+    # # ── sourceType: remove from base schemas ──
     - command: remove
       reason: >-
         Remove sourceType $ref from base schemas so the inline single-value
@@ -487,7 +523,7 @@ openapi:
           - "$.components.schemas.BaseQuoteSource.properties"
         keys: [ "sourceType" ]
 
-    # ── destinationType: remove from base schemas ──
+    # # ── destinationType: remove from base schemas ──
     - command: remove
       reason: >-
         Remove destinationType $ref from base schemas so the inline
@@ -506,18 +542,68 @@ openapi:
         stripping the accountType discriminator, which causes TS2312 errors
       args:
         target:
-          - "$.components.schemas.PaymentClabeAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentUsAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentPixAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentIbanAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentUpiAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentUsdAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentBrlAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentMxnAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentDkkAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentEurAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentInrAccountInfo.allOf[0]"
           - "$.components.schemas.PaymentNgnAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentCadAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentGbpAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentHkdAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentIdrAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentMyrAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentPhpAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentSgdAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentThbAccountInfo.allOf[0]"
+          - "$.components.schemas.PaymentVndAccountInfo.allOf[0]"
           - "$.components.schemas.PaymentSparkWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentLightningInvoiceInfo.allOf[0]"
           - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentTronWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── Remove $ref to BaseExternalAccountInfo from external account variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to BaseExternalAccountInfo from external account info
+        variants because the base schema becomes an empty object after stripping
+        the accountType discriminator
+      args:
+        target:
+          - "$.components.schemas.UsdExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.BrlExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.MxnExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.DkkExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.EurExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.InrExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.NgnExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.CadExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.GbpExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.HkdExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.IdrExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.MyrExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.PhpExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.SgdExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.ThbExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.VndExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.KesExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.RwfExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.TzsExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.ZmwExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.ZarExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.XofExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.MwkExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.UgxExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.SparkWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.LightningExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.SolanaWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.TronWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.PolygonWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.BaseWalletExternalAccountInfo.allOf[0]"
         keys: [ "$ref" ]
 
     # ── Remove $ref to BaseQuoteSource from quote source variants ──
@@ -543,6 +629,30 @@ openapi:
           - "$.components.schemas.ExternalAccountDetailsDestination.allOf[0]"
         keys: [ "$ref" ]
 
+    # ── Remove $ref to BaseTransactionSource from transaction source variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to BaseTransactionSource from transaction source variants
+        because the base schema becomes an empty object after stripping sourceType
+      args:
+        target:
+          - "$.components.schemas.AccountTransactionSource.allOf[0]"
+          - "$.components.schemas.UmaAddressTransactionSource.allOf[0]"
+          - "$.components.schemas.RealtimeFundingTransactionSource.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── Remove $ref to BaseTransactionDestination from transaction destination variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to BaseTransactionDestination from transaction destination
+        variants because the base schema becomes an empty object after stripping destinationType
+      args:
+        target:
+          - "$.components.schemas.AccountTransactionDestination.allOf[0]"
+          - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
+          - "$.components.schemas.ExternalAccountDetailsTransactionDestination.allOf[0]"
+        keys: [ "$ref" ]
+
 codeflow:
   detect_breaking_changes: true
   release_environment: npm
@@ -552,3 +662,4 @@ diagnostics:
       - pagination.0.response.data.items
     Schema/EnumHasOneMember: true
     Schema/RequiredPropertyNotDefined: true
+    Schema/IsAmbiguous: true

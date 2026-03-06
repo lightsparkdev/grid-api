@@ -5,7 +5,7 @@ allOf:
       - data
     properties:
       data:
-        $ref: ../customers/IndividualCustomer.yaml
+        $ref: ../customers/CustomerOneOf.yaml
       type:
         type: string
         enum:
@@ -14,3 +14,8 @@ allOf:
           - CUSTOMER.KYC_SUBMITTED
           - CUSTOMER.KYC_MANUALLY_APPROVED
           - CUSTOMER.KYC_MANUALLY_REJECTED
+          - CUSTOMER.KYB_APPROVED
+          - CUSTOMER.KYB_REJECTED
+          - CUSTOMER.KYB_SUBMITTED
+          - CUSTOMER.KYB_MANUALLY_APPROVED
+          - CUSTOMER.KYB_MANUALLY_REJECTED

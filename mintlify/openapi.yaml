@@ -1623,6 +1623,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Quote'
+              example:
+                id: Quote:019542f5-b3e7-1d02-0000-000000000006
+                status: PENDING
+                createdAt: '2025-10-03T12:00:00Z'
+                expiresAt: '2025-10-03T12:05:00Z'
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                sendingCurrency:
+                  code: USD
+                  name: United States Dollar
+                  symbol: $
+                  decimals: 2
+                receivingCurrency:
+                  code: EUR
+                  name: Euro
+                  symbol: €
+                  decimals: 2
+                totalSendingAmount: 10000
+                totalReceivingAmount: 9200
+                exchangeRate: 0.92
+                feesIncluded: 10
+                transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -3517,11 +3543,11 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
-  kyc-status:
+  customer-update:
     post:
-      summary: KYC customer status change
+      summary: Customer status change
       description: |
-        Webhook that is called when the KYC status of a customer is updated.
+        Webhook that is called when the status of a customer is updated, including KYC and KYB status changes.
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -3533,20 +3559,7 @@ webhooks:
         4. Verify the signature using the public key and the hash
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-
-        ### KYC/B Flow
-        This webhook is triggered when KYC/B has reached a decision on a customer. Generally most customers will finish KYC within a few minutes. Others might be rejected because of incorrect data passed in or may have been flagged for manual review.
-        The webhook will only trigger for final states. This will be APPROVED, REJECTED, EXPIRED, CANCELED, MANUALLY_APPROVED, MANUALLY_REJECTED.
-
-          * APPROVED: The customer has been approved.
-          * REJECTED: The customer has been rejected after a KYC check.
-          * PENDING_REVIEW: KYC check is in progress.
-          * EXPIRED: KYC check has expired. This is generally because a customer did not submit all required information needed within a session.
-          * CANCELED: KYC check was canceled.
-          * MANUALLY_APPROVED: The customer was manually approved.
-          * MANUALLY_REJECTED: The customer was manually rejected.
-          * NOT_STARTED: KYC has not started on the customer.
-      operationId: kycStatusWebhook
+      operationId: customerStatusWebhook
       tags:
         - Webhooks
       security:
@@ -3556,10 +3569,10 @@ webhooks:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerKycWebhook'
+              $ref: '#/components/schemas/CustomerWebhook'
             examples:
               kycApprovedWebhook:
-                summary: When a customer KYC has been approved
+                summary: When an individual customer KYC has been approved
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000007
                   type: CUSTOMER.KYC_APPROVED
@@ -3584,7 +3597,7 @@ webhooks:
                     updatedAt: '2025-07-21T17:32:28Z'
                     isDeleted: false
               kycRejectedWebhook:
-                summary: When a customer KYC has been rejected
+                summary: When an individual customer KYC has been rejected
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000008
                   type: CUSTOMER.KYC_REJECTED
@@ -3598,6 +3611,54 @@ webhooks:
                     fullName: Jane Smith
                     birthDate: '1988-03-22'
                     nationality: US
+                    createdAt: '2025-07-21T17:32:28Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+                    isDeleted: false
+              kybApprovedWebhook:
+                summary: When a business customer KYB has been approved
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: CUSTOMER.KYB_APPROVED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Customer:019542f5-b3e7-1d02-0000-000000000003
+                    platformCustomerId: 7a2f9d4e1b8c3f5
+                    customerType: BUSINESS
+                    umaAddress: $acme.corp@uma.domain.com
+                    kybStatus: APPROVED
+                    address:
+                      line1: 456 Business Ave
+                      city: New York
+                      state: NY
+                      postalCode: '10001'
+                      country: US
+                    businessInfo:
+                      legalName: Acme Corporation
+                      registrationNumber: '12345678'
+                      taxId: 98-7654321
+                    createdAt: '2025-07-21T17:32:28Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+                    isDeleted: false
+              kybRejectedWebhook:
+                summary: When a business customer KYB has been rejected
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000010
+                  type: CUSTOMER.KYB_REJECTED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Customer:019542f5-b3e7-1d02-0000-000000000004
+                    platformCustomerId: 3c8e5f2a9d1b7e4
+                    customerType: BUSINESS
+                    umaAddress: $globex.inc@uma.domain.com
+                    kybStatus: REJECTED
+                    address:
+                      line1: 789 Corporate Blvd
+                      city: Chicago
+                      state: IL
+                      postalCode: '60601'
+                      country: US
+                    businessInfo:
+                      legalName: Globex Inc
                     createdAt: '2025-07-21T17:32:28Z'
                     updatedAt: '2025-08-15T14:32:00Z'
                     isDeleted: false
@@ -4139,18 +4200,6 @@ components:
         - BUSINESS
       description: Whether the customer is an individual or a business entity
       example: INDIVIDUAL
-    KycStatus:
-      type: string
-      enum:
-        - APPROVED
-        - REJECTED
-        - PENDING_REVIEW
-        - EXPIRED
-        - CANCELED
-        - MANUALLY_APPROVED
-        - MANUALLY_REJECTED
-      description: The current KYC status of a customer
-      example: APPROVED
     Customer:
       type: object
       required:
@@ -4169,8 +4218,6 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
-        kycStatus:
-          $ref: '#/components/schemas/KycStatus'
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -4192,6 +4239,18 @@ components:
           description: Whether the customer is marked as deleted
           example: false
           readOnly: true
+    KycStatus:
+      type: string
+      enum:
+        - APPROVED
+        - REJECTED
+        - PENDING_REVIEW
+        - EXPIRED
+        - CANCELED
+        - MANUALLY_APPROVED
+        - MANUALLY_REJECTED
+      description: The current KYC status of a customer
+      example: APPROVED
     Address:
       type: object
       required:
@@ -4232,6 +4291,8 @@ components:
           type: string
           enum:
             - INDIVIDUAL
+        kycStatus:
+          $ref: '#/components/schemas/KycStatus'
         fullName:
           type: string
           description: Individual's full name
@@ -4252,6 +4313,19 @@ components:
       allOf:
         - $ref: '#/components/schemas/Customer'
         - $ref: '#/components/schemas/IndividualCustomerFields'
+    KybStatus:
+      type: string
+      enum:
+        - AWAITING_SUBMISSION
+        - APPROVED
+        - REJECTED
+        - PENDING_REVIEW
+        - EXPIRED
+        - CANCELED
+        - MANUALLY_APPROVED
+        - MANUALLY_REJECTED
+      description: The current KYB status of a business customer
+      example: APPROVED
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -4331,6 +4405,8 @@ components:
           type: string
           enum:
             - BUSINESS
+        kybStatus:
+          $ref: '#/components/schemas/KybStatus'
         address:
           $ref: '#/components/schemas/Address'
         businessInfo:
@@ -8824,6 +8900,11 @@ components:
         - CUSTOMER.KYC_SUBMITTED
         - CUSTOMER.KYC_MANUALLY_APPROVED
         - CUSTOMER.KYC_MANUALLY_REJECTED
+        - CUSTOMER.KYB_APPROVED
+        - CUSTOMER.KYB_REJECTED
+        - CUSTOMER.KYB_SUBMITTED
+        - CUSTOMER.KYB_MANUALLY_APPROVED
+        - CUSTOMER.KYB_MANUALLY_REJECTED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
@@ -8836,7 +8917,6 @@ components:
         - timestamp
         - id
         - type
-        - data
       properties:
         id:
           type: string
@@ -8850,9 +8930,17 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the webhook was sent
           example: '2025-08-15T14:32:00Z'
-        data:
-          type: object
-          description: The resource object. Contains the full resource as the corresponding GET endpoint would return it.
+    IncomingPaymentWebhookData:
+      title: Incoming Payment Webhook Data
+      allOf:
+        - $ref: '#/components/schemas/IncomingTransaction'
+        - type: object
+          properties:
+            requestedReceiverCustomerInfoFields:
+              type: array
+              items:
+                $ref: '#/components/schemas/CounterpartyFieldDefinition'
+              description: Information required by the sender's VASP about the recipient. Platform must provide these in the 200 OK response if approving. Note that this only includes fields which Grid does not already have from initial customer registration.
     IncomingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -8861,15 +8949,7 @@ components:
             - data
           properties:
             data:
-              allOf:
-                - $ref: '#/components/schemas/IncomingTransaction'
-                - type: object
-                  properties:
-                    requestedReceiverCustomerInfoFields:
-                      type: array
-                      items:
-                        $ref: '#/components/schemas/CounterpartyFieldDefinition'
-                      description: Information required by the sender's VASP about the recipient. Platform must provide these in the 200 OK response if approving. Note that this only includes fields which Grid does not already have from initial customer registration.
+              $ref: '#/components/schemas/IncomingPaymentWebhookData'
             type:
               type: string
               enum:
@@ -8961,7 +9041,7 @@ components:
               type: string
               enum:
                 - INVITATION.CLAIMED
-    CustomerKycWebhook:
+    CustomerWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
         - type: object
@@ -8969,7 +9049,7 @@ components:
             - data
           properties:
             data:
-              $ref: '#/components/schemas/IndividualCustomer'
+              $ref: '#/components/schemas/CustomerOneOf'
             type:
               type: string
               enum:
@@ -8978,6 +9058,11 @@ components:
                 - CUSTOMER.KYC_SUBMITTED
                 - CUSTOMER.KYC_MANUALLY_APPROVED
                 - CUSTOMER.KYC_MANUALLY_REJECTED
+                - CUSTOMER.KYB_APPROVED
+                - CUSTOMER.KYB_REJECTED
+                - CUSTOMER.KYB_SUBMITTED
+                - CUSTOMER.KYB_MANUALLY_APPROVED
+                - CUSTOMER.KYB_MANUALLY_REJECTED
     InternalAccountStatusWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
