@@ -57,6 +57,8 @@ jobs:
           OG_VERSION=7.18.0
           curl -sL "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OG_VERSION}/openapi-generator-cli-${OG_VERSION}.jar" \
             -o /tmp/openapi-generator-cli.jar
+          EXPECTED_SHA=$(curl -sL "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OG_VERSION}/openapi-generator-cli-${OG_VERSION}.jar.sha256")
+          echo "${EXPECTED_SHA}  /tmp/openapi-generator-cli.jar" | sha256sum -c -
 
       - name: Run code generation
         if: steps.check_diff.outputs.changed == 'true'
@@ -119,7 +121,7 @@ jobs:
         working-directory: webdev
         env:
           GH_TOKEN: ${{ secrets.WEBDEV_GITHUB_TOKEN }}
-          HEAD_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          HEAD_COMMIT_MSG: ${{ github.event.head_commit.message || format('Manual dispatch by @{0}', github.actor) }}
         run: |
           BRANCH="grid-api/bump-v${NEW_VERSION}"
           COMMIT_SHA="${{ github.sha }}"
