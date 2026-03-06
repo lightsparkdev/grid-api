@@ -31,12 +31,6 @@ jobs:
             grid-api
             umaaas-api/generators/python-typed
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
       - name: Check if openapi.yaml changed
         id: check_diff
         run: |
@@ -45,6 +39,13 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Setup Java
+        if: steps.check_diff.outputs.changed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Copy updated OpenAPI spec
         if: steps.check_diff.outputs.changed == 'true'
