@@ -1,7 +1,7 @@
 post:
-  summary: KYC customer status change
+  summary: Customer status change
   description: >
-    Webhook that is called when the KYC status of a customer is updated.
+    Webhook that is called when the status of a customer is updated, including KYC and KYB status changes.
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -25,23 +25,7 @@ post:
     If the signature verification succeeds, the webhook is authentic. If not, it
     should be rejected.
 
-
-    ### KYC/B Flow
-
-    This webhook is triggered when KYC/B has reached a decision on a customer. Generally most customers will finish KYC within a few minutes.
-    Others might be rejected because of incorrect data passed in or may have been flagged for manual review.
-
-    The webhook will only trigger for final states. This will be APPROVED, REJECTED, EXPIRED, CANCELED, MANUALLY_APPROVED, MANUALLY_REJECTED.
-
-      * APPROVED: The customer has been approved.
-      * REJECTED: The customer has been rejected after a KYC check.
-      * PENDING_REVIEW: KYC check is in progress.
-      * EXPIRED: KYC check has expired. This is generally because a customer did not submit all required information needed within a session.
-      * CANCELED: KYC check was canceled.
-      * MANUALLY_APPROVED: The customer was manually approved.
-      * MANUALLY_REJECTED: The customer was manually rejected.
-      * NOT_STARTED: KYC has not started on the customer.
-  operationId: kycStatusWebhook
+  operationId: customerStatusWebhook
   tags:
     - Webhooks
   security:
@@ -51,10 +35,10 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../components/schemas/webhooks/CustomerKycWebhook.yaml
+          $ref: ../components/schemas/webhooks/CustomerWebhook.yaml
         examples:
           kycApprovedWebhook:
-            summary: When a customer KYC has been approved
+            summary: When an individual customer KYC has been approved
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000007
               type: CUSTOMER.KYC_APPROVED
@@ -79,7 +63,7 @@ post:
                 updatedAt: '2025-07-21T17:32:28Z'
                 isDeleted: false
           kycRejectedWebhook:
-            summary: When a customer KYC has been rejected
+            summary: When an individual customer KYC has been rejected
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000008
               type: CUSTOMER.KYC_REJECTED
@@ -93,6 +77,54 @@ post:
                 fullName: Jane Smith
                 birthDate: '1988-03-22'
                 nationality: US
+                createdAt: '2025-07-21T17:32:28Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+                isDeleted: false
+          kybApprovedWebhook:
+            summary: When a business customer KYB has been approved
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+              type: CUSTOMER.KYB_APPROVED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Customer:019542f5-b3e7-1d02-0000-000000000003
+                platformCustomerId: 7a2f9d4e1b8c3f5
+                customerType: BUSINESS
+                umaAddress: $acme.corp@uma.domain.com
+                kybStatus: APPROVED
+                address:
+                  line1: 456 Business Ave
+                  city: New York
+                  state: NY
+                  postalCode: '10001'
+                  country: US
+                businessInfo:
+                  legalName: Acme Corporation
+                  registrationNumber: '12345678'
+                  taxId: '98-7654321'
+                createdAt: '2025-07-21T17:32:28Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+                isDeleted: false
+          kybRejectedWebhook:
+            summary: When a business customer KYB has been rejected
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000010
+              type: CUSTOMER.KYB_REJECTED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Customer:019542f5-b3e7-1d02-0000-000000000004
+                platformCustomerId: 3c8e5f2a9d1b7e4
+                customerType: BUSINESS
+                umaAddress: $globex.inc@uma.domain.com
+                kybStatus: REJECTED
+                address:
+                  line1: 789 Corporate Blvd
+                  city: Chicago
+                  state: IL
+                  postalCode: '60601'
+                  country: US
+                businessInfo:
+                  legalName: Globex Inc
                 createdAt: '2025-07-21T17:32:28Z'
                 updatedAt: '2025-08-15T14:32:00Z'
                 isDeleted: false

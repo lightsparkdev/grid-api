@@ -6,6 +6,8 @@ properties:
     type: string
     enum:
       - INDIVIDUAL
+  kycStatus:
+    $ref: ./KycStatus.yaml
   fullName:
     type: string
     description: Individual's full name

@@ -3,7 +3,6 @@ required:
   - timestamp
   - id
   - type
-  - data
 properties:
   id:
     type: string
@@ -22,8 +21,3 @@ properties:
     description: >-
       ISO 8601 timestamp of when the webhook was sent
     example: '2025-08-15T14:32:00Z'
-  data:
-    type: object
-    description: >-
-      The resource object. Contains the full resource as the corresponding
-      GET endpoint would return it.
