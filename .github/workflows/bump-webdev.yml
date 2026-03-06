@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: bump-webdev
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -158,4 +162,5 @@ jobs:
             --body "$PR_BODY" || \
           gh pr edit "$BRANCH" \
             --repo lightsparkdev/webdev \
+            --title "chore(grid-api): bump to v${NEW_VERSION}" \
             --body "$PR_BODY"
