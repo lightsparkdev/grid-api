@@ -3,6 +3,7 @@ package com.grid.sample.routes
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.customers.CustomerCreateParams
 import com.lightspark.grid.models.customers.CustomerCreateParams.CreateCustomerRequest
+import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
@@ -29,14 +30,14 @@ fun Route.customerRoutes() {
                         json.optText("birthDate")?.let { birthDate(LocalDate.parse(it)) }
                         json.get("address")?.takeIf { !it.isNull }?.let { addrNode ->
                             address(
-                                CreateCustomerRequest.Individual.Address.builder()
+                                Address.builder()
                                     .apply {
+                                        addrNode.optText("country")?.let { country(it) }
                                         addrNode.optText("line1")?.let { line1(it) }
+                                        addrNode.optText("postalCode")?.let { postalCode(it) }
                                         addrNode.optText("line2")?.let { line2(it) }
                                         addrNode.optText("city")?.let { city(it) }
                                         addrNode.optText("state")?.let { state(it) }
-                                        addrNode.optText("postalCode")?.let { postalCode(it) }
-                                        addrNode.optText("country")?.let { country(it) }
                                     }
                                     .build()
                             )

@@ -9,9 +9,9 @@ object Config {
         ignoreIfMissing = true
     }
 
-    val apiTokenId: String = getEnvVar("GRID_API_TOKEN_ID")
-    val apiClientSecret: String = getEnvVar("GRID_API_CLIENT_SECRET")
-    val webhookPublicKey: String = getEnvVar("GRID_WEBHOOK_PUBLIC_KEY").replace("\\n", "\n")
+    val gridClientId: String = getEnvVar("GRID_CLIENT_ID")
+    val gridClientSecret: String = getEnvVar("GRID_CLIENT_SECRET")
+    val webhookPubkey: String = getEnvVar("GRID_WEBHOOK_PUBKEY").replace("\\n", "\n")
 
     private fun getEnvVar(key: String): String =
         System.getProperty(key)

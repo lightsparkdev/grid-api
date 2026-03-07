@@ -42,6 +42,10 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
     accountType: sel.accountType,
   };
 
+  if (spec.paymentRails) {
+    info.paymentRails = spec.paymentRails;
+  }
+
   for (const field of spec.fields) {
     info[field.name] = field.example;
   }

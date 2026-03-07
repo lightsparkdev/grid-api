@@ -28,7 +28,8 @@ export default function CreateQuote({ customerId, externalAccountId, onComplete,
         accountId: externalAccountId ?? "<external-account-id>"
       },
       lockedCurrencyAmount: 1000,
-      lockedCurrencySide: "SENDING"
+      lockedCurrencySide: "SENDING",
+      purposeOfPayment: "SELF"
     }, null, 2))
   }, [customerId, externalAccountId])
 
