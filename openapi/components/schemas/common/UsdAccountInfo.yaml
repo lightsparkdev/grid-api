@@ -14,9 +14,9 @@ properties:
     items:
       type: string
       enum:
+      - RTP
       - ACH
       - WIRE
-      - RTP
       - FEDNOW
   accountNumber:
     type: string
