@@ -17,9 +17,11 @@ properties:
       - BANK_TRANSFER
   bankName:
     type: string
-    description: Name of the beneficiary's bank
-    example: BDO Unibank
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
   accountNumber:
     type: string
-    description: Bank account number
-    example: '001234567890'
+    description: The account number of the bank
+    minLength: 1
+    maxLength: 34

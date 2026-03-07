@@ -8,8 +8,10 @@ allOf:
   properties:
     beneficiary:
       oneOf:
-      - $ref: ../common/UsdBeneficiary.yaml
-      - $ref: ../common/BusinessBeneficiary.yaml
+      - title: Individual Beneficiary
+        $ref: ../common/UsdBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
