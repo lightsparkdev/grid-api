@@ -2174,6 +2174,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /crypto/estimate-withdrawal-fee:
+    post:
+      summary: Estimate crypto withdrawal fee
+      description: |
+        Estimate the network and application fees for a cryptocurrency withdrawal from a crypto internal account to an external blockchain address. Use this to show fee information to customers before they initiate a withdrawal.
+      operationId: estimateCryptoWithdrawalFee
+      tags:
+        - Cross-Currency Transfers
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateCryptoWithdrawalFeeRequest'
+            examples:
+              estimateUSDCWithdrawal:
+                summary: Estimate fee for USDC withdrawal on Solana
+                value:
+                  internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  currency: USDC
+                  cryptoNetwork: SOLANA_MAINNET
+                  amount: 1000000
+                  destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+      responses:
+        '200':
+          description: Fee estimation returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateCryptoWithdrawalFeeResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /sandbox/webhooks/test:
     post:
       summary: Send a test webhook
@@ -7354,6 +7410,10 @@ components:
             beneficiaryVerifiedData:
               $ref: '#/components/schemas/BeneficiaryVerifiedData'
               description: Verified beneficiary data returned by the payment rail, if available
+            cryptoNetwork:
+              type: string
+              description: 'The blockchain network for this external account, if applicable. Present when the account is a cryptocurrency wallet. Example values: SOLANA_MAINNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
+              example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountCreateRequest:
@@ -7379,6 +7439,10 @@ components:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
               default: false
+            cryptoNetwork:
+              type: string
+              description: 'The blockchain network for this external account. Required when the account is a cryptocurrency wallet (e.g. SolanaWallet, PolygonWallet, TronWallet). Specifies which network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
+              example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     PlatformExternalAccountCreateRequest:
@@ -8478,6 +8542,63 @@ components:
           type: string
           description: Optional reason for rejecting the payment. This is just for debugging purposes or can be used for a platform's own purposes.
           example: RESTRICTED_JURISDICTION
+    EstimateCryptoWithdrawalFeeRequest:
+      type: object
+      required:
+        - internalAccountId
+        - currency
+        - cryptoNetwork
+        - amount
+        - destinationAddress
+      properties:
+        internalAccountId:
+          type: string
+          description: The ID of the crypto internal account to withdraw from.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        currency:
+          type: string
+          description: The currency code of the asset to withdraw (e.g. USDC).
+          example: USDC
+        cryptoNetwork:
+          type: string
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
+          example: SOLANA_MAINNET
+        amount:
+          type: integer
+          description: The amount to withdraw in the smallest unit of the currency.
+          example: 1000000
+        destinationAddress:
+          type: string
+          description: The blockchain address to withdraw funds to.
+          example: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+    EstimateCryptoWithdrawalFeeResponse:
+      type: object
+      required:
+        - networkFee
+        - networkFeeAsset
+        - totalFee
+        - netAmount
+      properties:
+        networkFee:
+          type: integer
+          description: The estimated network (gas) fee in the smallest unit of the network fee asset.
+          example: 5000
+        networkFeeAsset:
+          type: string
+          description: The asset used to pay the network fee (e.g. SOL for Solana transactions).
+          example: SOL
+        applicationFee:
+          type: integer
+          description: The application fee charged by the platform, if any, in the smallest unit of the withdrawal currency.
+          example: 0
+        totalFee:
+          type: integer
+          description: The total fee (network + application) in the smallest unit of the withdrawal currency.
+          example: 5000
+        netAmount:
+          type: integer
+          description: The net amount the recipient will receive after fees, in the smallest unit of the withdrawal currency.
+          example: 995000
     TestWebhookResponse:
       type: object
       required:

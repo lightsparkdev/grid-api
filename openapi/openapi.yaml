@@ -116,6 +116,8 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_approve.yaml
   /transactions/{transactionId}/reject:
     $ref: paths/transactions/transactions_{transactionId}_reject.yaml
+  /crypto/estimate-withdrawal-fee:
+    $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:
     $ref: paths/sandbox/sandbox_webhooks_test.yaml
   /customers/bulk/csv:

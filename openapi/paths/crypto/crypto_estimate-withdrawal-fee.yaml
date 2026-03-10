@@ -1,0 +1,57 @@
+post:
+  summary: Estimate crypto withdrawal fee
+  description: >
+    Estimate the network and application fees for a cryptocurrency withdrawal from a
+    crypto internal account to an external blockchain address. Use this to show fee
+    information to customers before they initiate a withdrawal.
+  operationId: estimateCryptoWithdrawalFee
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/crypto/EstimateCryptoWithdrawalFeeRequest.yaml
+        examples:
+          estimateUSDCWithdrawal:
+            summary: Estimate fee for USDC withdrawal on Solana
+            value:
+              internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              currency: USDC
+              cryptoNetwork: SOLANA_MAINNET
+              amount: 1000000
+              destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+  responses:
+    '200':
+      description: Fee estimation returned successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/crypto/EstimateCryptoWithdrawalFeeResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -40,5 +40,12 @@ allOf:
       beneficiaryVerifiedData:
         $ref: ./BeneficiaryVerifiedData.yaml
         description: Verified beneficiary data returned by the payment rail, if available
+      cryptoNetwork:
+        type: string
+        description: >-
+          The blockchain network for this external account, if applicable. Present when the account
+          is a cryptocurrency wallet. Example values: SOLANA_MAINNET, ETHEREUM_MAINNET,
+          POLYGON_MAINNET, TRON_MAINNET.
+        example: SOLANA_MAINNET
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml
