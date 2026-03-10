@@ -28,7 +28,7 @@ properties:
     type: string
     description: West African mobile money phone number (Senegal, Benin, or Ivory Coast)
     example: '+221781234567'
-    pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229[0-9]{8,9})$
+    pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229([0-9]{8}|[0-9]{10}))$
   provider:
     type: string
     description: Mobile money provider
