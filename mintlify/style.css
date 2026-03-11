@@ -4214,6 +4214,10 @@ html.dark #rate-explorer-static {
   background: transparent;
   border-top: 0.5px solid var(--ls-black-10);
   border-bottom: 0.5px solid var(--ls-black-10);
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--re-navbar-h, 60px) - var(--re-below-h, 100px));
+  scroll-margin-top: var(--re-navbar-h, 60px);
 }
 
 html.dark .rate-explorer {
@@ -4763,6 +4767,7 @@ html.dark .rate-explorer-toggle-btn.active {
 
 .rate-explorer-table-wrapper {
   overflow-x: clip;
+  flex: 1;
 }
 
 .rate-explorer-table-wrapper [data-table-wrapper] {

@@ -7,46 +7,46 @@ mode: "wide"
 ---
 
 export const CURRENCIES = [
-  { code: 'USD', name: 'US Dollar', region: 'Americas', usdMid: 1, gridSpread: 0, wiseSpread: 0 },
-  { code: 'CAD', name: 'Canadian Dollar', region: 'Americas', usdMid: 1.362, gridSpread: 0.35, wiseSpread: 0.55 },
-  { code: 'MXN', name: 'Mexican Peso', region: 'Americas', usdMid: 17.45, gridSpread: 0.5, wiseSpread: 0.95 },
-  { code: 'BRL', name: 'Brazilian Real', region: 'Americas', usdMid: 5.05, gridSpread: 0.55, wiseSpread: 1.00 },
-  { code: 'CRC', name: 'Costa Rican Colón', region: 'Americas', usdMid: 512, gridSpread: 0.8, wiseSpread: 1.60 },
-  { code: 'EUR', name: 'Euro', region: 'Europe', usdMid: 0.921, gridSpread: 0.25, wiseSpread: 0.55 },
-  { code: 'GBP', name: 'British Pound', region: 'Europe', usdMid: 0.791, gridSpread: 0.25, wiseSpread: 0.55 },
-  { code: 'CHF', name: 'Swiss Franc', region: 'Europe', usdMid: 0.881, gridSpread: 0.3, wiseSpread: 0.55 },
-  { code: 'DKK', name: 'Danish Krone', region: 'Europe', usdMid: 6.87, gridSpread: 0.3, wiseSpread: 0.55 },
-  { code: 'SEK', name: 'Swedish Krona', region: 'Europe', usdMid: 10.45, gridSpread: 0.4, wiseSpread: 0.90 },
-  { code: 'NOK', name: 'Norwegian Krone', region: 'Europe', usdMid: 10.55, gridSpread: 0.4, wiseSpread: 0.90 },
-  { code: 'CZK', name: 'Czech Koruna', region: 'Europe', usdMid: 23.15, gridSpread: 0.45, wiseSpread: 0.95 },
-  { code: 'HUF', name: 'Hungarian Forint', region: 'Europe', usdMid: 362, gridSpread: 0.5, wiseSpread: 1.00 },
-  { code: 'PLN', name: 'Polish Zloty', region: 'Europe', usdMid: 4.02, gridSpread: 0.45, wiseSpread: 0.90 },
-  { code: 'RON', name: 'Romanian Leu', region: 'Europe', usdMid: 4.58, gridSpread: 0.5, wiseSpread: 1.00 },
-  { code: 'BGN', name: 'Bulgarian Lev', region: 'Europe', usdMid: 1.80, gridSpread: 0.45, wiseSpread: 0.95 },
-  { code: 'ISK', name: 'Icelandic Króna', region: 'Europe', usdMid: 138, gridSpread: 0.8, wiseSpread: 1.50 },
-  { code: 'NGN', name: 'Nigerian Naira', region: 'Africa', usdMid: 1550, gridSpread: 0.8, wiseSpread: 2.50 },
-  { code: 'KES', name: 'Kenyan Shilling', region: 'Africa', usdMid: 129.5, gridSpread: 0.7, wiseSpread: 2.00 },
-  { code: 'ZAR', name: 'South African Rand', region: 'Africa', usdMid: 18.5, gridSpread: 0.5, wiseSpread: 0.95 },
-  { code: 'GHS', name: 'Ghanaian Cedi', region: 'Africa', usdMid: 14.8, gridSpread: 0.9, wiseSpread: 2.50 },
-  { code: 'UGX', name: 'Ugandan Shilling', region: 'Africa', usdMid: 3750, gridSpread: 0.9, wiseSpread: 2.80 },
-  { code: 'TZS', name: 'Tanzanian Shilling', region: 'Africa', usdMid: 2530, gridSpread: 0.9, wiseSpread: 2.50 },
-  { code: 'ZMW', name: 'Zambian Kwacha', region: 'Africa', usdMid: 26.5, gridSpread: 1.0, wiseSpread: 2.80 },
-  { code: 'MWK', name: 'Malawian Kwacha', region: 'Africa', usdMid: 1730, gridSpread: 1.1, wiseSpread: 3.00 },
-  { code: 'XOF', name: 'West African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.8, wiseSpread: 2.00 },
-  { code: 'XAF', name: 'Central African CFA', region: 'Africa', usdMid: 605, gridSpread: 0.85, wiseSpread: 2.00 },
-  { code: 'CDF', name: 'Congolese Franc', region: 'Africa', usdMid: 2780, gridSpread: 1.2, wiseSpread: 3.00 },
-  { code: 'BWP', name: 'Botswana Pula', region: 'Africa', usdMid: 13.6, gridSpread: 0.9, wiseSpread: 2.00 },
-  { code: 'INR', name: 'Indian Rupee', region: 'Asia-Pacific', usdMid: 83.5, gridSpread: 0.45, wiseSpread: 0.90 },
-  { code: 'PHP', name: 'Philippine Peso', region: 'Asia-Pacific', usdMid: 56.2, gridSpread: 0.5, wiseSpread: 1.00 },
-  { code: 'IDR', name: 'Indonesian Rupiah', region: 'Asia-Pacific', usdMid: 15650, gridSpread: 0.7, wiseSpread: 1.10 },
-  { code: 'SGD', name: 'Singapore Dollar', region: 'Asia-Pacific', usdMid: 1.34, gridSpread: 0.3, wiseSpread: 0.55 },
-  { code: 'HKD', name: 'Hong Kong Dollar', region: 'Asia-Pacific', usdMid: 7.81, gridSpread: 0.2, wiseSpread: 0.50 },
-  { code: 'CNY', name: 'Chinese Yuan', region: 'Asia-Pacific', usdMid: 7.24, gridSpread: 0.6, wiseSpread: 1.10 },
-  { code: 'KRW', name: 'South Korean Won', region: 'Asia-Pacific', usdMid: 1325, gridSpread: 0.45, wiseSpread: 0.90 },
-  { code: 'THB', name: 'Thai Baht', region: 'Asia-Pacific', usdMid: 35.2, gridSpread: 0.5, wiseSpread: 0.95 },
-  { code: 'VND', name: 'Vietnamese Dong', region: 'Asia-Pacific', usdMid: 25200, gridSpread: 0.8, wiseSpread: 1.10 },
-  { code: 'MYR', name: 'Malaysian Ringgit', region: 'Asia-Pacific', usdMid: 4.65, gridSpread: 0.5, wiseSpread: 1.00 },
-  { code: 'LKR', name: 'Sri Lankan Rupee', region: 'Asia-Pacific', usdMid: 298, gridSpread: 0.9, wiseSpread: 1.80 },
+  { code: 'USD', name: 'US Dollar', region: 'Americas', usdMid: 1, rateCardSpread: 0, wiseSpread: 0 },
+  { code: 'CAD', name: 'Canadian Dollar', region: 'Americas', usdMid: 1.362, rateCardSpread: 0.15, wiseSpread: 0.55 },
+  { code: 'MXN', name: 'Mexican Peso', region: 'Americas', usdMid: 17.45, rateCardSpread: 0.36, wiseSpread: 0.95 },
+  { code: 'BRL', name: 'Brazilian Real', region: 'Americas', usdMid: 5.05, rateCardSpread: 0.45, wiseSpread: 1.00 },
+  { code: 'CRC', name: 'Costa Rican Colon', region: 'Americas', usdMid: 512, rateCardSpread: 1.50, wiseSpread: 1.60 },
+  { code: 'EUR', name: 'Euro', region: 'Europe', usdMid: 0.921, rateCardSpread: 0.13, wiseSpread: 0.55 },
+  { code: 'GBP', name: 'British Pound', region: 'Europe', usdMid: 0.791, rateCardSpread: 0.13, wiseSpread: 0.55 },
+  { code: 'CHF', name: 'Swiss Franc', region: 'Europe', usdMid: 0.881, rateCardSpread: 0.21, wiseSpread: 0.55 },
+  { code: 'DKK', name: 'Danish Krone', region: 'Europe', usdMid: 6.87, rateCardSpread: 0.17, wiseSpread: 0.55 },
+  { code: 'SEK', name: 'Swedish Krona', region: 'Europe', usdMid: 10.45, rateCardSpread: 0.17, wiseSpread: 0.90 },
+  { code: 'NOK', name: 'Norwegian Krone', region: 'Europe', usdMid: 10.55, rateCardSpread: 0.16, wiseSpread: 0.90 },
+  { code: 'CZK', name: 'Czech Koruna', region: 'Europe', usdMid: 23.15, rateCardSpread: 0.24, wiseSpread: 0.95 },
+  { code: 'HUF', name: 'Hungarian Forint', region: 'Europe', usdMid: 362, rateCardSpread: 0.31, wiseSpread: 1.00 },
+  { code: 'PLN', name: 'Polish Zloty', region: 'Europe', usdMid: 4.02, rateCardSpread: 0.22, wiseSpread: 0.90 },
+  { code: 'RON', name: 'Romanian Leu', region: 'Europe', usdMid: 4.58, rateCardSpread: 0.30, wiseSpread: 1.00 },
+  { code: 'BGN', name: 'Bulgarian Lev', region: 'Europe', usdMid: 1.80, rateCardSpread: 0.34, wiseSpread: 0.95 },
+  { code: 'ISK', name: 'Icelandic Krona', region: 'Europe', usdMid: 138, rateCardSpread: 0.80, wiseSpread: 1.50 },
+  { code: 'NGN', name: 'Nigerian Naira', region: 'Africa', usdMid: 1550, rateCardSpread: 0.80, wiseSpread: 2.50 },
+  { code: 'KES', name: 'Kenyan Shilling', region: 'Africa', usdMid: 129.5, rateCardSpread: 0.36, wiseSpread: 2.00 },
+  { code: 'ZAR', name: 'South African Rand', region: 'Africa', usdMid: 18.5, rateCardSpread: 0.50, wiseSpread: 0.95 },
+  { code: 'GHS', name: 'Ghanaian Cedi', region: 'Africa', usdMid: 14.8, rateCardSpread: 0.41, wiseSpread: 2.50 },
+  { code: 'UGX', name: 'Ugandan Shilling', region: 'Africa', usdMid: 3750, rateCardSpread: 0.90, wiseSpread: 2.80 },
+  { code: 'TZS', name: 'Tanzanian Shilling', region: 'Africa', usdMid: 2530, rateCardSpread: 0.90, wiseSpread: 2.50 },
+  { code: 'ZMW', name: 'Zambian Kwacha', region: 'Africa', usdMid: 26.5, rateCardSpread: 1.00, wiseSpread: 2.80 },
+  { code: 'MWK', name: 'Malawian Kwacha', region: 'Africa', usdMid: 1730, rateCardSpread: 1.10, wiseSpread: 3.00 },
+  { code: 'XOF', name: 'West African CFA', region: 'Africa', usdMid: 605, rateCardSpread: 0.80, wiseSpread: 2.00 },
+  { code: 'XAF', name: 'Central African CFA', region: 'Africa', usdMid: 605, rateCardSpread: 0.85, wiseSpread: 2.00 },
+  { code: 'CDF', name: 'Congolese Franc', region: 'Africa', usdMid: 2780, rateCardSpread: 1.20, wiseSpread: 3.00 },
+  { code: 'BWP', name: 'Botswana Pula', region: 'Africa', usdMid: 13.6, rateCardSpread: 0.90, wiseSpread: 2.00 },
+  { code: 'INR', name: 'Indian Rupee', region: 'Asia-Pacific', usdMid: 83.5, rateCardSpread: 0.32, wiseSpread: 0.90 },
+  { code: 'PHP', name: 'Philippine Peso', region: 'Asia-Pacific', usdMid: 56.2, rateCardSpread: 0.20, wiseSpread: 1.00 },
+  { code: 'IDR', name: 'Indonesian Rupiah', region: 'Asia-Pacific', usdMid: 15650, rateCardSpread: 0.35, wiseSpread: 1.10 },
+  { code: 'SGD', name: 'Singapore Dollar', region: 'Asia-Pacific', usdMid: 1.34, rateCardSpread: 0.15, wiseSpread: 0.55 },
+  { code: 'HKD', name: 'Hong Kong Dollar', region: 'Asia-Pacific', usdMid: 7.81, rateCardSpread: 0.20, wiseSpread: 0.50 },
+  { code: 'CNY', name: 'Chinese Yuan', region: 'Asia-Pacific', usdMid: 7.24, rateCardSpread: 0.60, wiseSpread: 1.10 },
+  { code: 'KRW', name: 'South Korean Won', region: 'Asia-Pacific', usdMid: 1325, rateCardSpread: 0.45, wiseSpread: 0.90 },
+  { code: 'THB', name: 'Thai Baht', region: 'Asia-Pacific', usdMid: 35.2, rateCardSpread: 0.34, wiseSpread: 0.95 },
+  { code: 'VND', name: 'Vietnamese Dong', region: 'Asia-Pacific', usdMid: 25200, rateCardSpread: 1.18, wiseSpread: 1.10 },
+  { code: 'MYR', name: 'Malaysian Ringgit', region: 'Asia-Pacific', usdMid: 4.65, rateCardSpread: 0.31, wiseSpread: 1.00 },
+  { code: 'LKR', name: 'Sri Lankan Rupee', region: 'Asia-Pacific', usdMid: 298, rateCardSpread: 0.42, wiseSpread: 1.80 },
 ];
 
 export const CURRENCY_TO_COUNTRY = {
@@ -430,7 +430,7 @@ export const RateExplorer = () => {
   const [viewMode, setViewMode] = React.useState('bps');
   const [liveRates, setLiveRates] = React.useState(() => {
     try {
-      const cached = sessionStorage.getItem('grid_live_rates');
+      const cached = sessionStorage.getItem('coinbase_mid_rates');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) {
@@ -440,6 +440,7 @@ export const RateExplorer = () => {
     } catch (e) {}
     return null;
   });
+  const [gridCostRates, setGridCostRates] = React.useState(null);
   const [showSourceDropdown, setShowSourceDropdown] = React.useState(false);
   const [sourceDropdownQuery, setSourceDropdownQuery] = React.useState('');
   const [sourceHighlightIdx, setSourceHighlightIdx] = React.useState(-1);
@@ -475,7 +476,43 @@ export const RateExplorer = () => {
   React.useEffect(() => {
     if (!isVisible) return;
     if (liveRates !== null) return;
-    fetch('https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCurrency=USD')
+    fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD')
+      .then(res => {
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+      })
+      .then(json => {
+        const rates = {};
+        if (json && json.data && json.data.rates) {
+          Object.entries(json.data.rates).forEach(([code, val]) => {
+            rates[code] = val;
+          });
+        }
+        setLiveRates(rates);
+        try { sessionStorage.setItem('coinbase_mid_rates', JSON.stringify({ ts: Date.now(), rates })); } catch (e) {}
+      })
+      .catch(() => {
+        setLiveRates({});
+        try { sessionStorage.setItem('coinbase_mid_rates', JSON.stringify({ ts: Date.now(), rates: {} })); } catch (e) {}
+      });
+  }, [isVisible]);
+
+  React.useEffect(() => {
+    if (!isVisible) return;
+    const bucketed = bucketAmount(debouncedAmount);
+    const sendingCents = bucketed * 100;
+    const cacheKey = 'grid_cost_' + sendingCents;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.ts && Date.now() - parsed.ts < CACHE_TTL) {
+          setGridCostRates(parsed.rates);
+          return;
+        }
+      }
+    } catch (e) {}
+    fetch('https://api.lightspark.com/grid/2025-10-13/public/exchange-rates?sourceCurrency=USD&sendingAmount=' + sendingCents)
       .then(res => {
         if (!res.ok) throw new Error(res.status);
         return res.json();
@@ -484,17 +521,18 @@ export const RateExplorer = () => {
         const rates = {};
         if (json && json.data && json.data.length > 0) {
           json.data.forEach(r => {
-            rates[r.destinationCurrency.code] = String(r.exchangeRate);
+            var destDecimals = r.destinationCurrency.decimals || 0;
+            var actualRate = (r.receivingAmount / Math.pow(10, destDecimals)) / (r.sendingAmount / 100);
+            rates[r.destinationCurrency.code] = String(actualRate);
           });
         }
-        setLiveRates(rates);
-        try { sessionStorage.setItem('grid_live_rates', JSON.stringify({ ts: Date.now(), rates })); } catch (e) {}
+        setGridCostRates(rates);
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), rates })); } catch (e) {}
       })
       .catch(() => {
-        setLiveRates({});
-        try { sessionStorage.setItem('grid_live_rates', JSON.stringify({ ts: Date.now(), rates: {} })); } catch (e) {}
+        setGridCostRates({});
       });
-  }, [isVisible]);
+  }, [isVisible, debouncedAmount]);
 
   React.useEffect(() => {
     if (!isVisible) return;
@@ -572,9 +610,18 @@ export const RateExplorer = () => {
       el.style.setProperty('--re-thead-top', (navH + hH) + 'px');
     };
 
-    requestAnimationFrame(updateVars);
+    const measureBelow = () => {
+      var prev = el.style.minHeight;
+      el.style.minHeight = '0px';
+      var elBottom = el.getBoundingClientRect().bottom + window.scrollY;
+      var pageH = document.documentElement.scrollHeight;
+      el.style.minHeight = prev;
+      el.style.setProperty('--re-below-h', (pageH - elBottom) + 'px');
+    };
 
-    const ro = new ResizeObserver(updateVars);
+    requestAnimationFrame(() => { updateVars(); measureBelow(); });
+
+    const ro = new ResizeObserver(() => { updateVars(); measureBelow(); });
     ro.observe(header);
     if (navbar) ro.observe(navbar);
 
@@ -661,12 +708,25 @@ export const RateExplorer = () => {
     setTimeout(() => e.target.select(), 0);
   };
 
+  const scrollToHeader = () => {
+    const header = headerBarRef.current;
+    const el = explorerRef.current;
+    if (header) header.classList.remove('re-header-hidden');
+    if (!el || window.scrollY < 200) return;
+    el.style.minHeight = el.offsetHeight + 'px';
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'instant', block: 'start' });
+      requestAnimationFrame(() => { el.style.minHeight = ''; });
+    }, 0);
+  };
+
   const addCurrency = (code) => {
     if (!selectedCurrencies.includes(code)) {
       setSelectedCurrencies([...selectedCurrencies, code]);
     }
     setShowDropdown(false);
     setDropdownQuery('');
+    scrollToHeader();
   };
 
   const removeCurrency = (code) => {
@@ -675,6 +735,7 @@ export const RateExplorer = () => {
 
   const clearCurrencies = () => {
     setSelectedCurrencies([]);
+    scrollToHeader();
   };
 
   const getUsdMid = (code) => {
@@ -694,8 +755,21 @@ export const RateExplorer = () => {
     const midRate = destUsdMid / sourceUsdMid;
     const cd = competitorData[dest.code];
     const midReceive = cd && cd.midReceive ? cd.midReceive : debouncedAmount * midRate;
-    const gridBps = Math.round(dest.gridSpread * 100);
-    const gridReceive = midReceive * (1 - dest.gridSpread / 100);
+    const rateCard = dest.rateCardSpread;
+    let costFloorSpread = 0;
+    if (gridCostRates && gridCostRates[dest.code] && destUsdMid > 0) {
+      const gridApiRate = parseFloat(gridCostRates[dest.code]);
+      const coinbaseMid = midRate;
+      const coinbaseDestPerUnit = destUsdMid;
+      const gridDestPerUnit = gridApiRate;
+      if (coinbaseDestPerUnit > 0) {
+        costFloorSpread = ((coinbaseDestPerUnit - gridDestPerUnit) / coinbaseDestPerUnit) * 100;
+        if (costFloorSpread < 0) costFloorSpread = 0;
+      }
+    }
+    const effectiveSpread = Math.max(rateCard, costFloorSpread);
+    const gridBps = Math.round(effectiveSpread * 100);
+    const gridReceive = midReceive * (1 - effectiveSpread / 100);
     const providers = {};
     if (cd && cd.providers) {
       cd.providers.forEach(p => {
@@ -733,7 +807,7 @@ export const RateExplorer = () => {
       code: dest.code, name: dest.name,
       midRate: midRate, midReceive: midReceive,
       gridReceive: gridReceive, gridBps: gridBps,
-      providers: providers, gridSpread: dest.gridSpread,
+      providers: providers, effectiveSpread: effectiveSpread,
       stripeBps: stripeBps, stripeReceive: stripeReceive,
       airwallexBps: airwallexBps, airwallexReceive: airwallexReceive,
       bankAvgBps: bankAvgBps, bankAvgReceive: bankAvgReceive,
