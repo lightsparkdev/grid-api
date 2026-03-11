@@ -1,10 +1,12 @@
 package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.lightspark.grid.models.customers.externalaccounts.BeneficiaryOneOf
+import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreate
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreateParams
-import com.lightspark.grid.models.customers.externalaccounts.UsAccountInfo
+import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.InrExternalAccountInfo
+import com.lightspark.grid.models.platform.externalaccounts.InrAccountInfo
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
@@ -12,7 +14,6 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import java.time.LocalDate
 
 fun Route.externalAccountRoutes() {
     route("/api/customers/{customerId}/external-accounts") {
@@ -32,17 +33,18 @@ fun Route.externalAccountRoutes() {
 
                 val beneficiaryNode = json.get("beneficiary")
                 val beneficiary = if (beneficiaryNode != null && !beneficiaryNode.isNull) {
-                    BeneficiaryOneOf.Individual.builder()
+                    InrBeneficiary.builder()
+                        .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .fullName(beneficiaryNode.optText("fullName") ?: "")
-                        .nationality(beneficiaryNode.optText("nationality") ?: "US")
-                        .birthDate(LocalDate.parse(
-                            beneficiaryNode.optText("birthDate") ?: "1990-01-01"
-                        ))
+                        .nationality(beneficiaryNode.optText("nationality") ?: "IN")
+                        .birthDate(beneficiaryNode.optText("birthDate") ?: "1990-01-01")
                         .apply {
+                            beneficiaryNode.optText("email")?.let { email(it) }
+                            beneficiaryNode.optText("phoneNumber")?.let { phoneNumber(it) }
                             beneficiaryNode.get("address")?.takeIf { !it.isNull }?.let { addrNode ->
                                 address(
-                                    BeneficiaryOneOf.Individual.Address.builder()
-                                        .country(addrNode.optText("country") ?: "US")
+                                    Address.builder()
+                                        .country(addrNode.optText("country") ?: "IN")
                                         .line1(addrNode.optText("line1") ?: "")
                                         .postalCode(addrNode.optText("postalCode") ?: "")
                                         .apply {
@@ -56,34 +58,26 @@ fun Route.externalAccountRoutes() {
                         }
                         .build()
                 } else {
-                    BeneficiaryOneOf.Individual.builder()
+                    InrBeneficiary.builder()
+                        .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
                         .fullName("Account Holder")
-                        .nationality("US")
-                        .birthDate(LocalDate.parse("1990-01-01"))
+                        .nationality("IN")
+                        .birthDate("1990-01-01")
                         .build()
                 }
 
-                val accountCategory = when (accountInfo.optText("accountCategory")?.uppercase()) {
-                    "SAVINGS" -> UsAccountInfo.AccountCategory.SAVINGS
-                    else -> UsAccountInfo.AccountCategory.CHECKING
-                }
-
-                val usAccountInfo = UsAccountInfo.builder()
-                    .accountType(UsAccountInfo.AccountType.US_ACCOUNT)
-                    .accountCategory(accountCategory)
-                    .accountNumber(accountInfo.get("accountNumber").asText())
-                    .routingNumber(accountInfo.get("routingNumber").asText())
+                val inrAccountInfo = InrExternalAccountInfo.builder()
+                    .accountType(InrAccountInfo.AccountType.INR_ACCOUNT)
+                    .vpa(accountInfo.get("vpa").asText())
+                    .addPaymentRail(InrAccountInfo.PaymentRail.UPI)
                     .beneficiary(beneficiary)
-                    .apply {
-                        accountInfo.optText("bankName")?.let { bankName(it) }
-                    }
                     .build()
 
                 val externalAccountCreate = ExternalAccountCreate.builder()
-                    .accountInfo(usAccountInfo)
-                    .currency(json.optText("currency") ?: "USD")
-                    .customerId(customerId)
+                    .accountInfo(inrAccountInfo)
+                    .currency(json.optText("currency") ?: "INR")
                     .apply {
+                        customerId(customerId)
                         json.optText("platformAccountId")?.let { platformAccountId(it) }
                     }
                     .build()
