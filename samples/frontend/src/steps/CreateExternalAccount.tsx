@@ -18,27 +18,27 @@ export default function CreateExternalAccount({ customerId, onComplete, disabled
   useEffect(() => {
     setBody(JSON.stringify({
       customerId: customerId ?? "<customer-id>",
-      currency: "USD",
+      currency: "INR",
       platformAccountId: `acct_${Math.random().toString(36).slice(2, 10)}`,
       accountInfo: {
-        accountType: "US_ACCOUNT",
-        accountNumber: "12345678901",
-        routingNumber: "123456789",
-        accountCategory: "CHECKING",
-        bankName: "Chase Bank"
+        accountType: "INR_ACCOUNT",
+        vpa: "testuser@upi",
+        paymentRails: ["UPI"]
       },
       beneficiary: {
         beneficiaryType: "INDIVIDUAL",
-        fullName: "Jack Doe",
+        fullName: "Priya Sharma",
         birthDate: "1992-03-25",
-        nationality: "US",
+        nationality: "IN",
+        email: "priya.sharma@example.com",
+        phoneNumber: "+919876543210",
         address: {
-          line1: "123 Pine Street",
-          line2: "Unit 501",
-          city: "Seattle",
-          state: "WA",
-          postalCode: "98101",
-          country: "US"
+          line1: "42 MG Road",
+          line2: "Apt 3B",
+          city: "Mumbai",
+          state: "Maharashtra",
+          postalCode: "400001",
+          country: "IN"
         }
       }
     }, null, 2))
@@ -67,7 +67,7 @@ export default function CreateExternalAccount({ customerId, onComplete, disabled
   return (
     <div>
       <p className="text-sm text-gray-400 mb-2">
-        Create a USD bank account for customer <code className="text-blue-400">{customerId ?? '...'}</code>
+        Create an INR account (UPI) for customer <code className="text-blue-400">{customerId ?? '...'}</code>
       </p>
       <JsonEditor value={body} onChange={setBody} disabled={disabled || loading} />
       <button
