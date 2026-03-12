@@ -5,6 +5,8 @@ icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-payouts-b2b.png"
 ---
 
+import SandboxVpaValidation from '/snippets/sandbox-vpa-validation.mdx';
+
 ## Overview
 
 The Grid sandbox environment allows you to test your payouts integration without moving real money. All API endpoints work the same way in sandbox as they do in production, but money movements are simulated and you can control test scenarios using special test values.
@@ -101,7 +103,7 @@ For scenarios like PIX and UPI, where there's a domain part involved, append the
 
 ### INR UPI VPA validation simulation
 
-<Snippet file="sandbox-vpa-validation.mdx" />
+<SandboxVpaValidation />
 
 ### Testing Transfer-In (Pull from External Account)
 
