@@ -29,6 +29,7 @@ oneOf:
 - $ref: ./TronWalletExternalAccountInfo.yaml
 - $ref: ./PolygonWalletExternalAccountInfo.yaml
 - $ref: ./BaseWalletExternalAccountInfo.yaml
+- $ref: ./AedExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -62,3 +63,5 @@ discriminator:
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
+    AED_ACCOUNT: ./AedExternalAccountInfo.yaml
+    LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
