@@ -5081,11 +5081,13 @@ html.dark .rate-explorer-delta-positive {
   font-size: 13px;
   line-height: 20px;
   color: var(--ls-gray-400);
-  border-top: 0.5px solid var(--ls-black-06);
+  background: var(--ls-gray-025);
+  border-bottom: 0.5px solid var(--ls-black-06);
   font-feature-settings: "salt" 1;
 }
 
 html.dark .rate-explorer-disclaimer {
+  background: var(--ls-gray-950);
   border-color: var(--ls-white-04);
 }
 
