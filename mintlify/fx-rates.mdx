@@ -766,11 +766,11 @@ export const RateExplorer = () => {
         if (costFloorSpread < 0) costFloorSpread = 0;
       }
     }
-    const GRID_MARGIN = 0.30;
+    const GRID_MARGIN = 0.50;
     const hasCostData = gridCostRates && gridCostRates[dest.code] !== undefined;
-    var fallbackSpread = 0.93;
-    if (['CAD','CHF','HKD'].includes(dest.code)) fallbackSpread = 0.86;
-    else if (['ISK','GHS','CDF','LKR','CRC'].includes(dest.code)) fallbackSpread = 1.21;
+    var fallbackSpread = 1.13;
+    if (['CAD','CHF','HKD'].includes(dest.code)) fallbackSpread = 1.06;
+    else if (['ISK','GHS','CDF','LKR','CRC'].includes(dest.code)) fallbackSpread = 1.41;
     const effectiveSpread = hasCostData ? costFloorSpread + GRID_MARGIN : fallbackSpread;
     const gridBps = Math.round(effectiveSpread * 100);
     const gridReceive = midReceive * (1 - effectiveSpread / 100);
