@@ -1,14 +1,14 @@
 type: object
 required:
-  - accountType
-  - paymentRails
-  - phoneNumber
-  - provider
+- accountType
+- paymentRails
+- phoneNumber
+- provider
 properties:
   accountType:
     type: string
     enum:
-      - RWF_ACCOUNT
+    - RWF_ACCOUNT
   paymentRails:
     type: array
     items:
@@ -17,9 +17,13 @@ properties:
       - MOBILE_MONEY
   phoneNumber:
     type: string
-    description: Rwandan mobile money phone number
-    example: '+250781234567'
-    pattern: ^\+250[0-9]{9}$
+    description: The phone number in international format
+    example: '+1234567890'
+    minLength: 7
+    maxLength: 15
+    pattern: ^\+[0-9]{6,14}$
   provider:
     type: string
-    description: Mobile money provider
+    description: The mobile money provider name
+    minLength: 1
+    maxLength: 255
