@@ -767,7 +767,9 @@ export const RateExplorer = () => {
         if (costFloorSpread < 0) costFloorSpread = 0;
       }
     }
-    const effectiveSpread = Math.max(rateCard, costFloorSpread);
+    const GRID_MARGIN = 0.30;
+    const hasCostData = gridCostRates && gridCostRates[dest.code] !== undefined;
+    const effectiveSpread = hasCostData ? costFloorSpread + GRID_MARGIN : rateCard;
     const gridBps = Math.round(effectiveSpread * 100);
     const gridReceive = midReceive * (1 - effectiveSpread / 100);
     const providers = {};
