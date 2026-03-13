@@ -943,7 +943,7 @@ export const RateExplorer = () => {
           </div>
         </div>
 
-        {liveRates === null || !competitorDone ? (
+        {liveRates === null || !competitorDone || gridCostRates === null ? (
           <SkeletonTable cols={['Stripe', 'Airwallex', 'Wise', '', '', 'Bank avg.']} />
         ) : (
         <div className="rate-explorer-table-wrapper">
