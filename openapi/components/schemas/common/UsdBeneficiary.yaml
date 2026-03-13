@@ -1,4 +1,3 @@
-title: Individual Beneficiary
 type: object
 required:
 - beneficiaryType
@@ -32,4 +31,27 @@ properties:
     type: string
     description: The country of residence of the beneficiary
   address:
-    $ref: ./Address.yaml
+    type: object
+    required:
+    - country
+    - line1
+    - postalCode
+    properties:
+      line1:
+        type: string
+        description: Address line 1
+      postalCode:
+        type: string
+        description: Postal code
+      country:
+        type: string
+        description: Country code
+      line2:
+        type: string
+        description: Address line 2
+      city:
+        type: string
+        description: City
+      state:
+        type: string
+        description: State or province

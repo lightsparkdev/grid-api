@@ -1,14 +1,14 @@
 type: object
 required:
-  - accountType
-  - paymentRails
-  - accountNumber
-  - bankName
+- accountType
+- paymentRails
+- accountNumber
+- bankName
 properties:
   accountType:
     type: string
     enum:
-      - ZAR_ACCOUNT
+    - ZAR_ACCOUNT
   paymentRails:
     type: array
     items:
@@ -17,12 +17,7 @@ properties:
       - BANK_TRANSFER
   accountNumber:
     type: string
-    description: South African bank account number
-    example: '1234567890'
-    minLength: 9
-    maxLength: 13
-    pattern: ^[0-9]{9,13}$
+    description: The account number of the bank
   bankName:
     type: string
-    description: Name of the bank
-    example: Standard Bank
+    description: The bank name of the bank

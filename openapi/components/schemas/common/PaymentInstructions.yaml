@@ -1,41 +1,49 @@
 type: object
 required:
-  - accountOrWalletInfo
+- accountOrWalletInfo
 properties:
   instructionsNotes:
     type: string
     description: Additional human-readable instructions for making the payment
-    example: >-
-      Please ensure the reference code is included in the payment
-      memo/description field
+    example: Please ensure the reference code is included in the payment memo/description
+      field
   isPlatformAccount:
     type: boolean
-    description: Indicates whether the account is a platform account or a customer account.
+    description: Indicates whether the account is a platform account or a customer
+      account.
     example: true
   accountOrWalletInfo:
     oneOf:
-      - $ref: ../common/PaymentUsdAccountInfo.yaml
-      - $ref: ../common/PaymentBrlAccountInfo.yaml
-      - $ref: ../common/PaymentMxnAccountInfo.yaml
-      - $ref: ../common/PaymentDkkAccountInfo.yaml
-      - $ref: ../common/PaymentEurAccountInfo.yaml
-      - $ref: ../common/PaymentInrAccountInfo.yaml
-      - $ref: ../common/PaymentNgnAccountInfo.yaml
-      - $ref: ../common/PaymentCadAccountInfo.yaml
-      - $ref: ../common/PaymentGbpAccountInfo.yaml
-      - $ref: ../common/PaymentHkdAccountInfo.yaml
-      - $ref: ../common/PaymentIdrAccountInfo.yaml
-      - $ref: ../common/PaymentMyrAccountInfo.yaml
-      - $ref: ../common/PaymentPhpAccountInfo.yaml
-      - $ref: ../common/PaymentSgdAccountInfo.yaml
-      - $ref: ../common/PaymentThbAccountInfo.yaml
-      - $ref: ../common/PaymentVndAccountInfo.yaml
-      - $ref: ../common/PaymentSparkWalletInfo.yaml
-      - $ref: ../common/PaymentLightningInvoiceInfo.yaml
-      - $ref: ../common/PaymentSolanaWalletInfo.yaml
-      - $ref: ../common/PaymentTronWalletInfo.yaml
-      - $ref: ../common/PaymentPolygonWalletInfo.yaml
-      - $ref: ../common/PaymentBaseWalletInfo.yaml
+    - $ref: ../common/PaymentUsdAccountInfo.yaml
+    - $ref: ../common/PaymentBrlAccountInfo.yaml
+    - $ref: ../common/PaymentMxnAccountInfo.yaml
+    - $ref: ../common/PaymentDkkAccountInfo.yaml
+    - $ref: ../common/PaymentEurAccountInfo.yaml
+    - $ref: ../common/PaymentInrAccountInfo.yaml
+    - $ref: ../common/PaymentNgnAccountInfo.yaml
+    - $ref: ../common/PaymentCadAccountInfo.yaml
+    - $ref: ../common/PaymentGbpAccountInfo.yaml
+    - $ref: ../common/PaymentHkdAccountInfo.yaml
+    - $ref: ../common/PaymentIdrAccountInfo.yaml
+    - $ref: ../common/PaymentMyrAccountInfo.yaml
+    - $ref: ../common/PaymentPhpAccountInfo.yaml
+    - $ref: ../common/PaymentSgdAccountInfo.yaml
+    - $ref: ../common/PaymentThbAccountInfo.yaml
+    - $ref: ../common/PaymentVndAccountInfo.yaml
+    - $ref: ../common/PaymentKesAccountInfo.yaml
+    - $ref: ../common/PaymentMwkAccountInfo.yaml
+    - $ref: ../common/PaymentRwfAccountInfo.yaml
+    - $ref: ../common/PaymentTzsAccountInfo.yaml
+    - $ref: ../common/PaymentUgxAccountInfo.yaml
+    - $ref: ../common/PaymentXofAccountInfo.yaml
+    - $ref: ../common/PaymentZarAccountInfo.yaml
+    - $ref: ../common/PaymentZmwAccountInfo.yaml
+    - $ref: ../common/PaymentSparkWalletInfo.yaml
+    - $ref: ../common/PaymentLightningInvoiceInfo.yaml
+    - $ref: ../common/PaymentSolanaWalletInfo.yaml
+    - $ref: ../common/PaymentTronWalletInfo.yaml
+    - $ref: ../common/PaymentPolygonWalletInfo.yaml
+    - $ref: ../common/PaymentBaseWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
@@ -61,3 +69,11 @@ properties:
         TRON_WALLET: ../common/PaymentTronWalletInfo.yaml
         POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
         BASE_WALLET: ../common/PaymentBaseWalletInfo.yaml
+        KES_ACCOUNT: ../common/PaymentKesAccountInfo.yaml
+        MWK_ACCOUNT: ../common/PaymentMwkAccountInfo.yaml
+        RWF_ACCOUNT: ../common/PaymentRwfAccountInfo.yaml
+        TZS_ACCOUNT: ../common/PaymentTzsAccountInfo.yaml
+        UGX_ACCOUNT: ../common/PaymentUgxAccountInfo.yaml
+        XOF_ACCOUNT: ../common/PaymentXofAccountInfo.yaml
+        ZAR_ACCOUNT: ../common/PaymentZarAccountInfo.yaml
+        ZMW_ACCOUNT: ../common/PaymentZmwAccountInfo.yaml
