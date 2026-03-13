@@ -755,7 +755,6 @@ export const RateExplorer = () => {
     const midRate = destUsdMid / sourceUsdMid;
     const cd = competitorData[dest.code];
     const midReceive = cd && cd.midReceive ? cd.midReceive : debouncedAmount * midRate;
-    const rateCard = dest.rateCardSpread;
     let costFloorSpread = 0;
     if (gridCostRates && gridCostRates[dest.code] && destUsdMid > 0) {
       const gridApiRate = parseFloat(gridCostRates[dest.code]);
@@ -772,7 +771,7 @@ export const RateExplorer = () => {
     var fallbackSpread = 0.93;
     if (['CAD','CHF','HKD'].includes(dest.code)) fallbackSpread = 0.86;
     else if (['ISK','GHS','CDF','LKR','CRC'].includes(dest.code)) fallbackSpread = 1.21;
-    const effectiveSpread = hasCostData ? Math.max(costFloorSpread + GRID_MARGIN, rateCard) : fallbackSpread;
+    const effectiveSpread = hasCostData ? costFloorSpread + GRID_MARGIN : fallbackSpread;
     const gridBps = Math.round(effectiveSpread * 100);
     const gridReceive = midReceive * (1 - effectiveSpread / 100);
     const providers = {};
