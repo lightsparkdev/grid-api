@@ -769,7 +769,10 @@ export const RateExplorer = () => {
     }
     const GRID_MARGIN = 0.30;
     const hasCostData = gridCostRates && gridCostRates[dest.code] !== undefined;
-    const effectiveSpread = hasCostData ? costFloorSpread + GRID_MARGIN : Math.max(rateCard, GRID_MARGIN);
+    var fallbackSpread = 0.93;
+    if (['CAD','CHF','HKD'].includes(dest.code)) fallbackSpread = 0.86;
+    else if (['ISK','GHS','CDF','LKR','CRC'].includes(dest.code)) fallbackSpread = 1.21;
+    const effectiveSpread = hasCostData ? Math.max(costFloorSpread + GRID_MARGIN, rateCard) : fallbackSpread;
     const gridBps = Math.round(effectiveSpread * 100);
     const gridReceive = midReceive * (1 - effectiveSpread / 100);
     const providers = {};
@@ -843,6 +846,9 @@ export const RateExplorer = () => {
   return (
     <div ref={containerRef}>
       <div ref={explorerRef} className="rate-explorer not-prose">
+        <div className="rate-explorer-disclaimer">
+          Standard rates shown. Grid offers real-time settlement, no float requirements, and global reach via a single API. Competitor rates are sourced from live public comparison data and published pricing schedules. Actual rates may vary — <a href="/platform-overview/core-concepts/quote-system">get a real-time quote</a> or <a href="https://www.lightspark.com/contact">contact sales</a> for volume pricing.
+        </div>
         <div ref={headerBarRef} className="rate-explorer-header">
           <div className="rate-explorer-header-left">
             <span className="rate-explorer-header-label">Send</span>
@@ -1085,9 +1091,6 @@ export const RateExplorer = () => {
         </div>
         )}
 
-        <div className="rate-explorer-disclaimer">
-          Grid rates reflect standard published pricing, not personalized quotes. Stripe and Airwallex costs are based on published pricing schedules, not live API data. Wise and other provider rates are live via public comparison data and include all fees. Bank avg. is the average of bank-type providers from comparison data. Actual rates may vary — get real-time quotes via the <a href="/platform-overview/core-concepts/quote-system">Quote API</a>.
-        </div>
       </div>
     </div>
   );
