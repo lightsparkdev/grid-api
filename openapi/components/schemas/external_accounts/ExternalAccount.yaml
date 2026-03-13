@@ -54,6 +54,7 @@ allOf:
           derived from the provided rail and account information.
         minLength: 2
         maxLength: 2
+        pattern: '^[A-Z]{2}$'
         example: IN
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml
