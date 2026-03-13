@@ -174,7 +174,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
     "source": {
       "sourceType": "REALTIME_FUNDING",
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "currency": "USDC"
+      "currency": "USDC",
+      "cryptoNetwork": "SOLANA_MAINNET"
     },
     "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123" },
     "lockedCurrencySide": "SENDING",
@@ -183,13 +184,17 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   }'
 ```
 
+<Info>
+The `cryptoNetwork` field is required when the source currency is a stablecoin (USDC, USDT). It specifies which blockchain network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA_MAINNET`, `BASE_MAINNET`, `ETHEREUM_MAINNET`.
+</Info>
+
 The response includes an array of payment instructions, including blockchain wallet addresses for USDC and invoices for BTC:
 
 ```json Success (201 Created)
 {
   "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
   "status": "PENDING",
-  "source": { "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001", "currency": "USDC" },
+  "source": { "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001", "currency": "USDC", "cryptoNetwork": "SOLANA_MAINNET" },
   "destination": { "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "EUR" },
   "sendingAmount": { "amount": 10000, "currency": { "code": "USDC", "decimals": 2 } },
   "receivingAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
