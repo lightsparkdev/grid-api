@@ -7414,6 +7414,12 @@ components:
               type: string
               description: 'The blockchain network for this external account, if applicable. Present when the account is a cryptocurrency wallet. Example values: SOLANA_MAINNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
               example: SOLANA_MAINNET
+            countryCode:
+              type: string
+              description: ISO 3166-1 alpha-2 country code for the receiving external account, derived from the provided rail and account information.
+              minLength: 2
+              maxLength: 2
+              example: IN
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountCreateRequest:
