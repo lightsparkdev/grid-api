@@ -395,6 +395,111 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Note>
 </Tab>
 
+<Tab title="Malawi">
+**MWK Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "MWK",
+    "platformAccountId": "mw_mobile_001",
+    "accountInfo": {
+      "accountType": "MWK_ACCOUNT",
+      "phoneNumber": "+265991234567",
+      "provider": "AIRTEL",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Chimwemwe Banda",
+        "birthDate": "1993-03-18",
+        "nationality": "MW",
+        "address": {
+          "line1": "Kamuzu Procession Road",
+          "city": "Lilongwe",
+          "postalCode": "00100",
+          "country": "MW"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+265XXXXXXXXX` (9 digits after country code). Providers: `AIRTEL` or `TNM`.
+</Note>
+</Tab>
+
+<Tab title="Uganda">
+**UGX Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "UGX",
+    "platformAccountId": "ug_mobile_001",
+    "accountInfo": {
+      "accountType": "UGX_ACCOUNT",
+      "phoneNumber": "+256701234567",
+      "provider": "MTN",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Nakato Sarah",
+        "birthDate": "1990-07-25",
+        "nationality": "UG",
+        "address": {
+          "line1": "Kampala Road 45",
+          "city": "Kampala",
+          "postalCode": "00100",
+          "country": "UG"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+256XXXXXXXXX` (9 digits after country code). Providers: `MTN` or `AIRTEL`.
+</Note>
+</Tab>
+
+<Tab title="West Africa">
+**XOF Mobile Money (Senegal, Benin, Ivory Coast)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "XOF",
+    "platformAccountId": "xof_mobile_001",
+    "accountInfo": {
+      "accountType": "XOF_ACCOUNT",
+      "phoneNumber": "+221781234567",
+      "provider": "ORANGE",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Mamadou Diallo",
+        "birthDate": "1988-11-12",
+        "nationality": "SN",
+        "address": {
+          "line1": "Avenue Cheikh Anta Diop",
+          "city": "Dakar",
+          "postalCode": "10000",
+          "country": "SN"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Supported countries: Senegal (+221), Benin (+229), and Ivory Coast (+225). Phone formats vary by country.
+</Note>
+</Tab>
+
 <Tab title="Canada">
 **CAD Bank Transfer**
 
@@ -604,6 +709,16 @@ if (!/^\+260\d{9}$/.test(zmwPhoneNumber)) {
 }
 if (!/^\+250\d{9}$/.test(rwfPhoneNumber)) {
   throw new Error("Invalid Rwandan phone number");
+}
+if (!/^\+265\d{9}$/.test(mwkPhoneNumber)) {
+  throw new Error("Invalid Malawian phone number");
+}
+if (!/^\+256\d{9}$/.test(ugxPhoneNumber)) {
+  throw new Error("Invalid Ugandan phone number");
+}
+// West African (XOF): Senegal (+221), Ivory Coast (+225), Benin (+229)
+if (!/^\+(221\d{9}|225\d{10}|229\d{8,9})$/.test(xofPhoneNumber)) {
+  throw new Error("Invalid West African phone number");
 }
 ```
 
