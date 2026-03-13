@@ -771,7 +771,7 @@ export const RateExplorer = () => {
     var fallbackSpread = 1.13;
     if (['CAD','CHF','HKD'].includes(dest.code)) fallbackSpread = 1.06;
     else if (['ISK','GHS','CDF','LKR','CRC'].includes(dest.code)) fallbackSpread = 1.41;
-    const effectiveSpread = hasCostData ? costFloorSpread + GRID_MARGIN : fallbackSpread;
+    const effectiveSpread = (hasCostData && costFloorSpread > 0) ? costFloorSpread + GRID_MARGIN : fallbackSpread;
     const gridBps = Math.round(effectiveSpread * 100);
     const gridReceive = midReceive * (1 - effectiveSpread / 100);
     const providers = {};
