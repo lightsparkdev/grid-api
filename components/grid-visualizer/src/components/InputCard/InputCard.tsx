@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { CurrencySelection } from '@/lib/code-generator';
 import { cryptoAssets, type CryptoAccountType } from '@/data/crypto';
