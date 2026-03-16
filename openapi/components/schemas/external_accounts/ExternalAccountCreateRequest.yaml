@@ -28,5 +28,13 @@ allOf:
           this will override the existing default UMA deposit account. If there is no default UMA deposit account,
           incoming UMA payments will be deposited into the primary internal account for the customer.
         default: false
+      cryptoNetwork:
+        type: string
+        description: >-
+          The blockchain network for this external account. Required when the account is a
+          cryptocurrency wallet (e.g. SolanaWallet, PolygonWallet, TronWallet). Specifies which
+          network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET,
+          ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.
+        example: SOLANA_MAINNET
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml

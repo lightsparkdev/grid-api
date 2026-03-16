@@ -15,8 +15,6 @@ properties:
     example: 9f84e0c2a72c4fa
   customerType:
     $ref: ./CustomerType.yaml
-  kycStatus:
-    $ref: ./KycStatus.yaml
   umaAddress:
     type: string
     description: >-

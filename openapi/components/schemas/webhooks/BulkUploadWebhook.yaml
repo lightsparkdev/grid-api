@@ -1,0 +1,13 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../customers/BulkCustomerImportJob.yaml
+      type:
+        type: string
+        enum:
+          - BULK_UPLOAD.COMPLETED
+          - BULK_UPLOAD.FAILED

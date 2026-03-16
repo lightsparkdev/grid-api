@@ -2,12 +2,11 @@ allOf:
   - $ref: ./BaseWebhook.yaml
   - type: object
     required:
-      - invitation
+      - data
     properties:
-      invitation:
+      data:
         $ref: ../invitations/UmaInvitation.yaml
       type:
         type: string
-        enum: [INVITATION_CLAIMED]
-        description: Type of webhook event
-        example: INVITATION_CLAIMED
+        enum:
+          - INVITATION.CLAIMED

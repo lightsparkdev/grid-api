@@ -1,0 +1,32 @@
+type: object
+required:
+  - accountType
+  - countries
+  - paymentRails
+  - phoneNumber
+  - provider
+properties:
+  accountType:
+    type: string
+    enum:
+      - MWK_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - MW
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - MOBILE_MONEY
+  phoneNumber:
+    type: string
+    description: Malawian mobile money phone number
+    example: '+265991234567'
+    pattern: ^\+265[0-9]{9}$
+  provider:
+    type: string
+    description: Mobile money provider

@@ -2,10 +2,11 @@ type: object
 required:
   - reference
   - initiatedAt
+  - status
 properties:
   reference:
     type: string
-    description: The unique reference code of the refund
+    description: The unique reference ID of the refund
     example: UMA-Q12345-REFUND
   initiatedAt:
     type: string
@@ -15,5 +16,20 @@ properties:
   settledAt:
     type: string
     format: date-time
-    description: When the refund was or will be settled
-    example: '2025-08-15T14:30:00Z'
+    description: When the refund was settled
+    example: '2025-08-15T14:35:00Z'
+  status:
+    type: string
+    enum:
+      - PENDING
+      - COMPLETED
+      - FAILED
+    description: Current status of the refund
+    example: COMPLETED
+  reason:
+    type: string
+    enum:
+      - TRANSACTION_FAILED
+      - USER_CANCELLATION
+    description: Reason for the refund
+    example: TRANSACTION_FAILED

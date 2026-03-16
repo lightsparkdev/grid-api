@@ -2,6 +2,8 @@ package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.quotes.QuoteCreateParams
+import com.lightspark.grid.models.quotes.QuoteCreateParams.LockedCurrencySide
+import com.lightspark.grid.models.quotes.QuoteCreateParams.PurposeOfPayment
 import com.lightspark.grid.models.quotes.QuoteSourceOneOf
 import com.lightspark.grid.models.quotes.QuoteDestinationOneOf
 import com.grid.sample.GridClientBuilder
@@ -32,12 +34,15 @@ fun Route.quoteRoutes() {
                     .lockedCurrencyAmount(json.get("lockedCurrencyAmount").asLong())
                     .lockedCurrencySide(
                         when (json.optText("lockedCurrencySide")?.uppercase()) {
-                            "RECEIVING" -> QuoteCreateParams.LockedCurrencySide.RECEIVING
-                            else -> QuoteCreateParams.LockedCurrencySide.SENDING
+                            "RECEIVING" -> LockedCurrencySide.RECEIVING
+                            else -> LockedCurrencySide.SENDING
                         }
                     )
                     .apply {
                         json.optText("description")?.let { description(it) }
+                        json.optText("purposeOfPayment")?.let {
+                            purposeOfPayment(PurposeOfPayment.of(it))
+                        }
                     }
                     .build()
 
@@ -85,26 +90,26 @@ fun Route.quoteRoutes() {
     }
 }
 
-private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
+private fun buildQuoteSource(sourceNode: JsonNode): QuoteCreateParams.Source {
     val sourceType = sourceNode.optText("sourceType")
 
     if (sourceType == "REALTIME_FUNDING" || sourceNode.has("currency")) {
-        val realtimeSource = QuoteSourceOneOf.RealtimeFundingQuoteSource.builder()
+        val realtimeSource = QuoteCreateParams.Source.RealtimeFundingQuoteSource.builder()
             .currency(sourceNode.get("currency").asText())
             .apply {
                 sourceNode.optText("customerId")?.let { customerId(it) }
             }
             .build()
-        return QuoteSourceOneOf.ofRealtimeFundingQuoteSource(realtimeSource)
+        return QuoteCreateParams.Source.ofRealtimeFundingQuote(realtimeSource)
     }
 
-    val accountSource = QuoteSourceOneOf.AccountQuoteSource.builder()
+    val accountSource = QuoteCreateParams.Source.AccountQuoteSource.builder()
         .accountId(sourceNode.get("accountId").asText())
         .apply {
             sourceNode.optText("customerId")?.let { customerId(it) }
         }
         .build()
-    return QuoteSourceOneOf.ofAccountQuoteSource(accountSource)
+    return QuoteCreateParams.Source.ofAccountQuote(accountSource)
 }
 
 private fun buildQuoteDestination(destNode: JsonNode): QuoteDestinationOneOf {

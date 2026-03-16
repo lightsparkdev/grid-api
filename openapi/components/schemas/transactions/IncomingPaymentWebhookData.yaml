@@ -1,0 +1,14 @@
+title: Incoming Payment Webhook Data
+allOf:
+  - $ref: ./IncomingTransaction.yaml
+  - type: object
+    properties:
+      requestedReceiverCustomerInfoFields:
+        type: array
+        items:
+          $ref: ../common/CounterpartyFieldDefinition.yaml
+        description: >-
+          Information required by the sender's VASP about the recipient.
+          Platform must provide these in the 200 OK response if approving.
+          Note that this only includes fields which Grid does not
+          already have from initial customer registration.

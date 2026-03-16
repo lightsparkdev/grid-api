@@ -1,0 +1,30 @@
+type: object
+required:
+  - internalAccountId
+  - currency
+  - cryptoNetwork
+  - amount
+  - destinationAddress
+properties:
+  internalAccountId:
+    type: string
+    description: The ID of the crypto internal account to withdraw from.
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  currency:
+    type: string
+    description: The currency code of the asset to withdraw (e.g. USDC).
+    example: USDC
+  cryptoNetwork:
+    type: string
+    description: >-
+      The blockchain network for the withdrawal. Example values: SOLANA_MAINNET,
+      SOLANA_DEVNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.
+    example: SOLANA_MAINNET
+  amount:
+    type: integer
+    description: The amount to withdraw in the smallest unit of the currency.
+    example: 1000000
+  destinationAddress:
+    type: string
+    description: The blockchain address to withdraw funds to.
+    example: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU

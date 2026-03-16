@@ -3,6 +3,8 @@ package com.grid.sample.routes
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.customers.CustomerCreateParams
 import com.lightspark.grid.models.customers.CustomerCreateParams.CreateCustomerRequest
+import com.lightspark.grid.models.customers.IndividualCustomerFields
+import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
@@ -21,7 +23,7 @@ fun Route.customerRoutes() {
                 Log.incoming("POST", "/api/customers", body)
 
                 val individual = CreateCustomerRequest.Individual.builder()
-                    .customerType(CreateCustomerRequest.Individual.CustomerType.INDIVIDUAL)
+                    .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
                     .platformCustomerId(json.requiredText("platformCustomerId"))
                     .apply {
                         json.optText("fullName")?.let { fullName(it) }
@@ -29,14 +31,14 @@ fun Route.customerRoutes() {
                         json.optText("birthDate")?.let { birthDate(LocalDate.parse(it)) }
                         json.get("address")?.takeIf { !it.isNull }?.let { addrNode ->
                             address(
-                                CreateCustomerRequest.Individual.Address.builder()
+                                Address.builder()
                                     .apply {
+                                        addrNode.optText("country")?.let { country(it) }
                                         addrNode.optText("line1")?.let { line1(it) }
+                                        addrNode.optText("postalCode")?.let { postalCode(it) }
                                         addrNode.optText("line2")?.let { line2(it) }
                                         addrNode.optText("city")?.let { city(it) }
                                         addrNode.optText("state")?.let { state(it) }
-                                        addrNode.optText("postalCode")?.let { postalCode(it) }
-                                        addrNode.optText("country")?.let { country(it) }
                                     }
                                     .build()
                             )
@@ -45,7 +47,7 @@ fun Route.customerRoutes() {
                     .build()
 
                 val params = CustomerCreateParams.builder()
-                    .createCustomerRequest(individual)
+                    .createCustomerRequest(CreateCustomerRequest.ofIndividual(individual))
                     .build()
 
                 Log.gridRequest("customers.create", JsonUtils.prettyPrint(individual))

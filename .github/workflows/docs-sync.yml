@@ -87,7 +87,7 @@ jobs:
           claude_args:
             --allowedTools Bash,Read,Write,Edit,Glob,Grep,WebFetch
             --model claude-opus-4-5-20251101
-            --max-turns 30
+            --max-turns 45
           prompt: |
             ## Task: Documentation Sync Review
 
@@ -123,22 +123,36 @@ jobs:
                  - `mintlify/snippets/` - Shared content snippets
                  - `mintlify/platform-overview/` - Core concepts
 
-            4. **Check for Outdated References**
+            4. **Check Kotlin Sample App**
+               - Review `samples/kotlin/src/main/kotlin/com/grid/sample/routes/` for route handlers that reference changed schemas
+               - Check that request body construction matches current OpenAPI schemas (field names, required fields, enum values)
+               - Verify external account creation handlers support all current `ExternalAccountType` enum values from `openapi/components/schemas/external_accounts/ExternalAccountType.yaml`
+               - Check that webhook handling in `Webhooks.kt` matches current webhook schemas
+               - Check that quote creation in `Quotes.kt` includes all required fields
+               - Verify SDK method calls match the schema structure (e.g., beneficiary nested inside accountInfo, paymentRails included)
+
+            5. **Check Grid Visualizer Data**
+               - Review `components/grid-visualizer/src/data/account-types.ts` — account type keys and field specs must match `ExternalAccountType` enum values and their corresponding `*AccountInfo.yaml` schemas in `openapi/components/schemas/common/`
+               - Review `components/grid-visualizer/src/data/currencies.ts` — `accountType` values must match `ExternalAccountType` enum, `allRails` and `instantRails` must match the `paymentRails` enum values in each account info schema
+               - Review `components/grid-visualizer/src/data/crypto.ts` — crypto account types must match wallet types in the ExternalAccountType enum
+               - Review `components/grid-visualizer/src/lib/code-generator.ts` — generated API call bodies must match current request schemas (e.g., `accountInfo` structure, `paymentRails` inclusion, beneficiary format)
+
+            6. **Check for Outdated References**
                - Look for hardcoded field names that may have changed
                - Check for endpoint paths that may have been renamed
                - Verify response structure descriptions match the schema
 
             ### Actions
 
-            If documentation updates are needed:
-            1. Make the necessary changes to keep docs in sync
+            If updates are needed in any area (docs, Kotlin sample, or Grid Visualizer):
+            1. Make the necessary changes to keep everything in sync with the OpenAPI schema
             2. Run `npm run build:openapi` if you modified any files in `openapi/`
-            3. Create a PR with:
+            3. Create a single PR with all changes:
                - Branch name: `docs/sync-$(date +%Y%m%d)`
                - Clear title describing the sync
-               - Description listing what was updated and why
+               - Description listing what was updated and why, organized by area (docs, Kotlin sample, Grid Visualizer)
 
-            If documentation is already up to date:
+            If everything is already up to date:
             - Output a brief summary confirming no updates needed
             - Do not create a PR
 

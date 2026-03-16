@@ -58,7 +58,6 @@ components:
         Secp256r1 (P-256) asymmetric signature of the webhook payload, which can
         be used to verify that the webhook was sent by Grid.
 
-
         To verify the signature:
 
         1. Get the Grid public key provided to you during integration
@@ -72,19 +71,6 @@ components:
 
         If the signature verification succeeds, the webhook is authentic. If
         not, it should be rejected.
-  schemas:
-    AllErrors:
-      anyOf:
-        - $ref: components/schemas/errors/Error400.yaml
-        - $ref: components/schemas/errors/Error401.yaml
-        - $ref: components/schemas/errors/Error403.yaml
-        - $ref: components/schemas/errors/Error404.yaml
-        - $ref: components/schemas/errors/Error409.yaml
-        - $ref: components/schemas/errors/Error410.yaml
-        - $ref: components/schemas/errors/Error412.yaml
-        - $ref: components/schemas/errors/Error424.yaml
-        - $ref: components/schemas/errors/Error500.yaml
-        - $ref: components/schemas/errors/Error501.yaml
 paths:
   /config:
     $ref: paths/platform/config.yaml
@@ -130,8 +116,10 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_approve.yaml
   /transactions/{transactionId}/reject:
     $ref: paths/transactions/transactions_{transactionId}_reject.yaml
-  /webhooks/test:
-    $ref: paths/webhooks/webhooks_test.yaml
+  /crypto/estimate-withdrawal-fee:
+    $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
+  /sandbox/webhooks/test:
+    $ref: paths/sandbox/sandbox_webhooks_test.yaml
   /customers/bulk/csv:
     $ref: paths/customers/customers_bulk_csv.yaml
   /customers/bulk/jobs/{jobId}:
@@ -167,9 +155,9 @@ webhooks:
     $ref: webhooks/bulk-upload.yaml
   invitation-claimed:
     $ref: webhooks/invitation-claimed.yaml
-  kyc-status:
-    $ref: webhooks/kyc-status.yaml
-  account-status:
-    $ref: webhooks/account-status.yaml
+  customer-update:
+    $ref: webhooks/customer-update.yaml
+  internal-account-status:
+    $ref: webhooks/internal-account-status.yaml
 security:
   - BasicAuth: []

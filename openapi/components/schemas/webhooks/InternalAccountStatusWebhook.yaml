@@ -1,0 +1,12 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../customers/InternalAccount.yaml
+      type:
+        type: string
+        enum:
+          - INTERNAL_ACCOUNT.BALANCE_UPDATED

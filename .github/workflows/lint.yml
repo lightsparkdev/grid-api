@@ -5,12 +5,14 @@ on:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
+      - 'openapi/**'
       - '.markdownlint.json'
       - 'mintlify/**'
   pull_request:
     branches: [ main ]
     paths:
       - 'openapi.yaml'
+      - 'openapi/**'
       - '.markdownlint.json'
       - 'mintlify/**'
   # Allow manual triggering

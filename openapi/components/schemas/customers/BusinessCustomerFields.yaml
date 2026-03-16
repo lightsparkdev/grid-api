@@ -6,6 +6,8 @@ properties:
     type: string
     enum:
       - BUSINESS
+  kybStatus:
+    $ref: ./KybStatus.yaml
   address:
     $ref: ../common/Address.yaml
   businessInfo:

@@ -1,0 +1,34 @@
+type: object
+required:
+  - accountType
+  - countries
+  - paymentRails
+  - phoneNumber
+  - provider
+properties:
+  accountType:
+    type: string
+    enum:
+      - XOF_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - SN
+      - BJ
+      - CI
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - MOBILE_MONEY
+  phoneNumber:
+    type: string
+    description: West African mobile money phone number (Senegal, Benin, or Ivory Coast)
+    example: '+221781234567'
+    pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229([0-9]{8}|[0-9]{10}))$
+  provider:
+    type: string
+    description: Mobile money provider

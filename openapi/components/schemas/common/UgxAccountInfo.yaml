@@ -1,0 +1,32 @@
+type: object
+required:
+  - accountType
+  - countries
+  - paymentRails
+  - phoneNumber
+  - provider
+properties:
+  accountType:
+    type: string
+    enum:
+      - UGX_ACCOUNT
+  countries:
+    type: array
+    items:
+      type: string
+      enum:
+      - UG
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - MOBILE_MONEY
+  phoneNumber:
+    type: string
+    description: Ugandan mobile money phone number
+    example: '+256701234567'
+    pattern: ^\+256[0-9]{9}$
+  provider:
+    type: string
+    description: Mobile money provider

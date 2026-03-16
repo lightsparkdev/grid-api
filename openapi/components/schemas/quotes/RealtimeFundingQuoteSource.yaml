@@ -23,6 +23,14 @@ allOf:
           [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
           for the full list of supported fiat and crypto currencies.
         example: USD
+      cryptoNetwork:
+        type: string
+        description: >-
+          The crypto network to use for the funding source. Required when `currency` is a
+          stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit
+          on, so the correct deposit address can be generated. Example values:
+          `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`.
+        example: SOLANA_MAINNET
     description: >-
       Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
       This will require manual just-in-time funding using `paymentInstructions` in the response.

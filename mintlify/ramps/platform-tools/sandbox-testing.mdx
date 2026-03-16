@@ -5,6 +5,8 @@ icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-ramps.png"
 ---
 
+import SandboxVpaValidation from '/snippets/sandbox-vpa-validation.mdx';
+
 The Grid Sandbox environment provides a complete testing environment for ramp operations, allowing you to validate on-ramp and off-ramp flows without using real money or cryptocurrency.
 
 ## Sandbox overview
@@ -291,6 +293,10 @@ test digits. For scenarios like PIX and UPI, where there's a domain part involve
 For example, if testing email addresses as a PIX key, the full identifier would be "testuser.002@pix.com.br" to trigger the
 insufficient funds scenario.
 </Tip>
+
+## INR UPI VPA validation simulation
+
+<SandboxVpaValidation />
 
 ## Test scenarios
 

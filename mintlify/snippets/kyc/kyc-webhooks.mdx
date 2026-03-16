@@ -8,31 +8,52 @@ For regulated platforms, customers are created with `APPROVED` KYC status by def
 
 ```json
 {
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-  "type": "KYC_STATUS",
-  "timestamp": "2023-07-21T17:32:28Z",
-  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-  "kycStatus": "APPROVED",
-  "platformCustomerId": "1234567"
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "CUSTOMER.KYC_APPROVED",
+  "timestamp": "2025-07-21T17:32:28Z",
+  "data": {
+    "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "9f84e0c2a72c4fa",
+    "customerType": "INDIVIDUAL",
+    "umaAddress": "$john.doe@uma.domain.com",
+    "kycStatus": "APPROVED",
+    "fullName": "John Michael Doe",
+    "birthDate": "1990-01-15",
+    "nationality": "US",
+    "address": {
+      "line1": "123 Main Street",
+      "line2": "Apt 4B",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "US"
+    },
+    "createdAt": "2025-07-21T17:32:28Z",
+    "updatedAt": "2025-07-21T17:32:28Z",
+    "isDeleted": false
+  }
 }
 ```
 
 **Webhook Headers:**
 - `Content-Type: application/json`
-- `X-Webhook-Signature: sha256=abc123...`
+- `X-Grid-Signature: {"v": "1", "s": "base64_signature..."}`
 
-<ResponseField name="customerId" type="string" required>
-System-generated unique identifier of the customer whose KYC status has changed.
+<ResponseField name="id" type="string" required>
+Unique identifier for this webhook delivery. Use this for idempotency to prevent processing duplicate webhooks.
 </ResponseField>
 
-<ResponseField name="kycStatus" type="string" required>
-Final KYC verification status. Webhooks are only sent for final states:
-- `APPROVED`: Customer verification completed successfully
-- `REJECTED`: Customer verification was rejected
-- `EXPIRED`: KYC verification has expired and needs renewal
-- `CANCELED`: Verification process was canceled
-- `MANUALLY_APPROVED`: Customer was manually approved by platform
-- `MANUALLY_REJECTED`: Customer was manually rejected by platform
+<ResponseField name="type" type="string" required>
+Status-specific event type. KYC webhooks use `CUSTOMER.*` types:
+- `CUSTOMER.KYC_APPROVED`: Customer verification completed successfully
+- `CUSTOMER.KYC_REJECTED`: Customer verification was rejected
+- `CUSTOMER.KYC_SUBMITTED`: KYC verification was initially submitted
+- `CUSTOMER.KYC_MANUALLY_APPROVED`: Customer was manually approved by platform
+- `CUSTOMER.KYC_MANUALLY_REJECTED`: Customer was manually rejected by platform
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+The full customer resource object, same as the corresponding `GET /customers/{id}` endpoint would return. Includes all customer fields such as `id`, `kycStatus`, `fullName`, `birthDate`, `nationality`, `address`, etc.
 </ResponseField>
 
 <Note>
@@ -43,49 +64,39 @@ Intermediate states like `PENDING_REVIEW` do not trigger webhook notifications. 
 ```javascript
 // Example webhook handler for KYC status updates
 // Note: Only final states trigger webhook notifications
-app.post('/webhooks/kyc-status', (req, res) => {
-  const { customerId, kycStatus } = req.body;
-  
-  switch (kycStatus) {
-    case 'APPROVED':
+app.post('/webhooks/kyc-status', async (req, res) => {
+  const { type, data } = req.body;
+
+  switch (type) {
+    case 'CUSTOMER.KYC_APPROVED':
       // Activate customer account
-      await activateCustomer(customerId);
-      await sendWelcomeEmail(customerId);
+      await activateCustomer(data.id);
+      await sendWelcomeEmail(data.id);
       break;
-      
-    case 'REJECTED':
+
+    case 'CUSTOMER.KYC_REJECTED':
       // Notify support and customer
-      await notifySupport(customerId, 'KYC_REJECTED');
-      await sendRejectionEmail(customerId);
+      await notifySupport(data.id, 'KYC_REJECTED');
+      await sendRejectionEmail(data.id);
       break;
-      
-    case 'MANUALLY_APPROVED':
+
+    case 'CUSTOMER.KYC_MANUALLY_APPROVED':
       // Handle manual approval
-      await activateCustomer(customerId);
-      await sendWelcomeEmail(customerId);
+      await activateCustomer(data.id);
+      await sendWelcomeEmail(data.id);
       break;
-      
-    case 'MANUALLY_REJECTED':
+
+    case 'CUSTOMER.KYC_MANUALLY_REJECTED':
       // Handle manual rejection
-      await notifySupport(customerId, 'KYC_MANUALLY_REJECTED');
-      await sendRejectionEmail(customerId);
+      await notifySupport(data.id, 'KYC_MANUALLY_REJECTED');
+      await sendRejectionEmail(data.id);
       break;
-      
-    case 'EXPIRED':
-      // Handle expired KYC
-      await notifyCustomerForReKyc(customerId);
-      break;
-      
-    case 'CANCELED':
-      // Handle canceled verification
-      await logKycCancelation(customerId);
-      break;
-      
+
     default:
-      // Log unexpected statuses
-      console.log(`Unexpected KYC status ${kycStatus} for customer ${customerId}`);
+      // Log unexpected types
+      console.log(`Unexpected webhook type ${type} for customer ${data.id}`);
   }
-  
+
   res.status(200).send('OK');
 });
 ```

@@ -1,0 +1,37 @@
+type: object
+required:
+  - networkFee
+  - networkFeeAsset
+  - applicationFee
+  - totalFee
+  - netAmount
+properties:
+  networkFee:
+    type: integer
+    description: >-
+      The estimated network (gas) fee in the smallest unit of the network fee asset (e.g. lamports
+      for SOL). This is provided for informational purposes to show the raw on-chain cost. Note that
+      this value is denominated in networkFeeAsset, not in the withdrawal currency — it cannot be
+      directly added to applicationFee or compared to totalFee.
+    example: 5000
+  networkFeeAsset:
+    type: string
+    description: The asset used to pay the network fee (e.g. SOL for Solana transactions).
+    example: SOL
+  applicationFee:
+    type: integer
+    description: >-
+      The application fee charged by the platform in the smallest unit of the withdrawal currency.
+      Zero if no application fee applies.
+    example: 0
+  totalFee:
+    type: integer
+    description: >-
+      The total cost of the withdrawal in the smallest unit of the withdrawal currency. This equals
+      the network fee converted to the withdrawal currency at current rates plus the application fee.
+      This is the amount deducted from the withdrawal in addition to netAmount.
+    example: 5000
+  netAmount:
+    type: integer
+    description: The net amount the recipient will receive after fees, in the smallest unit of the withdrawal currency.
+    example: 995000

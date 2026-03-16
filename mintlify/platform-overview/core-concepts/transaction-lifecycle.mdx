@@ -21,16 +21,14 @@ PENDING → PROCESSING → COMPLETED
 
 | Status | Description | Next State | Actions Available |
 |--------|-------------|------------|-------------------|
-| **PENDING** | Transaction created, awaiting processing | PROCESSING, FAILED | Monitor status |
-| **PROCESSING** | Payment being routed and settled | COMPLETED, FAILED | Monitor status |
-| **COMPLETED** | Successfully delivered to recipient | Terminal | None (final state) |
-| **FAILED** | Transaction failed, funds refunded if applicable | Terminal | Create new transaction |
-| **REJECTED** | Rejected by recipient or compliance | Terminal | None (final state) |
-| **REFUNDED** | Completed transaction later refunded | Terminal | None (final state) |
-| **EXPIRED** | Quote or payment expired before execution | Terminal | Create new quote |
+| **PENDING** | Quote is pending confirmation | PROCESSING, EXPIRED | Monitor status |
+| **EXPIRED** | Quote wasn't executed before expiry window | Terminal | Create new quote |
+| **PROCESSING** | Executing the quote after receiving funds | COMPLETED, FAILED | Monitor status |
+| **COMPLETED** | Payout successfully reached the destination | Terminal | None (final state) |
+| **FAILED** | Something went wrong — accompanied by a `failureReason` | Terminal | Create new transaction |
 
 <Tip>
-**Terminal statuses**: `COMPLETED`, `REJECTED`, `FAILED`, `REFUNDED`, `EXPIRED`
+**Terminal statuses**: `COMPLETED`, `FAILED`, `EXPIRED`
 
 Once a transaction reaches a terminal status, it will not change further.
 </Tip>

@@ -53,18 +53,17 @@ properties:
     type: object
     additionalProperties: true
     description: >
-      Only relevant for UMA destinations.
-
-      Key-value pairs of information about the sender which was
-      requested by the counterparty (recipient) institution.
+      Key-value pairs of additional information about the sender which was
+      requested by the destination.
+      This is relevant when the destination requires more sender info than
+      was provided during customer creation.
 
       Any fields specified in `requiredPayerDataFields` from the
-      response of the `/receiver/uma/{receiverUmaAddress}` (lookupUma)
-      endpoint
-
-      MUST be provided here if they were requested. If the
-      counterparty (recipient) institution did not request any
-      information, this field can be omitted.
+      response of the `/receiver/uma/{receiverUmaAddress}` (lookupUma) or
+      `/receiver/external-account/{accountId}` (lookupExternalAccount)
+      endpoints
+      MUST be provided here if they were requested. If the destination did
+      not request any additional information, this field can be omitted.
     example:
       FULL_NAME: Jane Receiver
       NATIONALITY: FR
