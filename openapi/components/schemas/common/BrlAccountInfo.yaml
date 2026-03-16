@@ -18,10 +18,21 @@ properties:
       - PIX
   pixKey:
     type: string
-    description: The PIX key of the bank
+    description: The PIX key (email, phone, CPF, CNPJ, or random)
+    minLength: 1
+    maxLength: 77
   pixKeyType:
     type: string
-    description: The type of PIX key of the bank
+    description: The type of PIX key
+    enum:
+    - email
+    - phone
+    - cpf
+    - cnpj
+    - random
   taxId:
     type: string
-    description: The tax ID of the bank account
+    description: The tax ID (CPF or CNPJ)
+    minLength: 11
+    maxLength: 14
+    pattern: ^[0-9]{11,14}$

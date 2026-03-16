@@ -1,14 +1,14 @@
 type: object
 required:
-  - accountType
-  - paymentRails
-  - phoneNumber
-  - provider
+- accountType
+- paymentRails
+- phoneNumber
+- provider
 properties:
   accountType:
     type: string
     enum:
-      - TZS_ACCOUNT
+    - TZS_ACCOUNT
   paymentRails:
     type: array
     items:
@@ -19,7 +19,11 @@ properties:
     type: string
     description: Tanzanian mobile money phone number
     example: '+255712345678'
+    minLength: 7
+    maxLength: 15
     pattern: ^\+255[0-9]{9}$
   provider:
     type: string
-    description: Mobile money provider
+    description: The mobile money provider name
+    minLength: 1
+    maxLength: 255
