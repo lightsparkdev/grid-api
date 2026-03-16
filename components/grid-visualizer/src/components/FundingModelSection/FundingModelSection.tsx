@@ -64,7 +64,9 @@ export function FundingModelSection({
   selectedMode,
   onModeChange,
 }: FundingModelSectionProps) {
-  const options = source.type === 'crypto' ? CRYPTO_OPTIONS : FIAT_OPTIONS;
+  const options = source.type === 'crypto'
+    ? CRYPTO_OPTIONS
+    : FIAT_OPTIONS.filter((o) => o.mode !== 'realtime' || source.jitEligible);
 
   return (
     <AnimatePresence>
