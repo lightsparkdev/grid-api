@@ -217,7 +217,7 @@ function RailDropdown({
   });
 
   useEffect(() => {
-    if (currentRail && currentRail !== selectedRail) {
+    if (currentRail) {
       setSelectedRail(currentRail);
     }
   }, [currentRail]);
