@@ -26,6 +26,7 @@ interface InputCardProps {
   label: 'Source' | 'Destination';
   selection: CurrencySelection | null;
   region?: string | null;
+  rail?: string | null;
   onCardClick: () => void;
   onNetworkChange?: (acct: CryptoAccountType) => void;
   onRailChange?: (rail: string) => void;
@@ -201,16 +202,25 @@ function RailDropdown({
   selection,
   options,
   onSelect,
+  currentRail,
 }: {
   selection: CurrencySelection;
   options: string[];
   onSelect?: (rail: string) => void;
+  currentRail?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedRail, setSelectedRail] = useState(() => {
+    if (currentRail) return currentRail;
     const fiat = currencies.find((c) => c.code === selection.code);
     return fiat?.instantRails[0] ?? fiat?.allRails[0] ?? options[0];
   });
+
+  useEffect(() => {
+    if (currentRail && currentRail !== selectedRail) {
+      setSelectedRail(currentRail);
+    }
+  }, [currentRail]);
   const btnRef = useRef<HTMLButtonElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
 
@@ -292,6 +302,7 @@ export function InputCard({
   label,
   selection,
   region,
+  rail,
   onCardClick,
   onNetworkChange,
   onRailChange,
@@ -378,6 +389,7 @@ export function InputCard({
                   selection={selection}
                   options={fiatRailOptions}
                   onSelect={onRailChange}
+                  currentRail={rail}
                 />
               ) : selection.type === 'fiat' && fiatRail ? (
                 <div className={clsx(styles.propertyRow, styles.propertyRowStatic)}>

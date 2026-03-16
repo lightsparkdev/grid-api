@@ -160,6 +160,7 @@ export default function Home() {
                   label="Source"
                   selection={state.send}
                   region={state.sourceRegion}
+                  rail={state.sourceRail}
                   onCardClick={() => openPicker('send')}
                   onNetworkChange={setSendNetwork}
                   onRailChange={setSourceRail}
