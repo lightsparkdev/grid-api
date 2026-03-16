@@ -21,6 +21,7 @@ interface FlowPanelProps {
   receive: CurrencySelection;
   sourceRegion?: string | null;
   destRegion?: string | null;
+  sourceRail?: string | null;
   expanded: boolean;
   onToggle: () => void;
 }
@@ -264,10 +265,11 @@ export function FlowPanel({
   receive,
   sourceRegion,
   destRegion,
+  sourceRail,
   expanded,
   onToggle,
 }: FlowPanelProps) {
-  const path = useMemo(() => buildFlowPath(send, receive, sourceRegion, destRegion), [send, receive, sourceRegion, destRegion]);
+  const path = useMemo(() => buildFlowPath(send, receive, sourceRegion, destRegion, sourceRail), [send, receive, sourceRegion, destRegion, sourceRail]);
   const pathKey = path.nodes.map((n) => n.id + n.label + n.isInternal + n.actionCards.map((a) => a.text).join(',')).join('|');
   const contentRef = useRef<HTMLDivElement>(null);
   const flowRef = useRef<HTMLDivElement>(null);

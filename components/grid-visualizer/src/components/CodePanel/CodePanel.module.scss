@@ -237,6 +237,30 @@
   padding-bottom: var(--spacing-4xl);
 }
 
+// Instructional block (non-code step)
+.instructionalBlock {
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  padding: var(--spacing-md);
+}
+
+.instructionalNote {
+  @include body;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 24px;
+}
+
+.instructionalCode {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-xs);
+  padding: 1px var(--spacing-3xs);
+}
+
 // Code block
 .codeBlock {
   background: var(--surface-base);

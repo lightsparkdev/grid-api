@@ -49,10 +49,9 @@
 .sidebarContent {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
   padding: var(--spacing-4xl);
   overflow-y: auto;
+  overscroll-behavior: contain;
   min-height: 0;
 }
 
@@ -60,7 +59,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
+  margin: auto 0;
 }
 
 .sidebarFooter {
@@ -234,6 +233,7 @@
   // Inline "View flow and code" button in wizard view
   .mobileViewBtn {
     @include label;
+    margin-top: 22px;
     display: flex;
     align-items: center;
     justify-content: center;

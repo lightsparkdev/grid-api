@@ -3,7 +3,7 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 10px;
 }
 
 .divider {
@@ -61,7 +61,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
-  padding: 0 var(--spacing-xs);
 }
 
 .flowItem {

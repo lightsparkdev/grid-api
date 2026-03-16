@@ -3,6 +3,7 @@
 import { useMemo, useCallback, useRef } from 'react';
 import { Command } from '@lightsparkdev/origin';
 import type { CommandItem, CommandGroup } from '@lightsparkdev/origin';
+import { useCommandNav } from '@/hooks/useCommandNav';
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
 import { currencies } from '@/data/currencies';
 import styles from './RegionPicker.module.scss';
@@ -82,7 +83,7 @@ export function RegionPicker({
     [onSelect],
   );
 
-  const groupLabel = cryptoCode ? `Where's your ${cryptoCode}?` : 'Select your region';
+  const groupLabel = 'Region';
 
   const groups = useMemo(
     () => buildRegionItems(handleSelect, groupLabel),
@@ -93,6 +94,8 @@ export function RegionPicker({
   if (open) {
     frozenGroupsRef.current = groups;
   }
+
+  useCommandNav(open);
 
   const renderItem = useMemo(
     () => (item: CommandItem) => (
