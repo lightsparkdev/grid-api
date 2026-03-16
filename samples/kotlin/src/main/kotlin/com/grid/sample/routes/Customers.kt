@@ -33,12 +33,12 @@ fun Route.customerRoutes() {
                             address(
                                 Address.builder()
                                     .apply {
+                                        addrNode.optText("country")?.let { country(it) }
                                         addrNode.optText("line1")?.let { line1(it) }
+                                        addrNode.optText("postalCode")?.let { postalCode(it) }
                                         addrNode.optText("line2")?.let { line2(it) }
                                         addrNode.optText("city")?.let { city(it) }
                                         addrNode.optText("state")?.let { state(it) }
-                                        addrNode.optText("postalCode")?.let { postalCode(it) }
-                                        addrNode.optText("country")?.let { country(it) }
                                     }
                                     .build()
                             )

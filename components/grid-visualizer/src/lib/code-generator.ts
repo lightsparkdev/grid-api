@@ -42,6 +42,10 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
     accountType: sel.accountType,
   };
 
+  if (spec.paymentRails) {
+    info.paymentRails = spec.paymentRails;
+  }
+
   for (const field of spec.fields) {
     info[field.name] = field.example;
   }
@@ -118,10 +122,6 @@ export function generateSteps(
       accountInfo,
     };
 
-    if (spec?.purposeOfPaymentRequired) {
-      (accountInfo as Record<string, unknown>).purposeOfPayment = 'GOODS_OR_SERVICES';
-    }
-
     steps.push({
       step: stepNum++,
       title: 'Register destination account',
@@ -141,10 +141,6 @@ export function generateSteps(
       currency: source.code,
       accountInfo,
     };
-
-    if (spec?.purposeOfPaymentRequired) {
-      (accountInfo as Record<string, unknown>).purposeOfPayment = 'GOODS_OR_SERVICES';
-    }
 
     steps.push({
       step: stepNum++,
@@ -273,6 +269,7 @@ export function generateSteps(
       destination: quoteDest,
       lockedCurrencySide: 'SENDING',
       lockedCurrencyAmount: 100000,
+      purposeOfPayment: 'GIFT',
     };
 
     const quoteDesc = isSameCurrency
