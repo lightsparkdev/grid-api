@@ -1,7 +1,7 @@
-title: NGN Account
+title: AED Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/NgnAccountInfo.yaml
+- $ref: ../common/AedAccountInfo.yaml
 - type: object
   required:
   - beneficiary
@@ -9,11 +9,11 @@ allOf:
     beneficiary:
       oneOf:
       - title: Individual Beneficiary
-        $ref: ../common/NgnBeneficiary.yaml
+        $ref: ../common/AedBeneficiary.yaml
       - title: Business Beneficiary
         $ref: ../common/BusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
-          INDIVIDUAL: ../common/NgnBeneficiary.yaml
+          INDIVIDUAL: ../common/AedBeneficiary.yaml
           BUSINESS: ../common/BusinessBeneficiary.yaml

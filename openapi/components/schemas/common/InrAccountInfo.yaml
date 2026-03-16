@@ -16,4 +16,8 @@ properties:
       - UPI
   vpa:
     type: string
-    description: The VPA of the bank
+    description: The UPI Virtual Payment Address
+    example: user@upi
+    minLength: 3
+    maxLength: 255
+    pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$

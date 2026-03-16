@@ -4759,9 +4759,15 @@ components:
         accountNumber:
           type: string
           description: The account number of the bank
+          minLength: 1
+          maxLength: 34
         routingNumber:
           type: string
-          description: The routing number of the bank
+          description: The ABA routing number
+          example: '021000021'
+          minLength: 9
+          maxLength: 9
+          pattern: ^[0-9]{9}$
     PaymentUsdAccountInfo:
       title: USD Bank Account
       allOf:
@@ -4796,13 +4802,24 @@ components:
               - PIX
         pixKey:
           type: string
-          description: The PIX key of the bank
+          description: The PIX key (email, phone, CPF, CNPJ, or random)
+          minLength: 1
+          maxLength: 77
         pixKeyType:
           type: string
-          description: The type of PIX key of the bank
+          description: The type of PIX key
+          enum:
+            - CPF
+            - CNPJ
+            - EMAIL
+            - PHONE
+            - RANDOM
         taxId:
           type: string
-          description: The tax ID of the bank account
+          description: The tax ID (CPF or CNPJ)
+          minLength: 11
+          maxLength: 14
+          pattern: ^[0-9]{11,14}$
     PaymentBrlAccountInfo:
       title: BRL Account
       allOf:
@@ -4865,10 +4882,18 @@ components:
               - SEPA_INSTANT
         iban:
           type: string
-          description: The IBAN of the bank
-        swiftBic:
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        swiftCode:
           type: string
-          description: The SWIFT BIC of the bank
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
     PaymentDkkAccountInfo:
       title: DKK Account
       allOf:
@@ -4902,10 +4927,18 @@ components:
               - SEPA_INSTANT
         iban:
           type: string
-          description: The IBAN of the bank
-        swiftBic:
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        swiftCode:
           type: string
-          description: The SWIFT BIC of the bank
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
     PaymentEurAccountInfo:
       title: EUR Account
       allOf:
@@ -4938,7 +4971,11 @@ components:
               - UPI
         vpa:
           type: string
-          description: The VPA of the bank
+          description: The UPI Virtual Payment Address
+          example: user@upi
+          minLength: 3
+          maxLength: 255
+          pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
     PaymentInrAccountInfo:
       title: INR Account
       allOf:
@@ -4965,14 +5002,15 @@ components:
         accountNumber:
           type: string
           description: Nigerian bank account number
-          example: '0123456789'
           minLength: 10
           maxLength: 10
+          example: 123456789
           pattern: ^[0-9]{10}$
         bankName:
           type: string
-          description: Name of the bank
-          example: First Bank of Nigeria
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
     PaymentNgnAccountInfo:
       title: NGN Account
       allOf:
@@ -5059,15 +5097,17 @@ components:
               - FASTER_PAYMENTS
         sortCode:
           type: string
-          description: UK bank sort code (6 digits, may include hyphens)
-          example: 20-00-00
-          pattern: ^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$
+          description: The UK sort code
+          example: '123456'
+          minLength: 6
+          maxLength: 6
+          pattern: ^[0-9]{6}$
         accountNumber:
           type: string
           description: UK bank account number (8 digits)
-          example: '12345678'
           minLength: 8
           maxLength: 8
+          example: '12345678'
           pattern: ^[0-9]{8}$
     PaymentGbpAccountInfo:
       title: GBP Account
@@ -5103,15 +5143,18 @@ components:
               - BANK_TRANSFER
         bankName:
           type: string
-          description: Name of the bank
-          example: HSBC Hong Kong
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: Hong Kong bank account number
+          minLength: 1
+          maxLength: 34
           example: '123456789012'
         swiftCode:
           type: string
-          description: SWIFT/BIC code (8 or 11 characters)
+          description: The SWIFT/BIC code of the bank
           example: HSBCHKHHHKH
           minLength: 8
           maxLength: 11
@@ -5134,8 +5177,8 @@ components:
       required:
         - accountType
         - paymentRails
-        - accountNumber
         - bankName
+        - accountNumber
         - swiftCode
         - phoneNumber
       properties:
@@ -5149,17 +5192,21 @@ components:
             type: string
             enum:
               - BANK_TRANSFER
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+          example: Bank Central Asia
         accountNumber:
           type: string
           description: Indonesian bank account number
+          minLength: 1
+          maxLength: 34
           example: '1234567890'
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Bank Central Asia
         swiftCode:
           type: string
-          description: SWIFT/BIC code (8 or 11 characters)
+          description: The SWIFT/BIC code of the bank
           example: CENAIDJA
           minLength: 8
           maxLength: 11
@@ -5168,6 +5215,8 @@ components:
           type: string
           description: Indonesian phone number for e-wallet payments
           example: '+6281234567890'
+          minLength: 7
+          maxLength: 15
           pattern: ^\+62[0-9]{9,12}$
     PaymentIdrAccountInfo:
       title: IDR Account
@@ -5203,15 +5252,18 @@ components:
               - BANK_TRANSFER
         bankName:
           type: string
-          description: Name of the bank
-          example: Maybank
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: Malaysian bank account number
+          minLength: 1
+          maxLength: 34
           example: '1234567890'
         swiftCode:
           type: string
-          description: SWIFT/BIC code (8 or 11 characters)
+          description: The SWIFT/BIC code of the bank
           example: MABORUMMYYY
           minLength: 8
           maxLength: 11
@@ -5250,11 +5302,15 @@ components:
         bankName:
           type: string
           description: Name of the beneficiary's bank
+          minLength: 1
+          maxLength: 255
           example: BDO Unibank
         accountNumber:
           type: string
           description: Bank account number
-          example: '001234567890'
+          minLength: 1
+          maxLength: 34
+          example: 1234567890
     PaymentPhpAccountInfo:
       title: PHP Account
       allOf:
@@ -5274,8 +5330,8 @@ components:
         - accountType
         - paymentRails
         - bankName
-        - swiftCode
         - accountNumber
+        - swiftCode
       properties:
         accountType:
           type: string
@@ -5292,18 +5348,22 @@ components:
         bankName:
           type: string
           description: Name of the beneficiary's bank
+          minLength: 1
+          maxLength: 255
           example: DBS Bank Ltd
+        accountNumber:
+          type: string
+          description: Bank account number
+          minLength: 1
+          maxLength: 34
+          example: 123456789
         swiftCode:
           type: string
-          description: SWIFT/BIC code (8 or 11 characters)
+          description: The SWIFT/BIC code of the bank
           example: DBSSSGSG
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-        accountNumber:
-          type: string
-          description: Bank account number
-          example: '0123456789'
     PaymentSgdAccountInfo:
       title: SGD Account
       allOf:
@@ -5338,15 +5398,18 @@ components:
               - BANK_TRANSFER
         bankName:
           type: string
-          description: Name of the bank
-          example: Bangkok Bank
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: Thai bank account number
+          minLength: 1
+          maxLength: 34
           example: '1234567890'
         swiftCode:
           type: string
-          description: SWIFT/BIC code (8 or 11 characters)
+          description: The SWIFT/BIC code of the bank
           example: BKKBTHBK
           minLength: 8
           maxLength: 11
@@ -5385,15 +5448,18 @@ components:
               - BANK_TRANSFER
         bankName:
           type: string
-          description: Name of the bank
-          example: Vietcombank
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: Vietnamese bank account number
+          minLength: 1
+          maxLength: 34
           example: '1234567890'
         swiftCode:
           type: string
-          description: SWIFT/BIC code (8 or 11 characters)
+          description: The SWIFT/BIC code of the bank
           example: BFTVVNVX
           minLength: 8
           maxLength: 11
@@ -5565,6 +5631,405 @@ components:
               description: Type of asset
               enum:
                 - USDC
+    AedAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - AED_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        iban:
+          type: string
+          description: UAE IBAN (23 characters, starting with AE)
+          example: AE070331234567890123456
+          minLength: 23
+          maxLength: 23
+          pattern: ^AE[0-9]{21}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: EBILAEAD
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    PaymentAedAccountInfo:
+      title: AED Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/AedAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    KesAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - KES_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Kenyan mobile money phone number
+          example: '+254712345678'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+254[0-9]{9}$
+        provider:
+          type: string
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+    PaymentKesAccountInfo:
+      title: KES Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/KesAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    MwkAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - MWK_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - MW
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Malawian mobile money phone number
+          example: '+265991234567'
+          pattern: ^\+265[0-9]{9}$
+        provider:
+          type: string
+          description: Mobile money provider
+    PaymentMwkAccountInfo:
+      title: MWK Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/MwkAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    RwfAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - RWF_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Rwandan mobile money phone number
+          example: '+250781234567'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+250[0-9]{9}$
+        provider:
+          type: string
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+    PaymentRwfAccountInfo:
+      title: RWF Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/RwfAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    TzsAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TZS_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Tanzanian mobile money phone number
+          example: '+255712345678'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+255[0-9]{9}$
+        provider:
+          type: string
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+    PaymentTzsAccountInfo:
+      title: TZS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/TzsAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    UgxAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - UGX_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - UG
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Ugandan mobile money phone number
+          example: '+256701234567'
+          pattern: ^\+256[0-9]{9}$
+        provider:
+          type: string
+          description: Mobile money provider
+    PaymentUgxAccountInfo:
+      title: UGX Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/UgxAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    XofAccountInfo:
+      type: object
+      required:
+        - accountType
+        - countries
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - XOF_ACCOUNT
+        countries:
+          type: array
+          items:
+            type: string
+            enum:
+              - SN
+              - BJ
+              - CI
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: West African mobile money phone number (Senegal, Benin, or Ivory Coast)
+          example: '+221781234567'
+          pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229([0-9]{8}|[0-9]{10}))$
+        provider:
+          type: string
+          description: Mobile money provider
+    PaymentXofAccountInfo:
+      title: XOF Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/XofAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    ZarAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ZAR_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: South African bank account number
+          minLength: 9
+          maxLength: 13
+          example: '1234567890'
+          pattern: ^[0-9]{9,13}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+    PaymentZarAccountInfo:
+      title: ZAR Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/ZarAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    ZmwAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ZMW_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: Zambian mobile money phone number
+          example: '+260971234567'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+260[0-9]{9}$
+        provider:
+          type: string
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+    PaymentZmwAccountInfo:
+      title: ZMW Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/ZmwAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -5596,6 +6061,15 @@ components:
             - $ref: '#/components/schemas/PaymentSgdAccountInfo'
             - $ref: '#/components/schemas/PaymentThbAccountInfo'
             - $ref: '#/components/schemas/PaymentVndAccountInfo'
+            - $ref: '#/components/schemas/PaymentAedAccountInfo'
+            - $ref: '#/components/schemas/PaymentKesAccountInfo'
+            - $ref: '#/components/schemas/PaymentMwkAccountInfo'
+            - $ref: '#/components/schemas/PaymentRwfAccountInfo'
+            - $ref: '#/components/schemas/PaymentTzsAccountInfo'
+            - $ref: '#/components/schemas/PaymentUgxAccountInfo'
+            - $ref: '#/components/schemas/PaymentXofAccountInfo'
+            - $ref: '#/components/schemas/PaymentZarAccountInfo'
+            - $ref: '#/components/schemas/PaymentZmwAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -5627,6 +6101,15 @@ components:
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
+              AED_ACCOUNT: '#/components/schemas/PaymentAedAccountInfo'
+              KES_ACCOUNT: '#/components/schemas/PaymentKesAccountInfo'
+              MWK_ACCOUNT: '#/components/schemas/PaymentMwkAccountInfo'
+              RWF_ACCOUNT: '#/components/schemas/PaymentRwfAccountInfo'
+              TZS_ACCOUNT: '#/components/schemas/PaymentTzsAccountInfo'
+              UGX_ACCOUNT: '#/components/schemas/PaymentUgxAccountInfo'
+              XOF_ACCOUNT: '#/components/schemas/PaymentXofAccountInfo'
+              ZAR_ACCOUNT: '#/components/schemas/PaymentZarAccountInfo'
+              ZMW_ACCOUNT: '#/components/schemas/PaymentZmwAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -5814,8 +6297,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/BrlBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BrlBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5866,8 +6351,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/CadBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CadBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5918,8 +6405,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/DkkBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/DkkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -5970,8 +6459,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/EurBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EurBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6022,8 +6513,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/GbpBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GbpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6074,8 +6567,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/HkdBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HkdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6126,8 +6621,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/IdrBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/IdrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6178,39 +6675,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/InrBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/InrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/InrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    KesAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - KES_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: Kenyan mobile money phone number
-          example: '+254712345678'
-          pattern: ^\+254[0-9]{9}$
-        provider:
-          type: string
-          description: Mobile money provider
     KesBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6256,46 +6729,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/KesBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/KesBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/KesBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    MwkAccountInfo:
-      type: object
-      required:
-        - accountType
-        - countries
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - MWK_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - MW
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: Malawian mobile money phone number
-          example: '+265991234567'
-          pattern: ^\+265[0-9]{9}$
-        provider:
-          type: string
-          description: Mobile money provider
     MwkBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6341,8 +6783,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/MwkBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MwkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6393,8 +6837,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/MxnBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MxnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6445,8 +6891,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/MyrBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MyrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6497,8 +6945,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/NgnBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/NgnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6549,39 +6999,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/PhpBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PhpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    RwfAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - RWF_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: Rwandan mobile money phone number
-          example: '+250781234567'
-          pattern: ^\+250[0-9]{9}$
-        provider:
-          type: string
-          description: Mobile money provider
     RwfBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6627,8 +7053,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/RwfBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/RwfBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6679,8 +7107,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/SgdBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SgdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6731,39 +7161,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/ThbBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ThbBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ThbBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    TzsAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - TZS_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: Tanzanian mobile money phone number
-          example: '+255712345678'
-          pattern: ^\+255[0-9]{9}$
-        provider:
-          type: string
-          description: Mobile money provider
     TzsBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6809,46 +7215,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/TzsBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/TzsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/TzsBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    UgxAccountInfo:
-      type: object
-      required:
-        - accountType
-        - countries
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - UGX_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - UG
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: Ugandan mobile money phone number
-          example: '+256701234567'
-          pattern: ^\+256[0-9]{9}$
-        provider:
-          type: string
-          description: Mobile money provider
     UgxBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6894,8 +7269,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/UgxBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/UgxBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -6948,8 +7325,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/UsdBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/UsdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -7000,48 +7379,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/VndBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/VndBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/VndBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    XofAccountInfo:
-      type: object
-      required:
-        - accountType
-        - countries
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - XOF_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - SN
-              - BJ
-              - CI
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: West African mobile money phone number (Senegal, Benin, or Ivory Coast)
-          example: '+221781234567'
-          pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229([0-9]{8}|[0-9]{10}))$
-        provider:
-          type: string
-          description: Mobile money provider
     XofBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -7087,42 +7433,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/XofBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/XofBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/XofBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    ZarAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - accountNumber
-        - bankName
-      properties:
-        accountType:
-          type: string
-          enum:
-            - ZAR_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
-        accountNumber:
-          type: string
-          description: South African bank account number
-          example: '1234567890'
-          minLength: 9
-          maxLength: 13
-          pattern: ^[0-9]{9,13}$
-        bankName:
-          type: string
-          description: Name of the bank
-          example: Standard Bank
     ZarBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -7168,39 +7487,15 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/ZarBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ZarBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ZarBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    ZmwAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - phoneNumber
-        - provider
-      properties:
-        accountType:
-          type: string
-          enum:
-            - ZMW_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
-        phoneNumber:
-          type: string
-          description: Zambian mobile money phone number
-          example: '+260971234567'
-          pattern: ^\+260[0-9]{9}$
-        provider:
-          type: string
-          description: Mobile money provider
     ZmwBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -7246,8 +7541,10 @@ components:
           properties:
             beneficiary:
               oneOf:
-                - $ref: '#/components/schemas/ZmwBeneficiary'
-                - $ref: '#/components/schemas/BusinessBeneficiary'
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ZmwBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
@@ -7306,6 +7603,60 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+    AedBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    AedExternalAccountInfo:
+      title: AED Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/AedAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/AedBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/AedBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/BrlExternalAccountInfo'
@@ -7338,6 +7689,7 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/AedExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -7371,6 +7723,8 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
+          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object

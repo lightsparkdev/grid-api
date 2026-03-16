@@ -2,8 +2,8 @@ type: object
 required:
 - accountType
 - paymentRails
-- accountNumber
 - bankName
+- accountNumber
 - swiftCode
 - phoneNumber
 properties:
@@ -17,17 +17,21 @@ properties:
       type: string
       enum:
       - BANK_TRANSFER
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
+    example: Bank Central Asia
   accountNumber:
     type: string
     description: Indonesian bank account number
+    minLength: 1
+    maxLength: 34
     example: '1234567890'
-  bankName:
-    type: string
-    description: Name of the bank
-    example: Bank Central Asia
   swiftCode:
     type: string
-    description: SWIFT/BIC code (8 or 11 characters)
+    description: The SWIFT/BIC code of the bank
     example: CENAIDJA
     minLength: 8
     maxLength: 11
@@ -36,4 +40,6 @@ properties:
     type: string
     description: Indonesian phone number for e-wallet payments
     example: '+6281234567890'
+    minLength: 7
+    maxLength: 15
     pattern: ^\+62[0-9]{9,12}$
