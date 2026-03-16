@@ -48,11 +48,6 @@ function colorForCurrency(code: string, type: 'fiat' | 'crypto'): ActionColor {
   return 'btc';
 }
 
-function getRailLabel(sel: CurrencySelection): string {
-  if (sel.type === 'crypto' && sel.network) return sel.network;
-  return sel.accountLabel;
-}
-
 function getEndpointLabel(sel: CurrencySelection): string {
   if (sel.isInternal) {
     return `Grid ${sel.code} Account`;
@@ -72,6 +67,7 @@ export function buildFlowPath(
   destination: CurrencySelection,
   sourceRegion?: string | null,
   destRegion?: string | null,
+  sourceRail?: string | null,
 ): FlowPath {
   const nodes: FlowNode[] = [];
 
@@ -236,9 +232,10 @@ export function buildFlowPath(
 
     if (curr.type === 'endpoint' && !curr.isInternal && next.type === 'switch') {
       const srcFiatData = source.type === 'fiat' ? currencies.find((c) => c.code === source.code) : null;
-      const srcRail = srcFiatData
-        ? (srcFiatData.instantRails[0] ?? srcFiatData.allRails[0] ?? source.accountLabel)
-        : (source.network ?? source.accountLabel);
+      const srcRail = sourceRail
+        ?? (srcFiatData
+          ? (srcFiatData.instantRails[0] ?? srcFiatData.allRails[0] ?? source.accountLabel)
+          : (source.network ?? source.accountLabel));
       text = `Funds in via ${srcRail}`;
     } else if (curr.type === 'switch' && next.type === 'endpoint' && !next.isInternal) {
       const dstFiatData = destination.type === 'fiat' ? currencies.find((c) => c.code === destination.code) : null;

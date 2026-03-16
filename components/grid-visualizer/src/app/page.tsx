@@ -234,6 +234,7 @@ export default function Home() {
               receive={state.receive!}
               sourceRegion={state.sourceRegion}
               destRegion={state.destRegion}
+              sourceRail={state.sourceRail}
               expanded={flowExpanded}
               onToggle={toggleFlow}
             />
