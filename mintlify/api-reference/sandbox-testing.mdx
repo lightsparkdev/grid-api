@@ -1,0 +1,94 @@
+---
+title: "Sandbox Testing"
+description: "Use Grid sandbox magic values to trigger specific API responses"
+icon: "/images/icons/hammer.svg"
+"og:image": "/images/og/og-api-reference.png"
+---
+
+import SandboxExternalAccounts from '/snippets/sandbox-external-accounts.mdx';
+import SandboxBeneficiaryVerification from '/snippets/sandbox-beneficiary-verification.mdx';
+import SandboxTransferPatterns from '/snippets/sandbox-transfer-patterns.mdx';
+import SandboxQuotePatterns from '/snippets/sandbox-quote-patterns.mdx';
+import SandboxUmaAddresses from '/snippets/sandbox-uma-addresses.mdx';
+
+The Grid sandbox environment simulates real payment flows without moving real money. You can control test outcomes using special account number patterns and test addresses.
+
+## Adding external accounts
+
+<SandboxExternalAccounts />
+
+### Beneficiary name verification
+
+<SandboxBeneficiaryVerification />
+
+## Transfer in
+
+In production, internal accounts are funded by sending a bank transfer to the account's payment instructions or by pulling from an external account. In sandbox, you have two options:
+
+### Transfer in from an external account
+
+Use the `/transfer-in` endpoint to pull funds from an external account into an internal account. The external account's number suffix determines the outcome:
+
+<SandboxTransferPatterns />
+
+### Sandbox fund endpoint
+
+Instantly add funds to any internal account using `/sandbox/internal-accounts/{accountId}/fund`:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/{accountId}/fund \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount": 100000 }'
+```
+
+## Creating quotes (cross-currency transfers)
+
+<SandboxQuotePatterns />
+
+### Executing a quote
+
+After creating a quote, you need to fund it to trigger execution. There are two ways to do this in sandbox:
+
+**Prefunded internal account** — If your quote's source is an internal account, fund the account using one of the methods described in [transfer in](#transfer-in), then call the quote execute endpoint to trigger the transaction:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET"
+```
+
+**Real-time funding via sandbox send** — If your quote uses real-time funding, the quote response includes payment instructions for you to transfer funds to. Use `/sandbox/send` to simulate this payment:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/send \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "currencyCode": "USD"
+  }'
+```
+
+## Transferring out funds
+
+Use the `/transfer-out` endpoint to push funds from an internal account to an external account in the same currency. The external account's number suffix controls the outcome using the same patterns as [transfer in](#transfer-in-from-an-external-account).
+
+## Sending to a UMA address
+
+<SandboxUmaAddresses />
+
+### Simulating incoming UMA payments
+
+Use the sandbox receive endpoint to simulate an incoming UMA payment to one of your platform's users:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "senderUmaAddress": "$success.usd@sandbox.uma.money",
+    "receiverUmaAddress": "$your.user@your.domain",
+    "receivingCurrencyCode": "USD",
+    "receivingCurrencyAmount": 5000
+  }'
+```

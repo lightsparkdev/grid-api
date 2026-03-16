@@ -1,0 +1,13 @@
+When creating a quote with an external account destination, the account number suffix determines the payment outcome after quote execution:
+
+| Suffix | Behavior |
+|--------|----------|
+| **002** | Quote execution failed |
+| **003** | Long payment — completes after approximately 6 minutes |
+| **004** | Counterparty delivery failed |
+| **005** | Receiving bank returned payment (completes then transitions to failed) |
+| **006** | User cancellation |
+| **007** | Payout and refund failed |
+| **Any other** | Successful payment |
+
+These patterns apply whether you use a pre-created external account as the destination or provide `externalAccountDetails` inline in the quote request.

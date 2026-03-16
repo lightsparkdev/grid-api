@@ -5,7 +5,10 @@ icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-payouts-b2b.png"
 ---
 
-import SandboxVpaValidation from '/snippets/sandbox-vpa-validation.mdx';
+import SandboxBeneficiaryVerification from '/snippets/sandbox-beneficiary-verification.mdx';
+import SandboxExternalAccounts from '/snippets/sandbox-external-accounts.mdx';
+import SandboxTransferPatterns from '/snippets/sandbox-transfer-patterns.mdx';
+import SandboxQuotePatterns from '/snippets/sandbox-quote-patterns.mdx';
 
 ## Overview
 
@@ -55,55 +58,11 @@ Alternatively, you can also fund internal accounts using the `/quotes` or `/tran
 
 ### Adding Test External Accounts
 
-The flows for creating external accounts in sandbox are the same as in production.
-However, when creating external accounts in sandbox, you can use special account number patterns to simulate different
-transfer behaviors. The **last 3 digits** of the account number determine the test scenario:
+<SandboxExternalAccounts />
 
-| Last Digits | Behavior | Use Case |
-|-------------|----------|----------|
-| **002** | Insufficient funds | Transfer-in fails immediately |
-| **003** | Account closed/invalid | All transfers fail immediately |
-| **004** | Transfer rejected | Bank rejects the transfer |
-| **005** | Timeout/delayed failure | Transaction stays pending ~30s, then fails |
-| **Any other** | Success | All transfers complete normally |
+### Beneficiary name verification
 
-**Example - Creating a Test Account with Insufficient Funds:**
-
-```bash
-POST /customers/external-accounts
-
-{
-  "customerId": "Customer:123",
-  "currency": "USD",
-  "accountInfo": {
-    "accountType": "US_ACCOUNT",
-    "accountNumber": "000000002",  // Will trigger insufficient funds
-    "routingNumber": "110000000",
-    "accountCategory": "CHECKING",
-    "beneficiary": {
-      "beneficiaryType": "INDIVIDUAL",
-      "fullName": "Test User",
-      "address": {
-        "line1": "123 Test St",
-        "city": "San Francisco",
-        "state": "CA",
-        "postalCode": "94105",
-        "country": "US"
-      }
-    }
-  }
-}
-```
-
-<Note>
-These patterns apply to the primary identifier for any account type: US account numbers, IBANs, CLABEs, Spark wallet addresses, etc. Just ensure the identifier ends with the appropriate test digits.
-For scenarios like PIX and UPI, where there's a domain part involved, append the test digits to the user name part. For example, if testing email addresses as a PIX key, the full identifier would be
-"testuser.002@pix.com.br" to trigger the insufficient funds scenario.
-</Note>
-
-### INR UPI VPA validation simulation
-
-<SandboxVpaValidation />
+<SandboxBeneficiaryVerification />
 
 ### Testing Transfer-In (Pull from External Account)
 
@@ -123,13 +82,7 @@ POST /transfer-in
 }
 ```
 
-**Expected Behaviors:**
-
-- **Success (default)**: Transaction completes immediately with status `COMPLETED`
-- **Insufficient funds (002)**: Transaction fails immediately with appropriate error
-- **Account closed (003)**: Transaction fails immediately with account validation error
-- **Transfer rejected (004)**: Transaction fails immediately with rejection error
-- **Timeout (009)**: Transaction shows `PENDING` status for ~30 seconds, then transitions to `FAILED`
+<SandboxTransferPatterns />
 
 ### Testing Transfer-Out (Push to External Account)
 
@@ -153,6 +106,8 @@ The transfer will instantly simulate the bank transfer process and complete with
 
 ## Testing Cross-Currency Quotes
 
+<SandboxQuotePatterns />
+
 ### Creating Quotes with Test Accounts
 
 When creating quotes with the `externalAccountDetails` destination type, you can provide test account patterns inline:
@@ -172,7 +127,7 @@ POST /quotes
       "currency": "EUR",
       "accountInfo": {
         "accountType": "IBAN_ACCOUNT",
-        "iban": "DE89370400440532013003",  // Ends in 003 = account closed
+        "iban": "DE89370400440532013003",  // Ends in 003 = slow payment
         "beneficiary": {
           "beneficiaryType": "INDIVIDUAL",
           "fullName": "Test User"
