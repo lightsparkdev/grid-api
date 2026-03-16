@@ -127,6 +127,9 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
       return { ...state, pickerTarget: null };
     case 'SWAP': {
       const newSend = state.receive;
+      const sourceFundingMode: SourceFundingMode = newSend?.type === 'crypto'
+        ? 'realtime'
+        : 'external';
       return {
         ...state,
         send: newSend,
@@ -134,6 +137,7 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
         sourceRegion: state.destRegion,
         destRegion: state.sourceRegion,
         sourceRail: newSend?.type === 'fiat' ? getDefaultRail(newSend.code) : null,
+        sourceFundingMode,
       };
     }
     case 'RESET':
