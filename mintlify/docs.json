@@ -290,11 +290,15 @@
       {
         "label": "Contact sales",
         "href": "https://www.lightspark.com/contact"
+      },
+      {
+        "label": "Dashboard",
+        "href": "https://app.lightspark.com/login"
       }
     ]
   },
   "modeToggle": {
-    "default": "light",
+    "default": "dark",
     "isHidden": false
   },
   "contextual": {
