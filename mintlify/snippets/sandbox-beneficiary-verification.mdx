@@ -1,0 +1,10 @@
+For account types that support beneficiary name verification, you can simulate different verification outcomes in sandbox. Use account identifiers with a `1xx` suffix to trigger verification scenarios (this range is reserved for verification and does not conflict with transfer or quote test patterns):
+
+| Suffix | `beneficiaryVerificationStatus` | Behavior |
+|--------|--------------------------------|----------|
+| **102** | `NOT_MATCHED` | Account is valid but name does not match |
+| **103** | `PARTIAL_MATCH` | Account is valid, name is a fuzzy match |
+| **104** | `PENDING` | Verification still in progress |
+| **105** | _(error)_ | Returns `400` — invalid account |
+| **109** | _(error)_ | Returns `500` — simulated API error |
+| **Any other** | `MATCHED` | Account is valid, name matches exactly |

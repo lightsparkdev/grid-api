@@ -5,7 +5,9 @@ icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-ramps.png"
 ---
 
-import SandboxVpaValidation from '/snippets/sandbox-vpa-validation.mdx';
+import SandboxBeneficiaryVerification from '/snippets/sandbox-beneficiary-verification.mdx';
+import SandboxExternalAccounts from '/snippets/sandbox-external-accounts.mdx';
+import SandboxTransferPatterns from '/snippets/sandbox-transfer-patterns.mdx';
 
 The Grid Sandbox environment provides a complete testing environment for ramp operations, allowing you to validate on-ramp and off-ramp flows without using real money or cryptocurrency.
 
@@ -44,7 +46,7 @@ Set up a webhook endpoint for sandbox notifications:
 
 ```bash
 curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "webhookEndpoint": "https://api.yourapp.dev/webhooks/grid"
@@ -64,7 +66,7 @@ Simulate the complete on-ramp flow in sandbox:
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "platformCustomerId": "test_user_001",
@@ -88,7 +90,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
@@ -119,7 +121,7 @@ Use the sandbox endpoint to simulate receiving the fiat payment:
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/send' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "reference": "RAMP-ABC123",
@@ -167,7 +169,7 @@ Simulate a Bitcoin deposit to the customer's internal account using the sandbox 
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/InternalAccount:btc001/fund' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "amount": 10000000
@@ -184,7 +186,7 @@ Replace `InternalAccount:btc001` with your actual BTC internal account ID.
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "customerId": "Customer:sandbox001",
@@ -221,7 +223,7 @@ In sandbox, you can use special account number patterns to test different scenar
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
@@ -241,7 +243,7 @@ Then execute the quote:
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET"
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET"
 ```
 
 <Info>
@@ -253,50 +255,13 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execut
 
 ### External account test patterns
 
-When creating external bank accounts in sandbox, use special account number patterns to simulate different transfer failure scenarios. The **last 3 digits** of the account number determine the test behavior:
+<SandboxExternalAccounts />
 
-| Last Digits | Behavior | Use Case |
-|-------------|----------|----------|
-| **002** | Insufficient funds | Simulates bank account with insufficient balance |
-| **003** | Account closed/invalid | Simulates closed or non-existent account |
-| **004** | Transfer rejected | Simulates bank rejecting the transfer (compliance, limits, etc.) |
-| **005** | Timeout/delayed failure | Transaction stays pending ~30s, then fails |
-| **Any other** | Success | All transfers complete normally |
+<SandboxTransferPatterns />
 
-**Example - Testing Insufficient Funds:**
+## Beneficiary name verification
 
-```bash
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "customerId": "Customer:sandbox001",
-    "currency": "USD",
-    "accountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "000000002",  // Will trigger insufficient funds
-      "routingNumber": "021000021",
-      "accountCategory": "CHECKING",
-      "beneficiary": {
-        "beneficiaryType": "INDIVIDUAL",
-        "fullName": "Test User"
-      }
-    }
-  }'
-```
-
-When you create an off-ramp quote to this account and execute it, the transaction will fail immediately with an insufficient funds error.
-
-<Tip>
-These patterns work for all account types: US account numbers, IBANs, CLABEs, etc. Just ensure the identifier ends with the appropriate
-test digits. For scenarios like PIX and UPI, where there's a domain part involved, append the test digits to the user name part.
-For example, if testing email addresses as a PIX key, the full identifier would be "testuser.002@pix.com.br" to trigger the
-insufficient funds scenario.
-</Tip>
-
-## INR UPI VPA validation simulation
-
-<SandboxVpaValidation />
+<SandboxBeneficiaryVerification />
 
 ## Test scenarios
 
@@ -324,7 +289,7 @@ Test error scenarios systematically using the magic account patterns:
 ```bash
 # Create account with insufficient funds pattern
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "customerId": "Customer:sandbox001",
@@ -343,7 +308,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 # Attempt off-ramp to this account - will fail immediately
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET"
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET"
 # Response: 400 Bad Request with insufficient funds error
 ```
 
@@ -362,7 +327,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```bash
 # Create quote from empty internal account
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
@@ -384,7 +349,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 ```bash
 # Attempt quote with invalid Spark address
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -u "$SANDBOX_API_KEY:$SANDBOX_API_SECRET" \
+  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "destination": {
