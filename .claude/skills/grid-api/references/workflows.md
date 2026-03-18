@@ -13,20 +13,21 @@ Use this when the user wants to send money to a UMA address like `$alice@example
 1. **Look up the receiver**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/receiver/uma/%24alice%40example.com" | jq .
 ```
 
 This returns:
 
+- `id`: Lookup ID (use as `lookupId` when creating a quote — required for UMA destinations)
 - Supported currencies
 - Min/max amounts per currency
-- Required payer data fields
+- Required payer data fields (`requiredPayerDataFields`)
 
 2. **Check sender's balance**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/internal-accounts?customerId=<customerId>" | jq .
 ```
 
@@ -34,10 +35,13 @@ Identify the internal account with sufficient balance.
 
 3. **Create a quote**
 
+**Note:** `lookupId` from step 1 is required for UMA destinations.
+
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
+    "lookupId": "Lookup:xxx",
     "source": {
       "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:xxx"
@@ -56,11 +60,13 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 The response includes:
 
-- `sendingAmount` and `sendingCurrency`
-- `receivingAmount` and `receivingCurrency`
+- `totalSendingAmount` and `sendingCurrency`
+- `totalReceivingAmount` and `receivingCurrency`
 - `exchangeRate`
-- `fees` array
+- `feesIncluded` (fees in smallest unit of sending currency)
 - `expiresAt` (quote validity)
+- `transactionId` (associated transaction)
+- `rateDetails` (detailed rate breakdown)
 
 4. **Show the user the exchange details and get confirmation**
 
@@ -69,7 +75,7 @@ Example: "You're sending $100.00 USD. The recipient will receive €92.15 EUR (r
 5. **Execute the quote**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST \
   "$GRID_BASE_URL/quotes/Quote:xxx/execute" | jq .
 ```
@@ -77,9 +83,44 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 6. **Monitor the transaction**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/transactions?status=PROCESSING" | jq .
 ```
+
+## Workflow 1b: Check FX Rate Before Setting Up a Payment
+
+Use this when an integrator wants to preview exchange rates for a payment corridor **before** creating a receiving account or quote. This is useful for showing indicative pricing in a UI or deciding which corridor to use.
+
+### Steps
+
+1. **Query exchange rates for the corridor**
+
+```bash
+# Check USD → INR rate for a $100 send
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  "$GRID_BASE_URL/exchange-rates?sourceCurrency=USD&destinationCurrency=INR&sendingAmount=10000" | jq .
+```
+
+The response returns an array of rate objects. Each includes:
+- `exchangeRate`, `receivingAmount`, `fees.fixed`
+- `minSendingAmount` / `maxSendingAmount` for the corridor
+- `destinationPaymentRail` (e.g., UPI, SEPA_INSTANT)
+
+2. **Show the user indicative pricing**
+
+Example: "USD → INR via UPI: Rate 82.50, you send $100.00 → recipient gets ₹8,250.00. Fixed fee: $1.00. Min $1.00, max $100,000.00."
+
+3. **If the user wants to proceed, continue with a normal payment workflow**
+
+- If sending to a UMA address → Workflow 1
+- If sending to a bank account → Workflow 2
+- The actual executed rate will be locked when the quote is created via `POST /quotes`
+
+**Key differences from quotes:**
+- Exchange rates are **indicative** (cached ~5 minutes), not locked
+- No account or customer setup required — useful for rate discovery
+- No quote expiration to worry about
+- Multiple corridors can be compared in a single request by omitting `destinationCurrency`
 
 ## Workflow 2: Send Payment to International Bank Account
 
@@ -93,12 +134,12 @@ Ask the user: "Which country is the bank account in?"
 
 Refer to `account-types.md` for:
 
-- Required account type (CLABE, PIX, IBAN, etc.)
-- Required fields
+- Required account type (MXN_ACCOUNT, BRL_ACCOUNT, EUR_ACCOUNT, etc.)
+- Required fields and payment rails
 
 2. **Collect account details interactively**
 
-For Mexico (CLABE):
+For Mexico (MXN_ACCOUNT):
 
 - Ask for 18-digit CLABE number
 - Ask for beneficiary name
@@ -108,13 +149,14 @@ For Mexico (CLABE):
 3. **Create the external account**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "customerId": "Customer:xxx",
     "currency": "MXN",
     "accountInfo": {
-      "accountType": "CLABE",
+      "accountType": "MXN_ACCOUNT",
+      "paymentRails": ["SPEI"],
       "clabeNumber": "012345678901234567",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
@@ -130,14 +172,14 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 4. **Look up the account to get payment capabilities**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/receiver/external-account/ExternalAccount:xxx" | jq .
 ```
 
 5. **Create a quote**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "source": {
@@ -162,7 +204,7 @@ Note: `lockedCurrencySide: "RECEIVING"` means the recipient gets exactly this am
 7. **Execute the quote**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST \
   "$GRID_BASE_URL/quotes/Quote:xxx/execute" | jq .
 ```
@@ -176,7 +218,7 @@ Use this when a customer wants to convert fiat to cryptocurrency.
 1. **Ensure customer has completed KYC**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/Customer:xxx" | jq .
 ```
 
@@ -187,14 +229,14 @@ Check `kycStatus` is `APPROVED`.
 Show customer the `paymentInstructions` from their internal account:
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:xxx" | jq .
 ```
 
 3. **Create external account for crypto destination**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "customerId": "Customer:xxx",
@@ -210,7 +252,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 4. **Create and execute quote for conversion**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "source": {
@@ -240,16 +282,16 @@ Use this when a customer wants to convert cryptocurrency to fiat.
 1. **Create fiat external account for payout**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "customerId": "Customer:xxx",
     "currency": "USD",
     "accountInfo": {
-      "accountType": "US_ACCOUNT",
+      "accountType": "USD_ACCOUNT",
+      "paymentRails": ["ACH"],
       "routingNumber": "123456789",
       "accountNumber": "12345678901",
-      "accountCategory": "CHECKING",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "John Doe",
@@ -268,7 +310,7 @@ Provide the deposit address from their BTC internal account.
 3. **Create and execute quote for conversion**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "source": {
@@ -295,14 +337,14 @@ Use this when your platform receives an incoming payment that needs approval.
 1. **List pending incoming transactions**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/transactions?type=INCOMING&status=PENDING_APPROVAL" | jq .
 ```
 
 2. **Review transaction details**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/transactions/Transaction:xxx" | jq .
 ```
 
@@ -310,12 +352,12 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ```bash
 # Approve
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST \
   "$GRID_BASE_URL/transactions/Transaction:xxx/approve" | jq .
 
 # Or reject
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{"reason": "Suspicious activity"}' \
   "$GRID_BASE_URL/transactions/Transaction:xxx/reject" | jq .
@@ -337,7 +379,7 @@ The API supports bulk customer creation via CSV upload.
 2. **Upload CSV**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST \
   -F "file=@customers.csv" \
   "$GRID_BASE_URL/customers/bulk/csv" | jq .
@@ -346,7 +388,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 3. **Check job status**
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/bulk/jobs/<jobId>" | jq .
 ```
 
@@ -364,7 +406,7 @@ If a quote expires before execution:
 Check transaction status for failure reason:
 
 ```bash
-curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/transactions/Transaction:xxx" | jq .
 ```
 
