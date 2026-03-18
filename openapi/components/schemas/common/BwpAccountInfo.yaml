@@ -8,7 +8,7 @@ properties:
   accountType:
     type: string
     enum:
-    - MWK_ACCOUNT
+    - BWP_ACCOUNT
   paymentRails:
     type: array
     items:

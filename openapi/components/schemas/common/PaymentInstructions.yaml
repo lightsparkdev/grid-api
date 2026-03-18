@@ -39,6 +39,8 @@ properties:
     - $ref: ../common/PaymentXofAccountInfo.yaml
     - $ref: ../common/PaymentZarAccountInfo.yaml
     - $ref: ../common/PaymentZmwAccountInfo.yaml
+    - $ref: ../common/PaymentBwpAccountInfo.yaml
+    - $ref: ../common/PaymentXafAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
@@ -79,3 +81,5 @@ properties:
         XOF_ACCOUNT: ../common/PaymentXofAccountInfo.yaml
         ZAR_ACCOUNT: ../common/PaymentZarAccountInfo.yaml
         ZMW_ACCOUNT: ../common/PaymentZmwAccountInfo.yaml
+        BWP_ACCOUNT: ../common/PaymentBwpAccountInfo.yaml
+        XAF_ACCOUNT: ../common/PaymentXafAccountInfo.yaml

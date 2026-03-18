@@ -4,11 +4,12 @@ required:
 - paymentRails
 - phoneNumber
 - provider
+- region
 properties:
   accountType:
     type: string
     enum:
-    - MWK_ACCOUNT
+    - XAF_ACCOUNT
   paymentRails:
     type: array
     items:
@@ -27,3 +28,12 @@ properties:
     description: The mobile money provider name
     minLength: 1
     maxLength: 255
+  region:
+    type: string
+    description: Country code within the Central African CFA franc zone
+    minLength: 2
+    maxLength: 2
+    pattern: ^[A-Z]{2}$
+    enum:
+    - CM
+    - CG

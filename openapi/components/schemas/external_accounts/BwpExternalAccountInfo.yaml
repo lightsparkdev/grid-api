@@ -1,0 +1,19 @@
+title: BWP Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/BwpAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/BwpBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/BwpBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

@@ -5697,7 +5697,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
@@ -5706,12 +5705,6 @@ components:
           type: string
           enum:
             - MWK_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - MW
         paymentRails:
           type: array
           items:
@@ -5720,12 +5713,16 @@ components:
               - MOBILE_MONEY
         phoneNumber:
           type: string
-          description: Malawian mobile money phone number
-          example: '+265991234567'
-          pattern: ^\+265[0-9]{9}$
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
         provider:
           type: string
-          description: Mobile money provider
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
     PaymentMwkAccountInfo:
       title: MWK Account
       allOf:
@@ -5829,7 +5826,6 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
@@ -5838,12 +5834,6 @@ components:
           type: string
           enum:
             - UGX_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - UG
         paymentRails:
           type: array
           items:
@@ -5852,12 +5842,16 @@ components:
               - MOBILE_MONEY
         phoneNumber:
           type: string
-          description: Ugandan mobile money phone number
-          example: '+256701234567'
-          pattern: ^\+256[0-9]{9}$
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
         provider:
           type: string
-          description: Mobile money provider
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
     PaymentUgxAccountInfo:
       title: UGX Account
       allOf:
@@ -5875,23 +5869,15 @@ components:
       type: object
       required:
         - accountType
-        - countries
         - paymentRails
         - phoneNumber
         - provider
+        - region
       properties:
         accountType:
           type: string
           enum:
             - XOF_ACCOUNT
-        countries:
-          type: array
-          items:
-            type: string
-            enum:
-              - SN
-              - BJ
-              - CI
         paymentRails:
           type: array
           items:
@@ -5900,12 +5886,27 @@ components:
               - MOBILE_MONEY
         phoneNumber:
           type: string
-          description: West African mobile money phone number (Senegal, Benin, or Ivory Coast)
-          example: '+221781234567'
-          pattern: ^\+(221[0-9]{9}|225[0-9]{10}|229([0-9]{8}|[0-9]{10}))$
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
         provider:
           type: string
-          description: Mobile money provider
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+        region:
+          type: string
+          description: Country code within the West African CFA franc zone
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+          enum:
+            - BJ
+            - CI
+            - SN
+            - TG
     PaymentXofAccountInfo:
       title: XOF Account
       allOf:
@@ -6005,6 +6006,102 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    BwpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+        - provider
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BWP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+        provider:
+          type: string
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+    PaymentBwpAccountInfo:
+      title: BWP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/BwpAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    XafAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+        - provider
+        - region
+      properties:
+        accountType:
+          type: string
+          enum:
+            - XAF_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+        provider:
+          type: string
+          description: The mobile money provider name
+          minLength: 1
+          maxLength: 255
+        region:
+          type: string
+          description: Country code within the Central African CFA franc zone
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+          enum:
+            - CM
+            - CG
+    PaymentXafAccountInfo:
+      title: XAF Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/XafAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -6045,6 +6142,8 @@ components:
             - $ref: '#/components/schemas/PaymentXofAccountInfo'
             - $ref: '#/components/schemas/PaymentZarAccountInfo'
             - $ref: '#/components/schemas/PaymentZmwAccountInfo'
+            - $ref: '#/components/schemas/PaymentBwpAccountInfo'
+            - $ref: '#/components/schemas/PaymentXafAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -6085,6 +6184,8 @@ components:
               XOF_ACCOUNT: '#/components/schemas/PaymentXofAccountInfo'
               ZAR_ACCOUNT: '#/components/schemas/PaymentZarAccountInfo'
               ZMW_ACCOUNT: '#/components/schemas/PaymentZmwAccountInfo'
+              BWP_ACCOUNT: '#/components/schemas/PaymentBwpAccountInfo'
+              XAF_ACCOUNT: '#/components/schemas/PaymentXafAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -6166,7 +6267,9 @@ components:
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - AED_ACCOUNT
         - BRL_ACCOUNT
+        - BWP_ACCOUNT
         - CAD_ACCOUNT
         - DKK_ACCOUNT
         - EUR_ACCOUNT
@@ -6184,6 +6287,7 @@ components:
         - UGX_ACCOUNT
         - USD_ACCOUNT
         - VND_ACCOUNT
+        - XAF_ACCOUNT
         - XOF_ACCOUNT
         - ZAR_ACCOUNT
         - ZMW_ACCOUNT
@@ -7632,6 +7736,114 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/AedBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BwpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BwpExternalAccountInfo:
+      title: BWP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BwpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BwpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BwpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    XafBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          description: The registration number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    XafExternalAccountInfo:
+      title: XAF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/XafAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/XafBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/XafBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/BrlExternalAccountInfo'
@@ -7665,6 +7877,8 @@ components:
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AedExternalAccountInfo'
+        - $ref: '#/components/schemas/BwpExternalAccountInfo'
+        - $ref: '#/components/schemas/XafExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -7700,6 +7914,8 @@ components:
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
           AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
+          BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
+          XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
