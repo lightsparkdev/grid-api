@@ -3826,6 +3826,7 @@ components:
         - PURPOSE_OF_PAYMENT
         - ULTIMATE_INSTITUTION_COUNTRY
         - IDENTIFIER
+        - BUSINESS_TYPE
       description: Name of a type of field containing info about a platform's customer or counterparty customer.
       example: FULL_NAME
     CounterpartyFieldDefinition:
@@ -4357,6 +4358,30 @@ components:
         - MANUALLY_REJECTED
       description: The current KYB status of a business customer
       example: APPROVED
+    BusinessType:
+      type: string
+      description: The high-level industry category of the business
+      enum:
+        - AGRICULTURE_FORESTRY_FISHING_AND_HUNTING
+        - MINING_QUARRYING_AND_OIL_AND_GAS_EXTRACTION
+        - UTILITIES
+        - CONSTRUCTION
+        - MANUFACTURING
+        - WHOLESALE_TRADE
+        - RETAIL_TRADE
+        - TRANSPORTATION_AND_WAREHOUSING
+        - INFORMATION
+        - FINANCE_AND_INSURANCE
+        - REAL_ESTATE_AND_RENTAL_AND_LEASING
+        - PROFESSIONAL_SCIENTIFIC_AND_TECHNICAL_SERVICES
+        - MANAGEMENT_OF_COMPANIES_AND_ENTERPRISES
+        - ADMINISTRATIVE_AND_SUPPORT_AND_WASTE_MANAGEMENT_AND_REMEDIATION_SERVICES
+        - EDUCATIONAL_SERVICES
+        - HEALTH_CARE_AND_SOCIAL_ASSISTANCE
+        - ARTS_ENTERTAINMENT_AND_RECREATION
+        - ACCOMMODATION_AND_FOOD_SERVICES
+        - OTHER_SERVICES
+        - PUBLIC_ADMINISTRATION
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -4373,6 +4398,8 @@ components:
           type: string
           description: Tax identification number
           example: EIN-987654321
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
     UltimateBeneficialOwner:
       type: object
       required:
@@ -4464,6 +4491,8 @@ components:
           type: string
           description: Tax identification number
           example: EIN-987654321
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
     BusinessCustomer:
       title: Business Customer
       allOf:
