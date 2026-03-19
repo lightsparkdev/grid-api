@@ -8,7 +8,7 @@ Production: `https://api.lightspark.com/grid/2025-10-13`
 
 ## Authentication
 
-HTTP Basic Auth: `Authorization: Basic base64(tokenId:clientSecret)`
+HTTP Basic Auth: `Authorization: Basic base64(clientId:clientSecret)`
 
 ## Platform Configuration
 
@@ -16,6 +16,21 @@ HTTP Basic Auth: `Authorization: Basic base64(tokenId:clientSecret)`
 |--------|----------|-------------|
 | GET | `/config` | Get platform configuration |
 | PATCH | `/config` | Update platform configuration |
+
+## Exchange Rates
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/exchange-rates` | Get cached FX rates for payment corridors |
+
+Query parameters: `sourceCurrency`, `destinationCurrency` (repeatable), `sendingAmount` (default 10000).
+Rates are cached ~5 minutes and include platform-specific fees.
+
+## Crypto
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/crypto/estimate-withdrawal-fee` | Estimate network + app fees for crypto withdrawal |
 
 ## Customers
 
@@ -26,7 +41,7 @@ HTTP Basic Auth: `Authorization: Basic base64(tokenId:clientSecret)`
 | GET | `/customers/{customerId}` | Get customer details |
 | PATCH | `/customers/{customerId}` | Update customer |
 | DELETE | `/customers/{customerId}` | Delete customer |
-| POST | `/customers/kyc-link` | Generate KYC link |
+| GET | `/customers/kyc-link` | Generate KYC link |
 | POST | `/customers/bulk/csv` | Bulk upload customers |
 | GET | `/customers/bulk/jobs/{jobId}` | Get bulk job status |
 
@@ -63,16 +78,45 @@ Internal accounts are auto-created when customers are created based on platform 
 | GET | `/quotes/{quoteId}` | Get quote details |
 | POST | `/quotes/{quoteId}/execute` | Execute a pending quote |
 
-### Quote Source Types
+### Quote Source Types (`sourceType` discriminator)
 
-- `source.accountId`: Internal account ID
-- `source.customerId` + `source.currency`: Customer-funded with payment instructions
+- `ACCOUNT`: Internal account funded. Fields: `accountId`
+- `REALTIME_FUNDING`: Just-in-time funded. Fields: `customerId`, `currency`
 
-### Quote Destination Types
+### Quote Destination Types (`destinationType` discriminator)
 
-- `destination.accountId`: External account ID
-- `destination.umaAddress` + `destination.currency`: UMA address
-- `destination.externalAccountDetails`: Inline account creation
+- `ACCOUNT`: External or internal account. Fields: `accountId`, `currency`
+- `UMA_ADDRESS`: UMA address. Fields: `umaAddress`, `currency`
+- `EXTERNAL_ACCOUNT_DETAILS`: Inline account creation (creates external account + quote in one step). Fields: `externalAccountDetails` (same shape as external account create request)
+
+### Quote Request Fields
+
+- `lookupId`: Lookup ID from receiver lookup (required for UMA destinations)
+- `lockedCurrencySide`: `SENDING` or `RECEIVING`
+- `lockedCurrencyAmount`: Amount in smallest currency unit
+- `immediatelyExecute`: Skip confirmation and execute immediately (default false)
+- `purposeOfPayment`: Required for certain geographies (e.g., India). Values: `GIFT`, `SELF`, `GOODS_OR_SERVICES`, `EDUCATION`, `HEALTH_OR_MEDICAL`, `REAL_ESTATE_PURCHASE`, `TAX_PAYMENT`, `LOAN_PAYMENT`, `UTILITY_BILL`, `DONATION`, `TRAVEL`, `OTHER`
+- `senderCustomerInfo`: Key-value pairs of sender info requested by destination (from receiver lookup `requiredPayerDataFields`)
+- `description`: Optional memo
+
+### Quote Response Fields
+
+- `totalSendingAmount` / `totalReceivingAmount`: Amounts in smallest currency units
+- `sendingCurrency` / `receivingCurrency`: Currency objects with code, decimals, name, symbol
+- `exchangeRate`: Units of sending currency per receiving currency unit
+- `feesIncluded`: Fees in smallest unit of sending currency
+- `paymentInstructions`: Funding options (for REALTIME_FUNDING sources)
+- `expiresAt`: Quote expiration timestamp
+- `transactionId`: Associated transaction ID
+- `rateDetails`: Detailed rate and fee breakdown
+
+### Quote Statuses
+
+- `PENDING`: Awaiting execution
+- `PROCESSING`: Being executed
+- `COMPLETED`: Successfully completed
+- `FAILED`: Execution failed
+- `EXPIRED`: Quote expired before execution
 
 ## Receiver Lookup
 
@@ -99,27 +143,30 @@ Returns: supported currencies, min/max amounts, required payer data fields.
 
 ### Transaction Statuses
 
-- `PENDING`: Awaiting processing
-- `PENDING_APPROVAL`: Needs approval (incoming)
-- `PROCESSING`: In progress
-- `COMPLETED`: Successfully completed
-- `FAILED`: Failed
-- `CANCELLED`: Cancelled
+- `CREATED`: Initial lookup has been created
+- `PENDING`: Quote has been created
+- `PROCESSING`: Funding received, payment initiated
+- `COMPLETED`: Payment sent to destination network
+- `REJECTED`: Receiving institution rejected payment, refunded
+- `FAILED`: An error occurred during payment
+- `REFUNDED`: Payment unable to complete, refunded
+- `EXPIRED`: Quote expired
 
 ## Webhooks
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/webhooks/test` | Send test webhook |
+| POST | `/sandbox/webhooks/test` | Send test webhook (sandbox only) |
 
 ### Webhook Events
 
 - `incoming-payment`: Payment received
 - `outgoing-payment`: Payment status update
-- `kyc-status`: KYC status change
-- `account-status`: Account status change
+- `customer-update`: Customer information or KYC status change
+- `internal-account-status`: Internal account status change
 - `bulk-upload`: Bulk job completion
 - `invitation-claimed`: Invitation claimed
+- `test-webhook`: Test event (sandbox only)
 
 ## Invitations
 
