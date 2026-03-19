@@ -1,5 +1,5 @@
 type: object
-description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
+description: Additional information about the counterparty, if available and relevant to the transaction and platform.
 additionalProperties: true
 example:
   FULL_NAME: John Sender
