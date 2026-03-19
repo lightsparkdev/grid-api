@@ -7986,7 +7986,7 @@ components:
           EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
     CounterpartyInformation:
       type: object
-      description: Additional information about the counterparty, if available and relevant to the transaction and platform. Only applicable for transactions to/from UMA addresses.
+      description: Additional information about the counterparty, if available and relevant to the transaction and platform.
       additionalProperties: true
       example:
         FULL_NAME: John Sender
@@ -8648,14 +8648,6 @@ components:
               type: string
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
-            counterpartyInformation:
-              type: object
-              description: Information about the recipient, as required by the platform in their configuration.
-              additionalProperties: true
-              example:
-                FULL_NAME: Jane Receiver
-                BIRTH_DATE: '1990-01-01'
-                NATIONALITY: FR
             currency:
               type: string
               description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
@@ -8786,6 +8778,9 @@ components:
           type: string
           description: The ID of the transaction created from this quote.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        counterpartyInformation:
+          $ref: '#/components/schemas/CounterpartyInformation'
+          description: Additional information about the counterparty, if available and required by the platform in their configuration.
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.

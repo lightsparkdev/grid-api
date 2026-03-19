@@ -102,6 +102,11 @@ properties:
     type: string
     description: The ID of the transaction created from this quote.
     example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+  counterpartyInformation:
+    $ref: ../transactions/CounterpartyInformation.yaml
+    description: >-
+      Additional information about the counterparty, if available and required
+      by the platform in their configuration.
   rateDetails:
     $ref: ../transactions/OutgoingRateDetails.yaml
     description: Details about the rate and fees for the transaction.
