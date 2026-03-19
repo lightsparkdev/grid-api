@@ -14,6 +14,46 @@ post:
       application/json:
         schema:
           $ref: ../../components/schemas/customers/CustomerCreateRequestOneOf.yaml
+        examples:
+          individualCustomer:
+            summary: Create an individual customer
+            value:
+              customerType: INDIVIDUAL
+              platformCustomerId: ind-9f84e0c2
+              fullName: Jane Smith
+              birthDate: '1990-01-15'
+              nationality: US
+          businessCustomer:
+            summary: Create a business customer
+            value:
+              customerType: BUSINESS
+              platformCustomerId: biz-acme-001
+              businessInfo:
+                legalName: Acme Corporation
+                doingBusinessAs: Acme
+                country: US
+                registrationNumber: '5523041'
+                incorporatedOn: '2018-03-14'
+                entityType: LLC
+                taxId: 47-1234567
+                countriesOfOperation:
+                  - US
+                businessType: FINTECH
+                purposeOfAccount: PAYMENTS
+                sourceOfFunds: OPERATING_REVENUE
+                expectedActivityVolumes:
+                  monthlyTransactionCount: 100_TO_500
+                  monthlyTransactionVolume: 100K_TO_1M
+                expectedRecipientJurisdictions:
+                  - US
+                  - MX
+              address:
+                line1: 123 Market Street
+                line2: Suite 400
+                city: San Francisco
+                state: CA
+                postalCode: '94105'
+                country: US
   responses:
     '201':
       description: Customer created successfully

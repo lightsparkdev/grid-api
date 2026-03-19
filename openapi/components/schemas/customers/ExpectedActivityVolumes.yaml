@@ -1,0 +1,23 @@
+type: object
+description: Expected monthly transaction activity for the business
+properties:
+  monthlyTransactionCount:
+    type: string
+    enum:
+      - LESS_THAN_10
+      - 10_TO_100
+      - 100_TO_500
+      - 500_TO_1000
+      - MORE_THAN_1000
+    description: Expected number of transactions per month
+    example: 100_TO_500
+  monthlyTransactionVolume:
+    type: string
+    enum:
+      - LESS_THAN_10K
+      - 10K_TO_100K
+      - 100K_TO_1M
+      - 1M_TO_10M
+      - MORE_THAN_10M
+    description: Expected total transaction volume per month in USD equivalent
+    example: 100K_TO_1M

@@ -1,0 +1,9 @@
+type: string
+enum:
+  - RESOLVE_ERRORS
+  - PENDING_MANUAL_REVIEW
+  - IN_PROGRESS
+  - APPROVED
+  - REJECTED
+description: Current status of the KYC/KYB verification
+example: RESOLVE_ERRORS

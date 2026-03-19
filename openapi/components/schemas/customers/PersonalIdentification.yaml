@@ -1,0 +1,15 @@
+type: object
+required:
+  - idType
+  - identifier
+properties:
+  idType:
+    $ref: ./IdentificationType.yaml
+  identifier:
+    type: string
+    description: The identification number or value
+    example: 123-45-6789
+  countryOfIssuance:
+    type: string
+    description: Country that issued the identification (ISO 3166-1 alpha-2)
+    example: US

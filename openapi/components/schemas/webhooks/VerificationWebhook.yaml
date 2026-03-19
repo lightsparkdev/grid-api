@@ -1,0 +1,16 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../verifications/Verification.yaml
+      type:
+        type: string
+        enum:
+          - VERIFICATION.APPROVED
+          - VERIFICATION.REJECTED
+          - VERIFICATION.RESOLVE_ERRORS
+          - VERIFICATION.IN_PROGRESS
+          - VERIFICATION.PENDING_MANUAL_REVIEW

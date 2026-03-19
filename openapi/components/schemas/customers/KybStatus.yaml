@@ -1,12 +1,8 @@
 type: string
 enum:
-  - AWAITING_SUBMISSION
+  - UNVERIFIED
+  - PENDING
   - APPROVED
   - REJECTED
-  - PENDING_REVIEW
-  - EXPIRED
-  - CANCELED
-  - MANUALLY_APPROVED
-  - MANUALLY_REJECTED
 description: The current KYB status of a business customer
 example: APPROVED

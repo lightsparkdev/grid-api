@@ -1,0 +1,10 @@
+type: string
+enum:
+  - MISSING_FIELD
+  - INVALID_FIELD
+  - MISSING_DOCUMENT
+  - INVALID_DOCUMENT
+  - EXPIRED_DOCUMENT
+  - MISSING_BENEFICIAL_OWNER
+description: Type of verification error
+example: MISSING_FIELD

@@ -1,0 +1,92 @@
+post:
+  summary: Verification status change
+  description: >
+    Webhook that is called when a customer's KYC/KYB verification status changes.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid API public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+  operationId: verificationStatusWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/VerificationWebhook.yaml
+        examples:
+          approved:
+            summary: Verification approved
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+              type: VERIFICATION.APPROVED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Verification:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                verificationStatus: APPROVED
+                errors: []
+                createdAt: '2025-08-15T14:00:00Z'
+          resolveErrors:
+            summary: Verification requires action
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000031
+              type: VERIFICATION.RESOLVE_ERRORS
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Verification:019542f5-b3e7-1d02-0000-000000000011
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                verificationStatus: RESOLVE_ERRORS
+                errors:
+                  - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: MISSING_DOCUMENT
+                    acceptedDocumentTypes:
+                      - PROOF_OF_ADDRESS
+                      - UTILITY_BILL
+                      - BANK_STATEMENT
+                    reason: Proof of address document is required
+                createdAt: '2025-08-15T14:00:00Z'
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml
