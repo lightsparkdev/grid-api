@@ -1,0 +1,11 @@
+type: string
+enum:
+  - PAYMENTS
+  - PAYROLL
+  - TREASURY
+  - TRADING
+  - LENDING
+  - COLLECTIONS
+  - OTHER
+description: The intended purpose for using the Grid account
+example: PAYMENTS

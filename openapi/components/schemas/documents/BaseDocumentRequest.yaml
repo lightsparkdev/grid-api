@@ -1,0 +1,27 @@
+type: object
+required:
+  - file
+  - documentType
+  - country
+properties:
+  file:
+    type: string
+    format: binary
+    description: The document file (PDF, JPEG, or PNG, max 10 MB)
+  documentType:
+    $ref: ./DocumentType.yaml
+  side:
+    type: string
+    enum:
+      - FRONT
+      - BACK
+    description: Which side of the document (for two-sided documents like driver's licenses)
+    example: FRONT
+  country:
+    type: string
+    description: Country that issued the document (ISO 3166-1 alpha-2)
+    example: US
+  documentNumber:
+    type: string
+    description: Document identification number (e.g., passport number)
+    example: A12345678

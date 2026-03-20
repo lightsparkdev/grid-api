@@ -5,13 +5,48 @@ properties:
     type: string
     description: Legal name of the business
     example: Acme Corporation, Inc.
+  doingBusinessAs:
+    type: string
+    description: Trade name or DBA name of the business, if different from the legal name
+    example: Acme
+  country:
+    type: string
+    description: Country of incorporation or registration (ISO 3166-1 alpha-2)
+    example: US
   registrationNumber:
     type: string
     description: Business registration number
-    example: BRN-123456789
+    example: '5523041'
+  incorporatedOn:
+    type: string
+    format: date
+    description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+    example: '2018-03-14'
+  entityType:
+    $ref: ./EntityType.yaml
   taxId:
     type: string
     description: Tax identification number
-    example: EIN-987654321
+    example: 47-1234567
+  countriesOfOperation:
+    type: array
+    items:
+      type: string
+    description: List of countries where the business operates (ISO 3166-1 alpha-2)
+    example:
+      - US
   businessType:
     $ref: ./BusinessType.yaml
+  purposeOfAccount:
+    $ref: ./PurposeOfAccount.yaml
+  sourceOfFunds:
+    $ref: ./SourceOfFunds.yaml
+  expectedActivityVolumes:
+    $ref: ./ExpectedActivityVolumes.yaml
+  expectedRecipientJurisdictions:
+    type: array
+    items:
+      type: string
+    description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+    example:
+      - US

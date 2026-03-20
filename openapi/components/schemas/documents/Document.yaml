@@ -1,0 +1,50 @@
+type: object
+required:
+  - id
+  - documentHolder
+  - documentType
+  - country
+  - fileName
+  - createdAt
+properties:
+  id:
+    type: string
+    description: Unique identifier for this document
+    example: Document:019542f5-b3e7-1d02-0000-000000000001
+  documentHolder:
+    type: string
+    description: >-
+      ID of the entity that owns this document. Can be a Customer ID
+      or a BeneficialOwner ID.
+    example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
+  documentType:
+    $ref: ./DocumentType.yaml
+  side:
+    type: string
+    enum:
+      - FRONT
+      - BACK
+    description: Which side of the document this upload represents. Relevant for two-sided documents like driver's licenses or national IDs.
+    example: FRONT
+  country:
+    type: string
+    description: Country that issued the document (ISO 3166-1 alpha-2)
+    example: US
+  documentNumber:
+    type: string
+    description: Document identification number (e.g., passport number)
+    example: A12345678
+  fileName:
+    type: string
+    description: Original file name of the uploaded document
+    example: passport_scan.pdf
+  createdAt:
+    type: string
+    format: date-time
+    description: When this document was uploaded
+    example: '2025-10-03T12:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When this document was last updated
+    example: '2025-10-03T12:00:00Z'

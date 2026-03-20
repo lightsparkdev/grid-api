@@ -1,0 +1,40 @@
+get:
+  summary: Get a verification
+  description: Retrieve details of a specific verification by ID.
+  operationId: getVerification
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: verificationId
+      in: path
+      description: Verification ID
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/verifications/Verification.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Verification not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

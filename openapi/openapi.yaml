@@ -17,6 +17,15 @@ tags:
       also configure these settings in the Grid dashboard.
   - name: Customers
     description: Customer management endpoints for creating and updating customer information
+  - name: KYC/KYB Verifications
+    description: >-
+      Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)
+      verification, including managing beneficial owners and triggering
+      verification for customers.
+  - name: Documents
+    description: >-
+      Endpoints for uploading and managing verification documents for customers
+      and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
@@ -90,6 +99,18 @@ paths:
     $ref: paths/customers/customers_external_accounts.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
+  /beneficial-owners:
+    $ref: paths/beneficial-owners/beneficial_owners.yaml
+  /beneficial-owners/{beneficialOwnerId}:
+    $ref: paths/beneficial-owners/beneficial_owners_{beneficialOwnerId}.yaml
+  /documents:
+    $ref: paths/documents/documents.yaml
+  /documents/{documentId}:
+    $ref: paths/documents/documents_{documentId}.yaml
+  /verifications:
+    $ref: paths/verifications/verifications.yaml
+  /verifications/{verificationId}:
+    $ref: paths/verifications/verifications_{verificationId}.yaml
   /plaid/link-tokens:
     $ref: paths/plaid/plaid_link-tokens.yaml
   /plaid/callback/{plaid_link_token}:
@@ -159,5 +180,7 @@ webhooks:
     $ref: webhooks/customer-update.yaml
   internal-account-status:
     $ref: webhooks/internal-account-status.yaml
+  verification-update:
+    $ref: webhooks/verification-update.yaml
 security:
   - BasicAuth: []

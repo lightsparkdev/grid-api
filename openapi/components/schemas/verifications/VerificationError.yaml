@@ -1,0 +1,31 @@
+type: object
+required:
+  - resourceId
+  - type
+  - reason
+properties:
+  resourceId:
+    type: string
+    description: >-
+      ID of the resource with the issue (Customer, BeneficialOwner, or Document)
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  type:
+    $ref: ./VerificationErrorType.yaml
+  field:
+    type: string
+    description: >-
+      Dot-notation path to the field with the issue. Present when type is
+      MISSING_FIELD or INVALID_FIELD.
+    example: customer.address.line1
+  acceptedDocumentTypes:
+    type: array
+    items:
+      $ref: ../documents/DocumentType.yaml
+    description: >-
+      Document types that would satisfy this requirement. The integrator
+      can upload any one of the listed types. Present when type is
+      MISSING_DOCUMENT, INVALID_DOCUMENT, or EXPIRED_DOCUMENT.
+  reason:
+    type: string
+    description: Human-readable description of the issue
+    example: Business address line 1 is required

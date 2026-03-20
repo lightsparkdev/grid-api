@@ -1,0 +1,11 @@
+type: string
+enum:
+  - SOLE_PROPRIETORSHIP
+  - PARTNERSHIP
+  - LLC
+  - CORPORATION
+  - S_CORPORATION
+  - NON_PROFIT
+  - OTHER
+description: Legal entity type of the business
+example: LLC

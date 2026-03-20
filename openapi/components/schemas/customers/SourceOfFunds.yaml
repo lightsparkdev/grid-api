@@ -1,0 +1,11 @@
+type: string
+enum:
+  - OPERATING_REVENUE
+  - INVESTMENT_INCOME
+  - LOANS
+  - VENTURE_CAPITAL
+  - PERSONAL_SAVINGS
+  - DONATIONS
+  - OTHER
+description: The primary source of funds for the business
+example: OPERATING_REVENUE
