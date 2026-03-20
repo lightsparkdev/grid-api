@@ -29,6 +29,7 @@ oneOf:
 - $ref: ./TronWalletExternalAccountInfo.yaml
 - $ref: ./PolygonWalletExternalAccountInfo.yaml
 - $ref: ./BaseWalletExternalAccountInfo.yaml
+- $ref: ./EthereumWalletExternalAccountInfo.yaml
 - $ref: ./AedExternalAccountInfo.yaml
 - $ref: ./BwpExternalAccountInfo.yaml
 - $ref: ./XafExternalAccountInfo.yaml
@@ -65,7 +66,7 @@ discriminator:
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
+    ETHEREUM_WALLET: ./EthereumWalletExternalAccountInfo.yaml
     AED_ACCOUNT: ./AedExternalAccountInfo.yaml
-    LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
     BWP_ACCOUNT: ./BwpExternalAccountInfo.yaml
     XAF_ACCOUNT: ./XafExternalAccountInfo.yaml

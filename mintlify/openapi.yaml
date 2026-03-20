@@ -5673,6 +5673,7 @@ components:
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - ETHEREUM_WALLET
       description: Type of payment account or wallet
       example: USD_ACCOUNT
     BasePaymentAccountInfo:
@@ -6550,6 +6551,32 @@ components:
               description: Type of asset
               enum:
                 - USDC
+    EthereumWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ETHEREUM_WALLET
+        address:
+          type: string
+          description: Ethereum L1 wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentEthereumWalletInfo:
+      title: Base Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
     AedAccountInfo:
       type: object
       required:
@@ -7094,6 +7121,7 @@ components:
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
+            - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -7119,6 +7147,7 @@ components:
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
+              ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
               AED_ACCOUNT: '#/components/schemas/PaymentAedAccountInfo'
               KES_ACCOUNT: '#/components/schemas/PaymentKesAccountInfo'
               MWK_ACCOUNT: '#/components/schemas/PaymentMwkAccountInfo'
@@ -7211,6 +7240,7 @@ components:
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - ETHEREUM_WALLET
         - AED_ACCOUNT
         - BRL_ACCOUNT
         - BWP_ACCOUNT
@@ -8665,6 +8695,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+    EthereumWalletExternalAccountInfo:
+      title: Ethereum L1 Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletInfo'
     AedBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -8859,6 +8894,7 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AedExternalAccountInfo'
         - $ref: '#/components/schemas/BwpExternalAccountInfo'
         - $ref: '#/components/schemas/XafExternalAccountInfo'
@@ -8895,8 +8931,8 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
           AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
-          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
           XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
     ExternalAccount:
