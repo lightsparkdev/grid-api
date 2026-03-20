@@ -37,7 +37,7 @@ Instantly add funds to any internal account using `/sandbox/internal-accounts/{a
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/{accountId}/fund \
-  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{ "amount": 100000 }'
 ```
@@ -54,14 +54,14 @@ After creating a quote, you need to fund it to trigger execution. There are two 
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute \
-  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET"
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 **Real-time funding via sandbox send** — If your quote uses real-time funding, the quote response includes payment instructions for you to transfer funds to. Use `/sandbox/send` to simulate this payment:
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/send \
-  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
@@ -83,7 +83,7 @@ Use the sandbox receive endpoint to simulate an incoming UMA payment to one of y
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive \
-  -u "$SANDBOX_CLIENT_ID:$SANDBOX_API_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "senderUmaAddress": "$success.usd@sandbox.uma.money",
