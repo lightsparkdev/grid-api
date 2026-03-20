@@ -39,11 +39,10 @@ post:
                 countriesOfOperation:
                   - US
                 businessType: FINTECH
-                purposeOfAccount: PAYMENTS
-                sourceOfFunds: OPERATING_REVENUE
-                expectedActivityVolumes:
-                  monthlyTransactionCount: 100_TO_500
-                  monthlyTransactionVolume: 100K_TO_1M
+                purposeOfAccount: Payout to contractors
+                sourceOfFunds: Funds derived from customer payments for software services
+                expectedMonthlyTransactionCount: 100_TO_500
+                expectedMonthlyTransactionVolume: 100K_TO_1M
                 expectedRecipientJurisdictions:
                   - US
                   - MX

@@ -12,7 +12,3 @@ properties:
     $ref: ../common/Address.yaml
   businessInfo:
     $ref: ./BusinessInfoUpdate.yaml
-  beneficialOwners:
-    type: array
-    items:
-      $ref: ./UltimateBeneficialOwner.yaml
