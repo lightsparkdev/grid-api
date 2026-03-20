@@ -4756,50 +4756,22 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    BrlAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - pixKey
-        - pixKeyType
-        - taxId
-      properties:
-        accountType:
-          type: string
-          enum:
-            - BRL_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - PIX
-        pixKey:
-          type: string
-          description: The PIX key (email, phone, CPF, CNPJ, or random)
-          minLength: 1
-          maxLength: 77
-        pixKeyType:
-          type: string
-          description: The type of PIX key
-          enum:
-            - CPF
-            - CNPJ
-            - EMAIL
-            - PHONE
-            - RANDOM
-        taxId:
-          type: string
-          description: The tax ID (CPF or CNPJ)
-          minLength: 11
-          maxLength: 14
-          pattern: ^[0-9]{11,14}$
     PaymentBrlAccountInfo:
       title: BRL Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/BrlAccountInfo'
+        - type: object
+          required:
+            - qrCode
+          properties:
+            accountType:
+              type: string
+              enum:
+                - BRL_ACCOUNT
+            qrCode:
+              type: string
+              description: A PIX QR code payload that can be used to fund the transaction. This can be rendered as a QR code image or pasted into a PIX-compatible banking app.
+              minLength: 1
     MxnAccountInfo:
       type: object
       required:
@@ -6300,6 +6272,45 @@ components:
       properties:
         accountType:
           $ref: '#/components/schemas/ExternalAccountType'
+    BrlAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - pixKey
+        - pixKeyType
+        - taxId
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BRL_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - PIX
+        pixKey:
+          type: string
+          description: The PIX key (email, phone, CPF, CNPJ, or random)
+          minLength: 1
+          maxLength: 77
+        pixKeyType:
+          type: string
+          description: The type of PIX key
+          enum:
+            - CPF
+            - CNPJ
+            - EMAIL
+            - PHONE
+            - RANDOM
+        taxId:
+          type: string
+          description: The tax ID (CPF or CNPJ)
+          minLength: 11
+          maxLength: 14
+          pattern: ^[0-9]{11,14}$
     BrlBeneficiary:
       title: Individual Beneficiary
       type: object
