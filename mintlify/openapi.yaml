@@ -6566,7 +6566,7 @@ components:
           description: Ethereum L1 wallet address
           example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
     PaymentEthereumWalletInfo:
-      title: Base Wallet
+      title: Ethereum Wallet
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
