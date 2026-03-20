@@ -1,4 +1,4 @@
-title: Base Wallet
+title: Ethereum Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
   - $ref: ./EthereumWalletInfo.yaml

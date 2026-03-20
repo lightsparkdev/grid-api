@@ -2,4 +2,3 @@ title: Ethereum L1 Wallet
 allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/EthereumWalletInfo.yaml
-  
