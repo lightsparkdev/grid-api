@@ -13,3 +13,5 @@ properties:
     type: string
     description: Tax identification number
     example: EIN-987654321
+  businessType:
+    $ref: ./BusinessType.yaml
