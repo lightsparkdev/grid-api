@@ -277,4 +277,39 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
+  ETHEREUM_WALLET: {
+    accountType: 'ETHEREUM_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
+  AED_ACCOUNT: {
+    accountType: 'AED_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'AE070331234567890123456' },
+      { name: 'swiftCode', example: 'EBILAEAD', description: 'Optional' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  BWP_ACCOUNT: {
+    accountType: 'BWP_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+26771234567' },
+      { name: 'provider', example: 'ORANGE', description: 'Mobile money provider' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  XAF_ACCOUNT: {
+    accountType: 'XAF_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+237612345678' },
+      { name: 'provider', example: 'MTN', description: 'Mobile money provider' },
+      { name: 'region', example: 'CM', description: 'Country code (CM or CG)' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
 };
