@@ -40,11 +40,21 @@ properties:
   businessType:
     $ref: ./BusinessType.yaml
   purposeOfAccount:
-    $ref: ./PurposeOfAccount.yaml
+    type: string
+    description: The intended purpose for using the Grid account
+    example: Payout to contractors
   sourceOfFunds:
-    $ref: ./SourceOfFunds.yaml
-  expectedActivityVolumes:
-    $ref: ./ExpectedActivityVolumes.yaml
+    type: string
+    description: The primary source of funds for the business
+    example: Funds derived from customer payments for software services
+  expectedMonthlyTransactionCount:
+    type: string
+    description: Expected number of transactions per month
+    example: 100_TO_500
+  expectedMonthlyTransactionVolume:
+    type: string
+    description: Expected total transaction volume per month in USD equivalent
+    example: 100K_TO_1M
   expectedRecipientJurisdictions:
     type: array
     items:

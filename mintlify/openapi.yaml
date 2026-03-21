@@ -297,11 +297,10 @@ paths:
                     countriesOfOperation:
                       - US
                     businessType: FINTECH
-                    purposeOfAccount: PAYMENTS
-                    sourceOfFunds: OPERATING_REVENUE
-                    expectedActivityVolumes:
-                      monthlyTransactionCount: 100_TO_500
-                      monthlyTransactionVolume: 100K_TO_1M
+                    purposeOfAccount: Payout to contractors
+                    sourceOfFunds: Funds derived from customer payments for software services
+                    expectedMonthlyTransactionCount: 100_TO_500
+                    expectedMonthlyTransactionVolume: 100K_TO_1M
                     expectedRecipientJurisdictions:
                       - US
                       - MX
@@ -5207,54 +5206,6 @@ components:
         - ACCOMMODATION_AND_FOOD_SERVICES
         - OTHER_SERVICES
         - PUBLIC_ADMINISTRATION
-    PurposeOfAccount:
-      type: string
-      enum:
-        - PAYMENTS
-        - PAYROLL
-        - TREASURY
-        - TRADING
-        - LENDING
-        - COLLECTIONS
-        - OTHER
-      description: The intended purpose for using the Grid account
-      example: PAYMENTS
-    SourceOfFunds:
-      type: string
-      enum:
-        - OPERATING_REVENUE
-        - INVESTMENT_INCOME
-        - LOANS
-        - VENTURE_CAPITAL
-        - PERSONAL_SAVINGS
-        - DONATIONS
-        - OTHER
-      description: The primary source of funds for the business
-      example: OPERATING_REVENUE
-    ExpectedActivityVolumes:
-      type: object
-      description: Expected monthly transaction activity for the business
-      properties:
-        monthlyTransactionCount:
-          type: string
-          enum:
-            - LESS_THAN_10
-            - 10_TO_100
-            - 100_TO_500
-            - 500_TO_1000
-            - MORE_THAN_1000
-          description: Expected number of transactions per month
-          example: 100_TO_500
-        monthlyTransactionVolume:
-          type: string
-          enum:
-            - LESS_THAN_10K
-            - 10K_TO_100K
-            - 100K_TO_1M
-            - 1M_TO_10M
-            - MORE_THAN_10M
-          description: Expected total transaction volume per month in USD equivalent
-          example: 100K_TO_1M
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -5296,11 +5247,101 @@ components:
         businessType:
           $ref: '#/components/schemas/BusinessType'
         purposeOfAccount:
-          $ref: '#/components/schemas/PurposeOfAccount'
+          type: string
+          description: The intended purpose for using the Grid account
+          example: Payout to contractors
         sourceOfFunds:
-          $ref: '#/components/schemas/SourceOfFunds'
-        expectedActivityVolumes:
-          $ref: '#/components/schemas/ExpectedActivityVolumes'
+          type: string
+          description: The primary source of funds for the business
+          example: Funds derived from customer payments for software services
+        expectedMonthlyTransactionCount:
+          type: string
+          description: Expected number of transactions per month
+          example: 100_TO_500
+        expectedMonthlyTransactionVolume:
+          type: string
+          description: Expected total transaction volume per month in USD equivalent
+          example: 100K_TO_1M
+        expectedRecipientJurisdictions:
+          type: array
+          items:
+            type: string
+          description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+    BusinessCustomerFields:
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          type: string
+          enum:
+            - BUSINESS
+        kybStatus:
+          $ref: '#/components/schemas/KybStatus'
+        address:
+          $ref: '#/components/schemas/Address'
+        businessInfo:
+          $ref: '#/components/schemas/BusinessInfoUpdate'
+    BusinessInfo:
+      type: object
+      description: Additional information required for business entities
+      required:
+        - legalName
+      properties:
+        legalName:
+          type: string
+          description: Legal name of the business
+          example: Acme Corporation, Inc.
+        doingBusinessAs:
+          type: string
+          description: Trade name or DBA name of the business, if different from the legal name
+          example: Acme
+        country:
+          type: string
+          description: Country of incorporation or registration (ISO 3166-1 alpha-2)
+          example: US
+        registrationNumber:
+          type: string
+          description: Business registration number
+          example: '5523041'
+        incorporatedOn:
+          type: string
+          format: date
+          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+          example: '2018-03-14'
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        taxId:
+          type: string
+          description: Tax identification number
+          example: 47-1234567
+        countriesOfOperation:
+          type: array
+          items:
+            type: string
+          description: List of countries where the business operates (ISO 3166-1 alpha-2)
+          example:
+            - US
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
+        purposeOfAccount:
+          type: string
+          description: The intended purpose for using the Grid account
+          example: Payout to contractors
+        sourceOfFunds:
+          type: string
+          description: The primary source of funds for the business
+          example: Funds derived from customer payments for software services
+        expectedMonthlyTransactionCount:
+          type: string
+          description: Expected number of transactions per month
+          example: 100_TO_500
+        expectedMonthlyTransactionVolume:
+          type: string
+          description: Expected total transaction volume per month in USD equivalent
+          example: 100K_TO_1M
         expectedRecipientJurisdictions:
           type: array
           items:
@@ -5362,80 +5403,6 @@ components:
           type: string
           description: Title at company
           example: CEO, COO, President
-    BusinessCustomerFields:
-      type: object
-      required:
-        - customerType
-      properties:
-        customerType:
-          type: string
-          enum:
-            - BUSINESS
-        kybStatus:
-          $ref: '#/components/schemas/KybStatus'
-        address:
-          $ref: '#/components/schemas/Address'
-        businessInfo:
-          $ref: '#/components/schemas/BusinessInfoUpdate'
-        beneficialOwners:
-          type: array
-          items:
-            $ref: '#/components/schemas/UltimateBeneficialOwner'
-    BusinessInfo:
-      type: object
-      description: Additional information required for business entities
-      required:
-        - legalName
-      properties:
-        legalName:
-          type: string
-          description: Legal name of the business
-          example: Acme Corporation, Inc.
-        doingBusinessAs:
-          type: string
-          description: Trade name or DBA name of the business, if different from the legal name
-          example: Acme
-        country:
-          type: string
-          description: Country of incorporation or registration (ISO 3166-1 alpha-2)
-          example: US
-        registrationNumber:
-          type: string
-          description: Business registration number
-          example: '5523041'
-        incorporatedOn:
-          type: string
-          format: date
-          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
-          example: '2018-03-14'
-        entityType:
-          $ref: '#/components/schemas/EntityType'
-        taxId:
-          type: string
-          description: Tax identification number
-          example: 47-1234567
-        countriesOfOperation:
-          type: array
-          items:
-            type: string
-          description: List of countries where the business operates (ISO 3166-1 alpha-2)
-          example:
-            - US
-        businessType:
-          $ref: '#/components/schemas/BusinessType'
-        purposeOfAccount:
-          $ref: '#/components/schemas/PurposeOfAccount'
-        sourceOfFunds:
-          $ref: '#/components/schemas/SourceOfFunds'
-        expectedActivityVolumes:
-          $ref: '#/components/schemas/ExpectedActivityVolumes'
-        expectedRecipientJurisdictions:
-          type: array
-          items:
-            type: string
-          description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
-          example:
-            - US
     BusinessCustomer:
       title: Business Customer
       allOf:
@@ -5445,6 +5412,10 @@ components:
           properties:
             businessInfo:
               $ref: '#/components/schemas/BusinessInfo'
+            beneficialOwners:
+              type: array
+              items:
+                $ref: '#/components/schemas/UltimateBeneficialOwner'
     CustomerOneOf:
       oneOf:
         - $ref: '#/components/schemas/IndividualCustomer'
