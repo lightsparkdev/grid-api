@@ -22,5 +22,6 @@ enum:
   - TRON_WALLET
   - POLYGON_WALLET
   - BASE_WALLET
+  - ETHEREUM_WALLET
 description: Type of payment account or wallet
 example: USD_ACCOUNT

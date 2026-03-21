@@ -1,0 +1,11 @@
+title: Ethereum Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./EthereumWalletInfo.yaml
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum: 
+          - USDC
