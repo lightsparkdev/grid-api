@@ -38,7 +38,7 @@ post:
                 taxId: 47-1234567
                 countriesOfOperation:
                   - US
-                businessType: FINTECH
+                businessType: FINANCE_AND_INSURANCE
                 purposeOfAccount: Payout to contractors
                 sourceOfFunds: Funds derived from customer payments for software services
                 expectedMonthlyTransactionCount: 100_TO_500
