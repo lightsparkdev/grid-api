@@ -9019,22 +9019,6 @@ components:
         - CPF
       description: Type of personal identification document
       example: SSN
-    PersonalIdentification:
-      type: object
-      required:
-        - idType
-        - identifier
-      properties:
-        idType:
-          $ref: '#/components/schemas/IdentificationType'
-        identifier:
-          type: string
-          description: The identification number or value
-          example: 123-45-6789
-        countryOfIssuance:
-          type: string
-          description: Country that issued the identification (ISO 3166-1 alpha-2)
-          example: US
     BeneficialOwnerPersonalInfo:
       type: object
       required:
@@ -9043,20 +9027,21 @@ components:
         - birthDate
         - nationality
         - address
-        - personalIds
+        - idType
+        - identifier
       properties:
         firstName:
           type: string
           description: First name of the individual
           example: Jane
-        lastName:
-          type: string
-          description: Last name of the individual
-          example: Smith
         middleName:
           type: string
           description: Middle name of the individual
           example: Marie
+        lastName:
+          type: string
+          description: Last name of the individual
+          example: Smith
         birthDate:
           type: string
           format: date
@@ -9078,8 +9063,16 @@ components:
           pattern: ^\+[1-9]\d{1,14}$
         address:
           $ref: '#/components/schemas/Address'
-        personalIds:
-          $ref: '#/components/schemas/PersonalIdentification'
+        idType:
+          $ref: '#/components/schemas/IdentificationType'
+        identifier:
+          type: string
+          description: The identification number or value
+          example: 123-45-6789
+        countryOfIssuance:
+          type: string
+          description: Country that issued the identification (ISO 3166-1 alpha-2)
+          example: US
     BeneficialOwner:
       type: object
       required:
@@ -9107,8 +9100,7 @@ components:
             - UBO
             - DIRECTOR
         ownershipPercentage:
-          type: number
-          format: float
+          type: integer
           description: Percentage of ownership in the business (0-100)
           minimum: 0
           maximum: 100
@@ -9132,6 +9124,7 @@ components:
       required:
         - customerId
         - roles
+        - ownershipPercentage
         - personalInfo
       properties:
         customerId:
@@ -9147,8 +9140,7 @@ components:
             - UBO
             - DIRECTOR
         ownershipPercentage:
-          type: number
-          format: float
+          type: integer
           description: Percentage of ownership in the business (0-100). Relevant when role includes UBO.
           minimum: 0
           maximum: 100
@@ -9163,14 +9155,14 @@ components:
           type: string
           description: First name of the individual
           example: Jane
-        lastName:
-          type: string
-          description: Last name of the individual
-          example: Smith
         middleName:
           type: string
           description: Middle name of the individual
           example: Marie
+        lastName:
+          type: string
+          description: Last name of the individual
+          example: Smith
         birthDate:
           type: string
           format: date
@@ -9192,8 +9184,16 @@ components:
           pattern: ^\+[1-9]\d{1,14}$
         address:
           $ref: '#/components/schemas/Address'
-        personalIds:
-          $ref: '#/components/schemas/PersonalIdentification'
+        idType:
+          $ref: '#/components/schemas/IdentificationType'
+        identifier:
+          type: string
+          description: The identification number or value
+          example: 123-45-6789
+        countryOfIssuance:
+          type: string
+          description: Country that issued the identification (ISO 3166-1 alpha-2)
+          example: US
     BeneficialOwnerUpdateRequest:
       type: object
       properties:
@@ -9206,8 +9206,7 @@ components:
             - UBO
             - DIRECTOR
         ownershipPercentage:
-          type: number
-          format: float
+          type: integer
           description: Percentage of ownership in the business (0-100)
           minimum: 0
           maximum: 100
