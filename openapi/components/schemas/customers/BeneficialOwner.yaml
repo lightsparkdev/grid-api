@@ -24,12 +24,11 @@ properties:
       - UBO
       - DIRECTOR
   ownershipPercentage:
-    type: number
-    format: float
+    type: integer
     description: Percentage of ownership in the business (0-100)
     minimum: 0
     maximum: 100
-    example: 51.0
+    example: 51
   personalInfo:
     $ref: ./BeneficialOwnerPersonalInfo.yaml
   kycStatus:

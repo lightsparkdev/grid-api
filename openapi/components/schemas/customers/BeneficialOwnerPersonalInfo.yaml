@@ -5,20 +5,21 @@ required:
   - birthDate
   - nationality
   - address
-  - personalIds
+  - idType
+  - identifier
 properties:
   firstName:
     type: string
     description: First name of the individual
     example: Jane
-  lastName:
-    type: string
-    description: Last name of the individual
-    example: Smith
   middleName:
     type: string
     description: Middle name of the individual
     example: Marie
+  lastName:
+    type: string
+    description: Last name of the individual
+    example: Smith
   birthDate:
     type: string
     format: date
@@ -40,5 +41,13 @@ properties:
     pattern: '^\+[1-9]\d{1,14}$'
   address:
     $ref: ../common/Address.yaml
-  personalIds:
-    $ref: ./PersonalIdentification.yaml
+  idType:
+    $ref: ./IdentificationType.yaml
+  identifier:
+    type: string
+    description: The identification number or value
+    example: 123-45-6789
+  countryOfIssuance:
+    type: string
+    description: Country that issued the identification (ISO 3166-1 alpha-2)
+    example: US
