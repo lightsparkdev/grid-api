@@ -1,0 +1,19 @@
+title: BDT Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/BdtAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/BdtBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/BdtBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml
