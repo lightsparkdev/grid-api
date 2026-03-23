@@ -1,0 +1,139 @@
+---
+title: "Stablecoins & Precision"
+description: "How Grid treats USD and USDC as interchangeable and applies banker's rounding for stablecoin precision"
+---
+
+On Grid, USD and USDC are interchangeable. Both currencies use 2-decimal-place precision in the API, just like any fiat dollar amount. Because stablecoins natively support 6 decimal places on-chain, Grid applies **banker's rounding** whenever a transaction produces a USDC amount that requires rounding to 2 decimal places.
+
+## USD and USDC Interchangeability
+
+Grid accounts denominated in USD and USDC are functionally equivalent:
+
+- API amounts for both are expressed in cents (e.g., `1000` = $10.00 or 10.00 USDC)
+- Exchange rates, fees, and quote calculations treat them identically
+- You can send USD and have a recipient receive USDC, and vice versa
+
+## Precision and Rounding
+
+USDC natively supports **6 decimal places** on-chain (e.g., `10.125000 USDC`). Grid normalizes this to **2 decimal places** to match USD conventions.
+
+When a transaction involves USDC — either as the sending or receiving currency — Grid applies **banker's rounding** (round half to even) when the exchange calculation produces more than 2 decimal places of precision.
+
+Banker's rounding differs from standard rounding only when the value is exactly halfway between two options (i.e., the third decimal digit is exactly `5` with no further non-zero digits):
+
+| Calculated (6-decimal) | Standard rounding | Banker's rounding | Why |
+|------------------------|------------------|-------------------|-----|
+| 10.125000 USDC | 10.13 | **10.12** | Hundredths digit 2 is even → round down |
+| 10.135000 USDC | 10.14 | **10.14** | Hundredths digit 4 is even → round up |
+| 10.145000 USDC | 10.15 | **10.14** | Hundredths digit 4 is even → round down |
+| 10.155000 USDC | 10.16 | **10.16** | Hundredths digit 6 is even → round up |
+
+<Note>
+  Banker's rounding only differs from standard (round half up) rounding when the sub-cent value is **exactly** at the halfway point (`x.xx5000`). For all other values, the rounding behavior is identical.
+</Note>
+
+## Examples
+
+### Receiving USDC (MXN → USDC)
+
+A customer sends Mexican pesos and receives USDC. The exchange calculation produces a 6-decimal USDC amount; banker's rounding determines the final settled amount.
+
+**Quote request** — lock the MXN sending amount:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 17415
+  }'
+```
+
+**Quote response:**
+
+```json
+{
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "status": "PENDING",
+  "sendingCurrency": {
+    "code": "MXN",
+    "name": "Mexican Peso",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "USDC",
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "decimals": 2
+  },
+  "totalSendingAmount": 17415,
+  "totalReceivingAmount": 1012,
+  "exchangeRate": 17.20
+}
+```
+
+At a rate of 17.20 MXN/USDC, 174.15 MXN produces an exact intermediate value of **10.125000 USDC**. Since the hundredths digit is 2 (even), banker's rounding rounds **down** to **10.12 USDC** (`totalReceivingAmount: 1012`), rather than up to 10.13.
+
+### Sending USDC (USDC → MXN)
+
+A customer sends USDC and a recipient receives Mexican pesos. Because the destination amount is locked, the USDC debit is calculated and then rounded.
+
+**Quote request** — lock the MXN receiving amount:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:f91dcbd6-dced-4ec4-b756-3c3a9ea3d744"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:b34dcbd6-dced-4ec4-b756-3c3a9ea3d456"
+    },
+    "lockedCurrencySide": "RECEIVING",
+    "lockedCurrencyAmount": 100270
+  }'
+```
+
+**Quote response:**
+
+```json
+{
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000021",
+  "status": "PENDING",
+  "sendingCurrency": {
+    "code": "USDC",
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "decimals": 2
+  },
+  "receivingCurrency": {
+    "code": "MXN",
+    "name": "Mexican Peso",
+    "symbol": "$",
+    "decimals": 2
+  },
+  "totalSendingAmount": 5014,
+  "totalReceivingAmount": 100270,
+  "exchangeRate": 20.00
+}
+```
+
+At a rate of 20.00 MXN/USDC, delivering 1,002.70 MXN requires an exact intermediate value of **50.135000 USDC**. Since the hundredths digit is 4 (even), banker's rounding rounds **up** to **50.14 USDC** (`totalSendingAmount: 5014`), rather than down to 50.13.
+
+<Note>
+  Exchange rates in these examples are illustrative. Actual rates are determined at quote time based on live market conditions.
+</Note>
