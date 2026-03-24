@@ -114,6 +114,7 @@ export const accountSchema = new Schema<IAccount>(
     multiChainSupport: { type: Boolean, default: false },
     blockchainNetworks: [{ type: Schema.Types.Mixed }],
     eksEnrichments: {
+      _id: false,
       iban: {
         type: String,
         validate: {
