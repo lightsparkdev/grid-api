@@ -142,6 +142,9 @@ accountSchema.pre(['updateOne', 'findOneAndUpdate'], function (next) {
   next();
 });
 
+// NOTE: sparse index skips documents where 'eksEnrichments.iban' is ABSENT.
+// It does NOT skip documents where the field is explicitly null.
+// To clear an IBAN without hitting the unique constraint, use $unset, not $set: null.
 accountSchema.index(
   { 'eksEnrichments.iban': 1 },
   { unique: true, sparse: true }
