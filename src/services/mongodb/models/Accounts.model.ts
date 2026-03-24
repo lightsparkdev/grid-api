@@ -60,7 +60,7 @@ export interface IAccount {
   eksEnrichments?: {
     iban?: string;
     accountStatus?: 'ACTIVE' | 'SUSPENDED';
-    createdAt?: string;
+    createdAt?: string; // ISO 8601 string from EKS — not a Date object
   };
 }
 
@@ -113,7 +113,18 @@ export const accountSchema = new Schema<IAccount>(
     ],
     multiChainSupport: { type: Boolean, default: false },
     blockchainNetworks: [{ type: Schema.Types.Mixed }],
-    eksEnrichments: { type: Schema.Types.Mixed },
+    eksEnrichments: {
+      iban: {
+        type: String,
+        validate: {
+          validator: (v: string) => /^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(v),
+          message: (props: { value: string }) =>
+            `${props.value} is not a valid IBAN`,
+        },
+      },
+      accountStatus: { type: String, enum: ['ACTIVE', 'SUSPENDED'] },
+      createdAt: { type: String },
+    },
   },
   {
     strict: true,
