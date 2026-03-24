@@ -135,6 +135,13 @@ export const accountSchema = new Schema<IAccount>(
 
 // TODO: Set indexes - Index accounts[currency].accountId
 
+// Enforce schema validators on update operations so that the IBAN format
+// check is not silently bypassed by updateOne / findOneAndUpdate / etc.
+accountSchema.pre(['updateOne', 'findOneAndUpdate'], function (next) {
+  this.setOptions({ runValidators: true });
+  next();
+});
+
 accountSchema.index(
   { 'eksEnrichments.iban': 1 },
   { unique: true, sparse: true }
