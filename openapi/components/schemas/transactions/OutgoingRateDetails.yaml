@@ -46,7 +46,7 @@ properties:
     description: >-
       The variable fee rate charged by the Grid product to execute the quote
       as a percentage of the sending currency amount.
-    exclusiveMinimum: 0
+    minimum: 0
     example: 0.003
   gridApiVariableFeeAmount:
     type: number
