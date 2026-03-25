@@ -9,4 +9,4 @@ allOf:
       beneficialOwners:
         type: array
         items:
-          $ref: ./UltimateBeneficialOwner.yaml
+          $ref: ./BeneficialOwner.yaml

@@ -5387,60 +5387,130 @@ components:
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
           example:
             - US
-    UltimateBeneficialOwner:
+    BeneficialOwnerRole:
+      type: string
+      enum:
+        - UBO
+        - DIRECTOR
+        - COMPANY_OFFICER
+        - CONTROL_PERSON
+        - TRUSTEE
+        - GENERAL_PARTNER
+      description: Role of the beneficial owner within the business
+      example: UBO
+    IdentificationType:
+      type: string
+      enum:
+        - SSN
+        - PASSPORT
+        - NATIONAL_ID
+        - DRIVERS_LICENSE
+        - TAX_ID
+        - ITIN
+        - CPF
+      description: Type of personal identification document
+      example: SSN
+    BeneficialOwnerPersonalInfo:
       type: object
       required:
-        - fullName
-        - individualType
+        - firstName
+        - lastName
+        - birthDate
+        - nationality
+        - address
+        - idType
+        - identifier
       properties:
-        fullName:
+        firstName:
           type: string
-          description: Individual's full name
-          example: John Michael Doe
-        emailAddress:
+          description: First name of the individual
+          example: Jane
+        middleName:
           type: string
-          format: email
-          description: Email address of the individual
-          example: example@test.com
-        phoneNumber:
+          description: Middle name of the individual
+          example: Marie
+        lastName:
           type: string
-          description: Phone number of the individual in E.164 format
-          example: '+5555555555'
-          pattern: ^\+[1-9]\d{1,14}$
-        taxId:
-          type: string
-          description: Tax identification number of the individual. This could be a Social Security Number (SSN) for US individuals, Tax Identification Number (TIN) for non-US individuals, or a Passport Number.
-          example: EIN-987654321
+          description: Last name of the individual
+          example: Smith
         birthDate:
           type: string
           format: date
           description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-          example: '1990-01-15'
+          example: '1978-06-15'
         nationality:
           type: string
-          description: Country code (ISO 3166-1 alpha-2)
+          description: Country of nationality (ISO 3166-1 alpha-2)
           example: US
+        email:
+          type: string
+          format: email
+          description: Email address of the individual
+          example: jane.smith@acmecorp.com
+        phoneNumber:
+          type: string
+          description: Phone number in E.164 format
+          example: '+14155550192'
+          pattern: ^\+[1-9]\d{1,14}$
         address:
           $ref: '#/components/schemas/Address'
-        individualType:
+        idType:
+          $ref: '#/components/schemas/IdentificationType'
+        identifier:
           type: string
-          enum:
+          description: The identification number or value
+          example: 123-45-6789
+        countryOfIssuance:
+          type: string
+          description: Country that issued the identification (ISO 3166-1 alpha-2)
+          example: US
+    BeneficialOwner:
+      type: object
+      required:
+        - id
+        - customerId
+        - roles
+        - ownershipPercentage
+        - personalInfo
+        - kycStatus
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this beneficial owner
+          example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          description: The ID of the business customer this beneficial owner is associated with
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/BeneficialOwnerRole'
+          description: Roles of this person within the business
+          example:
+            - UBO
             - DIRECTOR
-            - CONTROL_PERSON
-            - BUSINESS_POINT_OF_CONTACT
-            - TRUSTEE
-            - SETTLOR
-            - GENERAL_PARTNER
-          description: Type of individual in the corporation
-          example: DIRECTOR
-        percentageOwnership:
-          type: number
-          description: Percent of ownership when individual type is beneficial owner
-          example: 25
-        title:
+        ownershipPercentage:
+          type: integer
+          description: Percentage of ownership in the business (0-100)
+          minimum: 0
+          maximum: 100
+          example: 51
+        personalInfo:
+          $ref: '#/components/schemas/BeneficialOwnerPersonalInfo'
+        kycStatus:
+          $ref: '#/components/schemas/KycStatus'
+        createdAt:
           type: string
-          description: Title at company
-          example: CEO, COO, President
+          format: date-time
+          description: When this beneficial owner was created
+          example: '2025-10-03T12:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this beneficial owner was last updated
+          example: '2025-10-03T12:00:00Z'
     BusinessCustomer:
       title: Business Customer
       allOf:
@@ -5453,7 +5523,7 @@ components:
             beneficialOwners:
               type: array
               items:
-                $ref: '#/components/schemas/UltimateBeneficialOwner'
+                $ref: '#/components/schemas/BeneficialOwner'
     CustomerOneOf:
       oneOf:
         - $ref: '#/components/schemas/IndividualCustomer'
@@ -9034,129 +9104,6 @@ components:
           example: ext_acc_123456
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountInfoOneOf'
-    BeneficialOwnerRole:
-      type: string
-      enum:
-        - UBO
-        - DIRECTOR
-        - COMPANY_OFFICER
-        - CONTROL_PERSON
-        - TRUSTEE
-        - GENERAL_PARTNER
-      description: Role of the beneficial owner within the business
-      example: UBO
-    IdentificationType:
-      type: string
-      enum:
-        - SSN
-        - PASSPORT
-        - NATIONAL_ID
-        - DRIVERS_LICENSE
-        - TAX_ID
-        - ITIN
-        - CPF
-      description: Type of personal identification document
-      example: SSN
-    BeneficialOwnerPersonalInfo:
-      type: object
-      required:
-        - firstName
-        - lastName
-        - birthDate
-        - nationality
-        - address
-        - idType
-        - identifier
-      properties:
-        firstName:
-          type: string
-          description: First name of the individual
-          example: Jane
-        middleName:
-          type: string
-          description: Middle name of the individual
-          example: Marie
-        lastName:
-          type: string
-          description: Last name of the individual
-          example: Smith
-        birthDate:
-          type: string
-          format: date
-          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-          example: '1978-06-15'
-        nationality:
-          type: string
-          description: Country of nationality (ISO 3166-1 alpha-2)
-          example: US
-        email:
-          type: string
-          format: email
-          description: Email address of the individual
-          example: jane.smith@acmecorp.com
-        phoneNumber:
-          type: string
-          description: Phone number in E.164 format
-          example: '+14155550192'
-          pattern: ^\+[1-9]\d{1,14}$
-        address:
-          $ref: '#/components/schemas/Address'
-        idType:
-          $ref: '#/components/schemas/IdentificationType'
-        identifier:
-          type: string
-          description: The identification number or value
-          example: 123-45-6789
-        countryOfIssuance:
-          type: string
-          description: Country that issued the identification (ISO 3166-1 alpha-2)
-          example: US
-    BeneficialOwner:
-      type: object
-      required:
-        - id
-        - customerId
-        - roles
-        - personalInfo
-        - kycStatus
-        - createdAt
-      properties:
-        id:
-          type: string
-          description: Unique identifier for this beneficial owner
-          example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
-        customerId:
-          type: string
-          description: The ID of the business customer this beneficial owner is associated with
-          example: Customer:019542f5-b3e7-1d02-0000-000000000001
-        roles:
-          type: array
-          items:
-            $ref: '#/components/schemas/BeneficialOwnerRole'
-          description: Roles of this person within the business
-          example:
-            - UBO
-            - DIRECTOR
-        ownershipPercentage:
-          type: integer
-          description: Percentage of ownership in the business (0-100)
-          minimum: 0
-          maximum: 100
-          example: 51
-        personalInfo:
-          $ref: '#/components/schemas/BeneficialOwnerPersonalInfo'
-        kycStatus:
-          $ref: '#/components/schemas/KycStatus'
-        createdAt:
-          type: string
-          format: date-time
-          description: When this beneficial owner was created
-          example: '2025-10-03T12:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: When this beneficial owner was last updated
-          example: '2025-10-03T12:00:00Z'
     BeneficialOwnerCreateRequest:
       type: object
       required:
