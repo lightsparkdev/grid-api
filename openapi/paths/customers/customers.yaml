@@ -39,7 +39,7 @@ post:
                 countriesOfOperation:
                   - US
                 businessType: FINTECH
-                purposeOfAccount: Payout to contractors
+                purposeOfAccount: CONTRACTOR_PAYOUTS
                 sourceOfFunds: Funds derived from customer payments for software services
                 expectedMonthlyTransactionCount: COUNT_100_TO_500
                 expectedMonthlyTransactionVolume: VOLUME_100K_TO_1M

@@ -38,9 +38,7 @@ properties:
   businessType:
     $ref: ./BusinessType.yaml
   purposeOfAccount:
-    type: string
-    description: The intended purpose for using the Grid account
-    example: Payout to contractors
+    $ref: ./PurposeOfAccount.yaml
   sourceOfFunds:
     type: string
     description: The primary source of funds for the business
