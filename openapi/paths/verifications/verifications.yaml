@@ -41,11 +41,9 @@ post:
                     field: customer.address.line1
                     reason: Business address line 1 is required
                   - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    type: MISSING_DOCUMENT
+                    type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
                     acceptedDocumentTypes:
                       - PROOF_OF_ADDRESS
-                      - UTILITY_BILL
-                      - BANK_STATEMENT
                     reason: Proof of address document is required
                   - resourceId: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000002
                     type: MISSING_FIELD

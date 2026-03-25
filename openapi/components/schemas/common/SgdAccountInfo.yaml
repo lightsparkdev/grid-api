@@ -29,7 +29,7 @@ properties:
     description: Bank account number
     minLength: 1
     maxLength: 34
-    example: 0123456789
+    example: '0123456789'
   swiftCode:
     type: string
     description: The SWIFT/BIC code of the bank

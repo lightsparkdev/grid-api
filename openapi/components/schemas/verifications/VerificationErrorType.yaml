@@ -2,9 +2,17 @@ type: string
 enum:
   - MISSING_FIELD
   - INVALID_FIELD
-  - MISSING_DOCUMENT
+  - MISSING_LEGAL_PRESENCE_DOCUMENT
+  - MISSING_COMPANY_DETAILS_DOCUMENT
+  - MISSING_CONTROL_STRUCTURE_DOCUMENT
+  - MISSING_OWNERSHIP_STRUCTURE_DOCUMENT
+  - MISSING_PROOF_OF_ADDRESS_DOCUMENT
+  - MISSING_IDENTITY_DOCUMENT
   - INVALID_DOCUMENT
   - EXPIRED_DOCUMENT
   - MISSING_BENEFICIAL_OWNER
-description: Type of verification error
+description: >-
+  Type of verification error. The category-specific MISSING_*_DOCUMENT
+  types indicate which document category is needed and determine the
+  accepted document types returned in acceptedDocumentTypes.
 example: MISSING_FIELD

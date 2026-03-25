@@ -296,7 +296,7 @@ paths:
                     taxId: 47-1234567
                     countriesOfOperation:
                       - US
-                    businessType: FINTECH
+                    businessType: INFORMATION
                     purposeOfAccount: CONTRACTOR_PAYOUTS
                     sourceOfFunds: Funds derived from customer payments for software services
                     expectedMonthlyTransactionCount: COUNT_100_TO_500
@@ -1611,11 +1611,9 @@ paths:
                         field: customer.address.line1
                         reason: Business address line 1 is required
                       - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                        type: MISSING_DOCUMENT
+                        type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
                         acceptedDocumentTypes:
                           - PROOF_OF_ADDRESS
-                          - UTILITY_BILL
-                          - BANK_STATEMENT
                         reason: Proof of address document is required
                       - resourceId: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000002
                         type: MISSING_FIELD
@@ -4565,11 +4563,9 @@ webhooks:
                     verificationStatus: RESOLVE_ERRORS
                     errors:
                       - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                        type: MISSING_DOCUMENT
+                        type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
                         acceptedDocumentTypes:
                           - PROOF_OF_ADDRESS
-                          - UTILITY_BILL
-                          - BANK_STATEMENT
                         reason: Proof of address document is required
                     createdAt: '2025-08-15T14:00:00Z'
       responses:
@@ -6003,7 +5999,7 @@ components:
           description: Nigerian bank account number
           minLength: 10
           maxLength: 10
-          example: 123456789
+          example: '0123456789'
           pattern: ^[0-9]{10}$
         bankName:
           type: string
@@ -6309,7 +6305,7 @@ components:
           description: Bank account number
           minLength: 1
           maxLength: 34
-          example: 1234567890
+          example: '001234567890'
     PaymentPhpAccountInfo:
       title: PHP Account
       allOf:
@@ -6355,7 +6351,7 @@ components:
           description: Bank account number
           minLength: 1
           maxLength: 34
-          example: 123456789
+          example: '0123456789'
         swiftCode:
           type: string
           description: The SWIFT/BIC code of the bank
@@ -9220,7 +9216,14 @@ components:
         - UTILITY_BILL
         - SELFIE
         - OTHER
-      description: Type of identity or business verification document
+      description: |-
+        Type of identity or business verification document. Document types are grouped by verification category:
+        **Identity** — PASSPORT, DRIVERS_LICENSE, NATIONAL_ID
+        **Business — Legal presence** — CERTIFICATE_OF_INCORPORATION, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, STATE_REGISTRY_EXCERPT
+        **Business — Company details** — INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, CERTIFICATE_OF_INCORPORATION, INCUMBENCY_CERTIFICATE, GOOD_STANDING_CERTIFICATE
+        **Business — Control structure** — ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, INCUMBENCY_CERTIFICATE, INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT
+        **Business — Ownership structure** — SHAREHOLDER_REGISTER, INFORMATION_STATEMENT, INCUMBENCY_CERTIFICATE, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION
+        **Proof of address** — PROOF_OF_ADDRESS
       example: PASSPORT
     Document:
       type: object
@@ -9330,11 +9333,16 @@ components:
       enum:
         - MISSING_FIELD
         - INVALID_FIELD
-        - MISSING_DOCUMENT
+        - MISSING_LEGAL_PRESENCE_DOCUMENT
+        - MISSING_COMPANY_DETAILS_DOCUMENT
+        - MISSING_CONTROL_STRUCTURE_DOCUMENT
+        - MISSING_OWNERSHIP_STRUCTURE_DOCUMENT
+        - MISSING_PROOF_OF_ADDRESS_DOCUMENT
+        - MISSING_IDENTITY_DOCUMENT
         - INVALID_DOCUMENT
         - EXPIRED_DOCUMENT
         - MISSING_BENEFICIAL_OWNER
-      description: Type of verification error
+      description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed and determine the accepted document types returned in acceptedDocumentTypes.
       example: MISSING_FIELD
     VerificationError:
       type: object
@@ -9357,7 +9365,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DocumentType'
-          description: Document types that would satisfy this requirement. The integrator can upload any one of the listed types. Present when type is MISSING_DOCUMENT, INVALID_DOCUMENT, or EXPIRED_DOCUMENT.
+          description: |-
+            Document types that would satisfy this requirement. The integrator can upload any one of the listed types. Present when type is MISSING_LEGAL_PRESENCE_DOCUMENT, MISSING_COMPANY_DETAILS_DOCUMENT, MISSING_CONTROL_STRUCTURE_DOCUMENT, MISSING_OWNERSHIP_STRUCTURE_DOCUMENT, MISSING_PROOF_OF_ADDRESS_DOCUMENT, MISSING_IDENTITY_DOCUMENT, INVALID_DOCUMENT, or EXPIRED_DOCUMENT.
+
+            | Error Type | Accepted Document Types |
+            |---|---|
+            | MISSING_LEGAL_PRESENCE_DOCUMENT | CERTIFICATE_OF_INCORPORATION, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, STATE_REGISTRY_EXCERPT |
+            | MISSING_COMPANY_DETAILS_DOCUMENT | INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, CERTIFICATE_OF_INCORPORATION, INCUMBENCY_CERTIFICATE, GOOD_STANDING_CERTIFICATE |
+            | MISSING_CONTROL_STRUCTURE_DOCUMENT | ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, INCUMBENCY_CERTIFICATE, INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT |
+            | MISSING_OWNERSHIP_STRUCTURE_DOCUMENT | SHAREHOLDER_REGISTER, INFORMATION_STATEMENT, INCUMBENCY_CERTIFICATE, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION |
+            | MISSING_PROOF_OF_ADDRESS_DOCUMENT | PROOF_OF_ADDRESS |
+            | MISSING_IDENTITY_DOCUMENT | PASSPORT, DRIVERS_LICENSE, NATIONAL_ID |
         reason:
           type: string
           description: Human-readable description of the issue
