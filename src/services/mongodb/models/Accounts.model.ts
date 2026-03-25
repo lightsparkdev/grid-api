@@ -117,6 +117,7 @@ export const accountSchema = new Schema<IAccount>(
       _id: false,
       iban: {
         type: String,
+        set: (v: string) => v?.toUpperCase(),
         validate: {
           validator: (v: string) => /^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(v),
           message: (props: { value: string }) =>
