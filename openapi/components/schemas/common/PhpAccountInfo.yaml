@@ -26,4 +26,4 @@ properties:
     description: Bank account number
     minLength: 1
     maxLength: 34
-    example: 001234567890
+    example: '001234567890'
