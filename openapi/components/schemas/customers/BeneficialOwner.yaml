@@ -3,6 +3,7 @@ required:
   - id
   - customerId
   - roles
+  - ownershipPercentage
   - personalInfo
   - kycStatus
   - createdAt
