@@ -1,29 +1,12 @@
-type: object
-required:
-- accountType
-- paymentRails
-- phoneNumber
-- provider
-properties:
-  accountType:
-    type: string
-    enum:
-    - ZMW_ACCOUNT
-  paymentRails:
-    type: array
-    items:
-      type: string
-      enum:
-      - MOBILE_MONEY
-  phoneNumber:
-    type: string
-    description: Zambian mobile money phone number
-    example: '+260971234567'
-    minLength: 7
-    maxLength: 15
-    pattern: ^\+260[0-9]{9}$
-  provider:
-    type: string
-    description: The mobile money provider name
-    minLength: 1
-    maxLength: 255
+allOf:
+- $ref: ./ZmwAccountInfoBase.yaml
+- type: object
+  required:
+  - paymentRails
+  properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY

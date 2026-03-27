@@ -1,0 +1,19 @@
+title: KES Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/KesAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/KesBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/KesBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

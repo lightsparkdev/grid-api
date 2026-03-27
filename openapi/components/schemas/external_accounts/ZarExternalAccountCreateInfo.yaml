@@ -1,0 +1,19 @@
+title: ZAR Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/ZarAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/ZarBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/ZarBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

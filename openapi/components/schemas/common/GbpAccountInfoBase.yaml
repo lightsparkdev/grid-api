@@ -1,0 +1,24 @@
+type: object
+required:
+- accountType
+- sortCode
+- accountNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - GBP_ACCOUNT
+  sortCode:
+    type: string
+    description: The UK sort code
+    example: '123456'
+    minLength: 6
+    maxLength: 6
+    pattern: ^[0-9]{6}$
+  accountNumber:
+    type: string
+    description: UK bank account number (8 digits)
+    minLength: 8
+    maxLength: 8
+    example: '12345678'
+    pattern: ^[0-9]{8}$

@@ -1,0 +1,16 @@
+type: object
+required:
+- accountType
+- clabeNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - MXN_ACCOUNT
+  clabeNumber:
+    type: string
+    description: The CLABE number of the bank
+    example: '123456789012345678'
+    minLength: 18
+    maxLength: 18
+    pattern: ^[0-9]{18}$
