@@ -9895,6 +9895,7 @@ components:
           enum:
             - TRANSACTION_FAILED
             - USER_CANCELLATION
+            - TIMEOUT
           description: Reason for the refund
           example: TRANSACTION_FAILED
     OutgoingRateDetails:
@@ -9952,7 +9953,6 @@ components:
         - LIGHTNING_PAYMENT_FAILED
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
-        - TIMEOUT
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
     OutgoingTransaction:
       title: Outgoing Transaction
