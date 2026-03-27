@@ -7,8 +7,8 @@ A sample application demonstrating the Grid API payout flow using the [Grid Kotl
 This sample walks through a complete payout:
 
 1. **Create Customer** — Register an individual customer on the platform
-2. **Create External Account** — Link a USD bank account to the customer
-3. **Create Quote** — Get a real-time quote for USDC to USD conversion
+2. **Create External Account** — Link a bank account (MXN, BRL, INR, GBP, PHP, EUR) to the customer
+3. **Create Quote** — Get a real-time quote for USD or USDC conversion
 4. **Sandbox Fund** — Simulate funding to complete the transaction
 
 Webhook events are streamed to the frontend in real time via Server-Sent Events (SSE).
@@ -109,3 +109,40 @@ Grid API calls are in `src/main/kotlin/com/grid/sample/routes/`:
 | [`Webhooks.kt`](src/main/kotlin/com/grid/sample/routes/Webhooks.kt) | Verify and parse incoming webhooks via `WebhookUtils.verifyWebhookSignature()` |
 
 Client initialization is in [`GridClientBuilder.kt`](src/main/kotlin/com/grid/sample/GridClientBuilder.kt).
+
+## Testing
+
+### Backend E2E tests (Ktor)
+
+These tests hit the Grid sandbox API directly via the Ktor route handlers. They require sandbox credentials in `.env`.
+
+```bash
+cd samples/kotlin
+./gradlew test
+```
+
+### Browser E2E tests (Playwright)
+
+These tests drive the full React UI in a real browser. The Kotlin backend must be running first.
+
+**Terminal 1 — Start the backend:**
+
+```bash
+cd samples/kotlin
+./gradlew run
+```
+
+**Terminal 2 — Run the tests:**
+
+```bash
+cd samples/frontend
+npm install
+npx playwright install chromium
+npm run test:e2e
+```
+
+To run tests with a visible browser window:
+
+```bash
+npm run test:e2e:headed
+```
