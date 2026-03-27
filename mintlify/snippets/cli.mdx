@@ -52,6 +52,7 @@ export GRID_API_CLIENT_SECRET="your-client-secret"
 | `grid transfers in` | Transfer funds in (external to internal) |
 | `grid transfers out` | Transfer funds out (internal to external) |
 | `grid transactions list` | List transactions |
+| `grid transactions get` | Get transaction details |
 | `grid receiver lookup-uma` | Look up a UMA address |
 | `grid sandbox fund` | Fund a sandbox account |
 | `grid sandbox send` | Simulate sending funds to a JIT quote |
@@ -61,8 +62,9 @@ Short aliases are available: `cust` for `customers`, `tx` for `transactions`, `a
 
 ### Example: Send USDC to a Mexico Bank Account
 
+<Steps>
+<Step title="Create a customer">
 ```bash
-# 1. Create a customer
 grid customers create \
   --platform-id "your-id" \
   --type INDIVIDUAL \
@@ -73,8 +75,10 @@ grid customers create \
   --address-state "CDMX" \
   --address-postal "06600" \
   --address-country "MX"
-
-# 2. Create an external CLABE account for the customer
+```
+</Step>
+<Step title="Create an external CLABE account for the customer">
+```bash
 grid accounts external create \
   --customer-id <customerId> \
   --currency MXN \
@@ -84,8 +88,10 @@ grid accounts external create \
   --beneficiary-name "Carlos Garcia" \
   --beneficiary-birth-date "1988-03-20" \
   --beneficiary-nationality MX
-
-# 3. Create a quote (returns payment instructions)
+```
+</Step>
+<Step title="Create a quote">
+```bash
 grid quotes create \
   --source-customer <customerId> \
   --source-currency USDC \
@@ -93,13 +99,19 @@ grid quotes create \
   --dest-currency MXN \
   --amount 100000 \
   --lock-side RECEIVING
-
-# 4. In sandbox, simulate the USDC deposit
+```
+</Step>
+<Step title="In sandbox, simulate the USDC deposit">
+```bash
 grid sandbox send --quote-id <quoteId> --currency USDC
-
-# 5. Check transaction status
+```
+</Step>
+<Step title="Check transaction status">
+```bash
 grid transactions get <transactionId>
 ```
+</Step>
+</Steps>
 
 <Note>
 All amounts are in the **smallest currency unit** (e.g., cents for USD, satoshis for BTC). Quotes expire in 1–5 minutes.
