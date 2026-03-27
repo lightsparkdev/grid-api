@@ -111,10 +111,6 @@ paths:
     $ref: paths/verifications/verifications.yaml
   /verifications/{verificationId}:
     $ref: paths/verifications/verifications_{verificationId}.yaml
-  /plaid/link-tokens:
-    $ref: paths/plaid/plaid_link-tokens.yaml
-  /plaid/callback/{plaid_link_token}:
-    $ref: paths/plaid/plaid_callback_{plaid_link_token}.yaml
   /transfer-in:
     $ref: paths/transfers/transfer_in.yaml
   /transfer-out:
