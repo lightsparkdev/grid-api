@@ -1,8 +1,0 @@
-type: object
-required:
-  - customerId
-properties:
-  customerId:
-    type: string
-    description: The ID of the customer for whom to create the Plaid Link token and external account
-    example: Customer:019542f5-b3e7-1d02-0000-000000000001

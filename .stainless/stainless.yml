@@ -186,11 +186,6 @@ resources:
           vnd_account_info: "#/components/schemas/VndAccountInfo"
           # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
 
-  plaid:
-    methods:
-      create_link_token: post /plaid/link-tokens
-      submit_public_token: post /plaid/callback/{plaid_link_token}
-
   transfer_in:
     models:
       transaction: "#/components/schemas/TransactionOneOf"
