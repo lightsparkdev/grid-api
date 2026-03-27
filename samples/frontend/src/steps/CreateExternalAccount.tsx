@@ -30,17 +30,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Priya Sharma",
-      birthDate: "1991-06-12",
-      nationality: "IN",
-      email: "priya.sharma@example.com",
-      phoneNumber: "+919876543210",
-      address: {
-        line1: "42 MG Road",
-        city: "Bangalore",
-        state: "Karnataka",
-        postalCode: "560001",
-        country: "IN"
-      }
+      nationality: "IN"
     }
   },
   MX: {
@@ -55,17 +45,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Carlos García",
-      birthDate: "1988-07-15",
-      nationality: "MX",
-      email: "carlos.garcia@example.com",
-      phoneNumber: "+5215512345678",
-      address: {
-        line1: "Av. Reforma 222",
-        city: "Mexico City",
-        state: "CDMX",
-        postalCode: "06600",
-        country: "MX"
-      }
+      nationality: "MX"
     }
   },
   BR: {
@@ -74,25 +54,15 @@ const COUNTRY_CONFIGS: Record<string, {
     description: "BRL account (PIX)",
     accountInfo: {
       accountType: "BRL_ACCOUNT",
-      pixKey: "carlos@example.com",
       pixKeyType: "EMAIL",
+      pixKey: "ana.silva@example.com",
       taxId: "12345678901",
       paymentRails: ["PIX"]
     },
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Ana Silva",
-      birthDate: "1990-11-20",
-      nationality: "BR",
-      email: "ana.silva@example.com",
-      phoneNumber: "+5511987654321",
-      address: {
-        line1: "Rua Augusta 1200",
-        city: "São Paulo",
-        state: "SP",
-        postalCode: "01304-001",
-        country: "BR"
-      }
+      nationality: "BR"
     }
   },
   PH: {
@@ -101,23 +71,34 @@ const COUNTRY_CONFIGS: Record<string, {
     description: "PHP account (Bank Transfer)",
     accountInfo: {
       accountType: "PHP_ACCOUNT",
-      bankName: "BDO Unibank",
+      bankCode: "BDO",
       accountNumber: "001234567890",
       paymentRails: ["BANK_TRANSFER"]
     },
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Maria Santos",
-      birthDate: "1995-04-10",
-      nationality: "PH",
-      email: "maria.santos@example.com",
-      phoneNumber: "+639171234567",
+      nationality: "PH"
+    }
+  },
+  EU: {
+    label: "🇪🇺 Europe (EUR)",
+    currency: "EUR",
+    description: "EUR account (SEPA)",
+    accountInfo: {
+      accountType: "EUR_ACCOUNT",
+      iban: "DE89370400440532013000",
+      paymentRails: ["SEPA"]
+    },
+    beneficiary: {
+      beneficiaryType: "INDIVIDUAL",
+      fullName: "Hans Müller",
+      nationality: "DE",
       address: {
-        line1: "123 Rizal Avenue",
-        city: "Manila",
-        state: "Metro Manila",
-        postalCode: "1000",
-        country: "PH"
+        line1: "Friedrichstraße 43",
+        city: "Berlin",
+        postalCode: "10117",
+        country: "DE"
       }
     }
   },
@@ -134,41 +115,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "James Smith",
-      birthDate: "1985-09-03",
-      nationality: "GB",
-      email: "james.smith@example.com",
-      phoneNumber: "+447911123456",
-      address: {
-        line1: "10 Downing Street",
-        city: "London",
-        postalCode: "SW1A 2AA",
-        country: "GB"
-      }
-    }
-  },
-  EU: {
-    label: "🇪🇺 Europe (EUR)",
-    currency: "EUR",
-    description: "EUR account (SEPA)",
-    accountInfo: {
-      accountType: "EUR_ACCOUNT",
-      iban: "DE89370400440532013000",
-      swiftCode: "DEUTDEFF",
-      paymentRails: ["SEPA"]
-    },
-    beneficiary: {
-      beneficiaryType: "INDIVIDUAL",
-      fullName: "Hans Müller",
-      birthDate: "1987-01-22",
-      nationality: "DE",
-      email: "hans.mueller@example.com",
-      phoneNumber: "+4917612345678",
-      address: {
-        line1: "Friedrichstraße 43",
-        city: "Berlin",
-        postalCode: "10117",
-        country: "DE"
-      }
+      nationality: "GB"
     }
   }
 }

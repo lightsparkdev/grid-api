@@ -157,7 +157,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildPhpBeneficiary(beneficiaryNode)
             val info = PhpExternalAccountInfo.builder()
                 .accountType(PhpAccountInfo.AccountType.PHP_ACCOUNT)
-                .bankName(accountInfo.requireText("bankName"))
+                .bankName(accountInfo.optText("bankCode") ?: accountInfo.requireText("bankName"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(beneficiary)
                 .paymentRails(buildPaymentRails(accountInfo) { PhpAccountInfo.PaymentRail.of(it) })
@@ -166,15 +166,19 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
         }
         "EUR_ACCOUNT" -> {
             val beneficiary = buildEurBeneficiary(beneficiaryNode)
-            val swiftCode = accountInfo.optText("swiftCode") ?: ""
             val info = ExternalAccountInfoOneOf.EurAccount.builder()
                 .accountType(EurAccountInfo.AccountType.EUR_ACCOUNT)
                 .iban(accountInfo.requireText("iban"))
-                .swiftBic(swiftCode)
                 .beneficiary(beneficiary)
                 .paymentRails(buildPaymentRails(accountInfo) { EurAccountInfo.PaymentRail.of(it) })
-                // Workaround: SDK serializes as "swiftBic" but the API expects "swiftCode"
-                .putAdditionalProperty("swiftCode", com.lightspark.grid.core.JsonValue.from(swiftCode))
+                .apply {
+                    val swiftCode = accountInfo.optText("swiftCode")
+                    if (swiftCode != null) {
+                        swiftBic(swiftCode)
+                        // Workaround: SDK serializes as "swiftBic" but the API expects "swiftCode"
+                        putAdditionalProperty("swiftCode", com.lightspark.grid.core.JsonValue.from(swiftCode))
+                    }
+                }
                 .build()
             ExternalAccountInfoOneOf.ofEurAccount(info)
         }

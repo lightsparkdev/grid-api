@@ -285,15 +285,7 @@ class EndToEndTest {
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
                         "fullName": "E2E Test User",
-                        "birthDate": "1988-07-15",
-                        "nationality": "MX",
-                        "address": {
-                            "line1": "Av. Reforma 222",
-                            "city": "Mexico City",
-                            "state": "CDMX",
-                            "postalCode": "06600",
-                            "country": "MX"
-                        }
+                        "nationality": "MX"
                     }
                 }
             """)
