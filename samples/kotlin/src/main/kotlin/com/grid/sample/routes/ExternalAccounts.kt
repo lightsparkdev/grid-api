@@ -212,7 +212,7 @@ private fun parseBeneficiaryFields(node: JsonNode?): BeneficiaryFields {
     if (node == null || node.isNull) return BeneficiaryFields("Account Holder", null, null, null)
     return BeneficiaryFields(
         fullName = node.optText("fullName") ?: "",
-        nationality = node.optText("nationality"),
+        nationality = node.optText("countryOfResidence") ?: node.optText("nationality"),
         birthDate = node.optText("birthDate"),
         address = buildAddress(node.get("address")),
     )

@@ -84,8 +84,7 @@ class EndToEndTest {
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
                         "fullName": "Carlos Test",
-                        "birthDate": "1990-01-01",
-                        "nationality": "MX"
+                        "countryOfResidence": "MX"
                     }
                 }
             """)
@@ -130,8 +129,7 @@ class EndToEndTest {
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
                         "fullName": "Priya Test",
-                        "birthDate": "1991-06-12",
-                        "nationality": "IN"
+                        "countryOfResidence": "IN"
                     }
                 }
             """)
@@ -206,8 +204,7 @@ class EndToEndTest {
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
                         "fullName": "Quote Test",
-                        "birthDate": "1990-01-01",
-                        "nationality": "MX"
+                        "countryOfResidence": "MX"
                     }
                 }
             """)
@@ -285,7 +282,7 @@ class EndToEndTest {
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
                         "fullName": "E2E Test User",
-                        "nationality": "MX"
+                        "countryOfResidence": "MX"
                     }
                 }
             """)

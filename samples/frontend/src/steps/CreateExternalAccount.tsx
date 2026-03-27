@@ -30,7 +30,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Priya Sharma",
-      nationality: "IN"
+      countryOfResidence: "IN"
     }
   },
   MX: {
@@ -45,7 +45,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Carlos García",
-      nationality: "MX"
+      countryOfResidence: "MX"
     }
   },
   BR: {
@@ -62,7 +62,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Ana Silva",
-      nationality: "BR"
+      countryOfResidence: "BR"
     }
   },
   PH: {
@@ -78,7 +78,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Maria Santos",
-      nationality: "PH"
+      countryOfResidence: "PH"
     }
   },
   EU: {
@@ -93,7 +93,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "Hans Müller",
-      nationality: "DE",
+      countryOfResidence: "DE",
       address: {
         line1: "Friedrichstraße 43",
         city: "Berlin",
@@ -115,7 +115,7 @@ const COUNTRY_CONFIGS: Record<string, {
     beneficiary: {
       beneficiaryType: "INDIVIDUAL",
       fullName: "James Smith",
-      nationality: "GB"
+      countryOfResidence: "GB"
     }
   }
 }
