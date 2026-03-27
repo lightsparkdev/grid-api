@@ -1,0 +1,19 @@
+title: UGX Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/UgxAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/UgxBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/UgxBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

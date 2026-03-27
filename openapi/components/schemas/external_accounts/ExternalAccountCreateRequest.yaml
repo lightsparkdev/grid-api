@@ -37,4 +37,4 @@ allOf:
           ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.
         example: SOLANA_MAINNET
       accountInfo:
-        $ref: ./ExternalAccountInfoOneOf.yaml
+        $ref: ./ExternalAccountCreateInfoOneOf.yaml

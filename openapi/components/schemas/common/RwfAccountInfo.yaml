@@ -1,29 +1,12 @@
-type: object
-required:
-- accountType
-- paymentRails
-- phoneNumber
-- provider
-properties:
-  accountType:
-    type: string
-    enum:
-    - RWF_ACCOUNT
-  paymentRails:
-    type: array
-    items:
-      type: string
-      enum:
-      - MOBILE_MONEY
-  phoneNumber:
-    type: string
-    description: Rwandan mobile money phone number
-    example: '+250781234567'
-    minLength: 7
-    maxLength: 15
-    pattern: ^\+250[0-9]{9}$
-  provider:
-    type: string
-    description: The mobile money provider name
-    minLength: 1
-    maxLength: 255
+allOf:
+- $ref: ./RwfAccountInfoBase.yaml
+- type: object
+  required:
+  - paymentRails
+  properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY
