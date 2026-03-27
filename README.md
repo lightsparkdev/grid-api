@@ -395,7 +395,7 @@ sequenceDiagram
     else Asynchronous Processing (within 5 seconds)
         Client-->>Grid: HTTP 202 Accepted
         Client->>Grid: /transactions/{transactionId}/approve or /reject
-        opt Approved
+        alt Approved
           Grid->>Bank: Execute payment to user's bank account
           Grid->>Client: Webhook: INCOMING_PAYMENT (COMPLETED)
           Client-->>Grid: HTTP 200 OK (acknowledge completion)
