@@ -95,7 +95,7 @@
             "group": "Managing Accounts",
             "pages": [
               "payouts-and-b2b/depositing-funds/internal-accounts",
-payouts-and-b2b/depositing-funds/external-accounts
+              "payouts-and-b2b/depositing-funds/external-accounts"
             ]
           },
           {
@@ -141,7 +141,7 @@ payouts-and-b2b/depositing-funds/external-accounts
             "group": "Managing Accounts",
             "pages": [
               "ramps/accounts/internal-accounts",
-ramps/accounts/external-accounts
+              "ramps/accounts/external-accounts"
             ]
           },
           {
@@ -184,7 +184,7 @@ ramps/accounts/external-accounts
             "group": "Managing Accounts",
             "pages": [
               "rewards/developer-guides/internal-accounts",
-rewards/developer-guides/external-accounts
+              "rewards/developer-guides/external-accounts"
             ]
           },
           {
@@ -228,7 +228,7 @@ rewards/developer-guides/external-accounts
             "group": "Managing Accounts",
             "pages": [
               "global-p2p/managing-accounts/internal-accounts",
-global-p2p/managing-accounts/external-accounts
+              "global-p2p/managing-accounts/external-accounts"
             ]
           },
           {
