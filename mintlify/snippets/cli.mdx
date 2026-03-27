@@ -1,0 +1,118 @@
+The Grid CLI lets you interact with the Grid API directly from your terminal — manage customers, send payments, create quotes, and test in sandbox without writing any code.
+
+<Card
+  title="Grid CLI"
+  icon="square-terminal"
+  href="https://github.com/lightsparkdev/grid-api/tree/main/cli"
+>
+  Open-source CLI built with Node.js and TypeScript.
+</Card>
+
+### Installation
+
+**Prerequisites:** Node.js v20 or v22 is required.
+
+```bash
+git clone https://github.com/lightsparkdev/grid-api.git
+cd grid-api/cli
+npm install
+npm run build
+npm link        # makes `grid` available globally
+```
+
+### Configuration
+
+Configure your credentials interactively:
+
+```bash
+grid configure
+```
+
+This prompts for your API Token ID and Client Secret, validates them, and saves to `~/.grid-credentials`.
+
+Alternatively, set environment variables:
+
+```bash
+export GRID_API_TOKEN_ID="your-token-id"
+export GRID_API_CLIENT_SECRET="your-client-secret"
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `grid configure` | Set up API credentials |
+| `grid config get` | View platform configuration |
+| `grid customers list` | List customers |
+| `grid customers create` | Create a customer |
+| `grid accounts internal list` | List internal accounts |
+| `grid accounts external create` | Create an external bank account or wallet |
+| `grid quotes create` | Create a payment quote |
+| `grid quotes execute` | Execute a pending quote |
+| `grid transfers in` | Transfer funds in (external to internal) |
+| `grid transfers out` | Transfer funds out (internal to external) |
+| `grid transactions list` | List transactions |
+| `grid transactions get` | Get transaction details |
+| `grid receiver lookup-uma` | Look up a UMA address |
+| `grid sandbox fund` | Fund a sandbox account |
+| `grid sandbox send` | Simulate sending funds to a JIT quote |
+| `grid sandbox receive` | Simulate receiving a UMA payment |
+
+Short aliases are available: `cust` for `customers`, `tx` for `transactions`, `acct` for `accounts`.
+
+### Example: Send USDC to a Mexico Bank Account
+
+<Steps>
+<Step title="Create a customer">
+```bash
+grid customers create \
+  --platform-id "your-id" \
+  --type INDIVIDUAL \
+  --full-name "Carlos Garcia" \
+  --birth-date "1988-03-20" \
+  --address-line1 "Av Reforma 222" \
+  --address-city "Mexico City" \
+  --address-state "CDMX" \
+  --address-postal "06600" \
+  --address-country "MX"
+```
+</Step>
+<Step title="Create an external CLABE account for the customer">
+```bash
+grid accounts external create \
+  --customer-id <customerId> \
+  --currency MXN \
+  --account-type CLABE \
+  --clabe "012345678901234567" \
+  --beneficiary-type INDIVIDUAL \
+  --beneficiary-name "Carlos Garcia" \
+  --beneficiary-birth-date "1988-03-20" \
+  --beneficiary-nationality MX
+```
+</Step>
+<Step title="Create a quote">
+```bash
+grid quotes create \
+  --source-customer <customerId> \
+  --source-currency USDC \
+  --dest-account <externalAccountId> \
+  --dest-currency MXN \
+  --amount 100000 \
+  --lock-side RECEIVING
+```
+</Step>
+<Step title="In sandbox, simulate the USDC deposit">
+```bash
+grid sandbox send --quote-id <quoteId> --currency USDC
+```
+</Step>
+<Step title="Check transaction status">
+```bash
+grid transactions get <transactionId>
+```
+</Step>
+</Steps>
+
+<Note>
+All amounts are in the **smallest currency unit** (e.g., cents for USD, satoshis for BTC). Quotes expire in 1–5 minutes.
+</Note>
