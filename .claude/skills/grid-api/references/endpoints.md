@@ -211,13 +211,6 @@ Use these account number endings for testing:
 |--------|----------|-------------|
 | GET | `/uma-providers` | List UMA provider domains |
 
-## Plaid Integration
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/plaid/link-tokens` | Create Plaid Link token |
-| POST | `/plaid/callback/{plaid_link_token}` | Plaid Link callback |
-
 ## Pagination
 
 List endpoints support cursor-based pagination:
