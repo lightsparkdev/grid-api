@@ -906,8 +906,6 @@ paths:
                   currency: USD
                   accountInfo:
                     accountType: USD_ACCOUNT
-                    paymentRails:
-                      - ACH
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
                     accountCategory: CHECKING
@@ -1036,8 +1034,6 @@ paths:
                   currency: USD
                   accountInfo:
                     accountType: USD_ACCOUNT
-                    paymentRails:
-                      - ACH
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
                     accountCategory: CHECKING
@@ -5635,11 +5631,10 @@ components:
       properties:
         accountType:
           $ref: '#/components/schemas/PaymentAccountType'
-    UsdAccountInfo:
+    UsdAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - accountNumber
         - routingNumber
       properties:
@@ -5647,15 +5642,6 @@ components:
           type: string
           enum:
             - USD_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - ACH
-              - WIRE
-              - RTP
-              - FEDNOW
         accountNumber:
           type: string
           description: The account number of the bank
@@ -5668,6 +5654,22 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
+    UsdAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/UsdAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - ACH
+                  - WIRE
+                  - RTP
+                  - FEDNOW
     PaymentUsdAccountInfo:
       title: USD Bank Account
       allOf:
@@ -5697,23 +5699,16 @@ components:
               type: string
               description: A PIX QR code payload that can be used to fund the transaction. This can be rendered as a QR code image or pasted into a PIX-compatible banking app.
               minLength: 1
-    MxnAccountInfo:
+    MxnAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - clabeNumber
       properties:
         accountType:
           type: string
           enum:
             - MXN_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - SPEI
         clabeNumber:
           type: string
           description: The CLABE number of the bank
@@ -5721,6 +5716,19 @@ components:
           minLength: 18
           maxLength: 18
           pattern: ^[0-9]{18}$
+    MxnAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/MxnAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SPEI
     PaymentMxnAccountInfo:
       title: MXN Account
       allOf:
@@ -5734,24 +5742,16 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    DkkAccountInfo:
+    DkkAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - iban
       properties:
         accountType:
           type: string
           enum:
             - DKK_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - SEPA
-              - SEPA_INSTANT
         iban:
           type: string
           description: The IBAN of the bank account
@@ -5766,6 +5766,20 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    DkkAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/DkkAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SEPA
+                  - SEPA_INSTANT
     PaymentDkkAccountInfo:
       title: DKK Account
       allOf:
@@ -5779,24 +5793,16 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    EurAccountInfo:
+    EurAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - iban
       properties:
         accountType:
           type: string
           enum:
             - EUR_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - SEPA
-              - SEPA_INSTANT
         iban:
           type: string
           description: The IBAN of the bank account
@@ -5811,6 +5817,20 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    EurAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/EurAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SEPA
+                  - SEPA_INSTANT
     PaymentEurAccountInfo:
       title: EUR Account
       allOf:
@@ -5824,23 +5844,16 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    InrAccountInfo:
+    InrAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - vpa
       properties:
         accountType:
           type: string
           enum:
             - INR_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - UPI
         vpa:
           type: string
           description: The UPI Virtual Payment Address
@@ -5848,16 +5861,28 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
+    InrAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/InrAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - UPI
     PaymentInrAccountInfo:
       title: INR Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/InrAccountInfo'
-    NgnAccountInfo:
+    NgnAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - accountNumber
         - bankName
       properties:
@@ -5865,12 +5890,6 @@ components:
           type: string
           enum:
             - NGN_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         accountNumber:
           type: string
           description: Nigerian bank account number
@@ -5883,6 +5902,19 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
+    NgnAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/NgnAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentNgnAccountInfo:
       title: NGN Account
       allOf:
@@ -5896,11 +5928,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    CadAccountInfo:
+    CadAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankCode
         - branchCode
         - accountNumber
@@ -5909,12 +5940,6 @@ components:
           type: string
           enum:
             - CAD_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankCode:
           type: string
           description: Canadian financial institution number (3 digits)
@@ -5936,6 +5961,19 @@ components:
           minLength: 7
           maxLength: 12
           pattern: ^[0-9]{7,12}$
+    CadAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/CadAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentCadAccountInfo:
       title: CAD Account
       allOf:
@@ -5949,11 +5987,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    GbpAccountInfo:
+    GbpAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - sortCode
         - accountNumber
       properties:
@@ -5961,12 +5998,6 @@ components:
           type: string
           enum:
             - GBP_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - FASTER_PAYMENTS
         sortCode:
           type: string
           description: The UK sort code
@@ -5981,6 +6012,19 @@ components:
           maxLength: 8
           example: '12345678'
           pattern: ^[0-9]{8}$
+    GbpAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/GbpAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - FASTER_PAYMENTS
     PaymentGbpAccountInfo:
       title: GBP Account
       allOf:
@@ -5994,11 +6038,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    HkdAccountInfo:
+    HkdAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
         - swiftCode
@@ -6007,12 +6050,6 @@ components:
           type: string
           enum:
             - HKD_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankName:
           type: string
           description: The name of the bank
@@ -6031,6 +6068,19 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    HkdAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/HkdAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentHkdAccountInfo:
       title: HKD Account
       allOf:
@@ -6044,11 +6094,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    IdrAccountInfo:
+    IdrAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
         - swiftCode
@@ -6058,12 +6107,6 @@ components:
           type: string
           enum:
             - IDR_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankName:
           type: string
           description: The name of the bank
@@ -6090,6 +6133,19 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+62[0-9]{9,12}$
+    IdrAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/IdrAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentIdrAccountInfo:
       title: IDR Account
       allOf:
@@ -6103,11 +6159,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    MyrAccountInfo:
+    MyrAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
         - swiftCode
@@ -6116,12 +6171,6 @@ components:
           type: string
           enum:
             - MYR_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankName:
           type: string
           description: The name of the bank
@@ -6140,6 +6189,19 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    MyrAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/MyrAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentMyrAccountInfo:
       title: MYR Account
       allOf:
@@ -6153,11 +6215,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    PhpAccountInfo:
+    PhpAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
       properties:
@@ -6165,12 +6226,6 @@ components:
           type: string
           enum:
             - PHP_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankName:
           type: string
           description: Name of the beneficiary's bank
@@ -6183,6 +6238,19 @@ components:
           minLength: 1
           maxLength: 34
           example: '001234567890'
+    PhpAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PhpAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentPhpAccountInfo:
       title: PHP Account
       allOf:
@@ -6196,11 +6264,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    SgdAccountInfo:
+    SgdAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
         - swiftCode
@@ -6209,14 +6276,6 @@ components:
           type: string
           enum:
             - SGD_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - PAYNOW
-              - FAST
-              - BANK_TRANSFER
         bankName:
           type: string
           description: Name of the beneficiary's bank
@@ -6236,6 +6295,21 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    SgdAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SgdAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - PAYNOW
+                  - FAST
+                  - BANK_TRANSFER
     PaymentSgdAccountInfo:
       title: SGD Account
       allOf:
@@ -6249,11 +6323,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    ThbAccountInfo:
+    ThbAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
         - swiftCode
@@ -6262,12 +6335,6 @@ components:
           type: string
           enum:
             - THB_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankName:
           type: string
           description: The name of the bank
@@ -6286,6 +6353,19 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    ThbAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ThbAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentThbAccountInfo:
       title: THB Account
       allOf:
@@ -6299,11 +6379,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    VndAccountInfo:
+    VndAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - bankName
         - accountNumber
         - swiftCode
@@ -6312,12 +6391,6 @@ components:
           type: string
           enum:
             - VND_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         bankName:
           type: string
           description: The name of the bank
@@ -6336,6 +6409,19 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    VndAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/VndAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentVndAccountInfo:
       title: VND Account
       allOf:
@@ -6529,23 +6615,16 @@ components:
               description: Type of asset
               enum:
                 - USDC
-    AedAccountInfo:
+    AedAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - iban
       properties:
         accountType:
           type: string
           enum:
             - AED_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         iban:
           type: string
           description: UAE IBAN (23 characters, starting with AE)
@@ -6560,6 +6639,19 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    AedAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/AedAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentAedAccountInfo:
       title: AED Account
       allOf:
@@ -6573,11 +6665,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    KesAccountInfo:
+    KesAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6585,12 +6676,6 @@ components:
           type: string
           enum:
             - KES_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: Kenyan mobile money phone number
@@ -6603,6 +6688,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    KesAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/KesAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentKesAccountInfo:
       title: KES Account
       allOf:
@@ -6616,11 +6714,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    MwkAccountInfo:
+    MwkAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6628,12 +6725,6 @@ components:
           type: string
           enum:
             - MWK_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -6646,6 +6737,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    MwkAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/MwkAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentMwkAccountInfo:
       title: MWK Account
       allOf:
@@ -6659,11 +6763,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    RwfAccountInfo:
+    RwfAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6671,12 +6774,6 @@ components:
           type: string
           enum:
             - RWF_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: Rwandan mobile money phone number
@@ -6689,6 +6786,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    RwfAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/RwfAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentRwfAccountInfo:
       title: RWF Account
       allOf:
@@ -6702,11 +6812,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    TzsAccountInfo:
+    TzsAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6714,12 +6823,6 @@ components:
           type: string
           enum:
             - TZS_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: Tanzanian mobile money phone number
@@ -6732,6 +6835,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    TzsAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/TzsAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentTzsAccountInfo:
       title: TZS Account
       allOf:
@@ -6745,11 +6861,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    UgxAccountInfo:
+    UgxAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6757,12 +6872,6 @@ components:
           type: string
           enum:
             - UGX_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -6775,6 +6884,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    UgxAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/UgxAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentUgxAccountInfo:
       title: UGX Account
       allOf:
@@ -6788,11 +6910,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    XofAccountInfo:
+    XofAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
         - region
@@ -6801,12 +6922,6 @@ components:
           type: string
           enum:
             - XOF_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -6830,6 +6945,19 @@ components:
             - CI
             - SN
             - TG
+    XofAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/XofAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentXofAccountInfo:
       title: XOF Account
       allOf:
@@ -6843,11 +6971,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    ZarAccountInfo:
+    ZarAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - accountNumber
         - bankName
       properties:
@@ -6855,12 +6982,6 @@ components:
           type: string
           enum:
             - ZAR_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - BANK_TRANSFER
         accountNumber:
           type: string
           description: South African bank account number
@@ -6873,6 +6994,19 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
+    ZarAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ZarAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
     PaymentZarAccountInfo:
       title: ZAR Account
       allOf:
@@ -6886,11 +7020,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    ZmwAccountInfo:
+    ZmwAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6898,12 +7031,6 @@ components:
           type: string
           enum:
             - ZMW_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: Zambian mobile money phone number
@@ -6916,6 +7043,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    ZmwAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ZmwAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentZmwAccountInfo:
       title: ZMW Account
       allOf:
@@ -6929,11 +7069,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    BwpAccountInfo:
+    BwpAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
       properties:
@@ -6941,12 +7080,6 @@ components:
           type: string
           enum:
             - BWP_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -6959,6 +7092,19 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
+    BwpAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BwpAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentBwpAccountInfo:
       title: BWP Account
       allOf:
@@ -6972,11 +7118,10 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    XafAccountInfo:
+    XafAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - phoneNumber
         - provider
         - region
@@ -6985,12 +7130,6 @@ components:
           type: string
           enum:
             - XAF_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - MOBILE_MONEY
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -7012,6 +7151,19 @@ components:
           enum:
             - CM
             - CG
+    XafAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/XafAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
     PaymentXafAccountInfo:
       title: XAF Account
       allOf:
@@ -7226,11 +7378,10 @@ components:
       properties:
         accountType:
           $ref: '#/components/schemas/ExternalAccountType'
-    BrlAccountInfo:
+    BrlAccountInfoBase:
       type: object
       required:
         - accountType
-        - paymentRails
         - pixKey
         - pixKeyType
         - taxId
@@ -7239,12 +7390,6 @@ components:
           type: string
           enum:
             - BRL_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - PIX
         pixKey:
           type: string
           description: The PIX key (email, phone, CPF, CNPJ, or random)
@@ -7265,6 +7410,19 @@ components:
           minLength: 11
           maxLength: 14
           pattern: ^[0-9]{11,14}$
+    BrlAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/BrlAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - PIX
     BrlBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -8932,6 +9090,619 @@ components:
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+    AedExternalAccountCreateInfo:
+      title: AED Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/AedAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/AedBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/AedBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BrlExternalAccountCreateInfo:
+      title: BRL Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BrlAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BrlBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BwpExternalAccountCreateInfo:
+      title: BWP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BwpAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BwpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BwpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CadExternalAccountCreateInfo:
+      title: CAD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CadAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CadBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CadBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    DkkExternalAccountCreateInfo:
+      title: DKK Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/DkkAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/DkkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EurExternalAccountCreateInfo:
+      title: EUR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EurAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EurBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EurBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GbpExternalAccountCreateInfo:
+      title: GBP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GbpAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GbpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HkdExternalAccountCreateInfo:
+      title: HKD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HkdAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HkdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HkdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    IdrExternalAccountCreateInfo:
+      title: IDR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/IdrAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/IdrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IdrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    InrExternalAccountCreateInfo:
+      title: INR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/InrAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/InrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/InrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    KesExternalAccountCreateInfo:
+      title: KES Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/KesAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/KesBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/KesBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MwkExternalAccountCreateInfo:
+      title: MWK Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MwkAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MwkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MwkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MxnExternalAccountCreateInfo:
+      title: MXN Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MxnAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MxnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MxnBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    MyrExternalAccountCreateInfo:
+      title: MYR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/MyrAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/MyrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/MyrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    NgnExternalAccountCreateInfo:
+      title: NGN Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/NgnAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/NgnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/NgnBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PhpExternalAccountCreateInfo:
+      title: PHP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PhpAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PhpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    RwfExternalAccountCreateInfo:
+      title: RWF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/RwfAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/RwfBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/RwfBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    SgdExternalAccountCreateInfo:
+      title: SGD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SgdAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SgdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ThbExternalAccountCreateInfo:
+      title: THB Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ThbAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ThbBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ThbBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    TzsExternalAccountCreateInfo:
+      title: TZS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TzsAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/TzsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/TzsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    UgxExternalAccountCreateInfo:
+      title: UGX Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/UgxAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/UgxBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/UgxBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    UsdExternalAccountCreateInfo:
+      title: USD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/UsdAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/UsdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/UsdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    VndExternalAccountCreateInfo:
+      title: VND Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/VndAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/VndBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/VndBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    XafExternalAccountCreateInfo:
+      title: XAF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/XafAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/XafBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/XafBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    XofExternalAccountCreateInfo:
+      title: XOF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/XofAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/XofBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/XofBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ZarExternalAccountCreateInfo:
+      title: ZAR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ZarAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ZarBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ZarBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ZmwExternalAccountCreateInfo:
+      title: ZMW Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ZmwAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ZmwBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ZmwBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    ExternalAccountCreateInfoOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/BrlExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/BwpExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/CadExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/DkkExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/EurExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/GbpExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/HkdExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/IdrExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/InrExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/KesExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/MwkExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/MxnExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/MyrExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/NgnExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/PhpExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/RwfExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/SgdExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/ThbExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/TzsExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/UgxExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/UsdExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/VndExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/XafExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/XofExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/ZarExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/ZmwExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningExternalAccountInfo'
+        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
+      discriminator:
+        propertyName: accountType
+        mapping:
+          AED_ACCOUNT: '#/components/schemas/AedExternalAccountCreateInfo'
+          BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountCreateInfo'
+          BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountCreateInfo'
+          CAD_ACCOUNT: '#/components/schemas/CadExternalAccountCreateInfo'
+          DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountCreateInfo'
+          EUR_ACCOUNT: '#/components/schemas/EurExternalAccountCreateInfo'
+          GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountCreateInfo'
+          HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountCreateInfo'
+          IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountCreateInfo'
+          INR_ACCOUNT: '#/components/schemas/InrExternalAccountCreateInfo'
+          KES_ACCOUNT: '#/components/schemas/KesExternalAccountCreateInfo'
+          MWK_ACCOUNT: '#/components/schemas/MwkExternalAccountCreateInfo'
+          MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountCreateInfo'
+          MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountCreateInfo'
+          NGN_ACCOUNT: '#/components/schemas/NgnExternalAccountCreateInfo'
+          PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountCreateInfo'
+          RWF_ACCOUNT: '#/components/schemas/RwfExternalAccountCreateInfo'
+          SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountCreateInfo'
+          THB_ACCOUNT: '#/components/schemas/ThbExternalAccountCreateInfo'
+          TZS_ACCOUNT: '#/components/schemas/TzsExternalAccountCreateInfo'
+          UGX_ACCOUNT: '#/components/schemas/UgxExternalAccountCreateInfo'
+          USD_ACCOUNT: '#/components/schemas/UsdExternalAccountCreateInfo'
+          VND_ACCOUNT: '#/components/schemas/VndExternalAccountCreateInfo'
+          XAF_ACCOUNT: '#/components/schemas/XafExternalAccountCreateInfo'
+          XOF_ACCOUNT: '#/components/schemas/XofExternalAccountCreateInfo'
+          ZAR_ACCOUNT: '#/components/schemas/ZarExternalAccountCreateInfo'
+          ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountCreateInfo'
+          SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
+          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
+          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
+          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
+          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
     ExternalAccountCreateRequest:
       allOf:
         - type: object
@@ -8960,7 +9731,7 @@ components:
               description: 'The blockchain network for this external account. Required when the account is a cryptocurrency wallet (e.g. SolanaWallet, PolygonWallet, TronWallet). Specifies which network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
               example: SOLANA_MAINNET
             accountInfo:
-              $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+              $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
     PlatformExternalAccountCreateRequest:
       type: object
       required:
@@ -8976,7 +9747,7 @@ components:
           description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
           example: ext_acc_123456
         accountInfo:
-          $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+          $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
     BeneficialOwnerCreateRequest:
       type: object
       required:

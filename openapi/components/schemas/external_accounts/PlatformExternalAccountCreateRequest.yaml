@@ -12,4 +12,4 @@ properties:
     description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
     example: ext_acc_123456
   accountInfo:
-    $ref: ./ExternalAccountInfoOneOf.yaml
+    $ref: ./ExternalAccountCreateInfoOneOf.yaml
