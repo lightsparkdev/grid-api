@@ -22,6 +22,16 @@ post:
     - Cross-Currency Transfers
   security:
     - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple times,
+        the server will return the same response as the first request.
+      schema:
+        type: string
+        example: <uuid>
   requestBody:
     required: true
     content:

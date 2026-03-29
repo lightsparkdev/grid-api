@@ -2137,6 +2137,15 @@ paths:
         - Cross-Currency Transfers
       security:
         - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
       requestBody:
         required: true
         content:
@@ -2411,6 +2420,14 @@ paths:
           schema:
             type: string
           example: Quote:019542f5-b3e7-1d02-0000-000000000001
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
       responses:
         '200':
           description: |
