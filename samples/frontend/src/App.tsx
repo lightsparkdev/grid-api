@@ -11,8 +11,15 @@ export default function App() {
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [externalAccountId, setExternalAccountId] = useState<string | null>(null)
   const [quoteId, setQuoteId] = useState<string | null>(null)
+  const [selectedCountry, setSelectedCountry] = useState('MX')
 
   const advance = () => setActiveStep((s) => s + 1)
+
+  const restartFromExternalAccount = () => {
+    setExternalAccountId(null)
+    setQuoteId(null)
+    setActiveStep(1)
+  }
 
   const steps = [
     {
@@ -35,6 +42,8 @@ export default function App() {
         <CreateExternalAccount
           customerId={customerId}
           disabled={activeStep !== 1}
+          selectedCountry={selectedCountry}
+          onCountryChange={setSelectedCountry}
           onComplete={(data) => {
             setExternalAccountId(data.id as string)
             advance()
@@ -49,6 +58,7 @@ export default function App() {
         <CreateQuote
           customerId={customerId}
           externalAccountId={externalAccountId}
+          selectedCountry={selectedCountry}
           disabled={activeStep !== 2}
           onComplete={(data) => {
             setQuoteId((data.quoteId ?? data.id) as string)
@@ -74,11 +84,19 @@ export default function App() {
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <header className="border-b border-gray-800 px-6 py-4">
         <h1 className="text-xl font-bold">Grid API Sample</h1>
-        <p className="text-sm text-gray-400">Send a real time payment to a US bank account funded with USDC</p>
+        <p className="text-sm text-gray-400">Send a real time payment funded with USDC</p>
       </header>
       <div className="flex">
         <main className="w-3/5 p-6 border-r border-gray-800 min-h-[calc(100vh-73px)]">
           <StepWizard steps={steps} activeStep={activeStep} />
+          {activeStep >= 1 && (
+            <button
+              onClick={restartFromExternalAccount}
+              className="mt-6 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium text-gray-300"
+            >
+              Start New Payment
+            </button>
+          )}
         </main>
         <aside className="w-2/5 p-6 min-h-[calc(100vh-73px)]">
           <WebhookStream />

@@ -15,7 +15,7 @@ private var publicKeyInitialized = false
 
 private fun ensurePublicKey() {
     if (!publicKeyInitialized) {
-        WebhookUtils.setPublicKey(Config.webhookPubkey)
+        WebhookUtils.setPublicKey(Config.webhookPublicKey)
         publicKeyInitialized = true
     }
 }
