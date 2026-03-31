@@ -38,6 +38,7 @@ cli/dist/
 
 # Frontend build output
 samples/frontend/dist/
+samples/typescript/public/
 
 # Figma design tokens (local reference only)
 mintlify/tokens/
