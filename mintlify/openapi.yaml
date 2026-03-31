@@ -44,6 +44,8 @@ tags:
     description: Endpoints to programmatically manage API tokens
   - name: Exchange Rates
     description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
+  - name: Discoveries
+    description: Endpoints for discovering available payment rails, banks, and providers for a given country and currency corridor.
 paths:
   /config:
     get:
@@ -239,6 +241,99 @@ paths:
                         fees:
                           fixed: 10
                         updatedAt: '2025-02-05T12:00:00Z'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /discoveries:
+    get:
+      summary: List available receiving institution names
+      description: |
+        Retrieve available payment institution names for a given country and currency. Use this endpoint
+        to look up supported banks and payment providers for a specific corridor.
+        If no country and currency parameter are provided, all payment institutions will be returned
+
+        The `bankName` field in each result is the value to pass as `bankName` when
+        creating an external account via `POST /customers/external-accounts`.
+      operationId: getDiscoveries
+      tags:
+        - Discoveries
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: country
+          in: query
+          description: ISO 3166-1 alpha-2 country code (e.g. PH)
+          required: false
+          schema:
+            type: string
+          example: PH
+        - name: currency
+          in: query
+          description: ISO 4217 currency code (e.g. PHP)
+          required: false
+          schema:
+            type: string
+          example: PHP
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: List of payment rails matching the filter criteria
+                    items:
+                      type: object
+                      required:
+                        - bankName
+                        - displayName
+                        - country
+                        - currency
+                      properties:
+                        bankName:
+                          type: string
+                          description: |
+                            Canonical name for this payment rail. Pass this value as `bankName` when creating an external account.
+                        displayName:
+                          type: string
+                          description: Human-friendly display name for this payment rail.
+                        country:
+                          type: string
+                          description: ISO 3166-1 alpha-2 country code.
+                        currency:
+                          type: string
+                          description: ISO 4217 currency code.
+              examples:
+                philippinesBanks:
+                  summary: Payment rails for Philippines (PHP)
+                  value:
+                    data:
+                      - bankName: BDO Unibank
+                        displayName: BDO Unibank
+                        country: PH
+                        currency: PHP
+                      - bankName: BPI
+                        displayName: Bank of the Philippine Islands
+                        country: PH
+                        currency: PHP
         '400':
           description: Bad request - Invalid parameters
           content:
