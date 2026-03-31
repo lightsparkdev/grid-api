@@ -110,9 +110,26 @@ The transfer will instantly simulate the bank transfer process and complete with
 
 ### Creating Quotes with Test Accounts
 
-When creating quotes with the `externalAccountDetails` destination type, you can provide test account patterns inline:
+When creating quotes with test external accounts, first create an external account with a test account pattern, then reference it in the quote:
 
 ```bash
+# Step 1: Create the external account with a test pattern
+POST /customers/external-accounts
+
+{
+  "customerId": "Customer:123",
+  "currency": "EUR",
+  "accountInfo": {
+    "accountType": "IBAN_ACCOUNT",
+    "iban": "DE89370400440532013003",
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "Test User"
+    }
+  }
+}
+
+# Step 2: Create the quote using the external account ID
 POST /quotes
 
 {
@@ -121,24 +138,16 @@ POST /quotes
     "accountId": "InternalAccount:abc123"
   },
   "destination": {
-    "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
-    "externalAccountDetails": {
-      "customerId": "Customer:123",
-      "currency": "EUR",
-      "accountInfo": {
-        "accountType": "IBAN_ACCOUNT",
-        "iban": "DE89370400440532013003",  // Ends in 003 = slow payment
-        "beneficiary": {
-          "beneficiaryType": "INDIVIDUAL",
-          "fullName": "Test User"
-        }
-      }
-    }
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:...",
+    "currency": "EUR"
   },
   "lockedCurrencySide": "SENDING",
   "lockedCurrencyAmount": 100000
 }
 ```
+
+The IBAN ending in `003` triggers the slow payment test pattern.
 
 ### Executing Quotes in Sandbox
 

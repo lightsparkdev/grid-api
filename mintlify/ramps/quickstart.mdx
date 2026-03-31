@@ -35,9 +35,10 @@ Before starting this guide, ensure you have:
 The on-ramp process consists of the following steps:
 
 1. **Create a customer** via the API
-2. **Create a quote** for the USD-to-BTC conversion with current exchange rate
-3. **Fund the quote** using the provided payment instructions (JIT funding)
-4. **Receive webhook notification** confirming Bitcoin delivery to the Spark wallet
+2. **Create an external account** for the destination Spark wallet
+3. **Create a quote** for the USD-to-BTC conversion with current exchange rate
+4. **Fund the quote** using the provided payment instructions (JIT funding)
+5. **Receive webhook notification** confirming Bitcoin delivery to the Spark wallet
 
 ---
 
@@ -56,9 +57,48 @@ link flow to onboard your customers.
   </Tab>
 </Tabs>
 
-## Step 2: Create a Quote for Fiat-to-Crypto Conversion
+## Step 2: Create an External Account for the Destination Wallet
 
-Create a quote to convert USD to Bitcoin and deliver it to a Spark wallet. The quote will provide the current exchange rate and payment instructions for funding.
+Register the customer's Spark wallet as an external account so it can be used as a quote destination.
+
+### Request
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+    }
+  }'
+```
+
+### Response
+
+```json
+{
+  "id": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "BTC",
+  "accountInfo": {
+    "accountType": "SPARK_WALLET",
+    "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+  }
+}
+```
+
+<Tip>
+  External accounts can be reused across multiple quotes. Register once, then reference by ID.
+</Tip>
+
+## Step 3: Create a Quote for Fiat-to-Crypto Conversion
+
+Create a quote to convert USD to Bitcoin and deliver it to the Spark wallet. The quote will provide the current exchange rate and payment instructions for funding.
 
 ### Request
 
@@ -72,28 +112,14 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
       "currency": "USD"
     },
     "destination": {
-      "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
     "description": "On-ramp: Buy $100 of Bitcoin"
   }'
 ```
-
-<Note>
-  **Combined External Account Creation**: The `externalAccountDetails` option
-  automatically creates the external account (Spark wallet) and uses it as the
-  destination for the Bitcoin transfer in a single API call. If you want to reuse
-  the same external accounts for many quotes, you can add them using the
-  `/external-accounts` endpoint, and then use the `accountId` in the quote creation request.
-</Note>
 
 ### Response
 
@@ -167,7 +193,7 @@ The quote shows:
 
 ---
 
-## Step 3: Fund the Quote (Just-in-Time)
+## Step 4: Fund the Quote (Just-in-Time)
 
 In production, you would initiate a real-time push payment (ACH, RTP, wire, etc.) to the bank account provided in `paymentInstructions`, making sure to include the exact reference code `RAMP-ABC123` in the transfer memo.
 
@@ -211,7 +237,7 @@ In production, your customer or platform would initiate a bank transfer to the p
 
 ---
 
-## Step 4: Receive Completion Webhook
+## Step 5: Receive Completion Webhook
 
 Once Grid receives your payment and completes the USD-to-BTC conversion and delivery, you'll receive a webhook notification:
 
@@ -275,9 +301,10 @@ Once Grid receives your payment and completes the USD-to-BTC conversion and deli
 You've successfully completed a fiat-to-crypto on-ramp! Here's what happened:
 
 1. ✅ Created a customer via API
-2. ✅ Created a quote with exchange rate and payment instructions
-3. ✅ Funded the quote using JIT payment (simulated in sandbox)
-4. ✅ Bitcoin automatically converted and delivered to Spark wallet
+2. ✅ Registered the destination Spark wallet as an external account
+3. ✅ Created a quote with exchange rate and payment instructions
+4. ✅ Funded the quote using JIT payment (simulated in sandbox)
+5. ✅ Bitcoin automatically converted and delivered to Spark wallet
 
 ## Next Steps
 

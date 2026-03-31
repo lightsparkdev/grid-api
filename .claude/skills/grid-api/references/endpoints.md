@@ -87,7 +87,6 @@ Internal accounts are auto-created when customers are created based on platform 
 
 - `ACCOUNT`: External or internal account. Fields: `accountId`, `currency`
 - `UMA_ADDRESS`: UMA address. Fields: `umaAddress`, `currency`
-- `EXTERNAL_ACCOUNT_DETAILS`: Inline account creation (creates external account + quote in one step). Fields: `externalAccountDetails` (same shape as external account create request)
 
 ### Quote Request Fields
 

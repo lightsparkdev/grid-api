@@ -63,13 +63,8 @@ post:
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
                 currency: USD
               destination:
-                destinationType: EXTERNAL_ACCOUNT_DETAILS
-                externalAccountDetails:
-                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                  currency: BTC
-                  accountInfo:
-                    accountType: SPARK_WALLET
-                    address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                destinationType: ACCOUNT
+                accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
               lockedCurrencySide: RECEIVING
               lockedCurrencyAmount: 10000
               immediatelyExecute: true
