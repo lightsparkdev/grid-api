@@ -23,9 +23,6 @@ properties:
   phoneNumber:
     type: string
     description: The phone number of the beneficiary
-  registrationNumber:
-    type: string
-    description: The registration number of the beneficiary
   countryOfResidence:
     type: string
     description: The country of residence of the beneficiary

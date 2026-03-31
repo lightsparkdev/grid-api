@@ -33,6 +33,14 @@ oneOf:
 - $ref: ./AedExternalAccountInfo.yaml
 - $ref: ./BwpExternalAccountInfo.yaml
 - $ref: ./XafExternalAccountInfo.yaml
+- $ref: ./BdtExternalAccountInfo.yaml
+- $ref: ./CopExternalAccountInfo.yaml
+- $ref: ./EgpExternalAccountInfo.yaml
+- $ref: ./GhsExternalAccountInfo.yaml
+- $ref: ./GtqExternalAccountInfo.yaml
+- $ref: ./HtgExternalAccountInfo.yaml
+- $ref: ./JmdExternalAccountInfo.yaml
+- $ref: ./PkrExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -70,3 +78,12 @@ discriminator:
     AED_ACCOUNT: ./AedExternalAccountInfo.yaml
     BWP_ACCOUNT: ./BwpExternalAccountInfo.yaml
     XAF_ACCOUNT: ./XafExternalAccountInfo.yaml
+    BDT_ACCOUNT: ./BdtExternalAccountInfo.yaml
+    COP_ACCOUNT: ./CopExternalAccountInfo.yaml
+    EGP_ACCOUNT: ./EgpExternalAccountInfo.yaml
+    GHS_ACCOUNT: ./GhsExternalAccountInfo.yaml
+    GTQ_ACCOUNT: ./GtqExternalAccountInfo.yaml
+    HTG_ACCOUNT: ./HtgExternalAccountInfo.yaml
+    JMD_ACCOUNT: ./JmdExternalAccountInfo.yaml
+    LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
+    PKR_ACCOUNT: ./PkrExternalAccountInfo.yaml

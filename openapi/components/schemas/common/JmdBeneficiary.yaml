@@ -4,6 +4,7 @@ required:
 - beneficiaryType
 - address
 - fullName
+- phoneNumber
 properties:
   beneficiaryType:
     type: string
