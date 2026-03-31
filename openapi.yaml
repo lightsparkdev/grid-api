@@ -5656,6 +5656,7 @@ components:
               - WIRE
               - RTP
               - FEDNOW
+              - BANK_TRANSFER
         accountNumber:
           type: string
           description: The account number of the bank
@@ -6180,9 +6181,10 @@ components:
         accountNumber:
           type: string
           description: Bank account number
-          minLength: 1
-          maxLength: 34
+          minLength: 8
+          maxLength: 16
           example: '001234567890'
+          pattern: ^[0-9]{8,16}$
     PaymentPhpAccountInfo:
       title: PHP Account
       allOf:
@@ -7025,6 +7027,389 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    BdtAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - branchCode
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BDT_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        branchCode:
+          type: string
+          description: The branch code
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentBdtAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    CopAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - bankAccountType
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - COP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentCopAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    EgpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - EGP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    PaymentEgpAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    GhsAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GHS_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentGhsAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    GtqAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GTQ_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentGtqAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    HtgAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - HTG_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentHtgAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    JmdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - branchCode
+        - bankAccountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - JMD_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        branchCode:
+          type: string
+          description: The branch code
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+    PaymentJmdAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    PkrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PKR_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentPkrAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -7067,6 +7452,14 @@ components:
             - $ref: '#/components/schemas/PaymentZmwAccountInfo'
             - $ref: '#/components/schemas/PaymentBwpAccountInfo'
             - $ref: '#/components/schemas/PaymentXafAccountInfo'
+            - $ref: '#/components/schemas/PaymentBdtAccountInfo'
+            - $ref: '#/components/schemas/PaymentCopAccountInfo'
+            - $ref: '#/components/schemas/PaymentEgpAccountInfo'
+            - $ref: '#/components/schemas/PaymentGhsAccountInfo'
+            - $ref: '#/components/schemas/PaymentGtqAccountInfo'
+            - $ref: '#/components/schemas/PaymentHtgAccountInfo'
+            - $ref: '#/components/schemas/PaymentJmdAccountInfo'
+            - $ref: '#/components/schemas/PaymentPkrAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -7111,6 +7504,14 @@ components:
               ZMW_ACCOUNT: '#/components/schemas/PaymentZmwAccountInfo'
               BWP_ACCOUNT: '#/components/schemas/PaymentBwpAccountInfo'
               XAF_ACCOUNT: '#/components/schemas/PaymentXafAccountInfo'
+              BDT_ACCOUNT: '#/components/schemas/PaymentBdtAccountInfo'
+              COP_ACCOUNT: '#/components/schemas/PaymentCopAccountInfo'
+              EGP_ACCOUNT: '#/components/schemas/PaymentEgpAccountInfo'
+              GHS_ACCOUNT: '#/components/schemas/PaymentGhsAccountInfo'
+              GTQ_ACCOUNT: '#/components/schemas/PaymentGtqAccountInfo'
+              HTG_ACCOUNT: '#/components/schemas/PaymentHtgAccountInfo'
+              JMD_ACCOUNT: '#/components/schemas/PaymentJmdAccountInfo'
+              PKR_ACCOUNT: '#/components/schemas/PaymentPkrAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -7291,9 +7692,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7430,9 +7828,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7463,6 +7858,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - address
         - fullName
       properties:
         beneficiaryType:
@@ -7484,9 +7880,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7538,9 +7931,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7592,9 +7982,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7646,9 +8033,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7700,9 +8084,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7754,9 +8135,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7808,9 +8186,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7862,9 +8237,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7916,9 +8288,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7970,9 +8339,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8024,9 +8390,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8078,9 +8441,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8132,9 +8492,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8186,9 +8543,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8240,9 +8594,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8294,9 +8645,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8327,9 +8675,7 @@ components:
       type: object
       required:
         - beneficiaryType
-        - birthDate
         - fullName
-        - nationality
       properties:
         beneficiaryType:
           type: string
@@ -8350,9 +8696,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8404,9 +8747,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8458,9 +8798,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8512,9 +8849,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8566,9 +8900,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8678,9 +9009,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8732,9 +9060,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8786,9 +9111,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8813,6 +9135,421 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/XafBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BdtBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BdtExternalAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BdtBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    CopExternalAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CopBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EgpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - countryOfResidence
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    EgpExternalAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EgpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GhsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GhsExternalAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GhsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GtqBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GtqExternalAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GtqBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HtgBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    HtgExternalAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HtgBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    JmdBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    JmdExternalAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/JmdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PkrBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    PkrExternalAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PkrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
@@ -8850,6 +9587,14 @@ components:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
         - $ref: '#/components/schemas/BwpExternalAccountInfo'
         - $ref: '#/components/schemas/XafExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtExternalAccountInfo'
+        - $ref: '#/components/schemas/CopExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -8887,6 +9632,15 @@ components:
           AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
           XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
+          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountInfo'
+          COP_ACCOUNT: '#/components/schemas/CopExternalAccountInfo'
+          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountInfo'
+          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountInfo'
+          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountInfo'
+          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountInfo'
+          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountInfo'
+          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
+          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
