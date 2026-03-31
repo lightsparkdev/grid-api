@@ -7713,6 +7713,14 @@ components:
         - XOF_ACCOUNT
         - ZAR_ACCOUNT
         - ZMW_ACCOUNT
+        - BDT_ACCOUNT
+        - COP_ACCOUNT
+        - EGP_ACCOUNT
+        - GHS_ACCOUNT
+        - GTQ_ACCOUNT
+        - HTG_ACCOUNT
+        - JMD_ACCOUNT
+        - PKR_ACCOUNT
       description: Type of external account or wallet
       example: GBP_ACCOUNT
     BaseExternalAccountInfo:
