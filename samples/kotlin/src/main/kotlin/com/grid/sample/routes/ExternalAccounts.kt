@@ -2,10 +2,19 @@ package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.customers.externalaccounts.Address
+import com.lightspark.grid.models.customers.externalaccounts.BrlBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.BrlExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreate
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreateParams
+import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountInfoOneOf
+import com.lightspark.grid.models.customers.externalaccounts.GbpBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.GbpExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.InrExternalAccountInfo
+import com.lightspark.grid.models.customers.externalaccounts.MxnBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.MxnExternalAccountInfo
+import com.lightspark.grid.models.customers.externalaccounts.UsdBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.UsdExternalAccountInfo
 import com.lightspark.grid.models.platform.externalaccounts.InrAccountInfo
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
