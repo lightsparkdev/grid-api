@@ -294,6 +294,32 @@ resources:
   $shared:
     models:
       bulk_customer_import_error_entry: "#/components/schemas/BulkCustomerImportErrorEntry"
+  crypto:
+    methods:
+      estimate_withdrawal_fee: post /crypto/estimate-withdrawal-fee
+  beneficial_owners:
+    methods:
+      create: post /beneficial-owners
+      list: get /beneficial-owners
+      retrieve: get /beneficial-owners/{beneficialOwnerId}
+      update: patch /beneficial-owners/{beneficialOwnerId}
+  documents:
+    methods:
+      upload: post /documents
+      list: get /documents
+      retrieve: get /documents/{documentId}
+      replace: put /documents/{documentId}
+      delete: delete /documents/{documentId}
+  verifications:
+    methods:
+      submit: post /verifications
+      list: get /verifications
+      retrieve: get /verifications/{verificationId}
+  discoveries:
+    methods:
+      list: 
+        endpoint: get /discoveries
+        paginated: false
 
 settings:
   # All generated integration tests that hit the prism mock http server are marked
@@ -401,7 +427,7 @@ pagination:
 
 openapi:
   code_samples: mintlify
-  transformations:
+  transforms:
     # # ── customerType: IndividualCustomerFields / BusinessCustomerFields ──
     # - command: remove
     #   reason: >-
