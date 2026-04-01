@@ -2,6 +2,5 @@ type: string
 enum:
   - ACCOUNT
   - UMA_ADDRESS
-  - EXTERNAL_ACCOUNT_DETAILS
 description: Type of payment destination
 example: ACCOUNT
