@@ -59,4 +59,10 @@ dependencies {
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.6")
+
+    // Testing
+    testImplementation("io.ktor:ktor-server-test-host:3.1.3")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.21")
+    testImplementation("io.ktor:ktor-client-content-negotiation:3.1.3")
+    testImplementation("io.ktor:ktor-serialization-jackson:3.1.3")
 }

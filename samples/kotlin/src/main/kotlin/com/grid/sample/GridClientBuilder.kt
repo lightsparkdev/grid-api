@@ -6,8 +6,8 @@ import com.lightspark.grid.client.okhttp.LightsparkGridOkHttpClient
 object GridClientBuilder {
     val client: LightsparkGridClient by lazy {
         LightsparkGridOkHttpClient.builder()
-            .username(Config.gridClientId)
-            .password(Config.gridClientSecret)
+            .username(Config.apiTokenId)
+            .password(Config.apiClientSecret)
             .build()
     }
 }
