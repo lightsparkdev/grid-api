@@ -1,4 +1,4 @@
-.PHONY: install build build-openapi mint lint lint-openapi lint-markdown cli-install cli-build cli
+.PHONY: install build build-openapi mint lint lint-openapi lint-spectral lint-markdown cli-install cli-build cli
 
 install:
 	npm install
@@ -21,10 +21,12 @@ mint:
 
 lint:
 	npm run lint
-	cd mintlify && mint openapi-check openapi.yaml
 
 lint-openapi:
 	npm run lint:openapi
+
+lint-spectral:
+	npx spectral lint openapi.yaml --fail-severity=error
 
 lint-markdown:
 	npm run lint:markdown
