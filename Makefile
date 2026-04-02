@@ -21,7 +21,6 @@ mint:
 
 lint:
 	npm run lint
-	cd mintlify && mint openapi-check openapi.yaml
 
 lint-openapi:
 	npm run lint:openapi
