@@ -48,8 +48,7 @@ post:
 get:
   summary: List beneficial owners
   description: >
-    Retrieve a list of beneficial owners with optional filtering by customer ID
-    and role.
+    Retrieve a list of beneficial owners for a business customer.
   operationId: listBeneficialOwners
   tags:
     - KYC/KYB Verifications
@@ -58,16 +57,10 @@ get:
   parameters:
     - name: customerId
       in: query
-      description: Filter by business customer ID
-      required: false
+      description: The business customer ID
+      required: true
       schema:
         type: string
-    - name: role
-      in: query
-      description: Filter by role
-      required: false
-      schema:
-        $ref: ../../components/schemas/customers/BeneficialOwnerRole.yaml
     - name: limit
       in: query
       description: Maximum number of results to return (default 20, max 100)
