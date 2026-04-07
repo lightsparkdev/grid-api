@@ -417,6 +417,55 @@ The discriminator property must be listed in `required` in the **variant** schem
 
 - Use `allOf` for extending base schemas
 
+### Avoid Inline Schemas in Request and Response Definitions
+
+Never define schemas inline within path request bodies or responses. Always use `$ref` to reference a named schema in `components/schemas/`. Inline schemas produce auto-generated names in SDKs based on the operation and HTTP status code, resulting in poor developer experience.
+
+```yaml
+# ❌ Wrong — inline schema generates ugly SDK names like
+# "CreateCustomerExternalAccount200Response" or "CreateCustomerExternalAccountBody"
+post:
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            currency:
+              type: string
+            accountInfo:
+              type: object
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              status:
+                type: string
+```
+
+```yaml
+# ✅ Correct — named schemas produce clean SDK types
+post:
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '../../components/schemas/external_accounts/ExternalAccountCreateRequest.yaml'
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/external_accounts/ExternalAccount.yaml'
+```
+
+This applies to all request bodies, response bodies, and nested objects within them. If a schema is used only once, it still belongs in `components/schemas/` with a descriptive name.
+
 ### Documentation in OpenAPI
 
 - Add `description` to every endpoint, parameter, and schema field
