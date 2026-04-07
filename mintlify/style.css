@@ -1368,6 +1368,12 @@ ul#sidebar-group > li[data-title="Exchange Rates"] > button::before {
   background-image: url('/images/icons/trending.svg') !important;
 }
 
+/* Discoveries - checklist magnifying glass */
+#sidebar-group > li[data-title="Discoveries"] > button::before,
+ul#sidebar-group > li[data-title="Discoveries"] > button::before {
+  background-image: url('/images/icons/IconSquareChecklistMagnifyingGlass.svg') !important;
+}
+
 
 /* ===========================================
    Main Content Area
