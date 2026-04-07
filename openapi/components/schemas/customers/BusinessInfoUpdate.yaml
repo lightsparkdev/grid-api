@@ -5,11 +5,68 @@ properties:
     type: string
     description: Legal name of the business
     example: Acme Corporation, Inc.
+  doingBusinessAs:
+    type: string
+    description: Trade name or DBA name of the business, if different from the legal name
+    example: Acme
+  country:
+    type: string
+    description: Country of incorporation or registration (ISO 3166-1 alpha-2)
+    example: US
   registrationNumber:
     type: string
     description: Business registration number
-    example: BRN-123456789
+    example: '5523041'
+  incorporatedOn:
+    type: string
+    format: date
+    description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+    example: '2018-03-14'
+  entityType:
+    $ref: ./EntityType.yaml
   taxId:
     type: string
     description: Tax identification number
-    example: EIN-987654321
+    example: 47-1234567
+  countriesOfOperation:
+    type: array
+    items:
+      type: string
+    description: List of countries where the business operates (ISO 3166-1 alpha-2)
+    example:
+      - US
+  businessType:
+    $ref: ./BusinessType.yaml
+  purposeOfAccount:
+    $ref: ./PurposeOfAccount.yaml
+  sourceOfFunds:
+    type: string
+    description: The primary source of funds for the business
+    example: Funds derived from customer payments for software services
+  expectedMonthlyTransactionCount:
+    type: string
+    enum:
+      - COUNT_UNDER_10
+      - COUNT_10_TO_100
+      - COUNT_100_TO_500
+      - COUNT_500_TO_1000
+      - COUNT_OVER_1000
+    description: Expected number of transactions per month
+    example: COUNT_100_TO_500
+  expectedMonthlyTransactionVolume:
+    type: string
+    enum:
+      - VOLUME_UNDER_10K
+      - VOLUME_10K_TO_100K
+      - VOLUME_100K_TO_1M
+      - VOLUME_1M_TO_10M
+      - VOLUME_OVER_10M
+    description: Expected total transaction volume per month in USD equivalent
+    example: VOLUME_100K_TO_1M
+  expectedRecipientJurisdictions:
+    type: array
+    items:
+      type: string
+    description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+    example:
+      - US

@@ -1,0 +1,139 @@
+get:
+  summary: Get a document by ID
+  description: Retrieve details and metadata of a specific document by ID.
+  operationId: getDocument
+  tags:
+    - Documents
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: documentId
+      in: path
+      description: Document ID
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/documents/Document.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Document not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+put:
+  summary: Replace a document
+  description: >
+    Replace an existing document with a new file and/or updated metadata.
+    This is useful when a document was rejected and needs to be re-uploaded.
+    The request must use multipart/form-data.
+  operationId: replaceDocument
+  tags:
+    - Documents
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: documentId
+      in: path
+      description: Document ID
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          $ref: ../../components/schemas/documents/DocumentReplaceRequest.yaml
+  responses:
+    '200':
+      description: Document replaced successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/documents/Document.yaml
+    '400':
+      description: Bad request - Invalid file type, size, or parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Document not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete a document
+  description: >
+    Delete an uploaded document. This cannot be undone. Documents that have
+    already been submitted for verification may not be deletable.
+  operationId: deleteDocument
+  tags:
+    - Documents
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: documentId
+      in: path
+      description: Document ID
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: Document deleted successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Document not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Document cannot be deleted (already submitted for verification)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

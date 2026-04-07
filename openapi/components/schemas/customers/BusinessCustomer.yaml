@@ -6,3 +6,7 @@ allOf:
     properties:
       businessInfo:
         $ref: ./BusinessInfo.yaml
+      beneficialOwners:
+        type: array
+        items:
+          $ref: ./BeneficialOwner.yaml

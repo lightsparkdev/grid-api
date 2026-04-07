@@ -306,38 +306,6 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
 Customer doesn't see rate before execution. If you want to lock a quote and confirm fees and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
 </Warning>
 
-## Creating External Accounts in Quotes
-
-You can create an external account inline when creating a quote:
-
-```json
-{
-  "source": {
-    "sourceType": "ACCOUNT",
-    "accountId": "InternalAccount:abc123"
-  },
-  "destination": {
-    "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
-    "externalAccountDetails": {
-      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "currency": "EUR",
-      "accountInfo": {
-        "accountType": "IBAN_ACCOUNT",
-        "iban": "DE89370400440532013000",
-        "beneficiary": {
-          "beneficiaryType": "INDIVIDUAL",
-          "fullName": "Alice Smith"
-        }
-      }
-    }
-  },
-  "lockedCurrencySide": "SENDING",
-  "lockedCurrencyAmount": 100000
-}
-```
-
-This is useful for one-time recipients or when you don't want to manage external accounts separately.
-
 ## Fees
 
 All fees are transparently displayed in the quote response:

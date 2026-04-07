@@ -1,0 +1,53 @@
+type: object
+required:
+  - firstName
+  - lastName
+  - birthDate
+  - nationality
+  - address
+  - idType
+  - identifier
+properties:
+  firstName:
+    type: string
+    description: First name of the individual
+    example: Jane
+  middleName:
+    type: string
+    description: Middle name of the individual
+    example: Marie
+  lastName:
+    type: string
+    description: Last name of the individual
+    example: Smith
+  birthDate:
+    type: string
+    format: date
+    description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+    example: '1978-06-15'
+  nationality:
+    type: string
+    description: Country of nationality (ISO 3166-1 alpha-2)
+    example: US
+  email:
+    type: string
+    format: email
+    description: Email address of the individual
+    example: jane.smith@acmecorp.com
+  phoneNumber:
+    type: string
+    description: Phone number in E.164 format
+    example: '+14155550192'
+    pattern: '^\+[1-9]\d{1,14}$'
+  address:
+    $ref: ../common/Address.yaml
+  idType:
+    $ref: ./IdentificationType.yaml
+  identifier:
+    type: string
+    description: The identification number or value
+    example: 123-45-6789
+  countryOfIssuance:
+    type: string
+    description: Country that issued the identification (ISO 3166-1 alpha-2)
+    example: US

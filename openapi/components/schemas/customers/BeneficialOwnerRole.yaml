@@ -1,0 +1,10 @@
+type: string
+enum:
+  - UBO
+  - DIRECTOR
+  - COMPANY_OFFICER
+  - CONTROL_PERSON
+  - TRUSTEE
+  - GENERAL_PARTNER
+description: Role of the beneficial owner within the business
+example: UBO

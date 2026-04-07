@@ -1,0 +1,127 @@
+post:
+  summary: Upload a document
+  description: >
+    Upload a verification document for a customer or beneficial owner.
+    The request must use multipart/form-data with the file in the `file` field
+    and metadata in the remaining fields.
+
+
+    Supported file types: PDF, JPEG, PNG. Maximum file size: 10 MB.
+  operationId: uploadDocument
+  tags:
+    - Documents
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          $ref: ../../components/schemas/documents/DocumentUploadRequest.yaml
+  responses:
+    '201':
+      description: Document uploaded successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/documents/Document.yaml
+    '400':
+      description: Bad request - Invalid file type, size, or parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Document holder not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List documents
+  description: >
+    Retrieve a list of documents with optional filtering by document holder.
+  operationId: listDocuments
+  tags:
+    - Documents
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: documentHolder
+      in: query
+      description: Filter by document holder ID (Customer or BeneficialOwner)
+      required: false
+      schema:
+        type: string
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of documents matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/documents/Document.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: Total number of results matching the criteria
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

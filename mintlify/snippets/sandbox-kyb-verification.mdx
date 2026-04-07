@@ -1,0 +1,21 @@
+In sandbox, you can trigger specific KYC/KYB verification outcomes using magic suffixes in customer and beneficial owner fields. These let you test different verification flows without waiting for real review.
+
+### Business customer verification
+
+The **last 3 digits** of the `registrationNumber` in `businessInfo` determine the KYB status outcome when you call `POST /verifications`:
+
+| Suffix | `kybStatus` | Behavior |
+|--------|------------|----------|
+| **001** | `PENDING` | KYB verification remains pending |
+| **002** | `REJECTED` | KYB verification is rejected |
+| **Any other** | `APPROVED` | KYB verification is approved |
+
+### Beneficial owner KYC
+
+The **last 3 characters** of the `lastName` in `personalInfo` determine the individual KYC status outcome:
+
+| Suffix | `kycStatus` | Behavior |
+|--------|------------|----------|
+| **001** | `PENDING` | KYC verification remains pending |
+| **002** | `REJECTED` | KYC verification is rejected |
+| **Any other** | `APPROVED` | KYC verification is approved |

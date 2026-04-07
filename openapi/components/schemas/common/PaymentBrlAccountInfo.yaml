@@ -1,4 +1,15 @@
 title: BRL Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./BrlAccountInfo.yaml
+  - type: object
+    required:
+      - qrCode
+    properties:
+      accountType:
+        type: string
+        enum:
+          - BRL_ACCOUNT
+      qrCode:
+        type: string
+        description: A PIX QR code payload that can be used to fund the transaction. This can be rendered as a QR code image or pasted into a PIX-compatible banking app.
+        minLength: 1

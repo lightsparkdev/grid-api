@@ -18,6 +18,7 @@ properties:
       - WIRE
       - RTP
       - FEDNOW
+      - BANK_TRANSFER
   accountNumber:
     type: string
     description: The account number of the bank

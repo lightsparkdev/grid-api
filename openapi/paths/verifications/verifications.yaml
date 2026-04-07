@@ -1,0 +1,167 @@
+post:
+  summary: Submit customer for verification
+  description: >
+    Trigger KYC (individual) or KYB (business) verification for a customer.
+    The response indicates whether all required information has been provided.
+    If data is missing, the `errors` array describes exactly what needs to be
+    supplied before verification can proceed.
+
+
+    Call this endpoint again after resolving errors to re-submit.
+  operationId: createVerification
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/verifications/VerificationRequest.yaml
+  responses:
+    '200':
+      description: >
+        Verification status returned. Check `verificationStatus` and `errors`
+        to determine next steps.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/verifications/Verification.yaml
+          examples:
+            missingInfo:
+              summary: Verification blocked by missing data
+              value:
+                id: Verification:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                verificationStatus: RESOLVE_ERRORS
+                errors:
+                  - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: MISSING_FIELD
+                    field: customer.address.line1
+                    reason: Business address line 1 is required
+                  - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
+                    acceptedDocumentTypes:
+                      - PROOF_OF_ADDRESS
+                    reason: Proof of address document is required
+                  - resourceId: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000002
+                    type: MISSING_FIELD
+                    field: personalInfo.birthDate
+                    reason: Date of birth is required for beneficial owners
+                createdAt: '2025-10-03T12:00:00Z'
+            submitted:
+              summary: Verification submitted successfully
+              value:
+                id: Verification:019542f5-b3e7-1d02-0000-000000000002
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                verificationStatus: IN_PROGRESS
+                errors: []
+                createdAt: '2025-10-03T12:00:00Z'
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List verifications
+  description: >
+    Retrieve a list of verifications with optional filtering by customer ID
+    and status.
+  operationId: listVerifications
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: Filter by customer ID
+      required: false
+      schema:
+        type: string
+    - name: verificationStatus
+      in: query
+      description: Filter by verification status
+      required: false
+      schema:
+        $ref: ../../components/schemas/verifications/VerificationStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of verifications matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/verifications/Verification.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: Total number of results matching the criteria
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

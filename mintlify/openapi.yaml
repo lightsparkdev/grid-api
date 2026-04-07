@@ -20,6 +20,10 @@ tags:
     description: Platform configuration endpoints for managing global settings. You can also configure these settings in the Grid dashboard.
   - name: Customers
     description: Customer management endpoints for creating and updating customer information
+  - name: KYC/KYB Verifications
+    description: Endpoints for Know Your Customer (KYC) and Know Your Business (KYB) verification, including managing beneficial owners and triggering verification for customers.
+  - name: Documents
+    description: Endpoints for uploading and managing verification documents for customers and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
@@ -40,6 +44,8 @@ tags:
     description: Endpoints to programmatically manage API tokens
   - name: Exchange Rates
     description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
+  - name: Discoveries
+    description: Endpoints for discovering available payment rails, banks, and providers for a given country and currency corridor.
 paths:
   /config:
     get:
@@ -253,6 +259,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /discoveries:
+    get:
+      summary: List available receiving institution names
+      description: |
+        Retrieve available payment institution names for a given country and currency. Use this endpoint
+        to look up supported banks and payment providers for a specific corridor.
+        If no country and currency parameter are provided, all payment institutions will be returned
+
+        The `bankName` field in each result is the value to pass as `bankName` when
+        creating an external account via `POST /customers/external-accounts`.
+      operationId: getDiscoveries
+      tags:
+        - Discoveries
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: country
+          in: query
+          description: ISO 3166-1 alpha-2 country code (e.g. PH)
+          required: false
+          schema:
+            type: string
+          example: PH
+        - name: currency
+          in: query
+          description: ISO 4217 currency code (e.g. PHP)
+          required: false
+          schema:
+            type: string
+          example: PHP
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: List of payment rails matching the filter criteria
+                    items:
+                      type: object
+                      required:
+                        - bankName
+                        - displayName
+                        - country
+                        - currency
+                      properties:
+                        bankName:
+                          type: string
+                          description: |
+                            Canonical name for this payment rail. Pass this value as `bankName` when creating an external account.
+                        displayName:
+                          type: string
+                          description: Human-friendly display name for this payment rail.
+                        country:
+                          type: string
+                          description: ISO 3166-1 alpha-2 country code.
+                        currency:
+                          type: string
+                          description: ISO 4217 currency code.
+              examples:
+                philippinesBanks:
+                  summary: Payment rails for Philippines (PHP)
+                  value:
+                    data:
+                      - bankName: BDO Unibank
+                        displayName: BDO Unibank
+                        country: PH
+                        currency: PHP
+                      - bankName: BPI
+                        displayName: Bank of the Philippine Islands
+                        country: PH
+                        currency: PHP
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers:
     post:
       summary: Add a new customer
@@ -268,6 +367,45 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CustomerCreateRequestOneOf'
+            examples:
+              individualCustomer:
+                summary: Create an individual customer
+                value:
+                  customerType: INDIVIDUAL
+                  platformCustomerId: ind-9f84e0c2
+                  fullName: Jane Smith
+                  birthDate: '1990-01-15'
+                  nationality: US
+              businessCustomer:
+                summary: Create a business customer
+                value:
+                  customerType: BUSINESS
+                  platformCustomerId: biz-acme-001
+                  businessInfo:
+                    legalName: Acme Corporation
+                    doingBusinessAs: Acme
+                    country: US
+                    registrationNumber: '5523041'
+                    incorporatedOn: '2018-03-14'
+                    entityType: LLC
+                    taxId: 47-1234567
+                    countriesOfOperation:
+                      - US
+                    businessType: INFORMATION
+                    purposeOfAccount: CONTRACTOR_PAYOUTS
+                    sourceOfFunds: Funds derived from customer payments for software services
+                    expectedMonthlyTransactionCount: COUNT_100_TO_500
+                    expectedMonthlyTransactionVolume: VOLUME_100K_TO_1M
+                    expectedRecipientJurisdictions:
+                      - US
+                      - MX
+                  address:
+                    line1: 123 Market Street
+                    line2: Suite 400
+                    city: San Francisco
+                    state: CA
+                    postalCode: '94105'
+                    country: US
       responses:
         '201':
           description: Customer created successfully
@@ -597,7 +735,7 @@ paths:
       description: Generate a hosted KYC link to onboard a customer
       operationId: getKycLinkForCustomer
       tags:
-        - Customers
+        - KYC/KYB Verifications
       security:
         - BasicAuth: []
       responses:
@@ -1049,24 +1187,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /plaid/link-tokens:
+  /beneficial-owners:
     post:
-      summary: Request Plaid Link token
+      summary: Create a beneficial owner
       description: |
-        Creates a Plaid Link token that can be used to initialize Plaid Link in your application.
-        The Link token is used to authenticate the customer and allow them to select their bank account.
-
-        **Async Flow:**
-        1. Platform calls this endpoint to get a link_token and callbackUrl
-        2. Platform displays Plaid Link UI to the end customer using the link_token
-        3. End customer authenticates with their bank and selects an account
-        4. Plaid returns a public_token to the platform
-        5. Platform POSTs the public_token to the callbackUrl
-        6. Lightspark exchanges the public_token with Plaid and creates the external account asynchronously
-        7. Platform receives a webhook notification when the external account is ready
-      operationId: createPlaidLinkToken
+        Add a beneficial owner, director, or company officer to a business customer. The beneficial owner will go through KYC verification automatically.
+      operationId: createBeneficialOwner
       tags:
-        - External Accounts
+        - KYC/KYB Verifications
       security:
         - BasicAuth: []
       requestBody:
@@ -1074,16 +1202,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlaidLinkTokenRequest'
-            example:
-              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              $ref: '#/components/schemas/BeneficialOwnerCreateRequest'
       responses:
-        '200':
-          description: Link token created successfully
+        '201':
+          description: Beneficial owner created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaidLinkTokenResponse'
+                $ref: '#/components/schemas/BeneficialOwner'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1108,64 +1234,628 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /plaid/callback/{plaid_link_token}:
-    post:
-      summary: Submit Plaid public token
+    get:
+      summary: List beneficial owners
       description: |
-        After the customer completes Plaid Link authentication, the platform should POST
-        the public_token to this callback URL (provided in the link token response).
-
-        This will trigger asynchronous processing:
-        1. Lightspark exchanges the public_token for an access_token with Plaid
-        2. Lightspark retrieves and verifies the account details
-        3. An external account is created
-        4. A webhook notification is sent to the platform when complete
-      operationId: submitPlaidPublicToken
+        Retrieve a list of beneficial owners for a business customer.
+      operationId: listBeneficialOwners
       tags:
-        - External Accounts
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
       parameters:
-        - name: plaid_link_token
-          in: path
+        - name: customerId
+          in: query
+          description: The business customer ID
           required: true
-          description: The Plaid link token from the link token response, used to identify the session
           schema:
             type: string
-          example: link-sandbox-abc123xyz-1234-5678
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - hasMore
+                properties:
+                  data:
+                    type: array
+                    description: List of beneficial owners matching the filter criteria
+                    items:
+                      $ref: '#/components/schemas/BeneficialOwner'
+                  hasMore:
+                    type: boolean
+                    description: Indicates if more results are available beyond this page
+                  nextCursor:
+                    type: string
+                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
+                  totalCount:
+                    type: integer
+                    description: Total number of results matching the criteria
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /beneficial-owners/{beneficialOwnerId}:
+    get:
+      summary: Get a beneficial owner
+      description: Retrieve details of a specific beneficial owner by ID.
+      operationId: getBeneficialOwner
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: beneficialOwnerId
+          in: path
+          description: Beneficial owner ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficialOwner'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Beneficial owner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a beneficial owner
+      description: Update details of a specific beneficial owner. Only provided fields are updated.
+      operationId: updateBeneficialOwner
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: beneficialOwnerId
+          in: path
+          description: Beneficial owner ID
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlaidCallbackRequest'
-            example:
-              publicToken: public-sandbox-12345678-1234-1234-1234-123456789012
-              accountId: plaid_account_id_123
+              $ref: '#/components/schemas/BeneficialOwnerUpdateRequest'
       responses:
-        '202':
-          description: |
-            A pending external account resource will be created and returned while the Grid API asynchronously processes the Plaid public token.
+        '200':
+          description: Beneficial owner updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExternalAccount'
+                $ref: '#/components/schemas/BeneficialOwner'
         '400':
-          description: Bad request - Invalid public token or link token
+          description: Bad request - Invalid parameters
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
         '404':
-          description: Link token not found or expired
+          description: Beneficial owner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /documents:
+    post:
+      summary: Upload a document
+      description: |
+        Upload a verification document for a customer or beneficial owner. The request must use multipart/form-data with the file in the `file` field and metadata in the remaining fields.
+
+        Supported file types: PDF, JPEG, PNG. Maximum file size: 10 MB.
+      operationId: uploadDocument
+      tags:
+        - Documents
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      responses:
+        '201':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad request - Invalid file type, size, or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Document holder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List documents
+      description: |
+        Retrieve a list of documents with optional filtering by document holder.
+      operationId: listDocuments
+      tags:
+        - Documents
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: documentHolder
+          in: query
+          description: Filter by document holder ID (Customer or BeneficialOwner)
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - hasMore
+                properties:
+                  data:
+                    type: array
+                    description: List of documents matching the filter criteria
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  hasMore:
+                    type: boolean
+                    description: Indicates if more results are available beyond this page
+                  nextCursor:
+                    type: string
+                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
+                  totalCount:
+                    type: integer
+                    description: Total number of results matching the criteria
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /documents/{documentId}:
+    get:
+      summary: Get a document by ID
+      description: Retrieve details and metadata of a specific document by ID.
+      operationId: getDocument
+      tags:
+        - Documents
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          description: Document ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    put:
+      summary: Replace a document
+      description: |
+        Replace an existing document with a new file and/or updated metadata. This is useful when a document was rejected and needs to be re-uploaded. The request must use multipart/form-data.
+      operationId: replaceDocument
+      tags:
+        - Documents
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          description: Document ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentReplaceRequest'
+      responses:
+        '200':
+          description: Document replaced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad request - Invalid file type, size, or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete a document
+      description: |
+        Delete an uploaded document. This cannot be undone. Documents that have already been submitted for verification may not be deletable.
+      operationId: deleteDocument
+      tags:
+        - Documents
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          description: Document ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Document deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Document not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Link token already used
+          description: Conflict - Document cannot be deleted (already submitted for verification)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /verifications:
+    post:
+      summary: Submit customer for verification
+      description: |
+        Trigger KYC (individual) or KYB (business) verification for a customer. The response indicates whether all required information has been provided. If data is missing, the `errors` array describes exactly what needs to be supplied before verification can proceed.
+
+        Call this endpoint again after resolving errors to re-submit.
+      operationId: createVerification
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+      responses:
+        '200':
+          description: |
+            Verification status returned. Check `verificationStatus` and `errors` to determine next steps.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+              examples:
+                missingInfo:
+                  summary: Verification blocked by missing data
+                  value:
+                    id: Verification:019542f5-b3e7-1d02-0000-000000000001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    verificationStatus: RESOLVE_ERRORS
+                    errors:
+                      - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                        type: MISSING_FIELD
+                        field: customer.address.line1
+                        reason: Business address line 1 is required
+                      - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                        type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
+                        acceptedDocumentTypes:
+                          - PROOF_OF_ADDRESS
+                        reason: Proof of address document is required
+                      - resourceId: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000002
+                        type: MISSING_FIELD
+                        field: personalInfo.birthDate
+                        reason: Date of birth is required for beneficial owners
+                    createdAt: '2025-10-03T12:00:00Z'
+                submitted:
+                  summary: Verification submitted successfully
+                  value:
+                    id: Verification:019542f5-b3e7-1d02-0000-000000000002
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    verificationStatus: IN_PROGRESS
+                    errors: []
+                    createdAt: '2025-10-03T12:00:00Z'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List verifications
+      description: |
+        Retrieve a list of verifications with optional filtering by customer ID and status.
+      operationId: listVerifications
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+        - name: verificationStatus
+          in: query
+          description: Filter by verification status
+          required: false
+          schema:
+            $ref: '#/components/schemas/VerificationStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - hasMore
+                properties:
+                  data:
+                    type: array
+                    description: List of verifications matching the filter criteria
+                    items:
+                      $ref: '#/components/schemas/Verification'
+                  hasMore:
+                    type: boolean
+                    description: Indicates if more results are available beyond this page
+                  nextCursor:
+                    type: string
+                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
+                  totalCount:
+                    type: integer
+                    description: Total number of results matching the criteria
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /verifications/{verificationId}:
+    get:
+      summary: Get a verification
+      description: Retrieve details of a specific verification by ID.
+      operationId: getVerification
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: verificationId
+          in: path
+          description: Verification ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Verification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -1577,13 +2267,8 @@ paths:
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
                     currency: USD
                   destination:
-                    destinationType: EXTERNAL_ACCOUNT_DETAILS
-                    externalAccountDetails:
-                      customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                      currency: BTC
-                      accountInfo:
-                        accountType: SPARK_WALLET
-                        address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
                   lockedCurrencySide: RECEIVING
                   lockedCurrencyAmount: 10000
                   immediatelyExecute: true
@@ -3787,6 +4472,85 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  verification-update:
+    post:
+      summary: Verification status change
+      description: |
+        Webhook that is called when a customer's KYC/KYB verification status changes.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid API public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: verificationStatusWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationWebhook'
+            examples:
+              approved:
+                summary: Verification approved
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+                  type: VERIFICATION.APPROVED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Verification:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    verificationStatus: APPROVED
+                    errors: []
+                    createdAt: '2025-08-15T14:00:00Z'
+              resolveErrors:
+                summary: Verification requires action
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000031
+                  type: VERIFICATION.RESOLVE_ERRORS
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Verification:019542f5-b3e7-1d02-0000-000000000011
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    verificationStatus: RESOLVE_ERRORS
+                    errors:
+                      - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                        type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
+                        acceptedDocumentTypes:
+                          - PROOF_OF_ADDRESS
+                        reason: Proof of address document is required
+                    createdAt: '2025-08-15T14:00:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
 components:
   securitySchemes:
     BasicAuth:
@@ -3826,6 +4590,7 @@ components:
         - PURPOSE_OF_PAYMENT
         - ULTIMATE_INSTITUTION_COUNTRY
         - IDENTIFIER
+        - BUSINESS_TYPE
       description: Name of a type of field containing info about a platform's customer or counterparty customer.
       example: FULL_NAME
     CounterpartyFieldDefinition:
@@ -4071,6 +4836,12 @@ components:
             | INVALID_AMOUNT | Amount is invalid |
             | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
             | WEBHOOK_DELIVERY_ERROR | Webhook delivery error |
+            | LOW_QUALITY | Document quality too low to process |
+            | DATA_MISMATCH | Document details don't match provided information |
+            | EXPIRED | Document has expired |
+            | SUSPECTED_FRAUD | Document suspected of being forged or edited |
+            | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
+            | INCOMPLETE | Document is missing pages or sides |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -4099,6 +4870,12 @@ components:
             - INVALID_AMOUNT
             - WEBHOOK_ENDPOINT_NOT_SET
             - WEBHOOK_DELIVERY_ERROR
+            - LOW_QUALITY
+            - DATA_MISMATCH
+            - EXPIRED
+            - SUSPECTED_FRAUD
+            - UNSUITABLE_DOCUMENT
+            - INCOMPLETE
         message:
           type: string
           description: Error message
@@ -4273,13 +5050,10 @@ components:
     KycStatus:
       type: string
       enum:
+        - UNVERIFIED
+        - PENDING
         - APPROVED
         - REJECTED
-        - PENDING_REVIEW
-        - EXPIRED
-        - CANCELED
-        - MANUALLY_APPROVED
-        - MANUALLY_REJECTED
       description: The current KYC status of a customer
       example: APPROVED
     Address:
@@ -4347,16 +5121,66 @@ components:
     KybStatus:
       type: string
       enum:
-        - AWAITING_SUBMISSION
+        - UNVERIFIED
+        - PENDING
         - APPROVED
         - REJECTED
-        - PENDING_REVIEW
-        - EXPIRED
-        - CANCELED
-        - MANUALLY_APPROVED
-        - MANUALLY_REJECTED
       description: The current KYB status of a business customer
       example: APPROVED
+    EntityType:
+      type: string
+      enum:
+        - SOLE_PROPRIETORSHIP
+        - PARTNERSHIP
+        - LLC
+        - CORPORATION
+        - S_CORPORATION
+        - NON_PROFIT
+        - OTHER
+      description: Legal entity type of the business
+      example: LLC
+    BusinessType:
+      type: string
+      description: The high-level industry category of the business
+      enum:
+        - AGRICULTURE_FORESTRY_FISHING_AND_HUNTING
+        - MINING_QUARRYING_AND_OIL_AND_GAS_EXTRACTION
+        - UTILITIES
+        - CONSTRUCTION
+        - MANUFACTURING
+        - WHOLESALE_TRADE
+        - RETAIL_TRADE
+        - TRANSPORTATION_AND_WAREHOUSING
+        - INFORMATION
+        - FINANCE_AND_INSURANCE
+        - REAL_ESTATE_AND_RENTAL_AND_LEASING
+        - PROFESSIONAL_SCIENTIFIC_AND_TECHNICAL_SERVICES
+        - MANAGEMENT_OF_COMPANIES_AND_ENTERPRISES
+        - ADMINISTRATIVE_AND_SUPPORT_AND_WASTE_MANAGEMENT_AND_REMEDIATION_SERVICES
+        - EDUCATIONAL_SERVICES
+        - HEALTH_CARE_AND_SOCIAL_ASSISTANCE
+        - ARTS_ENTERTAINMENT_AND_RECREATION
+        - ACCOMMODATION_AND_FOOD_SERVICES
+        - OTHER_SERVICES
+        - PUBLIC_ADMINISTRATION
+    PurposeOfAccount:
+      type: string
+      enum:
+        - CONTRACTOR_PAYOUTS
+        - CREATOR_PAYOUTS
+        - EMPLOYEE_PAYOUTS
+        - MARKETPLACE_SELLER_PAYOUTS
+        - SUPPLIER_PAYMENTS
+        - CROSS_BORDER_B2B
+        - AR_AUTOMATION
+        - AP_AUTOMATION
+        - EMBEDDED_PAYMENTS
+        - PLATFORM_FEE_COLLECTION
+        - P2P_TRANSFERS
+        - CHARITABLE_DONATIONS
+        - OTHER
+      description: The intended purpose for using the Grid account
+      example: CONTRACTOR_PAYOUTS
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -4365,68 +5189,71 @@ components:
           type: string
           description: Legal name of the business
           example: Acme Corporation, Inc.
+        doingBusinessAs:
+          type: string
+          description: Trade name or DBA name of the business, if different from the legal name
+          example: Acme
+        country:
+          type: string
+          description: Country of incorporation or registration (ISO 3166-1 alpha-2)
+          example: US
         registrationNumber:
           type: string
           description: Business registration number
-          example: BRN-123456789
+          example: '5523041'
+        incorporatedOn:
+          type: string
+          format: date
+          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+          example: '2018-03-14'
+        entityType:
+          $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
           description: Tax identification number
-          example: EIN-987654321
-    UltimateBeneficialOwner:
-      type: object
-      required:
-        - fullName
-        - individualType
-      properties:
-        fullName:
+          example: 47-1234567
+        countriesOfOperation:
+          type: array
+          items:
+            type: string
+          description: List of countries where the business operates (ISO 3166-1 alpha-2)
+          example:
+            - US
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
+        purposeOfAccount:
+          $ref: '#/components/schemas/PurposeOfAccount'
+        sourceOfFunds:
           type: string
-          description: Individual's full name
-          example: John Michael Doe
-        emailAddress:
-          type: string
-          format: email
-          description: Email address of the individual
-          example: example@test.com
-        phoneNumber:
-          type: string
-          description: Phone number of the individual in E.164 format
-          example: '+5555555555'
-          pattern: ^\+[1-9]\d{1,14}$
-        taxId:
-          type: string
-          description: Tax identification number of the individual. This could be a Social Security Number (SSN) for US individuals, Tax Identification Number (TIN) for non-US individuals, or a Passport Number.
-          example: EIN-987654321
-        birthDate:
-          type: string
-          format: date
-          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-          example: '1990-01-15'
-        nationality:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-          example: US
-        address:
-          $ref: '#/components/schemas/Address'
-        individualType:
+          description: The primary source of funds for the business
+          example: Funds derived from customer payments for software services
+        expectedMonthlyTransactionCount:
           type: string
           enum:
-            - DIRECTOR
-            - CONTROL_PERSON
-            - BUSINESS_POINT_OF_CONTACT
-            - TRUSTEE
-            - SETTLOR
-            - GENERAL_PARTNER
-          description: Type of individual in the corporation
-          example: DIRECTOR
-        percentageOwnership:
-          type: number
-          description: Percent of ownership when individual type is beneficial owner
-          example: 25
-        title:
+            - COUNT_UNDER_10
+            - COUNT_10_TO_100
+            - COUNT_100_TO_500
+            - COUNT_500_TO_1000
+            - COUNT_OVER_1000
+          description: Expected number of transactions per month
+          example: COUNT_100_TO_500
+        expectedMonthlyTransactionVolume:
           type: string
-          description: Title at company
-          example: CEO, COO, President
+          enum:
+            - VOLUME_UNDER_10K
+            - VOLUME_10K_TO_100K
+            - VOLUME_100K_TO_1M
+            - VOLUME_1M_TO_10M
+            - VOLUME_OVER_10M
+          description: Expected total transaction volume per month in USD equivalent
+          example: VOLUME_100K_TO_1M
+        expectedRecipientJurisdictions:
+          type: array
+          items:
+            type: string
+          description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
     BusinessCustomerFields:
       type: object
       required:
@@ -4442,10 +5269,6 @@ components:
           $ref: '#/components/schemas/Address'
         businessInfo:
           $ref: '#/components/schemas/BusinessInfoUpdate'
-        beneficialOwners:
-          type: array
-          items:
-            $ref: '#/components/schemas/UltimateBeneficialOwner'
     BusinessInfo:
       type: object
       description: Additional information required for business entities
@@ -4456,14 +5279,195 @@ components:
           type: string
           description: Legal name of the business
           example: Acme Corporation, Inc.
+        doingBusinessAs:
+          type: string
+          description: Trade name or DBA name of the business, if different from the legal name
+          example: Acme
+        country:
+          type: string
+          description: Country of incorporation or registration (ISO 3166-1 alpha-2)
+          example: US
         registrationNumber:
           type: string
           description: Business registration number
-          example: BRN-123456789
+          example: '5523041'
+        incorporatedOn:
+          type: string
+          format: date
+          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+          example: '2018-03-14'
+        entityType:
+          $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
           description: Tax identification number
-          example: EIN-987654321
+          example: 47-1234567
+        countriesOfOperation:
+          type: array
+          items:
+            type: string
+          description: List of countries where the business operates (ISO 3166-1 alpha-2)
+          example:
+            - US
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
+        purposeOfAccount:
+          $ref: '#/components/schemas/PurposeOfAccount'
+        sourceOfFunds:
+          type: string
+          description: The primary source of funds for the business
+          example: Funds derived from customer payments for software services
+        expectedMonthlyTransactionCount:
+          type: string
+          enum:
+            - COUNT_UNDER_10
+            - COUNT_10_TO_100
+            - COUNT_100_TO_500
+            - COUNT_500_TO_1000
+            - COUNT_OVER_1000
+          description: Expected number of transactions per month
+          example: COUNT_100_TO_500
+        expectedMonthlyTransactionVolume:
+          type: string
+          enum:
+            - VOLUME_UNDER_10K
+            - VOLUME_10K_TO_100K
+            - VOLUME_100K_TO_1M
+            - VOLUME_1M_TO_10M
+            - VOLUME_OVER_10M
+          description: Expected total transaction volume per month in USD equivalent
+          example: VOLUME_100K_TO_1M
+        expectedRecipientJurisdictions:
+          type: array
+          items:
+            type: string
+          description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+    BeneficialOwnerRole:
+      type: string
+      enum:
+        - UBO
+        - DIRECTOR
+        - COMPANY_OFFICER
+        - CONTROL_PERSON
+        - TRUSTEE
+        - GENERAL_PARTNER
+      description: Role of the beneficial owner within the business
+      example: UBO
+    IdentificationType:
+      type: string
+      enum:
+        - SSN
+        - PASSPORT
+        - NATIONAL_ID
+        - DRIVERS_LICENSE
+        - TAX_ID
+        - ITIN
+        - CPF
+      description: Type of personal identification document
+      example: SSN
+    BeneficialOwnerPersonalInfo:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - birthDate
+        - nationality
+        - address
+        - idType
+        - identifier
+      properties:
+        firstName:
+          type: string
+          description: First name of the individual
+          example: Jane
+        middleName:
+          type: string
+          description: Middle name of the individual
+          example: Marie
+        lastName:
+          type: string
+          description: Last name of the individual
+          example: Smith
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+          example: '1978-06-15'
+        nationality:
+          type: string
+          description: Country of nationality (ISO 3166-1 alpha-2)
+          example: US
+        email:
+          type: string
+          format: email
+          description: Email address of the individual
+          example: jane.smith@acmecorp.com
+        phoneNumber:
+          type: string
+          description: Phone number in E.164 format
+          example: '+14155550192'
+          pattern: ^\+[1-9]\d{1,14}$
+        address:
+          $ref: '#/components/schemas/Address'
+        idType:
+          $ref: '#/components/schemas/IdentificationType'
+        identifier:
+          type: string
+          description: The identification number or value
+          example: 123-45-6789
+        countryOfIssuance:
+          type: string
+          description: Country that issued the identification (ISO 3166-1 alpha-2)
+          example: US
+    BeneficialOwner:
+      type: object
+      required:
+        - id
+        - customerId
+        - roles
+        - ownershipPercentage
+        - personalInfo
+        - kycStatus
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this beneficial owner
+          example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          description: The ID of the business customer this beneficial owner is associated with
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/BeneficialOwnerRole'
+          description: Roles of this person within the business
+          example:
+            - UBO
+            - DIRECTOR
+        ownershipPercentage:
+          type: integer
+          description: Percentage of ownership in the business (0-100)
+          minimum: 0
+          maximum: 100
+          example: 51
+        personalInfo:
+          $ref: '#/components/schemas/BeneficialOwnerPersonalInfo'
+        kycStatus:
+          $ref: '#/components/schemas/KycStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: When this beneficial owner was created
+          example: '2025-10-03T12:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this beneficial owner was last updated
+          example: '2025-10-03T12:00:00Z'
     BusinessCustomer:
       title: Business Customer
       allOf:
@@ -4473,6 +5477,10 @@ components:
           properties:
             businessInfo:
               $ref: '#/components/schemas/BusinessInfo'
+            beneficialOwners:
+              type: array
+              items:
+                $ref: '#/components/schemas/BeneficialOwner'
     CustomerOneOf:
       oneOf:
         - $ref: '#/components/schemas/IndividualCustomer'
@@ -4701,6 +5709,7 @@ components:
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - ETHEREUM_WALLET
       description: Type of payment account or wallet
       example: USD_ACCOUNT
     BasePaymentAccountInfo:
@@ -4731,6 +5740,7 @@ components:
               - WIRE
               - RTP
               - FEDNOW
+              - BANK_TRANSFER
         accountNumber:
           type: string
           description: The account number of the bank
@@ -4756,50 +5766,22 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    BrlAccountInfo:
-      type: object
-      required:
-        - accountType
-        - paymentRails
-        - pixKey
-        - pixKeyType
-        - taxId
-      properties:
-        accountType:
-          type: string
-          enum:
-            - BRL_ACCOUNT
-        paymentRails:
-          type: array
-          items:
-            type: string
-            enum:
-              - PIX
-        pixKey:
-          type: string
-          description: The PIX key (email, phone, CPF, CNPJ, or random)
-          minLength: 1
-          maxLength: 77
-        pixKeyType:
-          type: string
-          description: The type of PIX key
-          enum:
-            - CPF
-            - CNPJ
-            - EMAIL
-            - PHONE
-            - RANDOM
-        taxId:
-          type: string
-          description: The tax ID (CPF or CNPJ)
-          minLength: 11
-          maxLength: 14
-          pattern: ^[0-9]{11,14}$
     PaymentBrlAccountInfo:
       title: BRL Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/BrlAccountInfo'
+        - type: object
+          required:
+            - qrCode
+          properties:
+            accountType:
+              type: string
+              enum:
+                - BRL_ACCOUNT
+            qrCode:
+              type: string
+              description: A PIX QR code payload that can be used to fund the transaction. This can be rendered as a QR code image or pasted into a PIX-compatible banking app.
+              minLength: 1
     MxnAccountInfo:
       type: object
       required:
@@ -4979,7 +5961,7 @@ components:
           description: Nigerian bank account number
           minLength: 10
           maxLength: 10
-          example: 123456789
+          example: '0123456789'
           pattern: ^[0-9]{10}$
         bankName:
           type: string
@@ -5283,9 +6265,10 @@ components:
         accountNumber:
           type: string
           description: Bank account number
-          minLength: 1
-          maxLength: 34
-          example: 1234567890
+          minLength: 8
+          maxLength: 16
+          example: '001234567890'
+          pattern: ^[0-9]{8,16}$
     PaymentPhpAccountInfo:
       title: PHP Account
       allOf:
@@ -5331,7 +6314,7 @@ components:
           description: Bank account number
           minLength: 1
           maxLength: 34
-          example: 123456789
+          example: '0123456789'
         swiftCode:
           type: string
           description: The SWIFT/BIC code of the bank
@@ -5599,6 +6582,32 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
+    EthereumWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ETHEREUM_WALLET
+        address:
+          type: string
+          description: Ethereum L1 wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentEthereumWalletInfo:
+      title: Ethereum Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletInfo'
         - type: object
           properties:
             assetType:
@@ -6102,6 +7111,389 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    BdtAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - branchCode
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BDT_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        branchCode:
+          type: string
+          description: The branch code
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentBdtAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    CopAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - bankAccountType
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - COP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentCopAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    EgpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - EGP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    PaymentEgpAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    GhsAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GHS_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentGhsAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    GtqAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GTQ_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentGtqAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    HtgAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - HTG_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentHtgAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    JmdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - branchCode
+        - bankAccountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - JMD_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        branchCode:
+          type: string
+          description: The branch code
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+    PaymentJmdAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    PkrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PKR_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentPkrAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -6144,12 +7536,21 @@ components:
             - $ref: '#/components/schemas/PaymentZmwAccountInfo'
             - $ref: '#/components/schemas/PaymentBwpAccountInfo'
             - $ref: '#/components/schemas/PaymentXafAccountInfo'
+            - $ref: '#/components/schemas/PaymentBdtAccountInfo'
+            - $ref: '#/components/schemas/PaymentCopAccountInfo'
+            - $ref: '#/components/schemas/PaymentEgpAccountInfo'
+            - $ref: '#/components/schemas/PaymentGhsAccountInfo'
+            - $ref: '#/components/schemas/PaymentGtqAccountInfo'
+            - $ref: '#/components/schemas/PaymentHtgAccountInfo'
+            - $ref: '#/components/schemas/PaymentJmdAccountInfo'
+            - $ref: '#/components/schemas/PaymentPkrAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
+            - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -6175,6 +7576,7 @@ components:
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
+              ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
               AED_ACCOUNT: '#/components/schemas/PaymentAedAccountInfo'
               KES_ACCOUNT: '#/components/schemas/PaymentKesAccountInfo'
               MWK_ACCOUNT: '#/components/schemas/PaymentMwkAccountInfo'
@@ -6186,6 +7588,14 @@ components:
               ZMW_ACCOUNT: '#/components/schemas/PaymentZmwAccountInfo'
               BWP_ACCOUNT: '#/components/schemas/PaymentBwpAccountInfo'
               XAF_ACCOUNT: '#/components/schemas/PaymentXafAccountInfo'
+              BDT_ACCOUNT: '#/components/schemas/PaymentBdtAccountInfo'
+              COP_ACCOUNT: '#/components/schemas/PaymentCopAccountInfo'
+              EGP_ACCOUNT: '#/components/schemas/PaymentEgpAccountInfo'
+              GHS_ACCOUNT: '#/components/schemas/PaymentGhsAccountInfo'
+              GTQ_ACCOUNT: '#/components/schemas/PaymentGtqAccountInfo'
+              HTG_ACCOUNT: '#/components/schemas/PaymentHtgAccountInfo'
+              JMD_ACCOUNT: '#/components/schemas/PaymentJmdAccountInfo'
+              PKR_ACCOUNT: '#/components/schemas/PaymentPkrAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -6267,6 +7677,7 @@ components:
         - TRON_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
+        - ETHEREUM_WALLET
         - AED_ACCOUNT
         - BRL_ACCOUNT
         - BWP_ACCOUNT
@@ -6291,6 +7702,14 @@ components:
         - XOF_ACCOUNT
         - ZAR_ACCOUNT
         - ZMW_ACCOUNT
+        - BDT_ACCOUNT
+        - COP_ACCOUNT
+        - EGP_ACCOUNT
+        - GHS_ACCOUNT
+        - GTQ_ACCOUNT
+        - HTG_ACCOUNT
+        - JMD_ACCOUNT
+        - PKR_ACCOUNT
       description: Type of external account or wallet
       example: GBP_ACCOUNT
     BaseExternalAccountInfo:
@@ -6300,6 +7719,45 @@ components:
       properties:
         accountType:
           $ref: '#/components/schemas/ExternalAccountType'
+    BrlAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - pixKey
+        - pixKeyType
+        - taxId
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BRL_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - PIX
+        pixKey:
+          type: string
+          description: The PIX key (email, phone, CPF, CNPJ, or random)
+          minLength: 1
+          maxLength: 77
+        pixKeyType:
+          type: string
+          description: The type of PIX key
+          enum:
+            - CPF
+            - CNPJ
+            - EMAIL
+            - PHONE
+            - RANDOM
+        taxId:
+          type: string
+          description: The tax ID (CPF or CNPJ)
+          minLength: 11
+          maxLength: 14
+          pattern: ^[0-9]{11,14}$
     BrlBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -6326,9 +7784,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6465,9 +7920,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6498,6 +7950,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - address
         - fullName
       properties:
         beneficiaryType:
@@ -6519,9 +7972,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6573,9 +8023,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6627,9 +8074,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6681,9 +8125,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6735,9 +8176,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6789,9 +8227,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6843,9 +8278,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6897,9 +8329,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -6951,9 +8380,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7005,9 +8431,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7059,9 +8482,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7113,9 +8533,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7167,9 +8584,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7221,9 +8635,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7275,9 +8686,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7329,9 +8737,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7362,9 +8767,7 @@ components:
       type: object
       required:
         - beneficiaryType
-        - birthDate
         - fullName
-        - nationality
       properties:
         beneficiaryType:
           type: string
@@ -7385,9 +8788,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7439,9 +8839,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7493,9 +8890,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7547,9 +8941,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7601,9 +8992,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7682,6 +9070,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+    EthereumWalletExternalAccountInfo:
+      title: Ethereum L1 Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletInfo'
     AedBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -7708,9 +9101,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7762,9 +9152,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7816,9 +9203,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7843,6 +9227,421 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/XafBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BdtBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BdtExternalAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BdtBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    CopExternalAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CopBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EgpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - countryOfResidence
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    EgpExternalAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EgpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GhsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GhsExternalAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GhsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GtqBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GtqExternalAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GtqBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HtgBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    HtgExternalAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HtgBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    JmdBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    JmdExternalAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/JmdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PkrBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    PkrExternalAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PkrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
@@ -7876,9 +9675,18 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AedExternalAccountInfo'
         - $ref: '#/components/schemas/BwpExternalAccountInfo'
         - $ref: '#/components/schemas/XafExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtExternalAccountInfo'
+        - $ref: '#/components/schemas/CopExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -7912,10 +9720,19 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
           AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
-          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
           XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
+          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountInfo'
+          COP_ACCOUNT: '#/components/schemas/CopExternalAccountInfo'
+          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountInfo'
+          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountInfo'
+          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountInfo'
+          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountInfo'
+          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountInfo'
+          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
+          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -8006,59 +9823,340 @@ components:
           example: ext_acc_123456
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountInfoOneOf'
-    PlaidLinkTokenRequest:
+    BeneficialOwnerCreateRequest:
+      type: object
+      required:
+        - customerId
+        - roles
+        - ownershipPercentage
+        - personalInfo
+      properties:
+        customerId:
+          type: string
+          description: The ID of the business customer this beneficial owner is associated with
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/BeneficialOwnerRole'
+          description: Roles of this person within the business
+          example:
+            - UBO
+            - DIRECTOR
+        ownershipPercentage:
+          type: integer
+          description: Percentage of ownership in the business (0-100). Relevant when role includes UBO.
+          minimum: 0
+          maximum: 100
+          example: 51
+        personalInfo:
+          $ref: '#/components/schemas/BeneficialOwnerPersonalInfo'
+    BeneficialOwnerPersonalInfoUpdate:
+      type: object
+      description: Partial update for beneficial owner personal information. Only provided fields are updated.
+      properties:
+        firstName:
+          type: string
+          description: First name of the individual
+          example: Jane
+        middleName:
+          type: string
+          description: Middle name of the individual
+          example: Marie
+        lastName:
+          type: string
+          description: Last name of the individual
+          example: Smith
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+          example: '1978-06-15'
+        nationality:
+          type: string
+          description: Country of nationality (ISO 3166-1 alpha-2)
+          example: US
+        email:
+          type: string
+          format: email
+          description: Email address of the individual
+          example: jane.smith@acmecorp.com
+        phoneNumber:
+          type: string
+          description: Phone number in E.164 format
+          example: '+14155550192'
+          pattern: ^\+[1-9]\d{1,14}$
+        address:
+          $ref: '#/components/schemas/Address'
+        idType:
+          $ref: '#/components/schemas/IdentificationType'
+        identifier:
+          type: string
+          description: The identification number or value
+          example: 123-45-6789
+        countryOfIssuance:
+          type: string
+          description: Country that issued the identification (ISO 3166-1 alpha-2)
+          example: US
+    BeneficialOwnerUpdateRequest:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/BeneficialOwnerRole'
+          description: Roles of this person within the business
+          example:
+            - UBO
+            - DIRECTOR
+        ownershipPercentage:
+          type: integer
+          description: Percentage of ownership in the business (0-100)
+          minimum: 0
+          maximum: 100
+          example: 51
+        personalInfo:
+          $ref: '#/components/schemas/BeneficialOwnerPersonalInfoUpdate'
+    DocumentType:
+      type: string
+      enum:
+        - PASSPORT
+        - DRIVERS_LICENSE
+        - NATIONAL_ID
+        - PROOF_OF_ADDRESS
+        - BANK_STATEMENT
+        - TAX_RETURN
+        - CERTIFICATE_OF_INCORPORATION
+        - ARTICLES_OF_INCORPORATION
+        - ARTICLES_OF_ASSOCIATION
+        - STATE_REGISTRY_EXCERPT
+        - GOOD_STANDING_CERTIFICATE
+        - INFORMATION_STATEMENT
+        - INCUMBENCY_CERTIFICATE
+        - BUSINESS_LICENSE
+        - SHAREHOLDER_REGISTER
+        - POWER_OF_ATTORNEY
+        - UTILITY_BILL
+        - SELFIE
+        - OTHER
+      description: |-
+        Type of identity or business verification document. Document types are grouped by verification category:
+        **Identity** — PASSPORT, DRIVERS_LICENSE, NATIONAL_ID
+        **Business — Legal presence** — CERTIFICATE_OF_INCORPORATION, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, STATE_REGISTRY_EXCERPT
+        **Business — Company details** — INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, CERTIFICATE_OF_INCORPORATION, INCUMBENCY_CERTIFICATE, GOOD_STANDING_CERTIFICATE
+        **Business — Control structure** — ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, INCUMBENCY_CERTIFICATE, INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT
+        **Business — Ownership structure** — SHAREHOLDER_REGISTER, INFORMATION_STATEMENT, INCUMBENCY_CERTIFICATE, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION
+        **Proof of address** — PROOF_OF_ADDRESS
+      example: PASSPORT
+    Document:
+      type: object
+      required:
+        - id
+        - documentHolder
+        - documentType
+        - country
+        - fileName
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this document
+          example: Document:019542f5-b3e7-1d02-0000-000000000001
+        documentHolder:
+          type: string
+          description: ID of the entity that owns this document. Can be a Customer ID or a BeneficialOwner ID.
+          example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        side:
+          type: string
+          enum:
+            - FRONT
+            - BACK
+          description: Which side of the document this upload represents. Relevant for two-sided documents like driver's licenses or national IDs.
+          example: FRONT
+        country:
+          type: string
+          description: Country that issued the document (ISO 3166-1 alpha-2)
+          example: US
+        documentNumber:
+          type: string
+          description: Document identification number (e.g., passport number)
+          example: A12345678
+        fileName:
+          type: string
+          description: Original file name of the uploaded document
+          example: passport_scan.pdf
+        createdAt:
+          type: string
+          format: date-time
+          description: When this document was uploaded
+          example: '2025-10-03T12:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this document was last updated
+          example: '2025-10-03T12:00:00Z'
+    BaseDocumentRequest:
+      type: object
+      required:
+        - file
+        - documentType
+        - country
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The document file (PDF, JPEG, or PNG, max 10 MB)
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        side:
+          type: string
+          enum:
+            - FRONT
+            - BACK
+          description: Which side of the document (for two-sided documents like driver's licenses)
+          example: FRONT
+        country:
+          type: string
+          description: Country that issued the document (ISO 3166-1 alpha-2)
+          example: US
+        documentNumber:
+          type: string
+          description: Document identification number (e.g., passport number)
+          example: A12345678
+    DocumentUploadRequest:
+      title: Document Upload Request
+      allOf:
+        - $ref: '#/components/schemas/BaseDocumentRequest'
+        - type: object
+          required:
+            - documentHolder
+          properties:
+            documentHolder:
+              type: string
+              description: ID of the entity that owns this document. Can be a Customer ID or a BeneficialOwner ID.
+              example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
+    DocumentReplaceRequest:
+      title: Document Replace Request
+      allOf:
+        - $ref: '#/components/schemas/BaseDocumentRequest'
+    VerificationStatus:
+      type: string
+      enum:
+        - RESOLVE_ERRORS
+        - PENDING_MANUAL_REVIEW
+        - IN_PROGRESS
+        - APPROVED
+        - REJECTED
+        - READY_FOR_VERIFICATION
+      description: Current status of the KYC/KYB verification
+      example: RESOLVE_ERRORS
+    VerificationErrorType:
+      type: string
+      enum:
+        - MISSING_FIELD
+        - INVALID_FIELD
+        - MISSING_LEGAL_PRESENCE_DOCUMENT
+        - MISSING_COMPANY_DETAILS_DOCUMENT
+        - MISSING_CONTROL_STRUCTURE_DOCUMENT
+        - MISSING_OWNERSHIP_STRUCTURE_DOCUMENT
+        - MISSING_PROOF_OF_ADDRESS_DOCUMENT
+        - MISSING_IDENTITY_DOCUMENT
+        - INVALID_DOCUMENT
+        - EXPIRED_DOCUMENT
+        - POOR_QUALITY_DOCUMENT
+        - SUSPECTED_FRAUD_DOCUMENT
+        - WRONG_DOCUMENT_TYPE
+        - INCOMPLETE_DOCUMENT
+        - UNREADABLE_DOCUMENT
+        - DOCUMENT_VERIFICATION_FAILED
+        - APPLICANT_SANCTIONED
+        - APPLICANT_FRAUD
+        - APPLICANT_CRIMINAL_RECORD
+        - APPLICANT_REJECTED
+        - MISSING_BENEFICIAL_OWNER
+      description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed. Document quality types (POOR_QUALITY_DOCUMENT, SUSPECTED_FRAUD_DOCUMENT, etc.) indicate specific issues with uploaded documents. APPLICANT_* types indicate issues with the applicant themselves (sanctions, fraud, criminal records).
+      example: MISSING_FIELD
+    VerificationError:
+      type: object
+      required:
+        - resourceId
+        - type
+        - reason
+      properties:
+        resourceId:
+          type: string
+          description: ID of the resource with the issue (Customer, BeneficialOwner, or Document)
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          $ref: '#/components/schemas/VerificationErrorType'
+        field:
+          type: string
+          description: Dot-notation path to the field with the issue. Present when type is MISSING_FIELD or INVALID_FIELD.
+          example: customer.address.line1
+        acceptedDocumentTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentType'
+          description: |-
+            Document types that would satisfy this requirement. The integrator can upload any one of the listed types. Present when type is MISSING_LEGAL_PRESENCE_DOCUMENT, MISSING_COMPANY_DETAILS_DOCUMENT, MISSING_CONTROL_STRUCTURE_DOCUMENT, MISSING_OWNERSHIP_STRUCTURE_DOCUMENT, MISSING_PROOF_OF_ADDRESS_DOCUMENT, MISSING_IDENTITY_DOCUMENT, INVALID_DOCUMENT, or EXPIRED_DOCUMENT.
+
+            | Error Type | Accepted Document Types |
+            |---|---|
+            | MISSING_LEGAL_PRESENCE_DOCUMENT | CERTIFICATE_OF_INCORPORATION, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, STATE_REGISTRY_EXCERPT |
+            | MISSING_COMPANY_DETAILS_DOCUMENT | INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, CERTIFICATE_OF_INCORPORATION, INCUMBENCY_CERTIFICATE, GOOD_STANDING_CERTIFICATE |
+            | MISSING_CONTROL_STRUCTURE_DOCUMENT | ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, INCUMBENCY_CERTIFICATE, INFORMATION_STATEMENT, STATE_REGISTRY_EXCERPT |
+            | MISSING_OWNERSHIP_STRUCTURE_DOCUMENT | SHAREHOLDER_REGISTER, INFORMATION_STATEMENT, INCUMBENCY_CERTIFICATE, STATE_REGISTRY_EXCERPT, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION |
+            | MISSING_PROOF_OF_ADDRESS_DOCUMENT | PROOF_OF_ADDRESS |
+            | MISSING_IDENTITY_DOCUMENT | PASSPORT, DRIVERS_LICENSE, NATIONAL_ID |
+        reason:
+          type: string
+          description: Human-readable description of the issue
+          example: Business address line 1 is required
+    Verification:
+      type: object
+      required:
+        - id
+        - customerId
+        - verificationStatus
+        - errors
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this verification
+          example: Verification:019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          description: The ID of the customer being verified
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        verificationStatus:
+          $ref: '#/components/schemas/VerificationStatus'
+        errors:
+          type: array
+          description: List of issues preventing verification from proceeding. Empty when verificationStatus is APPROVED or IN_PROGRESS.
+          items:
+            $ref: '#/components/schemas/VerificationError'
+        createdAt:
+          type: string
+          format: date-time
+          description: When this verification was created
+          example: '2025-10-03T12:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this verification was last updated
+          example: '2025-10-03T12:00:00Z'
+    VerificationRequest:
       type: object
       required:
         - customerId
       properties:
         customerId:
           type: string
-          description: The ID of the customer for whom to create the Plaid Link token and external account
+          description: The ID of the customer to verify
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
-    PlaidLinkTokenResponse:
-      type: object
-      required:
-        - linkToken
-        - expiration
-        - callbackUrl
-      properties:
-        linkToken:
-          type: string
-          description: |
-            The Plaid Link token to be used to initialize Plaid Link in your application. This token is single-use and expires after the specified expiration time.
-          example: link-sandbox-af1a0311-da53-4636-b754-dd15cc058176
-        expiration:
-          type: string
-          format: date-time
-          description: |
-            The ISO 8601 timestamp when this link token expires. Link tokens typically expire after 4 hours.
-          example: '2025-10-05T18:30:00Z'
-        callbackUrl:
-          type: string
-          description: |
-            The URL where the platform should POST the public_token after the customer completes Plaid Link authentication. This will trigger asynchronous external account creation. The URL includes the linkToken as the path parameter.
-          example: https://api.lightspark.com/grid/2025-10-13/plaid/callback/{plaid_link_token}
-        requestId:
-          type: string
-          description: A unique identifier for this request, useful for debugging
-          example: req_abc123def456
-    PlaidCallbackRequest:
-      type: object
-      required:
-        - publicToken
-      properties:
-        publicToken:
-          type: string
-          description: |
-            The public token returned by Plaid Link after the customer successfully
-            authenticates and selects an account.
-          example: public-sandbox-12345678-1234-1234-1234-123456789012
-        accountId:
-          type: string
-          description: |
-            Optional Plaid account ID if the customer selected a specific account.
-            If not provided, the default account will be used.
-          example: plaid_account_id_123
     ExternalAccountReference:
       type: object
       required:
@@ -8123,7 +10221,6 @@ components:
       enum:
         - ACCOUNT
         - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
       description: Type of transaction destination
       example: ACCOUNT
     BaseTransactionDestination:
@@ -8173,33 +10270,15 @@ components:
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
           description: UMA address destination details
-    ExternalAccountDetailsTransactionDestination:
-      title: External Account Details Destination
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionDestination'
-        - type: object
-          required:
-            - externalAccountDetails
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT_DETAILS
-            externalAccountDetails:
-              $ref: '#/components/schemas/ExternalAccountCreateRequest'
-          description: Transaction destination where external account details were provided inline at quote creation rather than using a pre-registered external account.
     TransactionDestinationOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountTransactionDestination'
         - $ref: '#/components/schemas/UmaAddressTransactionDestination'
-        - $ref: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
     CounterpartyInformation:
       type: object
       description: Additional information about the counterparty, if available and relevant to the transaction and platform.
@@ -8379,7 +10458,7 @@ components:
           type: number
           format: double
           description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
-          exclusiveMinimum: 0
+          minimum: 0
           example: 0.003
         gridApiVariableFeeAmount:
           type: number
@@ -8478,6 +10557,7 @@ components:
           enum:
             - TRANSACTION_FAILED
             - USER_CANCELLATION
+            - TIMEOUT
           description: Reason for the refund
           example: TRANSACTION_FAILED
     OutgoingRateDetails:
@@ -8519,7 +10599,7 @@ components:
           type: number
           format: double
           description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the sending currency amount.
-          exclusiveMinimum: 0
+          minimum: 0
           example: 0.003
         gridApiVariableFeeAmount:
           type: number
@@ -8535,7 +10615,6 @@ components:
         - LIGHTNING_PAYMENT_FAILED
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
-        - TIMEOUT
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
     OutgoingTransaction:
       title: Outgoing Transaction
@@ -8815,7 +10894,6 @@ components:
       enum:
         - ACCOUNT
         - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
       description: Type of payment destination
       example: ACCOUNT
     BaseDestination:
@@ -8869,33 +10947,15 @@ components:
               description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: EUR
           description: UMA address destination details
-    ExternalAccountDetailsDestination:
-      title: External Account Details
-      allOf:
-        - $ref: '#/components/schemas/BaseDestination'
-        - type: object
-          required:
-            - externalAccountDetails
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT_DETAILS
-            externalAccountDetails:
-              $ref: '#/components/schemas/ExternalAccountCreateRequest'
-          description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination. See the Sandbox Testing guide in the API reference for test values.
     QuoteDestinationOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountDestination'
         - $ref: '#/components/schemas/UmaAddressDestination'
-        - $ref: '#/components/schemas/ExternalAccountDetailsDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsDestination'
     Quote:
       type: object
       required:
@@ -9563,14 +11623,16 @@ components:
         - INCOMING_PAYMENT.FAILED
         - CUSTOMER.KYC_APPROVED
         - CUSTOMER.KYC_REJECTED
-        - CUSTOMER.KYC_SUBMITTED
-        - CUSTOMER.KYC_MANUALLY_APPROVED
-        - CUSTOMER.KYC_MANUALLY_REJECTED
+        - CUSTOMER.KYC_PENDING
         - CUSTOMER.KYB_APPROVED
         - CUSTOMER.KYB_REJECTED
-        - CUSTOMER.KYB_SUBMITTED
-        - CUSTOMER.KYB_MANUALLY_APPROVED
-        - CUSTOMER.KYB_MANUALLY_REJECTED
+        - CUSTOMER.KYB_PENDING
+        - VERIFICATION.APPROVED
+        - VERIFICATION.REJECTED
+        - VERIFICATION.RESOLVE_ERRORS
+        - VERIFICATION.IN_PROGRESS
+        - VERIFICATION.PENDING_MANUAL_REVIEW
+        - VERIFICATION.READY_FOR_VERIFICATION
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
@@ -9721,14 +11783,10 @@ components:
               enum:
                 - CUSTOMER.KYC_APPROVED
                 - CUSTOMER.KYC_REJECTED
-                - CUSTOMER.KYC_SUBMITTED
-                - CUSTOMER.KYC_MANUALLY_APPROVED
-                - CUSTOMER.KYC_MANUALLY_REJECTED
+                - CUSTOMER.KYC_PENDING
                 - CUSTOMER.KYB_APPROVED
                 - CUSTOMER.KYB_REJECTED
-                - CUSTOMER.KYB_SUBMITTED
-                - CUSTOMER.KYB_MANUALLY_APPROVED
-                - CUSTOMER.KYB_MANUALLY_REJECTED
+                - CUSTOMER.KYB_PENDING
     InternalAccountStatusWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -9742,3 +11800,20 @@ components:
               type: string
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
+    VerificationWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/Verification'
+            type:
+              type: string
+              enum:
+                - VERIFICATION.APPROVED
+                - VERIFICATION.REJECTED
+                - VERIFICATION.RESOLVE_ERRORS
+                - VERIFICATION.IN_PROGRESS
+                - VERIFICATION.PENDING_MANUAL_REVIEW

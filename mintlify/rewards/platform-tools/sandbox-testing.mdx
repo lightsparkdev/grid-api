@@ -15,7 +15,7 @@ The Grid sandbox environment allows you to test your rewards integration without
 
 To use the sandbox environment:
 
-1. Contact Lightspark to get your inital sandbox credentials configured. Email [support@lightspark.com](mailto:support@lightspark.com) to get started.
+1. Go to [app.lightspark.com](https://app.lightspark.com), create an account, and generate your sandbox API keys from the dashboard.
 2. Add your sandbox API token and secret to your environment variables.
 3. Use the normal production base URL: `https://api.lightspark.com/grid/2025-10-13`
 4. Authenticate using your sandbox token with HTTP Basic Auth
@@ -55,9 +55,23 @@ This endpoint returns the updated `InternalAccount` object with the new balance.
 
 ### Testing Successful Bitcoin Rewards
 
-The standard reward flow works seamlessly in sandbox. Create and execute a quote to instantly convert USD to BTC and send to a Spark wallet:
+The standard reward flow works seamlessly in sandbox. First create the destination external account, then create and execute a quote to instantly convert USD to BTC:
 
 ```bash
+# Step 1: Create the destination external account
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+    }
+  }'
+
+# Step 2: Create and execute the quote
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -u "sandbox_token_id:sandbox_token_secret" \
   -H "Content-Type: application/json" \
@@ -66,14 +80,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100,
@@ -105,6 +113,20 @@ Use special Spark wallet address patterns to test different failure scenarios. T
 **Example - Testing Wallet Unavailable:**
 
 ```bash
+# Create an external account with a test address ending in 003
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m003"
+    }
+  }'
+
+# Then use it in a quote
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -u "sandbox_token_id:sandbox_token_secret" \
   -H "Content-Type: application/json" \
@@ -113,14 +135,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m003"
-        }
-      }
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:..."
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100,
@@ -172,14 +188,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 300000,
@@ -242,72 +252,68 @@ Here's a complete test workflow for distributing a $1.00 Bitcoin reward:
 
 ### Testing Error Scenarios
 
-Test each failure mode systematically:
+Test each failure mode systematically. First create external accounts with test address patterns, then use them in quotes:
 
 ```bash
-# 1. Test wallet unavailable (003)
+# 1. Test wallet unavailable (address ending in 003)
+# Create external account with test address
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:test001",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m003"
+    }
+  }'
+# Use the returned ExternalAccount ID in the quote
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -u "sandbox_token_id:sandbox_token_secret" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:platform-usd"},
-    "destination": {
-      "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
-      "externalAccountDetails": {
-        "customerId": "Customer:test001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m003" # Wallet unavailable *003
-        }
-      }
-    },
+    "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:..."},
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100,
     "immediatelyExecute": true
   }'
 # Response: Transaction fails with wallet unavailable error
 
-# 2. Test insufficient balance
+# 2. Test insufficient balance (use any valid external account)
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -u "sandbox_token_id:sandbox_token_secret" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:platform-usd"},
-    "destination": {
-      "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
-      "externalAccountDetails": {
-        "customerId": "Customer:test001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
-    },
+    "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:..."},
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000000,
     "immediatelyExecute": true
   }'
 # Response: 400 Bad Request with insufficient balance error
 
-# 3. Test timeout scenario (005)
+# 3. Test timeout scenario (address ending in 005)
+# Create external account with test address
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -u "sandbox_token_id:sandbox_token_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:test001",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m005"
+    }
+  }'
+# Use the returned ExternalAccount ID in the quote
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -u "sandbox_token_id:sandbox_token_secret" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:platform-usd"},
-    "destination": {
-      "destinationType": "EXTERNAL_ACCOUNT_DETAILS",
-      "externalAccountDetails": {
-        "customerId": "Customer:test001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6m005" # Timeout/delayed failure *005
-        }
-      }
-    },
+    "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:..."},
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100,
     "immediatelyExecute": true

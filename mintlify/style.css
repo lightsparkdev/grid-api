@@ -1350,10 +1350,28 @@ ul#sidebar-group > li[data-title="API Tokens"] > button::before {
   background-image: url('/images/icons/key2.svg') !important;
 }
 
+/* KYC/KYB Verifications - magnifying glass */
+#sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before,
+ul#sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before {
+  background-image: url('/images/icons/magnifying-glass.svg') !important;
+}
+
+/* Documents - file text */
+#sidebar-group > li[data-title="Documents"] > button::before,
+ul#sidebar-group > li[data-title="Documents"] > button::before {
+  background-image: url('/images/icons/file-text.svg') !important;
+}
+
 /* Exchange Rates - trending */
 #sidebar-group > li[data-title="Exchange Rates"] > button::before,
 ul#sidebar-group > li[data-title="Exchange Rates"] > button::before {
   background-image: url('/images/icons/trending.svg') !important;
+}
+
+/* Discoveries - checklist magnifying glass */
+#sidebar-group > li[data-title="Discoveries"] > button::before,
+ul#sidebar-group > li[data-title="Discoveries"] > button::before {
+  background-image: url('/images/icons/IconSquareChecklistMagnifyingGlass.svg') !important;
 }
 
 

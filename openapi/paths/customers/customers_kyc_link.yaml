@@ -16,7 +16,7 @@ get:
   description: Generate a hosted KYC link to onboard a customer
   operationId: getKycLinkForCustomer
   tags:
-    - Customers
+    - KYC/KYB Verifications
   security:
     - BasicAuth: []
   responses:

@@ -214,7 +214,7 @@ Stablecoins: `SOLANA_WALLET` (USDC), `TRON_WALLET` (USDT), `POLYGON_WALLET` (USD
 ```json
 {
   "source": { "sourceType": "ACCOUNT" | "REALTIME_FUNDING", ... },
-  "destination": { "destinationType": "ACCOUNT" | "EXTERNAL_ACCOUNT_DETAILS" | "UMA_ADDRESS", ... },
+  "destination": { "destinationType": "ACCOUNT" | "UMA_ADDRESS", ... },
   "lockedCurrencySide": "SENDING" | "RECEIVING",
   "lockedCurrencyAmount": 10000
 }

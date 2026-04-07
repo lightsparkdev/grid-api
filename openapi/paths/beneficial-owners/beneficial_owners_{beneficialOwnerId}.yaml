@@ -1,0 +1,92 @@
+get:
+  summary: Get a beneficial owner
+  description: Retrieve details of a specific beneficial owner by ID.
+  operationId: getBeneficialOwner
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: beneficialOwnerId
+      in: path
+      description: Beneficial owner ID
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/BeneficialOwner.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Beneficial owner not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update a beneficial owner
+  description: Update details of a specific beneficial owner. Only provided fields are updated.
+  operationId: updateBeneficialOwner
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: beneficialOwnerId
+      in: path
+      description: Beneficial owner ID
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/BeneficialOwnerUpdateRequest.yaml
+  responses:
+    '200':
+      description: Beneficial owner updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/BeneficialOwner.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Beneficial owner not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,3 @@
+title: Document Replace Request
+allOf:
+  - $ref: ./BaseDocumentRequest.yaml

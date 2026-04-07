@@ -1,4 +1,4 @@
-.PHONY: install build build-openapi mint lint lint-openapi lint-markdown cli-install cli-build cli
+.PHONY: install build build-openapi mint lint lint-openapi lint-spectral lint-markdown cli-install cli-build cli
 
 install:
 	npm install
@@ -10,15 +10,23 @@ build:
 build-openapi:
 	npm run build:openapi
 
+STAINLESS_OPENAPI_URL := https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml
+LOCAL_OPENAPI_PATH := openapi.yaml
+
 mint:
-	cd mintlify && mint dev
+	@cd mintlify && \
+	sed -i.bak 's|$(STAINLESS_OPENAPI_URL)|$(LOCAL_OPENAPI_PATH)|' docs.json && \
+	trap 'mv docs.json.bak docs.json' EXIT INT TERM; \
+	mint dev
 
 lint:
 	npm run lint
-	cd mintlify && mint openapi-check openapi.yaml
 
 lint-openapi:
 	npm run lint:openapi
+
+lint-spectral:
+	npx spectral lint openapi.yaml --fail-severity=error
 
 lint-markdown:
 	npm run lint:markdown

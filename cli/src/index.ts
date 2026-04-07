@@ -6,6 +6,7 @@ import * as path from "path";
 import { loadConfig, GridConfig } from "./config";
 import { GridClient } from "./client";
 import { formatError, output, setOutputFormat, setUseColors, OutputFormat } from "./output";
+import { configureHelp } from "./help";
 
 export interface GlobalOptions {
   config?: string;
@@ -23,15 +24,18 @@ const program = new Command();
 program
   .name("grid")
   .description("CLI for Grid API - manage global payments")
-  .version(packageJson.version)
+  .version(packageJson.version, "-V, --version", "Show the version and exit")
   .option("-c, --config <path>", "Path to credentials file")
   .option(
     "-u, --base-url <url>",
     "Base URL for API (default: https://api.lightspark.com/grid/2025-10-13)"
   )
   .option("-f, --format <format>", "Output format: json or table", "json")
-  .option("--no-color", "Disable colored output")
-  .hook("preAction", (thisCommand) => {
+  .option("--no-color", "Disable colored output");
+
+configureHelp(program);
+
+program.hook("preAction", (thisCommand) => {
     const opts = thisCommand.opts();
     if (opts.format) setOutputFormat(opts.format as OutputFormat);
     if (opts.color === false) setUseColors(false);

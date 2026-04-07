@@ -20,7 +20,7 @@ properties:
     description: Nigerian bank account number
     minLength: 10
     maxLength: 10
-    example: 0123456789
+    example: '0123456789'
     pattern: ^[0-9]{10}$
   bankName:
     type: string

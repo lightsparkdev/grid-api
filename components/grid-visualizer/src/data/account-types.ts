@@ -306,4 +306,116 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
+  ETHEREUM_WALLET: {
+    accountType: 'ETHEREUM_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
+  AED_ACCOUNT: {
+    accountType: 'AED_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'AE070331234567890123456', description: 'UAE IBAN (23 characters)' },
+      { name: 'swiftCode', example: 'EBILAEAD', description: 'Optional' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  BWP_ACCOUNT: {
+    accountType: 'BWP_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+26771234567' },
+      { name: 'provider', example: 'Orange', description: 'Mobile money provider' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  XAF_ACCOUNT: {
+    accountType: 'XAF_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+237671234567' },
+      { name: 'provider', example: 'MTN', description: 'Mobile money provider' },
+      { name: 'region', example: 'CM', description: 'Country code (CM or CG)' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  BDT_ACCOUNT: {
+    accountType: 'BDT_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890123' },
+      { name: 'branchCode', example: '12345', description: '5-digit branch code' },
+      { name: 'phoneNumber', example: '+8801712345678' },
+      { name: 'swiftCode', example: 'BABORUMMYYY', description: 'Optional' },
+    ],
+    paymentRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  COP_ACCOUNT: {
+    accountType: 'COP_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'bankAccountType', example: 'SAVINGS', description: 'CHECKING or SAVINGS' },
+      { name: 'phoneNumber', example: '+573001234567' },
+    ],
+    paymentRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  EGP_ACCOUNT: {
+    accountType: 'EGP_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890123456' },
+      { name: 'iban', example: 'EG380019000500000000263180002', description: 'Optional' },
+      { name: 'swiftCode', example: 'NBEGEGCX', description: 'Optional' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  GHS_ACCOUNT: {
+    accountType: 'GHS_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'phoneNumber', example: '+233241234567' },
+    ],
+    paymentRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  GTQ_ACCOUNT: {
+    accountType: 'GTQ_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'phoneNumber', example: '+50212345678' },
+    ],
+    paymentRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  HTG_ACCOUNT: {
+    accountType: 'HTG_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+50934567890' },
+    ],
+    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  JMD_ACCOUNT: {
+    accountType: 'JMD_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'branchCode', example: '12345', description: '5-digit branch code' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
+    ],
+    paymentRails: ['BANK_TRANSFER'],
+    beneficiaryRequired: true,
+  },
+  PKR_ACCOUNT: {
+    accountType: 'PKR_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890123456' },
+      { name: 'phoneNumber', example: '+923001234567' },
+      { name: 'iban', example: 'PK36SCBL0000001123456702', description: 'Optional' },
+    ],
+    paymentRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
 };

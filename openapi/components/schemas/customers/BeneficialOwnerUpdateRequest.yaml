@@ -1,0 +1,18 @@
+type: object
+properties:
+  roles:
+    type: array
+    items:
+      $ref: ./BeneficialOwnerRole.yaml
+    description: Roles of this person within the business
+    example:
+      - UBO
+      - DIRECTOR
+  ownershipPercentage:
+    type: integer
+    description: Percentage of ownership in the business (0-100)
+    minimum: 0
+    maximum: 100
+    example: 51
+  personalInfo:
+    $ref: ./BeneficialOwnerPersonalInfoUpdate.yaml

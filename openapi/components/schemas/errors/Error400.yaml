@@ -41,6 +41,12 @@ properties:
       | INVALID_AMOUNT | Amount is invalid |
       | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
       | WEBHOOK_DELIVERY_ERROR | Webhook delivery error |
+      | LOW_QUALITY | Document quality too low to process |
+      | DATA_MISMATCH | Document details don't match provided information |
+      | EXPIRED | Document has expired |
+      | SUSPECTED_FRAUD | Document suspected of being forged or edited |
+      | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
+      | INCOMPLETE | Document is missing pages or sides |
     enum:
       - INVALID_INPUT
       - MISSING_MANDATORY_USER_INFO
@@ -69,6 +75,12 @@ properties:
       - INVALID_AMOUNT
       - WEBHOOK_ENDPOINT_NOT_SET
       - WEBHOOK_DELIVERY_ERROR
+      - LOW_QUALITY
+      - DATA_MISMATCH
+      - EXPIRED
+      - SUSPECTED_FRAUD
+      - UNSUITABLE_DOCUMENT
+      - INCOMPLETE
   message:
     type: string
     description: Error message

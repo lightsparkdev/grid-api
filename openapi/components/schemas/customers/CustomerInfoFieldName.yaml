@@ -16,6 +16,7 @@ enum:
   - PURPOSE_OF_PAYMENT
   - ULTIMATE_INSTITUTION_COUNTRY
   - IDENTIFIER
+  - BUSINESS_TYPE
 description: >-
   Name of a type of field containing info about a platform's customer or
   counterparty customer.

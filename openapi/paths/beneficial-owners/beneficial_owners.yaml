@@ -1,0 +1,123 @@
+post:
+  summary: Create a beneficial owner
+  description: >
+    Add a beneficial owner, director, or company officer to a business customer.
+    The beneficial owner will go through KYC verification automatically.
+  operationId: createBeneficialOwner
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/BeneficialOwnerCreateRequest.yaml
+  responses:
+    '201':
+      description: Beneficial owner created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/BeneficialOwner.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List beneficial owners
+  description: >
+    Retrieve a list of beneficial owners for a business customer.
+  operationId: listBeneficialOwners
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: The business customer ID
+      required: true
+      schema:
+        type: string
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - hasMore
+            properties:
+              data:
+                type: array
+                description: List of beneficial owners matching the filter criteria
+                items:
+                  $ref: ../../components/schemas/customers/BeneficialOwner.yaml
+              hasMore:
+                type: boolean
+                description: Indicates if more results are available beyond this page
+              nextCursor:
+                type: string
+                description: >-
+                  Cursor to retrieve the next page of results (only present if
+                  hasMore is true)
+              totalCount:
+                type: integer
+                description: Total number of results matching the criteria
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
