@@ -221,7 +221,6 @@ resources:
     methods:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
-      list: get /quotes
       execute: post /quotes/{quoteId}/execute
 
   transactions:
