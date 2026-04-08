@@ -29,6 +29,22 @@ export GRID_API_CLIENT_SECRET=$(jq -r .apiClientSecret ~/.grid-credentials)
 export GRID_BASE_URL=$(jq -r '.baseUrl // "https://api.lightspark.com/grid/2025-10-13"' ~/.grid-credentials)
 ```
 
+### 1b. Detect sandbox vs non-sandbox platform
+
+Try a sandbox endpoint to determine platform type. Save the result for use in tests that have sandbox-specific behavior.
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"amount": 0}' \
+  "$GRID_BASE_URL/sandbox/internal-accounts/dummy/fund"
+```
+
+- If the response contains `"not a sandbox platform"`, set `IS_SANDBOX=false`
+- Otherwise (any other error like "not found", or success), set `IS_SANDBOX=true`
+
+Report the detected mode to the user (e.g., "Detected non-sandbox platform" or "Detected sandbox platform").
+
 ### 2. Verify Base testnet key exists
 
 ```bash
@@ -193,7 +209,7 @@ $BASE_HELPER usdc-balance
 
 Save `raw` as `INITIAL_ONCHAIN_USDC`.
 
-3. Transfer out 0.10 USDC:
+3. Transfer out 0.20 USDC:
 
 ```bash
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
@@ -201,10 +217,12 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d "{
     \"source\": {\"accountId\": \"$USDC_INTERNAL_ID\"},
     \"destination\": {\"accountId\": \"$USDC_EXTERNAL_ID\"},
-    \"amount\": 100000
+    \"amount\": 200000
   }" \
   "$GRID_BASE_URL/transfer-out"
 ```
+
+Note: the amount must exceed the custody provider fee (~100100 micro-USDC), so 200000 is the minimum safe amount.
 
 4. Poll on-chain USDC balance every 5 seconds, up to 120 seconds:
 
@@ -212,7 +230,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 $BASE_HELPER usdc-balance
 ```
 
-5. **PASS criteria:** On-chain USDC balance (`raw`) increases by approximately 100000 (0.10 USDC) from `INITIAL_ONCHAIN_USDC`.
+5. **PASS criteria:** On-chain USDC balance (`raw`) increases above `INITIAL_ONCHAIN_USDC` (net amount will be ~99900 after fees).
 
 ---
 
@@ -398,8 +416,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     },
     \"destination\": {
       \"destinationType\": \"ACCOUNT\",
-      \"accountId\": \"$MXN_EXTERNAL_ID\",
-      \"paymentRail\": \"SPEI\"
+      \"accountId\": \"$MXN_EXTERNAL_ID\"
     },
     \"lockedCurrencySide\": \"RECEIVING\",
     \"lockedCurrencyAmount\": 200,
@@ -408,7 +425,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   "$GRID_BASE_URL/quotes"
 ```
 
-Note: `lockedCurrencyAmount: 200` = 2.00 MXN (smallest unit = centavos), roughly ~$0.10 USD.
+Note: `lockedCurrencyAmount: 200` = 2.00 MXN (smallest unit = centavos), roughly ~$0.10 USD. Do not include `paymentRail` — the API infers it from the external account.
 
 3. Extract `QUOTE_ID`, `TRANSACTION_ID`, `PAYMENT_ADDRESS`, and `TOTAL_SENDING_AMOUNT`.
 
@@ -435,7 +452,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 **Steps:**
 
-1. Fund the USD internal account via sandbox endpoint:
+1. Fund the USD internal account:
+
+**If `IS_SANDBOX=true`:** Use the sandbox fund endpoint:
 
 ```bash
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
@@ -445,6 +464,8 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 ```
 
 Verify the balance increased (response contains updated account).
+
+**If `IS_SANDBOX=false`:** Check the current USD internal account balance. If balance is 0, skip this test with a note: "SKIP: Non-sandbox platform — USD internal account has no balance. Requires a prior successful USDC→USD conversion (Test 4) or manual funding." If balance > 0, proceed.
 
 2. Record initial on-chain USDC balance:
 
@@ -530,8 +551,8 @@ Include in Details: relevant amounts, transaction IDs, error messages, or timing
 
 All tests use small amounts to conserve testnet funds:
 - Test 2: 0.50 USDC deposit (500000 micro-USDC)
-- Test 3: 0.10 USDC transfer-out (100000 micro-USDC)
+- Test 3: 0.20 USDC transfer-out (200000 micro-USDC) — must exceed ~100100 custody fee
 - Tests 4-5: ~$0.10 USD locked on receiving side (10 cents)
 - Test 6: ~2.00 MXN locked on receiving side (~$0.10 USD)
-- Test 7: $0.50 USD → USDC (50 cents)
-- **Total USDC needed: ~1.0 USDC + gas (~0.001 ETH on Base Sepolia)**
+- Test 7: $0.50 USD → USDC (50 cents) — requires sandbox or prior USD balance
+- **Total USDC needed: ~1.2 USDC + gas (~0.001 ETH on Base Sepolia)**
