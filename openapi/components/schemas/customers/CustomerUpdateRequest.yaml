@@ -4,6 +4,19 @@ required:
 properties:
   customerType:
     $ref: ./CustomerType.yaml
+  currencies:
+    type: array
+    items:
+      type: string
+    description: >-
+      Updated list of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR";
+      tickers for crypto, e.g. "BTC", "USDC"). Replaces the existing list. Some currency
+      combinations may require separate customers — if so, the request will be rejected
+      with details.
+    example:
+      - USD
+      - EUR
+      - USDC
   umaAddress:
     type: string
     description: >-

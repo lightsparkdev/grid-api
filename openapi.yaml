@@ -373,14 +373,31 @@ paths:
                 value:
                   customerType: INDIVIDUAL
                   platformCustomerId: ind-9f84e0c2
+                  region: US
+                  currencies:
+                    - USD
+                    - USDC
                   fullName: Jane Smith
                   birthDate: '1990-01-15'
                   nationality: US
+              individualCustomerInferred:
+                summary: Create an individual customer with inferred currencies
+                value:
+                  customerType: INDIVIDUAL
+                  platformCustomerId: ind-7b3f1a9d
+                  region: MX
+                  fullName: Carlos García
+                  birthDate: '1988-05-22'
+                  nationality: MX
               businessCustomer:
                 summary: Create a business customer
                 value:
                   customerType: BUSINESS
                   platformCustomerId: biz-acme-001
+                  region: US
+                  currencies:
+                    - USD
+                    - USDC
                   businessInfo:
                     legalName: Acme Corporation
                     doingBusinessAs: Acme
@@ -509,6 +526,18 @@ paths:
           required: false
           schema:
             type: string
+        - name: region
+          in: query
+          description: Filter by customer region (ISO 3166-1 alpha-2 country code)
+          required: false
+          schema:
+            type: string
+        - name: currency
+          in: query
+          description: Filter by currency code. Returns customers that have this currency in their enabled currencies list.
+          required: false
+          schema:
+            type: string
         - name: umaAddress
           in: query
           description: Filter by uma address
@@ -626,6 +655,10 @@ paths:
                   customerType: INDIVIDUAL
                   fullName: John Smith
                   birthDate: '1985-06-15'
+                  currencies:
+                    - USD
+                    - EUR
+                    - USDC
                   address:
                     line1: 456 Market St
                     city: San Francisco
@@ -636,6 +669,9 @@ paths:
                 summary: Update business customer example
                 value:
                   customerType: BUSINESS
+                  currencies:
+                    - USD
+                    - USDC
                   businessInfo:
                     legalName: New Tech Solutions LLC
                     registrationNumber: BRN-987654321
@@ -4171,6 +4207,10 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 9f84e0c2a72c4fa
                     customerType: INDIVIDUAL
+                    region: US
+                    currencies:
+                      - USD
+                      - USDC
                     umaAddress: $john.doe@uma.domain.com
                     kycStatus: APPROVED
                     fullName: John Michael Doe
@@ -4196,6 +4236,10 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000002
                     platformCustomerId: 4b7c1e9d3f5a8e2
                     customerType: INDIVIDUAL
+                    region: US
+                    currencies:
+                      - USD
+                      - USDC
                     umaAddress: $jane.smith@uma.domain.com
                     kycStatus: REJECTED
                     fullName: Jane Smith
@@ -4214,6 +4258,10 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000003
                     platformCustomerId: 7a2f9d4e1b8c3f5
                     customerType: BUSINESS
+                    region: US
+                    currencies:
+                      - USD
+                      - USDC
                     umaAddress: $acme.corp@uma.domain.com
                     kybStatus: APPROVED
                     address:
@@ -4239,6 +4287,9 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000004
                     platformCustomerId: 3c8e5f2a9d1b7e4
                     customerType: BUSINESS
+                    region: US
+                    currencies:
+                      - USD
                     umaAddress: $globex.inc@uma.domain.com
                     kybStatus: REJECTED
                     address:
@@ -4900,6 +4951,18 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        region:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity and regulatory jurisdiction.
+          example: US
+        currencies:
+          type: array
+          items:
+            type: string
+          description: List of currency codes enabled for this customer.
+          example:
+            - USD
+            - USDC
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -5376,6 +5439,18 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        region:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity. This determines the regulatory jurisdiction and KYC requirements for the customer. Required if the customer will use currencies with different KYC requirements across regions. A customer with accounts in multiple regions should be registered as separate customers. This field is immutable after creation.
+          example: US
+        currencies:
+          type: array
+          items:
+            type: string
+          description: List of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR"; tickers for crypto, e.g. "BTC", "USDC"). Required if the customer will use more than one sending currency, since the correct currencies cannot always be inferred. If not provided, currencies will be inferred from the customer's region. Some currency combinations may require separate customers — if so, the request will be rejected with details.
+          example:
+            - USD
+            - USDC
         umaAddress:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
@@ -5507,6 +5582,15 @@ components:
       properties:
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        currencies:
+          type: array
+          items:
+            type: string
+          description: Updated list of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR"; tickers for crypto, e.g. "BTC", "USDC"). Replaces the existing list. Some currency combinations may require separate customers — if so, the request will be rejected with details.
+          example:
+            - USD
+            - EUR
+            - USDC
         umaAddress:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
