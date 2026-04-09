@@ -1150,11 +1150,15 @@ html.dark #navigation-items li[class*="space-y"] > button {
   color: var(--ls-gray-600) !important;
 }
 
-/* Hide the original SVG chevron */
+/* Hide the original SVG chevron (Mintlify wraps it in a div now) */
 #sidebar-group > li > button > svg,
 ul#sidebar-group > li > button > svg,
 #navigation-items li.space-y-px > button > svg,
-#navigation-items li[class*="space-y"] > button > svg {
+#navigation-items li[class*="space-y"] > button > svg,
+#sidebar-group > li > button > div > svg,
+ul#sidebar-group > li > button > div > svg,
+#navigation-items li.space-y-px > button > div > svg,
+#navigation-items li[class*="space-y"] > button > div > svg {
   display: none !important;
   visibility: hidden !important;
 }
