@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { GridClient, PaginatedResponse } from "../client";
+import { GridClient } from "../client";
 import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
 import {
@@ -48,40 +48,6 @@ export function registerQuotesCommand(
   const quotesCmd = program
     .command("quotes")
     .description("Quote management commands");
-
-  quotesCmd
-    .command("list")
-    .description("List transfer quotes")
-    .option("-l, --limit <number>", "Maximum results (default 20, max 100)", "20")
-    .option("--cursor <cursor>", "Pagination cursor")
-    .option("--customer-id <id>", "Filter by sending customer ID")
-    .option("--sending-account <id>", "Filter by sending account ID")
-    .option("--receiving-account <id>", "Filter by receiving account ID")
-    .option("--sending-uma <address>", "Filter by sending UMA address")
-    .option("--receiving-uma <address>", "Filter by receiving UMA address")
-    .option("--status <status>", "Filter by status (PENDING, PROCESSING, COMPLETED, FAILED, EXPIRED)")
-    .action(async (options) => {
-      const opts = program.opts<GlobalOptions>();
-      const client = getClient(opts);
-      if (!client) return;
-
-      const params: Record<string, string | number | undefined> = {
-        limit: parseInt(options.limit, 10),
-        cursor: options.cursor,
-        customerId: options.customerId,
-        sendingAccountId: options.sendingAccount,
-        receivingAccountId: options.receivingAccount,
-        sendingUmaAddress: options.sendingUma,
-        receivingUmaAddress: options.receivingUma,
-        status: options.status,
-      };
-
-      const response = await client.get<PaginatedResponse<Quote>>(
-        "/quotes",
-        params
-      );
-      outputResponse(response);
-    });
 
   quotesCmd
     .command("get <quoteId>")
