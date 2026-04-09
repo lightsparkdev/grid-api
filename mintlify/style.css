@@ -592,9 +592,12 @@ div:has(> .chat-assistant-floating-input) {
   background: transparent !important;
 }
 
+/* Mintlify currently renders the bottom bar glow on the input itself. */
+.chat-assistant-floating-input::before,
 div:has(> .chat-assistant-floating-input)::before,
 .chat-assistant-floating-input > div::before {
   background: transparent !important;
+  opacity: 0 !important;
 }
 
 /* Mobile assistant bar placeholder - make transparent so it doesn't cover content */
@@ -1150,11 +1153,15 @@ html.dark #navigation-items li[class*="space-y"] > button {
   color: var(--ls-gray-600) !important;
 }
 
-/* Hide the original SVG chevron */
-#sidebar-group > li > button > svg,
-ul#sidebar-group > li > button > svg,
-#navigation-items li.space-y-px > button > svg,
-#navigation-items li[class*="space-y"] > button > svg {
+/* Hide Mintlify's native chevron, including the new wrapped SVG variant. */
+#sidebar-group > li > button > div:has(> svg),
+ul#sidebar-group > li > button > div:has(> svg),
+#navigation-items li.space-y-px > button > div:has(> svg),
+#navigation-items li[class*="space-y"] > button > div:has(> svg),
+#sidebar-group > li > button svg,
+ul#sidebar-group > li > button svg,
+#navigation-items li.space-y-px > button svg,
+#navigation-items li[class*="space-y"] > button svg {
   display: none !important;
   visibility: hidden !important;
 }
