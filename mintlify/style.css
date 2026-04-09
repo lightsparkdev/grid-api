@@ -1846,14 +1846,6 @@ html.dark #api-playground-2-operation-page .expandable {
   background-color: var(--ls-white-06) !important;
 }
 
-/* Hide any Mintlify-added ::after chevrons on expandable summaries */
-#api-playground-2-operation-page details > summary::after,
-#api-playground-2-operation-page details.expandable > summary::after,
-#api-playground-2-operation-page [data-component-part="expandable-button"]::after {
-  content: none !important;
-  display: none !important;
-}
-
 /* Page description text - match body text size */
 #api-playground-2-operation-page header#header .text-lg,
 header#header .text-lg {
@@ -2712,16 +2704,9 @@ html.dark .accordion-group details > summary:hover {
   background-color: var(--ls-white-06) !important;
 }
 
-/* Hide Mintlify's chevron SVG, icon wrapper, and ::after pseudo-element */
+/* Hide Mintlify's chevron SVG and icon wrapper */
 .accordion-group details > summary svg,
-.accordion-group details > summary div[data-component-part="accordion-icon"],
-.accordion-group details > summary span[data-icon],
-.accordion-group details > summary [data-slot="icon"] {
-  display: none !important;
-}
-
-.accordion-group details > summary::after {
-  content: none !important;
+.accordion-group details > summary div[data-component-part="accordion-icon"] {
   display: none !important;
 }
 
@@ -2857,26 +2842,13 @@ html.dark .prose:not(.accordion-group) > details.accordion > summary:hover {
   background-color: var(--ls-white-06) !important;
 }
 
-/* Hide Mintlify's chevron SVG, icon wrapper, and ::after pseudo-element */
+/* Hide Mintlify's chevron SVG and icon wrapper */
 #content > details.accordion > summary svg,
 #content-area > details.accordion > summary svg,
 .prose:not(.accordion-group) > details.accordion > summary svg,
 #content > details.accordion > summary div[data-component-part="accordion-icon"],
 #content-area > details.accordion > summary div[data-component-part="accordion-icon"],
-.prose:not(.accordion-group) > details.accordion > summary div[data-component-part="accordion-icon"],
-#content > details.accordion > summary span[data-icon],
-#content-area > details.accordion > summary span[data-icon],
-.prose:not(.accordion-group) > details.accordion > summary span[data-icon],
-#content > details.accordion > summary [data-slot="icon"],
-#content-area > details.accordion > summary [data-slot="icon"],
-.prose:not(.accordion-group) > details.accordion > summary [data-slot="icon"] {
-  display: none !important;
-}
-
-#content > details.accordion > summary::after,
-#content-area > details.accordion > summary::after,
-.prose:not(.accordion-group) > details.accordion > summary::after {
-  content: none !important;
+.prose:not(.accordion-group) > details.accordion > summary div[data-component-part="accordion-icon"] {
   display: none !important;
 }
 
