@@ -1,0 +1,21 @@
+type: string
+description: |
+  The blockchain network identifier. The environment (mainnet vs testnet) is determined
+  automatically based on whether the request is made against the production or sandbox API.
+
+  | Value | Production | Sandbox |
+  |-------|------------|---------|
+  | BITCOIN | Bitcoin mainnet | Bitcoin testnet |
+  | ETHEREUM | Ethereum mainnet | Ethereum Sepolia |
+  | SOLANA | Solana mainnet | Solana devnet |
+  | BASE | Base mainnet | Base Sepolia |
+  | SPARK | Spark mainnet | Spark testnet |
+  | LIGHTNING | Lightning mainnet | Lightning regtest |
+enum:
+  - BITCOIN
+  - ETHEREUM
+  - SOLANA
+  - BASE
+  - SPARK
+  - LIGHTNING
+example: SOLANA

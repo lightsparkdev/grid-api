@@ -29,13 +29,6 @@ allOf:
           incoming UMA payments will be deposited into the primary internal account for the customer.
         default: false
       cryptoNetwork:
-        type: string
-        description: >-
-          The blockchain network for this external account. Required when the account is a
-          cryptocurrency wallet. Specifies which network the wallet is on. Example values:
-          SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET,
-          BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET,
-          LIGHTNING_REGTEST.
-        example: SOLANA_MAINNET
+        $ref: ../crypto/CryptoNetwork.yaml
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml

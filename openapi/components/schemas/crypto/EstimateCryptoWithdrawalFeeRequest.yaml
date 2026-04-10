@@ -15,13 +15,7 @@ properties:
     description: The currency code of the asset to withdraw (e.g. USDC).
     example: USDC
   cryptoNetwork:
-    type: string
-    description: >-
-      The blockchain network for the withdrawal. Example values: SOLANA_MAINNET,
-      SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET,
-      BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET,
-      LIGHTNING_REGTEST.
-    example: SOLANA_MAINNET
+    $ref: ./CryptoNetwork.yaml
   amount:
     type: integer
     description: The amount to withdraw in the smallest unit of the currency.
