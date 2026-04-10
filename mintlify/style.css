@@ -1527,9 +1527,9 @@ html:not([data-assistant-state=open]) #content-container:has(#api-playground-2-o
   min-width: 0 !important;
 }
 
-/* Add gap between main content and code column ONLY on API reference pages */
-/* Uses :has() to scope the rule to pages containing the API playground */
-#content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
+/* Add gap between main content and code column ONLY on API reference pages.
+   Scoped to assistant-closed so the gap collapses with the code panel. */
+html:not([data-assistant-state=open]) #content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
   gap: 48px !important;
 }
 
