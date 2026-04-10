@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./ReceiverLookupResponse.yaml
+  - type: object
+    required:
+      - receiverUmaAddress
+    properties:
+      receiverUmaAddress:
+        type: string
+        description: The UMA address that was looked up
+        example: $receiver@uma.domain

@@ -76,12 +76,11 @@ rules:
   # ============================================================
 
   # Request bodies must use $ref, not inline schemas.
-  # Note: Spectral resolves $refs in the bundled spec, so some component-level
-  # false positives appear — the real violations are on paths.* entries.
   no-inline-request-schema:
     description: Request body schemas must use $ref, not inline definitions
     message: "Use $ref for request body schema instead of inline definition. See openapi/README.md#avoid-inline-schemas-in-request-and-response-definitions"
     severity: error
+    resolved: false
     given: "$.paths[*][get,post,put,patch,delete].requestBody.content[application/json].schema"
     then:
       field: "$ref"
@@ -92,6 +91,7 @@ rules:
     description: Response body schemas must use $ref, not inline definitions
     message: "Use $ref for response schema instead of inline definition. See openapi/README.md#avoid-inline-schemas-in-request-and-response-definitions"
     severity: error
+    resolved: false
     given: "$.paths[*][get,post,put,patch,delete].responses[*].content[application/json].schema"
     then:
       field: "$ref"

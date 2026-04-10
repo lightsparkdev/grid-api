@@ -5,7 +5,7 @@
   "scripts": {
     "build:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
     "prelint:openapi": "npm run build:openapi",
-    "lint:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && npx @redocly/cli lint openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
+    "lint:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && npx @redocly/cli lint openapi.yaml && npx spectral lint openapi.yaml --fail-severity=error && cp openapi.yaml mintlify/openapi.yaml",
     "lint": "npm run lint:openapi",
     "broken-links": "cd mintlify && mint broken-links",
     "validate": "npm run lint",

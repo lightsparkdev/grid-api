@@ -1,0 +1,16 @@
+type: object
+properties:
+  data:
+    description: List of available UMA Providers using Grid
+    type: array
+    items:
+      $ref: './UmaProvider.yaml'
+  hasMore:
+    type: boolean
+    description: Indicates if more results are available beyond this page
+  nextCursor:
+    type: string
+    description: Cursor to retrieve the next page of results (only present if hasMore is true)
+  totalCount:
+    type: integer
+    description: Total number of transactions matching the criteria (excluding pagination)
