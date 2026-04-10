@@ -152,40 +152,6 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }'
 ```
 
-## Creating accounts inline with quotes
-
-For one-time conversions, create external accounts inline using `externalAccountDetails`:
-
-```bash
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "source": {
-      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "currency": "USD"
-    },
-    "destination": {
-      "externalAccountDetails": {
-        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
-    },
-    "lockedCurrencySide": "SENDING",
-    "lockedCurrencyAmount": 10000
-  }'
-```
-
-<Tip>
-  Use `externalAccountDetails` for one-time destinations. The external account
-  will be automatically created and can be reused for future quotes using its
-  returned ID.
-</Tip>
-
 ## Listing external accounts
 
 ### List customer external accounts
@@ -344,7 +310,6 @@ if (await verifySparkWallet(sparkAddress)) {
 
 ## Next steps
 
-- [Plaid Integration](/ramps/accounts/plaid) - Connect bank accounts via Plaid
 - [Fiat-to-Crypto Conversion](/ramps/conversion-flows/fiat-crypto-conversion) - Build conversion flows
 - [Self-Custody Wallets](/ramps/conversion-flows/self-custody-wallets) - Advanced wallet integration
 - [Webhooks](/ramps/platform-tools/webhooks) - Handle account status updates

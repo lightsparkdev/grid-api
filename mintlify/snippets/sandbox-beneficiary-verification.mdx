@@ -6,5 +6,7 @@ For account types that support beneficiary name verification, you can simulate d
 | **103** | `PARTIAL_MATCH` | Account is valid, name is a fuzzy match |
 | **104** | `PENDING` | Verification still in progress |
 | **105** | _(error)_ | Returns `400` — invalid account |
+| **106** | `UNSUPPORTED` | Payment rail does not support name verification |
+| **107** | `CHECKED_BY_RECEIVING_FI` | Verification deferred to receiving financial institution (e.g., ACH) |
 | **109** | _(error)_ | Returns `500` — simulated API error |
 | **Any other** | `MATCHED` | Account is valid, name matches exactly |

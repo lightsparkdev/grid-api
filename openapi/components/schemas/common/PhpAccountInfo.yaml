@@ -24,6 +24,7 @@ properties:
   accountNumber:
     type: string
     description: Bank account number
-    minLength: 1
-    maxLength: 34
+    minLength: 8
+    maxLength: 16
     example: '001234567890'
+    pattern: ^[0-9]{8,16}$

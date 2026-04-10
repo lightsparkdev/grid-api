@@ -592,9 +592,12 @@ div:has(> .chat-assistant-floating-input) {
   background: transparent !important;
 }
 
+/* Mintlify currently renders the bottom bar glow on the input itself. */
+.chat-assistant-floating-input::before,
 div:has(> .chat-assistant-floating-input)::before,
 .chat-assistant-floating-input > div::before {
   background: transparent !important;
+  opacity: 0 !important;
 }
 
 /* Mobile assistant bar placeholder - make transparent so it doesn't cover content */
@@ -1150,11 +1153,15 @@ html.dark #navigation-items li[class*="space-y"] > button {
   color: var(--ls-gray-600) !important;
 }
 
-/* Hide the original SVG chevron */
-#sidebar-group > li > button > svg,
-ul#sidebar-group > li > button > svg,
-#navigation-items li.space-y-px > button > svg,
-#navigation-items li[class*="space-y"] > button > svg {
+/* Hide Mintlify's native chevron, including the new wrapped SVG variant. */
+#sidebar-group > li > button > div:has(> svg),
+ul#sidebar-group > li > button > div:has(> svg),
+#navigation-items li.space-y-px > button > div:has(> svg),
+#navigation-items li[class*="space-y"] > button > div:has(> svg),
+#sidebar-group > li > button svg,
+ul#sidebar-group > li > button svg,
+#navigation-items li.space-y-px > button svg,
+#navigation-items li[class*="space-y"] > button svg {
   display: none !important;
   visibility: hidden !important;
 }
@@ -1368,6 +1375,12 @@ ul#sidebar-group > li[data-title="Exchange Rates"] > button::before {
   background-image: url('/images/icons/trending.svg') !important;
 }
 
+/* Discoveries - checklist magnifying glass */
+#sidebar-group > li[data-title="Discoveries"] > button::before,
+ul#sidebar-group > li[data-title="Discoveries"] > button::before {
+  background-image: url('/images/icons/IconSquareChecklistMagnifyingGlass.svg') !important;
+}
+
 
 /* ===========================================
    Main Content Area
@@ -1500,8 +1513,10 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   max-width: 100% !important;
 }
 
-/* Ensure code panel doesn't shrink on API reference pages */
-#content-container:has(#api-playground-2-operation-page) #content-side-layout {
+/* Ensure code panel doesn't shrink on API reference pages.
+   Scoped to assistant-closed so Mintlify's built-in collapse rule
+   (html[data-assistant-state=open] ... { width:0 }) isn't overridden. */
+html:not([data-assistant-state=open]) #content-container:has(#api-playground-2-operation-page) #content-side-layout {
   flex-shrink: 0 !important;
   min-width: 28rem !important;
 }
@@ -1512,9 +1527,9 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   min-width: 0 !important;
 }
 
-/* Add gap between main content and code column ONLY on API reference pages */
-/* Uses :has() to scope the rule to pages containing the API playground */
-#content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
+/* Add gap between main content and code column ONLY on API reference pages.
+   Scoped to assistant-closed so the gap collapses with the code panel. */
+html:not([data-assistant-state=open]) #content-container > div[class*="flex-row-reverse"]:has(#api-playground-2-operation-page) {
   gap: 48px !important;
 }
 

@@ -186,7 +186,7 @@ POST /transfer-in
 }
 ```
 
-Only works for "pullable" external accounts (Plaid-linked, debit cards, etc.).
+Only works for "pullable" external accounts (e.g., debit cards).
 
 ## Monitoring Transactions
 
@@ -271,7 +271,6 @@ Use for reconciliation and reporting.
 | `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
 | `QUOTE_EXECUTION_FAILED` | Error executing the quote | Create new quote |
 | `INSUFFICIENT_BALANCE` | Source account lacks funds | Fund account, retry |
-| `TIMEOUT` | Transaction timed out | Retry or contact support |
 
 ## Best Practices
 

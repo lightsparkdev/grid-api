@@ -87,7 +87,6 @@ Internal accounts are auto-created when customers are created based on platform 
 
 - `ACCOUNT`: External or internal account. Fields: `accountId`, `currency`
 - `UMA_ADDRESS`: UMA address. Fields: `umaAddress`, `currency`
-- `EXTERNAL_ACCOUNT_DETAILS`: Inline account creation (creates external account + quote in one step). Fields: `externalAccountDetails` (same shape as external account create request)
 
 ### Quote Request Fields
 
@@ -210,13 +209,6 @@ Use these account number endings for testing:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/uma-providers` | List UMA provider domains |
-
-## Plaid Integration
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/plaid/link-tokens` | Create Plaid Link token |
-| POST | `/plaid/callback/{plaid_link_token}` | Plaid Link callback |
 
 ## Pagination
 

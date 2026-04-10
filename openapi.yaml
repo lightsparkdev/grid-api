@@ -44,6 +44,8 @@ tags:
     description: Endpoints to programmatically manage API tokens
   - name: Exchange Rates
     description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
+  - name: Discoveries
+    description: Endpoints for discovering available payment rails, banks, and providers for a given country and currency corridor.
 paths:
   /config:
     get:
@@ -257,6 +259,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /discoveries:
+    get:
+      summary: List available receiving institution names
+      description: |
+        Retrieve available payment institution names for a given country and currency. Use this endpoint
+        to look up supported banks and payment providers for a specific corridor.
+        If no country and currency parameter are provided, all payment institutions will be returned
+
+        The `bankName` field in each result is the value to pass as `bankName` when
+        creating an external account via `POST /customers/external-accounts`.
+      operationId: getDiscoveries
+      tags:
+        - Discoveries
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: country
+          in: query
+          description: ISO 3166-1 alpha-2 country code (e.g. PH)
+          required: false
+          schema:
+            type: string
+          example: PH
+        - name: currency
+          in: query
+          description: ISO 4217 currency code (e.g. PHP)
+          required: false
+          schema:
+            type: string
+          example: PHP
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: List of payment rails matching the filter criteria
+                    items:
+                      type: object
+                      required:
+                        - bankName
+                        - displayName
+                        - country
+                        - currency
+                      properties:
+                        bankName:
+                          type: string
+                          description: |
+                            Canonical name for this payment rail. Pass this value as `bankName` when creating an external account.
+                        displayName:
+                          type: string
+                          description: Human-friendly display name for this payment rail.
+                        country:
+                          type: string
+                          description: ISO 3166-1 alpha-2 country code.
+                        currency:
+                          type: string
+                          description: ISO 4217 currency code.
+              examples:
+                philippinesBanks:
+                  summary: Payment rails for Philippines (PHP)
+                  value:
+                    data:
+                      - bankName: BDO Unibank
+                        displayName: BDO Unibank
+                        country: PH
+                        currency: PHP
+                      - bankName: BPI
+                        displayName: Bank of the Philippine Islands
+                        country: PH
+                        currency: PHP
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers:
     post:
       summary: Add a new customer
@@ -278,14 +373,31 @@ paths:
                 value:
                   customerType: INDIVIDUAL
                   platformCustomerId: ind-9f84e0c2
+                  region: US
+                  currencies:
+                    - USD
+                    - USDC
                   fullName: Jane Smith
                   birthDate: '1990-01-15'
                   nationality: US
+              individualCustomerInferred:
+                summary: Create an individual customer with inferred currencies
+                value:
+                  customerType: INDIVIDUAL
+                  platformCustomerId: ind-7b3f1a9d
+                  region: MX
+                  fullName: Carlos García
+                  birthDate: '1988-05-22'
+                  nationality: MX
               businessCustomer:
                 summary: Create a business customer
                 value:
                   customerType: BUSINESS
                   platformCustomerId: biz-acme-001
+                  region: US
+                  currencies:
+                    - USD
+                    - USDC
                   businessInfo:
                     legalName: Acme Corporation
                     doingBusinessAs: Acme
@@ -414,6 +526,18 @@ paths:
           required: false
           schema:
             type: string
+        - name: region
+          in: query
+          description: Filter by customer region (ISO 3166-1 alpha-2 country code)
+          required: false
+          schema:
+            type: string
+        - name: currency
+          in: query
+          description: Filter by currency code. Returns customers that have this currency in their enabled currencies list.
+          required: false
+          schema:
+            type: string
         - name: umaAddress
           in: query
           description: Filter by uma address
@@ -531,6 +655,10 @@ paths:
                   customerType: INDIVIDUAL
                   fullName: John Smith
                   birthDate: '1985-06-15'
+                  currencies:
+                    - USD
+                    - EUR
+                    - USDC
                   address:
                     line1: 456 Market St
                     city: San Francisco
@@ -541,6 +669,9 @@ paths:
                 summary: Update business customer example
                 value:
                   customerType: BUSINESS
+                  currencies:
+                    - USD
+                    - USDC
                   businessInfo:
                     legalName: New Tech Solutions LLC
                     registrationNumber: BRN-987654321
@@ -1142,7 +1273,7 @@ paths:
     get:
       summary: List beneficial owners
       description: |
-        Retrieve a list of beneficial owners with optional filtering by customer ID and role.
+        Retrieve a list of beneficial owners for a business customer.
       operationId: listBeneficialOwners
       tags:
         - KYC/KYB Verifications
@@ -1151,16 +1282,10 @@ paths:
       parameters:
         - name: customerId
           in: query
-          description: Filter by business customer ID
-          required: false
+          description: The business customer ID
+          required: true
           schema:
             type: string
-        - name: role
-          in: query
-          description: Filter by role
-          required: false
-          schema:
-            $ref: '#/components/schemas/BeneficialOwnerRole'
         - name: limit
           in: query
           description: Maximum number of results to return (default 20, max 100)
@@ -1773,129 +1898,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /plaid/link-tokens:
-    post:
-      summary: Request Plaid Link token
-      description: |
-        Creates a Plaid Link token that can be used to initialize Plaid Link in your application.
-        The Link token is used to authenticate the customer and allow them to select their bank account.
-
-        **Async Flow:**
-        1. Platform calls this endpoint to get a link_token and callbackUrl
-        2. Platform displays Plaid Link UI to the end customer using the link_token
-        3. End customer authenticates with their bank and selects an account
-        4. Plaid returns a public_token to the platform
-        5. Platform POSTs the public_token to the callbackUrl
-        6. Lightspark exchanges the public_token with Plaid and creates the external account asynchronously
-        7. Platform receives a webhook notification when the external account is ready
-      operationId: createPlaidLinkToken
-      tags:
-        - External Accounts
-      security:
-        - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PlaidLinkTokenRequest'
-            example:
-              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-      responses:
-        '200':
-          description: Link token created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlaidLinkTokenResponse'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /plaid/callback/{plaid_link_token}:
-    post:
-      summary: Submit Plaid public token
-      description: |
-        After the customer completes Plaid Link authentication, the platform should POST
-        the public_token to this callback URL (provided in the link token response).
-
-        This will trigger asynchronous processing:
-        1. Lightspark exchanges the public_token for an access_token with Plaid
-        2. Lightspark retrieves and verifies the account details
-        3. An external account is created
-        4. A webhook notification is sent to the platform when complete
-      operationId: submitPlaidPublicToken
-      tags:
-        - External Accounts
-      parameters:
-        - name: plaid_link_token
-          in: path
-          required: true
-          description: The Plaid link token from the link token response, used to identify the session
-          schema:
-            type: string
-          example: link-sandbox-abc123xyz-1234-5678
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PlaidCallbackRequest'
-            example:
-              publicToken: public-sandbox-12345678-1234-1234-1234-123456789012
-              accountId: plaid_account_id_123
-      responses:
-        '202':
-          description: |
-            A pending external account resource will be created and returned while the Grid API asynchronously processes the Plaid public token.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExternalAccount'
-        '400':
-          description: Bad request - Invalid public token or link token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '404':
-          description: Link token not found or expired
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '409':
-          description: Link token already used
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /transfer-in:
     post:
       summary: Create a transfer-in request
@@ -2260,6 +2262,15 @@ paths:
         - Cross-Currency Transfers
       security:
         - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
       requestBody:
         required: true
         content:
@@ -2301,13 +2312,8 @@ paths:
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
                     currency: USD
                   destination:
-                    destinationType: EXTERNAL_ACCOUNT_DETAILS
-                    externalAccountDetails:
-                      customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                      currency: BTC
-                      accountInfo:
-                        accountType: SPARK_WALLET
-                        address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
                   lockedCurrencySide: RECEIVING
                   lockedCurrencyAmount: 10000
                   immediatelyExecute: true
@@ -2384,132 +2390,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
-    get:
-      summary: List transfer quotes
-      description: |
-        Retrieve a list of transfer quotes with optional filtering parameters. Returns all
-        quotes that match the specified filters. If no filters are provided, returns all quotes
-        (paginated).
-      operationId: listQuotes
-      tags:
-        - Cross-Currency Transfers
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: customerId
-          in: query
-          description: Filter by sending customer ID
-          required: false
-          schema:
-            type: string
-        - name: sendingAccountId
-          in: query
-          description: Filter by sending account ID
-          required: false
-          schema:
-            type: string
-        - name: receivingAccountId
-          in: query
-          description: Filter by receiving account ID
-          required: false
-          schema:
-            type: string
-        - name: sendingUmaAddress
-          in: query
-          description: Filter by sending UMA address
-          required: false
-          schema:
-            type: string
-        - name: receivingUmaAddress
-          in: query
-          description: Filter by receiving UMA address
-          required: false
-          schema:
-            type: string
-        - name: status
-          in: query
-          description: Filter by quote status
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - PROCESSING
-              - COMPLETED
-              - FAILED
-              - EXPIRED
-        - name: createdAfter
-          in: query
-          description: Filter quotes created after this timestamp (inclusive)
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: createdBefore
-          in: query
-          description: Filter quotes created before this timestamp (inclusive)
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: limit
-          in: query
-          description: Maximum number of results to return (default 20, max 100)
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          description: Cursor for pagination (returned from previous request)
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of quotes matching the criteria
-                    items:
-                      $ref: '#/components/schemas/Quote'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of quotes matching the criteria (excluding pagination)
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /quotes/{quoteId}/execute:
     post:
       summary: Execute a quote
@@ -2534,6 +2414,14 @@ paths:
           schema:
             type: string
           example: Quote:019542f5-b3e7-1d02-0000-000000000001
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
       responses:
         '200':
           description: |
@@ -4336,6 +4224,10 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 9f84e0c2a72c4fa
                     customerType: INDIVIDUAL
+                    region: US
+                    currencies:
+                      - USD
+                      - USDC
                     umaAddress: $john.doe@uma.domain.com
                     kycStatus: APPROVED
                     fullName: John Michael Doe
@@ -4361,6 +4253,10 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000002
                     platformCustomerId: 4b7c1e9d3f5a8e2
                     customerType: INDIVIDUAL
+                    region: US
+                    currencies:
+                      - USD
+                      - USDC
                     umaAddress: $jane.smith@uma.domain.com
                     kycStatus: REJECTED
                     fullName: Jane Smith
@@ -4379,6 +4275,10 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000003
                     platformCustomerId: 7a2f9d4e1b8c3f5
                     customerType: BUSINESS
+                    region: US
+                    currencies:
+                      - USD
+                      - USDC
                     umaAddress: $acme.corp@uma.domain.com
                     kybStatus: APPROVED
                     address:
@@ -4404,6 +4304,9 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000004
                     platformCustomerId: 3c8e5f2a9d1b7e4
                     customerType: BUSINESS
+                    region: US
+                    currencies:
+                      - USD
                     umaAddress: $globex.inc@uma.domain.com
                     kybStatus: REJECTED
                     address:
@@ -5065,6 +4968,18 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        region:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity and regulatory jurisdiction.
+          example: US
+        currencies:
+          type: array
+          items:
+            type: string
+          description: List of currency codes enabled for this customer.
+          example:
+            - USD
+            - USDC
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -5541,6 +5456,18 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        region:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity. This determines the regulatory jurisdiction and KYC requirements for the customer. Required if the customer will use currencies with different KYC requirements across regions. A customer with accounts in multiple regions should be registered as separate customers. This field is immutable after creation.
+          example: US
+        currencies:
+          type: array
+          items:
+            type: string
+          description: List of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR"; tickers for crypto, e.g. "BTC", "USDC"). Required if the customer will use more than one sending currency, since the correct currencies cannot always be inferred. If not provided, currencies will be inferred from the customer's region. Some currency combinations may require separate customers — if so, the request will be rejected with details.
+          example:
+            - USD
+            - USDC
         umaAddress:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
@@ -5672,6 +5599,15 @@ components:
       properties:
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        currencies:
+          type: array
+          items:
+            type: string
+          description: Updated list of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR"; tickers for crypto, e.g. "BTC", "USDC"). Replaces the existing list. Some currency combinations may require separate customers — if so, the request will be rejected with details.
+          example:
+            - USD
+            - EUR
+            - USDC
         umaAddress:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
@@ -5779,6 +5715,7 @@ components:
               - WIRE
               - RTP
               - FEDNOW
+              - BANK_TRANSFER
         accountNumber:
           type: string
           description: The account number of the bank
@@ -6303,9 +6240,10 @@ components:
         accountNumber:
           type: string
           description: Bank account number
-          minLength: 1
-          maxLength: 34
+          minLength: 8
+          maxLength: 16
           example: '001234567890'
+          pattern: ^[0-9]{8,16}$
     PaymentPhpAccountInfo:
       title: PHP Account
       allOf:
@@ -7148,6 +7086,389 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    BdtAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - branchCode
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BDT_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        branchCode:
+          type: string
+          description: The branch code
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentBdtAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    CopAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - bankAccountType
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - COP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentCopAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    EgpAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - EGP_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+    PaymentEgpAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    GhsAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GHS_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentGhsAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    GtqAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - GTQ_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentGtqAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    HtgAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - HTG_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - MOBILE_MONEY
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentHtgAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    JmdAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - branchCode
+        - bankAccountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - JMD_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        branchCode:
+          type: string
+          description: The branch code
+          minLength: 5
+          maxLength: 5
+          pattern: ^[0-9]{5}$
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+    PaymentJmdAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    PkrAccountInfo:
+      type: object
+      required:
+        - accountType
+        - paymentRails
+        - accountNumber
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PKR_ACCOUNT
+        paymentRails:
+          type: array
+          items:
+            type: string
+            enum:
+              - BANK_TRANSFER
+              - MOBILE_MONEY
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account
+          example: DE89370400440532013000
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    PaymentPkrAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -7190,6 +7511,14 @@ components:
             - $ref: '#/components/schemas/PaymentZmwAccountInfo'
             - $ref: '#/components/schemas/PaymentBwpAccountInfo'
             - $ref: '#/components/schemas/PaymentXafAccountInfo'
+            - $ref: '#/components/schemas/PaymentBdtAccountInfo'
+            - $ref: '#/components/schemas/PaymentCopAccountInfo'
+            - $ref: '#/components/schemas/PaymentEgpAccountInfo'
+            - $ref: '#/components/schemas/PaymentGhsAccountInfo'
+            - $ref: '#/components/schemas/PaymentGtqAccountInfo'
+            - $ref: '#/components/schemas/PaymentHtgAccountInfo'
+            - $ref: '#/components/schemas/PaymentJmdAccountInfo'
+            - $ref: '#/components/schemas/PaymentPkrAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -7234,6 +7563,14 @@ components:
               ZMW_ACCOUNT: '#/components/schemas/PaymentZmwAccountInfo'
               BWP_ACCOUNT: '#/components/schemas/PaymentBwpAccountInfo'
               XAF_ACCOUNT: '#/components/schemas/PaymentXafAccountInfo'
+              BDT_ACCOUNT: '#/components/schemas/PaymentBdtAccountInfo'
+              COP_ACCOUNT: '#/components/schemas/PaymentCopAccountInfo'
+              EGP_ACCOUNT: '#/components/schemas/PaymentEgpAccountInfo'
+              GHS_ACCOUNT: '#/components/schemas/PaymentGhsAccountInfo'
+              GTQ_ACCOUNT: '#/components/schemas/PaymentGtqAccountInfo'
+              HTG_ACCOUNT: '#/components/schemas/PaymentHtgAccountInfo'
+              JMD_ACCOUNT: '#/components/schemas/PaymentJmdAccountInfo'
+              PKR_ACCOUNT: '#/components/schemas/PaymentPkrAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -7340,6 +7677,14 @@ components:
         - XOF_ACCOUNT
         - ZAR_ACCOUNT
         - ZMW_ACCOUNT
+        - BDT_ACCOUNT
+        - COP_ACCOUNT
+        - EGP_ACCOUNT
+        - GHS_ACCOUNT
+        - GTQ_ACCOUNT
+        - HTG_ACCOUNT
+        - JMD_ACCOUNT
+        - PKR_ACCOUNT
       description: Type of external account or wallet
       example: GBP_ACCOUNT
     BaseExternalAccountInfo:
@@ -7414,9 +7759,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7553,9 +7895,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7586,6 +7925,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - address
         - fullName
       properties:
         beneficiaryType:
@@ -7607,9 +7947,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7661,9 +7998,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7715,9 +8049,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7769,9 +8100,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7823,9 +8151,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7877,9 +8202,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7931,9 +8253,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -7985,9 +8304,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8039,9 +8355,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8093,9 +8406,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8147,9 +8457,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8201,9 +8508,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8255,9 +8559,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8309,9 +8610,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8363,9 +8661,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8417,9 +8712,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8450,9 +8742,7 @@ components:
       type: object
       required:
         - beneficiaryType
-        - birthDate
         - fullName
-        - nationality
       properties:
         beneficiaryType:
           type: string
@@ -8473,9 +8763,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8527,9 +8814,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8581,9 +8865,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8635,9 +8916,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8689,9 +8967,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8801,9 +9076,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8855,9 +9127,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8909,9 +9178,6 @@ components:
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          description: The registration number of the beneficiary
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -8936,6 +9202,421 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/XafBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BdtBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BdtExternalAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BdtBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    CopExternalAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CopBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EgpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - countryOfResidence
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    EgpExternalAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EgpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GhsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GhsExternalAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GhsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GtqBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GtqExternalAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GtqBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HtgBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    HtgExternalAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HtgBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    JmdBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    JmdExternalAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/JmdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PkrBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    PkrExternalAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PkrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
@@ -8973,6 +9654,14 @@ components:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
         - $ref: '#/components/schemas/BwpExternalAccountInfo'
         - $ref: '#/components/schemas/XafExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtExternalAccountInfo'
+        - $ref: '#/components/schemas/CopExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -9010,6 +9699,15 @@ components:
           AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
           XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
+          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountInfo'
+          COP_ACCOUNT: '#/components/schemas/CopExternalAccountInfo'
+          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountInfo'
+          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountInfo'
+          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountInfo'
+          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountInfo'
+          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountInfo'
+          LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
+          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -9051,7 +9749,7 @@ components:
               description: Verified beneficiary data returned by the payment rail, if available
             cryptoNetwork:
               type: string
-              description: 'The blockchain network for this external account, if applicable. Present when the account is a cryptocurrency wallet. Example values: SOLANA_MAINNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
+              description: 'The blockchain network for this external account, if applicable. Present when the account is a cryptocurrency wallet. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
@@ -9080,7 +9778,7 @@ components:
               default: false
             cryptoNetwork:
               type: string
-              description: 'The blockchain network for this external account. Required when the account is a cryptocurrency wallet (e.g. SolanaWallet, PolygonWallet, TronWallet). Specifies which network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
+              description: 'The blockchain network for this external account. Required when the account is a cryptocurrency wallet. Specifies which network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
@@ -9326,6 +10024,7 @@ components:
         - IN_PROGRESS
         - APPROVED
         - REJECTED
+        - READY_FOR_VERIFICATION
       description: Current status of the KYC/KYB verification
       example: RESOLVE_ERRORS
     VerificationErrorType:
@@ -9341,8 +10040,18 @@ components:
         - MISSING_IDENTITY_DOCUMENT
         - INVALID_DOCUMENT
         - EXPIRED_DOCUMENT
+        - POOR_QUALITY_DOCUMENT
+        - SUSPECTED_FRAUD_DOCUMENT
+        - WRONG_DOCUMENT_TYPE
+        - INCOMPLETE_DOCUMENT
+        - UNREADABLE_DOCUMENT
+        - DOCUMENT_VERIFICATION_FAILED
+        - APPLICANT_SANCTIONED
+        - APPLICANT_FRAUD
+        - APPLICANT_CRIMINAL_RECORD
+        - APPLICANT_REJECTED
         - MISSING_BENEFICIAL_OWNER
-      description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed and determine the accepted document types returned in acceptedDocumentTypes.
+      description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed. Document quality types (POOR_QUALITY_DOCUMENT, SUSPECTED_FRAUD_DOCUMENT, etc.) indicate specific issues with uploaded documents. APPLICANT_* types indicate issues with the applicant themselves (sanctions, fraud, criminal records).
       example: MISSING_FIELD
     VerificationError:
       type: object
@@ -9423,59 +10132,6 @@ components:
           type: string
           description: The ID of the customer to verify
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
-    PlaidLinkTokenRequest:
-      type: object
-      required:
-        - customerId
-      properties:
-        customerId:
-          type: string
-          description: The ID of the customer for whom to create the Plaid Link token and external account
-          example: Customer:019542f5-b3e7-1d02-0000-000000000001
-    PlaidLinkTokenResponse:
-      type: object
-      required:
-        - linkToken
-        - expiration
-        - callbackUrl
-      properties:
-        linkToken:
-          type: string
-          description: |
-            The Plaid Link token to be used to initialize Plaid Link in your application. This token is single-use and expires after the specified expiration time.
-          example: link-sandbox-af1a0311-da53-4636-b754-dd15cc058176
-        expiration:
-          type: string
-          format: date-time
-          description: |
-            The ISO 8601 timestamp when this link token expires. Link tokens typically expire after 4 hours.
-          example: '2025-10-05T18:30:00Z'
-        callbackUrl:
-          type: string
-          description: |
-            The URL where the platform should POST the public_token after the customer completes Plaid Link authentication. This will trigger asynchronous external account creation. The URL includes the linkToken as the path parameter.
-          example: https://api.lightspark.com/grid/2025-10-13/plaid/callback/{plaid_link_token}
-        requestId:
-          type: string
-          description: A unique identifier for this request, useful for debugging
-          example: req_abc123def456
-    PlaidCallbackRequest:
-      type: object
-      required:
-        - publicToken
-      properties:
-        publicToken:
-          type: string
-          description: |
-            The public token returned by Plaid Link after the customer successfully
-            authenticates and selects an account.
-          example: public-sandbox-12345678-1234-1234-1234-123456789012
-        accountId:
-          type: string
-          description: |
-            Optional Plaid account ID if the customer selected a specific account.
-            If not provided, the default account will be used.
-          example: plaid_account_id_123
     ExternalAccountReference:
       type: object
       required:
@@ -9540,7 +10196,6 @@ components:
       enum:
         - ACCOUNT
         - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
       description: Type of transaction destination
       example: ACCOUNT
     BaseTransactionDestination:
@@ -9590,33 +10245,15 @@ components:
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
           description: UMA address destination details
-    ExternalAccountDetailsTransactionDestination:
-      title: External Account Details Destination
-      allOf:
-        - $ref: '#/components/schemas/BaseTransactionDestination'
-        - type: object
-          required:
-            - externalAccountDetails
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT_DETAILS
-            externalAccountDetails:
-              $ref: '#/components/schemas/ExternalAccountCreateRequest'
-          description: Transaction destination where external account details were provided inline at quote creation rather than using a pre-registered external account.
     TransactionDestinationOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountTransactionDestination'
         - $ref: '#/components/schemas/UmaAddressTransactionDestination'
-        - $ref: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsTransactionDestination'
     CounterpartyInformation:
       type: object
       description: Additional information about the counterparty, if available and relevant to the transaction and platform.
@@ -9895,6 +10532,7 @@ components:
           enum:
             - TRANSACTION_FAILED
             - USER_CANCELLATION
+            - TIMEOUT
           description: Reason for the refund
           example: TRANSACTION_FAILED
     OutgoingRateDetails:
@@ -9952,7 +10590,6 @@ components:
         - LIGHTNING_PAYMENT_FAILED
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
-        - TIMEOUT
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
     OutgoingTransaction:
       title: Outgoing Transaction
@@ -10215,7 +10852,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `ETHEREUM_TESTNET`, `BASE_MAINNET`, `BASE_TESTNET`, `SPARK_MAINNET`, `SPARK_TESTNET`, `LIGHTNING_MAINNET`, `LIGHTNING_REGTEST`.'
               example: SOLANA_MAINNET
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -10232,7 +10869,6 @@ components:
       enum:
         - ACCOUNT
         - UMA_ADDRESS
-        - EXTERNAL_ACCOUNT_DETAILS
       description: Type of payment destination
       example: ACCOUNT
     BaseDestination:
@@ -10286,33 +10922,15 @@ components:
               description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: EUR
           description: UMA address destination details
-    ExternalAccountDetailsDestination:
-      title: External Account Details
-      allOf:
-        - $ref: '#/components/schemas/BaseDestination'
-        - type: object
-          required:
-            - externalAccountDetails
-            - destinationType
-          properties:
-            destinationType:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT_DETAILS
-            externalAccountDetails:
-              $ref: '#/components/schemas/ExternalAccountCreateRequest'
-          description: A convenient destination option which adds the external account and creates the quote in one step rather than first needing to call /external-accounts to add the account. Useful for one-off payments to some destination. See the Sandbox Testing guide in the API reference for test values.
     QuoteDestinationOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountDestination'
         - $ref: '#/components/schemas/UmaAddressDestination'
-        - $ref: '#/components/schemas/ExternalAccountDetailsDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
-          EXTERNAL_ACCOUNT_DETAILS: '#/components/schemas/ExternalAccountDetailsDestination'
     Quote:
       type: object
       required:
@@ -10520,7 +11138,7 @@ components:
           example: USDC
         cryptoNetwork:
           type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, POLYGON_MAINNET, TRON_MAINNET.'
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
           example: SOLANA_MAINNET
         amount:
           type: integer
@@ -10989,6 +11607,7 @@ components:
         - VERIFICATION.RESOLVE_ERRORS
         - VERIFICATION.IN_PROGRESS
         - VERIFICATION.PENDING_MANUAL_REVIEW
+        - VERIFICATION.READY_FOR_VERIFICATION
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED

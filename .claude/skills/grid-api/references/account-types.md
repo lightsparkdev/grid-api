@@ -6,8 +6,10 @@ This reference maps countries/regions to their required account types and fields
 
 | Country/Region | Account Type | Currency | Payment Rail(s) | Primary Identifier |
 |----------------|--------------|----------|-----------------|-------------------|
+| Botswana | BWP_ACCOUNT | BWP | MOBILE_MONEY | Phone number + Provider |
 | Brazil | BRL_ACCOUNT | BRL | PIX | PIX key |
 | Canada | CAD_ACCOUNT | CAD | BANK_TRANSFER | Bank code + Branch code + Account number |
+| Central Africa (CFA) | XAF_ACCOUNT | XAF | MOBILE_MONEY | Phone number + Provider + Region |
 | Denmark | DKK_ACCOUNT | DKK | SEPA, SEPA_INSTANT | IBAN |
 | Europe (SEPA) | EUR_ACCOUNT | EUR | SEPA, SEPA_INSTANT | IBAN |
 | Hong Kong | HKD_ACCOUNT | HKD | BANK_TRANSFER | Bank name + SWIFT + Account number |
@@ -24,6 +26,7 @@ This reference maps countries/regions to their required account types and fields
 | South Africa | ZAR_ACCOUNT | ZAR | BANK_TRANSFER | Bank name + Account number |
 | Tanzania | TZS_ACCOUNT | TZS | MOBILE_MONEY | Phone number + Provider |
 | Thailand | THB_ACCOUNT | THB | BANK_TRANSFER | Bank name + SWIFT + Account number |
+| UAE | AED_ACCOUNT | AED | BANK_TRANSFER | IBAN |
 | Uganda | UGX_ACCOUNT | UGX | MOBILE_MONEY | Phone number + Provider |
 | United Kingdom | GBP_ACCOUNT | GBP | FASTER_PAYMENTS | Sort code + Account number |
 | United States | USD_ACCOUNT | USD | ACH, WIRE, RTP, FEDNOW | Routing number + Account number |
@@ -37,6 +40,7 @@ This reference maps countries/regions to their required account types and fields
 |------|----------|-------------------|
 | SPARK_WALLET | BTC | Spark wallet address |
 | LIGHTNING | BTC | Lightning invoice, bolt12 offer, or lightning address |
+| ETHEREUM_WALLET | USDC | Ethereum L1 wallet address (0x...) |
 | SOLANA_WALLET | USDC | Solana wallet address |
 | TRON_WALLET | USDT | TRON wallet address |
 | POLYGON_WALLET | USDC | Polygon wallet address (0x...) |
@@ -45,6 +49,68 @@ This reference maps countries/regions to their required account types and fields
 ## Detailed Field Requirements
 
 **IMPORTANT**: All fiat account types now require a `paymentRails` field specifying the payment rail to use.
+
+### Botswana (BWP_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "BWP",
+    "accountInfo": {
+      "accountType": "BWP_ACCOUNT",
+      "paymentRails": ["MOBILE_MONEY"],
+      "phoneNumber": "+2671234567",
+      "provider": "Orange Money",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "BW"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `paymentRails`: `MOBILE_MONEY`
+- `phoneNumber`: International format (pattern: `^\+[0-9]{6,14}$`)
+- `provider`: Mobile money provider name
+
+### Central Africa CFA (XAF_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "XAF",
+    "accountInfo": {
+      "accountType": "XAF_ACCOUNT",
+      "paymentRails": ["MOBILE_MONEY"],
+      "phoneNumber": "+237612345678",
+      "provider": "MTN Mobile Money",
+      "region": "CM",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "CM"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `paymentRails`: `MOBILE_MONEY`
+- `phoneNumber`: International format (pattern: `^\+[0-9]{6,14}$`)
+- `provider`: Mobile money provider name
+- `region`: Country code in Central African CFA franc zone (enum: `CM` for Cameroon, `CG` for Congo)
 
 ### Mexico (MXN_ACCOUNT)
 
@@ -264,6 +330,36 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 ```
 
 UPI VPA format: `username@bankhandle` (e.g., `john@okaxis`, `jane@ybl`)
+
+### UAE (AED_ACCOUNT)
+
+```bash
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "AED",
+    "accountInfo": {
+      "accountType": "AED_ACCOUNT",
+      "paymentRails": ["BANK_TRANSFER"],
+      "iban": "AE070331234567890123456",
+      "swiftCode": "EBILAEAD",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Full Name",
+        "birthDate": "1990-01-15",
+        "nationality": "AE"
+      }
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
+Required fields:
+
+- `paymentRails`: `BANK_TRANSFER`
+- `iban`: UAE IBAN (23 characters, pattern: `^AE[0-9]{21}$`)
+- `swiftCode`: SWIFT/BIC code (8 or 11 characters) — optional
 
 ### United Kingdom (GBP_ACCOUNT)
 
@@ -689,7 +785,7 @@ Mobile money required fields:
 - `paymentRails`: `MOBILE_MONEY`
 - `phoneNumber`: Country-specific format (see patterns above)
 - `provider`: Mobile money provider name
-- `countries`: Required for XOF_ACCOUNT (enum: `SN`, `BJ`, `CI`), MWK_ACCOUNT (`MW`), UGX_ACCOUNT (`UG`)
+- `countries`: Required for XOF_ACCOUNT (enum: `SN`, `BJ`, `CI`), XAF_ACCOUNT uses `region` (enum: `CM`, `CG`), MWK_ACCOUNT (`MW`), UGX_ACCOUNT (`UG`)
 
 ### Crypto Wallets
 
@@ -727,6 +823,22 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 
 Lightning supports one of: `invoice` (bolt11), `bolt12` (bolt12 offer), or `lightningAddress` (user@domain format).
 
+#### Ethereum Wallet (USDC)
+
+```bash
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<customerId>",
+    "currency": "USDC",
+    "accountInfo": {
+      "accountType": "ETHEREUM_WALLET",
+      "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+    }
+  }' \
+  "$GRID_BASE_URL/customers/external-accounts" | jq .
+```
+
 #### Solana Wallet (USDC)
 
 ```bash
@@ -748,6 +860,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 - **TRON_WALLET**: USDT, requires `address`
 - **POLYGON_WALLET**: USDC, requires `address` (0x format)
 - **BASE_WALLET**: USDC, requires `address` (0x format)
+- **ETHEREUM_WALLET**: USDC, requires `address` (0x format)
 
 **Note:** Crypto wallets do NOT require beneficiary information.
 

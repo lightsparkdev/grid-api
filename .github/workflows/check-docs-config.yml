@@ -1,0 +1,26 @@
+name: Check docs config
+
+on:
+  pull_request:
+    paths:
+      - 'mintlify/docs.json'
+
+jobs:
+  check-openapi-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure docs.json uses production OpenAPI URL
+        run: |
+          EXPECTED_URL="https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml"
+          if grep -q '"openapi.yaml"' mintlify/docs.json; then
+            echo "::error file=mintlify/docs.json::docs.json references local 'openapi.yaml' instead of the production Stainless URL."
+            echo ""
+            echo "The openapi field must point to:"
+            echo "  $EXPECTED_URL"
+            echo ""
+            echo "Local openapi.yaml is only for development (make mint handles this automatically)."
+            exit 1
+          fi
+          echo "docs.json openapi reference looks good."

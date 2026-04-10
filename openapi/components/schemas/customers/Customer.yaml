@@ -15,6 +15,21 @@ properties:
     example: 9f84e0c2a72c4fa
   customerType:
     $ref: ./CustomerType.yaml
+  region:
+    type: string
+    description: >-
+      Country code (ISO 3166-1 alpha-2) representing the customer's regional identity
+      and regulatory jurisdiction.
+    example: US
+  currencies:
+    type: array
+    items:
+      type: string
+    description: >-
+      List of currency codes enabled for this customer.
+    example:
+      - USD
+      - USDC
   umaAddress:
     type: string
     description: >-

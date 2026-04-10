@@ -59,6 +59,10 @@ patch:
               customerType: INDIVIDUAL
               fullName: John Smith
               birthDate: '1985-06-15'
+              currencies:
+                - USD
+                - EUR
+                - USDC
               address:
                 line1: 456 Market St
                 city: San Francisco
@@ -69,6 +73,9 @@ patch:
             summary: Update business customer example
             value:
               customerType: BUSINESS
+              currencies:
+                - USD
+                - USDC
               businessInfo:
                 legalName: New Tech Solutions LLC
                 registrationNumber: BRN-987654321

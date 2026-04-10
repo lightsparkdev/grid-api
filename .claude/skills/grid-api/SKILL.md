@@ -200,7 +200,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/external-accounts" | jq .
 ```
 
-For all 24 supported fiat account types and 6 crypto wallet types with their field requirements, read `references/account-types.md`.
+For all 27 supported fiat account types and 7 crypto wallet types with their field requirements, read `references/account-types.md`.
 
 ### Exchange Rates (Pre-Quote FX Rates)
 
@@ -259,7 +259,7 @@ Returns:
 - `totalFee` — total cost in withdrawal currency (network fee converted + application fee)
 - `netAmount` — amount recipient receives after all fees
 
-Supported networks: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `POLYGON_MAINNET`, `TRON_MAINNET`
+Supported networks: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `POLYGON_MAINNET`, `BASE_MAINNET`, `TRON_MAINNET`
 
 ### Quotes (Cross-Currency Transfers)
 
@@ -471,7 +471,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 
 **Compatible instant methods:**
 
-- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon), USDT (Tron)
+- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum), USDT (Tron)
 - **Fiat:** RTP, SEPA Instant, and other instant payment rails
 
 **Flow:**
