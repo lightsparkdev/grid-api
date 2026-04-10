@@ -2,6 +2,7 @@ type: object
 required:
 - accountType
 - paymentRails
+- bankName
 - accountNumber
 - branchCode
 - bankAccountType
@@ -16,6 +17,11 @@ properties:
       type: string
       enum:
       - BANK_TRANSFER
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
   accountNumber:
     type: string
     description: The account number of the bank

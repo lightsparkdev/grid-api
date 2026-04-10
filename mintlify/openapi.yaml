@@ -5533,6 +5533,7 @@ components:
         - paymentRails
         - accountNumber
         - routingNumber
+        - bankName
       properties:
         accountType:
           type: string
@@ -5560,6 +5561,11 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
     PaymentUsdAccountInfo:
       title: USD Bank Account
       allOf:
@@ -6923,6 +6929,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
         - branchCode
         - phoneNumber
@@ -6938,6 +6945,11 @@ components:
             enum:
               - BANK_TRANSFER
               - MOBILE_MONEY
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -6981,6 +6993,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
         - bankAccountType
         - phoneNumber
@@ -6996,6 +7009,11 @@ components:
             enum:
               - BANK_TRANSFER
               - MOBILE_MONEY
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -7032,6 +7050,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
       properties:
         accountType:
@@ -7044,6 +7063,11 @@ components:
             type: string
             enum:
               - BANK_TRANSFER
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -7081,6 +7105,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
         - phoneNumber
       properties:
@@ -7095,6 +7120,11 @@ components:
             enum:
               - BANK_TRANSFER
               - MOBILE_MONEY
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -7125,6 +7155,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
         - phoneNumber
       properties:
@@ -7139,6 +7170,11 @@ components:
             enum:
               - BANK_TRANSFER
               - MOBILE_MONEY
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -7206,6 +7242,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
         - branchCode
         - bankAccountType
@@ -7220,6 +7257,11 @@ components:
             type: string
             enum:
               - BANK_TRANSFER
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -7255,6 +7297,7 @@ components:
       required:
         - accountType
         - paymentRails
+        - bankName
         - accountNumber
         - phoneNumber
       properties:
@@ -7269,6 +7312,11 @@ components:
             enum:
               - BANK_TRANSFER
               - MOBILE_MONEY
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
