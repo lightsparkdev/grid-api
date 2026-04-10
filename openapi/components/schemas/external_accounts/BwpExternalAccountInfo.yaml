@@ -1,11 +1,18 @@
 title: BWP Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/BwpAccountInfo.yaml
+- $ref: ../common/BwpAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

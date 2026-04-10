@@ -1,11 +1,18 @@
 title: BWP Account
 allOf:
 - $ref: ./BasePaymentAccountInfo.yaml
-- $ref: ./BwpAccountInfo.yaml
+- $ref: ./BwpAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - reference
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY
     reference:
       type: string
       description: Unique reference code that must be included with the payment to

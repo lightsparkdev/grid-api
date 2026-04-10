@@ -1,11 +1,18 @@
 title: GBP Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/GbpAccountInfo.yaml
+- $ref: ../common/GbpAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - FASTER_PAYMENTS
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

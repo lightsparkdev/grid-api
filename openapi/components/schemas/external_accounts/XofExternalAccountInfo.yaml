@@ -1,11 +1,18 @@
 title: XOF Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/XofAccountInfo.yaml
+- $ref: ../common/XofAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

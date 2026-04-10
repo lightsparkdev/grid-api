@@ -1,11 +1,19 @@
 title: EUR Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./EurAccountInfo.yaml
+  - $ref: ./EurAccountInfoBase.yaml
   - type: object
     required:
+      - paymentRails
       - reference
     properties:
+      paymentRails:
+        type: array
+        items:
+          type: string
+          enum:
+          - SEPA
+          - SEPA_INSTANT
       reference:
         type: string
         description: >-

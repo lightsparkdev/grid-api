@@ -1,11 +1,18 @@
 title: MXN Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./MxnAccountInfo.yaml
+  - $ref: ./MxnAccountInfoBase.yaml
   - type: object
     required:
+      - paymentRails
       - reference
     properties:
+      paymentRails:
+        type: array
+        items:
+          type: string
+          enum:
+          - SPEI
       reference:
         type: string
         description: >-

@@ -1,11 +1,18 @@
 title: AED Account
 allOf:
 - $ref: ./BasePaymentAccountInfo.yaml
-- $ref: ./AedAccountInfo.yaml
+- $ref: ./AedAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - reference
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - BANK_TRANSFER
     reference:
       type: string
       description: Unique reference code that must be included with the payment to

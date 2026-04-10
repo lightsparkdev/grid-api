@@ -1,11 +1,19 @@
 title: DKK Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./DkkAccountInfo.yaml
+  - $ref: ./DkkAccountInfoBase.yaml
   - type: object
     required:
+      - paymentRails
       - reference
     properties:
+      paymentRails:
+        type: array
+        items:
+          type: string
+          enum:
+          - SEPA
+          - SEPA_INSTANT
       reference:
         type: string
         description: >-

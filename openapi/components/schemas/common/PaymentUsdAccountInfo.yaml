@@ -1,11 +1,22 @@
 title: USD Bank Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./UsdAccountInfo.yaml
+  - $ref: ./UsdAccountInfoBase.yaml
   - type: object
     required:
+      - paymentRails
       - reference
     properties:
+      paymentRails:
+        type: array
+        items:
+          type: string
+          enum:
+          - ACH
+          - WIRE
+          - RTP
+          - FEDNOW
+          - BANK_TRANSFER
       reference:
         type: string
         description: >-

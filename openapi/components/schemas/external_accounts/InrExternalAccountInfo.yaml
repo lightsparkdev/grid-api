@@ -1,11 +1,18 @@
 title: INR Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/InrAccountInfo.yaml
+- $ref: ../common/InrAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - UPI
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

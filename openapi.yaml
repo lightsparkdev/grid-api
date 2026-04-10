@@ -5696,12 +5696,15 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
-    UsdAccountInfo:
+    PaymentUsdAccountInfo:
+      title: USD Bank Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/UsdAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -5713,15 +5716,6 @@ components:
                   - RTP
                   - FEDNOW
                   - BANK_TRANSFER
-    PaymentUsdAccountInfo:
-      title: USD Bank Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/UsdAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -5759,12 +5753,15 @@ components:
           minLength: 18
           maxLength: 18
           pattern: ^[0-9]{18}$
-    MxnAccountInfo:
+    PaymentMxnAccountInfo:
+      title: MXN Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/MxnAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -5772,15 +5769,6 @@ components:
                 type: string
                 enum:
                   - SPEI
-    PaymentMxnAccountInfo:
-      title: MXN Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/MxnAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -5809,12 +5797,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    DkkAccountInfo:
+    PaymentDkkAccountInfo:
+      title: DKK Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/DkkAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -5823,15 +5814,6 @@ components:
                 enum:
                   - SEPA
                   - SEPA_INSTANT
-    PaymentDkkAccountInfo:
-      title: DKK Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/DkkAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -5860,12 +5842,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    EurAccountInfo:
+    PaymentEurAccountInfo:
+      title: EUR Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/EurAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -5874,15 +5859,6 @@ components:
                 enum:
                   - SEPA
                   - SEPA_INSTANT
-    PaymentEurAccountInfo:
-      title: EUR Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/EurAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -5904,24 +5880,11 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
-    InrAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/InrAccountInfoBase'
-        - type: object
-          required:
-            - paymentRails
-          properties:
-            paymentRails:
-              type: array
-              items:
-                type: string
-                enum:
-                  - UPI
     PaymentInrAccountInfo:
       title: INR Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/InrAccountInfo'
+        - $ref: '#/components/schemas/InrAccountInfoBase'
     NgnAccountInfoBase:
       type: object
       required:
@@ -5945,12 +5908,15 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
-    NgnAccountInfo:
+    PaymentNgnAccountInfo:
+      title: NGN Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/NgnAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -5958,15 +5924,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentNgnAccountInfo:
-      title: NGN Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/NgnAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6004,12 +5961,15 @@ components:
           minLength: 7
           maxLength: 12
           pattern: ^[0-9]{7,12}$
-    CadAccountInfo:
+    PaymentCadAccountInfo:
+      title: CAD Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/CadAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6017,15 +5977,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentCadAccountInfo:
-      title: CAD Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6055,12 +6006,15 @@ components:
           maxLength: 8
           example: '12345678'
           pattern: ^[0-9]{8}$
-    GbpAccountInfo:
+    PaymentGbpAccountInfo:
+      title: GBP Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/GbpAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6068,15 +6022,6 @@ components:
                 type: string
                 enum:
                   - FASTER_PAYMENTS
-    PaymentGbpAccountInfo:
-      title: GBP Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/GbpAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6111,12 +6056,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    HkdAccountInfo:
+    PaymentHkdAccountInfo:
+      title: HKD Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/HkdAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6124,15 +6072,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentHkdAccountInfo:
-      title: HKD Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/HkdAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6176,12 +6115,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+62[0-9]{9,12}$
-    IdrAccountInfo:
+    PaymentIdrAccountInfo:
+      title: IDR Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/IdrAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6189,15 +6131,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentIdrAccountInfo:
-      title: IDR Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/IdrAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6232,12 +6165,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    MyrAccountInfo:
+    PaymentMyrAccountInfo:
+      title: MYR Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/MyrAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6245,15 +6181,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentMyrAccountInfo:
-      title: MYR Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/MyrAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6282,12 +6209,15 @@ components:
           maxLength: 16
           example: '001234567890'
           pattern: ^[0-9]{8,16}$
-    PhpAccountInfo:
+    PaymentPhpAccountInfo:
+      title: PHP Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/PhpAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6295,15 +6225,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentPhpAccountInfo:
-      title: PHP Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/PhpAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6339,12 +6260,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    SgdAccountInfo:
+    PaymentSgdAccountInfo:
+      title: SGD Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/SgdAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6354,15 +6278,6 @@ components:
                   - PAYNOW
                   - FAST
                   - BANK_TRANSFER
-    PaymentSgdAccountInfo:
-      title: SGD Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/SgdAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6397,12 +6312,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    ThbAccountInfo:
+    PaymentThbAccountInfo:
+      title: THB Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/ThbAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6410,15 +6328,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentThbAccountInfo:
-      title: THB Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/ThbAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6453,12 +6362,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    VndAccountInfo:
+    PaymentVndAccountInfo:
+      title: VND Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/VndAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6466,15 +6378,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentVndAccountInfo:
-      title: VND Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/VndAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6683,12 +6586,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    AedAccountInfo:
+    PaymentAedAccountInfo:
+      title: AED Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/AedAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6696,15 +6602,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentAedAccountInfo:
-      title: AED Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/AedAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6732,12 +6629,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    KesAccountInfo:
+    PaymentKesAccountInfo:
+      title: KES Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/KesAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6745,15 +6645,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentKesAccountInfo:
-      title: KES Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/KesAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6781,12 +6672,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    MwkAccountInfo:
+    PaymentMwkAccountInfo:
+      title: MWK Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/MwkAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6794,15 +6688,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentMwkAccountInfo:
-      title: MWK Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/MwkAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6830,12 +6715,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    RwfAccountInfo:
+    PaymentRwfAccountInfo:
+      title: RWF Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/RwfAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6843,15 +6731,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentRwfAccountInfo:
-      title: RWF Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/RwfAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6879,12 +6758,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    TzsAccountInfo:
+    PaymentTzsAccountInfo:
+      title: TZS Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/TzsAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6892,15 +6774,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentTzsAccountInfo:
-      title: TZS Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/TzsAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6928,12 +6801,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    UgxAccountInfo:
+    PaymentUgxAccountInfo:
+      title: UGX Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/UgxAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -6941,15 +6817,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentUgxAccountInfo:
-      title: UGX Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/UgxAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -6989,12 +6856,15 @@ components:
             - CI
             - SN
             - TG
-    XofAccountInfo:
+    PaymentXofAccountInfo:
+      title: XOF Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/XofAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7002,15 +6872,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentXofAccountInfo:
-      title: XOF Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/XofAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7038,12 +6899,15 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
-    ZarAccountInfo:
+    PaymentZarAccountInfo:
+      title: ZAR Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/ZarAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7051,15 +6915,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentZarAccountInfo:
-      title: ZAR Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/ZarAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7087,12 +6942,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    ZmwAccountInfo:
+    PaymentZmwAccountInfo:
+      title: ZMW Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/ZmwAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7100,15 +6958,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentZmwAccountInfo:
-      title: ZMW Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/ZmwAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7136,12 +6985,15 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-    BwpAccountInfo:
+    PaymentBwpAccountInfo:
+      title: BWP Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/BwpAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7149,15 +7001,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentBwpAccountInfo:
-      title: BWP Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/BwpAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7195,12 +7038,15 @@ components:
           enum:
             - CM
             - CG
-    XafAccountInfo:
+    PaymentXafAccountInfo:
+      title: XAF Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/XafAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7208,15 +7054,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentXafAccountInfo:
-      title: XAF Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/XafAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7258,12 +7095,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-    BdtAccountInfo:
+    PaymentBdtAccountInfo:
+      title: BDT Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/BdtAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7272,15 +7112,6 @@ components:
                 enum:
                   - BANK_TRANSFER
                   - MOBILE_MONEY
-    PaymentBdtAccountInfo:
-      title: BDT Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/BdtAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7315,12 +7146,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-    CopAccountInfo:
+    PaymentCopAccountInfo:
+      title: COP Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/CopAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7329,15 +7163,6 @@ components:
                 enum:
                   - BANK_TRANSFER
                   - MOBILE_MONEY
-    PaymentCopAccountInfo:
-      title: COP Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/CopAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7371,12 +7196,15 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-    EgpAccountInfo:
+    PaymentEgpAccountInfo:
+      title: EGP Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/EgpAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7384,15 +7212,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentEgpAccountInfo:
-      title: EGP Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/EgpAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7420,12 +7239,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-    GhsAccountInfo:
+    PaymentGhsAccountInfo:
+      title: GHS Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/GhsAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7434,15 +7256,6 @@ components:
                 enum:
                   - BANK_TRANSFER
                   - MOBILE_MONEY
-    PaymentGhsAccountInfo:
-      title: GHS Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/GhsAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7470,12 +7283,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-    GtqAccountInfo:
+    PaymentGtqAccountInfo:
+      title: GTQ Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/GtqAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7484,15 +7300,6 @@ components:
                 enum:
                   - BANK_TRANSFER
                   - MOBILE_MONEY
-    PaymentGtqAccountInfo:
-      title: GTQ Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/GtqAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7514,12 +7321,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-    HtgAccountInfo:
+    PaymentHtgAccountInfo:
+      title: HTG Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/HtgAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7527,15 +7337,6 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
-    PaymentHtgAccountInfo:
-      title: HTG Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/HtgAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7569,12 +7370,15 @@ components:
           enum:
             - CHECKING
             - SAVINGS
-    JmdAccountInfo:
+    PaymentJmdAccountInfo:
+      title: JMD Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/JmdAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7582,15 +7386,6 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
-    PaymentJmdAccountInfo:
-      title: JMD Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/JmdAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7625,12 +7420,15 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-    PkrAccountInfo:
+    PaymentPkrAccountInfo:
+      title: PKR Account
       allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/PkrAccountInfoBase'
         - type: object
           required:
             - paymentRails
+            - reference
           properties:
             paymentRails:
               type: array
@@ -7639,15 +7437,6 @@ components:
                 enum:
                   - BANK_TRANSFER
                   - MOBILE_MONEY
-    PaymentPkrAccountInfo:
-      title: PKR Account
-      allOf:
-        - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/PkrAccountInfo'
-        - type: object
-          required:
-            - reference
-          properties:
             reference:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
@@ -7909,19 +7698,6 @@ components:
           minLength: 11
           maxLength: 14
           pattern: ^[0-9]{11,14}$
-    BrlAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/BrlAccountInfoBase'
-        - type: object
-          required:
-            - paymentRails
-          properties:
-            paymentRails:
-              type: array
-              items:
-                type: string
-                enum:
-                  - PIX
     BrlBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -7988,11 +7764,18 @@ components:
       title: BRL Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BrlAccountInfo'
+        - $ref: '#/components/schemas/BrlAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - PIX
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8042,11 +7825,18 @@ components:
       title: CAD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfo'
+        - $ref: '#/components/schemas/CadAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8093,11 +7883,19 @@ components:
       title: DKK Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/DkkAccountInfo'
+        - $ref: '#/components/schemas/DkkAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SEPA
+                  - SEPA_INSTANT
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8145,11 +7943,19 @@ components:
       title: EUR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/EurAccountInfo'
+        - $ref: '#/components/schemas/EurAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SEPA
+                  - SEPA_INSTANT
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8196,11 +8002,18 @@ components:
       title: GBP Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GbpAccountInfo'
+        - $ref: '#/components/schemas/GbpAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - FASTER_PAYMENTS
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8247,11 +8060,18 @@ components:
       title: HKD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/HkdAccountInfo'
+        - $ref: '#/components/schemas/HkdAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8298,11 +8118,18 @@ components:
       title: IDR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/IdrAccountInfo'
+        - $ref: '#/components/schemas/IdrAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8349,11 +8176,18 @@ components:
       title: INR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/InrAccountInfo'
+        - $ref: '#/components/schemas/InrAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - UPI
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8400,11 +8234,18 @@ components:
       title: KES Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/KesAccountInfo'
+        - $ref: '#/components/schemas/KesAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8451,11 +8292,18 @@ components:
       title: MWK Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/MwkAccountInfo'
+        - $ref: '#/components/schemas/MwkAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8502,11 +8350,18 @@ components:
       title: MXN Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/MxnAccountInfo'
+        - $ref: '#/components/schemas/MxnAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SPEI
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8553,11 +8408,18 @@ components:
       title: MYR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/MyrAccountInfo'
+        - $ref: '#/components/schemas/MyrAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8604,11 +8466,18 @@ components:
       title: NGN Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/NgnAccountInfo'
+        - $ref: '#/components/schemas/NgnAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8655,11 +8524,18 @@ components:
       title: PHP Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PhpAccountInfo'
+        - $ref: '#/components/schemas/PhpAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8706,11 +8582,18 @@ components:
       title: RWF Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/RwfAccountInfo'
+        - $ref: '#/components/schemas/RwfAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8757,11 +8640,20 @@ components:
       title: SGD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SgdAccountInfo'
+        - $ref: '#/components/schemas/SgdAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - PAYNOW
+                  - FAST
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8808,11 +8700,18 @@ components:
       title: THB Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/ThbAccountInfo'
+        - $ref: '#/components/schemas/ThbAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8859,11 +8758,18 @@ components:
       title: TZS Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/TzsAccountInfo'
+        - $ref: '#/components/schemas/TzsAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8910,11 +8816,18 @@ components:
       title: UGX Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UgxAccountInfo'
+        - $ref: '#/components/schemas/UgxAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -8961,11 +8874,22 @@ components:
       title: USD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/UsdAccountInfo'
+        - $ref: '#/components/schemas/UsdAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - ACH
+                  - WIRE
+                  - RTP
+                  - FEDNOW
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9012,11 +8936,18 @@ components:
       title: VND Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/VndAccountInfo'
+        - $ref: '#/components/schemas/VndAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9063,11 +8994,18 @@ components:
       title: XOF Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/XofAccountInfo'
+        - $ref: '#/components/schemas/XofAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9114,11 +9052,18 @@ components:
       title: ZAR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/ZarAccountInfo'
+        - $ref: '#/components/schemas/ZarAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9165,11 +9110,18 @@ components:
       title: ZMW Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/ZmwAccountInfo'
+        - $ref: '#/components/schemas/ZmwAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9274,11 +9226,18 @@ components:
       title: AED Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/AedAccountInfo'
+        - $ref: '#/components/schemas/AedAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9325,11 +9284,18 @@ components:
       title: BWP Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BwpAccountInfo'
+        - $ref: '#/components/schemas/BwpAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9376,11 +9342,18 @@ components:
       title: XAF Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/XafAccountInfo'
+        - $ref: '#/components/schemas/XafAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9427,11 +9400,19 @@ components:
       title: BDT Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BdtAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9479,11 +9460,19 @@ components:
       title: COP Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CopAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9533,11 +9522,18 @@ components:
       title: EGP Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/EgpAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9584,11 +9580,19 @@ components:
       title: GHS Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GhsAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9636,11 +9640,19 @@ components:
       title: GTQ Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GtqAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9687,11 +9699,18 @@ components:
       title: HTG Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/HtgAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9740,11 +9759,18 @@ components:
       title: JMD Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/JmdAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
@@ -9791,11 +9817,19 @@ components:
       title: PKR Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PkrAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfoBase'
         - type: object
           required:
+            - paymentRails
             - beneficiary
           properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary

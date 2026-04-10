@@ -1,11 +1,19 @@
 title: DKK Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/DkkAccountInfo.yaml
+- $ref: ../common/DkkAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - SEPA
+        - SEPA_INSTANT
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

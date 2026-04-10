@@ -1,11 +1,19 @@
 title: EUR Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/EurAccountInfo.yaml
+- $ref: ../common/EurAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - SEPA
+        - SEPA_INSTANT
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

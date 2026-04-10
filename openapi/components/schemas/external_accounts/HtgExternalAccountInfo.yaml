@@ -1,11 +1,18 @@
 title: HTG Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/HtgAccountInfo.yaml
+- $ref: ../common/HtgAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

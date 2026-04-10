@@ -1,11 +1,18 @@
 title: AED Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/AedAccountInfo.yaml
+- $ref: ../common/AedAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - BANK_TRANSFER
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

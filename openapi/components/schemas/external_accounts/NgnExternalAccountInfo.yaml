@@ -1,11 +1,18 @@
 title: NGN Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/NgnAccountInfo.yaml
+- $ref: ../common/NgnAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - BANK_TRANSFER
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

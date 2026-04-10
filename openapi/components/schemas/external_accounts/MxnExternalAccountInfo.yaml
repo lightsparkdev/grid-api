@@ -1,11 +1,18 @@
 title: MXN Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/MxnAccountInfo.yaml
+- $ref: ../common/MxnAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - SPEI
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

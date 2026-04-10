@@ -1,11 +1,20 @@
 title: SGD Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./SgdAccountInfo.yaml
+  - $ref: ./SgdAccountInfoBase.yaml
   - type: object
     required:
+      - paymentRails
       - reference
     properties:
+      paymentRails:
+        type: array
+        items:
+          type: string
+          enum:
+          - PAYNOW
+          - FAST
+          - BANK_TRANSFER
       reference:
         type: string
         description: >-

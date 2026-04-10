@@ -1,11 +1,18 @@
 title: BRL Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/BrlAccountInfo.yaml
+- $ref: ../common/BrlAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - PIX
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

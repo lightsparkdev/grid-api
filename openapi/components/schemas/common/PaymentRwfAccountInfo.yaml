@@ -1,11 +1,18 @@
 title: RWF Account
 allOf:
 - $ref: ./BasePaymentAccountInfo.yaml
-- $ref: ./RwfAccountInfo.yaml
+- $ref: ./RwfAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - reference
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY
     reference:
       type: string
       description: Unique reference code that must be included with the payment to

@@ -1,11 +1,18 @@
 title: IDR Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/IdrAccountInfo.yaml
+- $ref: ../common/IdrAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - BANK_TRANSFER
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

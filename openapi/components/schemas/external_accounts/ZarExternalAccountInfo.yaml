@@ -1,11 +1,18 @@
 title: ZAR Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/ZarAccountInfo.yaml
+- $ref: ../common/ZarAccountInfoBase.yaml
 - type: object
   required:
+  - paymentRails
   - beneficiary
   properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - BANK_TRANSFER
     beneficiary:
       oneOf:
       - title: Individual Beneficiary

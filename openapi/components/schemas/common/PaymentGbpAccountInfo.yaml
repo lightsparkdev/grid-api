@@ -1,11 +1,18 @@
 title: GBP Account
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./GbpAccountInfo.yaml
+  - $ref: ./GbpAccountInfoBase.yaml
   - type: object
     required:
+      - paymentRails
       - reference
     properties:
+      paymentRails:
+        type: array
+        items:
+          type: string
+          enum:
+          - FASTER_PAYMENTS
       reference:
         type: string
         description: >-
