@@ -1513,10 +1513,12 @@ html.dark div[class*="lg:flex-1"][class*="overflow-x-clip"] {
   max-width: 100% !important;
 }
 
-/* Ensure code panel doesn't shrink on API reference pages */
+/* Code panel: preferred 28rem, but allow collapse when assistant panel is open */
 #content-container:has(#api-playground-2-operation-page) #content-side-layout {
-  flex-shrink: 0 !important;
-  min-width: 28rem !important;
+  flex: 0 1 28rem !important;
+  width: auto !important;
+  max-width: 28rem !important;
+  min-width: 0 !important;
 }
 
 /* Ensure content area is flexible on API reference pages */
