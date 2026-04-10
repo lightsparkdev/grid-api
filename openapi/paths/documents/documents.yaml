@@ -86,27 +86,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of documents matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/documents/Document.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: Total number of results matching the criteria
+            $ref: ../../components/schemas/documents/DocumentListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

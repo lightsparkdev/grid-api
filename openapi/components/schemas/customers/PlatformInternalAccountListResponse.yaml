@@ -1,0 +1,9 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: array
+    description: List of internal accounts matching the filter criteria
+    items:
+      $ref: ./InternalAccount.yaml

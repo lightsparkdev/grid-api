@@ -22,15 +22,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-            properties:
-              data:
-                type: array
-                description: List of internal accounts matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/customers/InternalAccount.yaml
+            $ref: ../../components/schemas/customers/PlatformInternalAccountListResponse.yaml
     "400":
       description: Bad request - Invalid parameters
       content:

@@ -52,15 +52,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-            properties:
-              data:
-                type: array
-                description: List of exchange rates matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/exchange_rates/ExchangeRate.yaml
+            $ref: ../../components/schemas/exchange_rates/ExchangeRateListResponse.yaml
           examples:
             allRatesFromUSD:
               summary: All exchange rates from USD

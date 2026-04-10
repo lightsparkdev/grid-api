@@ -106,29 +106,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of tokens matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/tokens/ApiToken.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: >-
-                  Total number of tokens matching the criteria (excluding
-                  pagination)
+            $ref: ../../components/schemas/tokens/TokenListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

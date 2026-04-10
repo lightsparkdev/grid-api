@@ -189,15 +189,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    description: List of exchange rates matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/ExchangeRate'
+                $ref: '#/components/schemas/ExchangeRateListResponse'
               examples:
                 allRatesFromUSD:
                   summary: All exchange rates from USD
@@ -295,32 +287,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    description: List of payment rails matching the filter criteria
-                    items:
-                      type: object
-                      required:
-                        - bankName
-                        - displayName
-                        - country
-                        - currency
-                      properties:
-                        bankName:
-                          type: string
-                          description: |
-                            Canonical name for this payment rail. Pass this value as `bankName` when creating an external account.
-                        displayName:
-                          type: string
-                          description: Human-friendly display name for this payment rail.
-                        country:
-                          type: string
-                          description: ISO 3166-1 alpha-2 country code.
-                        currency:
-                          type: string
-                          description: ISO 4217 currency code.
+                $ref: '#/components/schemas/DiscoveryListResponse'
               examples:
                 philippinesBanks:
                   summary: Payment rails for Philippines (PHP)
@@ -556,25 +523,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of customers matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/CustomerOneOf'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of customers matching the criteria (excluding pagination)
+                $ref: '#/components/schemas/CustomerListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -841,25 +790,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of internal accounts matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/InternalAccount'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of customers matching the criteria (excluding pagination)
+                $ref: '#/components/schemas/InternalAccountListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -903,15 +834,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    description: List of internal accounts matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/InternalAccount'
+                $ref: '#/components/schemas/PlatformInternalAccountListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -978,25 +901,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of external accounts matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/ExternalAccount'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of external accounts matching the criteria (excluding pagination)
+                $ref: '#/components/schemas/ExternalAccountListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1119,15 +1024,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    description: List of external accounts matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/ExternalAccount'
+                $ref: '#/components/schemas/PlatformExternalAccountListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1307,25 +1204,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of beneficial owners matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/BeneficialOwner'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of results matching the criteria
+                $ref: '#/components/schemas/BeneficialOwnerListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1523,25 +1402,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of documents matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/Document'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of results matching the criteria
+                $ref: '#/components/schemas/DocumentListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -1820,25 +1681,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of verifications matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/Verification'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of results matching the criteria
+                $ref: '#/components/schemas/VerificationListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -2064,16 +1907,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ReceiverLookupResponse'
-                  - type: object
-                    required:
-                      - receiverUmaAddress
-                    properties:
-                      receiverUmaAddress:
-                        type: string
-                        description: The UMA address that was looked up
-                        example: $receiver@uma.domain
+                $ref: '#/components/schemas/ReceiverUmaLookupResponse'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -2147,16 +1981,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ReceiverLookupResponse'
-                  - type: object
-                    required:
-                      - accountId
-                    properties:
-                      accountId:
-                        type: string
-                        description: The external account ID that was looked up
-                        example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                $ref: '#/components/schemas/ReceiverExternalAccountLookupResponse'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -2561,25 +2386,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of transactions matching the criteria
-                    items:
-                      $ref: '#/components/schemas/TransactionOneOf'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of transactions matching the criteria (excluding pagination)
+                $ref: '#/components/schemas/TransactionListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -3437,21 +3244,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    description: List of available UMA Providers using Grid
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/UmaProvider'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of transactions matching the criteria (excluding pagination)
+                $ref: '#/components/schemas/UmaProviderListResponse'
         '401':
           description: Unauthorized
           content:
@@ -3570,25 +3363,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - hasMore
-                properties:
-                  data:
-                    type: array
-                    description: List of tokens matching the filter criteria
-                    items:
-                      $ref: '#/components/schemas/ApiToken'
-                  hasMore:
-                    type: boolean
-                    description: Indicates if more results are available beyond this page
-                  nextCursor:
-                    type: string
-                    description: Cursor to retrieve the next page of results (only present if hasMore is true)
-                  totalCount:
-                    type: integer
-                    description: Total number of tokens matching the criteria (excluding pagination)
+                $ref: '#/components/schemas/TokenListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -4943,6 +4718,43 @@ components:
           format: date-time
           description: Timestamp when this exchange rate was last refreshed
           example: '2025-02-05T12:00:00Z'
+    ExchangeRateListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of exchange rates matching the filter criteria
+          items:
+            $ref: '#/components/schemas/ExchangeRate'
+    DiscoveryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          description: List of payment rails matching the filter criteria
+          items:
+            type: object
+            required:
+              - bankName
+              - displayName
+              - country
+              - currency
+            properties:
+              bankName:
+                type: string
+                description: |
+                  Canonical name for this payment rail. Pass this value as `bankName` when creating an external account.
+              displayName:
+                type: string
+                description: Human-friendly display name for this payment rail.
+              country:
+                type: string
+                description: ISO 3166-1 alpha-2 country code.
+              currency:
+                type: string
+                description: ISO 4217 currency code.
     CustomerType:
       type: string
       enum:
@@ -5444,6 +5256,26 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomer'
           BUSINESS: '#/components/schemas/BusinessCustomer'
+    CustomerListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of customers matching the filter criteria
+          items:
+            $ref: '#/components/schemas/CustomerOneOf'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of customers matching the criteria (excluding pagination)
     CustomerCreateRequest:
       type: object
       required:
@@ -7605,6 +7437,36 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
+    InternalAccountListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of internal accounts matching the filter criteria
+          items:
+            $ref: '#/components/schemas/InternalAccount'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of customers matching the criteria (excluding pagination)
+    PlatformInternalAccountListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of internal accounts matching the filter criteria
+          items:
+            $ref: '#/components/schemas/InternalAccount'
     ExternalAccountStatus:
       type: string
       enum:
@@ -9753,6 +9615,26 @@ components:
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+    ExternalAccountListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of external accounts matching the filter criteria
+          items:
+            $ref: '#/components/schemas/ExternalAccount'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of external accounts matching the criteria (excluding pagination)
     ExternalAccountCreateRequest:
       allOf:
         - type: object
@@ -9782,6 +9664,16 @@ components:
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+    PlatformExternalAccountListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of external accounts matching the filter criteria
+          items:
+            $ref: '#/components/schemas/ExternalAccount'
     PlatformExternalAccountCreateRequest:
       type: object
       required:
@@ -9798,6 +9690,26 @@ components:
           example: ext_acc_123456
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+    BeneficialOwnerListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of beneficial owners matching the filter criteria
+          items:
+            $ref: '#/components/schemas/BeneficialOwner'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of results matching the criteria
     BeneficialOwnerCreateRequest:
       type: object
       required:
@@ -9972,6 +9884,26 @@ components:
           format: date-time
           description: When this document was last updated
           example: '2025-10-03T12:00:00Z'
+    DocumentListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of documents matching the filter criteria
+          items:
+            $ref: '#/components/schemas/Document'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of results matching the criteria
     BaseDocumentRequest:
       type: object
       required:
@@ -10123,6 +10055,26 @@ components:
           format: date-time
           description: When this verification was last updated
           example: '2025-10-03T12:00:00Z'
+    VerificationListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of verifications matching the filter criteria
+          items:
+            $ref: '#/components/schemas/Verification'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of results matching the criteria
     VerificationRequest:
       type: object
       required:
@@ -10733,6 +10685,17 @@ components:
           type: string
           description: Unique identifier for the lookup. Needed in the subsequent create quote request.
           example: Lookup:019542f5-b3e7-1d02-0000-000000000009
+    ReceiverUmaLookupResponse:
+      allOf:
+        - $ref: '#/components/schemas/ReceiverLookupResponse'
+        - type: object
+          required:
+            - receiverUmaAddress
+          properties:
+            receiverUmaAddress:
+              type: string
+              description: The UMA address that was looked up
+              example: $receiver@uma.domain
     Error412:
       type: object
       required:
@@ -10793,6 +10756,17 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    ReceiverExternalAccountLookupResponse:
+      allOf:
+        - $ref: '#/components/schemas/ReceiverLookupResponse'
+        - type: object
+          required:
+            - accountId
+          properties:
+            accountId:
+              type: string
+              description: The external account ID that was looked up
+              example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
     QuoteSourceType:
       type: string
       enum:
@@ -11105,6 +11079,26 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    TransactionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of transactions matching the criteria
+          items:
+            $ref: '#/components/schemas/TransactionOneOf'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of transactions matching the criteria (excluding pagination)
     ApprovePaymentRequest:
       type: object
       properties:
@@ -11519,6 +11513,23 @@ components:
           type: boolean
           description: Whether this UMA Provider is on your allow list
           example: true
+    UmaProviderListResponse:
+      type: object
+      properties:
+        data:
+          description: List of available UMA Providers using Grid
+          type: array
+          items:
+            $ref: '#/components/schemas/UmaProvider'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of transactions matching the criteria (excluding pagination)
     Permission:
       type: string
       enum:
@@ -11567,6 +11578,26 @@ components:
           format: date-time
           description: Last update timestamp
           example: '2025-07-21T17:32:28Z'
+    TokenListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of tokens matching the filter criteria
+          items:
+            $ref: '#/components/schemas/ApiToken'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of tokens matching the criteria (excluding pagination)
     ApiTokenCreateRequest:
       type: object
       required:

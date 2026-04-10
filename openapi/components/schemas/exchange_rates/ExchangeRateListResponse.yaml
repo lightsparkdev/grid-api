@@ -1,0 +1,9 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: array
+    description: List of exchange rates matching the filter criteria
+    items:
+      $ref: ./ExchangeRate.yaml
