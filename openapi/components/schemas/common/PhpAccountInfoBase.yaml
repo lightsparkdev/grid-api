@@ -1,0 +1,23 @@
+type: object
+required:
+- accountType
+- bankName
+- accountNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - PHP_ACCOUNT
+  bankName:
+    type: string
+    description: Name of the beneficiary's bank
+    minLength: 1
+    maxLength: 255
+    example: BDO Unibank
+  accountNumber:
+    type: string
+    description: Bank account number
+    minLength: 8
+    maxLength: 16
+    example: '001234567890'
+    pattern: ^[0-9]{8,16}$

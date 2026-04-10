@@ -1,0 +1,31 @@
+type: object
+required:
+- accountType
+- pixKey
+- pixKeyType
+- taxId
+properties:
+  accountType:
+    type: string
+    enum:
+    - BRL_ACCOUNT
+  pixKey:
+    type: string
+    description: The PIX key (email, phone, CPF, CNPJ, or random)
+    minLength: 1
+    maxLength: 77
+  pixKeyType:
+    type: string
+    description: The type of PIX key
+    enum:
+    - CPF
+    - CNPJ
+    - EMAIL
+    - PHONE
+    - RANDOM
+  taxId:
+    type: string
+    description: The tax ID (CPF or CNPJ)
+    minLength: 11
+    maxLength: 14
+    pattern: ^[0-9]{11,14}$

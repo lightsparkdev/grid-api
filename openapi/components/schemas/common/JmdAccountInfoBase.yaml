@@ -1,0 +1,28 @@
+type: object
+required:
+- accountType
+- accountNumber
+- branchCode
+- bankAccountType
+properties:
+  accountType:
+    type: string
+    enum:
+    - JMD_ACCOUNT
+  accountNumber:
+    type: string
+    description: The account number of the bank
+    minLength: 1
+    maxLength: 34
+  branchCode:
+    type: string
+    description: The branch code
+    minLength: 5
+    maxLength: 5
+    pattern: ^[0-9]{5}$
+  bankAccountType:
+    type: string
+    description: The bank account type
+    enum:
+    - CHECKING
+    - SAVINGS
