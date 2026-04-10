@@ -8,6 +8,38 @@ External accounts are bank accounts, cryptocurrency wallets, or payment destinat
   Platform accounts are managed at the organization level.
 </Info>
 
+## Look up bank names with the Discoveries API
+
+Some countries require a `bankName` when creating an external account — including the Philippines, Nigeria, South Africa, and others. The `bankName` value must match exactly what Grid expects.
+
+Use the [Discoveries API](/api-reference/discoveries/list-available-receiving-institution-names) to retrieve the list of valid bank names for a given country and currency:
+
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/discoveries?country=PH&currency=PHP' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+```
+
+```json Response
+{
+  "data": [
+    {
+      "bankName": "BDO Unibank",
+      "displayName": "BDO Unibank",
+      "country": "PH",
+      "currency": "PHP"
+    },
+    {
+      "bankName": "BPI",
+      "displayName": "Bank of the Philippine Islands",
+      "country": "PH",
+      "currency": "PHP"
+    }
+  ]
+}
+```
+
+Use `bankName` from the response as the `bankName` value when creating an external account. The `displayName` is a human-friendly label you can show to your users. You can filter the list on the client side as the user types to provide a bank search experience.
+
 ## Create external accounts by region or wallet
 
 <Tabs>
