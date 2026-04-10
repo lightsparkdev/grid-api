@@ -105,6 +105,35 @@ It'll prompt you for your API Token ID and Client Secret, validate them, and sav
 Start in the sandbox environment to experiment safely. The Skill is great at generating fake account data to help you test different flows.
 </Tip>
 
+## MCP server
+
+Grid provides a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that gives AI agents access to Grid's documentation, so your agentic workflows have full context of the Grid API during implementation.
+
+```
+https://grid.lightspark.com/mcp
+```
+
+The MCP server exposes two tools:
+
+- **`search_grid_api_documentation`** — Search the Grid docs for relevant guides, code examples, and API references
+- **`get_page_grid_api_documentation`** — Retrieve the full content of a specific documentation page
+
+<Info>
+The MCP server provides documentation access to support agentic implementation workflows. It does not yet support interacting with the Grid API directly — use the [Grid API agent skill](#install-the-grid-api-agent-skill) or direct API calls for that.
+</Info>
+
+Add it to any MCP-compatible client (Claude Desktop, Cursor, Windsurf, etc.) using the streamable HTTP transport:
+
+```json
+{
+  "mcpServers": {
+    "grid-api-docs": {
+      "url": "https://grid.lightspark.com/mcp"
+    }
+  }
+}
+```
+
 ## Example prompts
 
 Try these prompts in Claude Code or paste them into your AI assistant of choice:
