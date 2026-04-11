@@ -2590,7 +2590,7 @@ paths:
                 value:
                   internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
                   currency: USDC
-                  cryptoNetwork: SOLANA_MAINNET
+                  cryptoNetwork: SOLANA
                   amount: 1000000
                   destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
       responses:
@@ -7502,6 +7502,28 @@ components:
           type: string
           description: The verified full name of the account holder as returned by the payment rail
           example: John Doe
+    CryptoNetwork:
+      type: string
+      description: |
+        The blockchain network identifier. The environment (mainnet vs testnet) is determined
+        automatically based on whether the request is made against the production or sandbox API.
+
+        | Value | Production | Sandbox |
+        |-------|------------|---------|
+        | BITCOIN | Bitcoin mainnet | Bitcoin testnet |
+        | ETHEREUM | Ethereum mainnet | Ethereum Sepolia |
+        | SOLANA | Solana mainnet | Solana devnet |
+        | BASE | Base mainnet | Base Sepolia |
+        | SPARK | Spark mainnet | Spark testnet |
+        | LIGHTNING | Lightning mainnet | Lightning regtest |
+      enum:
+        - BITCOIN
+        - ETHEREUM
+        - SOLANA
+        - BASE
+        - SPARK
+        - LIGHTNING
+      example: SOLANA
     ExternalAccountType:
       type: string
       enum:
@@ -9610,9 +9632,7 @@ components:
               $ref: '#/components/schemas/BeneficiaryVerifiedData'
               description: Verified beneficiary data returned by the payment rail, if available
             cryptoNetwork:
-              type: string
-              description: 'The blockchain network for this external account, if applicable. Present when the account is a cryptocurrency wallet. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
-              example: SOLANA_MAINNET
+              $ref: '#/components/schemas/CryptoNetwork'
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountListResponse:
@@ -9659,9 +9679,7 @@ components:
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
               default: false
             cryptoNetwork:
-              type: string
-              description: 'The blockchain network for this external account. Required when the account is a cryptocurrency wallet. Specifies which network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
-              example: SOLANA_MAINNET
+              $ref: '#/components/schemas/CryptoNetwork'
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     PlatformExternalAccountListResponse:
@@ -10825,9 +10843,9 @@ components:
               description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: USD
             cryptoNetwork:
-              type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `ETHEREUM_TESTNET`, `BASE_MAINNET`, `BASE_TESTNET`, `SPARK_MAINNET`, `SPARK_TESTNET`, `LIGHTNING_MAINNET`, `LIGHTNING_REGTEST`.'
-              example: SOLANA_MAINNET
+              allOf:
+                - $ref: '#/components/schemas/CryptoNetwork'
+                - description: The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated.
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
       oneOf:
@@ -11131,9 +11149,7 @@ components:
           description: The currency code of the asset to withdraw (e.g. USDC).
           example: USDC
         cryptoNetwork:
-          type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
-          example: SOLANA_MAINNET
+          $ref: '#/components/schemas/CryptoNetwork'
         amount:
           type: integer
           description: The amount to withdraw in the smallest unit of the currency.
