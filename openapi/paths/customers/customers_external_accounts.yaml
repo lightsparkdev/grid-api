@@ -88,8 +88,6 @@ post:
               currency: USD
               accountInfo:
                 accountType: USD_ACCOUNT
-                paymentRails:
-                  - ACH
                 accountNumber: "12345678901"
                 routingNumber: "123456789"
                 accountCategory: CHECKING

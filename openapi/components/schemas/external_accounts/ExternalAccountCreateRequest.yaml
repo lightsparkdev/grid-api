@@ -38,4 +38,4 @@ allOf:
           LIGHTNING_REGTEST.
         example: SOLANA_MAINNET
       accountInfo:
-        $ref: ./ExternalAccountInfoOneOf.yaml
+        $ref: ./ExternalAccountCreateInfoOneOf.yaml

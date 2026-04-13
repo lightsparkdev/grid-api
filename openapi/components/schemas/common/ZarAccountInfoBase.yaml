@@ -1,0 +1,22 @@
+type: object
+required:
+- accountType
+- accountNumber
+- bankName
+properties:
+  accountType:
+    type: string
+    enum:
+    - ZAR_ACCOUNT
+  accountNumber:
+    type: string
+    description: South African bank account number
+    minLength: 9
+    maxLength: 13
+    example: '1234567890'
+    pattern: ^[0-9]{9,13}$
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255

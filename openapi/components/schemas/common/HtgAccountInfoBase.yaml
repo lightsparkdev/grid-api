@@ -1,0 +1,16 @@
+type: object
+required:
+- accountType
+- phoneNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - HTG_ACCOUNT
+  phoneNumber:
+    type: string
+    description: The phone number in international format
+    example: '+1234567890'
+    minLength: 7
+    maxLength: 15
+    pattern: ^\+[0-9]{6,14}$

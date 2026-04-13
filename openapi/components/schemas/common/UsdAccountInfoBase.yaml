@@ -1,0 +1,22 @@
+type: object
+required:
+- accountType
+- accountNumber
+- routingNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - USD_ACCOUNT
+  accountNumber:
+    type: string
+    description: The account number of the bank
+    minLength: 1
+    maxLength: 34
+  routingNumber:
+    type: string
+    description: The ABA routing number
+    example: '021000021'
+    minLength: 9
+    maxLength: 9
+    pattern: ^[0-9]{9}$
