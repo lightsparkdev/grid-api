@@ -28,7 +28,7 @@ NETWORKS = {
     "testnet": {
         "rpc": "https://rpc-amoy.polygon.technology",
         "chain_id": 80002,
-        "usdc_contract": "0x41E94Eb71898E8B51d136F15b58AAcb90f0b7e70",
+        "usdc_contract": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
         "cred_key": "polygonTestnetPrivateKey",
         "name": "Polygon Amoy",
         "priority_fee_gwei": 30,
