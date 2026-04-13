@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./ReceiverLookupResponse.yaml
+  - type: object
+    required:
+      - accountId
+    properties:
+      accountId:
+        type: string
+        description: The external account ID that was looked up
+        example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965

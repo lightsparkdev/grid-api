@@ -7,6 +7,7 @@ on:
       - 'openapi.yaml'
       - 'openapi/**'
       - '.markdownlint.json'
+      - '.spectral.yaml'
       - 'mintlify/**'
   pull_request:
     branches: [ main ]
@@ -14,6 +15,7 @@ on:
       - 'openapi.yaml'
       - 'openapi/**'
       - '.markdownlint.json'
+      - '.spectral.yaml'
       - 'mintlify/**'
   # Allow manual triggering
   workflow_dispatch:

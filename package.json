@@ -5,7 +5,7 @@
   "scripts": {
     "build:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
     "prelint:openapi": "npm run build:openapi",
-    "lint:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && npx @redocly/cli lint openapi.yaml && cp openapi.yaml mintlify/openapi.yaml",
+    "lint:openapi": "npx @redocly/cli bundle openapi/openapi.yaml -o openapi.yaml && npx @redocly/cli lint openapi.yaml && npx spectral lint openapi.yaml --fail-severity=error && cp openapi.yaml mintlify/openapi.yaml",
     "lint": "npm run lint:openapi",
     "broken-links": "cd mintlify && mint broken-links",
     "validate": "npm run lint",
@@ -19,6 +19,7 @@
     "mint": "^4.2.105"
   },
   "devDependencies": {
+    "@stoplight/spectral-cli": "^6.15.0",
     "markdownlint-cli": "^0.44.0",
     "widdershins": "^4.0.1"
   },

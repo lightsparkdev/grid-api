@@ -417,6 +417,55 @@ The discriminator property must be listed in `required` in the **variant** schem
 
 - Use `allOf` for extending base schemas
 
+### Avoid Inline Schemas in Request and Response Definitions
+
+Never define schemas inline within path request bodies or responses. Always use `$ref` to reference a named schema in `components/schemas/`. Inline schemas produce auto-generated names in SDKs based on the operation and HTTP status code, resulting in poor developer experience.
+
+```yaml
+# ❌ Wrong — inline schema generates ugly SDK names like
+# "CreateCustomerExternalAccount200Response" or "CreateCustomerExternalAccountBody"
+post:
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            currency:
+              type: string
+            accountInfo:
+              type: object
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              status:
+                type: string
+```
+
+```yaml
+# ✅ Correct — named schemas produce clean SDK types
+post:
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '../../components/schemas/external_accounts/ExternalAccountCreateRequest.yaml'
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/external_accounts/ExternalAccount.yaml'
+```
+
+This applies to all request bodies, response bodies, and nested objects within them. If a schema is used only once, it still belongs in `components/schemas/` with a descriptive name.
+
 ### Documentation in OpenAPI
 
 - Add `description` to every endpoint, parameter, and schema field
@@ -564,6 +613,62 @@ All errors follow a consistent structure:
 2. Add the new code to the corresponding `Error{StatusCode}.yaml` enum
 3. Add a description in the markdown table within the `code` field description
 4. Update SDK error handling if needed
+
+---
+
+## Idempotency
+
+Any API endpoint that triggers money movement **must** support idempotency to prevent duplicate transactions caused by retries, network failures, or client timeouts.
+
+We follow the [IETF Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) specification.
+
+### Endpoints Requiring Idempotency
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /quotes` (with `immediatelyExecute: true`) | Creates and executes a quote in one step |
+| `POST /quotes/{quoteId}/execute` | Executes a previously created quote |
+| `POST /transfer-in` | Initiates an inbound transfer |
+| `POST /transfer-out` | Initiates an outbound transfer |
+
+### How It Works
+
+Clients include an `Idempotency-Key` header with a unique value (typically a UUID) on the request. The server uses this key to deduplicate requests:
+
+- **First request**: Processes normally and stores the response keyed by the idempotency key.
+- **Subsequent requests with the same key (2xx or 4xx)**: Returns the stored response without reprocessing. The response status code and body will match the original response.
+- **Subsequent requests with the same key (5xx)**: Server errors are not stored — the request will be retried and processed again, allowing recovery from transient failures.
+- **Different key**: Treated as a new request.
+
+```
+POST /quotes/{quoteId}/execute
+Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
+```
+
+### SDK Support
+
+Our SDKs support idempotency keys via request options:
+
+```typescript
+// TypeScript
+await client.quotes.execute('Quote:123', {
+  idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
+});
+```
+
+```kotlin
+// Kotlin
+client.quotes().execute("Quote:123", RequestOptions.builder()
+    .idempotencyKey("550e8400-e29b-41d4-a716-446655440000")
+    .build())
+```
+
+### Design Guidelines
+
+When adding a new endpoint that triggers money movement:
+
+1. Document that the endpoint supports idempotency in the operation description
+2. Include the `Idempotency-Key` header in the OpenAPI spec parameters
 
 ---
 

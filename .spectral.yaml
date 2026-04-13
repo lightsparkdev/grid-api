@@ -1,0 +1,175 @@
+extends:
+  - spectral:oas
+
+rules:
+  # Disable built-in rules already covered by Redocly
+  info-contact: off
+  info-description: off
+  operation-tag-defined: off
+  oas3-api-servers: off
+
+  # ============================================================
+  # Naming Conventions (README: Naming Conventions)
+  # ============================================================
+
+  # Fields must be camelCase (excludes TestWebhookResponse which mirrors external format)
+  field-names-camelCase:
+    description: Schema property names must be camelCase
+    message: "Property '{{property}}' must be camelCase. See openapi/README.md#field-naming"
+    severity: error
+    given: "$.components.schemas[?(@property != 'TestWebhookResponse')].properties"
+    then:
+      field: "@key"
+      function: casing
+      functionOptions:
+        type: camel
+
+  # Enum values must be UPPER_SNAKE_CASE (dots allowed for webhook namespacing)
+  enum-values-upper-snake-case:
+    description: Enum values must be UPPER_SNAKE_CASE
+    message: "Enum value '{{value}}' must be UPPER_SNAKE_CASE. See openapi/README.md#field-naming"
+    severity: error
+    given: "$.components.schemas.*.enum[*]"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*(\\.[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)*$"
+
+  # Query parameters must be camelCase
+  query-params-camelCase:
+    description: Query parameter names must be camelCase
+    message: "Query parameter '{{value}}' must be camelCase. See openapi/README.md#field-naming"
+    severity: error
+    given: "$.paths.*.*.parameters[?(@.in=='query')].name"
+    then:
+      function: casing
+      functionOptions:
+        type: camel
+
+  # Path parameters must be camelCase
+  path-params-camelCase:
+    description: Path parameter names must be camelCase
+    message: "Path parameter '{{value}}' must be camelCase. See openapi/README.md#field-naming"
+    severity: error
+    given: "$.paths.*.*.parameters[?(@.in=='path')].name"
+    then:
+      function: casing
+      functionOptions:
+        type: camel
+
+  # ============================================================
+  # Discriminators and Polymorphism (README: OpenAPI Best Practices)
+  # ============================================================
+
+  # oneOf must include a discriminator
+  oneOf-must-have-discriminator:
+    description: oneOf schemas must include a discriminator
+    message: "oneOf without a discriminator. See openapi/README.md#discriminators-and-polymorphism"
+    severity: warn
+    given: "$.components.schemas[?(@.oneOf)]"
+    then:
+      field: discriminator
+      function: truthy
+
+  # ============================================================
+  # No Inline Schemas (README: Avoid Inline Schemas)
+  # ============================================================
+
+  # Request bodies must use $ref, not inline schemas.
+  no-inline-request-schema:
+    description: Request body schemas must use $ref, not inline definitions
+    message: "Use $ref for request body schema instead of inline definition. See openapi/README.md#avoid-inline-schemas-in-request-and-response-definitions"
+    severity: error
+    resolved: false
+    given: "$.paths[*][get,post,put,patch,delete].requestBody.content[application/json].schema"
+    then:
+      field: "$ref"
+      function: truthy
+
+  # Response bodies must use $ref, not inline schemas
+  no-inline-response-schema:
+    description: Response body schemas must use $ref, not inline definitions
+    message: "Use $ref for response schema instead of inline definition. See openapi/README.md#avoid-inline-schemas-in-request-and-response-definitions"
+    severity: error
+    resolved: false
+    given: "$.paths[*][get,post,put,patch,delete].responses[*].content[application/json].schema"
+    then:
+      field: "$ref"
+      function: truthy
+
+  # ============================================================
+  # Pagination (README: Pagination)
+  # ============================================================
+
+  # GET list endpoints returning arrays should use pagination envelope
+  pagination-envelope-has-data:
+    description: Paginated responses must include a 'data' array field
+    message: "List response missing 'data' field. See openapi/README.md#pagination"
+    severity: warn
+    given: "$.paths.*.get.responses.200.content.application/json.schema.properties"
+    then:
+      field: data
+      function: truthy
+
+  pagination-envelope-has-hasMore:
+    description: Paginated responses must include a 'hasMore' boolean field
+    message: "List response missing 'hasMore' field. See openapi/README.md#pagination"
+    severity: warn
+    given: "$.paths.*.get.responses.200.content.application/json.schema.properties[?(@.data)]"
+    then:
+      field: hasMore
+      function: truthy
+
+  # ============================================================
+  # HTTP Methods and Status Codes (README: HTTP Methods)
+  # ============================================================
+
+  # DELETE operations should return 204
+  delete-returns-204:
+    description: DELETE operations should return 204 No Content
+    message: "DELETE should return 204. See openapi/README.md#http-methods"
+    severity: warn
+    given: "$.paths.*.delete.responses"
+    then:
+      field: "204"
+      function: truthy
+
+  # ============================================================
+  # Documentation (README: Documentation in OpenAPI)
+  # ============================================================
+
+  # Schema properties should have descriptions
+  schema-properties-have-descriptions:
+    description: Schema properties should have descriptions
+    message: "Property '{{property}}' is missing a description. See openapi/README.md#documentation-in-openapi"
+    severity: warn
+    given: "$.components.schemas.*.properties.*"
+    then:
+      field: description
+      function: truthy
+
+  # Schemas should have examples where appropriate
+  schema-properties-have-examples:
+    description: String and number schema properties should have examples
+    message: "Property is missing an example. See openapi/README.md#documentation-in-openapi"
+    severity: info
+    given: "$.components.schemas.*.properties[?(@.type=='string' || @.type=='integer' || @.type=='number')]"
+    then:
+      field: example
+      function: truthy
+
+  # ============================================================
+  # Paths (README: Resources)
+  # ============================================================
+
+  # Paths should use kebab-case (path params in {camelCase} are allowed)
+  paths-kebab-case:
+    description: Path segments should use kebab-case
+    message: "Path should use kebab-case (e.g., /external-accounts not /externalAccounts). See openapi/README.md#resources"
+    severity: error
+    given: "$.paths"
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        match: "^(\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+$"

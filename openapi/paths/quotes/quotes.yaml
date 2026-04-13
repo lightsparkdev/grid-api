@@ -22,6 +22,16 @@ post:
     - Cross-Currency Transfers
   security:
     - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple times,
+        the server will return the same response as the first request.
+      schema:
+        type: string
+        example: <uuid>
   requestBody:
     required: true
     content:
@@ -141,133 +151,3 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error501.yaml
-get:
-  summary: List transfer quotes
-  description: |
-    Retrieve a list of transfer quotes with optional filtering parameters. Returns all
-    quotes that match the specified filters. If no filters are provided, returns all quotes
-    (paginated).
-  operationId: listQuotes
-  tags:
-    - Cross-Currency Transfers
-  security:
-    - BasicAuth: []
-  parameters:
-    - name: customerId
-      in: query
-      description: Filter by sending customer ID
-      required: false
-      schema:
-        type: string
-    - name: sendingAccountId
-      in: query
-      description: Filter by sending account ID
-      required: false
-      schema:
-        type: string
-    - name: receivingAccountId
-      in: query
-      description: Filter by receiving account ID
-      required: false
-      schema:
-        type: string
-    - name: sendingUmaAddress
-      in: query
-      description: Filter by sending UMA address
-      required: false
-      schema:
-        type: string
-    - name: receivingUmaAddress
-      in: query
-      description: Filter by receiving UMA address
-      required: false
-      schema:
-        type: string
-    - name: status
-      in: query
-      description: Filter by quote status
-      required: false
-      schema:
-        type: string
-        enum:
-          - PENDING
-          - PROCESSING
-          - COMPLETED
-          - FAILED
-          - EXPIRED
-    - name: createdAfter
-      in: query
-      description: Filter quotes created after this timestamp (inclusive)
-      required: false
-      schema:
-        type: string
-        format: date-time
-    - name: createdBefore
-      in: query
-      description: Filter quotes created before this timestamp (inclusive)
-      required: false
-      schema:
-        type: string
-        format: date-time
-    - name: limit
-      in: query
-      description: Maximum number of results to return (default 20, max 100)
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-    - name: cursor
-      in: query
-      description: Cursor for pagination (returned from previous request)
-      required: false
-      schema:
-        type: string
-  responses:
-    '200':
-      description: Successful operation
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of quotes matching the criteria
-                items:
-                  $ref: ../../components/schemas/quotes/Quote.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: >-
-                  Total number of quotes matching the criteria (excluding
-                  pagination)
-    '400':
-      description: Bad request - Invalid parameters
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/errors/Error400.yaml
-    '401':
-      description: Unauthorized
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/errors/Error401.yaml
-    '500':
-      description: Internal service error
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/errors/Error500.yaml
