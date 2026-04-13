@@ -684,5 +684,3 @@ diagnostics:
     Schema/EnumHasOneMember: true
     Schema/RequiredPropertyNotDefined: true
     Schema/IsAmbiguous: true
-    Endpoint/NotFound: true
-    Method/PaginatedWithoutMatchingScheme: true
