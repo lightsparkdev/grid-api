@@ -26,6 +26,14 @@ oneOf:
 - $ref: ./XofExternalAccountCreateInfo.yaml
 - $ref: ./ZarExternalAccountCreateInfo.yaml
 - $ref: ./ZmwExternalAccountCreateInfo.yaml
+- $ref: ./BdtExternalAccountCreateInfo.yaml
+- $ref: ./CopExternalAccountCreateInfo.yaml
+- $ref: ./EgpExternalAccountCreateInfo.yaml
+- $ref: ./GhsExternalAccountCreateInfo.yaml
+- $ref: ./GtqExternalAccountCreateInfo.yaml
+- $ref: ./HtgExternalAccountCreateInfo.yaml
+- $ref: ./JmdExternalAccountCreateInfo.yaml
+- $ref: ./PkrExternalAccountCreateInfo.yaml
 - $ref: ./SparkWalletExternalAccountInfo.yaml
 - $ref: ./LightningExternalAccountInfo.yaml
 - $ref: ./SolanaWalletExternalAccountInfo.yaml
@@ -63,6 +71,14 @@ discriminator:
     XOF_ACCOUNT: ./XofExternalAccountCreateInfo.yaml
     ZAR_ACCOUNT: ./ZarExternalAccountCreateInfo.yaml
     ZMW_ACCOUNT: ./ZmwExternalAccountCreateInfo.yaml
+    BDT_ACCOUNT: ./BdtExternalAccountCreateInfo.yaml
+    COP_ACCOUNT: ./CopExternalAccountCreateInfo.yaml
+    EGP_ACCOUNT: ./EgpExternalAccountCreateInfo.yaml
+    GHS_ACCOUNT: ./GhsExternalAccountCreateInfo.yaml
+    GTQ_ACCOUNT: ./GtqExternalAccountCreateInfo.yaml
+    HTG_ACCOUNT: ./HtgExternalAccountCreateInfo.yaml
+    JMD_ACCOUNT: ./JmdExternalAccountCreateInfo.yaml
+    PKR_ACCOUNT: ./PkrExternalAccountCreateInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml

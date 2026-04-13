@@ -10381,6 +10381,166 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ZmwBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BdtExternalAccountCreateInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BdtBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopExternalAccountCreateInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CopBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EgpExternalAccountCreateInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EgpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GhsExternalAccountCreateInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GhsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GtqExternalAccountCreateInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GtqBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HtgExternalAccountCreateInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HtgBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    JmdExternalAccountCreateInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/JmdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PkrExternalAccountCreateInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PkrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -10410,6 +10570,14 @@ components:
         - $ref: '#/components/schemas/XofExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ZarExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ZmwExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/BdtExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/CopExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/EgpExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/GhsExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/GtqExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/HtgExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/JmdExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/PkrExternalAccountCreateInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
@@ -10447,6 +10615,14 @@ components:
           XOF_ACCOUNT: '#/components/schemas/XofExternalAccountCreateInfo'
           ZAR_ACCOUNT: '#/components/schemas/ZarExternalAccountCreateInfo'
           ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountCreateInfo'
+          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountCreateInfo'
+          COP_ACCOUNT: '#/components/schemas/CopExternalAccountCreateInfo'
+          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountCreateInfo'
+          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountCreateInfo'
+          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountCreateInfo'
+          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountCreateInfo'
+          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountCreateInfo'
+          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountCreateInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
