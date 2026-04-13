@@ -168,22 +168,22 @@ resources:
             paginated: false
           create: post /platform/external-accounts
         models:
-          usd_account_info: "#/components/schemas/UsdAccountInfo"
-          brl_account_info: "#/components/schemas/BrlAccountInfo"
-          mxn_account_info: "#/components/schemas/MxnAccountInfo"
-          dkk_account_info: "#/components/schemas/DkkAccountInfo"
-          eur_account_info: "#/components/schemas/EurAccountInfo"
-          inr_account_info: "#/components/schemas/InrAccountInfo"
-          ngn_account_info: "#/components/schemas/NgnAccountInfo"
-          cad_account_info: "#/components/schemas/CadAccountInfo"
-          gbp_account_info: "#/components/schemas/GbpAccountInfo"
-          hkd_account_info: "#/components/schemas/HkdAccountInfo"
-          idr_account_info: "#/components/schemas/IdrAccountInfo"
-          myr_account_info: "#/components/schemas/MyrAccountInfo"
-          php_account_info: "#/components/schemas/PhpAccountInfo"
-          sgd_account_info: "#/components/schemas/SgdAccountInfo"
-          thb_account_info: "#/components/schemas/ThbAccountInfo"
-          vnd_account_info: "#/components/schemas/VndAccountInfo"
+          usd_account_info: "#/components/schemas/UsdAccountInfoBase"
+          brl_account_info: "#/components/schemas/BrlAccountInfoBase"
+          mxn_account_info: "#/components/schemas/MxnAccountInfoBase"
+          dkk_account_info: "#/components/schemas/DkkAccountInfoBase"
+          eur_account_info: "#/components/schemas/EurAccountInfoBase"
+          inr_account_info: "#/components/schemas/InrAccountInfoBase"
+          ngn_account_info: "#/components/schemas/NgnAccountInfoBase"
+          cad_account_info: "#/components/schemas/CadAccountInfoBase"
+          gbp_account_info: "#/components/schemas/GbpAccountInfoBase"
+          hkd_account_info: "#/components/schemas/HkdAccountInfoBase"
+          idr_account_info: "#/components/schemas/IdrAccountInfoBase"
+          myr_account_info: "#/components/schemas/MyrAccountInfoBase"
+          php_account_info: "#/components/schemas/PhpAccountInfoBase"
+          sgd_account_info: "#/components/schemas/SgdAccountInfoBase"
+          thb_account_info: "#/components/schemas/ThbAccountInfoBase"
+          vnd_account_info: "#/components/schemas/VndAccountInfoBase"
           # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
 
   transfer_in:
@@ -316,7 +316,7 @@ resources:
       retrieve: get /verifications/{verificationId}
   discoveries:
     methods:
-      list: 
+      list:
         endpoint: get /discoveries
         paginated: false
 
