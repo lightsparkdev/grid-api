@@ -1,13 +1,16 @@
 title: COP Account
 allOf:
-- $ref: ./BasePaymentAccountInfo.yaml
-- $ref: ./CopAccountInfo.yaml
-- type: object
-  required:
-  - reference
-  properties:
-    reference:
-      type: string
-      description: Unique reference code that must be included with the payment to
-        properly credit it
-      example: UMA-Q12345-REF
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - type: object
+    required:
+      - paymentUrl
+    properties:
+      accountType:
+        type: string
+        enum:
+          - COP_ACCOUNT
+      paymentUrl:
+        type: string
+        format: uri
+        description: A payment URL where the customer can complete their COP deposit.
+        example: https://payments.example.com/t/abc123

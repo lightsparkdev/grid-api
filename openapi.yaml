@@ -5494,6 +5494,7 @@ components:
         - BRL_ACCOUNT
         - MXN_ACCOUNT
         - DKK_ACCOUNT
+        - COP_ACCOUNT
         - EUR_ACCOUNT
         - INR_ACCOUNT
         - NGN_ACCOUNT
@@ -7134,63 +7135,23 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
-    CopAccountInfoBase:
-      type: object
-      required:
-        - accountType
-        - accountNumber
-        - bankAccountType
-        - phoneNumber
-      properties:
-        accountType:
-          type: string
-          enum:
-            - COP_ACCOUNT
-        accountNumber:
-          type: string
-          description: The account number of the bank
-          minLength: 1
-          maxLength: 34
-        bankAccountType:
-          type: string
-          description: The bank account type
-          enum:
-            - CHECKING
-            - SAVINGS
-        phoneNumber:
-          type: string
-          description: The phone number in international format
-          example: '+1234567890'
-          minLength: 7
-          maxLength: 15
-          pattern: ^\+[0-9]{6,14}$
-    CopAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/CopAccountInfoBase'
-        - type: object
-          required:
-            - paymentRails
-          properties:
-            paymentRails:
-              type: array
-              items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
     PaymentCopAccountInfo:
       title: COP Account
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
-        - $ref: '#/components/schemas/CopAccountInfo'
         - type: object
           required:
-            - reference
+            - paymentUrl
           properties:
-            reference:
+            accountType:
               type: string
-              description: Unique reference code that must be included with the payment to properly credit it
-              example: UMA-Q12345-REF
+              enum:
+                - COP_ACCOUNT
+            paymentUrl:
+              type: string
+              format: uri
+              description: A payment URL where the customer can complete their COP deposit.
+              example: https://payments.example.com/t/abc123
     EgpAccountInfoBase:
       type: object
       required:
@@ -9322,6 +9283,50 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankAccountType
+        - phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - COP_ACCOUNT
+        accountNumber:
+          type: string
+          description: The account number of the bank
+          minLength: 1
+          maxLength: 34
+        bankAccountType:
+          type: string
+          description: The bank account type
+          enum:
+            - CHECKING
+            - SAVINGS
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+    CopAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/CopAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
     CopBeneficiary:
       title: Individual Beneficiary
       type: object
