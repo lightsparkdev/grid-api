@@ -42,6 +42,7 @@ properties:
     - $ref: ../common/PaymentBwpAccountInfo.yaml
     - $ref: ../common/PaymentXafAccountInfo.yaml
     - $ref: ../common/PaymentBdtAccountInfo.yaml
+    - $ref: ../common/PaymentArsAccountInfo.yaml
     - $ref: ../common/PaymentCopAccountInfo.yaml
     - $ref: ../common/PaymentEgpAccountInfo.yaml
     - $ref: ../common/PaymentGhsAccountInfo.yaml
@@ -94,6 +95,7 @@ properties:
         BWP_ACCOUNT: ../common/PaymentBwpAccountInfo.yaml
         XAF_ACCOUNT: ../common/PaymentXafAccountInfo.yaml
         BDT_ACCOUNT: ../common/PaymentBdtAccountInfo.yaml
+        ARS_ACCOUNT: ../common/PaymentArsAccountInfo.yaml
         COP_ACCOUNT: ../common/PaymentCopAccountInfo.yaml
         EGP_ACCOUNT: ../common/PaymentEgpAccountInfo.yaml
         GHS_ACCOUNT: ../common/PaymentGhsAccountInfo.yaml
