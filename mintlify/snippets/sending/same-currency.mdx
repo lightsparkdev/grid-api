@@ -65,32 +65,28 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
 </Step>
 
 <Step title="Track transfer status">
-  The transaction is created with a `PENDING` status. Monitor the status by:
-
-**Option 1: Webhook notifications** (recommended)
+  The transaction is created with a `PENDING` status and progresses through `PROCESSING` to `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses. The webhook body contains the full transaction resource:
 
 ```json
 {
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
     "status": "COMPLETED",
+    "type": "OUTGOING",
+    "sentAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
+    "receivedAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
     "settledAt": "2025-10-03T15:02:30Z"
   },
   "timestamp": "2025-10-03T15:03:00Z"
 }
 ```
 
-**Option 2: Poll the transaction endpoint**
+If a transaction fails, Grid initiates a refund automatically. You'll receive `OUTGOING_PAYMENT.REFUND_PENDING` followed by `OUTGOING_PAYMENT.REFUND_COMPLETED` or `OUTGOING_PAYMENT.REFUND_FAILED`. The transaction's `refund` object tracks the refund status and reference.
 
-```bash
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000015' \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-```
-
-<Check>
-  When the transaction status changes to `COMPLETED`, the funds have been successfully transferred to the external account.
-</Check>
+<Info>
+  For the full state diagram, refund object details, and all webhook scenarios (including bank returns and manual cancellations), see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
+</Info>
 </Step>
 </Steps>
 

@@ -284,11 +284,6 @@ The quote shows:
 - **Exchange rate**: 8.1 sats per USD cent (~$123,000 per BTC)
 The quote status changes to `PROCESSING` and the Bitcoin transfer is initiated. USD is debited from the internal account, Bitcoin is purchased, and then sent to the Spark wallet address.
 
-You can track the status by:
-
-1. Polling the quote endpoint: `GET /quotes/{quoteId}`
-2. Waiting for a webhook notification
-
 ### Completion Webhook
 
 When the Bitcoin transfer completes, you'll receive a webhook notification:

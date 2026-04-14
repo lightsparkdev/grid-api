@@ -125,32 +125,30 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
 </Step>
 
 <Step title="Track transfer status">
-  The transaction is created with a `PENDING` status. Monitor the status by:
+  The transaction is created with a `PENDING` status and progresses through `PROCESSING` to `COMPLETED` or `FAILED`. Monitor the status by:
 
-**Option 1: Webhook notifications** (recommended)
+You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses. The webhook body contains the full transaction resource:
 
 ```json
 {
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
     "status": "COMPLETED",
+    "type": "OUTGOING",
+    "sentAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
+    "receivedAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
     "settledAt": "2025-10-03T15:02:30Z"
   },
   "timestamp": "2025-10-03T15:03:00Z"
 }
 ```
 
-**Option 2: Poll the transaction endpoint**
+If a transaction fails, Grid initiates a refund automatically. You'll receive `OUTGOING_PAYMENT.REFUND_PENDING` followed by `OUTGOING_PAYMENT.REFUND_COMPLETED` or `OUTGOING_PAYMENT.REFUND_FAILED`. The transaction's `refund` object tracks the refund status and reference.
 
-```bash
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000015' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
-```
-
-<Check>
-  When the transaction status changes to `COMPLETED`, the funds have been successfully transferred to the external account.
-</Check>
+<Info>
+  For the full state diagram, refund object details, and all webhook scenarios (including bank returns and manual cancellations), see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
+</Info>
 </Step>
 </Steps>
 
@@ -159,9 +157,14 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction
 | Status       | Description                                   |
 | ------------ | --------------------------------------------- |
 | `PENDING`    | Transfer initiated and awaiting processing    |
+| `EXPIRED`    | Quote wasn't executed before the expiry window |
 | `PROCESSING` | Transfer in progress through the payment rail |
 | `COMPLETED`  | Transfer successfully completed               |
-| `FAILED`     | Transfer failed (see error details)           |
+| `FAILED`     | Transfer failed — accompanied by a `failureReason` |
+
+<Info>
+For the full state diagram including refund tracking and edge cases like bank returns, see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
+</Info>
 
 ## Cross-Currency Transfers
 
@@ -259,7 +262,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 - Quote hasn't expired (check `expiresAt`)
 
 <Warning>
-  Quotes typically expire after 15 minutes. If expired, create a new quote to get an updated exchange rate.
+  Quote expiration depends on the corridor but is typically ~5 minutes or greater. If expired, create a new quote to get an updated exchange rate.
 </Warning>
 </Step>
 
@@ -309,24 +312,22 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
 <Check>
   Once executed, the quote creates a transaction and the transfer begins processing. The `transactionId` can be used to track the payment.
 </Check>
+
+<Info>
+  **Real-time funding sources:** If your quote uses a real-time funding source (USDC, BTC, RTP, or FedNow), you don't call the execute endpoint. Instead, send a payment to the account specified in the quote's `paymentInstructions`. Grid detects the deposit and processes the transfer automatically.
+</Info>
 </Step>
 
 <Step title="Monitor completion">
-  Track the transfer using webhooks or by polling the transaction:
-
-```bash
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000030' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
-```
-
-You'll receive a webhook when the transaction completes:
+  After execution, a transaction is created and progresses through `PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses:
 
 ```json
 {
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
     "status": "COMPLETED",
+    "type": "OUTGOING",
     "sentAmount": {
       "amount": 10000,
       "currency": { "code": "USD", "symbol": "$", "decimals": 2 }
@@ -343,49 +344,57 @@ You'll receive a webhook when the transaction completes:
 }
 ```
 
+If a transaction fails, Grid initiates a refund automatically. You'll receive `OUTGOING_PAYMENT.REFUND_PENDING` followed by `OUTGOING_PAYMENT.REFUND_COMPLETED` or `OUTGOING_PAYMENT.REFUND_FAILED`. The transaction's `refund` object tracks the refund status and reference.
+
+<Info>
+  For the full state diagram, refund object details, and all webhook scenarios (including bank returns and manual cancellations), see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
+</Info>
 </Step>
 </Steps>
 
-### Quote statuses
+### Transaction statuses
 
 | Status       | Description                                |
 | ------------ | ------------------------------------------ |
 | `PENDING`    | Quote created, awaiting execution          |
 | `PROCESSING` | Quote executed, transfer in progress       |
 | `COMPLETED`  | Transfer successfully completed            |
-| `FAILED`     | Transfer failed (funds returned to source) |
+| `FAILED`     | Transfer failed — refund initiated automatically (track via `refund` object) |
 | `EXPIRED`    | Quote expired without execution            |
 
 ## Checking Payment Status
 
-### Using webhooks (recommended)
-
 Configure a webhook endpoint to receive real-time notifications when payment status changes:
 
 ```javascript
-// Your webhook endpoint
 app.post("/webhooks/grid", (req, res) => {
-  const { type, transaction } = req.body;
+  const { type, data } = req.body;
 
-  if (type === "OUTGOING_PAYMENT") {
-    const { id, status, settledAt } = transaction;
+  switch (type) {
+    case "OUTGOING_PAYMENT.COMPLETED":
+      console.log(`Payment ${data.id} completed at ${data.settledAt}`);
+      // Update your database, notify customer
+      break;
 
-    switch (status) {
-      case "COMPLETED":
-        console.log(`Payment ${id} completed at ${settledAt}`);
-        // Update your database, notify customer, etc.
-        break;
+    case "OUTGOING_PAYMENT.FAILED":
+      console.log(`Payment ${data.id} failed: ${data.failureReason}`);
+      // Handle failure, notify customer — refund webhook follows
+      break;
 
-      case "FAILED":
-        console.log(`Payment ${id} failed`);
-        // Handle failure, refund, notify customer
-        break;
+    case "OUTGOING_PAYMENT.PROCESSING":
+      console.log(`Payment ${data.id} is processing`);
+      // Optional: Update UI to show processing state
+      break;
 
-      case "PROCESSING":
-        console.log(`Payment ${id} is processing`);
-        // Optional: Update UI to show processing state
-        break;
-    }
+    case "OUTGOING_PAYMENT.REFUND_COMPLETED":
+      console.log(`Payment ${data.id} refund completed`);
+      // Update your records with refund details
+      break;
+
+    case "OUTGOING_PAYMENT.REFUND_FAILED":
+      console.log(`Payment ${data.id} refund failed`);
+      // Alert your team — may require manual resolution
+      break;
   }
 
   res.status(200).json({ received: true });
@@ -397,99 +406,11 @@ app.post("/webhooks/grid", (req, res) => {
   webhook implementation details including signature verification.
 </Tip>
 
-### Polling transactions
-
-If webhooks aren't available, poll the transaction endpoint:
-
-```javascript
-async function checkPaymentStatus(transactionId) {
-  const response = await fetch(
-    `https://api.lightspark.com/grid/2025-10-13/transactions/${transactionId}`,
-    {
-      headers: {
-        Authorization: `Basic ${credentials}`,
-      },
-    }
-  );
-
-  const transaction = await response.json();
-  return transaction.status;
-}
-
-// Poll every 10 seconds
-const pollInterval = setInterval(async () => {
-  const status = await checkPaymentStatus(
-    "Transaction:019542f5-b3e7-1d02-0000-000000000015"
-  );
-
-  if (status === "COMPLETED" || status === "FAILED") {
-    clearInterval(pollInterval);
-    // Handle completion
-  }
-}, 10000);
-```
-
-<Warning>
-  Polling can delay status updates and increase API usage. Use webhooks for
-  production applications whenever possible.
-</Warning>
-
 ## Best Practices
 
 <AccordionGroup>
-<Accordion title="Always check account balance before transfers">
-Verify the internal account has sufficient balance to avoid failed transfers:
-
-```javascript
-async function checkBalance(accountId, requiredAmount) {
-  const response = await fetch(
-    `https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts`,
-    {
-      headers: { Authorization: `Basic ${credentials}` },
-    }
-  );
-
-  const { data } = await response.json();
-  const account = data.find((a) => a.id === accountId);
-
-  if (account.balance.amount < requiredAmount) {
-    throw new Error("Insufficient balance");
-  }
-
-  return true;
-}
-```
-
-This prevents unnecessary API calls and provides better user feedback.
-
-</Accordion>
-
-<Accordion title="Use idempotency for quote execution">
-Store quote IDs in your database to prevent accidental duplicate executions:
-
-```javascript
-async function executeQuoteOnce(quoteId) {
-  // Check if already executed
-  const existing = await db.quotes.findOne({ quoteId });
-  if (existing?.executed) {
-    throw new Error("Quote already executed");
-  }
-
-  // Execute and mark as executed
-  const result = await executeQuote(quoteId);
-  await db.quotes.update(
-    { quoteId },
-    { executed: true, transactionId: result.transactionId }
-  );
-
-  return result;
-}
-```
-
-</Accordion>
-
 <Accordion title="Handle quote expiration gracefully">
-Quotes expire after a short period. Always check expiration before executing:
+Quote expiration depends on the corridor (typically ~5 minutes or greater). Always check expiration before executing:
 
 ```javascript
 async function executeQuoteWithCheck(quoteId) {
