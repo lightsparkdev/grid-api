@@ -3,6 +3,6 @@ enum:
   - SSN
   - ITIN
   - EIN
-  - NON_TAX_ID
-description: Type of personal identification document
+  - NON_US_TAX_ID
+description: Type of tax identification
 example: SSN
