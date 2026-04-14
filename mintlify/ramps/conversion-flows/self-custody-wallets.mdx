@@ -209,33 +209,42 @@ console.log("Transfer initiated:", transaction.id);
 
 ### Step 4: Monitor transfer completion
 
-Track the transfer status via webhooks:
+Track the transfer status via `OUTGOING_PAYMENT.<STATUS>` webhooks:
 
 ```javascript
 app.post("/webhooks/grid", async (req, res) => {
-  const { type, transaction } = req.body;
+  const { type, data } = req.body;
 
-  if (type === "OUTGOING_PAYMENT") {
-    if (transaction.status === "COMPLETED") {
-      // Notify user of successful transfer
-      await notifyUser(transaction.customerId, {
+  switch (type) {
+    case "OUTGOING_PAYMENT.COMPLETED":
+      await notifyUser(data.customerId, {
         message: "Bitcoin sent to your wallet!",
-        amount: `${transaction.receivedAmount.amount / 100000000} BTC`,
-        walletAddress: transaction.destination.accountInfo.address,
+        amount: `${data.receivedAmount.amount / 100000000} BTC`,
+        walletAddress: data.destination.accountInfo.address,
       });
-    } else if (transaction.status === "FAILED") {
-      // Handle failure
-      await notifyUser(transaction.customerId, {
+      break;
+
+    case "OUTGOING_PAYMENT.FAILED":
+      await notifyUser(data.customerId, {
         message: "Transfer failed",
-        reason: transaction.failureReason,
+        reason: data.failureReason,
         action: "Please verify your wallet address",
       });
-    }
+      // Refund webhook (OUTGOING_PAYMENT.REFUND_*) will follow
+      break;
+
+    case "OUTGOING_PAYMENT.REFUND_COMPLETED":
+      await notifyUser(data.customerId, {
+        message: "Refund completed. Funds returned to your account.",
+      });
+      break;
   }
 
   res.status(200).json({ received: true });
 });
 ```
+
+See the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide for all status transitions and refund handling.
 
 ## Best practices
 

@@ -9,8 +9,7 @@ Use webhooks for real-time updates and daily queries as a backstop to detect mis
 Listen for transaction webhooks to track transaction status change until a terminal state is reached.
 
 <Info>
-Terminal statuses for outgoing transactions: `COMPLETED`, `FAILED`, `EXPIRED`.
-All other statuses will progress until reaching one of the above.
+Expected terminal statuses for outgoing transactions: `COMPLETED`, `FAILED`, `EXPIRED`. However, transitions between these can occur (e.g., a bank return moves `COMPLETED` → `FAILED`). Also listen for `OUTGOING_PAYMENT.REFUND_COMPLETED` and `OUTGOING_PAYMENT.REFUND_FAILED` to track refunds on failed transactions.
 </Info>
 
 - **Outbound transactions**: The originating account is debited at transaction creation. If the transaction ultimately fails, a refund is posted back to the originating account.

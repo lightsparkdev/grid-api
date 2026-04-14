@@ -111,22 +111,29 @@ function displayPaymentInstructions(quote) {
 
 ### Monitor completion
 
-Grid sends a webhook when the transfer completes:
+Grid sends `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses:
 
 ```javascript
 app.post("/webhooks/grid", async (req, res) => {
-  const { type, transaction } = req.body;
+  const { type, data } = req.body;
 
-  if (type === "OUTGOING_PAYMENT" && transaction.status === "COMPLETED") {
-    await notifyUser(transaction.customerId, {
+  if (type === "OUTGOING_PAYMENT.COMPLETED") {
+    await notifyUser(data.customerId, {
       message: "Your Bitcoin purchase is complete!",
-      amount: `${transaction.receivedAmount.amount / 100000000} BTC`,
+      amount: `${data.receivedAmount.amount / 100000000} BTC`,
     });
+  } else if (type === "OUTGOING_PAYMENT.FAILED") {
+    await notifyUser(data.customerId, {
+      message: `Purchase failed: ${data.failureReason}`,
+    });
+    // Refund webhook (OUTGOING_PAYMENT.REFUND_*) will follow
   }
 
   res.status(200).json({ received: true });
 });
 ```
+
+See the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide for all status transitions and refund handling.
 
 ## Off-ramp: Crypto to fiat
 
@@ -164,12 +171,16 @@ const result = await fetch(
 
 ```javascript
 app.post("/webhooks/grid", async (req, res) => {
-  const { type, transaction } = req.body;
+  const { type, data } = req.body;
 
-  if (type === "OUTGOING_PAYMENT" && transaction.status === "COMPLETED") {
-    await notifyUser(transaction.customerId, {
+  if (type === "OUTGOING_PAYMENT.COMPLETED") {
+    await notifyUser(data.customerId, {
       message: "Your USD withdrawal is complete!",
-      amount: `$${transaction.receivedAmount.amount / 100}`,
+      amount: `$${data.receivedAmount.amount / 100}`,
+    });
+  } else if (type === "OUTGOING_PAYMENT.FAILED") {
+    await notifyUser(data.customerId, {
+      message: `Withdrawal failed: ${data.failureReason}`,
     });
   }
 

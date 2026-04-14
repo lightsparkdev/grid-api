@@ -15,7 +15,7 @@ Distributing Bitcoin rewards involves creating a quote that converts your fiat b
 
 1. **Create a quote** - Specify source account, destination, and amount
 2. **Execute the quote** - Either immediately or after review
-3. **Monitor completion** - Track via webhooks or polling
+3. **Monitor completion** - Track via webhooks
 
 ## Finding your platform's internal account
 
@@ -259,22 +259,6 @@ When the Bitcoin transfer completes, you'll receive a webhook:
   },
   "type": "OUTGOING_PAYMENT"
 }
-```
-
-### Polling Status
-
-Alternatively, poll the quote or transaction endpoint:
-
-```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-```
-
-Or:
-
-```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/transactions/{transactionId}" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ## Common Patterns
