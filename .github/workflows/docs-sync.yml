@@ -151,6 +151,7 @@ jobs:
                - Branch name: `docs/sync-$(date +%Y%m%d)`
                - Clear title describing the sync
                - Description listing what was updated and why, organized by area (docs, Kotlin sample, Grid Visualizer)
+               - Add reviewers: `gh pr edit --add-reviewer shreyav,pengying`
 
             If everything is already up to date:
             - Output a brief summary confirming no updates needed
