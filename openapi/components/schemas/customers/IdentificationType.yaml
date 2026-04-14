@@ -1,11 +1,8 @@
 type: string
 enum:
   - SSN
-  - PASSPORT
-  - NATIONAL_ID
-  - DRIVERS_LICENSE
-  - TAX_ID
   - ITIN
-  - CPF
+  - EIN
+  - NON_TAX_ID
 description: Type of personal identification document
 example: SSN
