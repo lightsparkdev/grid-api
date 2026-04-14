@@ -5491,6 +5491,7 @@ components:
         - BRL_ACCOUNT
         - MXN_ACCOUNT
         - DKK_ACCOUNT
+        - ARS_ACCOUNT
         - COP_ACCOUNT
         - EUR_ACCOUNT
         - INR_ACCOUNT
@@ -7132,6 +7133,25 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    PaymentArsAccountInfo:
+      title: ARS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - type: object
+          required:
+            - accountNumber
+          properties:
+            accountType:
+              type: string
+              enum:
+                - ARS_ACCOUNT
+            accountNumber:
+              type: string
+              description: The static CVU (Clave Virtual Uniforme) bank account number to pay to.
+              minLength: 22
+              maxLength: 22
+              pattern: ^\d{22}$
+              example: '0000003100074052501434'
     PaymentCopAccountInfo:
       title: COP Account
       allOf:
@@ -7502,6 +7522,7 @@ components:
             - $ref: '#/components/schemas/PaymentBwpAccountInfo'
             - $ref: '#/components/schemas/PaymentXafAccountInfo'
             - $ref: '#/components/schemas/PaymentBdtAccountInfo'
+            - $ref: '#/components/schemas/PaymentArsAccountInfo'
             - $ref: '#/components/schemas/PaymentCopAccountInfo'
             - $ref: '#/components/schemas/PaymentEgpAccountInfo'
             - $ref: '#/components/schemas/PaymentGhsAccountInfo'
@@ -7554,6 +7575,7 @@ components:
               BWP_ACCOUNT: '#/components/schemas/PaymentBwpAccountInfo'
               XAF_ACCOUNT: '#/components/schemas/PaymentXafAccountInfo'
               BDT_ACCOUNT: '#/components/schemas/PaymentBdtAccountInfo'
+              ARS_ACCOUNT: '#/components/schemas/PaymentArsAccountInfo'
               COP_ACCOUNT: '#/components/schemas/PaymentCopAccountInfo'
               EGP_ACCOUNT: '#/components/schemas/PaymentEgpAccountInfo'
               GHS_ACCOUNT: '#/components/schemas/PaymentGhsAccountInfo'
