@@ -106,7 +106,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .routingNumber(accountInfo.requireText("routingNumber"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { UsdAccountInfo.PaymentRail.of(it) })
                 .build()
             ExternalAccountInfoOneOf.ofUsdAccount(info)
         }
@@ -116,7 +115,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountType(InrAccountInfo.AccountType.INR_ACCOUNT)
                 .vpa(accountInfo.requireText("vpa"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { InrAccountInfo.PaymentRail.of(it) })
                 .build()
             ExternalAccountInfoOneOf.ofInrAccount(info)
         }
@@ -128,7 +126,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .pixKeyType(accountInfo.requireText("pixKeyType"))
                 .taxId(accountInfo.requireText("taxId"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { BrlAccountInfo.PaymentRail.of(it) })
                 .build()
             ExternalAccountInfoOneOf.ofBrlAccount(info)
         }
@@ -138,7 +135,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountType(MxnAccountInfo.AccountType.MXN_ACCOUNT)
                 .clabeNumber(accountInfo.requireText("clabeNumber"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { MxnAccountInfo.PaymentRail.of(it) })
                 .build()
             ExternalAccountInfoOneOf.ofMxnAccount(info)
         }
@@ -149,7 +145,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .sortCode(accountInfo.requireText("sortCode"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { GbpAccountInfo.PaymentRail.of(it) })
                 .build()
             ExternalAccountInfoOneOf.ofGbpAccount(info)
         }
@@ -160,7 +155,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .bankName(accountInfo.optText("bankCode") ?: accountInfo.requireText("bankName"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { PhpAccountInfo.PaymentRail.of(it) })
                 .build()
             ExternalAccountInfoOneOf.ofPhpAccount(info)
         }
@@ -170,7 +164,6 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountType(EurAccountInfo.AccountType.EUR_ACCOUNT)
                 .iban(accountInfo.requireText("iban"))
                 .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { EurAccountInfo.PaymentRail.of(it) })
                 .apply {
                     val swiftCode = accountInfo.optText("swiftCode")
                     if (swiftCode != null) {
@@ -320,9 +313,4 @@ private fun buildEurBeneficiary(node: JsonNode?): ExternalAccountInfoOneOf.EurAc
     )
 }
 
-private fun <T> buildPaymentRails(accountInfo: JsonNode, parse: (String) -> T): List<T> {
-    val railsNode = accountInfo.get("paymentRails")
-    if (railsNode == null || !railsNode.isArray || railsNode.isEmpty) return emptyList()
-    return railsNode.map { parse(it.asText()) }
-}
 
