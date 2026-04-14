@@ -78,8 +78,7 @@ class EndToEndTest {
                     "platformAccountId": "acct_test_${System.currentTimeMillis()}",
                     "accountInfo": {
                         "accountType": "MXN_ACCOUNT",
-                        "clabeNumber": "014027000005555601",
-                        "paymentRails": ["SPEI"]
+                        "clabeNumber": "014027000005555601"
                     },
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
@@ -123,8 +122,7 @@ class EndToEndTest {
                     "platformAccountId": "acct_test_${System.currentTimeMillis()}",
                     "accountInfo": {
                         "accountType": "INR_ACCOUNT",
-                        "vpa": "test@upi",
-                        "paymentRails": ["UPI"]
+                        "vpa": "test@upi"
                     },
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
@@ -198,8 +196,7 @@ class EndToEndTest {
                     "platformAccountId": "acct_test_${System.currentTimeMillis()}",
                     "accountInfo": {
                         "accountType": "MXN_ACCOUNT",
-                        "clabeNumber": "014027000005555601",
-                        "paymentRails": ["SPEI"]
+                        "clabeNumber": "014027000005555601"
                     },
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
@@ -276,8 +273,7 @@ class EndToEndTest {
                     "platformAccountId": "acct_e2e_${System.currentTimeMillis()}",
                     "accountInfo": {
                         "accountType": "MXN_ACCOUNT",
-                        "clabeNumber": "014027000005555601",
-                        "paymentRails": ["SPEI"]
+                        "clabeNumber": "014027000005555601"
                     },
                     "beneficiary": {
                         "beneficiaryType": "INDIVIDUAL",
