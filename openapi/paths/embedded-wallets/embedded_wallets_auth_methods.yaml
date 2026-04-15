@@ -1,0 +1,59 @@
+post:
+  summary: Create an embedded wallet auth method
+  description: |
+    Create a new authentication method for the embedded wallet associated with
+    the supplied Turnkey stamp.
+
+    The request may create a passkey-based method immediately or return a
+    follow-up step for OTP or OAuth-based authentication methods.
+  operationId: createEmbeddedWalletAuthMethod
+  tags:
+    - Embedded Wallets
+  security: []
+  parameters:
+    - name: X-Turnkey-Stamp
+      in: header
+      description: >
+        Turnkey stamp authorizing the request. The stamp may represent either a
+        session stamp or a direct stamp.
+      required: true
+      schema:
+        type: string
+      example: stamp:session:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthMethodCreateRequest.yaml
+  responses:
+    '201':
+      description: Embedded wallet auth method created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthOperationResponse.yaml
+    '400':
+      description: Bad request - Invalid auth method creation parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Turnkey stamp is invalid or expired
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Embedded wallet auth method already exists or cannot be created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

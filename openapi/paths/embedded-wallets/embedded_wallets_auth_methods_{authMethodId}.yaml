@@ -1,0 +1,134 @@
+patch:
+  summary: Update an embedded wallet auth method
+  description: |
+    Update the email address or phone number associated with an embedded wallet
+    auth method.
+
+    The auth method to update is identified by `authMethodId`, while the
+    request is authorized with a Turnkey stamp.
+  operationId: updateEmbeddedWalletAuthMethod
+  tags:
+    - Embedded Wallets
+  security: []
+  parameters:
+    - name: authMethodId
+      in: path
+      description: Unique identifier of the embedded wallet auth method to update
+      required: true
+      schema:
+        type: string
+      example: EmbeddedWalletAuthMethod:019542f5-b3e7-1d02-0000-000000000001
+    - name: X-Turnkey-Stamp
+      in: header
+      description: >
+        Turnkey stamp authorizing the request. The stamp may represent either a
+        session stamp or a direct stamp.
+      required: true
+      schema:
+        type: string
+      example: stamp:direct:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthMethodUpdateRequest.yaml
+  responses:
+    '200':
+      description: Embedded wallet auth method updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthOperationResponse.yaml
+    '400':
+      description: Bad request - Invalid auth method update parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Turnkey stamp is invalid or expired
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Embedded wallet auth method not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Embedded wallet auth method cannot be updated in its current state
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+
+delete:
+  summary: Delete an embedded wallet auth method
+  description: |
+    Delete an embedded wallet auth method.
+
+    The request will be rejected when the specified auth method is the last
+    remaining authentication method for the embedded wallet.
+  operationId: deleteEmbeddedWalletAuthMethod
+  tags:
+    - Embedded Wallets
+  security: []
+  parameters:
+    - name: authMethodId
+      in: path
+      description: Unique identifier of the embedded wallet auth method to delete
+      required: true
+      schema:
+        type: string
+      example: EmbeddedWalletAuthMethod:019542f5-b3e7-1d02-0000-000000000001
+    - name: X-Turnkey-Stamp
+      in: header
+      description: >
+        Turnkey stamp authorizing the request. The stamp may represent either a
+        session stamp or a direct stamp.
+      required: true
+      schema:
+        type: string
+      example: stamp:session:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+  responses:
+    '204':
+      description: Embedded wallet auth method deleted successfully
+    '400':
+      description: Bad request - Invalid auth method deletion parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Turnkey stamp is invalid or expired
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Embedded wallet auth method not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Embedded wallet auth method is the last remaining method or cannot be deleted
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

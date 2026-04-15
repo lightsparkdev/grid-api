@@ -1,0 +1,19 @@
+type: object
+description: >
+  Fields to update for an embedded wallet auth method. Provide only the fields
+  relevant to the auth method being updated.
+minProperties: 1
+properties:
+  email:
+    type: string
+    format: email
+    description: New email address for the embedded wallet auth method
+    example: alice.updated@example.com
+  phoneNumber:
+    type: string
+    description: New phone number for the embedded wallet auth method
+    example: '+14155550124'
+  label:
+    type: string
+    description: Updated user-facing label for the auth method
+    example: Primary recovery email

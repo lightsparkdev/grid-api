@@ -207,6 +207,17 @@ resources:
           oauth: post /embedded-wallets/{internalAccountId}/auth/oauth
           init_passkey: post /embedded-wallets/{internalAccountId}/auth/passkey/init
           complete_passkey: post /embedded-wallets/{internalAccountId}/auth/passkey/complete
+      auth_methods:
+        models:
+          embedded_wallet_auth_method_type: "#/components/schemas/EmbeddedWalletAuthMethodType"
+          embedded_wallet_auth_method: "#/components/schemas/EmbeddedWalletAuthMethod"
+          embedded_wallet_auth_method_create_request: "#/components/schemas/EmbeddedWalletAuthMethodCreateRequest"
+          embedded_wallet_auth_method_update_request: "#/components/schemas/EmbeddedWalletAuthMethodUpdateRequest"
+          embedded_wallet_auth_operation_response: "#/components/schemas/EmbeddedWalletAuthOperationResponse"
+        methods:
+          create: post /embedded-wallets/auth/methods
+          update: patch /embedded-wallets/auth/methods/{authMethodId}
+          delete: delete /embedded-wallets/auth/methods/{authMethodId}
 
   transfer_in:
     models:

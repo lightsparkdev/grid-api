@@ -1,0 +1,28 @@
+type: object
+required:
+  - methodType
+properties:
+  methodType:
+    $ref: ./EmbeddedWalletAuthMethodType.yaml
+  email:
+    type: string
+    format: email
+    description: Email address to associate with the auth method, when applicable
+    example: alice@example.com
+  phoneNumber:
+    type: string
+    description: Phone number to associate with the auth method, when applicable
+    example: '+14155550123'
+  oauthProvider:
+    type: string
+    description: OAuth provider to use when `methodType` is `OAUTH`
+    example: GOOGLE
+  redirectUri:
+    type: string
+    format: uri
+    description: Redirect URI for OAuth-based auth method creation, when applicable
+    example: https://partner.example.com/embedded-wallet/callback
+  authenticatorName:
+    type: string
+    description: Friendly name for a passkey authenticator, when applicable
+    example: Alice MacBook Pro

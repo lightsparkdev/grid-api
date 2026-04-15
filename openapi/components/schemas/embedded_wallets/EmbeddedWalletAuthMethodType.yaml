@@ -1,0 +1,14 @@
+type: string
+description: |
+  Type of authentication method associated with an embedded wallet.
+
+  | Value | Description |
+  |-------|-------------|
+  | PASSKEY | WebAuthn passkey-based authentication |
+  | OTP | One-time password delivered to an email address or phone number |
+  | OAUTH | Third-party OAuth-based authentication |
+enum:
+  - PASSKEY
+  - OTP
+  - OAUTH
+example: OTP

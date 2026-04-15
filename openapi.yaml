@@ -27,7 +27,7 @@ tags:
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
   - name: Embedded Wallets
-    description: Endpoints for starting and completing embedded wallet authentication flows.
+    description: Endpoints for starting and completing embedded wallet authentication flows and managing embedded wallet authentication methods.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -1504,6 +1504,197 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /embedded-wallets/auth/methods:
+    post:
+      summary: Create an embedded wallet auth method
+      description: |
+        Create a new authentication method for the embedded wallet associated with
+        the supplied Turnkey stamp.
+
+        The request may create a passkey-based method immediately or return a
+        follow-up step for OTP or OAuth-based authentication methods.
+      operationId: createEmbeddedWalletAuthMethod
+      tags:
+        - Embedded Wallets
+      security: []
+      parameters:
+        - name: X-Turnkey-Stamp
+          in: header
+          description: |
+            Turnkey stamp authorizing the request. The stamp may represent either a session stamp or a direct stamp.
+          required: true
+          schema:
+            type: string
+          example: stamp:session:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthMethodCreateRequest'
+      responses:
+        '201':
+          description: Embedded wallet auth method created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthOperationResponse'
+        '400':
+          description: Bad request - Invalid auth method creation parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Turnkey stamp is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Embedded wallet auth method already exists or cannot be created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /embedded-wallets/auth/methods/{authMethodId}:
+    patch:
+      summary: Update an embedded wallet auth method
+      description: |
+        Update the email address or phone number associated with an embedded wallet
+        auth method.
+
+        The auth method to update is identified by `authMethodId`, while the
+        request is authorized with a Turnkey stamp.
+      operationId: updateEmbeddedWalletAuthMethod
+      tags:
+        - Embedded Wallets
+      security: []
+      parameters:
+        - name: authMethodId
+          in: path
+          description: Unique identifier of the embedded wallet auth method to update
+          required: true
+          schema:
+            type: string
+          example: EmbeddedWalletAuthMethod:019542f5-b3e7-1d02-0000-000000000001
+        - name: X-Turnkey-Stamp
+          in: header
+          description: |
+            Turnkey stamp authorizing the request. The stamp may represent either a session stamp or a direct stamp.
+          required: true
+          schema:
+            type: string
+          example: stamp:direct:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthMethodUpdateRequest'
+      responses:
+        '200':
+          description: Embedded wallet auth method updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthOperationResponse'
+        '400':
+          description: Bad request - Invalid auth method update parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Turnkey stamp is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet auth method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Embedded wallet auth method cannot be updated in its current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete an embedded wallet auth method
+      description: |
+        Delete an embedded wallet auth method.
+
+        The request will be rejected when the specified auth method is the last
+        remaining authentication method for the embedded wallet.
+      operationId: deleteEmbeddedWalletAuthMethod
+      tags:
+        - Embedded Wallets
+      security: []
+      parameters:
+        - name: authMethodId
+          in: path
+          description: Unique identifier of the embedded wallet auth method to delete
+          required: true
+          schema:
+            type: string
+          example: EmbeddedWalletAuthMethod:019542f5-b3e7-1d02-0000-000000000001
+        - name: X-Turnkey-Stamp
+          in: header
+          description: |
+            Turnkey stamp authorizing the request. The stamp may represent either a session stamp or a direct stamp.
+          required: true
+          schema:
+            type: string
+          example: stamp:session:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+      responses:
+        '204':
+          description: Embedded wallet auth method deleted successfully
+        '400':
+          description: Bad request - Invalid auth method deletion parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Turnkey stamp is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet auth method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Embedded wallet auth method is the last remaining method or cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -10332,6 +10523,156 @@ components:
           type: string
           description: Opaque credential bundle returned after successful passkey authentication
           example: credential_bundle_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+    EmbeddedWalletAuthMethodType:
+      type: string
+      description: |
+        Type of authentication method associated with an embedded wallet.
+
+        | Value | Description |
+        |-------|-------------|
+        | PASSKEY | WebAuthn passkey-based authentication |
+        | OTP | One-time password delivered to an email address or phone number |
+        | OAUTH | Third-party OAuth-based authentication |
+      enum:
+        - PASSKEY
+        - OTP
+        - OAUTH
+      example: OTP
+    EmbeddedWalletAuthMethodCreateRequest:
+      type: object
+      required:
+        - methodType
+      properties:
+        methodType:
+          $ref: '#/components/schemas/EmbeddedWalletAuthMethodType'
+        email:
+          type: string
+          format: email
+          description: Email address to associate with the auth method, when applicable
+          example: alice@example.com
+        phoneNumber:
+          type: string
+          description: Phone number to associate with the auth method, when applicable
+          example: '+14155550123'
+        oauthProvider:
+          type: string
+          description: OAuth provider to use when `methodType` is `OAUTH`
+          example: GOOGLE
+        redirectUri:
+          type: string
+          format: uri
+          description: Redirect URI for OAuth-based auth method creation, when applicable
+          example: https://partner.example.com/embedded-wallet/callback
+        authenticatorName:
+          type: string
+          description: Friendly name for a passkey authenticator, when applicable
+          example: Alice MacBook Pro
+    EmbeddedWalletAuthMethod:
+      type: object
+      required:
+        - id
+        - methodType
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the embedded wallet auth method
+          example: EmbeddedWalletAuthMethod:019542f5-b3e7-1d02-0000-000000000001
+        methodType:
+          $ref: '#/components/schemas/EmbeddedWalletAuthMethodType'
+        label:
+          type: string
+          description: Human-readable label or masked identifier for the auth method
+          example: al***@example.com
+        oauthProvider:
+          type: string
+          description: OAuth provider associated with the auth method, when applicable
+          example: GOOGLE
+        verifiedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the auth method was verified and became active
+          example: '2026-04-08T15:32:28Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: '2026-04-08T15:30:01Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-04-08T15:32:28Z'
+    EmbeddedWalletAuthOperationResponse:
+      type: object
+      required:
+        - status
+        - nextStep
+      properties:
+        embeddedWalletId:
+          type: string
+          description: Unique identifier of the embedded wallet associated with the operation
+          example: EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000001
+        authSessionId:
+          type: string
+          description: Unique identifier of the embedded wallet auth session, when applicable
+          example: EmbeddedWalletAuthSession:019542f5-b3e7-1d02-0000-000000000002
+        pendingActionId:
+          type: string
+          description: Unique identifier of the pending embedded wallet action
+          example: EmbeddedWalletPendingAction:019542f5-b3e7-1d02-0000-000000000003
+        otpChallengeId:
+          type: string
+          description: Unique identifier of the OTP challenge, when an OTP step is active
+          example: EmbeddedWalletOtpChallenge:019542f5-b3e7-1d02-0000-000000000004
+        turnkeySubOrgId:
+          type: string
+          description: Turnkey sub-organization identifier associated with the embedded wallet
+          example: suborg_01JABCDEF23456789GHIJKL
+        status:
+          type: string
+          description: Current status of the embedded wallet auth-related operation
+          example: PENDING
+        nextStep:
+          type: string
+          description: Next action the integrator or end user must complete
+          example: COMPLETE_OTP_VERIFICATION
+        maskedDestination:
+          type: string
+          description: Masked email address or phone number used for OTP delivery
+          example: al***@example.com
+        oauthConsentUrl:
+          type: string
+          format: uri
+          description: OAuth consent URL the integrator should redirect the end user to, when applicable
+          example: https://accounts.google.com/o/oauth2/v2/auth?client_id=example-client-id
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiration timestamp for the current step of the auth flow
+          example: '2026-04-08T15:40:00Z'
+        authMethod:
+          $ref: '#/components/schemas/EmbeddedWalletAuthMethod'
+    EmbeddedWalletAuthMethodUpdateRequest:
+      type: object
+      description: |
+        Fields to update for an embedded wallet auth method. Provide only the fields relevant to the auth method being updated.
+      minProperties: 1
+      properties:
+        email:
+          type: string
+          format: email
+          description: New email address for the embedded wallet auth method
+          example: alice.updated@example.com
+        phoneNumber:
+          type: string
+          description: New phone number for the embedded wallet auth method
+          example: '+14155550124'
+        label:
+          type: string
+          description: Updated user-facing label for the auth method
+          example: Primary recovery email
     BeneficialOwnerCreateRequest:
       type: object
       required:

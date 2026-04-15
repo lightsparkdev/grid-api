@@ -1,0 +1,36 @@
+type: object
+required:
+  - id
+  - methodType
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: Unique identifier of the embedded wallet auth method
+    example: EmbeddedWalletAuthMethod:019542f5-b3e7-1d02-0000-000000000001
+  methodType:
+    $ref: ./EmbeddedWalletAuthMethodType.yaml
+  label:
+    type: string
+    description: Human-readable label or masked identifier for the auth method
+    example: al***@example.com
+  oauthProvider:
+    type: string
+    description: OAuth provider associated with the auth method, when applicable
+    example: GOOGLE
+  verifiedAt:
+    type: string
+    format: date-time
+    description: Timestamp when the auth method was verified and became active
+    example: '2026-04-08T15:32:28Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp
+    example: '2026-04-08T15:30:01Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp
+    example: '2026-04-08T15:32:28Z'

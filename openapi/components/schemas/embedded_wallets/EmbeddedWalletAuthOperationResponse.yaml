@@ -1,0 +1,49 @@
+type: object
+required:
+  - status
+  - nextStep
+properties:
+  embeddedWalletId:
+    type: string
+    description: Unique identifier of the embedded wallet associated with the operation
+    example: EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000001
+  authSessionId:
+    type: string
+    description: Unique identifier of the embedded wallet auth session, when applicable
+    example: EmbeddedWalletAuthSession:019542f5-b3e7-1d02-0000-000000000002
+  pendingActionId:
+    type: string
+    description: Unique identifier of the pending embedded wallet action
+    example: EmbeddedWalletPendingAction:019542f5-b3e7-1d02-0000-000000000003
+  otpChallengeId:
+    type: string
+    description: Unique identifier of the OTP challenge, when an OTP step is active
+    example: EmbeddedWalletOtpChallenge:019542f5-b3e7-1d02-0000-000000000004
+  turnkeySubOrgId:
+    type: string
+    description: Turnkey sub-organization identifier associated with the embedded wallet
+    example: suborg_01JABCDEF23456789GHIJKL
+  status:
+    type: string
+    description: Current status of the embedded wallet auth-related operation
+    example: PENDING
+  nextStep:
+    type: string
+    description: Next action the integrator or end user must complete
+    example: COMPLETE_OTP_VERIFICATION
+  maskedDestination:
+    type: string
+    description: Masked email address or phone number used for OTP delivery
+    example: al***@example.com
+  oauthConsentUrl:
+    type: string
+    format: uri
+    description: OAuth consent URL the integrator should redirect the end user to, when applicable
+    example: https://accounts.google.com/o/oauth2/v2/auth?client_id=example-client-id
+  expiresAt:
+    type: string
+    format: date-time
+    description: Expiration timestamp for the current step of the auth flow
+    example: '2026-04-08T15:40:00Z'
+  authMethod:
+    $ref: ./EmbeddedWalletAuthMethod.yaml
