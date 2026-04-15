@@ -1,0 +1,55 @@
+post:
+  summary: Complete embedded wallet OTP authentication
+  description: |
+    Complete embedded wallet OTP authentication for the specified internal
+    account and return a credential bundle bound to the supplied public key.
+  operationId: completeEmbeddedWalletOtpAuth
+  tags:
+    - Embedded Wallets
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: internalAccountId
+      in: path
+      description: Unique identifier of the EMBEDDED_WALLET internal account
+      required: true
+      schema:
+        type: string
+      example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthOtpCompleteRequest.yaml
+  responses:
+    '200':
+      description: OTP authentication completed successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthOtpCompleteResponse.yaml
+    '400':
+      description: Bad request - Invalid OTP parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Embedded wallet internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

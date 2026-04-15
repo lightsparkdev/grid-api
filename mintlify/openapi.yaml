@@ -1189,6 +1189,127 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /embedded-wallets/{internalAccountId}/auth/otp/init:
+    post:
+      summary: Initialize embedded wallet OTP authentication
+      description: |
+        Send a one-time password (OTP) for the embedded wallet associated with the
+        specified internal account.
+
+        If the internal account is not yet linked to a Turnkey signer, Grid will
+        first provision the embedded wallet signer and supporting wallet records,
+        then send the OTP.
+
+        Conditional validation:
+        - First-time setup requires `userName` and `userEmail`.
+        - Reauthentication may omit the request body entirely, and `userName` and
+          `userEmail` must not be provided once a signer is already linked.
+      operationId: initEmbeddedWalletOtpAuth
+      tags:
+        - Embedded Wallets
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: internalAccountId
+          in: path
+          description: Unique identifier of the EMBEDDED_WALLET internal account
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthOtpInitRequest'
+      responses:
+        '200':
+          description: OTP initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthOtpInitResponse'
+        '400':
+          description: Bad request - Invalid first-time provisioning fields or OTP initialization parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /embedded-wallets/{internalAccountId}/auth/otp/complete:
+    post:
+      summary: Complete embedded wallet OTP authentication
+      description: |
+        Complete embedded wallet OTP authentication for the specified internal
+        account and return a credential bundle bound to the supplied public key.
+      operationId: completeEmbeddedWalletOtpAuth
+      tags:
+        - Embedded Wallets
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: internalAccountId
+          in: path
+          description: Unique identifier of the EMBEDDED_WALLET internal account
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthOtpCompleteRequest'
+      responses:
+        '200':
+          description: OTP authentication completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthOtpCompleteResponse'
+        '400':
+          description: Bad request - Invalid OTP parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /embedded-wallets/{internalAccountId}/auth/oauth:
     post:
       summary: Authenticate an embedded wallet with OAuth
@@ -1233,6 +1354,140 @@ paths:
                 $ref: '#/components/schemas/EmbeddedWalletAuthOAuthResponse'
         '400':
           description: Bad request - Invalid OAuth authentication parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /embedded-wallets/{internalAccountId}/auth/passkey/init:
+    post:
+      summary: Initialize embedded wallet passkey authentication
+      description: |
+        Initialize passkey authentication for the embedded wallet associated with
+        the specified internal account and return the exact serialized request body
+        that must be signed with WebAuthn.
+
+        If the internal account is not yet linked to a Turnkey signer, Grid will
+        first provision the signer and register the passkey using the supplied
+        attestation fields before creating the session request body.
+
+        Conditional validation:
+        - Reauthentication requires only `clientPublicKey`.
+        - First-time setup additionally requires `userName`, `challenge`,
+          `credentialId`, `clientDataJson`, and `attestationObject`. `userEmail` is
+          optional, and `transports` defaults to an empty list when omitted.
+      operationId: initEmbeddedWalletPasskeyAuth
+      tags:
+        - Embedded Wallets
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: internalAccountId
+          in: path
+          description: Unique identifier of the EMBEDDED_WALLET internal account
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthPasskeyInitRequest'
+      responses:
+        '200':
+          description: Passkey authentication initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthPasskeyInitResponse'
+        '400':
+          description: Bad request - Invalid passkey initialization parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /embedded-wallets/{internalAccountId}/auth/passkey/complete:
+    post:
+      summary: Complete embedded wallet passkey authentication
+      description: |
+        Complete passkey authentication for the embedded wallet associated with the
+        specified internal account.
+
+        The request body returned by passkey init must be sent back unchanged in
+        `stampedRequestBody`, and the WebAuthn signature must be provided in
+        `X-Stamp-Webauthn`.
+      operationId: completeEmbeddedWalletPasskeyAuth
+      tags:
+        - Embedded Wallets
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: internalAccountId
+          in: path
+          description: Unique identifier of the EMBEDDED_WALLET internal account
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        - name: X-Stamp-Webauthn
+          in: header
+          description: WebAuthn stamp for the exact serialized request body returned by passkey init
+          required: true
+          schema:
+            type: string
+          example: webauthn:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthPasskeyCompleteRequest'
+      responses:
+        '200':
+          description: Passkey authentication completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthPasskeyCompleteResponse'
+        '400':
+          description: Bad request - Invalid stamped request body or passkey parameters
           content:
             application/json:
               schema:
@@ -9891,6 +10146,63 @@ components:
           example: ext_acc_123456
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+    EmbeddedWalletAuthOtpInitRequest:
+      type: object
+      description: |
+        Request to initialize embedded wallet OTP authentication.
+
+        Conditional validation:
+        - If the internal account is not yet linked to a Turnkey signer, `userName`
+          and `userEmail` are required.
+        - If the internal account is already linked, the request body may be omitted
+          and `userName` and `userEmail` must not be provided.
+      properties:
+        userName:
+          type: string
+          description: Full name to use when first provisioning the embedded wallet signer
+          example: Alice Example
+        userEmail:
+          type: string
+          format: email
+          description: Verified email address that should receive the OTP during first-time provisioning
+          example: alice@example.com
+    EmbeddedWalletAuthOtpInitResponse:
+      type: object
+      required:
+        - otpId
+      properties:
+        otpId:
+          type: string
+          description: Identifier of the OTP challenge that was created and sent
+          example: otp_019542f5b3e71d020000000000000001
+    EmbeddedWalletAuthOtpCompleteRequest:
+      type: object
+      required:
+        - otpId
+        - otpCode
+        - clientPublicKey
+      properties:
+        otpId:
+          type: string
+          description: Identifier of the OTP challenge returned by OTP init
+          example: otp_019542f5b3e71d020000000000000001
+        otpCode:
+          type: string
+          description: One-time password entered by the end user
+          example: '123456'
+        clientPublicKey:
+          type: string
+          description: Public key that Turnkey should bind the resulting credential bundle to
+          example: 029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1
+    EmbeddedWalletAuthOtpCompleteResponse:
+      type: object
+      required:
+        - credentialBundle
+      properties:
+        credentialBundle:
+          type: string
+          description: Opaque credential bundle returned after successful OTP authentication
+          example: credential_bundle_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
     EmbeddedWalletOAuthProvider:
       type: string
       description: OAuth provider used for embedded wallet authentication
@@ -9941,6 +10253,85 @@ components:
           type: string
           description: Opaque session string returned after successful OAuth authentication
           example: session_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+    EmbeddedWalletAuthPasskeyInitRequest:
+      type: object
+      required:
+        - clientPublicKey
+      description: |
+        Request to initialize embedded wallet passkey authentication.
+
+        Conditional validation:
+        - If the internal account is already linked, only `clientPublicKey` is
+          required.
+        - If the internal account is not yet linked, Grid first provisions the
+          embedded wallet signer and registers the passkey. In that case `userName`,
+          `challenge`, `credentialId`, `clientDataJson`, and `attestationObject` are
+          required. `userEmail` is optional, and `transports` defaults to an empty
+          list when omitted.
+      properties:
+        clientPublicKey:
+          type: string
+          description: Public key that Turnkey should bind the resulting session to
+          example: 029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1
+        userName:
+          type: string
+          description: Full name to use when first provisioning the embedded wallet signer
+          example: Alice Example
+        userEmail:
+          type: string
+          format: email
+          description: Optional email address to attach when first provisioning the embedded wallet signer
+          example: alice@example.com
+        challenge:
+          type: string
+          description: Original WebAuthn challenge used to create the credential during first-time provisioning
+          example: nH7b7XQp2Y8Hq0mQZsA0eQ
+        credentialId:
+          type: string
+          description: WebAuthn credential ID produced during first-time passkey registration
+          example: AYECAwQFBgcICQoLDA0ODw
+        clientDataJson:
+          type: string
+          description: Base64url-encoded clientDataJSON from the WebAuthn attestation response
+          example: eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwgImNoYWxsZW5nZSI6Im5IN2I3WFFwMlk4SHEwbVFac0EwZVEifQ
+        attestationObject:
+          type: string
+          description: Base64url-encoded attestationObject from the WebAuthn attestation response
+          example: o2NmbXRkbm9uZWhhdXRoRGF0YVhYQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo
+        transports:
+          type: array
+          description: Optional list of WebAuthn transports associated with the passkey. If omitted, Grid treats this as an empty list.
+          items:
+            type: string
+          example:
+            - internal
+    EmbeddedWalletAuthPasskeyInitResponse:
+      type: object
+      required:
+        - requestBody
+      properties:
+        requestBody:
+          type: string
+          description: Exact serialized JSON request body that must be signed and returned unchanged during passkey completion
+          example: '{"organizationId":"SubOrganization:019542f5-b3e7-1d02-0000-000000000001","targetPublicKey":"029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1","expirationSeconds":"900"}'
+    EmbeddedWalletAuthPasskeyCompleteRequest:
+      type: object
+      required:
+        - stampedRequestBody
+      properties:
+        stampedRequestBody:
+          type: string
+          description: Exact serialized JSON request body returned by passkey init. Grid treats this value as opaque and forwards it unchanged.
+          example: '{"organizationId":"SubOrganization:019542f5-b3e7-1d02-0000-000000000001","targetPublicKey":"029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1","expirationSeconds":"900"}'
+    EmbeddedWalletAuthPasskeyCompleteResponse:
+      type: object
+      required:
+        - credentialBundle
+      properties:
+        credentialBundle:
+          type: string
+          description: Opaque credential bundle returned after successful passkey authentication
+          example: credential_bundle_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
     BeneficialOwnerCreateRequest:
       type: object
       required:

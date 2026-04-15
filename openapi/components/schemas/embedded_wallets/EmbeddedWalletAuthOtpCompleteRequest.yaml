@@ -1,0 +1,18 @@
+type: object
+required:
+  - otpId
+  - otpCode
+  - clientPublicKey
+properties:
+  otpId:
+    type: string
+    description: Identifier of the OTP challenge returned by OTP init
+    example: otp_019542f5b3e71d020000000000000001
+  otpCode:
+    type: string
+    description: One-time password entered by the end user
+    example: '123456'
+  clientPublicKey:
+    type: string
+    description: Public key that Turnkey should bind the resulting credential bundle to
+    example: 029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1

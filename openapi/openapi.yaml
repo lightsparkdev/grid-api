@@ -109,8 +109,16 @@ paths:
     $ref: paths/customers/customers_external_accounts.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
+  /embedded-wallets/{internalAccountId}/auth/otp/init:
+    $ref: paths/embedded-wallets/embedded_wallets_{internalAccountId}_auth_otp_init.yaml
+  /embedded-wallets/{internalAccountId}/auth/otp/complete:
+    $ref: paths/embedded-wallets/embedded_wallets_{internalAccountId}_auth_otp_complete.yaml
   /embedded-wallets/{internalAccountId}/auth/oauth:
     $ref: paths/embedded-wallets/embedded_wallets_{internalAccountId}_auth_oauth.yaml
+  /embedded-wallets/{internalAccountId}/auth/passkey/init:
+    $ref: paths/embedded-wallets/embedded_wallets_{internalAccountId}_auth_passkey_init.yaml
+  /embedded-wallets/{internalAccountId}/auth/passkey/complete:
+    $ref: paths/embedded-wallets/embedded_wallets_{internalAccountId}_auth_passkey_complete.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:

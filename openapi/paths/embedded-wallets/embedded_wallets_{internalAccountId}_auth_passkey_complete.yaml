@@ -1,0 +1,66 @@
+post:
+  summary: Complete embedded wallet passkey authentication
+  description: |
+    Complete passkey authentication for the embedded wallet associated with the
+    specified internal account.
+
+    The request body returned by passkey init must be sent back unchanged in
+    `stampedRequestBody`, and the WebAuthn signature must be provided in
+    `X-Stamp-Webauthn`.
+  operationId: completeEmbeddedWalletPasskeyAuth
+  tags:
+    - Embedded Wallets
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: internalAccountId
+      in: path
+      description: Unique identifier of the EMBEDDED_WALLET internal account
+      required: true
+      schema:
+        type: string
+      example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    - name: X-Stamp-Webauthn
+      in: header
+      description: WebAuthn stamp for the exact serialized request body returned by passkey init
+      required: true
+      schema:
+        type: string
+      example: webauthn:eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthPasskeyCompleteRequest.yaml
+  responses:
+    '200':
+      description: Passkey authentication completed successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthPasskeyCompleteResponse.yaml
+    '400':
+      description: Bad request - Invalid stamped request body or passkey parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Embedded wallet internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

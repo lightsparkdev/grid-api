@@ -1,0 +1,8 @@
+type: object
+required:
+  - requestBody
+properties:
+  requestBody:
+    type: string
+    description: Exact serialized JSON request body that must be signed and returned unchanged during passkey completion
+    example: '{"organizationId":"SubOrganization:019542f5-b3e7-1d02-0000-000000000001","targetPublicKey":"029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1","expirationSeconds":"900"}'

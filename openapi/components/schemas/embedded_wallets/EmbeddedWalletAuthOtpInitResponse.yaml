@@ -1,0 +1,8 @@
+type: object
+required:
+  - otpId
+properties:
+  otpId:
+    type: string
+    description: Identifier of the OTP challenge that was created and sent
+    example: otp_019542f5b3e71d020000000000000001

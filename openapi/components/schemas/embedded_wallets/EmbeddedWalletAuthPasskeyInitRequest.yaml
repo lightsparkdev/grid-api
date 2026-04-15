@@ -1,0 +1,51 @@
+type: object
+required:
+  - clientPublicKey
+description: |
+  Request to initialize embedded wallet passkey authentication.
+
+  Conditional validation:
+  - If the internal account is already linked, only `clientPublicKey` is
+    required.
+  - If the internal account is not yet linked, Grid first provisions the
+    embedded wallet signer and registers the passkey. In that case `userName`,
+    `challenge`, `credentialId`, `clientDataJson`, and `attestationObject` are
+    required. `userEmail` is optional, and `transports` defaults to an empty
+    list when omitted.
+properties:
+  clientPublicKey:
+    type: string
+    description: Public key that Turnkey should bind the resulting session to
+    example: 029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1
+  userName:
+    type: string
+    description: Full name to use when first provisioning the embedded wallet signer
+    example: Alice Example
+  userEmail:
+    type: string
+    format: email
+    description: Optional email address to attach when first provisioning the embedded wallet signer
+    example: alice@example.com
+  challenge:
+    type: string
+    description: Original WebAuthn challenge used to create the credential during first-time provisioning
+    example: nH7b7XQp2Y8Hq0mQZsA0eQ
+  credentialId:
+    type: string
+    description: WebAuthn credential ID produced during first-time passkey registration
+    example: AYECAwQFBgcICQoLDA0ODw
+  clientDataJson:
+    type: string
+    description: Base64url-encoded clientDataJSON from the WebAuthn attestation response
+    example: eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwgImNoYWxsZW5nZSI6Im5IN2I3WFFwMlk4SHEwbVFac0EwZVEifQ
+  attestationObject:
+    type: string
+    description: Base64url-encoded attestationObject from the WebAuthn attestation response
+    example: o2NmbXRkbm9uZWhhdXRoRGF0YVhYQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo
+  transports:
+    type: array
+    description: Optional list of WebAuthn transports associated with the passkey. If omitted, Grid treats this as an empty list.
+    items:
+      type: string
+    example:
+      - internal

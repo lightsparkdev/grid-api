@@ -1,0 +1,64 @@
+post:
+  summary: Initialize embedded wallet OTP authentication
+  description: |
+    Send a one-time password (OTP) for the embedded wallet associated with the
+    specified internal account.
+
+    If the internal account is not yet linked to a Turnkey signer, Grid will
+    first provision the embedded wallet signer and supporting wallet records,
+    then send the OTP.
+
+    Conditional validation:
+    - First-time setup requires `userName` and `userEmail`.
+    - Reauthentication may omit the request body entirely, and `userName` and
+      `userEmail` must not be provided once a signer is already linked.
+  operationId: initEmbeddedWalletOtpAuth
+  tags:
+    - Embedded Wallets
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: internalAccountId
+      in: path
+      description: Unique identifier of the EMBEDDED_WALLET internal account
+      required: true
+      schema:
+        type: string
+      example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthOtpInitRequest.yaml
+  responses:
+    '200':
+      description: OTP initialized successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/embedded_wallets/EmbeddedWalletAuthOtpInitResponse.yaml
+    '400':
+      description: Bad request - Invalid first-time provisioning fields or OTP initialization parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Embedded wallet internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

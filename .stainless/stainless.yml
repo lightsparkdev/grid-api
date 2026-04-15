@@ -190,11 +190,23 @@ resources:
     subresources:
       auth:
         models:
+          embedded_wallet_auth_otp_init_request: "#/components/schemas/EmbeddedWalletAuthOtpInitRequest"
+          embedded_wallet_auth_otp_init_response: "#/components/schemas/EmbeddedWalletAuthOtpInitResponse"
+          embedded_wallet_auth_otp_complete_request: "#/components/schemas/EmbeddedWalletAuthOtpCompleteRequest"
+          embedded_wallet_auth_otp_complete_response: "#/components/schemas/EmbeddedWalletAuthOtpCompleteResponse"
           embedded_wallet_oauth_provider: "#/components/schemas/EmbeddedWalletOAuthProvider"
           embedded_wallet_auth_oauth_request: "#/components/schemas/EmbeddedWalletAuthOAuthRequest"
           embedded_wallet_auth_oauth_response: "#/components/schemas/EmbeddedWalletAuthOAuthResponse"
+          embedded_wallet_auth_passkey_init_request: "#/components/schemas/EmbeddedWalletAuthPasskeyInitRequest"
+          embedded_wallet_auth_passkey_init_response: "#/components/schemas/EmbeddedWalletAuthPasskeyInitResponse"
+          embedded_wallet_auth_passkey_complete_request: "#/components/schemas/EmbeddedWalletAuthPasskeyCompleteRequest"
+          embedded_wallet_auth_passkey_complete_response: "#/components/schemas/EmbeddedWalletAuthPasskeyCompleteResponse"
         methods:
+          init_otp: post /embedded-wallets/{internalAccountId}/auth/otp/init
+          complete_otp: post /embedded-wallets/{internalAccountId}/auth/otp/complete
           oauth: post /embedded-wallets/{internalAccountId}/auth/oauth
+          init_passkey: post /embedded-wallets/{internalAccountId}/auth/passkey/init
+          complete_passkey: post /embedded-wallets/{internalAccountId}/auth/passkey/complete
 
   transfer_in:
     models:

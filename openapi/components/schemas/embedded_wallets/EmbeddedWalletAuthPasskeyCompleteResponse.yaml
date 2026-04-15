@@ -1,0 +1,8 @@
+type: object
+required:
+  - credentialBundle
+properties:
+  credentialBundle:
+    type: string
+    description: Opaque credential bundle returned after successful passkey authentication
+    example: credential_bundle_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9

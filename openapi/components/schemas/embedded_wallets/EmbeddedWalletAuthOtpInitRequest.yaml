@@ -1,0 +1,19 @@
+type: object
+description: |
+  Request to initialize embedded wallet OTP authentication.
+
+  Conditional validation:
+  - If the internal account is not yet linked to a Turnkey signer, `userName`
+    and `userEmail` are required.
+  - If the internal account is already linked, the request body may be omitted
+    and `userName` and `userEmail` must not be provided.
+properties:
+  userName:
+    type: string
+    description: Full name to use when first provisioning the embedded wallet signer
+    example: Alice Example
+  userEmail:
+    type: string
+    format: email
+    description: Verified email address that should receive the OTP during first-time provisioning
+    example: alice@example.com
