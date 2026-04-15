@@ -26,6 +26,8 @@ tags:
     description: Endpoints for uploading and managing verification documents for customers and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
+  - name: Embedded Wallets
+    description: Endpoints for starting and completing embedded wallet authentication flows.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -1181,6 +1183,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /embedded-wallets/{internalAccountId}/auth/oauth:
+    post:
+      summary: Authenticate an embedded wallet with OAuth
+      description: |
+        Authenticate the embedded wallet associated with the specified internal
+        account using an OAuth-issued OIDC token.
+
+        If the internal account is not yet linked to a Turnkey signer, Grid will
+        first provision the signer and supporting wallet records before completing
+        OAuth authentication.
+
+        Conditional validation:
+        - First-time setup requires `userName`, `provider`, `oidcToken`, and
+          `clientPublicKey`. `userEmail` is optional.
+        - Reauthentication requires `oidcToken` and `clientPublicKey`. `provider`
+          may still be supplied for validation or logging.
+      operationId: authenticateEmbeddedWalletWithOAuth
+      tags:
+        - Embedded Wallets
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: internalAccountId
+          in: path
+          description: Unique identifier of the EMBEDDED_WALLET internal account
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedWalletAuthOAuthRequest'
+      responses:
+        '200':
+          description: OAuth authentication completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedWalletAuthOAuthResponse'
+        '400':
+          description: Bad request - Invalid OAuth authentication parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Embedded wallet internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -9823,6 +9891,56 @@ components:
           example: ext_acc_123456
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountInfoOneOf'
+    EmbeddedWalletOAuthProvider:
+      type: string
+      description: OAuth provider used for embedded wallet authentication
+      enum:
+        - GOOGLE
+        - APPLE
+      example: GOOGLE
+    EmbeddedWalletAuthOAuthRequest:
+      type: object
+      required:
+        - oidcToken
+        - clientPublicKey
+      description: |
+        Request to authenticate an embedded wallet with OAuth.
+
+        Conditional validation:
+        - If the internal account is not yet linked to a Turnkey signer, `userName`
+          and `provider` are required. `userEmail` is optional.
+        - If the internal account is already linked, only `oidcToken` and
+          `clientPublicKey` are required. `provider` may still be supplied for
+          validation or logging.
+      properties:
+        oidcToken:
+          type: string
+          description: OIDC token to exchange with Turnkey for OAuth authentication
+          example: eyJhbGciOiJSUzI1NiIsImtpZCI6Im9hdXRoLWtleS0xIn0.eyJzdWIiOiJ1c2VyLTEyMyJ9.signature
+        clientPublicKey:
+          type: string
+          description: Public key that Turnkey should bind the resulting session to
+          example: 029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1
+        provider:
+          $ref: '#/components/schemas/EmbeddedWalletOAuthProvider'
+        userName:
+          type: string
+          description: Full name to use when first provisioning the embedded wallet signer
+          example: Alice Example
+        userEmail:
+          type: string
+          format: email
+          description: Optional email address to attach when first provisioning the embedded wallet signer
+          example: alice@example.com
+    EmbeddedWalletAuthOAuthResponse:
+      type: object
+      required:
+        - session
+      properties:
+        session:
+          type: string
+          description: Opaque session string returned after successful OAuth authentication
+          example: session_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
     BeneficialOwnerCreateRequest:
       type: object
       required:

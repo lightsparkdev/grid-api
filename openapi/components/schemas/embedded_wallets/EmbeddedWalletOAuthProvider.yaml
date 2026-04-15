@@ -1,0 +1,6 @@
+type: string
+description: OAuth provider used for embedded wallet authentication
+enum:
+  - GOOGLE
+  - APPLE
+example: GOOGLE

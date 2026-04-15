@@ -1,0 +1,33 @@
+type: object
+required:
+  - oidcToken
+  - clientPublicKey
+description: |
+  Request to authenticate an embedded wallet with OAuth.
+
+  Conditional validation:
+  - If the internal account is not yet linked to a Turnkey signer, `userName`
+    and `provider` are required. `userEmail` is optional.
+  - If the internal account is already linked, only `oidcToken` and
+    `clientPublicKey` are required. `provider` may still be supplied for
+    validation or logging.
+properties:
+  oidcToken:
+    type: string
+    description: OIDC token to exchange with Turnkey for OAuth authentication
+    example: eyJhbGciOiJSUzI1NiIsImtpZCI6Im9hdXRoLWtleS0xIn0.eyJzdWIiOiJ1c2VyLTEyMyJ9.signature
+  clientPublicKey:
+    type: string
+    description: Public key that Turnkey should bind the resulting session to
+    example: 029a4f9d0e0bc2f2d8df91f0f2d1b09ff8f85f8b16f31c2fb45a3f6c4a79c2d8f1
+  provider:
+    $ref: ./EmbeddedWalletOAuthProvider.yaml
+  userName:
+    type: string
+    description: Full name to use when first provisioning the embedded wallet signer
+    example: Alice Example
+  userEmail:
+    type: string
+    format: email
+    description: Optional email address to attach when first provisioning the embedded wallet signer
+    example: alice@example.com

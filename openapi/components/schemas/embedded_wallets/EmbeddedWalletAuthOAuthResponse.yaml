@@ -1,0 +1,8 @@
+type: object
+required:
+  - session
+properties:
+  session:
+    type: string
+    description: Opaque session string returned after successful OAuth authentication
+    example: session_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9

@@ -28,6 +28,10 @@ tags:
       and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
+  - name: Embedded Wallets
+    description: >-
+      Endpoints for starting and completing embedded wallet authentication
+      flows.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -105,6 +109,8 @@ paths:
     $ref: paths/customers/customers_external_accounts.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
+  /embedded-wallets/{internalAccountId}/auth/oauth:
+    $ref: paths/embedded-wallets/embedded_wallets_{internalAccountId}_auth_oauth.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:

@@ -186,6 +186,16 @@ resources:
           vnd_account_info: "#/components/schemas/VndAccountInfo"
           # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
 
+  embedded_wallets:
+    subresources:
+      auth:
+        models:
+          embedded_wallet_oauth_provider: "#/components/schemas/EmbeddedWalletOAuthProvider"
+          embedded_wallet_auth_oauth_request: "#/components/schemas/EmbeddedWalletAuthOAuthRequest"
+          embedded_wallet_auth_oauth_response: "#/components/schemas/EmbeddedWalletAuthOAuthResponse"
+        methods:
+          oauth: post /embedded-wallets/{internalAccountId}/auth/oauth
+
   transfer_in:
     models:
       transaction: "#/components/schemas/TransactionOneOf"
