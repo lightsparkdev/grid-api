@@ -1,0 +1,20 @@
+type: string
+enum:
+  - ACH
+  - BANK_TRANSFER
+  - FAST
+  - FASTER_PAYMENTS
+  - FEDNOW
+  - MOBILE_MONEY
+  - PAYNOW
+  - PIX
+  - RTP
+  - SEPA
+  - SEPA_INSTANT
+  - SPEI
+  - UPI
+  - WIRE
+description: >-
+  The payment rail used for the transfer. Payment rails represent the underlying
+  payment network or system used to move funds between accounts.
+example: ACH

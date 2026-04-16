@@ -4645,6 +4645,25 @@ components:
           description: Number of decimal places for the currency
           minimum: 0
           example: 2
+    PaymentRail:
+      type: string
+      enum:
+        - ACH
+        - BANK_TRANSFER
+        - FAST
+        - FASTER_PAYMENTS
+        - FEDNOW
+        - MOBILE_MONEY
+        - PAYNOW
+        - PIX
+        - RTP
+        - SEPA
+        - SEPA_INSTANT
+        - SPEI
+        - UPI
+        - WIRE
+      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
+      example: ACH
     ExchangeRateFees:
       type: object
       description: Fees associated with an exchange rate
@@ -4693,9 +4712,7 @@ components:
         destinationCurrency:
           $ref: '#/components/schemas/Currency'
         destinationPaymentRail:
-          type: string
-          description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
-          example: UPI
+          $ref: '#/components/schemas/PaymentRail'
         receivingAmount:
           type: integer
           format: int64
@@ -11889,9 +11906,9 @@ components:
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
             paymentRail:
-              type: string
-              description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
-              example: ACH
+              allOf:
+                - $ref: '#/components/schemas/PaymentRail'
+                - description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           description: Destination account details
     UmaAddressDestination:
       title: UMA Address
