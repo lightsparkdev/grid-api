@@ -5273,7 +5273,6 @@ components:
       type: object
       required:
         - customerType
-        - platformCustomerId
       properties:
         platformCustomerId:
           type: string
