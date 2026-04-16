@@ -35,7 +35,10 @@ properties:
   destinationCurrency:
     $ref: ../common/Currency.yaml
   destinationPaymentRail:
-    $ref: ../common/PaymentRail.yaml
+    allOf:
+      - $ref: ../common/PaymentRail.yaml
+      - description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
+        example: UPI
   receivingAmount:
     type: integer
     format: int64
