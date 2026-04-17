@@ -9,7 +9,6 @@ import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
 import com.grid.sample.optText
-import com.grid.sample.requireText
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -26,8 +25,8 @@ fun Route.customerRoutes() {
 
                 val individual = CreateCustomerRequest.Individual.builder()
                     .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
-                    .platformCustomerId(json.requireText("platformCustomerId"))
                     .apply {
+                        json.optText("platformCustomerId")?.let { platformCustomerId(it) }
                         json.optText("fullName")?.let { fullName(it) }
                         json.optText("nationality")?.let { nationality(it) }
                         json.optText("birthDate")?.let { birthDate(LocalDate.parse(it)) }
