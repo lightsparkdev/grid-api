@@ -1,0 +1,37 @@
+type: object
+required:
+  - id
+  - accountId
+  - type
+  - nickname
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for the authentication credential.
+    example: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+  accountId:
+    type: string
+    description: Identifier of the internal account that this credential authenticates.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  type:
+    $ref: ./AuthMethodType.yaml
+  nickname:
+    type: string
+    description: >-
+      Human-readable identifier for this credential. For EMAIL_OTP credentials
+      this is the email address; for OAUTH credentials it is typically the email
+      claim from the OIDC token; for PASSKEY credentials it is the nickname
+      provided at registration time.
+    example: example@lightspark.com
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-04-08T15:30:01Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2026-04-08T15:35:00Z'

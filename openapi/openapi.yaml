@@ -52,6 +52,11 @@ tags:
     description: >-
       Endpoints for discovering available payment rails, banks, and providers
       for a given country and currency corridor.
+  - name: Embedded Wallet Auth
+    description: >-
+      Endpoints for registering and verifying end-user authentication
+      credentials (email OTP, OAuth, passkey) used to sign Embedded Wallet
+      actions.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -167,6 +172,10 @@ paths:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
     $ref: paths/tokens/tokens_{tokenId}.yaml
+  /auth/credentials:
+    $ref: paths/auth/auth_credentials.yaml
+  /auth/credentials/{id}/verify:
+    $ref: paths/auth/auth_credentials_{id}_verify.yaml
 webhooks:
   incoming-payment:
     $ref: webhooks/incoming-payment.yaml

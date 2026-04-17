@@ -1,0 +1,14 @@
+type: string
+enum:
+  - OAUTH
+  - EMAIL_OTP
+  - PASSKEY
+description: >-
+  The type of authentication credential.
+
+  - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as
+  Google or Apple.
+
+  - `EMAIL_OTP`: A one-time password delivered to the user's email address.
+
+  - `PASSKEY`: A WebAuthn passkey bound to the user's device.

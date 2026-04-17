@@ -46,6 +46,8 @@ tags:
     description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
   - name: Discoveries
     description: Endpoints for discovering available payment rails, banks, and providers for a given country and currency corridor.
+  - name: Embedded Wallet Auth
+    description: Endpoints for registering and verifying end-user authentication credentials (email OTP, OAuth, passkey) used to sign Embedded Wallet actions.
 paths:
   /config:
     get:
@@ -3454,6 +3456,160 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/credentials:
+    post:
+      summary: Create an authentication credential
+      description: |
+        Register an authentication credential for an Embedded Wallet customer.
+
+        **First credential on an internal account**
+
+        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests.
+
+        **Adding an additional credential**
+
+        Registering an additional credential against an internal account that already has one requires a signature from an existing verified credential. Call this endpoint with the new credential's details; if an existing credential is already registered on the internal account the response is `202` with a `payloadToSign` and a `requestId`. Sign the payload with the session private key of an existing verified credential on the same internal account (decrypted client-side from its `encryptedSessionSigningKey`) and retry the same request with the signature supplied as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+      operationId: createAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of an existing verified authentication credential on the target internal account and base64-encoded. Required when registering an additional credential on an internal account that already has one; ignored when the internal account has no existing credentials.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering an additional credential; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentialCreateRequestOneOf'
+            examples:
+              emailOtp:
+                summary: Register an email OTP credential
+                value:
+                  type: EMAIL_OTP
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '201':
+          description: Authentication credential created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMethod'
+        '202':
+          description: An existing authentication credential is already registered on the internal account. The response contains a `payloadToSign` that must be signed with the session private key of an existing verified credential on the same internal account, along with a `requestId` that must be echoed back on the retry. The signature is passed as the `Grid-Wallet-Signature` header and the `requestId` as the `Request-Id` header on a retry of this request to complete registration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthCredentialAdditionalChallengeOneOf'
+              examples:
+                emailOtp:
+                  summary: Additional email OTP credential challenge
+                  value:
+                    type: EMAIL_OTP
+                    email: example@lightspark.com
+                    payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
+        '400':
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an `EMAIL_OTP` credential on an internal account that already has one — only one email OTP credential is supported per internal account at this time.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending challenge for an additional credential on the target internal account, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/credentials/{id}/verify:
+    post:
+      summary: Verify an authentication credential
+      description: |
+        Complete the verification step for a previously created authentication credential and issue a session signing key.
+
+        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. On success, the response contains an `encryptedSessionSigningKey` that is encrypted to the supplied `clientPublicKey`, along with an `expiresAt` timestamp marking when the session expires. The `clientPublicKey` is ephemeral and one-time-use per verification request.
+      operationId: verifyAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the authentication credential to verify (the `id` field of the `AuthMethod` returned from `POST /auth/credentials`).
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
+            examples:
+              emailOtp:
+                summary: Verify an email OTP credential
+                value:
+                  type: EMAIL_OTP
+                  otp: '123456'
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+      responses:
+        '200':
+          description: Authentication credential verified and session issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Authentication credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   incoming-payment:
     post:
@@ -4555,6 +4711,7 @@ components:
             | SUSPECTED_FRAUD | Document suspected of being forged or edited |
             | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
             | INCOMPLETE | Document is missing pages or sides |
+            | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -4589,6 +4746,7 @@ components:
             - SUSPECTED_FRAUD
             - UNSUITABLE_DOCUMENT
             - INCOMPLETE
+            - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
         message:
           type: string
           description: Error message
@@ -12631,6 +12789,192 @@ components:
           description: A list of permissions to grant to the token
           items:
             $ref: '#/components/schemas/Permission'
+    AuthMethodType:
+      type: string
+      enum:
+        - OAUTH
+        - EMAIL_OTP
+        - PASSKEY
+      description: |-
+        The type of authentication credential.
+        - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
+        - `EMAIL_OTP`: A one-time password delivered to the user's email address.
+        - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+    AuthCredentialCreateRequest:
+      type: object
+      required:
+        - type
+        - accountId
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        accountId:
+          type: string
+          description: Identifier of the internal account that this credential will authenticate.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    EmailOtpCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - EMAIL_OTP
+          description: Discriminator value identifying this as an email OTP credential.
+    EmailOtpCredentialCreateRequest:
+      title: Email OTP Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
+    AuthCredentialCreateRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/EmailOtpCredentialCreateRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/EmailOtpCredentialCreateRequest'
+    AuthMethod:
+      type: object
+      required:
+        - id
+        - accountId
+        - type
+        - nickname
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the authentication credential.
+          example: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+        accountId:
+          type: string
+          description: Identifier of the internal account that this credential authenticates.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        nickname:
+          type: string
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the nickname provided at registration time.
+          example: example@lightspark.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-04-08T15:30:01Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-04-08T15:35:00Z'
+    AuthCredentialAdditionalChallenge:
+      type: object
+      required:
+        - type
+        - payloadToSign
+        - requestId
+        - expiresAt
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        payloadToSign:
+          type: string
+          description: Payload that must be signed with the session private key of an existing verified authentication credential on the internal account. The resulting signature is passed as the `Grid-Wallet-Signature` header on the retry of `POST /auth/credentials` to complete registration of the additional credential.
+          example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+        requestId:
+          type: string
+          description: Unique identifier for this additional-credential registration request. Must be echoed in the `Request-Id` header on the signed retry of `POST /auth/credentials` so the server can correlate the retry with the issued challenge.
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
+          example: '2026-04-08T15:35:00Z'
+    EmailOtpCredentialAdditionalChallengeFields:
+      type: object
+      required:
+        - type
+        - email
+      properties:
+        type:
+          type: string
+          enum:
+            - EMAIL_OTP
+          description: Discriminator value identifying this as an additional-credential challenge for an email OTP credential.
+        email:
+          type: string
+          format: email
+          description: Email address associated with the internal account's customer record, returned here so the client knows which mailbox will receive the OTP on the signed retry.
+          example: example@lightspark.com
+    EmailOtpCredentialAdditionalChallenge:
+      title: Email OTP Credential Additional Challenge
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialAdditionalChallenge'
+        - $ref: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
+    AuthCredentialAdditionalChallengeOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
+    AuthCredentialVerifyRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+    EmailOtpCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - otp
+        - clientPublicKey
+      properties:
+        type:
+          type: string
+          enum:
+            - EMAIL_OTP
+          description: Discriminator value identifying this as an email OTP verification.
+        otp:
+          type: string
+          description: The one-time password received by the user via email.
+          example: '123456'
+        clientPublicKey:
+          type: string
+          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    EmailOtpCredentialVerifyRequest:
+      title: Email OTP Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
+    AuthCredentialVerifyRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+    AuthSession:
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          required:
+            - encryptedSessionSigningKey
+            - expiresAt
+          properties:
+            encryptedSessionSigningKey:
+              type: string
+              description: Session signing key encrypted to the `clientPublicKey` supplied when the credential was created. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
+              example: '-----BEGIN ENCRYPTED PRIVATE KEY----- MIIBvTBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQIabc... -----END ENCRYPTED PRIVATE KEY-----'
+            expiresAt:
+              type: string
+              format: date-time
+              description: Timestamp after which the session signing key is no longer valid.
+              example: '2026-04-08T15:35:00Z'
     WebhookType:
       type: string
       enum:

@@ -1,0 +1,23 @@
+allOf:
+  - $ref: ./AuthMethod.yaml
+  - type: object
+    required:
+      - encryptedSessionSigningKey
+      - expiresAt
+    properties:
+      encryptedSessionSigningKey:
+        type: string
+        description: >-
+          Session signing key encrypted to the `clientPublicKey` supplied when
+          the credential was created. The client decrypts this key with its
+          private key and uses it to sign subsequent Embedded Wallet requests
+          until `expiresAt`.
+        example: >-
+          -----BEGIN ENCRYPTED PRIVATE KEY-----
+          MIIBvTBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQIabc...
+          -----END ENCRYPTED PRIVATE KEY-----
+      expiresAt:
+        type: string
+        format: date-time
+        description: Timestamp after which the session signing key is no longer valid.
+        example: '2026-04-08T15:35:00Z'
