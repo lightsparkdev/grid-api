@@ -1,0 +1,26 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    type: integer
+    enum:
+      - 429
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+    enum:
+      - RATE_LIMITED
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details
+    additionalProperties: true

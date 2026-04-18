@@ -327,6 +327,7 @@ resources:
         methods:
           create: post /auth/credentials
           verify: post /auth/credentials/{id}/verify
+          challenge: post /auth/credentials/{id}/challenge
         models:
           auth_method_type: '#/components/schemas/AuthMethodType'
           auth_method: '#/components/schemas/AuthMethod'

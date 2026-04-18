@@ -3878,6 +3878,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/credentials/{id}/challenge:
+    post:
+      summary: Resend an authentication credential challenge
+      description: |
+        Re-issue the challenge for an existing authentication credential.
+
+        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file. After the user receives the new OTP, call `POST /auth/credentials/{id}/verify` to complete verification and issue a session.
+      operationId: challengeAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the authentication credential to re-challenge (the `id` field of the `AuthMethod` returned from `POST /auth/credentials`).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge re-issued for the authentication credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMethod'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Authentication credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when challenge re-issues are requested more frequently than the OTP rate limit allows. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying the request.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   incoming-payment:
     post:
@@ -13327,6 +13388,33 @@ components:
               format: date-time
               description: Timestamp after which the session signing key is no longer valid.
               example: '2026-04-08T15:35:00Z'
+    Error429:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 429
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+          enum:
+            - RATE_LIMITED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     WebhookType:
       type: string
       enum:
