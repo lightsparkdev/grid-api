@@ -126,7 +126,9 @@ private fun buildQuoteDestination(destNode: JsonNode): QuoteDestinationOneOf {
     val accountDest = QuoteDestinationOneOf.AccountDestination.builder()
         .accountId(destNode.get("accountId").asText())
         .apply {
-            destNode.optText("paymentRail")?.let { paymentRail(it) }
+            destNode.optText("paymentRail")?.let {
+                paymentRail(QuoteDestinationOneOf.AccountDestination.PaymentRail.of(it))
+            }
         }
         .build()
     return QuoteDestinationOneOf.ofAccountDestination(accountDest)

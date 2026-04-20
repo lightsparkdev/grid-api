@@ -1,29 +1,23 @@
 package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.lightspark.grid.models.BrlExternalAccountCreateInfo
+import com.lightspark.grid.models.EurBeneficiary
+import com.lightspark.grid.models.EurExternalAccountCreateInfo
+import com.lightspark.grid.models.GbpExternalAccountCreateInfo
+import com.lightspark.grid.models.InrExternalAccountCreateInfo
+import com.lightspark.grid.models.MxnExternalAccountCreateInfo
+import com.lightspark.grid.models.PhpExternalAccountCreateInfo
+import com.lightspark.grid.models.UsdExternalAccountCreateInfo
 import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.lightspark.grid.models.customers.externalaccounts.BrlBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.BrlExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreate
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreateParams
-import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountInfoOneOf
 import com.lightspark.grid.models.customers.externalaccounts.GbpBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.GbpExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.InrExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.MxnBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.MxnExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.PhpBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.PhpExternalAccountInfo
 import com.lightspark.grid.models.customers.externalaccounts.UsdBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.UsdExternalAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.BrlAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.EurAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.GbpAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.InrAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.MxnAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.PhpAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.UsdAccountInfo
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
@@ -95,90 +89,73 @@ fun Route.externalAccountRoutes() {
     }
 }
 
-private fun <T> parsePaymentRails(accountInfo: JsonNode, map: (String) -> T): List<T> =
-    accountInfo.get("paymentRails")?.map { map(it.asText()) } ?: emptyList()
-
-private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountInfoOneOf {
+private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountCreate.AccountInfo {
     val beneficiaryNode = accountInfo.get("beneficiary")
 
     return when (accountType) {
         "USD_ACCOUNT" -> {
-            val beneficiary = buildUsdBeneficiary(beneficiaryNode)
-            val info = UsdExternalAccountInfo.builder()
-                .accountType(UsdAccountInfo.AccountType.USD_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { UsdAccountInfo.PaymentRail.of(it) })
+            val info = UsdExternalAccountCreateInfo.builder()
+                .accountType(UsdExternalAccountCreateInfo.AccountType.USD_ACCOUNT)
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .routingNumber(accountInfo.requireText("routingNumber"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildUsdBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofUsdAccount(info)
+            ExternalAccountCreate.AccountInfo.ofUsdAccount(info)
         }
         "INR_ACCOUNT" -> {
-            val beneficiary = buildInrBeneficiary(beneficiaryNode)
-            val info = InrExternalAccountInfo.builder()
-                .accountType(InrAccountInfo.AccountType.INR_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { InrAccountInfo.PaymentRail.of(it) })
+            val info = InrExternalAccountCreateInfo.builder()
+                .accountType(InrExternalAccountCreateInfo.AccountType.INR_ACCOUNT)
                 .vpa(accountInfo.requireText("vpa"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildInrBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofInrAccount(info)
+            ExternalAccountCreate.AccountInfo.ofInrAccount(info)
         }
         "BRL_ACCOUNT" -> {
-            val beneficiary = buildBrlBeneficiary(beneficiaryNode)
-            val info = BrlExternalAccountInfo.builder()
-                .accountType(BrlAccountInfo.AccountType.BRL_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { BrlAccountInfo.PaymentRail.of(it) })
+            val info = BrlExternalAccountCreateInfo.builder()
+                .accountType(BrlExternalAccountCreateInfo.AccountType.BRL_ACCOUNT)
                 .pixKey(accountInfo.requireText("pixKey"))
-                .pixKeyType(BrlAccountInfo.PixKeyType.of(accountInfo.requireText("pixKeyType")))
+                .pixKeyType(BrlExternalAccountCreateInfo.PixKeyType.of(accountInfo.requireText("pixKeyType")))
                 .taxId(accountInfo.requireText("taxId"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildBrlBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofBrlAccount(info)
+            ExternalAccountCreate.AccountInfo.ofBrlAccount(info)
         }
         "MXN_ACCOUNT" -> {
-            val beneficiary = buildMxnBeneficiary(beneficiaryNode)
-            val info = MxnExternalAccountInfo.builder()
-                .accountType(MxnAccountInfo.AccountType.MXN_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { MxnAccountInfo.PaymentRail.of(it) })
+            val info = MxnExternalAccountCreateInfo.builder()
+                .accountType(MxnExternalAccountCreateInfo.AccountType.MXN_ACCOUNT)
                 .clabeNumber(accountInfo.requireText("clabeNumber"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildMxnBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofMxnAccount(info)
+            ExternalAccountCreate.AccountInfo.ofMxnAccount(info)
         }
         "GBP_ACCOUNT" -> {
-            val beneficiary = buildGbpBeneficiary(beneficiaryNode)
-            val info = GbpExternalAccountInfo.builder()
-                .accountType(GbpAccountInfo.AccountType.GBP_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { GbpAccountInfo.PaymentRail.of(it) })
+            val info = GbpExternalAccountCreateInfo.builder()
+                .accountType(GbpExternalAccountCreateInfo.AccountType.GBP_ACCOUNT)
                 .sortCode(accountInfo.requireText("sortCode"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildGbpBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofGbpAccount(info)
+            ExternalAccountCreate.AccountInfo.ofGbpAccount(info)
         }
         "PHP_ACCOUNT" -> {
-            val beneficiary = buildPhpBeneficiary(beneficiaryNode)
-            val info = PhpExternalAccountInfo.builder()
-                .accountType(PhpAccountInfo.AccountType.PHP_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { PhpAccountInfo.PaymentRail.of(it) })
+            val info = PhpExternalAccountCreateInfo.builder()
+                .accountType(PhpExternalAccountCreateInfo.AccountType.PHP_ACCOUNT)
                 .bankName(accountInfo.optText("bankCode") ?: accountInfo.requireText("bankName"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildPhpBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofPhpAccount(info)
+            ExternalAccountCreate.AccountInfo.ofPhpAccount(info)
         }
         "EUR_ACCOUNT" -> {
-            val beneficiary = buildEurBeneficiary(beneficiaryNode)
-            val info = ExternalAccountInfoOneOf.EurAccount.builder()
-                .accountType(EurAccountInfo.AccountType.EUR_ACCOUNT)
-                .paymentRails(parsePaymentRails(accountInfo) { EurAccountInfo.PaymentRail.of(it) })
+            val info = EurExternalAccountCreateInfo.builder()
+                .accountType(EurExternalAccountCreateInfo.AccountType.EUR_ACCOUNT)
                 .iban(accountInfo.requireText("iban"))
-                .beneficiary(beneficiary)
+                .beneficiary(buildEurBeneficiary(beneficiaryNode))
                 .apply {
                     accountInfo.optText("swiftCode")?.let { swiftCode(it) }
                 }
                 .build()
-            ExternalAccountInfoOneOf.ofEurAccount(info)
+            ExternalAccountCreate.AccountInfo.ofEurAccount(info)
         }
         else -> throw IllegalArgumentException("Unsupported account type: $accountType")
     }
@@ -216,9 +193,9 @@ private fun parseBeneficiaryFields(node: JsonNode?): BeneficiaryFields {
     )
 }
 
-private fun buildUsdBeneficiary(node: JsonNode?): UsdExternalAccountInfo.Beneficiary {
+private fun buildUsdBeneficiary(node: JsonNode?): UsdExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return UsdExternalAccountInfo.Beneficiary.ofIndividual(
+    return UsdExternalAccountCreateInfo.Beneficiary.ofIndividual(
         UsdBeneficiary.builder()
             .beneficiaryType(UsdBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
@@ -229,9 +206,9 @@ private fun buildUsdBeneficiary(node: JsonNode?): UsdExternalAccountInfo.Benefic
     )
 }
 
-private fun buildInrBeneficiary(node: JsonNode?): InrExternalAccountInfo.Beneficiary {
+private fun buildInrBeneficiary(node: JsonNode?): InrExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return InrExternalAccountInfo.Beneficiary.ofIndividual(
+    return InrExternalAccountCreateInfo.Beneficiary.ofIndividual(
         InrBeneficiary.builder()
             .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
@@ -244,9 +221,9 @@ private fun buildInrBeneficiary(node: JsonNode?): InrExternalAccountInfo.Benefic
     )
 }
 
-private fun buildBrlBeneficiary(node: JsonNode?): BrlExternalAccountInfo.Beneficiary {
+private fun buildBrlBeneficiary(node: JsonNode?): BrlExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return BrlExternalAccountInfo.Beneficiary.ofIndividual(
+    return BrlExternalAccountCreateInfo.Beneficiary.ofIndividual(
         BrlBeneficiary.builder()
             .beneficiaryType(BrlBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
@@ -259,9 +236,9 @@ private fun buildBrlBeneficiary(node: JsonNode?): BrlExternalAccountInfo.Benefic
     )
 }
 
-private fun buildMxnBeneficiary(node: JsonNode?): MxnExternalAccountInfo.Beneficiary {
+private fun buildMxnBeneficiary(node: JsonNode?): MxnExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return MxnExternalAccountInfo.Beneficiary.ofIndividual(
+    return MxnExternalAccountCreateInfo.Beneficiary.ofIndividual(
         MxnBeneficiary.builder()
             .beneficiaryType(MxnBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
@@ -274,9 +251,9 @@ private fun buildMxnBeneficiary(node: JsonNode?): MxnExternalAccountInfo.Benefic
     )
 }
 
-private fun buildGbpBeneficiary(node: JsonNode?): GbpExternalAccountInfo.Beneficiary {
+private fun buildGbpBeneficiary(node: JsonNode?): GbpExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return GbpExternalAccountInfo.Beneficiary.ofIndividual(
+    return GbpExternalAccountCreateInfo.Beneficiary.ofIndividual(
         GbpBeneficiary.builder()
             .beneficiaryType(GbpBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
@@ -289,9 +266,9 @@ private fun buildGbpBeneficiary(node: JsonNode?): GbpExternalAccountInfo.Benefic
     )
 }
 
-private fun buildPhpBeneficiary(node: JsonNode?): PhpExternalAccountInfo.Beneficiary {
+private fun buildPhpBeneficiary(node: JsonNode?): PhpExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return PhpExternalAccountInfo.Beneficiary.ofIndividual(
+    return PhpExternalAccountCreateInfo.Beneficiary.ofIndividual(
         PhpBeneficiary.builder()
             .beneficiaryType(PhpBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
@@ -304,18 +281,17 @@ private fun buildPhpBeneficiary(node: JsonNode?): PhpExternalAccountInfo.Benefic
     )
 }
 
-private fun buildEurBeneficiary(node: JsonNode?): ExternalAccountInfoOneOf.EurAccount.Beneficiary {
+private fun buildEurBeneficiary(node: JsonNode?): EurExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
-    return ExternalAccountInfoOneOf.EurAccount.Beneficiary.ofIndividual(
-        ExternalAccountInfoOneOf.EurAccount.Beneficiary.Individual.builder()
+    return EurExternalAccountCreateInfo.Beneficiary.ofIndividual(
+        EurBeneficiary.builder()
+            .beneficiaryType(EurBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
+            .address(f.address ?: throw IllegalArgumentException("EUR beneficiary requires an address"))
             .apply {
                 f.nationality?.let { nationality(it) }
                 f.birthDate?.let { birthDate(it) }
-                f.address?.let { address(it) }
             }
             .build()
     )
 }
-
-
