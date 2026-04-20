@@ -5564,6 +5564,12 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
+        bankAccountType:
+          type: string
+          description: The bank account type. Required for certain corridors (e.g., El Salvador).
+          enum:
+            - CHECKING
+            - SAVINGS
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -9328,6 +9334,7 @@ components:
         - accountType
         - accountNumber
         - bankAccountType
+        - bankName
         - phoneNumber
       properties:
         accountType:
@@ -9345,6 +9352,9 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -9396,6 +9406,12 @@ components:
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
+        documentType:
+          type: string
+          description: The type of identity document (e.g., national ID, passport)
+        documentNumber:
+          type: string
+          description: The identity document number
         address:
           $ref: '#/components/schemas/Address'
     CopExternalAccountInfo:
