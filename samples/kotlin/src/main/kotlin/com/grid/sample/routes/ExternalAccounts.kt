@@ -95,6 +95,9 @@ fun Route.externalAccountRoutes() {
     }
 }
 
+private fun <T> parsePaymentRails(accountInfo: JsonNode, map: (String) -> T): List<T> =
+    accountInfo.get("paymentRails")?.map { map(it.asText()) } ?: emptyList()
+
 private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountInfoOneOf {
     val beneficiaryNode = accountInfo.get("beneficiary")
 
@@ -103,6 +106,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildUsdBeneficiary(beneficiaryNode)
             val info = UsdExternalAccountInfo.builder()
                 .accountType(UsdAccountInfo.AccountType.USD_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { UsdAccountInfo.PaymentRail.of(it) })
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .routingNumber(accountInfo.requireText("routingNumber"))
                 .beneficiary(beneficiary)
@@ -113,6 +117,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildInrBeneficiary(beneficiaryNode)
             val info = InrExternalAccountInfo.builder()
                 .accountType(InrAccountInfo.AccountType.INR_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { InrAccountInfo.PaymentRail.of(it) })
                 .vpa(accountInfo.requireText("vpa"))
                 .beneficiary(beneficiary)
                 .build()
@@ -122,8 +127,9 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildBrlBeneficiary(beneficiaryNode)
             val info = BrlExternalAccountInfo.builder()
                 .accountType(BrlAccountInfo.AccountType.BRL_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { BrlAccountInfo.PaymentRail.of(it) })
                 .pixKey(accountInfo.requireText("pixKey"))
-                .pixKeyType(accountInfo.requireText("pixKeyType"))
+                .pixKeyType(BrlAccountInfo.PixKeyType.of(accountInfo.requireText("pixKeyType")))
                 .taxId(accountInfo.requireText("taxId"))
                 .beneficiary(beneficiary)
                 .build()
@@ -133,6 +139,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildMxnBeneficiary(beneficiaryNode)
             val info = MxnExternalAccountInfo.builder()
                 .accountType(MxnAccountInfo.AccountType.MXN_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { MxnAccountInfo.PaymentRail.of(it) })
                 .clabeNumber(accountInfo.requireText("clabeNumber"))
                 .beneficiary(beneficiary)
                 .build()
@@ -142,6 +149,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildGbpBeneficiary(beneficiaryNode)
             val info = GbpExternalAccountInfo.builder()
                 .accountType(GbpAccountInfo.AccountType.GBP_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { GbpAccountInfo.PaymentRail.of(it) })
                 .sortCode(accountInfo.requireText("sortCode"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(beneficiary)
@@ -152,6 +160,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildPhpBeneficiary(beneficiaryNode)
             val info = PhpExternalAccountInfo.builder()
                 .accountType(PhpAccountInfo.AccountType.PHP_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { PhpAccountInfo.PaymentRail.of(it) })
                 .bankName(accountInfo.optText("bankCode") ?: accountInfo.requireText("bankName"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(beneficiary)
@@ -162,15 +171,11 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             val beneficiary = buildEurBeneficiary(beneficiaryNode)
             val info = ExternalAccountInfoOneOf.EurAccount.builder()
                 .accountType(EurAccountInfo.AccountType.EUR_ACCOUNT)
+                .paymentRails(parsePaymentRails(accountInfo) { EurAccountInfo.PaymentRail.of(it) })
                 .iban(accountInfo.requireText("iban"))
                 .beneficiary(beneficiary)
                 .apply {
-                    val swiftCode = accountInfo.optText("swiftCode")
-                    if (swiftCode != null) {
-                        swiftBic(swiftCode)
-                        // Workaround: SDK serializes as "swiftBic" but the API expects "swiftCode"
-                        putAdditionalProperty("swiftCode", com.lightspark.grid.core.JsonValue.from(swiftCode))
-                    }
+                    accountInfo.optText("swiftCode")?.let { swiftCode(it) }
                 }
                 .build()
             ExternalAccountInfoOneOf.ofEurAccount(info)
