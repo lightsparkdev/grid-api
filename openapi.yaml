@@ -2491,6 +2491,12 @@ paths:
         This endpoint can only be used for quotes with a `source` which is either an internal account,
         or has direct pull functionality (e.g. ACH pull with an external account).
 
+        When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
+        the request must include a `Grid-Wallet-Signature` header. The signature is
+        produced by signing the `payloadToSign` value from the quote's
+        `paymentInstructions[].accountOrWalletInfo` entry with the session private
+        key of a verified authentication credential on the source Embedded Wallet.
+
         Once executed, the quote cannot be cancelled and the transfer will be processed.
       operationId: executeQuote
       tags:
@@ -2513,6 +2519,13 @@ paths:
           schema:
             type: string
             example: <uuid>
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet and base64-encoded. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
       responses:
         '200':
           description: |
@@ -2529,7 +2542,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized
+          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
           content:
             application/json:
               schema:
@@ -6018,6 +6031,7 @@ components:
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
+        - EMBEDDED_WALLET
       description: Type of payment account or wallet
       example: USD_ACCOUNT
     BasePaymentAccountInfo:
@@ -7985,6 +7999,44 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    PaymentEmbeddedWalletInfo:
+      title: Embedded Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - type: object
+          required:
+            - accountType
+            - payloadToSign
+          properties:
+            accountType:
+              type: string
+              enum:
+                - EMBEDDED_WALLET
+              description: Discriminator value identifying this as Embedded Wallet payment instructions.
+            payloadToSign:
+              type: string
+              description: Payload that must be signed with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting signature is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
+              example: |-
+                {
+                  "type": "ACTIVITY_TYPE_CREATE_AUTHENTICATORS_V2",
+                  "timestampMs": "1746736509954",
+                  "organizationId": "org_abc123",
+                  "parameters": {
+                    "userId": "user_xyz789",
+                    "authenticators": [
+                      {
+                        "authenticatorName": "My Security Key",
+                        "challenge": "base64_encoded_challenge_string",
+                        "attestation": {
+                          "credentialId": "cbor_encoded_then_base64_url_encoded_id",
+                          "clientDataJson": "base64_url_encoded_metadata_payload",
+                          "attestationObject": "base64_url_encoded_authenticator_data",
+                          "transports": ["AUTHENTICATOR_TRANSPORT_USB"]
+                        }
+                      }
+                    ]
+                  }
+                }
     PaymentInstructions:
       type: object
       required:
@@ -8043,6 +8095,7 @@ components:
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
+            - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -8089,6 +8142,7 @@ components:
               HTG_ACCOUNT: '#/components/schemas/PaymentHtgAccountInfo'
               JMD_ACCOUNT: '#/components/schemas/PaymentJmdAccountInfo'
               PKR_ACCOUNT: '#/components/schemas/PaymentPkrAccountInfo'
+              EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
     InternalAccount:
       type: object
       required:
@@ -12652,6 +12706,7 @@ components:
           description: |-
             Whether to immediately execute the quote after creation. If true, the quote will be executed and the transaction will be created at the current exchange rate. It should only be used if you don't want to lock and view rate details before executing the quote. If you are executing a pre-existing quote, use the `/quotes/{quoteId}/execute` endpoint instead. This is false by default.
             This can only be used for quotes with a `source` which is either an internal account, or has direct pull functionality (e.g. ACH pull with an external account).
+            Not supported when the `source` is an internal account of type `EMBEDDED_WALLET`: those transfers require a `Grid-Wallet-Signature` over the `payloadToSign` returned in the quote response, which is not available in a combined create-and-execute call. Create the quote first with `immediatelyExecute: false` and then call `POST /quotes/{quoteId}/execute` with the signature header.
           example: false
         description:
           type: string

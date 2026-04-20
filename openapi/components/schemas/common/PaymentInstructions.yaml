@@ -57,6 +57,7 @@ properties:
     - $ref: ../common/PaymentPolygonWalletInfo.yaml
     - $ref: ../common/PaymentBaseWalletInfo.yaml
     - $ref: ../common/PaymentEthereumWalletInfo.yaml
+    - $ref: ../common/PaymentEmbeddedWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
@@ -103,3 +104,4 @@ properties:
         HTG_ACCOUNT: ../common/PaymentHtgAccountInfo.yaml
         JMD_ACCOUNT: ../common/PaymentJmdAccountInfo.yaml
         PKR_ACCOUNT: ../common/PaymentPkrAccountInfo.yaml
+        EMBEDDED_WALLET: ../common/PaymentEmbeddedWalletInfo.yaml

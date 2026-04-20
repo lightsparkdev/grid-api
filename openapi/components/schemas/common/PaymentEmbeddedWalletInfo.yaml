@@ -1,0 +1,42 @@
+title: Embedded Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - type: object
+    required:
+      - accountType
+      - payloadToSign
+    properties:
+      accountType:
+        type: string
+        enum:
+          - EMBEDDED_WALLET
+        description: Discriminator value identifying this as Embedded Wallet payment instructions.
+      payloadToSign:
+        type: string
+        description: >-
+          Payload that must be signed with the session private key of a
+          verified authentication credential on the source Embedded Wallet.
+          The resulting signature is passed as the `Grid-Wallet-Signature`
+          header on `POST /quotes/{quoteId}/execute` to authorize the
+          outbound transfer from the wallet.
+        example: |-
+          {
+            "type": "ACTIVITY_TYPE_CREATE_AUTHENTICATORS_V2",
+            "timestampMs": "1746736509954",
+            "organizationId": "org_abc123",
+            "parameters": {
+              "userId": "user_xyz789",
+              "authenticators": [
+                {
+                  "authenticatorName": "My Security Key",
+                  "challenge": "base64_encoded_challenge_string",
+                  "attestation": {
+                    "credentialId": "cbor_encoded_then_base64_url_encoded_id",
+                    "clientDataJson": "base64_url_encoded_metadata_payload",
+                    "attestationObject": "base64_url_encoded_authenticator_data",
+                    "transports": ["AUTHENTICATOR_TRANSPORT_USB"]
+                  }
+                }
+              ]
+            }
+          }

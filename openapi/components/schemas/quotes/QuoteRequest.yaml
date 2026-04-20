@@ -42,6 +42,13 @@ properties:
 
       This can only be used for quotes with a `source` which is either an internal account,
       or has direct pull functionality (e.g. ACH pull with an external account).
+
+      Not supported when the `source` is an internal account of type
+      `EMBEDDED_WALLET`: those transfers require a `Grid-Wallet-Signature`
+      over the `payloadToSign` returned in the quote response, which is not
+      available in a combined create-and-execute call. Create the quote
+      first with `immediatelyExecute: false` and then call
+      `POST /quotes/{quoteId}/execute` with the signature header.
     example: false
   description:
     type: string
