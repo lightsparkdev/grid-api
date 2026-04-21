@@ -103,8 +103,12 @@ paths:
     $ref: paths/platform/platform_internal_accounts.yaml
   /customers/external-accounts:
     $ref: paths/customers/customers_external_accounts.yaml
+  /customers/external-accounts/{externalAccountId}:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
+  /platform/external-accounts/{externalAccountId}:
+    $ref: paths/platform/platform_external_accounts_{externalAccountId}.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:
