@@ -8,6 +8,7 @@ import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
+import com.grid.sample.optText
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -24,8 +25,8 @@ fun Route.customerRoutes() {
 
                 val individual = CreateCustomerRequest.Individual.builder()
                     .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
-                    .platformCustomerId(json.requiredText("platformCustomerId"))
                     .apply {
+                        json.optText("platformCustomerId")?.let { platformCustomerId(it) }
                         json.optText("fullName")?.let { fullName(it) }
                         json.optText("nationality")?.let { nationality(it) }
                         json.optText("birthDate")?.let { birthDate(LocalDate.parse(it)) }
@@ -68,8 +69,3 @@ fun Route.customerRoutes() {
     }
 }
 
-private fun JsonNode.optText(field: String): String? =
-    if (has(field) && !get(field).isNull) get(field).asText() else null
-
-private fun JsonNode.requiredText(field: String): String =
-    optText(field) ?: throw IllegalArgumentException("$field is required")

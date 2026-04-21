@@ -22,15 +22,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-            properties:
-              data:
-                type: array
-                description: List of external accounts matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+            $ref: ../../components/schemas/external_accounts/PlatformExternalAccountListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:
@@ -72,8 +64,6 @@ post:
               currency: USD
               accountInfo:
                 accountType: USD_ACCOUNT
-                paymentRails:
-                  - ACH
                 accountNumber: "12345678901"
                 routingNumber: "123456789"
                 accountCategory: CHECKING

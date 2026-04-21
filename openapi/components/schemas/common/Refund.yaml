@@ -31,5 +31,6 @@ properties:
     enum:
       - TRANSACTION_FAILED
       - USER_CANCELLATION
+      - TIMEOUT
     description: Reason for the refund
     example: TRANSACTION_FAILED

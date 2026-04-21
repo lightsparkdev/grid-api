@@ -5,6 +5,7 @@ import com.lightspark.grid.models.sandbox.SandboxSendFundsParams
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
+import com.grid.sample.optText
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -45,6 +46,3 @@ fun Route.sandboxRoutes() {
         }
     }
 }
-
-private fun JsonNode.optText(field: String): String? =
-    if (has(field) && !get(field).isNull) get(field).asText() else null

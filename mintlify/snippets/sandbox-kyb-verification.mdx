@@ -2,28 +2,20 @@ In sandbox, you can trigger specific KYC/KYB verification outcomes using magic s
 
 ### Business customer verification
 
-The **last 3 digits** of the `registrationNumber` in `businessInfo` determine the KYB verification outcome when you call `POST /verifications`:
+The **last 3 digits** of the `registrationNumber` in `businessInfo` determine the KYB status outcome when you call `POST /verifications`:
 
-| Suffix | `verificationStatus` | Behavior |
-|--------|---------------------|----------|
-| **001** | `REJECTED` | KYB verification is rejected |
-| **002** | `RESOLVE_ERRORS` | Returns errors for missing fields/documents |
+| Suffix | `kybStatus` | Behavior |
+|--------|------------|----------|
+| **001** | `PENDING` | KYB verification remains pending |
+| **002** | `REJECTED` | KYB verification is rejected |
 | **Any other** | `APPROVED` | KYB verification is approved |
 
 ### Beneficial owner KYC
 
-The **last 3 characters** of the `lastName` in `personalInfo` determine the individual KYC outcome:
+The **last 3 characters** of the `lastName` in `personalInfo` determine the individual KYC status outcome:
 
 | Suffix | `kycStatus` | Behavior |
 |--------|------------|----------|
-| **001** | `REJECTED` | KYC verification is rejected |
+| **001** | `PENDING` | KYC verification remains pending |
+| **002** | `REJECTED` | KYC verification is rejected |
 | **Any other** | `APPROVED` | KYC verification is approved |
-
-### Document verification
-
-The **last 3 characters** of the `documentNumber` determine the document verification outcome:
-
-| Suffix | Result | Behavior |
-|--------|--------|----------|
-| **001** | `REJECTED` | Document is rejected (bad quality, mismatch, etc.) |
-| **Any other** | `APPROVED` | Document is approved |

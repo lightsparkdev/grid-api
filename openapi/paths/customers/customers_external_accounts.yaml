@@ -45,29 +45,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of external accounts matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: >-
-                  Total number of external accounts matching the criteria (excluding
-                  pagination)
+            $ref: ../../components/schemas/external_accounts/ExternalAccountListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:
@@ -110,8 +88,6 @@ post:
               currency: USD
               accountInfo:
                 accountType: USD_ACCOUNT
-                paymentRails:
-                  - ACH
                 accountNumber: "12345678901"
                 routingNumber: "123456789"
                 accountCategory: CHECKING

@@ -1,0 +1,19 @@
+title: THB Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/ThbAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/ThbBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/ThbBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

@@ -38,16 +38,7 @@ get:
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: ../../../components/schemas/receiver/ReceiverLookupResponse.yaml
-              - type: object
-                required:
-                  - accountId
-                properties:
-                  accountId:
-                    type: string
-                    description: The external account ID that was looked up
-                    example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            $ref: ../../../components/schemas/receiver/ReceiverExternalAccountLookupResponse.yaml
     '400':
       description: Bad request - Missing or invalid parameters
       content:

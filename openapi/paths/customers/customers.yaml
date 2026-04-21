@@ -20,14 +20,31 @@ post:
             value:
               customerType: INDIVIDUAL
               platformCustomerId: ind-9f84e0c2
+              region: US
+              currencies:
+                - USD
+                - USDC
               fullName: Jane Smith
               birthDate: '1990-01-15'
               nationality: US
+          individualCustomerInferred:
+            summary: Create an individual customer with inferred currencies
+            value:
+              customerType: INDIVIDUAL
+              platformCustomerId: ind-7b3f1a9d
+              region: MX
+              fullName: Carlos García
+              birthDate: '1988-05-22'
+              nationality: MX
           businessCustomer:
             summary: Create a business customer
             value:
               customerType: BUSINESS
               platformCustomerId: biz-acme-001
+              region: US
+              currencies:
+                - USD
+                - USDC
               businessInfo:
                 legalName: Acme Corporation
                 doingBusinessAs: Acme
@@ -38,11 +55,11 @@ post:
                 taxId: 47-1234567
                 countriesOfOperation:
                   - US
-                businessType: FINANCE_AND_INSURANCE
-                purposeOfAccount: Payout to contractors
+                businessType: INFORMATION
+                purposeOfAccount: CONTRACTOR_PAYOUTS
                 sourceOfFunds: Funds derived from customer payments for software services
-                expectedMonthlyTransactionCount: 100_TO_500
-                expectedMonthlyTransactionVolume: 100K_TO_1M
+                expectedMonthlyTransactionCount: COUNT_100_TO_500
+                expectedMonthlyTransactionVolume: VOLUME_100K_TO_1M
                 expectedRecipientJurisdictions:
                   - US
                   - MX
@@ -159,6 +176,18 @@ get:
       required: false
       schema:
         type: string
+    - name: region
+      in: query
+      description: Filter by customer region (ISO 3166-1 alpha-2 country code)
+      required: false
+      schema:
+        type: string
+    - name: currency
+      in: query
+      description: Filter by currency code. Returns customers that have this currency in their enabled currencies list.
+      required: false
+      schema:
+        type: string
     - name: umaAddress
       in: query
       description: Filter by uma address
@@ -177,29 +206,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of customers matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/customers/CustomerOneOf.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: >-
-                  Total number of customers matching the criteria (excluding
-                  pagination)
+            $ref: ../../components/schemas/customers/CustomerListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

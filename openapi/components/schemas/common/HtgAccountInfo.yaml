@@ -1,0 +1,12 @@
+allOf:
+- $ref: ./HtgAccountInfoBase.yaml
+- type: object
+  required:
+  - paymentRails
+  properties:
+    paymentRails:
+      type: array
+      items:
+        type: string
+        enum:
+        - MOBILE_MONEY

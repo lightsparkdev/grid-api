@@ -7,7 +7,6 @@ export interface AccountFieldSpec {
 export interface AccountTypeSpec {
   accountType: string;
   fields: AccountFieldSpec[];
-  paymentRails?: string[];
   beneficiaryRequired: boolean;
 }
 
@@ -18,7 +17,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '123456789' },
       { name: 'routingNumber', example: '021000021' },
     ],
-    paymentRails: ['ACH', 'WIRE', 'RTP', 'FEDNOW'],
     beneficiaryRequired: true,
   },
   EUR_ACCOUNT: {
@@ -27,7 +25,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'iban', example: 'DE89370400440532013000' },
       { name: 'swiftBic', example: 'DEUTDEFF', description: 'Optional' },
     ],
-    paymentRails: ['SEPA', 'SEPA_INSTANT'],
     beneficiaryRequired: true,
   },
   GBP_ACCOUNT: {
@@ -36,7 +33,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'sortCode', example: '20-00-00' },
       { name: 'accountNumber', example: '12345678' },
     ],
-    paymentRails: ['FASTER_PAYMENTS'],
     beneficiaryRequired: true,
   },
   BRL_ACCOUNT: {
@@ -46,7 +42,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'pixKeyType', example: 'PHONE', description: 'CPF, CNPJ, EMAIL, PHONE, or RANDOM' },
       { name: 'taxId', example: '12345678901' },
     ],
-    paymentRails: ['PIX'],
     beneficiaryRequired: true,
   },
   MXN_ACCOUNT: {
@@ -54,7 +49,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     fields: [
       { name: 'clabeNumber', example: '123456789012345678' },
     ],
-    paymentRails: ['SPEI'],
     beneficiaryRequired: true,
   },
   INR_ACCOUNT: {
@@ -62,7 +56,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     fields: [
       { name: 'vpa', example: 'customer@okbank' },
     ],
-    paymentRails: ['UPI'],
     beneficiaryRequired: true,
   },
   DKK_ACCOUNT: {
@@ -71,7 +64,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'iban', example: 'DK5000400440116243' },
       { name: 'swiftBic', example: 'NDEADKKK', description: 'Optional' },
     ],
-    paymentRails: ['SEPA', 'SEPA_INSTANT'],
     beneficiaryRequired: true,
   },
   NGN_ACCOUNT: {
@@ -80,7 +72,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '0123456789' },
       { name: 'bankName', example: 'First Bank of Nigeria' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   CAD_ACCOUNT: {
@@ -90,7 +81,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'branchCode', example: '00012' },
       { name: 'accountNumber', example: '1234567' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   PHP_ACCOUNT: {
@@ -99,7 +89,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'bankName', example: 'BDO Unibank' },
       { name: 'accountNumber', example: '001234567890' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   SGD_ACCOUNT: {
@@ -109,7 +98,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'swiftCode', example: 'DBSSSGSG' },
       { name: 'accountNumber', example: '0123456789' },
     ],
-    paymentRails: ['PAYNOW', 'FAST', 'BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   HKD_ACCOUNT: {
@@ -119,7 +107,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '123456789012' },
       { name: 'swiftCode', example: 'HSBCHKHHHKH' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   IDR_ACCOUNT: {
@@ -130,7 +117,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'swiftCode', example: 'CENAIDJA' },
       { name: 'phoneNumber', example: '+6281234567890' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   KES_ACCOUNT: {
@@ -139,7 +125,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+254712345678' },
       { name: 'provider', example: 'M-PESA', description: 'Mobile money provider' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   MYR_ACCOUNT: {
@@ -149,7 +134,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890' },
       { name: 'swiftCode', example: 'MABORUMMYYY' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   RWF_ACCOUNT: {
@@ -158,7 +142,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+250781234567' },
       { name: 'provider', example: 'MTN', description: 'MTN or AIRTEL' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   THB_ACCOUNT: {
@@ -168,7 +151,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890' },
       { name: 'swiftCode', example: 'BKKBTHBK' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   TZS_ACCOUNT: {
@@ -177,7 +159,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+255712345678' },
       { name: 'provider', example: 'VODACOM', description: 'AIRTEL or VODACOM' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   VND_ACCOUNT: {
@@ -187,7 +168,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890' },
       { name: 'swiftCode', example: 'BFTVVNVX' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   ZAR_ACCOUNT: {
@@ -196,7 +176,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890' },
       { name: 'bankName', example: 'Standard Bank' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   ZMW_ACCOUNT: {
@@ -205,7 +184,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+260971234567' },
       { name: 'provider', example: 'MTN', description: 'TNM, AIRTEL, ZAMTEL, or MTN' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   MWK_ACCOUNT: {
@@ -214,7 +192,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+265991234567' },
       { name: 'provider', example: 'AIRTEL', description: 'Mobile money provider' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   UGX_ACCOUNT: {
@@ -223,7 +200,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+256771234567' },
       { name: 'provider', example: 'MTN', description: 'Mobile money provider' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   XOF_ACCOUNT: {
@@ -232,7 +208,6 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'phoneNumber', example: '+221771234567' },
       { name: 'provider', example: 'ORANGE', description: 'Mobile money provider' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   SPARK_WALLET: {
@@ -287,29 +262,95 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   AED_ACCOUNT: {
     accountType: 'AED_ACCOUNT',
     fields: [
-      { name: 'iban', example: 'AE070331234567890123456' },
+      { name: 'iban', example: 'AE070331234567890123456', description: 'UAE IBAN (23 characters)' },
       { name: 'swiftCode', example: 'EBILAEAD', description: 'Optional' },
     ],
-    paymentRails: ['BANK_TRANSFER'],
     beneficiaryRequired: true,
   },
   BWP_ACCOUNT: {
     accountType: 'BWP_ACCOUNT',
     fields: [
       { name: 'phoneNumber', example: '+26771234567' },
-      { name: 'provider', example: 'ORANGE', description: 'Mobile money provider' },
+      { name: 'provider', example: 'Orange', description: 'Mobile money provider' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
     beneficiaryRequired: true,
   },
   XAF_ACCOUNT: {
     accountType: 'XAF_ACCOUNT',
     fields: [
-      { name: 'phoneNumber', example: '+237612345678' },
+      { name: 'phoneNumber', example: '+237671234567' },
       { name: 'provider', example: 'MTN', description: 'Mobile money provider' },
       { name: 'region', example: 'CM', description: 'Country code (CM or CG)' },
     ],
-    paymentRails: ['MOBILE_MONEY'],
+    beneficiaryRequired: true,
+  },
+  BDT_ACCOUNT: {
+    accountType: 'BDT_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890123' },
+      { name: 'branchCode', example: '12345', description: '5-digit branch code' },
+      { name: 'phoneNumber', example: '+8801712345678' },
+      { name: 'swiftCode', example: 'BABORUMMYYY', description: 'Optional' },
+    ],
+    beneficiaryRequired: true,
+  },
+  COP_ACCOUNT: {
+    accountType: 'COP_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'bankAccountType', example: 'SAVINGS', description: 'CHECKING or SAVINGS' },
+      { name: 'phoneNumber', example: '+573001234567' },
+    ],
+    beneficiaryRequired: true,
+  },
+  EGP_ACCOUNT: {
+    accountType: 'EGP_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890123456' },
+      { name: 'iban', example: 'EG380019000500000000263180002', description: 'Optional' },
+      { name: 'swiftCode', example: 'NBEGEGCX', description: 'Optional' },
+    ],
+    beneficiaryRequired: true,
+  },
+  GHS_ACCOUNT: {
+    accountType: 'GHS_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'phoneNumber', example: '+233241234567' },
+    ],
+    beneficiaryRequired: true,
+  },
+  GTQ_ACCOUNT: {
+    accountType: 'GTQ_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'phoneNumber', example: '+50212345678' },
+    ],
+    beneficiaryRequired: true,
+  },
+  HTG_ACCOUNT: {
+    accountType: 'HTG_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+50934567890' },
+    ],
+    beneficiaryRequired: true,
+  },
+  JMD_ACCOUNT: {
+    accountType: 'JMD_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890' },
+      { name: 'branchCode', example: '12345', description: '5-digit branch code' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
+    ],
+    beneficiaryRequired: true,
+  },
+  PKR_ACCOUNT: {
+    accountType: 'PKR_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1234567890123456' },
+      { name: 'phoneNumber', example: '+923001234567' },
+      { name: 'iban', example: 'PK36SCBL0000001123456702', description: 'Optional' },
+    ],
     beneficiaryRequired: true,
   },
 };

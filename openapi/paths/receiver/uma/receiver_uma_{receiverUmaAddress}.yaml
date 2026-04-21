@@ -36,16 +36,7 @@ get:
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: ../../../components/schemas/receiver/ReceiverLookupResponse.yaml
-              - type: object
-                required:
-                  - receiverUmaAddress
-                properties:
-                  receiverUmaAddress:
-                    type: string
-                    description: The UMA address that was looked up
-                    example: $receiver@uma.domain
+            $ref: ../../../components/schemas/receiver/ReceiverUmaLookupResponse.yaml
     '400':
       description: Bad request - Missing or invalid parameters
       content:

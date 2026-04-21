@@ -97,29 +97,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of transactions matching the criteria
-                items:
-                  $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: >-
-                  Total number of transactions matching the criteria (excluding
-                  pagination)
+            $ref: ../../components/schemas/transactions/TransactionListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

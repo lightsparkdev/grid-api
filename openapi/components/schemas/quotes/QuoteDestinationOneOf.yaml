@@ -1,10 +1,8 @@
 oneOf:
   - $ref: ./AccountDestination.yaml
   - $ref: ./UmaAddressDestination.yaml
-  - $ref: ./ExternalAccountDetailsDestination.yaml
 discriminator:
   propertyName: destinationType
   mapping:
     ACCOUNT: ./AccountDestination.yaml
     UMA_ADDRESS: ./UmaAddressDestination.yaml
-    EXTERNAL_ACCOUNT_DETAILS: ./ExternalAccountDetailsDestination.yaml

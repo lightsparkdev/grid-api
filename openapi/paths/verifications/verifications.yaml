@@ -41,11 +41,9 @@ post:
                     field: customer.address.line1
                     reason: Business address line 1 is required
                   - resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    type: MISSING_DOCUMENT
+                    type: MISSING_PROOF_OF_ADDRESS_DOCUMENT
                     acceptedDocumentTypes:
                       - PROOF_OF_ADDRESS
-                      - UTILITY_BILL
-                      - BANK_STATEMENT
                     reason: Proof of address document is required
                   - resourceId: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000002
                     type: MISSING_FIELD
@@ -128,27 +126,7 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - hasMore
-            properties:
-              data:
-                type: array
-                description: List of verifications matching the filter criteria
-                items:
-                  $ref: ../../components/schemas/verifications/Verification.yaml
-              hasMore:
-                type: boolean
-                description: Indicates if more results are available beyond this page
-              nextCursor:
-                type: string
-                description: >-
-                  Cursor to retrieve the next page of results (only present if
-                  hasMore is true)
-              totalCount:
-                type: integer
-                description: Total number of results matching the criteria
+            $ref: ../../components/schemas/verifications/VerificationListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

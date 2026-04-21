@@ -87,7 +87,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 - Quote hasn't expired (check `expiresAt`)
 
 <Warning>
-  Quotes typically expire after a short period. If expired, create a new quote to get an updated exchange rate.
+  Quote expiration depends on the corridor but is typically ~5 minutes or greater. If expired, create a new quote to get an updated exchange rate.
 </Warning>
 </Step>
 
@@ -116,24 +116,22 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
 <Check>
   Once executed, the quote creates a transaction and the transfer begins processing. The `transactionId` can be used to track the payment.
 </Check>
+
+<Info>
+  **Real-time funding sources:** If your quote uses a real-time funding source (USDC, BTC, RTP, or FedNow), you don't call the execute endpoint. Instead, send a payment to the account specified in the quote's `paymentInstructions`. Grid detects the deposit and processes the transfer automatically.
+</Info>
 </Step>
 
 <Step title="Monitor completion">
-  Track the transfer using webhooks or by polling the transaction:
-
-```bash
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000030' \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-```
-
-You'll receive a webhook when the transaction completes:
+  After execution, a transaction is created and progresses through `PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses. The webhook body contains the full transaction resource:
 
 ```json
 {
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
     "status": "COMPLETED",
+    "type": "OUTGOING",
     "sentAmount": { "amount": 10000, "currency": { "code": "USD", "decimals": 2 } },
     "receivedAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
     "exchangeRate": 0.92,
@@ -144,6 +142,11 @@ You'll receive a webhook when the transaction completes:
 }
 ```
 
+If a transaction fails, Grid initiates a refund automatically. You'll receive `OUTGOING_PAYMENT.REFUND_PENDING` followed by `OUTGOING_PAYMENT.REFUND_COMPLETED` or `OUTGOING_PAYMENT.REFUND_FAILED`. The transaction's `refund` object tracks the refund status and reference.
+
+<Info>
+  For the full state diagram, refund object details, and all webhook scenarios (including bank returns and manual cancellations), see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
+</Info>
 </Step>
 </Steps>
 
@@ -240,14 +243,15 @@ Grid automatically detects blockchain deposits and processes the transfer once f
 </Step>
 
 <Step title="Transfer executes automatically">
-  Once the deposit is confirmed, Grid executes the cross-currency transfer. You'll receive `OUTGOING_PAYMENT` webhooks as the transfer progresses and completes:
+  Once the deposit is confirmed, Grid executes the cross-currency transfer. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transfer progresses:
 
 ```json
 {
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
     "status": "COMPLETED",
+    "type": "OUTGOING",
     "sentAmount": { "amount": 10000, "currency": { "code": "USD", "decimals": 2 } },
     "receivedAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
     "exchangeRate": 0.92,
@@ -257,5 +261,7 @@ Grid automatically detects blockchain deposits and processes the transfer once f
   "timestamp": "2025-10-03T15:31:00Z"
 }
 ```
+
+See the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide for all possible status transitions and refund handling.
 </Step>
 </Steps>

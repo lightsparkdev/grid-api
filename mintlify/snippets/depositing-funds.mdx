@@ -3,7 +3,7 @@ Grid provides two options to fund an account:
 - Prefund
 - Just-in-time funding
 
-With prefunding, you'll deposit funds into internal accounts via Wire, PIX, or crypto transfers. You can then use the balances as the source of funds for quotes and transfers.
+With prefunding, you'll deposit funds into internal accounts via Wire, PIX, hosted payment page, or crypto transfers. You can then use the balances as the source of funds for quotes and transfers.
 
 With just-in-time funding, you'll receive payment instructions as part of the quote. Once funds arrive, the payment to the receiver is automatically initiated.
 
@@ -64,6 +64,7 @@ Show the payment details prominently in your UI and enable copy / paste:
 
 - Account holder name
 - Bank name and routing information (account/routing number, CLABE, PIX key, etc.)
+- Payment URL (for COP deposits, redirect the customer to the `paymentUrl` returned in the payment instructions)
 - Reference code (if provided)
 - Any additional notes from `instructionsNotes`
 </Step>

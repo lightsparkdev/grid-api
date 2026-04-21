@@ -2,25 +2,32 @@ import { useState, useEffect } from 'react'
 import JsonEditor from '../components/JsonEditor'
 import ResponsePanel from '../components/ResponsePanel'
 import { apiPost } from '../lib/api'
+import { COUNTRY_CONFIGS } from './CreateExternalAccount'
 
 interface Props {
   customerId: string | null
   externalAccountId: string | null
+  selectedCountry: string
   onComplete: (response: Record<string, unknown>) => void
   disabled: boolean
 }
 
-export default function CreateQuote({ customerId, externalAccountId, onComplete, disabled }: Props) {
+const SOURCE_CURRENCIES = ['USD', 'USDC'] as const
+
+export default function CreateQuote({ customerId, externalAccountId, selectedCountry, onComplete, disabled }: Props) {
   const [body, setBody] = useState('')
   const [response, setResponse] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sourceCurrency, setSourceCurrency] = useState<string>(SOURCE_CURRENCIES[0])
+
+  const destCurrency = COUNTRY_CONFIGS[selectedCountry]?.currency ?? 'USD'
 
   useEffect(() => {
     setBody(JSON.stringify({
       source: {
         sourceType: "REALTIME_FUNDING",
-        currency: "USDC",
+        currency: sourceCurrency,
         customerId: customerId ?? "<customer-id>"
       },
       destination: {
@@ -31,7 +38,7 @@ export default function CreateQuote({ customerId, externalAccountId, onComplete,
       lockedCurrencySide: "SENDING",
       purposeOfPayment: "GIFT"
     }, null, 2))
-  }, [customerId, externalAccountId])
+  }, [customerId, externalAccountId, sourceCurrency, selectedCountry])
 
   const submit = async () => {
     setLoading(true)
@@ -52,8 +59,22 @@ export default function CreateQuote({ customerId, externalAccountId, onComplete,
   return (
     <div>
       <p className="text-sm text-gray-400 mb-2">
-        Create a quote to send USDC &rarr; USD to external account <code className="text-blue-400">{externalAccountId ?? '...'}</code>
+        Create a quote to send {sourceCurrency} &rarr; {destCurrency} to external account <code className="text-blue-400">{externalAccountId ?? '...'}</code>
       </p>
+      <div className="mb-3">
+        <label htmlFor="source-currency" className="block text-sm font-medium text-gray-300 mb-1">Source Currency</label>
+        <select
+          id="source-currency"
+          value={sourceCurrency}
+          onChange={(e) => setSourceCurrency(e.target.value)}
+          disabled={disabled || loading}
+          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-gray-100 focus:outline-none focus:border-blue-500"
+        >
+          {SOURCE_CURRENCIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
       <JsonEditor value={body} onChange={setBody} disabled={disabled || loading} />
       <button
         onClick={submit}

@@ -41,6 +41,15 @@ properties:
     - $ref: ../common/PaymentZmwAccountInfo.yaml
     - $ref: ../common/PaymentBwpAccountInfo.yaml
     - $ref: ../common/PaymentXafAccountInfo.yaml
+    - $ref: ../common/PaymentBdtAccountInfo.yaml
+    - $ref: ../common/PaymentArsAccountInfo.yaml
+    - $ref: ../common/PaymentCopAccountInfo.yaml
+    - $ref: ../common/PaymentEgpAccountInfo.yaml
+    - $ref: ../common/PaymentGhsAccountInfo.yaml
+    - $ref: ../common/PaymentGtqAccountInfo.yaml
+    - $ref: ../common/PaymentHtgAccountInfo.yaml
+    - $ref: ../common/PaymentJmdAccountInfo.yaml
+    - $ref: ../common/PaymentPkrAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
@@ -85,3 +94,12 @@ properties:
         ZMW_ACCOUNT: ../common/PaymentZmwAccountInfo.yaml
         BWP_ACCOUNT: ../common/PaymentBwpAccountInfo.yaml
         XAF_ACCOUNT: ../common/PaymentXafAccountInfo.yaml
+        BDT_ACCOUNT: ../common/PaymentBdtAccountInfo.yaml
+        ARS_ACCOUNT: ../common/PaymentArsAccountInfo.yaml
+        COP_ACCOUNT: ../common/PaymentCopAccountInfo.yaml
+        EGP_ACCOUNT: ../common/PaymentEgpAccountInfo.yaml
+        GHS_ACCOUNT: ../common/PaymentGhsAccountInfo.yaml
+        GTQ_ACCOUNT: ../common/PaymentGtqAccountInfo.yaml
+        HTG_ACCOUNT: ../common/PaymentHtgAccountInfo.yaml
+        JMD_ACCOUNT: ../common/PaymentJmdAccountInfo.yaml
+        PKR_ACCOUNT: ../common/PaymentPkrAccountInfo.yaml

@@ -8,6 +8,7 @@ A command-line interface for the Grid API, enabling global payments across fiat,
 cd cli
 npm install
 npm run build
+npm link        # makes `grid` available globally
 ```
 
 ## Quick Start
@@ -15,7 +16,7 @@ npm run build
 Configure your credentials interactively:
 
 ```bash
-node cli/dist/index.js configure
+grid configure
 ```
 
 This will prompt for your API Token ID and Client Secret, validate them, and save to `~/.grid-credentials`.
@@ -29,10 +30,8 @@ export GRID_API_CLIENT_SECRET="your-client-secret"
 
 ## Usage
 
-Run commands from the repository root:
-
 ```bash
-node cli/dist/index.js <command> [options]
+grid <command> [options]
 ```
 
 ### Global Options
@@ -64,36 +63,36 @@ Example: `grid tx list` is equivalent to `grid transactions list`
 
 ```bash
 # Interactive configuration
-node cli/dist/index.js configure
+grid configure
 
 # Non-interactive configuration
-node cli/dist/index.js configure --token-id <id> --client-secret <secret>
+grid configure --token-id <id> --client-secret <secret>
 
 # Skip credential verification
-node cli/dist/index.js configure --no-verify
+grid configure --no-verify
 ```
 
 ### Platform Configuration
 
 ```bash
 # Get platform config (currencies, limits, webhook)
-node cli/dist/index.js config get
+grid config get
 
 # Update webhook endpoint
-node cli/dist/index.js config update --webhook-endpoint https://example.com/webhooks
+grid config update --webhook-endpoint https://example.com/webhooks
 ```
 
 ### Customers
 
 ```bash
 # List customers
-node cli/dist/index.js customers list [--limit 20] [--type INDIVIDUAL|BUSINESS]
+grid customers list [--limit 20] [--type INDIVIDUAL|BUSINESS]
 
 # Get customer details
-node cli/dist/index.js customers get <customerId>
+grid customers get <customerId>
 
 # Create individual customer
-node cli/dist/index.js customers create \
+grid customers create \
   --platform-id "your-id" \
   --type INDIVIDUAL \
   --full-name "John Doe" \
@@ -105,25 +104,25 @@ node cli/dist/index.js customers create \
   --address-country "US"
 
 # Create business customer
-node cli/dist/index.js customers create \
+grid customers create \
   --platform-id "biz-123" \
   --type BUSINESS \
   --legal-name "Acme Inc" \
   --tax-id "12-3456789"
 
 # Generate KYC link
-node cli/dist/index.js customers kyc-link \
+grid customers kyc-link \
   --customer-id <id> \
   --redirect-url https://example.com/kyc-complete
 
 # Update customer
-node cli/dist/index.js customers update <customerId> --full-name "Jane Doe"
+grid customers update <customerId> --full-name "Jane Doe"
 
 # Delete customer (prompts for confirmation)
-node cli/dist/index.js customers delete <customerId>
+grid customers delete <customerId>
 
 # Delete customer without confirmation
-node cli/dist/index.js customers delete <customerId> --yes
+grid customers delete <customerId> --yes
 ```
 
 ### Accounts
@@ -132,20 +131,20 @@ node cli/dist/index.js customers delete <customerId> --yes
 
 ```bash
 # List customer internal accounts
-node cli/dist/index.js accounts internal list [--customer-id <id>] [--currency USD]
+grid accounts internal list [--customer-id <id>] [--currency USD]
 
 # List platform internal accounts
-node cli/dist/index.js accounts internal list --platform
+grid accounts internal list --platform
 ```
 
 #### External Accounts (Bank accounts, wallets)
 
 ```bash
 # List external accounts
-node cli/dist/index.js accounts external list [--customer-id <id>]
+grid accounts external list [--customer-id <id>]
 
 # Create US bank account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency USD \
   --account-type US_ACCOUNT \
@@ -156,7 +155,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-name "John Doe"
 
 # Create Mexico CLABE account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency MXN \
   --account-type CLABE \
@@ -167,7 +166,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-nationality MX
 
 # Create India UPI account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency INR \
   --account-type UPI \
@@ -178,7 +177,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-nationality IN
 
 # Create Brazil PIX account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency BRL \
   --account-type PIX \
@@ -189,7 +188,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-nationality BR
 
 # Create Nigeria account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency NGN \
   --account-type NGN_ACCOUNT \
@@ -202,7 +201,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-nationality NG
 
 # Create Europe IBAN account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency EUR \
   --account-type IBAN \
@@ -211,7 +210,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-name "Hans Mueller"
 
 # Create crypto wallet (Solana USDC)
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <id> \
   --currency USDC \
   --account-type SOLANA_WALLET \
@@ -222,20 +221,20 @@ node cli/dist/index.js accounts external create \
 
 ```bash
 # List quotes
-node cli/dist/index.js quotes list [--status PENDING] [--customer-id <id>]
+grid quotes list [--status PENDING] [--customer-id <id>]
 
 # Get quote details
-node cli/dist/index.js quotes get <quoteId>
+grid quotes get <quoteId>
 
 # Create quote from internal account (prefunded)
-node cli/dist/index.js quotes create \
+grid quotes create \
   --source-account <internalAccountId> \
   --dest-uma '$user@domain.com' \
   --amount 10000 \
   --lock-side SENDING
 
 # Create quote with JIT funding (real-time)
-node cli/dist/index.js quotes create \
+grid quotes create \
   --source-customer <customerId> \
   --source-currency USDC \
   --dest-account <externalAccountId> \
@@ -244,20 +243,20 @@ node cli/dist/index.js quotes create \
   --lock-side RECEIVING
 
 # Execute a pending quote
-node cli/dist/index.js quotes execute <quoteId>
+grid quotes execute <quoteId>
 ```
 
 ### Same-Currency Transfers
 
 ```bash
 # Transfer in (external → internal)
-node cli/dist/index.js transfers in \
+grid transfers in \
   --source <externalAccountId> \
   --dest <internalAccountId> \
   --amount 10000
 
 # Transfer out (internal → external)
-node cli/dist/index.js transfers out \
+grid transfers out \
   --source <internalAccountId> \
   --dest <externalAccountId> \
   --amount 10000
@@ -267,7 +266,7 @@ node cli/dist/index.js transfers out \
 
 ```bash
 # List transactions
-node cli/dist/index.js transactions list \
+grid transactions list \
   [--customer-id <id>] \
   [--status PENDING|PROCESSING|COMPLETED|FAILED] \
   [--type INCOMING|OUTGOING] \
@@ -275,36 +274,36 @@ node cli/dist/index.js transactions list \
   [--end-date 2024-12-31]
 
 # Get transaction details
-node cli/dist/index.js transactions get <transactionId>
+grid transactions get <transactionId>
 
 # Approve incoming payment
-node cli/dist/index.js transactions approve <transactionId>
+grid transactions approve <transactionId>
 
 # Reject incoming payment
-node cli/dist/index.js transactions reject <transactionId> --reason "Invalid sender"
+grid transactions reject <transactionId> --reason "Invalid sender"
 ```
 
 ### Receiver Lookup
 
 ```bash
 # Look up UMA address
-node cli/dist/index.js receiver lookup-uma '$user@domain.com'
+grid receiver lookup-uma '$user@domain.com'
 
 # Look up external account
-node cli/dist/index.js receiver lookup-account <accountId>
+grid receiver lookup-account <accountId>
 ```
 
 ### Sandbox Testing
 
 ```bash
 # Fund an internal account
-node cli/dist/index.js sandbox fund <internalAccountId> --amount 100000
+grid sandbox fund <internalAccountId> --amount 100000
 
 # Simulate sending funds to a JIT quote
-node cli/dist/index.js sandbox send --quote-id <quoteId> --currency USDC
+grid sandbox send --quote-id <quoteId> --currency USDC
 
 # Simulate receiving an UMA payment
-node cli/dist/index.js sandbox receive \
+grid sandbox receive \
   --uma-address '$user@domain.com' \
   --amount 1000 \
   --currency USD
@@ -339,7 +338,7 @@ On error:
 
 ```bash
 # 1. Create external account
-node cli/dist/index.js accounts external create \
+grid accounts external create \
   --customer-id <customerId> \
   --currency MXN \
   --account-type CLABE \
@@ -350,7 +349,7 @@ node cli/dist/index.js accounts external create \
   --beneficiary-nationality MX
 
 # 2. Create quote (returns payment instructions)
-node cli/dist/index.js quotes create \
+grid quotes create \
   --source-customer <customerId> \
   --source-currency USDC \
   --dest-account <externalAccountId> \
@@ -359,27 +358,27 @@ node cli/dist/index.js quotes create \
   --lock-side RECEIVING
 
 # 3. In sandbox, simulate the USDC deposit
-node cli/dist/index.js sandbox send --quote-id <quoteId> --currency USDC
+grid sandbox send --quote-id <quoteId> --currency USDC
 
 # 4. Check transaction status
-node cli/dist/index.js transactions get <transactionId>
+grid transactions get <transactionId>
 ```
 
 ### Send to UMA Address
 
 ```bash
 # 1. Look up the receiver
-node cli/dist/index.js receiver lookup-uma '$alice@example.com'
+grid receiver lookup-uma '$alice@example.com'
 
 # 2. Create and execute quote
-node cli/dist/index.js quotes create \
+grid quotes create \
   --source-account <internalAccountId> \
   --dest-uma '$alice@example.com' \
   --amount 5000 \
   --lock-side SENDING
 
 # 3. Execute the quote
-node cli/dist/index.js quotes execute <quoteId>
+grid quotes execute <quoteId>
 ```
 
 ## Output Formats
@@ -387,7 +386,7 @@ node cli/dist/index.js quotes execute <quoteId>
 ### JSON (default)
 
 ```bash
-node cli/dist/index.js customers list
+grid customers list
 ```
 
 Output includes syntax highlighting when running in a terminal.
@@ -395,7 +394,7 @@ Output includes syntax highlighting when running in a terminal.
 ### Table
 
 ```bash
-node cli/dist/index.js customers list --format table
+grid customers list --format table
 ```
 
 Displays results in a human-readable table format.
@@ -403,7 +402,7 @@ Displays results in a human-readable table format.
 ### Disable Colors
 
 ```bash
-node cli/dist/index.js customers list --no-color
+grid customers list --no-color
 ```
 
 ## Notes

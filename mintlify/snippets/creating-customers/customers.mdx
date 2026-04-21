@@ -16,10 +16,7 @@ export const Customers = ({ individualEnabled = true, businessEnabled = true, um
 
       Your platform's configuration (retrieved via `GET /config`) includes a `supportedCurrencies` array. Each currency object within this array has a `providerRequiredCustomerFields` list. If a customer is intended to use a specific currency, any fields listed for that currency **must** be provided when creating or updating the customer.
 
-      The base required information for all customers is only:
-
-      - Platform customer ID (your internal identifier)
-      - Customer type (`INDIVIDUAL` or `BUSINESS`)
+      The only required field for all customers is `customerType` (`INDIVIDUAL` or `BUSINESS`). It's recommended to also pass a `platformCustomerId` to tie the customer to your internal identifier, but if you don't, one will be generated automatically.
 
       If using sending and receiving to just-in-time UMA addresses, you'll also need to specify the bank account information
 
@@ -268,7 +265,7 @@ CSV Upload Best Practices
 You can track the job status through:
 
 1. Webhook notifications (if configured)
-2. Status polling endpoint:
+2. Status endpoint:
 
 ```bash
 curl -sS -X GET "https://api.lightspark.com/grid/2025-10-13/customers/bulk/jobs/{jobId}" \

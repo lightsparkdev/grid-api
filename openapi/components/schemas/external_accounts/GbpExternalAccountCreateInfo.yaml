@@ -1,0 +1,19 @@
+title: GBP Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/GbpAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/GbpBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/GbpBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

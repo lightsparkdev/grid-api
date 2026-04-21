@@ -50,7 +50,8 @@ The process consists of the following steps:
 1. **List platform internal accounts** to find your platform's USD funding instructions
 2. **Fund your internal account** via ACH push and receive a webhook notification
 3. **Generate a spark wallet** for your customer, or let them connect their own
-4. **Execute a quote** to complete the Bitcoin purchase and transfer a reward to the user's own Spark wallet.
+4. **Register the destination wallet** as an external account
+5. **Execute a quote** to complete the Bitcoin purchase and transfer a reward to the user's own Spark wallet.
 
 ## Step 1: List your platform's internal accounts
 
@@ -173,10 +174,44 @@ For rewards, the only entity who needs to be KYB'd is the entity paying for the 
 All you need in order to pay out a reward is the wallet address. No need to go through the full hosted KYC flow
 for this use case! To generate a spark wallet, you can use a tool like [Privy](https://privy.io) or the Spark SDK directly.
 
-## Step 4: Create and Execute a Quote to the Customer's Spark Wallet
+## Step 4: Register the Destination Spark Wallet
 
-Create and execute a trade from USD to BTC, and initiate the final transfer in one step. This combines external account
-creation and quote execution using the `externalAccountDetails` option.
+Register the customer's Spark wallet as an external account.
+
+### Request
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-accounts" \
+  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "BTC",
+    "accountInfo": {
+      "accountType": "SPARK_WALLET",
+      "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+    }
+  }'
+```
+
+### Response
+
+```json
+{
+  "id": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "BTC",
+  "accountInfo": {
+    "accountType": "SPARK_WALLET",
+    "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
+  }
+}
+```
+
+## Step 5: Create and Execute a Quote to the Customer's Spark Wallet
+
+Create and execute a trade from USD to BTC using the external account as the destination.
 
 ### Request
 
@@ -189,13 +224,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "externalAccountDetails": {
-        "currency": "BTC",
-        "accountInfo": {
-          "accountType": "SPARK_WALLET",
-          "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
-        }
-      }
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 100,
@@ -205,16 +235,10 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 ```
 
 <Note>
-  **Combined External Account Creation and Quote Execution**: The `externalAccountDetails` option allows you to
-  create the external account and execute the quote in a single API call, which is perfect for one-off payments
-  to new destinations. The external account will be automatically created and then used as the destination for
-  the Bitcoin transfer. Its ID in the response can be used directly in future quote creation requests.
-
 **Immediate Quote Execution (Market Order)**: Note that `immediatelyExecute` is set to `true` in this example.
 Because we always just want to send $1.00 worth of BTC to users as a reward at the current market rate, we don't
 need to lock a quote and view the rate details before executing. If you want to lock a quote and confirm fees
 and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
-
 </Note>
 
 ### Response
@@ -258,14 +282,7 @@ The quote shows:
 - **Sending**: \$1.00 USD (including $0.05 fee)
 - **Receiving**: 0.0000081 BTC (810 satoshis)
 - **Exchange rate**: 8.1 sats per USD cent (~$123,000 per BTC)
-- **External account created**: The Spark wallet was automatically added as an external account during quote creation
-
-The quote status changes to `PROCESSING` and the Bitcoin transfer is initiated. The external account is created, USD is debited from the internal account, Bitcoin is purchased, and then sent to the Spark wallet address.
-
-You can track the status by:
-
-1. Polling the quote endpoint: `GET /quotes/{quoteId}`
-2. Waiting for a webhook notification
+The quote status changes to `PROCESSING` and the Bitcoin transfer is initiated. USD is debited from the internal account, Bitcoin is purchased, and then sent to the Spark wallet address.
 
 ### Completion Webhook
 
@@ -319,7 +336,8 @@ You've successfully completed a Bitcoin purchase and transfer to a self-custody 
 1. ✅ Listed internal accounts and obtained USD funding instructions
 2. ✅ Funded the internal account with USD via ACH
 3. ✅ Generated a Spark wallet for the customer
-4. ✅ Created and executed a quote to purchase Bitcoin and send to the Spark wallet
+4. ✅ Registered the destination Spark wallet as an external account
+5. ✅ Created and executed a quote to purchase Bitcoin and send to the Spark wallet
 
 The customer now has 810 Satoshis in their self-custody Spark wallet!
 

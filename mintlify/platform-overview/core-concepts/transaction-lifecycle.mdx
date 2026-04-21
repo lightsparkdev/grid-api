@@ -7,37 +7,9 @@ description: "Follow a payment from creation to settlement"
 
 Understanding the transaction lifecycle helps you build robust payment flows, handle edge cases, and provide accurate status updates to your customers.
 
-## Transaction States
-
-Transactions progress through several states from creation to completion:
-
-```
-PENDING → PROCESSING → COMPLETED
-                    ↓
-                  FAILED
-```
-
-### Status Descriptions
-
-| Status | Description | Next State | Actions Available |
-|--------|-------------|------------|-------------------|
-| **PENDING** | Quote is pending confirmation | PROCESSING, EXPIRED | Monitor status |
-| **EXPIRED** | Quote wasn't executed before expiry window | Terminal | Create new quote |
-| **PROCESSING** | Executing the quote after receiving funds | COMPLETED, FAILED | Monitor status |
-| **COMPLETED** | Payout successfully reached the destination | Terminal | None (final state) |
-| **FAILED** | Something went wrong — accompanied by a `failureReason` | Terminal | Create new transaction |
-
-<Tip>
-**Terminal statuses**: `COMPLETED`, `FAILED`, `EXPIRED`
-
-Once a transaction reaches a terminal status, it will not change further.
-</Tip>
-
 ## Outgoing Transaction Flow
 
 **Your customer/platform sends funds to an external recipient.**
-
-### Step-by-Step
 
 <Steps>
   <Step title="Create Quote">
@@ -57,7 +29,7 @@ Once a transaction reaches a terminal status, it will not change further.
     **Response:**
     - Quote ID
     - Locked exchange rate
-    - Expiration time (1-5 minutes)
+    - Expiration time (typically ~5 minutes or greater, depending on corridor)
   </Step>
 
   <Step title="Execute Quote">
@@ -70,7 +42,7 @@ Once a transaction reaches a terminal status, it will not change further.
     **Result:**
     - Transaction created with status `PENDING`
     - Source account debited immediately
-    - `OUTGOING_PAYMENT` webhook sent
+    - `OUTGOING_PAYMENT.PENDING` webhook sent
   </Step>
 
   <Step title="Processing">
@@ -80,8 +52,6 @@ Once a transaction reaches a terminal status, it will not change further.
     - Settlement with destination bank/wallet
 
     **Status**: `PROCESSING`
-
-    **Webhook**: `OUTGOING_PAYMENT` with updated status
   </Step>
 
   <Step title="Completion or Failure">
@@ -89,62 +59,18 @@ Once a transaction reaches a terminal status, it will not change further.
     - Funds delivered to recipient
     - Status: `COMPLETED`
     - `settledAt` timestamp populated
-    - Final `OUTGOING_PAYMENT` webhook sent
+    - `OUTGOING_PAYMENT.COMPLETED` webhook sent
 
     **Failure Path:**
     - Delivery failed (invalid account, etc.)
     - Status: `FAILED`
     - `failureReason` populated
-    - Funds automatically refunded to source account
-    - Final `OUTGOING_PAYMENT` webhook sent
+    - `OUTGOING_PAYMENT.FAILED` webhook sent
+    - Refund initiated automatically — track via the `refund` object and `OUTGOING_PAYMENT.REFUND_*` webhooks
   </Step>
 </Steps>
 
 Most transactions on Grid are completed in seconds.
-
-### Webhook Payloads
-
-**On Creation (PENDING):**
-
-```json
-{
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
-    "id": "Transaction:...",
-    "status": "PENDING",
-    "type": "OUTGOING",
-    "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
-    "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
-    "createdAt": "2025-10-03T15:00:00Z"
-  }
-}
-```
-
-**On Completion:**
-
-```json
-{
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
-    "id": "Transaction:...",
-    "status": "COMPLETED",
-    "settledAt": "2025-10-03T15:05:00Z"
-  }
-}
-```
-
-**On Failure:**
-
-```json
-{
-  "type": "OUTGOING_PAYMENT",
-  "transaction": {
-    "id": "Transaction:...",
-    "status": "FAILED",
-    "failureReason": "INVALID_BANK_ACCOUNT"
-  }
-}
-```
 
 ## Same-Currency Transfers
 
@@ -186,54 +112,252 @@ POST /transfer-in
 }
 ```
 
-Only works for "pullable" external accounts (Plaid-linked, debit cards, etc.).
+Only works for "pullable" external accounts (e.g., debit cards).
 
-## Monitoring Transactions
+## Outgoing Payment Status
 
-### Via Webhooks (Recommended)
+A single `status` field represents whether the transaction reached its destination:
 
-Subscribe to transaction webhooks for real-time updates:
+| Status | Description |
+|--------|-------------|
+| **PENDING** | Quote is pending confirmation |
+| **EXPIRED** | Quote wasn't executed before the expiry window |
+| **PROCESSING** | Executing the quote after receiving funds (checking internal balances, or push/pull to/from external account) |
+| **COMPLETED** | Payout successfully reached the destination account |
+| **FAILED** | Something went wrong — accompanied by a `failureReason` |
 
-```javascript
-app.post('/webhooks/grid', async (req, res) => {
-  const {transaction, type} = req.body;
+<Warning>
+`EXPIRED` and `FAILED` are terminal states, but `COMPLETED` is not always final — a bank can return a payment after it was marked `COMPLETED`, moving it to `FAILED`. Always continue processing webhook events for transactions even after they reach `COMPLETED`.
+</Warning>
 
-  if (type === 'OUTGOING_PAYMENT') {
-    await updateTransactionStatus(transaction.id, transaction.status);
+### State Diagram
 
-    if (transaction.status === 'COMPLETED') {
-      await notifyCustomer(transaction.customerId, 'Payment delivered!');
-    } else if (transaction.status === 'FAILED') {
-      await notifyCustomer(transaction.customerId, `Payment failed: ${transaction.failureReason}`);
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING : Quote created
+    PENDING --> PROCESSING : Quote confirmed, funds received
+    PENDING --> EXPIRED : Quote expired before execution
+    PROCESSING --> COMPLETED : Payout reached destination
+    PROCESSING --> FAILED : Payout failed
+    COMPLETED --> FAILED : Bank returned payment
+    FAILED --> REFUND_PENDING : Refund initiated
+    PROCESSING --> REFUND_PENDING : Manual cancellation
+    state "REFUND" as refund {
+        REFUND_PENDING --> REFUND_COMPLETED : Refund settled
+        REFUND_PENDING --> REFUND_FAILED : Refund failed
     }
-  }
-
-  res.status(200).json({received: true});
-});
+    REFUND_COMPLETED --> COMPLETED : Manual cancellation resolved
+    EXPIRED --> [*]
+    COMPLETED --> [*]
+    REFUND_COMPLETED --> [*]
+    REFUND_FAILED --> [*]
 ```
 
-### Via Polling (Backup)
+## Refund Object
 
-Query transaction status periodically:
+When a payment fails or is cancelled, refunds are tracked in a dedicated object on the transaction, decoupled from the payment status:
 
-```bash
-GET /transactions/{transactionId}
-```
-
-**Response:**
+| Field | Description |
+|-------|-------------|
+| `reference` | Refund reference ID |
+| `initiatedAt` | Timestamp when refund was initiated |
+| `settledAt` | Timestamp when refund settled |
+| `status` | `PENDING`, `COMPLETED`, or `FAILED` |
+| `reason` | Why the refund occurred — `TRANSACTION_FAILED`, `USER_CANCELLATION`, or `TIMEOUT` |
 
 ```json
 {
-  "id": "Transaction:...",
-  "status": "PROCESSING",
-  "createdAt": "2025-10-03T15:00:00Z",
-  "updatedAt": "2025-10-03T15:02:00Z"
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+  "status": "FAILED",
+  "type": "OUTGOING",
+  "failureReason": "QUOTE_EXECUTION_FAILED",
+  "refund": {
+    "reference": "UMA-Q12345-REFUND",
+    "initiatedAt": "2025-10-03T15:10:00Z",
+    "settledAt": "2025-10-03T15:15:00Z",
+    "status": "COMPLETED",
+    "reason": "TRANSACTION_FAILED"
+  }
 }
 ```
 
-Poll every 5-10 seconds until terminal status reached.
+## Webhooks
 
-### Listing Transactions
+Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhook request body contains the full transaction resource.
+
+### Event Types
+
+| Event | Description |
+|-------|-------------|
+| `OUTGOING_PAYMENT.PENDING` | Transaction created, quote pending confirmation |
+| `OUTGOING_PAYMENT.PROCESSING` | Quote confirmed, payout in progress |
+| `OUTGOING_PAYMENT.COMPLETED` | Payout reached destination |
+| `OUTGOING_PAYMENT.FAILED` | Payout failed |
+| `OUTGOING_PAYMENT.EXPIRED` | Quote expired before execution |
+| `OUTGOING_PAYMENT.REFUND_PENDING` | Refund initiated |
+| `OUTGOING_PAYMENT.REFUND_COMPLETED` | Refund settled |
+| `OUTGOING_PAYMENT.REFUND_FAILED` | Refund failed |
+
+### Example Payloads
+
+<Tabs>
+<Tab title="PENDING">
+```json
+{
+  "type": "OUTGOING_PAYMENT.PENDING",
+  "data": {
+    "id": "Transaction:...",
+    "status": "PENDING",
+    "type": "OUTGOING",
+    "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
+    "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
+    "createdAt": "2025-10-03T15:00:00Z"
+  }
+}
+```
+</Tab>
+
+<Tab title="COMPLETED">
+```json
+{
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "data": {
+    "id": "Transaction:...",
+    "status": "COMPLETED",
+    "settledAt": "2025-10-03T15:05:00Z"
+  }
+}
+```
+</Tab>
+
+<Tab title="FAILED">
+```json
+{
+  "type": "OUTGOING_PAYMENT.FAILED",
+  "data": {
+    "id": "Transaction:...",
+    "status": "FAILED",
+    "failureReason": "INVALID_BANK_ACCOUNT"
+  }
+}
+```
+</Tab>
+
+<Tab title="REFUND_COMPLETED">
+```json
+{
+  "type": "OUTGOING_PAYMENT.REFUND_COMPLETED",
+  "data": {
+    "id": "Transaction:...",
+    "status": "FAILED",
+    "refund": {
+      "reference": "UMA-Q12345-REFUND",
+      "initiatedAt": "2025-10-03T15:10:00Z",
+      "settledAt": "2025-10-03T15:15:00Z",
+      "status": "COMPLETED",
+      "reason": "TRANSACTION_FAILED"
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Handling Webhooks
+
+```javascript
+app.post('/webhooks/grid', async (req, res) => {
+  const { data, type } = req.body;
+
+  switch (type) {
+    case 'OUTGOING_PAYMENT.COMPLETED':
+      await notifyCustomer(data.customerId, 'Payment delivered!');
+      break;
+
+    case 'OUTGOING_PAYMENT.FAILED':
+      await notifyCustomer(data.customerId, `Payment failed: ${data.failureReason}`);
+      break;
+
+    case 'OUTGOING_PAYMENT.REFUND_COMPLETED':
+      await notifyCustomer(data.customerId, 'Refund completed.');
+      break;
+
+    case 'OUTGOING_PAYMENT.REFUND_FAILED':
+      await notifyCustomer(data.customerId, 'Refund failed. Contact support.');
+      break;
+  }
+
+  await updateTransactionStatus(data.id, type);
+  res.status(200).json({ received: true });
+});
+```
+
+### Scenarios
+
+<Tabs>
+<Tab title="Happy Path">
+The standard successful payment flow:
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.COMPLETED`
+</Tab>
+
+<Tab title="Failure with Refund">
+Payment fails and the refund succeeds:
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.FAILED`
+4. `OUTGOING_PAYMENT.REFUND_PENDING`
+5. `OUTGOING_PAYMENT.REFUND_COMPLETED`
+</Tab>
+
+<Tab title="Failure with Failed Refund">
+Payment fails and the refund also fails:
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.FAILED`
+4. `OUTGOING_PAYMENT.REFUND_PENDING`
+5. `OUTGOING_PAYMENT.REFUND_FAILED`
+
+<Warning>
+If a refund fails, contact support to resolve the issue manually.
+</Warning>
+</Tab>
+
+<Tab title="Bank Return">
+Payment initially succeeds but the bank returns it:
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.COMPLETED`
+4. `OUTGOING_PAYMENT.FAILED`
+5. `OUTGOING_PAYMENT.REFUND_PENDING`
+6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
+
+<Info>
+Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`.
+</Info>
+</Tab>
+
+<Tab title="Manual Cancellation">
+Payment is cancelled while still processing, and the refund succeeds:
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.REFUND_PENDING`
+4. `OUTGOING_PAYMENT.REFUND_COMPLETED`
+5. `OUTGOING_PAYMENT.COMPLETED`
+
+<Info>
+In the manual cancellation flow, `OUTGOING_PAYMENT.COMPLETED` fires after the refund settles. This indicates the payout provider ultimately delivered the original payment despite the cancellation attempt. Your system should check the transaction's `refund` object to determine whether the payment was refunded or delivered.
+</Info>
+</Tab>
+</Tabs>
+
+## Listing Transactions
 
 Query all transactions for a customer or date range:
 
@@ -271,26 +395,15 @@ Use for reconciliation and reporting.
 | `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
 | `QUOTE_EXECUTION_FAILED` | Error executing the quote | Create new quote |
 | `INSUFFICIENT_BALANCE` | Source account lacks funds | Fund account, retry |
-| `TIMEOUT` | Transaction timed out | Retry or contact support |
+| `LIGHTNING_PAYMENT_FAILED` | Lightning network payment could not be routed | Retry or use alternative rail |
+| `FUNDING_AMOUNT_MISMATCH` | Funding amount doesn't match expected amount | Verify amounts and retry |
+| `COUNTERPARTY_POST_TX_FAILED` | Post-transaction processing at counterparty failed | Contact support |
+
+When a transaction fails, a refund is initiated automatically. Track the refund via the `refund` object on the transaction and `OUTGOING_PAYMENT.REFUND_*` webhook events. See [Refund Object](#refund-object) above.
 
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion title="Always use webhooks for status updates">
-    Don't rely solely on polling:
-
-    ```javascript
-    // ✅ Good: Webhook-driven updates
-    app.post('/webhooks/grid', async (req, res) => {
-      await handleTransactionUpdate(req.body.transaction);
-      res.status(200).send();
-    });
-
-    // ❌ Bad: Constant polling
-    setInterval(() => getTransaction(txId), 5000);
-    ```
-  </Accordion>
-
   <Accordion title="Store transaction IDs for reconciliation">
     Save transaction IDs to your database:
 
@@ -318,15 +431,24 @@ Use for reconciliation and reporting.
     Translate technical statuses to user-friendly messages:
 
     ```javascript
-    function getUserMessage(status, failureReason) {
-      if (status === 'PENDING') return 'Payment processing...';
-      if (status === 'PROCESSING') return 'Payment in progress...';
-      if (status === 'COMPLETED') return 'Payment delivered!';
-      if (status === 'FAILED') {
-        if (failureReason === 'INSUFFICIENT_BALANCE') {
-          return 'Insufficient funds. Please add money and try again.';
-        }
-        return 'Payment failed. Please try again or contact support.';
+    function getUserMessage(webhookType, data) {
+      switch (webhookType) {
+        case 'OUTGOING_PAYMENT.PENDING':
+          return 'Payment processing...';
+        case 'OUTGOING_PAYMENT.PROCESSING':
+          return 'Payment in progress...';
+        case 'OUTGOING_PAYMENT.COMPLETED':
+          return 'Payment delivered!';
+        case 'OUTGOING_PAYMENT.FAILED':
+          return 'Payment failed. Please try again or contact support.';
+        case 'OUTGOING_PAYMENT.REFUND_PENDING':
+          return 'Refund in progress...';
+        case 'OUTGOING_PAYMENT.REFUND_COMPLETED':
+          return 'Refund completed. Funds returned to your account.';
+        case 'OUTGOING_PAYMENT.REFUND_FAILED':
+          return 'Refund failed. Please contact support.';
+        default:
+          return 'Payment status updated.';
       }
     }
     ```

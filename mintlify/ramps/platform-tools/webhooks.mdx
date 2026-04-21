@@ -15,11 +15,11 @@ Grid sends webhooks for key events in the ramp lifecycle:
 
 <Tabs>
 <Tab title="OUTGOING_PAYMENT">
-  Sent when a conversion (on-ramp or off-ramp) completes, fails, or changes status.
+  Sent when a conversion (on-ramp or off-ramp) changes status. Webhook types use the format `OUTGOING_PAYMENT.<STATUS>` (e.g., `OUTGOING_PAYMENT.COMPLETED`, `OUTGOING_PAYMENT.FAILED`, `OUTGOING_PAYMENT.REFUND_COMPLETED`).
   
   ```json
   {
-    "transaction": {
+    "data": {
       "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
       "status": "COMPLETED",
       "type": "OUTGOING",
@@ -38,12 +38,12 @@ Grid sends webhooks for key events in the ramp lifecycle:
     },
     "timestamp": "2025-10-03T15:03:00Z",
     "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000030",
-    "type": "OUTGOING_PAYMENT"
+    "type": "OUTGOING_PAYMENT.COMPLETED"
   }
   ```
   
   <Check>
-  Use this webhook to update your UI, credit customer accounts, and trigger post-conversion workflows.
+  Use this webhook to update your UI, credit customer accounts, and trigger post-conversion workflows. See the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide for all status transitions and refund handling.
   </Check>
 </Tab>
 
@@ -173,31 +173,27 @@ app.post("/webhooks/grid", async (req, res) => {
     return res.status(401).end();
   }
 
-  const { type, transaction } = req.body;
+  const { type, data } = req.body;
 
-  if (type === "OUTGOING_PAYMENT" && transaction.status === "COMPLETED") {
+  if (type === "OUTGOING_PAYMENT.COMPLETED") {
     // On-ramp completed (USD → BTC)
     if (
-      transaction.sentAmount.currency.code === "USD" &&
-      transaction.receivedAmount.currency.code === "BTC"
+      data.sentAmount.currency.code === "USD" &&
+      data.receivedAmount.currency.code === "BTC"
     ) {
-      // Update user's transaction history
       await db.transactions.create({
-        userId: transaction.customerId,
+        userId: data.customerId,
         type: "ON_RAMP",
-        amountUsd: transaction.sentAmount.amount,
-        amountBtc: transaction.receivedAmount.amount,
-        rate: transaction.exchangeRate,
+        amountUsd: data.sentAmount.amount,
+        amountBtc: data.receivedAmount.amount,
+        rate: data.exchangeRate,
         status: "COMPLETED",
-        completedAt: new Date(transaction.settledAt),
+        completedAt: new Date(data.settledAt),
       });
 
-      // Notify user
-      await sendNotification(transaction.customerId, {
+      await sendNotification(data.customerId, {
         title: "Bitcoin purchased!",
-        message: `You received ${formatBtc(
-          transaction.receivedAmount.amount
-        )} BTC`,
+        message: `You received ${formatBtc(data.receivedAmount.amount)} BTC`,
       });
     }
   }
@@ -211,30 +207,26 @@ app.post("/webhooks/grid", async (req, res) => {
 Handle successful crypto-to-fiat conversions:
 
 ```javascript
-if (type === "OUTGOING_PAYMENT" && transaction.status === "COMPLETED") {
+if (type === "OUTGOING_PAYMENT.COMPLETED") {
   // Off-ramp completed (BTC → USD)
   if (
-    transaction.sentAmount.currency.code === "BTC" &&
-    transaction.receivedAmount.currency.code === "USD"
+    data.sentAmount.currency.code === "BTC" &&
+    data.receivedAmount.currency.code === "USD"
   ) {
-    // Update user's balance and transaction history
     await db.transactions.create({
-      userId: transaction.customerId,
+      userId: data.customerId,
       type: "OFF_RAMP",
-      amountBtc: transaction.sentAmount.amount,
-      amountUsd: transaction.receivedAmount.amount,
-      rate: transaction.exchangeRate,
+      amountBtc: data.sentAmount.amount,
+      amountUsd: data.receivedAmount.amount,
+      rate: data.exchangeRate,
       status: "COMPLETED",
-      bankAccountId: transaction.destination.accountId,
-      completedAt: new Date(transaction.settledAt),
+      bankAccountId: data.destination.accountId,
+      completedAt: new Date(data.settledAt),
     });
 
-    // Notify user
-    await sendNotification(transaction.customerId, {
+    await sendNotification(data.customerId, {
       title: "Cash out completed!",
-      message: `$${formatUsd(
-        transaction.receivedAmount.amount
-      )} sent to your bank account`,
+      message: `$${formatUsd(data.receivedAmount.amount)} sent to your bank account`,
     });
   }
 }

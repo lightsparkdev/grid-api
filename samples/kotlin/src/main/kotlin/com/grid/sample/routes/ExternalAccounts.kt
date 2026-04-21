@@ -1,15 +1,28 @@
 package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.lightspark.grid.models.BrlExternalAccountCreateInfo
+import com.lightspark.grid.models.EurBeneficiary
+import com.lightspark.grid.models.EurExternalAccountCreateInfo
+import com.lightspark.grid.models.GbpExternalAccountCreateInfo
+import com.lightspark.grid.models.InrExternalAccountCreateInfo
+import com.lightspark.grid.models.MxnExternalAccountCreateInfo
+import com.lightspark.grid.models.PhpExternalAccountCreateInfo
+import com.lightspark.grid.models.UsdExternalAccountCreateInfo
 import com.lightspark.grid.models.customers.externalaccounts.Address
+import com.lightspark.grid.models.customers.externalaccounts.BrlBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreate
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreateParams
+import com.lightspark.grid.models.customers.externalaccounts.GbpBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.InrExternalAccountInfo
-import com.lightspark.grid.models.platform.externalaccounts.InrAccountInfo
+import com.lightspark.grid.models.customers.externalaccounts.MxnBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.PhpBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.UsdBeneficiary
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
+import com.grid.sample.optText
+import com.grid.sample.requireText
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -29,53 +42,25 @@ fun Route.externalAccountRoutes() {
                 val body = call.receiveText()
                 val json = JsonUtils.mapper.readTree(body)
                 Log.incoming("POST", "/api/customers/$customerId/external-accounts", body)
-                val accountInfo = json.get("accountInfo")
+                val accountInfoNode = json.get("accountInfo")
+                    ?: return@post call.respondText(
+                        """{"error": "accountInfo is required"}""",
+                        ContentType.Application.Json,
+                        HttpStatusCode.BadRequest
+                    )
 
-                val beneficiaryNode = json.get("beneficiary")
-                val beneficiary = if (beneficiaryNode != null && !beneficiaryNode.isNull) {
-                    InrBeneficiary.builder()
-                        .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
-                        .fullName(beneficiaryNode.optText("fullName") ?: "")
-                        .nationality(beneficiaryNode.optText("nationality") ?: "IN")
-                        .birthDate(beneficiaryNode.optText("birthDate") ?: "1990-01-01")
-                        .apply {
-                            beneficiaryNode.optText("email")?.let { email(it) }
-                            beneficiaryNode.optText("phoneNumber")?.let { phoneNumber(it) }
-                            beneficiaryNode.get("address")?.takeIf { !it.isNull }?.let { addrNode ->
-                                address(
-                                    Address.builder()
-                                        .country(addrNode.optText("country") ?: "IN")
-                                        .line1(addrNode.optText("line1") ?: "")
-                                        .postalCode(addrNode.optText("postalCode") ?: "")
-                                        .apply {
-                                            addrNode.optText("line2")?.let { line2(it) }
-                                            addrNode.optText("city")?.let { city(it) }
-                                            addrNode.optText("state")?.let { state(it) }
-                                        }
-                                        .build()
-                                )
-                            }
-                        }
-                        .build()
-                } else {
-                    InrBeneficiary.builder()
-                        .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
-                        .fullName("Account Holder")
-                        .nationality("IN")
-                        .birthDate("1990-01-01")
-                        .build()
-                }
+                val accountType = accountInfoNode.optText("accountType")
+                    ?: return@post call.respondText(
+                        """{"error": "accountInfo.accountType is required"}""",
+                        ContentType.Application.Json,
+                        HttpStatusCode.BadRequest
+                    )
 
-                val inrAccountInfo = InrExternalAccountInfo.builder()
-                    .accountType(InrAccountInfo.AccountType.INR_ACCOUNT)
-                    .vpa(accountInfo.get("vpa").asText())
-                    .addPaymentRail(InrAccountInfo.PaymentRail.UPI)
-                    .beneficiary(beneficiary)
-                    .build()
+                val accountInfo = buildAccountInfo(accountType, accountInfoNode)
 
                 val externalAccountCreate = ExternalAccountCreate.builder()
-                    .accountInfo(inrAccountInfo)
-                    .currency(json.optText("currency") ?: "INR")
+                    .accountInfo(accountInfo)
+                    .currency(json.optText("currency") ?: "USD")
                     .apply {
                         customerId(customerId)
                         json.optText("platformAccountId")?.let { platformAccountId(it) }
@@ -104,63 +89,73 @@ fun Route.externalAccountRoutes() {
     }
 }
 
-private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountInfoOneOf {
+private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountCreate.AccountInfo {
     val beneficiaryNode = accountInfo.get("beneficiary")
 
     return when (accountType) {
         "USD_ACCOUNT" -> {
-            val beneficiary = buildUsdBeneficiary(beneficiaryNode)
-            val info = UsdExternalAccountInfo.builder()
-                .accountType(UsdExternalAccountInfo.AccountType.USD_ACCOUNT)
+            val info = UsdExternalAccountCreateInfo.builder()
+                .accountType(UsdExternalAccountCreateInfo.AccountType.USD_ACCOUNT)
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .routingNumber(accountInfo.requireText("routingNumber"))
-                .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { UsdExternalAccountInfo.PaymentRail.of(it) })
+                .beneficiary(buildUsdBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofUsdAccount(info)
+            ExternalAccountCreate.AccountInfo.ofUsdAccount(info)
         }
         "INR_ACCOUNT" -> {
-            val beneficiary = buildInrBeneficiary(beneficiaryNode)
-            val info = InrExternalAccountInfo.builder()
-                .accountType(InrExternalAccountInfo.AccountType.INR_ACCOUNT)
+            val info = InrExternalAccountCreateInfo.builder()
+                .accountType(InrExternalAccountCreateInfo.AccountType.INR_ACCOUNT)
                 .vpa(accountInfo.requireText("vpa"))
-                .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { InrExternalAccountInfo.PaymentRail.of(it) })
+                .beneficiary(buildInrBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofInrAccount(info)
+            ExternalAccountCreate.AccountInfo.ofInrAccount(info)
         }
         "BRL_ACCOUNT" -> {
-            val beneficiary = buildBrlBeneficiary(beneficiaryNode)
-            val info = BrlExternalAccountInfo.builder()
-                .accountType(BrlExternalAccountInfo.AccountType.BRL_ACCOUNT)
+            val info = BrlExternalAccountCreateInfo.builder()
+                .accountType(BrlExternalAccountCreateInfo.AccountType.BRL_ACCOUNT)
                 .pixKey(accountInfo.requireText("pixKey"))
-                .pixKeyType(accountInfo.requireText("pixKeyType"))
+                .pixKeyType(BrlExternalAccountCreateInfo.PixKeyType.of(accountInfo.requireText("pixKeyType")))
                 .taxId(accountInfo.requireText("taxId"))
-                .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { BrlExternalAccountInfo.PaymentRail.of(it) })
+                .beneficiary(buildBrlBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofBrlAccount(info)
+            ExternalAccountCreate.AccountInfo.ofBrlAccount(info)
         }
         "MXN_ACCOUNT" -> {
-            val beneficiary = buildMxnBeneficiary(beneficiaryNode)
-            val info = MxnExternalAccountInfo.builder()
-                .accountType(MxnExternalAccountInfo.AccountType.MXN_ACCOUNT)
+            val info = MxnExternalAccountCreateInfo.builder()
+                .accountType(MxnExternalAccountCreateInfo.AccountType.MXN_ACCOUNT)
                 .clabeNumber(accountInfo.requireText("clabeNumber"))
-                .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { MxnExternalAccountInfo.PaymentRail.of(it) })
+                .beneficiary(buildMxnBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofMxnAccount(info)
+            ExternalAccountCreate.AccountInfo.ofMxnAccount(info)
         }
         "GBP_ACCOUNT" -> {
-            val beneficiary = buildGbpBeneficiary(beneficiaryNode)
-            val info = GbpExternalAccountInfo.builder()
-                .accountType(GbpExternalAccountInfo.AccountType.GBP_ACCOUNT)
+            val info = GbpExternalAccountCreateInfo.builder()
+                .accountType(GbpExternalAccountCreateInfo.AccountType.GBP_ACCOUNT)
                 .sortCode(accountInfo.requireText("sortCode"))
                 .accountNumber(accountInfo.requireText("accountNumber"))
-                .beneficiary(beneficiary)
-                .paymentRails(buildPaymentRails(accountInfo) { GbpExternalAccountInfo.PaymentRail.of(it) })
+                .beneficiary(buildGbpBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountInfoOneOf.ofGbpAccount(info)
+            ExternalAccountCreate.AccountInfo.ofGbpAccount(info)
+        }
+        "PHP_ACCOUNT" -> {
+            val info = PhpExternalAccountCreateInfo.builder()
+                .accountType(PhpExternalAccountCreateInfo.AccountType.PHP_ACCOUNT)
+                .bankName(accountInfo.optText("bankCode") ?: accountInfo.requireText("bankName"))
+                .accountNumber(accountInfo.requireText("accountNumber"))
+                .beneficiary(buildPhpBeneficiary(beneficiaryNode))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofPhpAccount(info)
+        }
+        "EUR_ACCOUNT" -> {
+            val info = EurExternalAccountCreateInfo.builder()
+                .accountType(EurExternalAccountCreateInfo.AccountType.EUR_ACCOUNT)
+                .iban(accountInfo.requireText("iban"))
+                .beneficiary(buildEurBeneficiary(beneficiaryNode))
+                .apply {
+                    accountInfo.optText("swiftCode")?.let { swiftCode(it) }
+                }
+                .build()
+            ExternalAccountCreate.AccountInfo.ofEurAccount(info)
         }
         else -> throw IllegalArgumentException("Unsupported account type: $accountType")
     }
@@ -180,114 +175,123 @@ private fun buildAddress(addrNode: JsonNode?): Address? {
         .build()
 }
 
-private fun buildUsdBeneficiary(node: JsonNode?): UsdExternalAccountInfo.Beneficiary {
-    val b = if (node != null && !node.isNull) {
+/** Parsed beneficiary fields shared across all currency types. */
+private data class BeneficiaryFields(
+    val fullName: String,
+    val nationality: String?,
+    val birthDate: String?,
+    val address: Address?,
+)
+
+private fun parseBeneficiaryFields(node: JsonNode?): BeneficiaryFields {
+    if (node == null || node.isNull) return BeneficiaryFields("Account Holder", null, null, null)
+    return BeneficiaryFields(
+        fullName = node.optText("fullName") ?: "",
+        nationality = node.optText("countryOfResidence") ?: node.optText("nationality"),
+        birthDate = node.optText("birthDate"),
+        address = buildAddress(node.get("address")),
+    )
+}
+
+private fun buildUsdBeneficiary(node: JsonNode?): UsdExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return UsdExternalAccountCreateInfo.Beneficiary.ofIndividual(
         UsdBeneficiary.builder()
             .beneficiaryType(UsdBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName(node.optText("fullName") ?: "")
-            .nationality(node.optText("nationality") ?: "US")
-            .birthDate(node.optText("birthDate") ?: "1990-01-01")
-            .apply { buildAddress(node.get("address"))?.let { address(it) } }
+            .fullName(f.fullName)
+            .nationality(f.nationality ?: "US")
+            .birthDate(f.birthDate ?: "1990-01-01")
+            .apply { f.address?.let { address(it) } }
             .build()
-    } else {
-        UsdBeneficiary.builder()
-            .beneficiaryType(UsdBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName("Account Holder")
-            .nationality("US")
-            .birthDate("1990-01-01")
-            .build()
-    }
-    return UsdExternalAccountInfo.Beneficiary.ofIndividual(b)
+    )
 }
 
-private fun buildInrBeneficiary(node: JsonNode?): InrExternalAccountInfo.Beneficiary {
-    val b = if (node != null && !node.isNull) {
+private fun buildInrBeneficiary(node: JsonNode?): InrExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return InrExternalAccountCreateInfo.Beneficiary.ofIndividual(
         InrBeneficiary.builder()
             .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName(node.optText("fullName") ?: "")
+            .fullName(f.fullName)
             .apply {
-                node.optText("nationality")?.let { nationality(it) }
-                node.optText("birthDate")?.let { birthDate(it) }
-                buildAddress(node.get("address"))?.let { address(it) }
+                f.nationality?.let { nationality(it) }
+                f.birthDate?.let { birthDate(it) }
+                f.address?.let { address(it) }
             }
             .build()
-    } else {
-        InrBeneficiary.builder()
-            .beneficiaryType(InrBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName("Account Holder")
-            .build()
-    }
-    return InrExternalAccountInfo.Beneficiary.ofIndividual(b)
+    )
 }
 
-private fun buildBrlBeneficiary(node: JsonNode?): BrlExternalAccountInfo.Beneficiary {
-    val b = if (node != null && !node.isNull) {
+private fun buildBrlBeneficiary(node: JsonNode?): BrlExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return BrlExternalAccountCreateInfo.Beneficiary.ofIndividual(
         BrlBeneficiary.builder()
             .beneficiaryType(BrlBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName(node.optText("fullName") ?: "")
+            .fullName(f.fullName)
             .apply {
-                node.optText("nationality")?.let { nationality(it) }
-                node.optText("birthDate")?.let { birthDate(it) }
-                buildAddress(node.get("address"))?.let { address(it) }
+                f.nationality?.let { nationality(it) }
+                f.birthDate?.let { birthDate(it) }
+                f.address?.let { address(it) }
             }
             .build()
-    } else {
-        BrlBeneficiary.builder()
-            .beneficiaryType(BrlBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName("Account Holder")
-            .build()
-    }
-    return BrlExternalAccountInfo.Beneficiary.ofIndividual(b)
+    )
 }
 
-private fun buildMxnBeneficiary(node: JsonNode?): MxnExternalAccountInfo.Beneficiary {
-    val b = if (node != null && !node.isNull) {
+private fun buildMxnBeneficiary(node: JsonNode?): MxnExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return MxnExternalAccountCreateInfo.Beneficiary.ofIndividual(
         MxnBeneficiary.builder()
             .beneficiaryType(MxnBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName(node.optText("fullName") ?: "")
+            .fullName(f.fullName)
             .apply {
-                node.optText("nationality")?.let { nationality(it) }
-                node.optText("birthDate")?.let { birthDate(it) }
-                buildAddress(node.get("address"))?.let { address(it) }
+                f.nationality?.let { nationality(it) }
+                f.birthDate?.let { birthDate(it) }
+                f.address?.let { address(it) }
             }
             .build()
-    } else {
-        MxnBeneficiary.builder()
-            .beneficiaryType(MxnBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName("Account Holder")
-            .build()
-    }
-    return MxnExternalAccountInfo.Beneficiary.ofIndividual(b)
+    )
 }
 
-private fun buildGbpBeneficiary(node: JsonNode?): GbpExternalAccountInfo.Beneficiary {
-    val b = if (node != null && !node.isNull) {
+private fun buildGbpBeneficiary(node: JsonNode?): GbpExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return GbpExternalAccountCreateInfo.Beneficiary.ofIndividual(
         GbpBeneficiary.builder()
             .beneficiaryType(GbpBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName(node.optText("fullName") ?: "")
+            .fullName(f.fullName)
             .apply {
-                node.optText("nationality")?.let { nationality(it) }
-                node.optText("birthDate")?.let { birthDate(it) }
-                buildAddress(node.get("address"))?.let { address(it) }
+                f.nationality?.let { nationality(it) }
+                f.birthDate?.let { birthDate(it) }
+                f.address?.let { address(it) }
             }
             .build()
-    } else {
-        GbpBeneficiary.builder()
-            .beneficiaryType(GbpBeneficiary.BeneficiaryType.INDIVIDUAL)
-            .fullName("Account Holder")
+    )
+}
+
+private fun buildPhpBeneficiary(node: JsonNode?): PhpExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return PhpExternalAccountCreateInfo.Beneficiary.ofIndividual(
+        PhpBeneficiary.builder()
+            .beneficiaryType(PhpBeneficiary.BeneficiaryType.INDIVIDUAL)
+            .fullName(f.fullName)
+            .apply {
+                f.nationality?.let { nationality(it) }
+                f.birthDate?.let { birthDate(it) }
+                f.address?.let { address(it) }
+            }
             .build()
-    }
-    return GbpExternalAccountInfo.Beneficiary.ofIndividual(b)
+    )
 }
 
-private fun <T> buildPaymentRails(accountInfo: JsonNode, parse: (String) -> T): List<T> {
-    val railsNode = accountInfo.get("paymentRails")
-    if (railsNode == null || !railsNode.isArray || railsNode.isEmpty) return emptyList()
-    return railsNode.map { parse(it.asText()) }
+private fun buildEurBeneficiary(node: JsonNode?): EurExternalAccountCreateInfo.Beneficiary {
+    val f = parseBeneficiaryFields(node)
+    return EurExternalAccountCreateInfo.Beneficiary.ofIndividual(
+        EurBeneficiary.builder()
+            .beneficiaryType(EurBeneficiary.BeneficiaryType.INDIVIDUAL)
+            .fullName(f.fullName)
+            .address(f.address ?: throw IllegalArgumentException("EUR beneficiary requires an address"))
+            .apply {
+                f.nationality?.let { nationality(it) }
+                f.birthDate?.let { birthDate(it) }
+            }
+            .build()
+    )
 }
-
-private fun JsonNode.optText(field: String): String? =
-    if (has(field) && !get(field).isNull) get(field).asText() else null
-
-private fun JsonNode.requireText(field: String): String =
-    optText(field) ?: throw IllegalArgumentException("$field is required")

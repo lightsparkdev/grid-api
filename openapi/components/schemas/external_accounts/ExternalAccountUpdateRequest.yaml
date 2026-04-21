@@ -1,0 +1,10 @@
+type: object
+description: Request body for updating an external account. Only a limited set of fields are mutable.
+properties:
+  platformAccountId:
+    type: string
+    description: Optional platform-specific identifier for this account
+    example: acc_123456789
+  beneficiary:
+    $ref: ./BeneficiaryOneOf.yaml
+    description: Updated beneficiary information for the external account

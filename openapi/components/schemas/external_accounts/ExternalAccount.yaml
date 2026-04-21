@@ -44,8 +44,9 @@ allOf:
         type: string
         description: >-
           The blockchain network for this external account, if applicable. Present when the account
-          is a cryptocurrency wallet. Example values: SOLANA_MAINNET, ETHEREUM_MAINNET,
-          POLYGON_MAINNET, TRON_MAINNET.
+          is a cryptocurrency wallet. Example values: SOLANA_MAINNET, SOLANA_DEVNET,
+          ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET,
+          SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.
         example: SOLANA_MAINNET
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml

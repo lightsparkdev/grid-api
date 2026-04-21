@@ -48,6 +48,10 @@ tags:
     description: >-
       Endpoints for retrieving cached foreign exchange rates. Rates are cached
       for approximately 5 minutes and include platform-specific fees.
+  - name: Discoveries
+    description: >-
+      Endpoints for discovering available payment rails, banks, and providers
+      for a given country and currency corridor.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -85,6 +89,8 @@ paths:
     $ref: paths/platform/config.yaml
   /exchange-rates:
     $ref: paths/exchange-rates/exchange_rates.yaml
+  /discoveries:
+    $ref: paths/discoveries/discoveries.yaml
   /customers:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
@@ -97,8 +103,12 @@ paths:
     $ref: paths/platform/platform_internal_accounts.yaml
   /customers/external-accounts:
     $ref: paths/customers/customers_external_accounts.yaml
+  /customers/external-accounts/{externalAccountId}:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
+  /platform/external-accounts/{externalAccountId}:
+    $ref: paths/platform/platform_external_accounts_{externalAccountId}.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:
@@ -111,10 +121,6 @@ paths:
     $ref: paths/verifications/verifications.yaml
   /verifications/{verificationId}:
     $ref: paths/verifications/verifications_{verificationId}.yaml
-  /plaid/link-tokens:
-    $ref: paths/plaid/plaid_link-tokens.yaml
-  /plaid/callback/{plaid_link_token}:
-    $ref: paths/plaid/plaid_callback_{plaid_link_token}.yaml
   /transfer-in:
     $ref: paths/transfers/transfer_in.yaml
   /transfer-out:

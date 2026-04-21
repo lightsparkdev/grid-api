@@ -8,6 +8,38 @@ External accounts are bank accounts, cryptocurrency wallets, or payment destinat
   Platform accounts are managed at the organization level.
 </Info>
 
+## Look up bank names with the Discoveries API
+
+Some countries require a `bankName` when creating an external account — including the Philippines, Nigeria, South Africa, and others. The `bankName` value must match exactly what Grid expects.
+
+Use the [Discoveries API](/api-reference/discoveries/list-available-receiving-institution-names) to retrieve the list of valid bank names for a given country and currency:
+
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/discoveries?country=PH&currency=PHP' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+```
+
+```json Response
+{
+  "data": [
+    {
+      "bankName": "BDO Unibank",
+      "displayName": "BDO Unibank",
+      "country": "PH",
+      "currency": "PHP"
+    },
+    {
+      "bankName": "BPI",
+      "displayName": "Bank of the Philippine Islands",
+      "country": "PH",
+      "currency": "PHP"
+    }
+  ]
+}
+```
+
+Use `bankName` from the response as the `bankName` value when creating an external account. The `displayName` is a human-friendly label you can show to your users. You can filter the list on the client side as the user types to provide a bank search experience.
+
 ## Create external accounts by region or wallet
 
 <Tabs>
@@ -149,6 +181,77 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }'
 ```
 
+</Tab>
+
+<Tab title="Philippines">
+**PHP Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "PHP",
+    "platformAccountId": "ph_bank_001",
+    "accountInfo": {
+      "accountType": "PHP_ACCOUNT",
+      "bankName": "BDO Unibank",
+      "accountNumber": "001234567890",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Maria Santos",
+        "birthDate": "1995-04-10",
+        "nationality": "PH",
+        "address": {
+          "line1": "123 Rizal Avenue",
+          "city": "Manila",
+          "state": "Metro Manila",
+          "postalCode": "1000",
+          "country": "PH"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Account number must be 8-16 digits.
+</Note>
+</Tab>
+
+<Tab title="United Kingdom">
+**GBP Faster Payments**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "GBP",
+    "platformAccountId": "gb_bank_001",
+    "accountInfo": {
+      "accountType": "GBP_ACCOUNT",
+      "sortCode": "123456",
+      "accountNumber": "12345678",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "James Smith",
+        "birthDate": "1985-09-03",
+        "nationality": "GB",
+        "address": {
+          "line1": "10 Downing Street",
+          "city": "London",
+          "postalCode": "SW1A 2AA",
+          "country": "GB"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Sort code must be 6 digits. Account number must be 8 digits. Address is required for GBP individual beneficiaries.
+</Note>
 </Tab>
 
 <Tab title="India">
@@ -395,6 +498,114 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Note>
 </Tab>
 
+<Tab title="Malawi">
+**MWK Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "MWK",
+    "platformAccountId": "mw_mobile_001",
+    "accountInfo": {
+      "accountType": "MWK_ACCOUNT",
+      "phoneNumber": "+265991234567",
+      "provider": "AIRTEL",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Chimwemwe Banda",
+        "birthDate": "1993-03-18",
+        "nationality": "MW",
+        "address": {
+          "line1": "Kamuzu Procession Road",
+          "city": "Lilongwe",
+          "postalCode": "00100",
+          "country": "MW"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+265XXXXXXXXX` (9 digits after country code). Providers: `AIRTEL` or `TNM`.
+</Note>
+</Tab>
+
+<Tab title="Uganda">
+**UGX Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "UGX",
+    "platformAccountId": "ug_mobile_001",
+    "accountInfo": {
+      "accountType": "UGX_ACCOUNT",
+      "phoneNumber": "+256701234567",
+      "provider": "MTN",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Nakato Sarah",
+        "birthDate": "1990-07-25",
+        "nationality": "UG",
+        "address": {
+          "line1": "Kampala Road 45",
+          "city": "Kampala",
+          "postalCode": "00100",
+          "country": "UG"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Phone number must be in format `+256XXXXXXXXX` (9 digits after country code). Providers: `MTN` or `AIRTEL`.
+</Note>
+</Tab>
+
+<Tab title="West Africa">
+**XOF Mobile Money (Senegal, Benin, Ivory Coast)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "XOF",
+    "platformAccountId": "xof_mobile_001",
+    "accountInfo": {
+      "accountType": "XOF_ACCOUNT",
+      "phoneNumber": "+221781234567",
+      "provider": "ORANGE",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Mamadou Diallo",
+        "birthDate": "1988-11-12",
+        "nationality": "SN",
+        "address": {
+          "line1": "Avenue Cheikh Anta Diop",
+          "city": "Dakar",
+          "postalCode": "10000",
+          "country": "SN"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Supported countries and phone formats:
+  - Senegal (+221): `+221XXXXXXXXX` (9 digits after country code)
+  - Ivory Coast (+225): `+225XXXXXXXXXX` (10 digits after country code)
+  - Benin (+229): `+229XXXXXXXX` or `+229XXXXXXXXX` (8–9 digits after country code)
+</Note>
+</Tab>
+
 <Tab title="Canada">
 **CAD Bank Transfer**
 
@@ -543,6 +754,25 @@ For business accounts, include business information:
 }
 ```
 
+## Minimum required beneficiary fields
+
+The following table shows the minimum required fields for individual and business beneficiaries by country. All other fields are optional but recommended for faster compliance review.
+
+### Individual beneficiaries
+
+| Country | Required Fields | Required Address Fields |
+| --- | --- | --- |
+| US (USD) | `beneficiaryType`, `fullName` | `line1`, `city`, `postalCode`, `country` |
+| Mexico (MXN) | `beneficiaryType`, `fullName` | None (address optional) |
+| Brazil (BRL) | `beneficiaryType`, `fullName` | None (address optional) |
+| Philippines (PHP) | `beneficiaryType`, `fullName` | None (address optional) |
+| United Kingdom (GBP) | `beneficiaryType`, `fullName`, `address` | `line1`, `city`, `postalCode`, `country` |
+| Europe (EUR) | `beneficiaryType`, `fullName`, `address` | `line1`, `city`, `postalCode`, `country` |
+
+<Info>
+  While only the fields listed above are strictly required, providing additional information like `birthDate`, `nationality`, and `address` can reduce the likelihood of false positive compliance checks and increase transaction success rates. 
+</Info>
+
 ## Account status
 Beneficiary data may be reviewed for risk and compliance.  Only `ACTIVE` accounts can receive payments.  Updates to account data may trigger account re-review.
 
@@ -609,6 +839,19 @@ if (!/^\d{7,12}$/.test(cadAccountNumber)) {
   throw new Error("Invalid Canadian account number");
 }
 
+// PHP: 8-16 digit account number
+if (!/^\d{8,16}$/.test(phpAccountNumber)) {
+  throw new Error("Invalid Philippine account number");
+}
+
+// GBP: 6-digit sort code, 8-digit account number
+if (!/^\d{6}$/.test(sortCode)) {
+  throw new Error("Invalid sort code");
+}
+if (!/^\d{8}$/.test(gbpAccountNumber)) {
+  throw new Error("Invalid UK account number");
+}
+
 // ZAR: 9-13 digit account number
 if (!/^\d{9,13}$/.test(zarAccountNumber)) {
   throw new Error("Invalid South African account number");
@@ -626,6 +869,16 @@ if (!/^\+260\d{9}$/.test(zmwPhoneNumber)) {
 }
 if (!/^\+250\d{9}$/.test(rwfPhoneNumber)) {
   throw new Error("Invalid Rwandan phone number");
+}
+if (!/^\+265\d{9}$/.test(mwkPhoneNumber)) {
+  throw new Error("Invalid Malawian phone number");
+}
+if (!/^\+256\d{9}$/.test(ugxPhoneNumber)) {
+  throw new Error("Invalid Ugandan phone number");
+}
+// West African (XOF): Senegal (+221), Ivory Coast (+225), Benin (+229)
+if (!/^\+(221\d{9}|225\d{10}|229\d{8,9})$/.test(xofPhoneNumber)) {
+  throw new Error("Invalid West African phone number");
 }
 ```
 
