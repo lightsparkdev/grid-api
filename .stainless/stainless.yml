@@ -344,6 +344,8 @@ resources:
           email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
           email_otp_credential_additional_challenge: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
           email_otp_credential_additional_challenge_fields: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
+          oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
+          oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
   exchange_rates:
     methods:
       list:
