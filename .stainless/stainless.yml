@@ -730,6 +730,7 @@ openapi:
           - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentEthereumWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentEmbeddedWalletInfo.allOf[0]"
         keys: [ "$ref" ]
 
     # ── Remove $ref to BaseExternalAccountInfo from external account variants ──

@@ -7,6 +7,12 @@ post:
     This endpoint can only be used for quotes with a `source` which is either an internal account,
     or has direct pull functionality (e.g. ACH pull with an external account).
 
+    When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
+    the request must include a `Grid-Wallet-Signature` header. The signature is
+    produced by signing the `payloadToSign` value from the quote's
+    `paymentInstructions[].accountOrWalletInfo` entry with the session private
+    key of a verified authentication credential on the source Embedded Wallet.
+
     Once executed, the quote cannot be cancelled and the transfer will be processed.
   operationId: executeQuote
   tags:
@@ -30,6 +36,19 @@ post:
       schema:
         type: string
         example: <uuid>
+    - name: Grid-Wallet-Signature
+      in: header
+      required: false
+      description: >-
+        Signature over the `payloadToSign` returned in the quote's
+        `paymentInstructions[].accountOrWalletInfo` entry, produced with the
+        session private key of a verified authentication credential on the
+        source Embedded Wallet and base64-encoded. Required when the quote's
+        source is an internal account of type `EMBEDDED_WALLET`; ignored for
+        other source types.
+      schema:
+        type: string
+      example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
   responses:
     '200':
       description: >
@@ -47,7 +66,11 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error400.yaml
     '401':
-      description: Unauthorized
+      description: >-
+        Unauthorized. Also returned when the quote's source is an internal
+        account of type `EMBEDDED_WALLET` and the provided
+        `Grid-Wallet-Signature` header is missing, malformed, or does not
+        match the quote's `payloadToSign`.
       content:
         application/json:
           schema:
@@ -70,5 +93,3 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
-
-
