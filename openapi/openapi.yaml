@@ -180,6 +180,8 @@ paths:
     $ref: paths/auth/auth_credentials.yaml
   /auth/credentials/{id}/verify:
     $ref: paths/auth/auth_credentials_{id}_verify.yaml
+  /auth/credentials/{id}/challenge:
+    $ref: paths/auth/auth_credentials_{id}_challenge.yaml
 webhooks:
   incoming-payment:
     $ref: webhooks/incoming-payment.yaml
