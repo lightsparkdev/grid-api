@@ -1,0 +1,45 @@
+title: Passkey Auth Challenge
+description: >-
+  Extended `AuthMethod` shape returned for `PASSKEY` credentials from
+  `POST /auth/credentials` (first-authentication case) and
+  `POST /auth/credentials/{id}/challenge` (reauthentication case). Adds a
+  Grid-issued `challenge`, the corresponding `requestId`, and the
+  challenge's `expiresAt` to the base `AuthMethod` fields. The client signs
+  the challenge with the passkey to produce the assertion submitted to
+  `POST /auth/credentials/{id}/verify`.
+allOf:
+  - $ref: ./AuthMethod.yaml
+  - type: object
+    required:
+      - challenge
+      - requestId
+      - expiresAt
+    properties:
+      challenge:
+        type: string
+        description: >-
+          Base64url-encoded challenge issued by Grid for the pending
+          passkey authentication. The client passes it into
+          `navigator.credentials.get()` as the WebAuthn challenge; the
+          resulting assertion is submitted to
+          `POST /auth/credentials/{id}/verify`. Single-use; a new
+          challenge is issued on the next call to
+          `POST /auth/credentials/{id}/challenge`.
+        example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+      requestId:
+        type: string
+        description: >-
+          Unique identifier for this pending passkey authentication
+          request. Must be echoed as the `Request-Id` header on the
+          subsequent `POST /auth/credentials/{id}/verify` call so Grid
+          can correlate the assertion with the issued challenge.
+        example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      expiresAt:
+        type: string
+        format: date-time
+        description: >-
+          Timestamp after which the issued challenge is no longer valid.
+          The assertion must reach `POST /auth/credentials/{id}/verify`
+          before this time; otherwise the client must request a fresh
+          challenge via `POST /auth/credentials/{id}/challenge`.
+        example: '2026-04-08T15:35:00Z'

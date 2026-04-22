@@ -1,0 +1,52 @@
+title: Passkey Attestation
+type: object
+required:
+  - credentialId
+  - clientDataJson
+  - attestationObject
+properties:
+  credentialId:
+    type: string
+    description: >-
+      Base64url-encoded credential identifier produced by the authenticator
+      at registration time. Typically the base64url of
+      `PublicKeyCredential.rawId`.
+    example: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
+  clientDataJson:
+    type: string
+    description: >-
+      Base64url-encoded JSON client data collected by the browser during
+      the WebAuthn `navigator.credentials.create()` call. Corresponds to
+      `AuthenticatorAttestationResponse.clientDataJSON` from the WebAuthn
+      spec — Grid's field name is intentionally camelCased as
+      `clientDataJson` (lowercase JSON) for consistency with the rest of
+      the API; the value is the same bytes the browser returns. Contains
+      the challenge, origin, and `type: "webauthn.create"`.
+    example: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
+  attestationObject:
+    type: string
+    description: >-
+      Base64url-encoded CBOR attestation object produced by the authenticator
+      during registration. Corresponds to
+      `AuthenticatorAttestationResponse.attestationObject`.
+    example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
+  transports:
+    type: array
+    items:
+      type: string
+      enum:
+        - usb
+        - nfc
+        - ble
+        - internal
+        - hybrid
+    description: >-
+      Optional. WebAuthn transports as returned by
+      `AuthenticatorAttestationResponse.getTransports()`. Values follow
+      the W3C `AuthenticatorTransport` enum — pass the raw values through
+      to Grid; provider-specific translation is handled server-side.
+      Some authenticators return an empty array; omit the field or send
+      `[]` in that case.
+    example:
+      - internal
+      - hybrid

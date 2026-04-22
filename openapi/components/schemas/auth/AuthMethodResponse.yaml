@@ -1,0 +1,11 @@
+title: Auth Method Response
+description: >-
+  Strict wrapper around `AuthMethod` used inside
+  `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH` branches.
+  The only difference from `AuthMethod` is `unevaluatedProperties: false`,
+  which disambiguates the oneOf against `PasskeyAuthChallenge` — without
+  the strictness, an `AuthMethod` with extra fields would ambiguously
+  match both branches.
+allOf:
+  - $ref: ./AuthMethod.yaml
+unevaluatedProperties: false
