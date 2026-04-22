@@ -3682,6 +3682,13 @@ paths:
                     payloadToSign: '{"requestId":"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21","type":"EMAIL_OTP","accountId":"InternalAccount:01HF3Z4QWERTY","expiresAt":"2026-04-08T15:35:00Z"}'
                     requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                oauth:
+                  summary: Additional OAuth credential challenge
+                  value:
+                    type: OAUTH
+                    payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an `EMAIL_OTP` credential on an internal account that already has one — only one email OTP credential is supported per internal account at this time.
           content:
@@ -13221,13 +13228,30 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialAdditionalChallenge'
         - $ref: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
+    OauthCredentialAdditionalChallengeFields:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - OAUTH
+          description: Discriminator value identifying this as an additional-credential challenge for an OAuth credential.
+    OauthCredentialAdditionalChallenge:
+      title: OAuth Credential Additional Challenge
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialAdditionalChallenge'
+        - $ref: '#/components/schemas/OauthCredentialAdditionalChallengeFields'
     AuthCredentialAdditionalChallengeOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
+        - $ref: '#/components/schemas/OauthCredentialAdditionalChallenge'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
+          OAUTH: '#/components/schemas/OauthCredentialAdditionalChallenge'
     AuthCredentialVerifyRequest:
       type: object
       required:
