@@ -346,6 +346,8 @@ resources:
           email_otp_credential_additional_challenge_fields: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
           oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
           oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
+          oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
+          oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
   exchange_rates:
     methods:
       list:
@@ -857,6 +859,7 @@ openapi:
       args:
         target:
           - "$.components.schemas.EmailOtpCredentialVerifyRequest.allOf[0]"
+          - "$.components.schemas.OauthCredentialVerifyRequest.allOf[0]"
         keys: [ "$ref" ]
 
 codeflow:
