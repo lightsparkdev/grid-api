@@ -4080,6 +4080,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/sessions:
+    get:
+      summary: List active sessions
+      description: |-
+        Retrieve all active authentication sessions on an Embedded Wallet internal account. A session is created each time a credential is verified via `POST /auth/credentials/{id}/verify`, and remains active until its `expiresAt` passes or it is revoked via `DELETE /auth/sessions/{id}`.
+
+        The response is not paginated: an internal account is expected to have a small, bounded number of concurrent sessions (one per signed-in device, typically 1–4), so all results are returned inline.
+      operationId: listAuthSessions
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          description: Internal account id whose sessions to list.
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '200':
+          description: Active authentication sessions on the internal account. Returns an empty `data` array when the internal account has no active sessions or when `accountId` does not match any internal account visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionListResponse'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the `accountId` query parameter is missing or not a valid `InternalAccount:<uuid>` identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   incoming-payment:
     post:
@@ -13707,21 +13752,25 @@ components:
           OAUTH: '#/components/schemas/OauthCredentialVerifyRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
     AuthSession:
+      title: Authentication Session
+      description: An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification). Only the verify response includes `encryptedSessionSigningKey` — it is delivered exactly once at the moment the session is issued and is never returned by the list endpoint.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
           required:
             - id
-            - encryptedSessionSigningKey
             - expiresAt
           properties:
             id:
               type: string
-              description: System-generated unique identifier for the session. Pass this value to `DELETE /auth/sessions/{id}` to revoke the session before `expiresAt`. Overrides the `id` inherited from `AuthMethod` so the verify response identifies the session that was just issued; the caller already has the authenticating credential's `AuthMethod` id from the path of the verify request.
+              description: System-generated unique identifier for the session. Pass this value to `DELETE /auth/sessions/{id}` to revoke the session before `expiresAt`. Overrides the `id` inherited from `AuthMethod` so this response identifies the session rather than the authenticating credential.
               example: Session:019542f5-b3e7-1d02-0000-000000000003
             encryptedSessionSigningKey:
               type: string
-              description: 'HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verify request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.'
+              description: |-
+                HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verify request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
+
+                Only returned from `POST /auth/credentials/{id}/verify` (where the session is first issued). Omitted from responses that simply surface existing sessions (e.g. `GET /auth/sessions`) — Grid does not retain the plaintext key after the client has decrypted it.
               example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
             expiresAt:
               type: string
@@ -13755,6 +13804,16 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    SessionListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of active authentication sessions for the internal account.
+          items:
+            $ref: '#/components/schemas/AuthSession'
     WebhookType:
       type: string
       enum:
