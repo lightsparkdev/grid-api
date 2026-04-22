@@ -361,9 +361,11 @@ resources:
       sessions:
         methods:
           list: get /auth/sessions
+          delete: delete /auth/sessions/{id}
         models:
           session: '#/components/schemas/Session'
           session_list_response: '#/components/schemas/SessionListResponse'
+          session_delete_challenge: '#/components/schemas/SessionDeleteChallenge'
   exchange_rates:
     methods:
       list:
