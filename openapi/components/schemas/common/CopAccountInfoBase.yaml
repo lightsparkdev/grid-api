@@ -3,6 +3,7 @@ required:
 - accountType
 - accountNumber
 - bankAccountType
+- bankName
 - phoneNumber
 properties:
   accountType:
@@ -20,6 +21,9 @@ properties:
     enum:
     - CHECKING
     - SAVINGS
+  bankName:
+    type: string
+    description: The name of the bank
   phoneNumber:
     type: string
     description: The phone number in international format

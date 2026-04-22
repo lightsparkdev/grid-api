@@ -27,5 +27,11 @@ properties:
   countryOfResidence:
     type: string
     description: The country of residence of the beneficiary
+  documentType:
+    type: string
+    description: The type of identity document (e.g., national ID, passport)
+  documentNumber:
+    type: string
+    description: The identity document number
   address:
     $ref: ./Address.yaml
