@@ -363,6 +363,12 @@ resources:
           delete: delete /auth/sessions/{id}
         models:
           session_list_response: '#/components/schemas/SessionListResponse'
+
+  internal_accounts:
+    methods:
+      export: post /internal-accounts/{id}/export
+    models:
+      internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
   exchange_rates:
     methods:
       list:
