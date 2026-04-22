@@ -20,4 +20,4 @@ allOf:
           Wallet. The resulting signature is base64-encoded and passed as the
           `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute`
           to authorize the outbound transfer from the wallet.
-        example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"02f8710182...","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
+        example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
