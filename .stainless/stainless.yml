@@ -329,6 +329,7 @@ resources:
           list: get /auth/credentials
           verify: post /auth/credentials/{id}/verify
           challenge: post /auth/credentials/{id}/challenge
+          delete: delete /auth/credentials/{id}
         models:
           auth_method_type: '#/components/schemas/AuthMethodType'
           auth_method: '#/components/schemas/AuthMethod'
@@ -338,7 +339,7 @@ resources:
           auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
           auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
           auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
-          auth_credential_additional_challenge: '#/components/schemas/AuthCredentialAdditionalChallenge'
+          auth_signed_request_challenge: '#/components/schemas/AuthSignedRequestChallenge'
           email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
           email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
           email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
@@ -429,6 +430,7 @@ resources:
       pkr_beneficiary: "#/components/schemas/PkrBeneficiary"
       ethereum_wallet_external_account_info: "#/components/schemas/EthereumWalletExternalAccountInfo"
       verification_error: "#/components/schemas/VerificationError"
+      signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
   crypto:
     methods:
       estimate_withdrawal_fee: post /crypto/estimate-withdrawal-fee
@@ -850,9 +852,9 @@ openapi:
         Remove type $ref from auth credential base schemas so the inline
         single-value enums in each *CredentialCreateRequestFields /
         *CredentialVerifyRequestFields variant become the sole definition,
-        avoiding allOf type conflicts. `AuthCredentialAdditionalChallenge`
-        is not included — it's a flat schema with no variants, so the
-        base `type` field is already the sole definition.
+        avoiding allOf type conflicts. `AuthSignedRequestChallenge` is not
+        included — it has no discriminated variants, so the base `type`
+        field (inherited via allOf) is already the sole definition.
       args:
         target:
           - "$.components.schemas.AuthCredentialCreateRequest.properties"

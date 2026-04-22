@@ -178,6 +178,8 @@ paths:
     $ref: paths/tokens/tokens_{tokenId}.yaml
   /auth/credentials:
     $ref: paths/auth/auth_credentials.yaml
+  /auth/credentials/{id}:
+    $ref: paths/auth/auth_credentials_{id}.yaml
   /auth/credentials/{id}/verify:
     $ref: paths/auth/auth_credentials_{id}_verify.yaml
   /auth/credentials/{id}/challenge:
