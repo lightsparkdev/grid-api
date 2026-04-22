@@ -358,6 +358,12 @@ resources:
           auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
           passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
           passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
+      sessions:
+        methods:
+          list: get /auth/sessions
+        models:
+          session: '#/components/schemas/Session'
+          session_list_response: '#/components/schemas/SessionListResponse'
   exchange_rates:
     methods:
       list:

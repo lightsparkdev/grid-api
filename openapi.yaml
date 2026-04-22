@@ -4080,6 +4080,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/sessions:
+    get:
+      summary: List active sessions
+      description: |-
+        Retrieve all active authentication sessions on an Embedded Wallet internal account. A session is created each time a credential is verified via `POST /auth/credentials/{id}/verify`, and remains active until its `expiresAt` passes or it is revoked via `DELETE /auth/sessions/{id}`.
+
+        The response is not paginated: an internal account is expected to have a small, bounded number of concurrent sessions (one per signed-in device, typically 1–4), so all results are returned inline.
+      operationId: listAuthSessions
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          description: Internal account id whose sessions to list.
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '200':
+          description: Active authentication sessions on the internal account. Returns an empty `data` array when the internal account has no active sessions or when `accountId` does not match any internal account visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionListResponse'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the `accountId` query parameter is missing or not a valid `InternalAccount:<uuid>` identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   incoming-payment:
     post:
@@ -13784,6 +13829,57 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    Session:
+      title: Authentication Session
+      type: object
+      required:
+        - id
+        - accountId
+        - type
+        - nickname
+        - createdAt
+        - updatedAt
+        - expiresAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the session.
+          example: Session:019542f5-b3e7-1d02-0000-000000000003
+        accountId:
+          type: string
+          description: Identifier of the internal account this session belongs to.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        nickname:
+          type: string
+          description: Human-readable identifier inherited from the authentication credential that issued this session (email address for `EMAIL_OTP`, the OIDC email claim for `OAUTH`, user-chosen name for `PASSKEY`).
+          example: example@lightspark.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session was created.
+          example: '2026-04-08T15:30:01Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session was last updated.
+          example: '2026-04-08T15:35:00Z'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which the session is no longer valid.
+          example: '2026-04-09T15:30:01Z'
+    SessionListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of active authentication sessions for the internal account.
+          items:
+            $ref: '#/components/schemas/Session'
     WebhookType:
       type: string
       enum:
