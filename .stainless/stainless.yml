@@ -366,6 +366,13 @@ resources:
           session: '#/components/schemas/Session'
           session_list_response: '#/components/schemas/SessionListResponse'
           session_delete_challenge: '#/components/schemas/SessionDeleteChallenge'
+
+  internal_accounts:
+    methods:
+      export: post /internal-accounts/{id}/export
+    models:
+      internal_account_export_challenge: '#/components/schemas/InternalAccountExportChallenge'
+      internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
   exchange_rates:
     methods:
       list:

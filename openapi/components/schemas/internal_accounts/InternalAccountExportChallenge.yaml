@@ -1,0 +1,11 @@
+title: Internal Account Export Challenge
+allOf:
+  - $ref: ../common/SignedRequestChallenge.yaml
+  - type: object
+    required:
+      - id
+    properties:
+      id:
+        type: string
+        description: The id of the internal account being exported.
+        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002

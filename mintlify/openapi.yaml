@@ -3615,6 +3615,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/export:
+    post:
+      summary: Export internal account wallet credentials
+      description: |
+        Export the wallet credentials of an Embedded Wallet internal account. Wallet credentials are returned encrypted to the client public key that was supplied when the authorizing session was verified.
+
+        Export is a two-step signed-retry flow (same pattern as add-additional credential, revoke credential, and revoke session):
+
+        1. Call `POST /internal-accounts/{id}/export` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the same internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with `encryptedWalletCredentials`, which the client can decrypt with its local private key.
+      operationId: exportInternalAccount
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the internal account to export.
+          required: true
+          schema:
+            type: string
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the target internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      responses:
+        '200':
+          description: Signed retry accepted. Returns the encrypted wallet credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccountExportResponse'
+        '202':
+          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the target internal account, along with a `requestId` that must be echoed back on the retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccountExportChallenge'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending export challenge for this internal account, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /auth/credentials:
     post:
       summary: Create an authentication credential
@@ -13448,6 +13522,55 @@ components:
           description: A list of permissions to grant to the token
           items:
             $ref: '#/components/schemas/Permission'
+    InternalAccountExportResponse:
+      title: Internal Account Export Response
+      type: object
+      required:
+        - id
+        - encryptedWalletCredentials
+      properties:
+        id:
+          type: string
+          description: The id of the internal account that was exported.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        encryptedWalletCredentials:
+          type: string
+          description: Encrypted wallet mnemonic, sealed to the `clientPublicKey` supplied on the verify request. Decrypt with the matching private key, then manage the mnemonic securely — it is the master key of the self-custodial Embedded Wallet. Encoded as base58check (same format as `AuthSession.encryptedSessionSigningKey`).
+          example: 5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp
+    SignedRequestChallenge:
+      title: Signed Request Challenge
+      type: object
+      required:
+        - payloadToSign
+        - requestId
+        - expiresAt
+      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential revocation, session revocation, wallet export, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
+      properties:
+        payloadToSign:
+          type: string
+          description: Payload that must be signed with the session private key of a verified authentication credential. The resulting signature is passed as the `Grid-Wallet-Signature` header on the retry of the originating request to complete the operation.
+          example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+        requestId:
+          type: string
+          description: Unique identifier for this request. Must be echoed in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
+          example: '2026-04-08T15:35:00Z'
+    InternalAccountExportChallenge:
+      title: Internal Account Export Challenge
+      allOf:
+        - $ref: '#/components/schemas/SignedRequestChallenge'
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              description: The id of the internal account being exported.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
     AuthMethodType:
       type: string
       enum:
@@ -13685,28 +13808,6 @@ components:
         requestId:
           type: string
           description: Unique identifier for this additional-credential registration request. Must be echoed in the `Request-Id` header on the signed retry of `POST /auth/credentials` so the server can correlate the retry with the issued challenge.
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
-        expiresAt:
-          type: string
-          format: date-time
-          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
-          example: '2026-04-08T15:35:00Z'
-    SignedRequestChallenge:
-      title: Signed Request Challenge
-      type: object
-      required:
-        - payloadToSign
-        - requestId
-        - expiresAt
-      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential revocation, session revocation, wallet export, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
-      properties:
-        payloadToSign:
-          type: string
-          description: Payload that must be signed with the session private key of a verified authentication credential. The resulting signature is passed as the `Grid-Wallet-Signature` header on the retry of the originating request to complete the operation.
-          example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
-        requestId:
-          type: string
-          description: Unique identifier for this request. Must be echoed in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
           example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
         expiresAt:
           type: string

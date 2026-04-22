@@ -1,0 +1,20 @@
+title: Internal Account Export Response
+type: object
+required:
+  - id
+  - encryptedWalletCredentials
+properties:
+  id:
+    type: string
+    description: The id of the internal account that was exported.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  encryptedWalletCredentials:
+    type: string
+    description: >-
+      Encrypted wallet mnemonic, sealed to the `clientPublicKey`
+      supplied on the verify request. Decrypt with the matching
+      private key, then manage the mnemonic securely — it is the
+      master key of the self-custodial Embedded Wallet. Encoded as
+      base58check (same format as
+      `AuthSession.encryptedSessionSigningKey`).
+    example: 5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp
