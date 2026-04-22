@@ -337,19 +337,14 @@ resources:
           auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
           auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
           auth_credential_additional_challenge: '#/components/schemas/AuthCredentialAdditionalChallenge'
-          auth_credential_additional_challenge_one_of: '#/components/schemas/AuthCredentialAdditionalChallengeOneOf'
           email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
           email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
           email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
           email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
-          email_otp_credential_additional_challenge: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
-          email_otp_credential_additional_challenge_fields: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
           oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
           oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
           oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
           oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
-          oauth_credential_additional_challenge: '#/components/schemas/OauthCredentialAdditionalChallenge'
-          oauth_credential_additional_challenge_fields: '#/components/schemas/OauthCredentialAdditionalChallengeFields'
           passkey_attestation: '#/components/schemas/PasskeyAttestation'
           passkey_assertion: '#/components/schemas/PasskeyAssertion'
           passkey_credential_create_request: '#/components/schemas/PasskeyCredentialCreateRequest'
@@ -852,13 +847,14 @@ openapi:
       reason: >-
         Remove type $ref from auth credential base schemas so the inline
         single-value enums in each *CredentialCreateRequestFields /
-        *CredentialVerifyRequestFields / *CredentialAdditionalChallengeFields
-        variant become the sole definition, avoiding allOf type conflicts
+        *CredentialVerifyRequestFields variant become the sole definition,
+        avoiding allOf type conflicts. `AuthCredentialAdditionalChallenge`
+        is not included — it's a flat schema with no variants, so the
+        base `type` field is already the sole definition.
       args:
         target:
           - "$.components.schemas.AuthCredentialCreateRequest.properties"
           - "$.components.schemas.AuthCredentialVerifyRequest.properties"
-          - "$.components.schemas.AuthCredentialAdditionalChallenge.properties"
         keys: [ "type" ]
 
     # ── Remove $ref to AuthCredentialVerifyRequest from verify variants ──
