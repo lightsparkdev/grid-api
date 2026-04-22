@@ -1,0 +1,22 @@
+allOf:
+  - $ref: ./AuthMethod.yaml
+  - type: object
+    required:
+      - encryptedSessionSigningKey
+      - expiresAt
+    properties:
+      encryptedSessionSigningKey:
+        type: string
+        description: >-
+          HPKE-encrypted session signing key, sealed to the `clientPublicKey`
+          supplied when the credential was created. Encoded as a base58check
+          string: the decoded payload is a 33-byte compressed P-256 encapsulated
+          public key followed by AES-256-GCM ciphertext. The client decrypts
+          this key with its private key and uses it to sign subsequent Embedded
+          Wallet requests until `expiresAt`.
+        example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
+      expiresAt:
+        type: string
+        format: date-time
+        description: Timestamp after which the session signing key is no longer valid.
+        example: '2026-04-08T15:35:00Z'

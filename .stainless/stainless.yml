@@ -320,6 +320,29 @@ resources:
       list: get /tokens
       retrieve: get /tokens/{tokenId}
       delete: delete /tokens/{tokenId}
+
+  auth:
+    subresources:
+      credentials:
+        methods:
+          create: post /auth/credentials
+          verify: post /auth/credentials/{id}/verify
+        models:
+          auth_method_type: '#/components/schemas/AuthMethodType'
+          auth_method: '#/components/schemas/AuthMethod'
+          auth_session: '#/components/schemas/AuthSession'
+          auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
+          auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
+          auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
+          auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
+          auth_credential_additional_challenge: '#/components/schemas/AuthCredentialAdditionalChallenge'
+          auth_credential_additional_challenge_one_of: '#/components/schemas/AuthCredentialAdditionalChallengeOneOf'
+          email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
+          email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+          email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
+          email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
+          email_otp_credential_additional_challenge: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
+          email_otp_credential_additional_challenge_fields: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
   exchange_rates:
     methods:
       list:
@@ -805,6 +828,31 @@ openapi:
           - "$.components.schemas.AccountTransactionDestination.allOf[0]"
           - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
           - "$.components.schemas.ExternalAccountDetailsTransactionDestination.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── type: auth credential base schemas ──
+    - command: remove
+      reason: >-
+        Remove type $ref from auth credential base schemas so the inline
+        single-value enums in each *CredentialCreateRequestFields /
+        *CredentialVerifyRequestFields / *CredentialAdditionalChallengeFields
+        variant become the sole definition, avoiding allOf type conflicts
+      args:
+        target:
+          - "$.components.schemas.AuthCredentialCreateRequest.properties"
+          - "$.components.schemas.AuthCredentialVerifyRequest.properties"
+          - "$.components.schemas.AuthCredentialAdditionalChallenge.properties"
+        keys: [ "type" ]
+
+    # ── Remove $ref to AuthCredentialVerifyRequest from verify variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to AuthCredentialVerifyRequest from verify variants
+        because the base schema becomes an empty object after stripping the
+        type discriminator (no other shared fields on verify)
+      args:
+        target:
+          - "$.components.schemas.EmailOtpCredentialVerifyRequest.allOf[0]"
         keys: [ "$ref" ]
 
 codeflow:
