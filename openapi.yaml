@@ -3770,6 +3770,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+    get:
+      summary: List authentication credentials
+      description: |-
+        Retrieve all authentication credentials registered on an Embedded Wallet internal account.
+
+        The response is not paginated: an internal account is expected to have a small, bounded number of credentials (typically 1–5), so all results are returned inline. Additional per-credential detail (such as active session expiry) is available on `GET /auth/sessions`.
+      operationId: listAuthCredentials
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          description: Internal account id whose authentication credentials to list.
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '200':
+          description: Authentication credentials registered on the internal account. Returns an empty `data` array when the internal account has no credentials or when `accountId` does not match any internal account visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthCredentialListResponse'
+              examples:
+                multipleCredentials:
+                  summary: Internal account with an email OTP and a passkey credential
+                  value:
+                    data:
+                      - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                        accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        type: EMAIL_OTP
+                        nickname: example@lightspark.com
+                        createdAt: '2026-04-08T15:30:01Z'
+                        updatedAt: '2026-04-08T15:30:01Z'
+                      - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000003
+                        accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        type: PASSKEY
+                        nickname: iPhone Face-ID
+                        createdAt: '2026-04-09T10:15:00Z'
+                        updatedAt: '2026-04-09T10:15:00Z'
+                empty:
+                  summary: No credentials registered on the account
+                  value:
+                    data: []
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the `accountId` query parameter is missing or not a valid `InternalAccount:<uuid>` identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /auth/credentials/{id}/verify:
     post:
       summary: Verify an authentication credential
@@ -13209,6 +13274,50 @@ components:
         - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
         - `EMAIL_OTP`: A one-time password delivered to the user's email address.
         - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+    AuthMethod:
+      type: object
+      required:
+        - id
+        - accountId
+        - type
+        - nickname
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the authentication credential.
+          example: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+        accountId:
+          type: string
+          description: Identifier of the internal account that this credential authenticates.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        nickname:
+          type: string
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the nickname provided at registration time.
+          example: example@lightspark.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-04-08T15:30:01Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-04-08T15:35:00Z'
+    AuthCredentialListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of authentication credentials registered on the internal account.
+          items:
+            $ref: '#/components/schemas/AuthMethod'
     AuthCredentialCreateRequest:
       type: object
       required:
@@ -13329,40 +13438,6 @@ components:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
-    AuthMethod:
-      type: object
-      required:
-        - id
-        - accountId
-        - type
-        - nickname
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          description: System-generated unique identifier for the authentication credential.
-          example: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
-        accountId:
-          type: string
-          description: Identifier of the internal account that this credential authenticates.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        type:
-          $ref: '#/components/schemas/AuthMethodType'
-        nickname:
-          type: string
-          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the nickname provided at registration time.
-          example: example@lightspark.com
-        createdAt:
-          type: string
-          format: date-time
-          description: Creation timestamp.
-          example: '2026-04-08T15:30:01Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: Last update timestamp.
-          example: '2026-04-08T15:35:00Z'
     AuthMethodResponse:
       title: Auth Method Response
       description: 'Strict wrapper around `AuthMethod` used inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH` branches. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
