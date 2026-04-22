@@ -91,6 +91,7 @@ properties:
           accountNumber: "1234567890"
           routingNumber: "021000021"
           bankName: "Chase Bank"
+          phoneNumber: "+1234567890"
           reference: "UMA-Q12345-REF"
         instructionsNotes: "Include reference UMA-Q12345-REF in memo"
       - accountOrWalletInfo:
