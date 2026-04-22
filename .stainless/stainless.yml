@@ -348,6 +348,8 @@ resources:
           oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
           oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
           oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
+          oauth_credential_additional_challenge: '#/components/schemas/OauthCredentialAdditionalChallenge'
+          oauth_credential_additional_challenge_fields: '#/components/schemas/OauthCredentialAdditionalChallengeFields'
   exchange_rates:
     methods:
       list:
