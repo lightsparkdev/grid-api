@@ -326,12 +326,14 @@ resources:
       credentials:
         methods:
           create: post /auth/credentials
+          list: get /auth/credentials
           verify: post /auth/credentials/{id}/verify
           challenge: post /auth/credentials/{id}/challenge
         models:
           auth_method_type: '#/components/schemas/AuthMethodType'
           auth_method: '#/components/schemas/AuthMethod'
           auth_session: '#/components/schemas/AuthSession'
+          auth_credential_list_response: '#/components/schemas/AuthCredentialListResponse'
           auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
           auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
           auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
