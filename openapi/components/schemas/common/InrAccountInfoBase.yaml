@@ -14,3 +14,6 @@ properties:
     minLength: 3
     maxLength: 255
     pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
+example:
+  accountType: INR_ACCOUNT
+  vpa: user@upi

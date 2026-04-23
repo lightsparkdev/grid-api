@@ -1,6 +1,7 @@
 type: object
 required:
 - accountType
+- bankName
 - accountNumber
 - branchCode
 - bankAccountType
@@ -9,6 +10,11 @@ properties:
     type: string
     enum:
     - JMD_ACCOUNT
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
   accountNumber:
     type: string
     description: The account number of the bank
@@ -26,3 +32,9 @@ properties:
     enum:
     - CHECKING
     - SAVINGS
+example:
+  accountType: JMD_ACCOUNT
+  bankName: Example Bank
+  accountNumber: '1234567890'
+  branchCode: '11111'
+  bankAccountType: CHECKING
