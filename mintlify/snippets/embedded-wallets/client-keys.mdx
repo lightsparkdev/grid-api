@@ -1,0 +1,305 @@
+Every signed Embedded Wallet action uses two key pairs:
+
+| Key pair | Where it lives | What it does |
+|---|---|---|
+| **Client key pair** (P-256) | On the customer's device, generated fresh per verification request | Used as the HPKE recipient key so Grid can encrypt the session signing key to the client. Ephemeral — one pair per `POST /auth/credentials/{id}/verify` call. |
+| **Session signing key** (P-256) | Issued by Grid, encrypted to the client public key, decrypted and held on the device | Signs every wallet action for the lifetime of the session (default 15 minutes). |
+
+This page covers generating the client key pair, sending the public key to your backend, decrypting the session signing key, and signing payloads. Everything here runs **on the client**; your integrator backend only relays opaque byte strings.
+
+## 1. Generate a client key pair
+
+Generate a fresh P-256 key pair for every `POST /auth/credentials/{id}/verify` call and for every wallet export. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded — a 130-character string starting with `04` — to your integrator backend, which passes it to Grid as `clientPublicKey`. The Web Crypto, iOS, and Android APIs shown below all produce this format natively.
+
+<Tip>
+  For local development, you can generate a P-256 key pair from the command line:
+  ```bash
+  # Private key (PKCS#8 PEM)
+  openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out private.pem
+
+  # Public key (SPKI PEM)
+  openssl pkey -in private.pem -pubout -out public.pem
+  ```
+</Tip>
+
+<CodeGroup>
+```typescript Web (TypeScript)
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+// Generate a non-extractable P-256 key pair in the browser.
+// The private key never leaves Web Crypto; only the public key is exported.
+async function generateClientKeyPair(): Promise<{
+  keyPair: CryptoKeyPair;
+  publicKeyHex: string;
+}> {
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    false, // private key non-extractable
+    ["deriveBits"],
+  );
+
+  const raw = new Uint8Array(
+    await crypto.subtle.exportKey("raw", keyPair.publicKey),
+  );
+  // exportKey("raw") returns the 65-byte uncompressed form (0x04 || X || Y).
+  const publicKeyHex = bytesToHex(raw);
+
+  return { keyPair, publicKeyHex };
+}
+```
+
+```kotlin Android (Kotlin)
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import java.security.KeyPairGenerator
+import java.security.interfaces.ECPublicKey
+import java.security.spec.ECPoint
+
+data class ClientKeyPair(val alias: String, val publicKeyHex: String)
+
+private fun BigInteger.toFixed32(): ByteArray {
+    val bytes = toByteArray()
+    return ByteArray(32).also { out ->
+        val copyFrom = maxOf(0, bytes.size - 32)
+        val copyLength = bytes.size - copyFrom
+        System.arraycopy(bytes, copyFrom, out, 32 - copyLength, copyLength)
+    }
+}
+
+fun generateClientKeyPair(alias: String): ClientKeyPair {
+    val generator = KeyPairGenerator.getInstance(
+        KeyProperties.KEY_ALGORITHM_EC,
+        "AndroidKeyStore",
+    )
+    generator.initialize(
+        KeyGenParameterSpec.Builder(
+            alias,
+            KeyProperties.PURPOSE_AGREE_KEY,
+        )
+            .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+            .build(),
+    )
+    val keyPair = generator.generateKeyPair()
+    val point: ECPoint = (keyPair.public as ECPublicKey).w
+    val x = point.affineX.toFixed32()
+    val y = point.affineY.toFixed32()
+    val uncompressed = byteArrayOf(0x04) + x + y
+    val hex = uncompressed.joinToString("") { "%02x".format(it) }
+    return ClientKeyPair(alias = alias, publicKeyHex = hex)
+}
+```
+
+```swift iOS (Swift)
+import CryptoKit
+import Security
+
+struct ClientKeyPair {
+    let privateKey: P256.KeyAgreement.PrivateKey
+    let publicKeyHex: String
+}
+
+func generateClientKeyPair() -> ClientKeyPair {
+    let privateKey = P256.KeyAgreement.PrivateKey()
+    // x963Representation returns uncompressed SEC1 (65 bytes starting with 0x04).
+    let raw = privateKey.publicKey.x963Representation
+    let hex = raw.map { String(format: "%02x", $0) }.joined()
+    return ClientKeyPair(privateKey: privateKey, publicKeyHex: hex)
+}
+```
+</CodeGroup>
+
+<Note>
+  The private key **must not leave the device**. Your integrator backend only ever sees `publicKeyHex`.
+</Note>
+
+## 2. Verify the credential and receive the encrypted session signing key
+
+Your client sends `publicKeyHex` to your integrator backend along with whatever the credential type requires (OTP value, OIDC token, or WebAuthn assertion — see <a href="authentication">Authentication</a>). Your backend calls `POST /auth/credentials/{id}/verify` and returns the `encryptedSessionSigningKey` from Grid's response to the client.
+
+Grid encrypts the session signing key with **HPKE** (RFC 9180) using the suite:
+
+- KEM: DHKEM(P-256, HKDF-SHA256)
+- KDF: HKDF-SHA256
+- AEAD: AES-256-GCM
+
+The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag).
+
+## 3. Decrypt the session signing key
+
+<CodeGroup>
+```typescript Web (TypeScript)
+// npm i @hpke/core @hpke/dhkem-p256 bs58check
+import { Aes256Gcm, CipherSuite, HkdfSha256 } from "@hpke/core";
+import { DhkemP256HkdfSha256 } from "@hpke/dhkem-p256";
+import bs58check from "bs58check";
+
+async function decryptSessionSigningKey(
+  clientKeyPair: CryptoKeyPair,
+  encryptedSessionSigningKey: string,
+): Promise<Uint8Array> {
+  const payload = bs58check.decode(encryptedSessionSigningKey);
+  const enc = payload.slice(0, 33); // compressed P-256 encapsulated public key
+  const ciphertext = payload.slice(33);
+
+  const suite = new CipherSuite({
+    kem: new DhkemP256HkdfSha256(),
+    kdf: new HkdfSha256(),
+    aead: new Aes256Gcm(),
+  });
+
+  const recipient = await suite.createRecipientContext({
+    recipientKey: clientKeyPair.privateKey,
+    enc,
+  });
+  const plaintext = await recipient.open(ciphertext);
+  return new Uint8Array(plaintext); // 32-byte P-256 session private key (scalar)
+}
+```
+
+```kotlin Android (Kotlin)
+// Uses BouncyCastle for HPKE. implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+// Decoded session signing key is a 32-byte P-256 private scalar.
+import org.bouncycastle.crypto.hpke.HPKE
+import org.bouncycastle.crypto.hpke.HPKEContextWithEncapsulation
+import java.security.KeyStore
+
+fun decryptSessionSigningKey(
+    alias: String,
+    encryptedSessionSigningKey: String, // base58check
+): ByteArray {
+    val payload = Base58Check.decode(encryptedSessionSigningKey)
+    val enc = payload.copyOfRange(0, 33)
+    val ciphertext = payload.copyOfRange(33, payload.size)
+
+    val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+    val privateKey = keyStore.getKey(alias, null) as java.security.interfaces.ECPrivateKey
+
+    val hpke = HPKE(
+        HPKE.mode_base,
+        HPKE.kem_P256_SHA256,
+        HPKE.kdf_HKDF_SHA256,
+        HPKE.aead_AES_GCM256,
+    )
+    val recipient = hpke.setupBaseR(enc, privateKey, byteArrayOf())
+    return recipient.open(byteArrayOf(), ciphertext)
+}
+```
+
+```swift iOS (Swift)
+// swift-crypto 3.x exposes HPKE via CryptoKit.
+// The decoded session signing key is a 32-byte P-256 private scalar.
+import CryptoKit
+import Foundation
+
+func decryptSessionSigningKey(
+    clientPrivateKey: P256.KeyAgreement.PrivateKey,
+    encryptedSessionSigningKey: String, // base58check
+) throws -> Data {
+    let payload = try Base58Check.decode(encryptedSessionSigningKey)
+    let enc = payload.prefix(33)
+    let ciphertext = payload.suffix(from: 33)
+
+    var recipient = try HPKE.Recipient(
+        privateKey: clientPrivateKey,
+        ciphersuite: .P256_SHA256_AES_GCM_256,
+        info: Data(),
+        encapsulatedKey: Data(enc),
+    )
+    return try recipient.open(Data(ciphertext), authenticating: Data())
+}
+```
+</CodeGroup>
+
+The plaintext is a **32-byte P-256 private scalar**. Treat it as the session signing key for the rest of the session.
+
+## 4. Sign a `payloadToSign`
+
+Grid returns `payloadToSign` strings from several endpoints:
+
+- `POST /quotes` (when the source is an Embedded Wallet) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
+- `POST /auth/credentials` (adding an additional credential) — 202 response body.
+- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export` — all 202 response bodies.
+
+Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The signature is ECDSA over SHA-256 using the session signing key, DER-encoded, then base64-encoded. Pass it as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, the `Request-Id` header echoed back from the 202).
+
+<CodeGroup>
+```typescript Web (TypeScript)
+// npm i @noble/curves @noble/hashes
+import { p256 } from "@noble/curves/p256";
+import { sha256 } from "@noble/hashes/sha256";
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
+function signPayload(
+  sessionPrivateKeyBytes: Uint8Array, // 32 bytes, from decryptSessionSigningKey
+  payloadToSign: string,
+): string {
+  const digest = sha256(new TextEncoder().encode(payloadToSign));
+  const signature = p256.sign(digest, sessionPrivateKeyBytes);
+  return bytesToBase64(signature.toDERRawBytes());
+}
+```
+
+```kotlin Android (Kotlin)
+import java.security.KeyFactory
+import java.security.Signature
+import java.security.spec.ECPrivateKeySpec
+import java.security.spec.ECParameterSpec
+import android.util.Base64
+
+fun signPayload(
+    sessionPrivateScalar: ByteArray, // 32 bytes
+    payloadToSign: String,
+    p256Params: ECParameterSpec,
+): String {
+    val s = java.math.BigInteger(1, sessionPrivateScalar)
+    val privateKey = KeyFactory.getInstance("EC")
+        .generatePrivate(ECPrivateKeySpec(s, p256Params))
+    val signer = Signature.getInstance("SHA256withECDSA").apply {
+        initSign(privateKey)
+        update(payloadToSign.toByteArray(Charsets.UTF_8))
+    }
+    val der = signer.sign() // JCE returns DER-encoded ECDSA
+    return Base64.encodeToString(der, Base64.NO_WRAP)
+}
+```
+
+```swift iOS (Swift)
+import CryptoKit
+import Foundation
+
+func signPayload(
+    sessionPrivateScalar: Data, // 32 bytes
+    payloadToSign: String,
+) throws -> String {
+    let signingKey = try P256.Signing.PrivateKey(rawRepresentation: sessionPrivateScalar)
+    let payload = Data(payloadToSign.utf8)
+    let signature = try signingKey.signature(for: payload)
+    return signature.derRepresentation.base64EncodedString()
+}
+```
+</CodeGroup>
+
+Your backend adds the signature to the retry request:
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE="
+```
+
+## Session lifetime
+
+Sessions are valid for 15 minutes by default. The `AuthSession.expiresAt` field tells you exactly when the session signing key stops being accepted. After expiry, the client must re-verify the credential (see <a href="authentication">Authentication</a>) to obtain a fresh session.
+
+<Warning>
+  If the device is lost or compromised, the user should add a second credential from a trusted device and revoke the compromised one — see <a href="authentication#managing-credentials">Managing credentials</a>. To end the current browser or app session without touching credentials, see <a href="managing-sessions">Sessions</a>.
+</Warning>

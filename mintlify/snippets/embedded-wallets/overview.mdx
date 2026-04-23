@@ -1,0 +1,414 @@
+An Embedded Wallet is a self-custodial wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment.
+
+## Why an Embedded Wallet?
+
+- **Self-custody.** Grid never has unilateral access to move funds. The customer's device is the only party that can authorize a transaction.
+- **Stablecoin-denominated.** Balances are held as USDB. Use the standard `/quotes` API to convert in from fiat or out to any supported Grid bank-account rail (ACH, PIX, CLABE, UPI, IBAN, UMA, …).
+- **Grid-native.** You reuse the customer, internal-account, quote, transaction, and webhook primitives you already integrated for Payouts or P2P. The only thing that's new is an auth + signing layer at the wallet.
+
+## Payment flow
+
+Embedded Wallets ride on the same `/quotes` + `/quotes/{id}/execute` pattern as every other Grid payment. The only thing that's different is that outbound transfers need a client signature.
+
+- **Incoming funds.** Funding a wallet works like any other internal account. Create a quote with the Embedded Wallet as the `destination`, execute it, and Grid converts the source currency into USDB and credits the wallet. No customer approval needed — incoming value is passive.
+- **Outgoing funds.** Withdrawals and transfers out require the customer to authorize them on their device. Grid returns a `payloadToSign` in the quote's `paymentInstructions`; the client signs those bytes with its session signing key and passes the base64 signature as the `Grid-Wallet-Signature` header on `/quotes/{id}/execute`. Only then does Grid release the funds.
+
+Sessions are short-lived (15 minutes by default) and bound to a specific device via the client key pair, so a stolen signature can't be replayed from a different device or after the session expires. Standard transaction webhooks fire throughout the lifecycle — see [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle). The [Quickstart](#quickstart) below walks through an end-to-end withdrawal.
+
+## Architecture
+
+Three parties participate in every signed action:
+
+| Party | Role |
+|---|---|
+| **Client** | The customer's device (browser, iOS app, or Android app). Generates the client key pair, runs WebAuthn, decrypts the session signing key, and signs outbound requests. |
+| **Integrator backend** | Your server. Holds your Grid API credentials, brokers every call to Grid on behalf of the client, and issues WebAuthn challenges for initial passkey registration. |
+| **Grid** | Verifies auth credentials, issues session signing keys (encrypted to the client's public key), and enforces that every wallet action is authorized. |
+
+The client **never** talks to Grid directly. Every request flows client → integrator backend → Grid.
+
+## Auth credentials, client keys, and session signing keys
+
+Three distinct pieces of crypto collaborate to authorize actions on the Embedded Wallet (withdrawals, credential changes, session revocations, and wallet exports):
+
+| Piece | Where it lives | How long it lives | What it proves |
+|---|---|---|---|
+| **Auth credential** — passkey, OIDC token, or email OTP | Registered on the wallet; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this wallet."* Used to authenticate the user at the start of each session. |
+| **Client key pair** (P-256) | Generated on the client device for each verification request; private key stays in device-local secure storage | One verification request | Binds a given session signing key delivery to the exact device that asked for it — Grid encrypts the session to this public key, so only this device can decrypt. |
+| **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific wallet action was approved on an authenticated device."* Signs the `payloadToSign` Grid returns on quotes, credential changes, session revocations, and wallet exports. |
+
+The flow is always the same: verify an auth credential → receive a short-lived session signing key → sign `payloadToSign` bytes on the client → pass the signature as the `Grid-Wallet-Signature` header on the request that actually moves funds or changes account state. This applies to withdrawals, adding or removing credentials, revoking sessions, and exporting the wallet seed.
+
+See <a href="client-keys">Client keys & signing</a> for the full key-management and signing reference, and <a href="authentication">Authentication</a> for the per-credential-type flows.
+
+## Prerequisites
+
+<Warning>
+  Customers who hold an Embedded Wallet must be KYC/KYB verified before any funds can move in or out. This quickstart picks up after KYC is complete.
+
+  In sandbox, customers are automatically KYC approved on creation so you can skip straight to wallet setup.
+</Warning>
+
+You also need:
+
+- A platform configured with `USDB` in its supported currencies. In sandbox, USDB is enabled by default alongside `USD` and `USDC`.
+- Sandbox or production API credentials with access to the `Embedded Wallet Auth` and `Internal Accounts` endpoints.
+
+```bash
+export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
+export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
+export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
+```
+
+## Quickstart
+
+The walkthrough below is the happy path: create a customer, find the auto-provisioned wallet, register a passkey, fund it, and withdraw to a bank account. Each step shows the HTTP request your integrator backend makes on behalf of the client.
+
+### 1. Create a customer
+
+Create the customer record. An Embedded Wallet is provisioned automatically whenever a customer is created on a platform that has `USDB` in its supported currencies — you don't need to pass it on the customer.
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerType": "INDIVIDUAL",
+    "platformCustomerId": "ind-9f84e0c2",
+    "region": "US",
+    "email": "jane@example.com",
+    "fullName": "Jane Doe",
+    "birthDate": "1990-01-15",
+    "nationality": "US"
+  }'
+```
+
+**Response:** `201 Created` with the new `Customer:...` id. In sandbox, the customer is KYC-approved immediately; in production you would now run them through the [KYC / KYB flow](../onboarding/configuring-customers) before any funds can move.
+
+### 2. Find the Embedded Wallet
+
+When a customer is created on a USDB-enabled platform, Grid automatically provisions an Embedded Wallet alongside their other internal accounts. Fetch it by filtering the customer's internal accounts by `type=EMBEDDED_WALLET`.
+
+```bash
+curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "EMBEDDED_WALLET",
+      "balance": {
+        "amount": 0,
+        "currency": {
+          "code": "USDB",
+          "name": "USDB",
+          "decimals": 2
+        }
+      },
+      "fundingPaymentInstructions": [],
+      "createdAt": "2026-04-19T12:00:00Z",
+      "updatedAt": "2026-04-19T12:00:00Z"
+    }
+  ],
+  "hasMore": false,
+  "totalCount": 1
+}
+```
+
+Hold onto the `InternalAccount:...` id — every auth credential is scoped to it.
+
+### 3. Register a passkey credential
+
+Embedded Wallets support three authentication credential types: **passkey**, **OAuth (OIDC)**, and **email OTP**. A passkey is a user-friendly default: biometric, phishing-resistant, and usable across the user's devices.
+
+Registration only binds the passkey to the wallet — it doesn't issue a session. Sessions are created on-demand, when the customer initiates an action that needs a signature (step 7). The full flow with sequence diagram is documented in <a href="authentication#passkey-registration">Authentication</a>; the condensed version:
+
+<Steps>
+  <Step title="Your backend issues a WebAuthn challenge">
+    Generate a random base64url `challenge`, store it short-lived in your session store, and return it to the client.
+  </Step>
+  <Step title="Client runs `navigator.credentials.create()` / platform equivalent">
+    The browser or OS prompts the user for a biometric, returns an `attestation`. The client posts the attestation back to your backend.
+  </Step>
+  <Step title="Your backend calls Grid">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "type": "PASSKEY",
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+        "nickname": "iPhone Face-ID",
+        "challenge": "ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx",
+        "attestation": {
+          "credentialId": "AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY",
+          "clientDataJson": "eyJjaGFsbGVuZ2UiOiJBcktRaTJ5...",
+          "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10...",
+          "transports": ["internal", "hybrid"]
+        }
+      }'
+    ```
+
+    Grid verifies the attestation and replies `201` with the new `AuthMethod:...` id plus the first-authentication `challenge`, `requestId`, and `expiresAt`. Persist the auth method id against the customer — you'll pass it to `/challenge` and `/verify` whenever the customer needs to sign.
+  </Step>
+</Steps>
+
+The passkey is now bound to the wallet. You'll use it to authorize the withdrawal in step 7.
+
+### 4. Fund the wallet
+
+Embedded Wallets behave like any other internal account on the way in — incoming funds do not need the customer's signature. In sandbox, use the sandbox funding endpoint to skip straight to a funded state:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 100000
+  }'
+```
+
+You will receive an `INCOMING_PAYMENT` webhook when the balance updates. The wallet now holds 1,000.00 USDB.
+
+<Tip>
+  To fund from another currency (USD ACH, USDC on-chain, etc.), create a quote with `destination.destinationType: "ACCOUNT"` pointing at the Embedded Wallet's `InternalAccount` id. The quote's `sourceCurrency` can be any supported platform currency; Grid will convert into USDB on execute.
+</Tip>
+
+### 5. Add an external bank account
+
+Add the destination the customer wants to withdraw to. This is a standard external account — nothing Embedded Wallet-specific.
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "platformAccountId": "jane_doe_checking",
+    "accountInfo": {
+      "accountType": "USD_ACCOUNT",
+      "accountNumber": "1234567890",
+      "routingNumber": "021000021",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Jane Doe",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
+        "address": {
+          "line1": "123 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+  }'
+```
+
+**Response:** `201 Created` with the new `ExternalAccount:...` id.
+
+### 6. Create a withdrawal quote
+
+Create a quote with the Embedded Wallet as the source. Grid returns a `payloadToSign` in the quote's payment instructions — this is what the client will sign to authorize the transfer.
+
+```bash
+curl -X POST "$GRID_BASE_URL/quotes" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "Withdrawal to checking"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "status": "PENDING",
+  "createdAt": "2026-04-19T12:05:00Z",
+  "expiresAt": "2026-04-19T12:10:00Z",
+  "source": {
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "currency": "USDB"
+  },
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "USD"
+  },
+  "sendingCurrency": { "code": "USDB", "name": "USDB", "decimals": 2 },
+  "receivingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
+  "totalSendingAmount": 10000,
+  "totalReceivingAmount": 9975,
+  "exchangeRate": 1.0,
+  "feesIncluded": 25,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+  "paymentInstructions": [
+    {
+      "accountOrWalletInfo": {
+        "accountType": "EMBEDDED_WALLET",
+        "payloadToSign": "{\"type\":\"ACTIVITY_TYPE_SIGN_TRANSACTION_V2\",\"timestampMs\":\"1746736509954\",\"organizationId\":\"org_abc123\",\"parameters\":{\"signWith\":\"wallet_abc123def456\",\"unsignedTransaction\":\"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72\",\"type\":\"TRANSACTION_TYPE_ETHEREUM\"},\"generateAppProofs\":true}"
+      },
+      "instructionsNotes": "Sign the payloadToSign byte-for-byte and pass the signature as the Grid-Wallet-Signature header on execute"
+    }
+  ]
+}
+```
+
+### 7. Authenticate and sign
+
+The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with — this is when the passkey actually gets used. The flow is challenge → assertion → verify → decrypt → sign.
+
+<Steps>
+  <Step title="Your backend requests a fresh challenge">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/challenge" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+    ```
+
+    **Response (200):**
+
+    ```json
+    {
+      "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000001",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "type": "PASSKEY",
+      "nickname": "iPhone Face-ID",
+      "createdAt": "2026-04-19T12:00:01Z",
+      "updatedAt": "2026-04-19T12:05:00Z",
+      "challenge": "VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW",
+      "requestId": "7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
+      "expiresAt": "2026-04-19T12:10:00Z"
+    }
+    ```
+
+    Return `challenge` and `requestId` to the client.
+  </Step>
+  <Step title="Client generates a key pair and runs the WebAuthn assertion">
+    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 client key pair</a>, then prompts the authenticator with the Grid-issued challenge:
+
+    ```js
+    const base64urlToBytes = (value) => {
+      const padded = value.replace(/-/g, "+").replace(/_/g, "/")
+        .padEnd(Math.ceil(value.length / 4) * 4, "=");
+      return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+    };
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: base64urlToBytes(gridChallenge),
+        rpId: "yourapp.com",
+        userVerification: "required",
+      },
+    });
+    ```
+
+    Post the assertion plus `clientPublicKey` (uncompressed hex) back to your backend.
+  </Step>
+  <Step title="Your backend verifies the assertion to mint a session">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/verify" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+      -d '{
+        "type": "PASSKEY",
+        "assertion": {
+          "credentialId": "KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew",
+          "clientDataJson": "eyJjaGFsbGVuZ2UiOiJWalo2bzhLZkU5VjNxM0xrUjJuSDVlWjZkTTh5QTF4VyIsIm9yaWdpbiI6Imh0dHBzOi8veW91cmFwcC5jb20iLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0",
+          "authenticatorData": "PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA",
+          "signature": "MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900"
+        },
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
+    ```
+
+    **Response (200):**
+
+    ```json
+    {
+      "id": "Session:019542f5-b3e7-1d02-0000-000000000003",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "type": "PASSKEY",
+      "nickname": "iPhone Face-ID",
+      "encryptedSessionSigningKey": "w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf",
+      "createdAt": "2026-04-19T12:05:01Z",
+      "updatedAt": "2026-04-19T12:05:01Z",
+      "expiresAt": "2026-04-19T12:20:01Z"
+    }
+    ```
+
+    Return `encryptedSessionSigningKey` and `expiresAt` to the client.
+  </Step>
+  <Step title="Client decrypts the session signing key and signs the payload">
+    The client <a href="client-keys#3-decrypt-the-session-signing-key">decrypts</a> `encryptedSessionSigningKey` with the matching client private key, then <a href="client-keys#4-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the resulting session signing key. Return the base64 signature to your backend.
+  </Step>
+</Steps>
+
+<Warning>
+  Sign the `payloadToSign` bytes exactly as Grid returned them. Do not parse, re-serialize, trim, or normalize the JSON — the signature must cover the same bytes Grid's verifier hashes.
+</Warning>
+
+The session signing key is now valid for 15 minutes, so subsequent wallet actions within that window (for example, a second withdrawal) can reuse it without another `/challenge` + `/verify` round-trip.
+
+### 8. Execute the quote
+
+Call `/execute` with the signature in the `Grid-Wallet-Signature` header.
+
+```bash
+curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE="
+```
+
+**Response:**
+
+```json
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "status": "PROCESSING",
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+  "totalSendingAmount": 10000,
+  "totalReceivingAmount": 9975,
+  "feesIncluded": 25
+}
+```
+
+The transaction is on its way. You'll receive standard transaction webhooks (`OUTGOING_PAYMENT`) as it settles — see [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle).
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Client keys & signing" href="./client-keys" icon="key">
+    Generate the P-256 key pair, decrypt the session signing key, and sign payloads on Web, iOS, and Android.
+  </Card>
+  <Card title="Authentication" href="./authentication" icon="shield-check">
+    OAuth and Email OTP flows, passkey reauthentication, and the full WebAuthn parameter mapping.
+  </Card>
+  <Card title="Sessions" href="./managing-sessions" icon="clock-rotate-left">
+    List active sessions and revoke a session (sign-out).
+  </Card>
+  <Card title="Exporting a wallet" href="./exporting-wallet" icon="file-export">
+    Let a customer take their wallet seed off Grid.
+  </Card>
+</CardGroup>

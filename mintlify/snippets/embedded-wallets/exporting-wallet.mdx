@@ -1,0 +1,78 @@
+Exporting a wallet returns the wallet's mnemonic seed, encrypted to the client's public key. The customer decrypts it on their device and can then import the wallet into any compatible self-custody client. Grid never sees the plaintext seed leaving the system.
+
+Export uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential and session revocation — the initial `POST` returns a `payloadToSign`, and the signed retry returns the encrypted seed.
+
+Generate a fresh P-256 client key pair specifically for the export. Send its `clientPublicKey` on both export requests, then decrypt `encryptedWalletCredentials` with the matching private key after the signed retry succeeds.
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant IB as Integrator backend
+  participant G as Grid
+
+  IB->>G: POST /internal-accounts/{id}/export { clientPublicKey }
+  G-->>IB: 202 { payloadToSign, requestId, expiresAt }
+  IB-->>C: { payloadToSign, requestId }
+  C->>C: sign(payloadToSign, sessionPrivateKey)
+  C->>IB: { signature }
+  IB->>G: POST /internal-accounts/{id}/export { same clientPublicKey }<br/>Grid-Wallet-Signature<br/>Request-Id
+  G-->>IB: 200 { id, encryptedWalletCredentials }
+  IB-->>C: { encryptedWalletCredentials }
+  C->>C: decrypt with client private key<br/>→ mnemonic
+```
+
+<Steps>
+  <Step title="First call — receive the challenge">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/export" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+      -H "Content-Type: application/json" \
+      -d '{
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
+    ```
+
+    **Response (202):**
+
+    ```json
+    {
+      "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
+      "requestId": "c3f8a614-47e2-4a19-9f5d-2b0a91d47e08",
+      "expiresAt": "2026-04-19T12:10:00Z"
+    }
+    ```
+  </Step>
+  <Step title="Client signs the payload">
+    Sign `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
+  </Step>
+  <Step title="Signed retry — receive the encrypted seed">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/export" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
+      -H "Request-Id: c3f8a614-47e2-4a19-9f5d-2b0a91d47e08" \
+      -d '{
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
+    ```
+
+    **Response (200):**
+
+    ```json
+    {
+      "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "encryptedWalletCredentials": "5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp"
+    }
+    ```
+  </Step>
+  <Step title="Decrypt on the client">
+    `encryptedWalletCredentials` uses the same base58check/HPKE format as `encryptedSessionSigningKey`. Decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests — see <a href="client-keys#3-decrypt-the-session-signing-key">decrypt the session signing key</a> for code.
+
+    The plaintext is a BIP-39 mnemonic (the wallet's master seed).
+  </Step>
+</Steps>
+
+<Warning>
+  The exported mnemonic is the master key of the self-custody wallet. After decryption the customer is the only custodian — if the mnemonic is lost, the funds are lost. Surface appropriate warnings in your UI before running an export.
+</Warning>
