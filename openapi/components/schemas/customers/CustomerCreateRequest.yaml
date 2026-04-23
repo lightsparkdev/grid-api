@@ -31,6 +31,11 @@ properties:
     example:
       - USD
       - USDC
+  email:
+    type: string
+    format: email
+    description: Email address for the customer.
+    example: john.doe@example.com
   umaAddress:
     type: string
     description: >-
