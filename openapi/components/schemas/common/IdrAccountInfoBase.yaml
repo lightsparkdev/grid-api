@@ -36,3 +36,9 @@ properties:
     minLength: 7
     maxLength: 15
     pattern: ^\+62[0-9]{9,12}$
+example:
+  accountType: IDR_ACCOUNT
+  bankName: Bank Central Asia
+  accountNumber: '1234567890'
+  swiftCode: CENAIDJA
+  phoneNumber: '+6281234567890'

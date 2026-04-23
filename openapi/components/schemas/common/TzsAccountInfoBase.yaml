@@ -20,3 +20,7 @@ properties:
     description: The mobile money provider name
     minLength: 1
     maxLength: 255
+example:
+  accountType: TZS_ACCOUNT
+  phoneNumber: '+255712345678'
+  provider: Example Provider

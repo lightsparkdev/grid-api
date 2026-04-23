@@ -20,3 +20,7 @@ properties:
     description: The mobile money provider name
     minLength: 1
     maxLength: 255
+example:
+  accountType: ZMW_ACCOUNT
+  phoneNumber: '+260971234567'
+  provider: Example Provider
