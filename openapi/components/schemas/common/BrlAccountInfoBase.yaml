@@ -29,3 +29,8 @@ properties:
     minLength: 11
     maxLength: 14
     pattern: ^[0-9]{11,14}$
+example:
+  accountType: BRL_ACCOUNT
+  pixKey: user@example.com
+  pixKeyType: CPF
+  taxId: '11111111111'
