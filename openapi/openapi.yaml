@@ -176,6 +176,8 @@ paths:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
     $ref: paths/tokens/tokens_{tokenId}.yaml
+  /internal-accounts/{id}/export:
+    $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
   /auth/credentials:
     $ref: paths/auth/auth_credentials.yaml
   /auth/credentials/{id}:
