@@ -3723,13 +3723,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthCredentialAdditionalChallengeOneOf'
+                $ref: '#/components/schemas/AuthCredentialAdditionalChallenge'
               examples:
                 emailOtp:
                   summary: Additional email OTP credential challenge
                   value:
                     type: EMAIL_OTP
-                    email: example@lightspark.com
                     payloadToSign: '{"requestId":"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21","type":"EMAIL_OTP","accountId":"InternalAccount:01HF3Z4QWERTY","expiresAt":"2026-04-08T15:35:00Z"}'
                     requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
@@ -3740,8 +3739,15 @@ paths:
                     payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
                     requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                passkey:
+                  summary: Additional passkey credential challenge
+                  value:
+                    type: PASSKEY
+                    payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an `EMAIL_OTP` credential on an internal account that already has one — only one email OTP credential is supported per internal account at this time.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an `EMAIL_OTP` credential on an internal account that already has one — only one email OTP credential is supported per internal account at this time. Returned with `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a `PASSKEY` credential on an internal account that already has one — only one passkey credential is supported per internal account in v1.
           content:
             application/json:
               schema:
@@ -5016,6 +5022,7 @@ components:
             | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
             | INCOMPLETE | Document is missing pages or sides |
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+            | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential is already registered on the target internal account; only one passkey credential is supported per internal account in v1 |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -5051,6 +5058,7 @@ components:
             - UNSUITABLE_DOCUMENT
             - INCOMPLETE
             - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
+            - PASSKEY_CREDENTIAL_ALREADY_EXISTS
         message:
           type: string
           description: Error message
@@ -13359,6 +13367,8 @@ components:
           OAUTH: '#/components/schemas/AuthMethodResponse'
           PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
     AuthCredentialAdditionalChallenge:
+      title: Authentication Credential Additional Challenge
+      description: 202 response returned from `POST /auth/credentials` when the target internal account already has a verified credential. Identical shape across all three credential types (EMAIL_OTP, OAUTH, PASSKEY) — the `type` field simply echoes the credential type being added.
       type: object
       required:
         - type
@@ -13368,6 +13378,7 @@ components:
       properties:
         type:
           $ref: '#/components/schemas/AuthMethodType'
+          description: Credential type being registered as an additional credential. Echoes the `type` from the originating `POST /auth/credentials` request.
         payloadToSign:
           type: string
           description: JSON-encoded challenge payload that must be signed, as-is (byte-for-byte, without re-serialization), with the session private key of an existing verified authentication credential on the internal account. The resulting signature is passed as the `Grid-Wallet-Signature` header on the retry of `POST /auth/credentials` to complete registration of the additional credential.
@@ -13381,51 +13392,6 @@ components:
           format: date-time
           description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
           example: '2026-04-08T15:35:00Z'
-    EmailOtpCredentialAdditionalChallengeFields:
-      type: object
-      required:
-        - type
-        - email
-      properties:
-        type:
-          type: string
-          enum:
-            - EMAIL_OTP
-          description: Discriminator value identifying this as an additional-credential challenge for an email OTP credential.
-        email:
-          type: string
-          format: email
-          description: Email address associated with the internal account's customer record, returned here so the client knows which mailbox will receive the OTP on the signed retry.
-          example: example@lightspark.com
-    EmailOtpCredentialAdditionalChallenge:
-      title: Email OTP Credential Additional Challenge
-      allOf:
-        - $ref: '#/components/schemas/AuthCredentialAdditionalChallenge'
-        - $ref: '#/components/schemas/EmailOtpCredentialAdditionalChallengeFields'
-    OauthCredentialAdditionalChallengeFields:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          type: string
-          enum:
-            - OAUTH
-          description: Discriminator value identifying this as an additional-credential challenge for an OAuth credential.
-    OauthCredentialAdditionalChallenge:
-      title: OAuth Credential Additional Challenge
-      allOf:
-        - $ref: '#/components/schemas/AuthCredentialAdditionalChallenge'
-        - $ref: '#/components/schemas/OauthCredentialAdditionalChallengeFields'
-    AuthCredentialAdditionalChallengeOneOf:
-      oneOf:
-        - $ref: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
-        - $ref: '#/components/schemas/OauthCredentialAdditionalChallenge'
-      discriminator:
-        propertyName: type
-        mapping:
-          EMAIL_OTP: '#/components/schemas/EmailOtpCredentialAdditionalChallenge'
-          OAUTH: '#/components/schemas/OauthCredentialAdditionalChallenge'
     AuthCredentialVerifyRequest:
       type: object
       required:

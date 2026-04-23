@@ -48,6 +48,7 @@ properties:
       | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
       | INCOMPLETE | Document is missing pages or sides |
       | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+      | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential is already registered on the target internal account; only one passkey credential is supported per internal account in v1 |
     enum:
       - INVALID_INPUT
       - MISSING_MANDATORY_USER_INFO
@@ -83,6 +84,7 @@ properties:
       - UNSUITABLE_DOCUMENT
       - INCOMPLETE
       - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
+      - PASSKEY_CREDENTIAL_ALREADY_EXISTS
   message:
     type: string
     description: Error message
