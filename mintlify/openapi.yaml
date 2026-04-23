@@ -3623,7 +3623,7 @@ paths:
 
         **First credential on an internal account**
 
-        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests. For `OAUTH` credentials, the supplied `oidcToken` is validated inline against the issuer's `.well-known` OpenID configuration (the token's `iat` must be less than 60 seconds before the request); activation still happens via `POST /auth/credentials/{id}/verify`.
+        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests. For `OAUTH` credentials, the supplied `oidcToken` is validated inline against the issuer's `.well-known` OpenID configuration (the token's `iat` must be less than 60 seconds before the request); activation still happens via `POST /auth/credentials/{id}/verify`. For `PASSKEY` credentials, the client completes a WebAuthn registration (`navigator.credentials.create()`) using a `challenge` issued by the platform backend and submits the resulting `attestation` here; the credential must still be activated via `POST /auth/credentials/{id}/verify` by completing a WebAuthn assertion. Unlike the registration `challenge` (platform-issued), the challenge for the first authentication is issued by Grid and returned inline on the `201` response alongside the `AuthMethod` fields, plus a `requestId` and challenge `expiresAt` (see `PasskeyAuthChallenge`). The client uses that Grid-issued `challenge` to produce the assertion and submits it with `Request-Id: <requestId>` to `POST /auth/credentials/{id}/verify`. On every subsequent reauthentication the challenge is re-issued via `POST /auth/credentials/{id}/challenge`. Only one `PASSKEY` credential is supported per internal account in v1.
 
         **Adding an additional credential**
 
@@ -3666,13 +3666,58 @@ paths:
                   type: OAUTH
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+              passkey:
+                summary: Register a passkey credential
+                value:
+                  type: PASSKEY
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  nickname: iPhone Face-ID
+                  challenge: ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx
+                  attestation:
+                    credentialId: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
+                    clientDataJson: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
+                    attestationObject: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
+                    transports:
+                      - internal
+                      - hybrid
       responses:
         '201':
-          description: Authentication credential created successfully
+          description: Authentication credential created successfully. For `EMAIL_OTP` and `OAUTH`, the body is a plain `AuthMethod`. For `PASSKEY`, the body is a `PasskeyAuthChallenge` — an `AuthMethod` with the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the first authentication assertion.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthMethod'
+                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+              examples:
+                emailOtp:
+                  summary: Email OTP credential created
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                oauth:
+                  summary: OAuth credential created
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: OAUTH
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                passkey:
+                  summary: Passkey credential created with first-authentication challenge
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: PASSKEY
+                    nickname: iPhone Face-ID
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                    challenge: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
         '202':
           description: An existing authentication credential is already registered on the internal account. The response contains a `payloadToSign` that must be signed with the session private key of an existing verified credential on the same internal account, along with a `requestId` that must be echoed back on the retry. The signature is passed as the `Grid-Wallet-Signature` header and the `requestId` as the `Request-Id` header on a retry of this request to complete registration.
           content:
@@ -13147,15 +13192,79 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialCreateRequest'
         - $ref: '#/components/schemas/OauthCredentialCreateRequestFields'
+    PasskeyAttestation:
+      title: Passkey Attestation
+      type: object
+      required:
+        - credentialId
+        - clientDataJson
+        - attestationObject
+      properties:
+        credentialId:
+          type: string
+          description: Base64url-encoded credential identifier produced by the authenticator at registration time. Typically the base64url of `PublicKeyCredential.rawId`.
+          example: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
+        clientDataJson:
+          type: string
+          description: 'Base64url-encoded JSON client data collected by the browser during the WebAuthn `navigator.credentials.create()` call. Corresponds to `AuthenticatorAttestationResponse.clientDataJSON` from the WebAuthn spec — Grid''s field name is intentionally camelCased as `clientDataJson` (lowercase JSON) for consistency with the rest of the API; the value is the same bytes the browser returns. Contains the challenge, origin, and `type: "webauthn.create"`.'
+          example: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
+        attestationObject:
+          type: string
+          description: Base64url-encoded CBOR attestation object produced by the authenticator during registration. Corresponds to `AuthenticatorAttestationResponse.attestationObject`.
+          example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
+        transports:
+          type: array
+          items:
+            type: string
+            enum:
+              - usb
+              - nfc
+              - ble
+              - internal
+              - hybrid
+          description: Optional. WebAuthn transports as returned by `AuthenticatorAttestationResponse.getTransports()`. Values follow the W3C `AuthenticatorTransport` enum — pass the raw values through to Grid; provider-specific translation is handled server-side. Some authenticators return an empty array; omit the field or send `[]` in that case.
+          example:
+            - internal
+            - hybrid
+    PasskeyCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+        - nickname
+        - challenge
+        - attestation
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator value identifying this as a passkey credential.
+        nickname:
+          type: string
+          description: Human-readable identifier for the passkey, chosen by the user at registration time (e.g. "iPhone Face-ID", "YubiKey 5C"). Shown back on `AuthMethod` responses and in credential listings.
+          example: iPhone Face-ID
+        challenge:
+          type: string
+          description: Base64url-encoded WebAuthn challenge issued by the platform backend and passed to the client before `navigator.credentials.create()`. Grid verifies it matches the challenge embedded in the attestation's `clientDataJson`, binding the attestation to this registration. Must be single-use.
+          example: ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx
+        attestation:
+          $ref: '#/components/schemas/PasskeyAttestation'
+    PasskeyCredentialCreateRequest:
+      title: Passkey Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialCreateRequestFields'
     AuthCredentialCreateRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialCreateRequest'
         - $ref: '#/components/schemas/OauthCredentialCreateRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialCreateRequest'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
+          PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
     AuthMethod:
       type: object
       required:
@@ -13190,6 +13299,48 @@ components:
           format: date-time
           description: Last update timestamp.
           example: '2026-04-08T15:35:00Z'
+    AuthMethodResponse:
+      title: Auth Method Response
+      description: 'Strict wrapper around `AuthMethod` used inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH` branches. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+      unevaluatedProperties: false
+    PasskeyAuthChallenge:
+      title: Passkey Auth Challenge
+      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials` (first-authentication case) and `POST /auth/credentials/{id}/challenge` (reauthentication case). Adds a Grid-issued `challenge`, the corresponding `requestId`, and the challenge's `expiresAt` to the base `AuthMethod` fields. The client signs the challenge with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          required:
+            - challenge
+            - requestId
+            - expiresAt
+          properties:
+            challenge:
+              type: string
+              description: Base64url-encoded challenge issued by Grid for the pending passkey authentication. The client passes it into `navigator.credentials.get()` as the WebAuthn challenge; the resulting assertion is submitted to `POST /auth/credentials/{id}/verify`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
+              example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+            requestId:
+              type: string
+              description: Unique identifier for this pending passkey authentication request. Must be echoed as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
+              example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+            expiresAt:
+              type: string
+              format: date-time
+              description: Timestamp after which the issued challenge is no longer valid. The assertion must reach `POST /auth/credentials/{id}/verify` before this time; otherwise the client must request a fresh challenge via `POST /auth/credentials/{id}/challenge`.
+              example: '2026-04-08T15:35:00Z'
+    AuthCredentialResponseOneOf:
+      title: Auth Credential Response
+      description: Discriminated response shape returned from `POST /auth/credentials` (on successful registration) and `POST /auth/credentials/{id}/challenge` (on challenge re-issue). For `EMAIL_OTP` and `OAUTH` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion.
+      oneOf:
+        - $ref: '#/components/schemas/AuthMethodResponse'
+        - $ref: '#/components/schemas/PasskeyAuthChallenge'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
+          OAUTH: '#/components/schemas/AuthMethodResponse'
+          PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
     AuthCredentialAdditionalChallenge:
       type: object
       required:
