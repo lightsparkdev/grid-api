@@ -3860,11 +3860,13 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /auth/credentials/{id}/challenge:
     post:
-      summary: Resend an authentication credential challenge
+      summary: Re-issue an authentication credential challenge
       description: |
         Re-issue the challenge for an existing authentication credential.
 
-        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file. After the user receives the new OTP, call `POST /auth/credentials/{id}/verify` to complete verification and issue a session.
+        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file. The response is a plain `AuthMethod`; there is no challenge body to surface because the OTP is delivered out-of-band via email. After the user receives the new OTP, call `POST /auth/credentials/{id}/verify` to complete verification and issue a session.
+
+        For `PASSKEY` credentials, this issues a fresh Grid-generated WebAuthn challenge for reauthentication. The response is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the new `challenge`, `requestId`, and `expiresAt`. The client passes the `challenge` into `navigator.credentials.get()` and submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -3879,11 +3881,33 @@ paths:
             type: string
       responses:
         '200':
-          description: Challenge re-issued for the authentication credential
+          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` the body is a plain `AuthMethod` and a new OTP email has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthMethod'
+                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+              examples:
+                emailOtp:
+                  summary: Email OTP challenge re-issued
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:35:00Z'
+                passkey:
+                  summary: Passkey reauthentication challenge issued
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: PASSKEY
+                    nickname: iPhone Face-ID
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:35:00Z'
+                    challenge: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request
           content:
