@@ -368,6 +368,7 @@ resources:
     methods:
       export: post /internal-accounts/{id}/export
     models:
+      internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
   exchange_rates:
     methods:
