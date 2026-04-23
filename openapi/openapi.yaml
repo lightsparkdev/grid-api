@@ -184,6 +184,8 @@ paths:
     $ref: paths/auth/auth_credentials_{id}_verify.yaml
   /auth/credentials/{id}/challenge:
     $ref: paths/auth/auth_credentials_{id}_challenge.yaml
+  /auth/sessions:
+    $ref: paths/auth/auth_sessions.yaml
 webhooks:
   incoming-payment:
     $ref: webhooks/incoming-payment.yaml
