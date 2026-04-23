@@ -360,6 +360,7 @@ resources:
       sessions:
         methods:
           list: get /auth/sessions
+          delete: delete /auth/sessions/{id}
         models:
           session_list_response: '#/components/schemas/SessionListResponse'
   exchange_rates:
