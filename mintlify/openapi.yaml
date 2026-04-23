@@ -3770,7 +3770,7 @@ paths:
       description: |
         Complete the verification step for a previously created authentication credential and issue a session signing key.
 
-        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired.
+        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from either `POST /auth/credentials` (first authentication) or `POST /auth/credentials/{id}/challenge` (reauthentication), and submits the resulting `assertion` along with the client-generated public key. The `requestId` that accompanied the challenge must be echoed in the `Request-Id` header so Grid can correlate the assertion with the pending challenge; Grid verifies the WebAuthn signature against the stored credential before issuing the session.
 
         On success, the response contains an `encryptedSessionSigningKey` that is encrypted to the supplied `clientPublicKey`, along with an `expiresAt` timestamp marking when the session expires. The `clientPublicKey` is ephemeral and one-time-use per verification request.
       operationId: verifyAuthCredential
@@ -3785,6 +3785,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned alongside the Grid-issued `challenge` from `POST /auth/credentials` or `POST /auth/credentials/{id}/challenge`, echoed back here so Grid can correlate the assertion with the pending challenge. Required when `type` is `PASSKEY`; ignored for `EMAIL_OTP` and `OAUTH`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -3804,6 +3811,16 @@ paths:
                   type: OAUTH
                   oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
                   clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+              passkey:
+                summary: Verify a passkey credential
+                value:
+                  type: PASSKEY
+                  assertion:
+                    credentialId: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+                    clientDataJson: eyJjaGFsbGVuZ2UiOiJkRzkwWVd4c2VWVnVhWEYxWlZaaGJIVmxSWFpsY25sVWFXMWwiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0
+                    authenticatorData: PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA
+                    signature: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
       responses:
         '200':
           description: Authentication credential verified and session issued
@@ -3818,7 +3835,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`) or for an OIDC token whose signature, issuer, or `iat` freshness check failed (`OAUTH`).
+          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed.
           content:
             application/json:
               schema:
@@ -13466,15 +13483,69 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
         - $ref: '#/components/schemas/OauthCredentialVerifyRequestFields'
+    PasskeyAssertion:
+      title: Passkey Assertion
+      type: object
+      required:
+        - credentialId
+        - clientDataJson
+        - authenticatorData
+        - signature
+      properties:
+        credentialId:
+          type: string
+          description: Base64url-encoded credential identifier returned during the WebAuthn assertion. Corresponds to `PublicKeyCredential.rawId`.
+          example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+        clientDataJson:
+          type: string
+          description: 'Base64url-encoded JSON client data collected by the browser during the WebAuthn `navigator.credentials.get()` call. Corresponds to `AuthenticatorAssertionResponse.clientDataJSON` from the WebAuthn spec — Grid''s field name is intentionally camelCased as `clientDataJson` (lowercase JSON) for consistency with the rest of the API; the value is the same bytes the browser returns. Contains the challenge, origin, and `type: "webauthn.get"`.'
+          example: eyJjaGFsbGVuZ2UiOiJkRzkwWVd4c2VWVnVhWEYxWlZaaGJIVmxSWFpsY25sVWFXMWwiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0
+        authenticatorData:
+          type: string
+          description: Base64url-encoded authenticator data returned by the authenticator during the assertion. Corresponds to `AuthenticatorAssertionResponse.authenticatorData`.
+          example: PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA
+        signature:
+          type: string
+          description: Base64url-encoded signature produced by the authenticator over `authenticatorData || SHA-256(clientDataJSON)`. Corresponds to `AuthenticatorAssertionResponse.signature`. The signature byte format is determined by the credential's public-key algorithm — DER-encoded ECDSA for ES256 (P-256, typical for passkeys), PKCS#1 v1.5 for RS256, or a raw 64-byte signature for EdDSA.
+          example: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
+        userHandle:
+          type: string
+          description: Base64url-encoded user handle returned by the authenticator. Corresponds to `AuthenticatorAssertionResponse.userHandle`. Populated (and required by the WebAuthn spec) for discoverable credentials — resident keys used in the "Sign in with passkey" autofill flow — and typically present for passkey registrations. Omit this field entirely for non-discoverable credentials specified via `allowCredentials` where the authenticator returns no user handle.
+          example: dXNlci1oYW5kbGUtZXhhbXBsZQ
+    PasskeyCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - assertion
+        - clientPublicKey
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator value identifying this as a passkey verification.
+        assertion:
+          $ref: '#/components/schemas/PasskeyAssertion'
+        clientPublicKey:
+          type: string
+          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    PasskeyCredentialVerifyRequest:
+      title: Passkey Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
     AuthCredentialVerifyRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequest'
         - $ref: '#/components/schemas/OauthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialVerifyRequest'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialVerifyRequest'
           OAUTH: '#/components/schemas/OauthCredentialVerifyRequest'
+          PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
     AuthSession:
       allOf:
         - $ref: '#/components/schemas/AuthMethod'

@@ -351,11 +351,14 @@ resources:
           oauth_credential_additional_challenge: '#/components/schemas/OauthCredentialAdditionalChallenge'
           oauth_credential_additional_challenge_fields: '#/components/schemas/OauthCredentialAdditionalChallengeFields'
           passkey_attestation: '#/components/schemas/PasskeyAttestation'
+          passkey_assertion: '#/components/schemas/PasskeyAssertion'
           passkey_credential_create_request: '#/components/schemas/PasskeyCredentialCreateRequest'
           passkey_credential_create_request_fields: '#/components/schemas/PasskeyCredentialCreateRequestFields'
           passkey_auth_challenge: '#/components/schemas/PasskeyAuthChallenge'
           auth_method_response: '#/components/schemas/AuthMethodResponse'
           auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
+          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
+          passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
   exchange_rates:
     methods:
       list:
@@ -868,6 +871,7 @@ openapi:
         target:
           - "$.components.schemas.EmailOtpCredentialVerifyRequest.allOf[0]"
           - "$.components.schemas.OauthCredentialVerifyRequest.allOf[0]"
+          - "$.components.schemas.PasskeyCredentialVerifyRequest.allOf[0]"
         keys: [ "$ref" ]
 
 codeflow:

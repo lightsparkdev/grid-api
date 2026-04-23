@@ -1,0 +1,54 @@
+title: Passkey Assertion
+type: object
+required:
+  - credentialId
+  - clientDataJson
+  - authenticatorData
+  - signature
+properties:
+  credentialId:
+    type: string
+    description: >-
+      Base64url-encoded credential identifier returned during the WebAuthn
+      assertion. Corresponds to `PublicKeyCredential.rawId`.
+    example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+  clientDataJson:
+    type: string
+    description: >-
+      Base64url-encoded JSON client data collected by the browser during
+      the WebAuthn `navigator.credentials.get()` call. Corresponds to
+      `AuthenticatorAssertionResponse.clientDataJSON` from the WebAuthn
+      spec — Grid's field name is intentionally camelCased as
+      `clientDataJson` (lowercase JSON) for consistency with the rest of
+      the API; the value is the same bytes the browser returns. Contains
+      the challenge, origin, and `type: "webauthn.get"`.
+    example: eyJjaGFsbGVuZ2UiOiJkRzkwWVd4c2VWVnVhWEYxWlZaaGJIVmxSWFpsY25sVWFXMWwiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0
+  authenticatorData:
+    type: string
+    description: >-
+      Base64url-encoded authenticator data returned by the authenticator
+      during the assertion. Corresponds to
+      `AuthenticatorAssertionResponse.authenticatorData`.
+    example: PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA
+  signature:
+    type: string
+    description: >-
+      Base64url-encoded signature produced by the authenticator over
+      `authenticatorData || SHA-256(clientDataJSON)`. Corresponds to
+      `AuthenticatorAssertionResponse.signature`. The signature byte
+      format is determined by the credential's public-key algorithm —
+      DER-encoded ECDSA for ES256 (P-256, typical for passkeys), PKCS#1
+      v1.5 for RS256, or a raw 64-byte signature for EdDSA.
+    example: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
+  userHandle:
+    type: string
+    description: >-
+      Base64url-encoded user handle returned by the authenticator.
+      Corresponds to `AuthenticatorAssertionResponse.userHandle`.
+      Populated (and required by the WebAuthn spec) for discoverable
+      credentials — resident keys used in the "Sign in with passkey"
+      autofill flow — and typically present for passkey registrations.
+      Omit this field entirely for non-discoverable credentials
+      specified via `allowCredentials` where the authenticator returns
+      no user handle.
+    example: dXNlci1oYW5kbGUtZXhhbXBsZQ
