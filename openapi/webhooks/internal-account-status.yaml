@@ -56,6 +56,7 @@ post:
               data:
                 id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: INTERNAL_FIAT
                 balance:
                   amount: 10000
                   currency:

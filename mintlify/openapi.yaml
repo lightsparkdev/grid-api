@@ -4966,6 +4966,7 @@ webhooks:
                   data:
                     id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: INTERNAL_FIAT
                     balance:
                       amount: 10000
                       currency:
@@ -6323,6 +6324,19 @@ components:
           type: string
           description: The customer id of the newly created customer on the system
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    InternalAccountType:
+      title: Internal Account Type
+      type: string
+      enum:
+        - INTERNAL_FIAT
+        - INTERNAL_CRYPTO
+        - EMBEDDED_WALLET
+      description: |-
+        Classification of an internal account.
+
+        - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
+        - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
+        - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
     CurrencyAmount:
       type: object
       required:
@@ -8638,6 +8652,7 @@ components:
       type: object
       required:
         - id
+        - type
         - balance
         - fundingPaymentInstructions
         - createdAt
@@ -8651,6 +8666,8 @@ components:
           type: string
           description: The ID of the customer associated with the internal account. If this field is empty, the internal account belongs to the platform.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          $ref: '#/components/schemas/InternalAccountType'
         balance:
           $ref: '#/components/schemas/CurrencyAmount'
         fundingPaymentInstructions:
