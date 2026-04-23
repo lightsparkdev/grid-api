@@ -1,13 +1,36 @@
-allOf:
-- $ref: ./GhsAccountInfoBase.yaml
-- type: object
-  required:
-  - paymentRails
-  properties:
-    paymentRails:
-      type: array
-      items:
-        type: string
-        enum:
-        - BANK_TRANSFER
-        - MOBILE_MONEY
+type: object
+required:
+- accountType
+- paymentRails
+- bankName
+- accountNumber
+- phoneNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - GHS_ACCOUNT
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - BANK_TRANSFER
+      - MOBILE_MONEY
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
+  accountNumber:
+    type: string
+    description: The account number of the bank
+    minLength: 1
+    maxLength: 34
+  phoneNumber:
+    type: string
+    description: The phone number in international format
+    example: '+1234567890'
+    minLength: 7
+    maxLength: 15
+    pattern: ^\+[0-9]{6,14}$
