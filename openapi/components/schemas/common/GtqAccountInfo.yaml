@@ -1,13 +1,34 @@
-allOf:
-- $ref: ./GtqAccountInfoBase.yaml
-- type: object
-  required:
-  - paymentRails
-  properties:
-    paymentRails:
-      type: array
-      items:
-        type: string
-        enum:
-        - BANK_TRANSFER
-        - MOBILE_MONEY
+type: object
+required:
+- accountType
+- paymentRails
+- bankName
+- accountNumber
+- bankAccountType
+properties:
+  accountType:
+    type: string
+    enum:
+    - GTQ_ACCOUNT
+  paymentRails:
+    type: array
+    items:
+      type: string
+      enum:
+      - BANK_TRANSFER
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
+  accountNumber:
+    type: string
+    description: The account number of the bank
+    minLength: 1
+    maxLength: 34
+  bankAccountType:
+    type: string
+    description: The bank account type
+    enum:
+    - CHECKING
+    - SAVINGS
