@@ -946,8 +946,7 @@ paths:
                     accountType: USD_ACCOUNT
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
-                    bankAccountType: CHECKING
-                    bankName: Chase Bank
+                    phoneNumber: '+14155550100'
                     platformAccountId: ext_acc_123456
                     beneficiary:
                       beneficiaryType: INDIVIDUAL
@@ -1136,8 +1135,7 @@ paths:
                     accountType: USD_ACCOUNT
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
-                    bankAccountType: CHECKING
-                    bankName: Chase Bank
+                    phoneNumber: '+14155550100'
                     platformAccountId: ext_acc_123456
                     beneficiary:
                       beneficiaryType: INDIVIDUAL
@@ -12275,7 +12273,7 @@ components:
                       - WIRE
                     accountNumber: '1234567890'
                     routingNumber: '021000021'
-                    bankName: Chase Bank
+                    phoneNumber: '+14155550100'
                     reference: UMA-Q12345-REF
                   instructionsNotes: Include reference UMA-Q12345-REF in memo
                 - accountOrWalletInfo:
@@ -12671,7 +12669,7 @@ components:
                   - WIRE
                 accountNumber: '1234567890'
                 routingNumber: '021000021'
-                bankName: Chase Bank
+                phoneNumber: '+14155550100'
                 reference: UMA-Q12345-REF
               instructionsNotes: Include reference UMA-Q12345-REF in memo
             - accountOrWalletInfo:
