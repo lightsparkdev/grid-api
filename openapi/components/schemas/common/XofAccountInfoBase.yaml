@@ -32,8 +32,3 @@ properties:
     - CI
     - SN
     - TG
-example:
-  accountType: XOF_ACCOUNT
-  phoneNumber: '+1234567890'
-  provider: Example Provider
-  region: BJ

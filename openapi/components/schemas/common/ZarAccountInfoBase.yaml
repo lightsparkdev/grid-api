@@ -20,7 +20,3 @@ properties:
     description: The name of the bank
     minLength: 1
     maxLength: 255
-example:
-  accountType: ZAR_ACCOUNT
-  accountNumber: '1234567890'
-  bankName: Example Bank

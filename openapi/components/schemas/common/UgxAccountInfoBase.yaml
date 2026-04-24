@@ -20,7 +20,3 @@ properties:
     description: The mobile money provider name
     minLength: 1
     maxLength: 255
-example:
-  accountType: UGX_ACCOUNT
-  phoneNumber: '+1234567890'
-  provider: Example Provider

@@ -22,7 +22,3 @@ properties:
     maxLength: 8
     example: '12345678'
     pattern: ^[0-9]{8}$
-example:
-  accountType: GBP_ACCOUNT
-  sortCode: '123456'
-  accountNumber: '12345678'
