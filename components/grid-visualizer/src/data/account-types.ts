@@ -23,14 +23,14 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     accountType: 'EUR_ACCOUNT',
     fields: [
       { name: 'iban', example: 'DE89370400440532013000' },
-      { name: 'swiftBic', example: 'DEUTDEFF', description: 'Optional' },
+      { name: 'swiftCode', example: 'DEUTDEFF', description: 'Optional' },
     ],
     beneficiaryRequired: true,
   },
   GBP_ACCOUNT: {
     accountType: 'GBP_ACCOUNT',
     fields: [
-      { name: 'sortCode', example: '20-00-00' },
+      { name: 'sortCode', example: '123456' },
       { name: 'accountNumber', example: '12345678' },
     ],
     beneficiaryRequired: true,
@@ -62,7 +62,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     accountType: 'DKK_ACCOUNT',
     fields: [
       { name: 'iban', example: 'DK5000400440116243' },
-      { name: 'swiftBic', example: 'NDEADKKK', description: 'Optional' },
+      { name: 'swiftCode', example: 'NDEADKKK', description: 'Optional' },
     ],
     beneficiaryRequired: true,
   },
@@ -207,6 +207,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     fields: [
       { name: 'phoneNumber', example: '+221771234567' },
       { name: 'provider', example: 'ORANGE', description: 'Mobile money provider' },
+      { name: 'region', example: 'SN', description: 'Country code (BJ, CI, SN, or TG)' },
     ],
     beneficiaryRequired: true,
   },
