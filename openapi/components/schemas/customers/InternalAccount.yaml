@@ -1,6 +1,7 @@
 type: object
 required:
   - id
+  - type
   - balance
   - fundingPaymentInstructions
   - createdAt
@@ -14,6 +15,8 @@ properties:
     type: string
     description: The ID of the customer associated with the internal account. If this field is empty, the internal account belongs to the platform.
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  type:
+    $ref: ./InternalAccountType.yaml
   balance:
     $ref: ../common/CurrencyAmount.yaml
   fundingPaymentInstructions:

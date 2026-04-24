@@ -16,6 +16,15 @@ get:
       required: false
       schema:
         type: string
+    - name: type
+      in: query
+      description: >-
+        Filter by internal account type. Use `EMBEDDED_WALLET` to find the
+        self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` /
+        `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+      required: false
+      schema:
+        $ref: ../../components/schemas/customers/InternalAccountType.yaml
   responses:
     "200":
       description: Successful operation

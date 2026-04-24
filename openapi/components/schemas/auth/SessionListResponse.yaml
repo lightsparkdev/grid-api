@@ -1,0 +1,9 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: array
+    description: List of active authentication sessions for the internal account.
+    items:
+      $ref: ./AuthSession.yaml

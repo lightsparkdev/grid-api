@@ -12,13 +12,21 @@ get:
   parameters:
     - name: customerId
       in: query
-      description: Filter by system customer ID
+      description: >-
+        Filter by system customer ID. To filter to transactions made on behalf of the
+        platform, specify the platform ID as the customer ID.
       required: false
       schema:
         type: string
     - name: platformCustomerId
       in: query
       description: Filter by platform-specific customer ID
+      required: false
+      schema:
+        type: string
+    - name: accountIdentifier
+      in: query
+      description: Filter by account identifier (matches either sender or receiver)
       required: false
       schema:
         type: string

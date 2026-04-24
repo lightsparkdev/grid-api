@@ -1,0 +1,69 @@
+parameters:
+  - name: externalAccountId
+    in: path
+    description: System-generated unique external account identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get customer external account by ID
+  description: Retrieve a customer external account by its system-generated ID
+  operationId: getCustomerExternalAccountById
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete customer external account by ID
+  description: Delete a customer external account by its system-generated ID
+  operationId: deleteCustomerExternalAccountById
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: External account deleted successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

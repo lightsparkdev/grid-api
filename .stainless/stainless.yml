@@ -320,6 +320,56 @@ resources:
       list: get /tokens
       retrieve: get /tokens/{tokenId}
       delete: delete /tokens/{tokenId}
+
+  auth:
+    subresources:
+      credentials:
+        methods:
+          create: post /auth/credentials
+          list: get /auth/credentials
+          verify: post /auth/credentials/{id}/verify
+          challenge: post /auth/credentials/{id}/challenge
+          delete: delete /auth/credentials/{id}
+        models:
+          auth_method_type: '#/components/schemas/AuthMethodType'
+          auth_method: '#/components/schemas/AuthMethod'
+          auth_session: '#/components/schemas/AuthSession'
+          auth_credential_list_response: '#/components/schemas/AuthCredentialListResponse'
+          auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
+          auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
+          auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
+          auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
+          auth_signed_request_challenge: '#/components/schemas/AuthSignedRequestChallenge'
+          email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
+          email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+          email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
+          email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
+          oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
+          oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
+          oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
+          oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
+          passkey_attestation: '#/components/schemas/PasskeyAttestation'
+          passkey_assertion: '#/components/schemas/PasskeyAssertion'
+          passkey_credential_create_request: '#/components/schemas/PasskeyCredentialCreateRequest'
+          passkey_credential_create_request_fields: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+          passkey_auth_challenge: '#/components/schemas/PasskeyAuthChallenge'
+          auth_method_response: '#/components/schemas/AuthMethodResponse'
+          auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
+          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
+          passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
+      sessions:
+        methods:
+          list: get /auth/sessions
+          delete: delete /auth/sessions/{id}
+        models:
+          session_list_response: '#/components/schemas/SessionListResponse'
+
+  internal_accounts:
+    methods:
+      export: post /internal-accounts/{id}/export
+    models:
+      internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
+      internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
   exchange_rates:
     methods:
       list:
@@ -393,6 +443,7 @@ resources:
       pkr_beneficiary: "#/components/schemas/PkrBeneficiary"
       ethereum_wallet_external_account_info: "#/components/schemas/EthereumWalletExternalAccountInfo"
       verification_error: "#/components/schemas/VerificationError"
+      signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
   crypto:
     methods:
       estimate_withdrawal_fee: post /crypto/estimate-withdrawal-fee
@@ -706,6 +757,7 @@ openapi:
           - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentEthereumWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentEmbeddedWalletInfo.allOf[0]"
         keys: [ "$ref" ]
 
     # ── Remove $ref to BaseExternalAccountInfo from external account variants ──
@@ -805,6 +857,34 @@ openapi:
           - "$.components.schemas.AccountTransactionDestination.allOf[0]"
           - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
           - "$.components.schemas.ExternalAccountDetailsTransactionDestination.allOf[0]"
+        keys: [ "$ref" ]
+
+    # ── type: auth credential base schemas ──
+    - command: remove
+      reason: >-
+        Remove type $ref from auth credential base schemas so the inline
+        single-value enums in each *CredentialCreateRequestFields /
+        *CredentialVerifyRequestFields variant become the sole definition,
+        avoiding allOf type conflicts. `AuthSignedRequestChallenge` is not
+        included — it has no discriminated variants, so the base `type`
+        field (inherited via allOf) is already the sole definition.
+      args:
+        target:
+          - "$.components.schemas.AuthCredentialCreateRequest.properties"
+          - "$.components.schemas.AuthCredentialVerifyRequest.properties"
+        keys: [ "type" ]
+
+    # ── Remove $ref to AuthCredentialVerifyRequest from verify variants ──
+    - command: remove
+      reason: >-
+        Remove allOf $ref to AuthCredentialVerifyRequest from verify variants
+        because the base schema becomes an empty object after stripping the
+        type discriminator (no other shared fields on verify)
+      args:
+        target:
+          - "$.components.schemas.EmailOtpCredentialVerifyRequest.allOf[0]"
+          - "$.components.schemas.OauthCredentialVerifyRequest.allOf[0]"
+          - "$.components.schemas.PasskeyCredentialVerifyRequest.allOf[0]"
         keys: [ "$ref" ]
 
 codeflow:

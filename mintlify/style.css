@@ -1381,6 +1381,12 @@ ul#sidebar-group > li[data-title="Discoveries"] > button::before {
   background-image: url('/images/icons/IconSquareChecklistMagnifyingGlass.svg') !important;
 }
 
+/* Embedded Wallet Auth - lock */
+#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before,
+ul#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
+  background-image: url('/images/icons/lock.svg') !important;
+}
+
 
 /* ===========================================
    Main Content Area

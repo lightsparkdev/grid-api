@@ -46,6 +46,8 @@ tags:
     description: Endpoints for retrieving cached foreign exchange rates. Rates are cached for approximately 5 minutes and include platform-specific fees.
   - name: Discoveries
     description: Endpoints for discovering available payment rails, banks, and providers for a given country and currency corridor.
+  - name: Embedded Wallet Auth
+    description: Endpoints for registering and verifying end-user authentication credentials (email OTP, OAuth, passkey) used to sign Embedded Wallet actions.
 paths:
   /config:
     get:
@@ -769,6 +771,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: type
+          in: query
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          required: false
+          schema:
+            $ref: '#/components/schemas/InternalAccountType'
         - name: limit
           in: query
           description: Maximum number of results to return (default 20, max 100)
@@ -828,6 +836,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: type
+          in: query
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          required: false
+          schema:
+            $ref: '#/components/schemas/InternalAccountType'
       responses:
         '200':
           description: Successful operation
@@ -944,7 +958,7 @@ paths:
                     accountType: USD_ACCOUNT
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
-                    accountCategory: CHECKING
+                    bankAccountType: CHECKING
                     bankName: Chase Bank
                     platformAccountId: ext_acc_123456
                     beneficiary:
@@ -991,6 +1005,76 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: System-generated unique external account identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get customer external account by ID
+      description: Retrieve a customer external account by its system-generated ID
+      operationId: getCustomerExternalAccountById
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete customer external account by ID
+      description: Delete a customer external account by its system-generated ID
+      operationId: deleteCustomerExternalAccountById
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: External account deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -1064,7 +1148,7 @@ paths:
                     accountType: USD_ACCOUNT
                     accountNumber: '12345678901'
                     routingNumber: '123456789'
-                    accountCategory: CHECKING
+                    bankAccountType: CHECKING
                     bankName: Chase Bank
                     platformAccountId: ext_acc_123456
                     beneficiary:
@@ -1110,6 +1194,76 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: System-generated unique external account identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get platform external account by ID
+      description: Retrieve a platform external account by its system-generated ID
+      operationId: getPlatformExternalAccountById
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete platform external account by ID
+      description: Delete a platform external account by its system-generated ID
+      operationId: deletePlatformExternalAccountById
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: External account deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -2221,6 +2375,12 @@ paths:
         This endpoint can only be used for quotes with a `source` which is either an internal account,
         or has direct pull functionality (e.g. ACH pull with an external account).
 
+        When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
+        the request must include a `Grid-Wallet-Signature` header. The signature is
+        produced by signing the `payloadToSign` value from the quote's
+        `paymentInstructions[].accountOrWalletInfo` entry with the session private
+        key of a verified authentication credential on the source Embedded Wallet.
+
         Once executed, the quote cannot be cancelled and the transfer will be processed.
       operationId: executeQuote
       tags:
@@ -2243,6 +2403,13 @@ paths:
           schema:
             type: string
             example: <uuid>
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet and base64-encoded. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
       responses:
         '200':
           description: |
@@ -2259,7 +2426,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized
+          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
           content:
             application/json:
               schema:
@@ -2297,13 +2464,19 @@ paths:
       parameters:
         - name: customerId
           in: query
-          description: Filter by system customer ID
+          description: Filter by system customer ID. To filter to transactions made on behalf of the platform, specify the platform ID as the customer ID.
           required: false
           schema:
             type: string
         - name: platformCustomerId
           in: query
           description: Filter by platform-specific customer ID
+          required: false
+          schema:
+            type: string
+        - name: accountIdentifier
+          in: query
+          description: Filter by account identifier (matches either sender or receiver)
           required: false
           schema:
             type: string
@@ -3454,6 +3627,671 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/export:
+    post:
+      summary: Export internal account wallet credentials
+      description: |
+        Export the wallet credentials of an Embedded Wallet internal account. The returned wallet credentials are HPKE-encrypted to the `clientPublicKey` supplied in the request body.
+
+        Export is a two-step signed-retry flow (same pattern as add-additional credential, revoke credential, and revoke session):
+
+        1. Call `POST /internal-accounts/{id}/export` with the request body `{ "clientPublicKey": "..." }` and no signature headers. Grid binds the `clientPublicKey` into the `payloadToSign` it returns, so the subsequent `Grid-Wallet-Signature` commits to the target encryption key. The response is `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the same internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the **same** `clientPublicKey` submitted in step 1 — Grid rejects the retry with `401` if it disagrees with what was bound into `payloadToSign`. The signed retry returns `200` with `encryptedWalletCredentials`, which the client decrypts with the matching private key.
+
+        The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair for this export and discard the private key after decrypting. Do not reuse the keypair from any prior verify call — that private key was already discarded after decrypting the session signing key it was issued against.
+      operationId: exportInternalAccount
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the internal account to export.
+          required: true
+          schema:
+            type: string
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the target internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalAccountExportRequest'
+            examples:
+              export:
+                summary: Export request (both steps)
+                value:
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+      responses:
+        '200':
+          description: Signed retry accepted. Returns the encrypted wallet credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccountExportResponse'
+        '202':
+          description: Challenge issued. The response contains a `payloadToSign` (which binds the submitted `clientPublicKey`) that must be signed with the session private key of a verified authentication credential on the target internal account, along with a `requestId` that must be echoed back on the retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedRequestChallenge'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending export challenge for this internal account, when the `Request-Id` does not match an unexpired pending challenge, or when the retry's `clientPublicKey` does not match the one bound into `payloadToSign` on the initial call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/credentials:
+    post:
+      summary: Create an authentication credential
+      description: |
+        Register an authentication credential for an Embedded Wallet customer.
+
+        **First credential on an internal account**
+
+        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests. For `OAUTH` credentials, the supplied `oidcToken` is validated inline against the issuer's `.well-known` OpenID configuration (the token's `iat` must be less than 60 seconds before the request); activation still happens via `POST /auth/credentials/{id}/verify`. For `PASSKEY` credentials, the client completes a WebAuthn registration (`navigator.credentials.create()`) using a `challenge` issued by the platform backend and submits the resulting `attestation` here; the credential must still be activated via `POST /auth/credentials/{id}/verify` by completing a WebAuthn assertion. Unlike the registration `challenge` (platform-issued), the challenge for the first authentication is issued by Grid and returned inline on the `201` response alongside the `AuthMethod` fields, plus a `requestId` and challenge `expiresAt` (see `PasskeyAuthChallenge`). The client uses that Grid-issued `challenge` to produce the assertion and submits it with `Request-Id: <requestId>` to `POST /auth/credentials/{id}/verify`. On every subsequent reauthentication the challenge is re-issued via `POST /auth/credentials/{id}/challenge`. Only one `PASSKEY` credential is supported per internal account in v1.
+
+        **Adding an additional credential**
+
+        Registering an additional credential against an internal account that already has one requires a signature from an existing verified credential. Call this endpoint with the new credential's details; if an existing credential is already registered on the internal account the response is `202` with a `payloadToSign` and a `requestId`. Sign the payload with the session private key of an existing verified credential on the same internal account (decrypted client-side from its `encryptedSessionSigningKey`) and retry the same request with the signature supplied as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+      operationId: createAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of an existing verified authentication credential on the target internal account and base64-encoded. Required when registering an additional credential on an internal account that already has one; ignored when the internal account has no existing credentials.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering an additional credential; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentialCreateRequestOneOf'
+            examples:
+              emailOtp:
+                summary: Register an email OTP credential
+                value:
+                  type: EMAIL_OTP
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              oauth:
+                summary: Register an OAuth credential
+                value:
+                  type: OAUTH
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+              passkey:
+                summary: Register a passkey credential
+                value:
+                  type: PASSKEY
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  nickname: iPhone Face-ID
+                  challenge: ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx
+                  attestation:
+                    credentialId: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
+                    clientDataJson: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
+                    attestationObject: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
+                    transports:
+                      - internal
+                      - hybrid
+      responses:
+        '201':
+          description: Authentication credential created successfully. For `EMAIL_OTP` and `OAUTH`, the body is a plain `AuthMethod`. For `PASSKEY`, the body is a `PasskeyAuthChallenge` — an `AuthMethod` with the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the first authentication assertion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+              examples:
+                emailOtp:
+                  summary: Email OTP credential created
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                oauth:
+                  summary: OAuth credential created
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: OAUTH
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                passkey:
+                  summary: Passkey credential created with first-authentication challenge
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: PASSKEY
+                    nickname: iPhone Face-ID
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                    challenge: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
+        '202':
+          description: An existing authentication credential is already registered on the internal account. The response contains a `payloadToSign` that must be signed with the session private key of an existing verified credential on the same internal account, along with a `requestId` that must be echoed back on the retry. The signature is passed as the `Grid-Wallet-Signature` header and the `requestId` as the `Request-Id` header on a retry of this request to complete registration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+              examples:
+                emailOtp:
+                  summary: Additional email OTP credential challenge
+                  value:
+                    type: EMAIL_OTP
+                    payloadToSign: '{"requestId":"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21","type":"EMAIL_OTP","accountId":"InternalAccount:01HF3Z4QWERTY","expiresAt":"2026-04-08T15:35:00Z"}'
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
+                oauth:
+                  summary: Additional OAuth credential challenge
+                  value:
+                    type: OAUTH
+                    payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
+                passkey:
+                  summary: Additional passkey credential challenge
+                  value:
+                    type: PASSKEY
+                    payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
+        '400':
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an `EMAIL_OTP` credential on an internal account that already has one — only one email OTP credential is supported per internal account at this time. Returned with `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a `PASSKEY` credential on an internal account that already has one — only one passkey credential is supported per internal account in v1.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending challenge for an additional credential on the target internal account, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List authentication credentials
+      description: |-
+        Retrieve all authentication credentials registered on an Embedded Wallet internal account.
+
+        The response is not paginated: an internal account is expected to have a small, bounded number of credentials (typically 1–5), so all results are returned inline. Additional per-credential detail (such as active session expiry) is available on `GET /auth/sessions`.
+      operationId: listAuthCredentials
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          description: Internal account id whose authentication credentials to list.
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '200':
+          description: Authentication credentials registered on the internal account. Returns an empty `data` array when the internal account has no credentials or when `accountId` does not match any internal account visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthCredentialListResponse'
+              examples:
+                multipleCredentials:
+                  summary: Internal account with an email OTP and a passkey credential
+                  value:
+                    data:
+                      - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                        accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        type: EMAIL_OTP
+                        nickname: example@lightspark.com
+                        createdAt: '2026-04-08T15:30:01Z'
+                        updatedAt: '2026-04-08T15:30:01Z'
+                      - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000003
+                        accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        type: PASSKEY
+                        nickname: iPhone Face-ID
+                        createdAt: '2026-04-09T10:15:00Z'
+                        updatedAt: '2026-04-09T10:15:00Z'
+                empty:
+                  summary: No credentials registered on the account
+                  value:
+                    data: []
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the `accountId` query parameter is missing or not a valid `InternalAccount:<uuid>` identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/credentials/{id}:
+    delete:
+      summary: Revoke an authentication credential
+      description: |
+        Revoke an authentication credential on an Embedded Wallet internal account.
+
+        Revocation is a two-step flow because it must be authorized by a session on a *different* credential on the same internal account:
+
+        1. Call `DELETE /auth/credentials/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Sign the `payloadToSign` with the session private key of an existing verified credential on the same internal account — other than the one being revoked — and retry the same `DELETE` request with the signature supplied as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
+
+        The account must retain at least one authentication credential; an account with only a single credential cannot use this endpoint to revoke it.
+      operationId: revokeAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the authentication credential to revoke (the `id` field of the `AuthMethod` returned from `POST /auth/credentials`).
+          required: true
+          schema:
+            type: string
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of an existing verified authentication credential on the same internal account (other than the one being revoked) and base64-encoded. Required on the signed retry; ignored on the initial call.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      responses:
+        '202':
+          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of an existing verified credential on the same internal account (other than the one being revoked), along with a `requestId` that must be echoed back on the retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+        '204':
+          description: Authentication credential revoked successfully.
+        '400':
+          description: Bad request. Also returned when the target internal account has only a single authentication credential, which cannot be revoked via this endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending revocation challenge for this credential, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Authentication credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/credentials/{id}/verify:
+    post:
+      summary: Verify an authentication credential
+      description: |
+        Complete the verification step for a previously created authentication credential and issue a session signing key.
+
+        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from either `POST /auth/credentials` (first authentication) or `POST /auth/credentials/{id}/challenge` (reauthentication), and submits the resulting `assertion` along with the client-generated public key. The `requestId` that accompanied the challenge must be echoed in the `Request-Id` header so Grid can correlate the assertion with the pending challenge; Grid verifies the WebAuthn signature against the stored credential before issuing the session.
+
+        On success, the response contains an `encryptedSessionSigningKey` that is encrypted to the supplied `clientPublicKey`, along with an `expiresAt` timestamp marking when the session expires. The `clientPublicKey` is ephemeral and one-time-use per verification request.
+      operationId: verifyAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the authentication credential to verify (the `id` field of the `AuthMethod` returned from `POST /auth/credentials`).
+          required: true
+          schema:
+            type: string
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned alongside the Grid-issued `challenge` from `POST /auth/credentials` or `POST /auth/credentials/{id}/challenge`, echoed back here so Grid can correlate the assertion with the pending challenge. Required when `type` is `PASSKEY`; ignored for `EMAIL_OTP` and `OAUTH`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
+            examples:
+              emailOtp:
+                summary: Verify an email OTP credential
+                value:
+                  type: EMAIL_OTP
+                  otp: '123456'
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+              oauth:
+                summary: Verify an OAuth credential
+                value:
+                  type: OAUTH
+                  oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+              passkey:
+                summary: Verify a passkey credential
+                value:
+                  type: PASSKEY
+                  assertion:
+                    credentialId: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+                    clientDataJson: eyJjaGFsbGVuZ2UiOiJkRzkwWVd4c2VWVnVhWEYxWlZaaGJIVmxSWFpsY25sVWFXMWwiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0
+                    authenticatorData: PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA
+                    signature: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+      responses:
+        '200':
+          description: Authentication credential verified and session issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Authentication credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/credentials/{id}/challenge:
+    post:
+      summary: Re-issue an authentication credential challenge
+      description: |
+        Re-issue the challenge for an existing authentication credential.
+
+        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file. The response is a plain `AuthMethod`; there is no challenge body to surface because the OTP is delivered out-of-band via email. After the user receives the new OTP, call `POST /auth/credentials/{id}/verify` to complete verification and issue a session.
+
+        For `PASSKEY` credentials, this issues a fresh Grid-generated WebAuthn challenge for reauthentication. The response is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the new `challenge`, `requestId`, and `expiresAt`. The client passes the `challenge` into `navigator.credentials.get()` and submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+      operationId: challengeAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the authentication credential to re-challenge (the `id` field of the `AuthMethod` returned from `POST /auth/credentials`).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` the body is a plain `AuthMethod` and a new OTP email has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+              examples:
+                emailOtp:
+                  summary: Email OTP challenge re-issued
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:35:00Z'
+                passkey:
+                  summary: Passkey reauthentication challenge issued
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: PASSKEY
+                    nickname: iPhone Face-ID
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:35:00Z'
+                    challenge: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Authentication credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when challenge re-issues are requested more frequently than the OTP rate limit allows. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying the request.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/sessions:
+    get:
+      summary: List active sessions
+      description: |-
+        Retrieve all active authentication sessions on an Embedded Wallet internal account. A session is created each time a credential is verified via `POST /auth/credentials/{id}/verify`, and remains active until its `expiresAt` passes or it is revoked via `DELETE /auth/sessions/{id}`.
+
+        The response is not paginated: an internal account is expected to have a small, bounded number of concurrent sessions (one per signed-in device, typically 1–4), so all results are returned inline.
+      operationId: listAuthSessions
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          description: Internal account id whose sessions to list.
+          required: true
+          schema:
+            type: string
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '200':
+          description: Active authentication sessions on the internal account. Returns an empty `data` array when the internal account has no active sessions or when `accountId` does not match any internal account visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionListResponse'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the `accountId` query parameter is missing or not a valid `InternalAccount:<uuid>` identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/sessions/{id}:
+    delete:
+      summary: Revoke an authentication session
+      description: |
+        Revoke an authentication session on an Embedded Wallet internal account. Revocation is a two-step signed-retry flow:
+
+        1. Call `DELETE /auth/sessions/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Sign the `payloadToSign` with the session private key of a verified session on the same internal account (this can be the session being revoked, for self-logout) and retry the same `DELETE` request with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
+      operationId: revokeAuthSession
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the session to revoke.
+          required: true
+          schema:
+            type: string
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified session on the same internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      responses:
+        '202':
+          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified session on the same internal account, along with a `requestId` that must be echoed back on the retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+        '204':
+          description: Session revoked successfully.
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending revocation challenge for this session, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   incoming-payment:
     post:
@@ -4153,6 +4991,7 @@ webhooks:
                   data:
                     id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: INTERNAL_FIAT
                     balance:
                       amount: 10000
                       currency:
@@ -4304,6 +5143,7 @@ components:
         - ULTIMATE_INSTITUTION_COUNTRY
         - IDENTIFIER
         - BUSINESS_TYPE
+        - COMPANY_LEGAL_NAME
       description: Name of a type of field containing info about a platform's customer or counterparty customer.
       example: FULL_NAME
     CounterpartyFieldDefinition:
@@ -4555,6 +5395,8 @@ components:
             | SUSPECTED_FRAUD | Document suspected of being forged or edited |
             | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
             | INCOMPLETE | Document is missing pages or sides |
+            | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+            | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential is already registered on the target internal account; only one passkey credential is supported per internal account in v1 |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -4589,6 +5431,8 @@ components:
             - SUSPECTED_FRAUD
             - UNSUITABLE_DOCUMENT
             - INCOMPLETE
+            - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
+            - PASSKEY_CREDENTIAL_ALREADY_EXISTS
         message:
           type: string
           description: Error message
@@ -4808,6 +5652,11 @@ components:
           example:
             - USD
             - USDC
+        email:
+          type: string
+          format: email
+          description: Email address for the customer.
+          example: john.doe@example.com
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -5312,6 +6161,11 @@ components:
           example:
             - USD
             - USDC
+        email:
+          type: string
+          format: email
+          description: Email address for the customer.
+          example: john.doe@example.com
         umaAddress:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
@@ -5452,6 +6306,11 @@ components:
             - USD
             - EUR
             - USDC
+        email:
+          type: string
+          format: email
+          description: Email address for the customer.
+          example: john.doe@example.com
         umaAddress:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
@@ -5490,6 +6349,19 @@ components:
           type: string
           description: The customer id of the newly created customer on the system
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    InternalAccountType:
+      title: Internal Account Type
+      type: string
+      enum:
+        - INTERNAL_FIAT
+        - INTERNAL_CRYPTO
+        - EMBEDDED_WALLET
+      description: |-
+        Classification of an internal account.
+
+        - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
+        - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
+        - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
     CurrencyAmount:
       type: object
       required:
@@ -5531,6 +6403,7 @@ components:
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
+        - EMBEDDED_WALLET
       description: Type of payment account or wallet
       example: USD_ACCOUNT
     BasePaymentAccountInfo:
@@ -5563,6 +6436,12 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
+        bankAccountType:
+          type: string
+          description: The bank account type. Required for certain corridors (e.g., El Salvador).
+          enum:
+            - CHECKING
+            - SAVINGS
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -7498,6 +8377,24 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    PaymentEmbeddedWalletInfo:
+      title: Embedded Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - type: object
+          required:
+            - accountType
+            - payloadToSign
+          properties:
+            accountType:
+              type: string
+              enum:
+                - EMBEDDED_WALLET
+              description: Discriminator value identifying this as Embedded Wallet payment instructions.
+            payloadToSign:
+              type: string
+              description: JSON-encoded transaction signing payload that must be signed, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting signature is base64-encoded and passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
+              example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     PaymentInstructions:
       type: object
       required:
@@ -7556,6 +8453,7 @@ components:
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
+            - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
           discriminator:
             propertyName: accountType
             mapping:
@@ -7602,10 +8500,12 @@ components:
               HTG_ACCOUNT: '#/components/schemas/PaymentHtgAccountInfo'
               JMD_ACCOUNT: '#/components/schemas/PaymentJmdAccountInfo'
               PKR_ACCOUNT: '#/components/schemas/PaymentPkrAccountInfo'
+              EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
     InternalAccount:
       type: object
       required:
         - id
+        - type
         - balance
         - fundingPaymentInstructions
         - createdAt
@@ -7619,6 +8519,8 @@ components:
           type: string
           description: The ID of the customer associated with the internal account. If this field is empty, the internal account belongs to the platform.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          $ref: '#/components/schemas/InternalAccountType'
         balance:
           $ref: '#/components/schemas/CurrencyAmount'
         fundingPaymentInstructions:
@@ -9327,6 +10229,7 @@ components:
         - accountType
         - accountNumber
         - bankAccountType
+        - bankName
         - phoneNumber
       properties:
         accountType:
@@ -9344,6 +10247,9 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -9395,6 +10301,12 @@ components:
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
+        documentType:
+          type: string
+          description: The type of identity document (e.g., national ID, passport)
+        documentNumber:
+          type: string
+          description: The identity document number
         address:
           $ref: '#/components/schemas/Address'
     CopExternalAccountInfo:
@@ -12101,6 +13013,7 @@ components:
           description: |-
             Whether to immediately execute the quote after creation. If true, the quote will be executed and the transaction will be created at the current exchange rate. It should only be used if you don't want to lock and view rate details before executing the quote. If you are executing a pre-existing quote, use the `/quotes/{quoteId}/execute` endpoint instead. This is false by default.
             This can only be used for quotes with a `source` which is either an internal account, or has direct pull functionality (e.g. ACH pull with an external account).
+            Not supported when the `source` is an internal account of type `EMBEDDED_WALLET`: those transfers require a `Grid-Wallet-Signature` over the `payloadToSign` returned in the quote response, which is not available in a combined create-and-execute call. Create the quote first with `immediatelyExecute: false` and then call `POST /quotes/{quoteId}/execute` with the signature header.
           example: false
         description:
           type: string
@@ -12651,6 +13564,466 @@ components:
           description: A list of permissions to grant to the token
           items:
             $ref: '#/components/schemas/Permission'
+    InternalAccountExportRequest:
+      title: Internal Account Export Request
+      description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.
+      type: object
+      required:
+        - clientPublicKey
+      properties:
+        clientPublicKey:
+          type: string
+          description: Fresh P-256 public key, uncompressed SEC1 hex — 130 hex chars where the first two are `04` (the uncompressed-point indicator). Generate a new keypair for each export and discard the private key after decrypting the response.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    InternalAccountExportResponse:
+      title: Internal Account Export Response
+      type: object
+      required:
+        - id
+        - encryptedWalletCredentials
+      properties:
+        id:
+          type: string
+          description: The id of the internal account that was exported.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        encryptedWalletCredentials:
+          type: string
+          description: Encrypted wallet mnemonic, sealed to the `clientPublicKey` supplied on the verify request. Decrypt with the matching private key, then manage the mnemonic securely — it is the master key of the self-custodial Embedded Wallet. Encoded as base58check (same format as `AuthSession.encryptedSessionSigningKey`).
+          example: 5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp
+    SignedRequestChallenge:
+      title: Signed Request Challenge
+      type: object
+      required:
+        - payloadToSign
+        - requestId
+        - expiresAt
+      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential revocation, session revocation, wallet export, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
+      properties:
+        payloadToSign:
+          type: string
+          description: Payload that must be signed with the session private key of a verified authentication credential. The resulting signature is passed as the `Grid-Wallet-Signature` header on the retry of the originating request to complete the operation.
+          example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+        requestId:
+          type: string
+          description: Unique identifier for this request. Must be echoed in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
+          example: '2026-04-08T15:35:00Z'
+    AuthMethodType:
+      type: string
+      enum:
+        - OAUTH
+        - EMAIL_OTP
+        - PASSKEY
+      description: |-
+        The type of authentication credential.
+        - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
+        - `EMAIL_OTP`: A one-time password delivered to the user's email address.
+        - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+    AuthMethod:
+      type: object
+      required:
+        - id
+        - accountId
+        - type
+        - nickname
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the authentication credential.
+          example: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+        accountId:
+          type: string
+          description: Identifier of the internal account that this credential authenticates.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        nickname:
+          type: string
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the nickname provided at registration time.
+          example: example@lightspark.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-04-08T15:30:01Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-04-08T15:35:00Z'
+    AuthCredentialListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of authentication credentials registered on the internal account.
+          items:
+            $ref: '#/components/schemas/AuthMethod'
+    AuthCredentialCreateRequest:
+      type: object
+      required:
+        - type
+        - accountId
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        accountId:
+          type: string
+          description: Identifier of the internal account that this credential will authenticate.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    EmailOtpCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - EMAIL_OTP
+          description: Discriminator value identifying this as an email OTP credential.
+    EmailOtpCredentialCreateRequest:
+      title: Email OTP Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
+    OauthCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+        - oidcToken
+      properties:
+        type:
+          type: string
+          enum:
+            - OAUTH
+          description: Discriminator value identifying this as an OAuth credential.
+        oidcToken:
+          type: string
+          description: OIDC ID token issued by the identity provider (e.g. Google, Apple). Grid fetches the issuer's signing key from the `iss` claim's `.well-known` OpenID configuration and verifies the token signature. The token's `iat` claim must be less than 60 seconds before the request timestamp.
+          example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+    OauthCredentialCreateRequest:
+      title: OAuth Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/OauthCredentialCreateRequestFields'
+    PasskeyAttestation:
+      title: Passkey Attestation
+      type: object
+      required:
+        - credentialId
+        - clientDataJson
+        - attestationObject
+      properties:
+        credentialId:
+          type: string
+          description: Base64url-encoded credential identifier produced by the authenticator at registration time. Typically the base64url of `PublicKeyCredential.rawId`.
+          example: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
+        clientDataJson:
+          type: string
+          description: 'Base64url-encoded JSON client data collected by the browser during the WebAuthn `navigator.credentials.create()` call. Corresponds to `AuthenticatorAttestationResponse.clientDataJSON` from the WebAuthn spec — Grid''s field name is intentionally camelCased as `clientDataJson` (lowercase JSON) for consistency with the rest of the API; the value is the same bytes the browser returns. Contains the challenge, origin, and `type: "webauthn.create"`.'
+          example: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
+        attestationObject:
+          type: string
+          description: Base64url-encoded CBOR attestation object produced by the authenticator during registration. Corresponds to `AuthenticatorAttestationResponse.attestationObject`.
+          example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
+        transports:
+          type: array
+          items:
+            type: string
+            enum:
+              - usb
+              - nfc
+              - ble
+              - internal
+              - hybrid
+          description: Optional. WebAuthn transports as returned by `AuthenticatorAttestationResponse.getTransports()`. Values follow the W3C `AuthenticatorTransport` enum — pass the raw values through to Grid; provider-specific translation is handled server-side. Some authenticators return an empty array; omit the field or send `[]` in that case.
+          example:
+            - internal
+            - hybrid
+    PasskeyCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+        - nickname
+        - challenge
+        - attestation
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator value identifying this as a passkey credential.
+        nickname:
+          type: string
+          description: Human-readable identifier for the passkey, chosen by the user at registration time (e.g. "iPhone Face-ID", "YubiKey 5C"). Shown back on `AuthMethod` responses and in credential listings.
+          example: iPhone Face-ID
+        challenge:
+          type: string
+          description: Base64url-encoded WebAuthn challenge issued by the platform backend and passed to the client before `navigator.credentials.create()`. Grid verifies it matches the challenge embedded in the attestation's `clientDataJson`, binding the attestation to this registration. Must be single-use.
+          example: ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx
+        attestation:
+          $ref: '#/components/schemas/PasskeyAttestation'
+    PasskeyCredentialCreateRequest:
+      title: Passkey Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+    AuthCredentialCreateRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/EmailOtpCredentialCreateRequest'
+        - $ref: '#/components/schemas/OauthCredentialCreateRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialCreateRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/EmailOtpCredentialCreateRequest'
+          OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
+          PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
+    AuthMethodResponse:
+      title: Auth Method Response
+      description: 'Strict wrapper around `AuthMethod` used inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH` branches. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+      unevaluatedProperties: false
+    PasskeyAuthChallenge:
+      title: Passkey Auth Challenge
+      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials` (first-authentication case) and `POST /auth/credentials/{id}/challenge` (reauthentication case). Adds a Grid-issued `challenge`, the corresponding `requestId`, and the challenge's `expiresAt` to the base `AuthMethod` fields. The client signs the challenge with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          required:
+            - challenge
+            - requestId
+            - expiresAt
+          properties:
+            challenge:
+              type: string
+              description: Base64url-encoded challenge issued by Grid for the pending passkey authentication. The client passes it into `navigator.credentials.get()` as the WebAuthn challenge; the resulting assertion is submitted to `POST /auth/credentials/{id}/verify`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
+              example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+            requestId:
+              type: string
+              description: Unique identifier for this pending passkey authentication request. Must be echoed as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
+              example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+            expiresAt:
+              type: string
+              format: date-time
+              description: Timestamp after which the issued challenge is no longer valid. The assertion must reach `POST /auth/credentials/{id}/verify` before this time; otherwise the client must request a fresh challenge via `POST /auth/credentials/{id}/challenge`.
+              example: '2026-04-08T15:35:00Z'
+    AuthCredentialResponseOneOf:
+      title: Auth Credential Response
+      description: Discriminated response shape returned from `POST /auth/credentials` (on successful registration) and `POST /auth/credentials/{id}/challenge` (on challenge re-issue). For `EMAIL_OTP` and `OAUTH` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion.
+      oneOf:
+        - $ref: '#/components/schemas/AuthMethodResponse'
+        - $ref: '#/components/schemas/PasskeyAuthChallenge'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
+          OAUTH: '#/components/schemas/AuthMethodResponse'
+          PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
+    AuthSignedRequestChallenge:
+      title: Authentication Signed Request Challenge
+      description: 202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), and `DELETE /auth/sessions/{id}` (revoking a session). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, being revoked, or that issued the session being revoked). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
+      allOf:
+        - $ref: '#/components/schemas/SignedRequestChallenge'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              $ref: '#/components/schemas/AuthMethodType'
+              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), the credential type being revoked (`DELETE /auth/credentials/{id}`), or the type of credential that issued the session being revoked (`DELETE /auth/sessions/{id}`).'
+    AuthCredentialVerifyRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+    EmailOtpCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - otp
+        - clientPublicKey
+      properties:
+        type:
+          type: string
+          enum:
+            - EMAIL_OTP
+          description: Discriminator value identifying this as an email OTP verification.
+        otp:
+          type: string
+          description: The one-time password received by the user via email.
+          example: '123456'
+        clientPublicKey:
+          type: string
+          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    EmailOtpCredentialVerifyRequest:
+      title: Email OTP Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
+    OauthCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - oidcToken
+        - clientPublicKey
+      properties:
+        type:
+          type: string
+          enum:
+            - OAUTH
+          description: Discriminator value identifying this as an OAuth verification.
+        oidcToken:
+          type: string
+          description: OIDC ID token issued by the identity provider. For reauthentication after a prior session expired, supply a fresh token — the token's `iat` claim must be less than 60 seconds before the request timestamp. Grid fetches the issuer's signing key from the `iss` claim's `.well-known` OpenID configuration and verifies the token signature.
+          example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+        clientPublicKey:
+          type: string
+          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    OauthCredentialVerifyRequest:
+      title: OAuth Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/OauthCredentialVerifyRequestFields'
+    PasskeyAssertion:
+      title: Passkey Assertion
+      type: object
+      required:
+        - credentialId
+        - clientDataJson
+        - authenticatorData
+        - signature
+      properties:
+        credentialId:
+          type: string
+          description: Base64url-encoded credential identifier returned during the WebAuthn assertion. Corresponds to `PublicKeyCredential.rawId`.
+          example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+        clientDataJson:
+          type: string
+          description: 'Base64url-encoded JSON client data collected by the browser during the WebAuthn `navigator.credentials.get()` call. Corresponds to `AuthenticatorAssertionResponse.clientDataJSON` from the WebAuthn spec — Grid''s field name is intentionally camelCased as `clientDataJson` (lowercase JSON) for consistency with the rest of the API; the value is the same bytes the browser returns. Contains the challenge, origin, and `type: "webauthn.get"`.'
+          example: eyJjaGFsbGVuZ2UiOiJkRzkwWVd4c2VWVnVhWEYxWlZaaGJIVmxSWFpsY25sVWFXMWwiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0
+        authenticatorData:
+          type: string
+          description: Base64url-encoded authenticator data returned by the authenticator during the assertion. Corresponds to `AuthenticatorAssertionResponse.authenticatorData`.
+          example: PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA
+        signature:
+          type: string
+          description: Base64url-encoded signature produced by the authenticator over `authenticatorData || SHA-256(clientDataJSON)`. Corresponds to `AuthenticatorAssertionResponse.signature`. The signature byte format is determined by the credential's public-key algorithm — DER-encoded ECDSA for ES256 (P-256, typical for passkeys), PKCS#1 v1.5 for RS256, or a raw 64-byte signature for EdDSA.
+          example: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
+        userHandle:
+          type: string
+          description: Base64url-encoded user handle returned by the authenticator. Corresponds to `AuthenticatorAssertionResponse.userHandle`. Populated (and required by the WebAuthn spec) for discoverable credentials — resident keys used in the "Sign in with passkey" autofill flow — and typically present for passkey registrations. Omit this field entirely for non-discoverable credentials specified via `allowCredentials` where the authenticator returns no user handle.
+          example: dXNlci1oYW5kbGUtZXhhbXBsZQ
+    PasskeyCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - assertion
+        - clientPublicKey
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator value identifying this as a passkey verification.
+        assertion:
+          $ref: '#/components/schemas/PasskeyAssertion'
+        clientPublicKey:
+          type: string
+          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    PasskeyCredentialVerifyRequest:
+      title: Passkey Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
+    AuthCredentialVerifyRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+        - $ref: '#/components/schemas/OauthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/PasskeyCredentialVerifyRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+          OAUTH: '#/components/schemas/OauthCredentialVerifyRequest'
+          PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
+    AuthSession:
+      title: Authentication Session
+      description: An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification). Only the verify response includes `encryptedSessionSigningKey` — it is delivered exactly once at the moment the session is issued and is never returned by the list endpoint.
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          required:
+            - id
+            - expiresAt
+          properties:
+            id:
+              type: string
+              description: System-generated unique identifier for the session. Pass this value to `DELETE /auth/sessions/{id}` to revoke the session before `expiresAt`. Overrides the `id` inherited from `AuthMethod` so this response identifies the session rather than the authenticating credential.
+              example: Session:019542f5-b3e7-1d02-0000-000000000003
+            encryptedSessionSigningKey:
+              type: string
+              description: |-
+                HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verify request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
+
+                Only returned from `POST /auth/credentials/{id}/verify` (where the session is first issued). Omitted from responses that simply surface existing sessions (e.g. `GET /auth/sessions`) — Grid does not retain the plaintext key after the client has decrypted it.
+              example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
+            expiresAt:
+              type: string
+              format: date-time
+              description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
+              example: '2026-04-09T15:30:01Z'
+    Error429:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 429
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+          enum:
+            - RATE_LIMITED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    SessionListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: List of active authentication sessions for the internal account.
+          items:
+            $ref: '#/components/schemas/AuthSession'
     WebhookType:
       type: string
       enum:

@@ -1,0 +1,21 @@
+title: Internal Account Export Request
+description: >-
+  Request body for `POST /internal-accounts/{id}/export`. The
+  `clientPublicKey` is required on both steps of the signed-retry
+  flow. On step 1 Grid binds it into `payloadToSign` so the
+  subsequent `Grid-Wallet-Signature` commits to the target pubkey;
+  on step 2 the client echoes the same `clientPublicKey` back and
+  Grid uses it to encrypt the wallet credentials returned in the
+  `200` response.
+type: object
+required:
+  - clientPublicKey
+properties:
+  clientPublicKey:
+    type: string
+    description: >-
+      Fresh P-256 public key, uncompressed SEC1 hex — 130 hex chars
+      where the first two are `04` (the uncompressed-point indicator).
+      Generate a new keypair for each export and discard the private
+      key after decrypting the response.
+    example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2

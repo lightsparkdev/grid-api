@@ -90,7 +90,7 @@ post:
                 accountType: USD_ACCOUNT
                 accountNumber: "12345678901"
                 routingNumber: "123456789"
-                accountCategory: CHECKING
+                bankAccountType: CHECKING
                 bankName: Chase Bank
                 platformAccountId: ext_acc_123456
                 beneficiary:
