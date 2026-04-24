@@ -1,0 +1,78 @@
+Every call to `POST /auth/credentials/{id}/verify` creates a new **session** — an authenticated signing context with a 15-minute lifetime by default. Sessions accumulate: a customer signed in on a laptop and a phone has two active sessions, each with its own session signing key held on that device. Use the session endpoints to show the customer their active sign-ins and to sign out of a specific device.
+
+## List active sessions
+
+```bash
+curl -X GET "$GRID_BASE_URL/auth/sessions?accountId=InternalAccount:019542f5-b3e7-1d02-0000-000000000002" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "id": "Session:019542f5-b3e7-1d02-0000-000000000003",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "type": "PASSKEY",
+      "nickname": "iPhone Face-ID",
+      "createdAt": "2026-04-19T12:00:02Z",
+      "updatedAt": "2026-04-19T12:00:02Z",
+      "expiresAt": "2026-04-19T12:15:02Z"
+    },
+    {
+      "id": "Session:019542f5-b3e7-1d02-0000-000000000007",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "type": "EMAIL_OTP",
+      "nickname": "jane@example.com",
+      "createdAt": "2026-04-19T10:01:00Z",
+      "updatedAt": "2026-04-19T10:01:00Z",
+      "expiresAt": "2026-04-19T10:16:00Z"
+    }
+  ]
+}
+```
+
+The list endpoint returns all **active** sessions; expired sessions are not included. `encryptedSessionSigningKey` is never returned here — it is delivered exactly once on the verify response and never again.
+
+## Revoke a session
+
+Session revocation uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential management. Unlike credential revocation, a session **can revoke itself** — this is how self-logout works: sign with the session key you are about to invalidate.
+
+<Steps>
+  <Step title="First call — receive the challenge">
+    ```bash
+    curl -X DELETE "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+    ```
+
+    **Response (202):**
+
+    ```json
+    {
+      "type": "PASSKEY",
+      "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
+      "requestId": "2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22",
+      "expiresAt": "2026-04-19T12:10:00Z"
+    }
+    ```
+  </Step>
+  <Step title="Client signs the payload">
+    Sign `payloadToSign` with any active session signing key on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
+  </Step>
+  <Step title="Signed retry — session is revoked">
+    ```bash
+    curl -X DELETE "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
+      -H "Request-Id: 2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
+    ```
+
+    **Response:** `204 No Content`.
+  </Step>
+</Steps>
+
+<Tip>
+  Revoking a session only invalidates the session signing key, not the credential that issued it. The next call to `POST /auth/credentials/{id}/verify` on that credential still works and issues a brand new session.
+</Tip>

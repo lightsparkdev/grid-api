@@ -109,6 +109,16 @@
             ]
           },
           {
+            "group": "Embedded Wallets",
+            "pages": [
+              "payouts-and-b2b/embedded-wallets/overview",
+              "payouts-and-b2b/embedded-wallets/client-keys",
+              "payouts-and-b2b/embedded-wallets/authentication",
+              "payouts-and-b2b/embedded-wallets/managing-sessions",
+              "payouts-and-b2b/embedded-wallets/exporting-wallet"
+            ]
+          },
+          {
             "group": "Platform Tools",
             "pages": [
               "payouts-and-b2b/platform-tools/webhooks",
@@ -150,6 +160,16 @@
               "ramps/accounts/depositing-funds",
               "ramps/conversion-flows/fiat-crypto-conversion",
               "ramps/conversion-flows/self-custody-wallets"
+            ]
+          },
+          {
+            "group": "Embedded Wallets",
+            "pages": [
+              "ramps/embedded-wallets/overview",
+              "ramps/embedded-wallets/client-keys",
+              "ramps/embedded-wallets/authentication",
+              "ramps/embedded-wallets/managing-sessions",
+              "ramps/embedded-wallets/exporting-wallet"
             ]
           },
           {
@@ -195,6 +215,16 @@
             ]
           },
           {
+            "group": "Embedded Wallets",
+            "pages": [
+              "rewards/embedded-wallets/overview",
+              "rewards/embedded-wallets/client-keys",
+              "rewards/embedded-wallets/authentication",
+              "rewards/embedded-wallets/managing-sessions",
+              "rewards/embedded-wallets/exporting-wallet"
+            ]
+          },
+          {
             "group": "Platform Tools",
             "pages": [
               "rewards/platform-tools/webhooks",
@@ -220,8 +250,8 @@
             "group": "Onboarding",
             "pages": [
               "global-p2p/getting-started/platform-configuration",
-              "global-p2p/onboarding-customers/configuring-customers",
-              "global-p2p/onboarding-customers/invitations"
+              "global-p2p/onboarding/configuring-customers",
+              "global-p2p/onboarding/invitations"
             ]
           },
           {
@@ -239,6 +269,16 @@
               "global-p2p/sending-receiving-payments/receiving-payments",
               "global-p2p/sending-receiving-payments/reconciliation",
               "global-p2p/sending-receiving-payments/error-handling"
+            ]
+          },
+          {
+            "group": "Embedded Wallets",
+            "pages": [
+              "global-p2p/embedded-wallets/overview",
+              "global-p2p/embedded-wallets/client-keys",
+              "global-p2p/embedded-wallets/authentication",
+              "global-p2p/embedded-wallets/managing-sessions",
+              "global-p2p/embedded-wallets/exporting-wallet"
             ]
           },
           {
