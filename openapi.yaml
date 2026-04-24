@@ -3619,13 +3619,15 @@ paths:
     post:
       summary: Export internal account wallet credentials
       description: |
-        Export the wallet credentials of an Embedded Wallet internal account. Wallet credentials are returned encrypted to the client public key that was supplied when the authorizing session was verified.
+        Export the wallet credentials of an Embedded Wallet internal account. The returned wallet credentials are HPKE-encrypted to the `clientPublicKey` supplied in the request body.
 
         Export is a two-step signed-retry flow (same pattern as add-additional credential, revoke credential, and revoke session):
 
-        1. Call `POST /internal-accounts/{id}/export` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /internal-accounts/{id}/export` with the request body `{ "clientPublicKey": "..." }` and no signature headers. Grid binds the `clientPublicKey` into the `payloadToSign` it returns, so the subsequent `Grid-Wallet-Signature` commits to the target encryption key. The response is `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the same internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with `encryptedWalletCredentials`, which the client can decrypt with its local private key.
+        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the same internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the **same** `clientPublicKey` submitted in step 1 — Grid rejects the retry with `401` if it disagrees with what was bound into `payloadToSign`. The signed retry returns `200` with `encryptedWalletCredentials`, which the client decrypts with the matching private key.
+
+        The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair for this export and discard the private key after decrypting. Do not reuse the keypair from any prior verify call — that private key was already discarded after decrypting the session signing key it was issued against.
       operationId: exportInternalAccount
       tags:
         - Internal Accounts
@@ -3652,6 +3654,17 @@ paths:
           schema:
             type: string
           example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalAccountExportRequest'
+            examples:
+              export:
+                summary: Export request (both steps)
+                value:
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
       responses:
         '200':
           description: Signed retry accepted. Returns the encrypted wallet credentials.
@@ -3660,7 +3673,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccountExportResponse'
         '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the target internal account, along with a `requestId` that must be echoed back on the retry.
+          description: Challenge issued. The response contains a `payloadToSign` (which binds the submitted `clientPublicKey`) that must be signed with the session private key of a verified authentication credential on the target internal account, along with a `requestId` that must be echoed back on the retry.
           content:
             application/json:
               schema:
@@ -3672,7 +3685,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending export challenge for this internal account, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending export challenge for this internal account, when the `Request-Id` does not match an unexpired pending challenge, or when the retry's `clientPublicKey` does not match the one bound into `payloadToSign` on the initial call.
           content:
             application/json:
               schema:
@@ -13719,6 +13732,17 @@ components:
           description: A list of permissions to grant to the token
           items:
             $ref: '#/components/schemas/Permission'
+    InternalAccountExportRequest:
+      title: Internal Account Export Request
+      description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.
+      type: object
+      required:
+        - clientPublicKey
+      properties:
+        clientPublicKey:
+          type: string
+          description: Fresh P-256 public key, uncompressed SEC1 hex — 130 hex chars where the first two are `04` (the uncompressed-point indicator). Generate a new keypair for each export and discard the private key after decrypting the response.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
     InternalAccountExportResponse:
       title: Internal Account Export Response
       type: object
