@@ -784,6 +784,97 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/external-accoun
   depositing funds from external sources.
 </Info>
 
+## Get external account by ID
+
+Retrieve a specific external account by its system-generated ID:
+
+```bash cURL
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/{externalAccountId}' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+```
+
+**Response:**
+
+```json
+{
+  "id": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "USD",
+  "platformAccountId": "user_123_primary_bank",
+  "accountInfo": {
+    "accountType": "US_ACCOUNT",
+    "accountNumber": "123456789",
+    "routingNumber": "021000021",
+    "accountCategory": "CHECKING",
+    "bankName": "Chase Bank",
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "John Doe"
+    }
+  }
+}
+```
+
+## Update external account
+
+Update mutable fields on an external account. Only `platformAccountId` and `beneficiary` can be updated:
+
+<Tabs>
+<Tab title="Update platformAccountId">
+```bash cURL
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/{externalAccountId}' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "platformAccountId": "new_account_id_456"
+  }'
+```
+</Tab>
+
+<Tab title="Update beneficiary">
+```bash cURL
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/{externalAccountId}' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "Jane Doe",
+      "birthDate": "1990-01-15",
+      "nationality": "US",
+      "address": {
+        "line1": "456 Market Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "postalCode": "94105",
+        "country": "US"
+      }
+    }
+  }'
+```
+</Tab>
+</Tabs>
+
+<Warning>
+  Updates to beneficiary data may trigger account re-review, temporarily changing the status to `UNDER_REVIEW`.
+</Warning>
+
+## Delete external account
+
+Delete an external account by its ID:
+
+```bash cURL
+curl -X DELETE 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/{externalAccountId}' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+```
+
+Returns `204 No Content` on success.
+
+<Warning>
+  Deleting an external account is permanent. Ensure no pending transactions reference this account before deletion.
+</Warning>
+
 ## Best practices
 
 <AccordionGroup>
