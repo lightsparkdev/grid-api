@@ -13,15 +13,16 @@ post:
     1. Call `POST /internal-accounts/{id}/export` with the request body
     `{ "clientPublicKey": "..." }` and no signature headers. Grid binds
     the `clientPublicKey` into the `payloadToSign` it returns, so the
-    subsequent `Grid-Wallet-Signature` commits to the target encryption
-    key. The response is `202` with `payloadToSign`, `requestId`, and
-    `expiresAt`.
+    subsequent stamp in `Grid-Wallet-Signature` commits to the target
+    encryption key. The response is `202` with `payloadToSign`,
+    `requestId`, and `expiresAt`.
 
 
-    2. Sign the `payloadToSign` with the session private key of a
-    verified authentication credential on the same internal account
-    and retry with the signature as the `Grid-Wallet-Signature` header
-    and the `requestId` echoed back as the `Request-Id` header. The
+    2. Use the session API keypair of a verified authentication credential
+    on the same internal account to build an API-key stamp over
+    `payloadToSign`, then retry with that full stamp as the
+    `Grid-Wallet-Signature` header and the `requestId` echoed back as
+    the `Request-Id` header. The
     retry body must carry the **same** `clientPublicKey` submitted in
     step 1 — Grid rejects the retry with `401` if it disagrees with
     what was bound into `payloadToSign`. The signed retry returns
@@ -50,14 +51,13 @@ post:
       in: header
       required: false
       description: >-
-        Signature over the `payloadToSign` returned in a prior `202`
-        response, produced with the session private key of a verified
-        authentication credential on the target internal account and
-        base64-encoded. Required on the signed retry; ignored on the
-        initial call.
+        Full API-key stamp built over the prior `payloadToSign` with
+        the session API keypair of a verified authentication credential
+        on the target internal account. Required on the signed retry;
+        ignored on the initial call.
       schema:
         type: string
-      example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+      example: eyJwdWJsaWNLZXkiOiIuLi4iLCJzaWduYXR1cmUiOiIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2In0
     - name: Request-Id
       in: header
       required: false
@@ -89,11 +89,10 @@ post:
             $ref: ../../components/schemas/internal_accounts/InternalAccountExportResponse.yaml
     '202':
       description: >-
-        Challenge issued. The response contains a `payloadToSign` (which
-        binds the submitted `clientPublicKey`) that must be signed with
-        the session private key of a verified authentication credential
-        on the target internal account, along with a `requestId` that
-        must be echoed back on the retry.
+        Challenge issued. The response contains `payloadToSign` (which
+        binds the submitted `clientPublicKey`) plus a `requestId`.
+        Build an API-key stamp over `payloadToSign` with the session
+        API keypair and echo `requestId` on the retry.
       content:
         application/json:
           schema:
