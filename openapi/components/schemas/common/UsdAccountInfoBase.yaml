@@ -20,7 +20,9 @@ properties:
     minLength: 9
     maxLength: 9
     pattern: ^[0-9]{9}$
-example:
-  accountType: USD_ACCOUNT
-  accountNumber: '1234567890'
-  routingNumber: '021000021'
+  bankAccountType:
+    type: string
+    description: The bank account type. Required for certain corridors (e.g., El Salvador).
+    enum:
+    - CHECKING
+    - SAVINGS

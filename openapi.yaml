@@ -6436,10 +6436,12 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
-      example:
-        accountType: USD_ACCOUNT
-        accountNumber: '1234567890'
-        routingNumber: '021000021'
+        bankAccountType:
+          type: string
+          description: The bank account type. Required for certain corridors (e.g., El Salvador).
+          enum:
+            - CHECKING
+            - SAVINGS
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -6456,6 +6458,7 @@ components:
                   - WIRE
                   - RTP
                   - FEDNOW
+                  - BANK_TRANSFER
     PaymentUsdAccountInfo:
       title: USD Bank Account
       allOf:
@@ -6502,9 +6505,6 @@ components:
           minLength: 18
           maxLength: 18
           pattern: ^[0-9]{18}$
-      example:
-        accountType: MXN_ACCOUNT
-        clabeNumber: '123456789012345678'
     MxnAccountInfo:
       allOf:
         - $ref: '#/components/schemas/MxnAccountInfoBase'
@@ -6555,10 +6555,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: DKK_ACCOUNT
-        iban: DE89370400440532013000
-        swiftCode: DEUTDEFF
     DkkAccountInfo:
       allOf:
         - $ref: '#/components/schemas/DkkAccountInfoBase'
@@ -6610,10 +6606,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: EUR_ACCOUNT
-        iban: DE89370400440532013000
-        swiftCode: DEUTDEFF
     EurAccountInfo:
       allOf:
         - $ref: '#/components/schemas/EurAccountInfoBase'
@@ -6658,9 +6650,6 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
-      example:
-        accountType: INR_ACCOUNT
-        vpa: user@upi
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -6702,10 +6691,6 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
-      example:
-        accountType: NGN_ACCOUNT
-        accountNumber: '0123456789'
-        bankName: Example Bank
     NgnAccountInfo:
       allOf:
         - $ref: '#/components/schemas/NgnAccountInfoBase'
@@ -6816,10 +6801,6 @@ components:
           maxLength: 8
           example: '12345678'
           pattern: ^[0-9]{8}$
-      example:
-        accountType: GBP_ACCOUNT
-        sortCode: '123456'
-        accountNumber: '12345678'
     GbpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GbpAccountInfoBase'
@@ -6876,11 +6857,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: HKD_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '123456789012'
-        swiftCode: HSBCHKHHHKH
     HkdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/HkdAccountInfoBase'
@@ -6946,12 +6922,6 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+62[0-9]{9,12}$
-      example:
-        accountType: IDR_ACCOUNT
-        bankName: Bank Central Asia
-        accountNumber: '1234567890'
-        swiftCode: CENAIDJA
-        phoneNumber: '+6281234567890'
     IdrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/IdrAccountInfoBase'
@@ -7008,11 +6978,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: MYR_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        swiftCode: MABORUMMYYY
     MyrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/MyrAccountInfoBase'
@@ -7063,10 +7028,6 @@ components:
           maxLength: 16
           example: '001234567890'
           pattern: ^[0-9]{8,16}$
-      example:
-        accountType: PHP_ACCOUNT
-        bankName: BDO Unibank
-        accountNumber: '001234567890'
     PhpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PhpAccountInfoBase'
@@ -7124,11 +7085,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: SGD_ACCOUNT
-        bankName: DBS Bank Ltd
-        accountNumber: '0123456789'
-        swiftCode: DBSSSGSG
     SgdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/SgdAccountInfoBase'
@@ -7187,11 +7143,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: THB_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        swiftCode: BKKBTHBK
     ThbAccountInfo:
       allOf:
         - $ref: '#/components/schemas/ThbAccountInfoBase'
@@ -7248,11 +7199,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: VND_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        swiftCode: BFTVVNVX
     VndAccountInfo:
       allOf:
         - $ref: '#/components/schemas/VndAccountInfoBase'
@@ -7483,10 +7429,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: AED_ACCOUNT
-        iban: AE070331234567890123456
-        swiftCode: EBILAEAD
     AedAccountInfo:
       allOf:
         - $ref: '#/components/schemas/AedAccountInfoBase'
@@ -7536,10 +7478,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: KES_ACCOUNT
-        phoneNumber: '+254712345678'
-        provider: Example Provider
     KesAccountInfo:
       allOf:
         - $ref: '#/components/schemas/KesAccountInfoBase'
@@ -7589,10 +7527,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: MWK_ACCOUNT
-        phoneNumber: '+1234567890'
-        provider: Example Provider
     MwkAccountInfo:
       allOf:
         - $ref: '#/components/schemas/MwkAccountInfoBase'
@@ -7642,10 +7576,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: RWF_ACCOUNT
-        phoneNumber: '+250781234567'
-        provider: Example Provider
     RwfAccountInfo:
       allOf:
         - $ref: '#/components/schemas/RwfAccountInfoBase'
@@ -7695,10 +7625,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: TZS_ACCOUNT
-        phoneNumber: '+255712345678'
-        provider: Example Provider
     TzsAccountInfo:
       allOf:
         - $ref: '#/components/schemas/TzsAccountInfoBase'
@@ -7748,10 +7674,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: UGX_ACCOUNT
-        phoneNumber: '+1234567890'
-        provider: Example Provider
     UgxAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UgxAccountInfoBase'
@@ -7813,11 +7735,6 @@ components:
             - CI
             - SN
             - TG
-      example:
-        accountType: XOF_ACCOUNT
-        phoneNumber: '+1234567890'
-        provider: Example Provider
-        region: BJ
     XofAccountInfo:
       allOf:
         - $ref: '#/components/schemas/XofAccountInfoBase'
@@ -7867,10 +7784,6 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
-      example:
-        accountType: ZAR_ACCOUNT
-        accountNumber: '1234567890'
-        bankName: Example Bank
     ZarAccountInfo:
       allOf:
         - $ref: '#/components/schemas/ZarAccountInfoBase'
@@ -7920,10 +7833,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: ZMW_ACCOUNT
-        phoneNumber: '+260971234567'
-        provider: Example Provider
     ZmwAccountInfo:
       allOf:
         - $ref: '#/components/schemas/ZmwAccountInfoBase'
@@ -7973,10 +7882,6 @@ components:
           description: The mobile money provider name
           minLength: 1
           maxLength: 255
-      example:
-        accountType: BWP_ACCOUNT
-        phoneNumber: '+1234567890'
-        provider: Example Provider
     BwpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BwpAccountInfoBase'
@@ -8036,11 +7941,6 @@ components:
           enum:
             - CM
             - CG
-      example:
-        accountType: XAF_ACCOUNT
-        phoneNumber: '+1234567890'
-        provider: Example Provider
-        region: CM
     XafAccountInfo:
       allOf:
         - $ref: '#/components/schemas/XafAccountInfoBase'
@@ -8071,7 +7971,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - branchCode
         - phoneNumber
@@ -8080,11 +7979,6 @@ components:
           type: string
           enum:
             - BDT_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8110,13 +8004,6 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-      example:
-        accountType: BDT_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        branchCode: '11111'
-        swiftCode: DEUTDEFF
-        phoneNumber: '+1234567890'
     BdtAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BdtAccountInfoBase'
@@ -8184,18 +8071,12 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
       properties:
         accountType:
           type: string
           enum:
             - EGP_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8215,12 +8096,6 @@ components:
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-      example:
-        accountType: EGP_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        iban: DE89370400440532013000
-        swiftCode: DEUTDEFF
     EgpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/EgpAccountInfoBase'
@@ -8251,7 +8126,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - phoneNumber
       properties:
@@ -8259,11 +8133,6 @@ components:
           type: string
           enum:
             - GHS_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8276,11 +8145,6 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-      example:
-        accountType: GHS_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        phoneNumber: '+1234567890'
     GhsAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GhsAccountInfoBase'
@@ -8312,35 +8176,25 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
-        - bankAccountType
+        - phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - GTQ_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
           minLength: 1
           maxLength: 34
-        bankAccountType:
+        phoneNumber:
           type: string
-          description: The bank account type
-          enum:
-            - CHECKING
-            - SAVINGS
-      example:
-        accountType: GTQ_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        bankAccountType: CHECKING
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -8354,6 +8208,7 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
+                  - MOBILE_MONEY
     PaymentGtqAccountInfo:
       title: GTQ Account
       allOf:
@@ -8384,9 +8239,6 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-      example:
-        accountType: HTG_ACCOUNT
-        phoneNumber: '+1234567890'
     HtgAccountInfo:
       allOf:
         - $ref: '#/components/schemas/HtgAccountInfoBase'
@@ -8417,7 +8269,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - branchCode
         - bankAccountType
@@ -8426,11 +8277,6 @@ components:
           type: string
           enum:
             - JMD_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8448,12 +8294,6 @@ components:
           enum:
             - CHECKING
             - SAVINGS
-      example:
-        accountType: JMD_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        branchCode: '11111'
-        bankAccountType: CHECKING
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
@@ -8484,7 +8324,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - phoneNumber
       properties:
@@ -8492,11 +8331,6 @@ components:
           type: string
           enum:
             - PKR_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8516,12 +8350,6 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-      example:
-        accountType: PKR_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        iban: DE89370400440532013000
-        phoneNumber: '+1234567890'
     PkrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PkrAccountInfoBase'
@@ -8861,11 +8689,6 @@ components:
           minLength: 11
           maxLength: 14
           pattern: ^[0-9]{11,14}$
-      example:
-        accountType: BRL_ACCOUNT
-        pixKey: user@example.com
-        pixKeyType: CPF
-        taxId: '11111111111'
     BrlAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BrlAccountInfoBase'
@@ -9888,10 +9711,7 @@ components:
       type: object
       required:
         - beneficiaryType
-        - address
-        - birthDate
         - fullName
-        - nationality
       properties:
         beneficiaryType:
           type: string
@@ -10407,19 +10227,15 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - bankAccountType
+        - bankName
+        - phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - COP_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -10431,11 +10247,16 @@ components:
           enum:
             - CHECKING
             - SAVINGS
-      example:
-        accountType: COP_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
-        bankAccountType: CHECKING
+        bankName:
+          type: string
+          description: The name of the bank
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
     CopAccountInfo:
       allOf:
         - $ref: '#/components/schemas/CopAccountInfoBase'
@@ -10449,13 +10270,13 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
+                  - MOBILE_MONEY
     CopBeneficiary:
       title: Individual Beneficiary
       type: object
       required:
         - beneficiaryType
-        - documentNumber
-        - documentType
+        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10480,14 +10301,14 @@ components:
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
         documentType:
           type: string
           description: The type of identity document (e.g., national ID, passport)
         documentNumber:
           type: string
           description: The identity document number
+        address:
+          $ref: '#/components/schemas/Address'
     CopExternalAccountInfo:
       title: COP Account
       allOf:
@@ -10620,7 +10441,6 @@ components:
         - beneficiaryType
         - countryOfResidence
         - fullName
-        - phoneNumber
       properties:
         beneficiaryType:
           type: string

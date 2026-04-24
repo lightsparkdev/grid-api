@@ -20,7 +20,3 @@ properties:
     description: The name of the bank
     minLength: 1
     maxLength: 255
-example:
-  accountType: NGN_ACCOUNT
-  accountNumber: '0123456789'
-  bankName: Example Bank

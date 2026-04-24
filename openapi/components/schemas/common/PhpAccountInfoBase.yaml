@@ -21,7 +21,3 @@ properties:
     maxLength: 16
     example: '001234567890'
     pattern: ^[0-9]{8,16}$
-example:
-  accountType: PHP_ACCOUNT
-  bankName: BDO Unibank
-  accountNumber: '001234567890'

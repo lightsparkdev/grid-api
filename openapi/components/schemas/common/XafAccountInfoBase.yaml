@@ -30,8 +30,3 @@ properties:
     enum:
     - CM
     - CG
-example:
-  accountType: XAF_ACCOUNT
-  phoneNumber: '+1234567890'
-  provider: Example Provider
-  region: CM
