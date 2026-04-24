@@ -300,6 +300,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     fields: [
       { name: 'accountNumber', example: '1234567890' },
       { name: 'bankAccountType', example: 'SAVINGS', description: 'CHECKING or SAVINGS' },
+      { name: 'bankName', example: 'Bancolombia' },
       { name: 'phoneNumber', example: '+573001234567' },
     ],
     beneficiaryRequired: true,
