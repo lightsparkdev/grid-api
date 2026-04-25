@@ -3635,9 +3635,9 @@ paths:
 
         Export is a two-step signed-retry flow (same pattern as add-additional credential, revoke credential, and revoke session):
 
-        1. Call `POST /internal-accounts/{id}/export` with the request body `{ "clientPublicKey": "..." }` and no signature headers. Grid binds the `clientPublicKey` into the `payloadToSign` it returns, so the subsequent `Grid-Wallet-Signature` commits to the target encryption key. The response is `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /internal-accounts/{id}/export` with the request body `{ "clientPublicKey": "..." }` and no signature headers. Grid binds the `clientPublicKey` into the `payloadToSign` it returns, so the subsequent stamp in `Grid-Wallet-Signature` commits to the target encryption key. The response is `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the same internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the **same** `clientPublicKey` submitted in step 1 — Grid rejects the retry with `401` if it disagrees with what was bound into `payloadToSign`. The signed retry returns `200` with `encryptedWalletCredentials`, which the client decrypts with the matching private key.
+        2. Use the session API keypair of a verified authentication credential on the same internal account to build an API-key stamp over `payloadToSign`, then retry with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the **same** `clientPublicKey` submitted in step 1 — Grid rejects the retry with `401` if it disagrees with what was bound into `payloadToSign`. The signed retry returns `200` with `encryptedWalletCredentials`, which the client decrypts with the matching private key.
 
         The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair for this export and discard the private key after decrypting. Do not reuse the keypair from any prior verify call — that private key was already discarded after decrypting the session signing key it was issued against.
       operationId: exportInternalAccount
@@ -3655,10 +3655,10 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the target internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on the target internal account. Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
         - name: Request-Id
           in: header
           required: false
@@ -3685,7 +3685,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccountExportResponse'
         '202':
-          description: Challenge issued. The response contains a `payloadToSign` (which binds the submitted `clientPublicKey`) that must be signed with the session private key of a verified authentication credential on the target internal account, along with a `requestId` that must be echoed back on the retry.
+          description: Challenge issued. The response contains `payloadToSign` (which binds the submitted `clientPublicKey`) plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair and echo `requestId` on the retry.
           content:
             application/json:
               schema:
@@ -3726,7 +3726,7 @@ paths:
 
         **Adding an additional credential**
 
-        Registering an additional credential against an internal account that already has one requires a signature from an existing verified credential. Call this endpoint with the new credential's details; if an existing credential is already registered on the internal account the response is `202` with a `payloadToSign` and a `requestId`. Sign the payload with the session private key of an existing verified credential on the same internal account (decrypted client-side from its `encryptedSessionSigningKey`) and retry the same request with the signature supplied as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+        Registering an additional credential against an internal account that already has one requires a signature from an existing verified credential. Call this endpoint with the new credential's details; if an existing credential is already registered on the internal account the response is `202` with a `payloadToSign` and a `requestId`. Use the session API keypair of an existing verified credential on the same internal account (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -3736,10 +3736,10 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of an existing verified authentication credential on the target internal account and base64-encoded. Required when registering an additional credential on an internal account that already has one; ignored when the internal account has no existing credentials.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified authentication credential on the target internal account. Required when registering an additional credential on an internal account that already has one; ignored when the internal account has no existing credentials.
           schema:
             type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
         - name: Request-Id
           in: header
           required: false
@@ -3818,7 +3818,7 @@ paths:
                     requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '202':
-          description: An existing authentication credential is already registered on the internal account. The response contains a `payloadToSign` that must be signed with the session private key of an existing verified credential on the same internal account, along with a `requestId` that must be echoed back on the retry. The signature is passed as the `Grid-Wallet-Signature` header and the `requestId` as the `Request-Id` header on a retry of this request to complete registration.
+          description: An existing authentication credential is already registered on the internal account. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
           content:
             application/json:
               schema:
@@ -3944,7 +3944,7 @@ paths:
 
         1. Call `DELETE /auth/credentials/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign the `payloadToSign` with the session private key of an existing verified credential on the same internal account — other than the one being revoked — and retry the same `DELETE` request with the signature supplied as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
+        2. Use the session API keypair of an existing verified credential on the same internal account — other than the one being revoked — to build an API-key stamp over `payloadToSign`, then retry the same `DELETE` request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
 
         The account must retain at least one authentication credential; an account with only a single credential cannot use this endpoint to revoke it.
       operationId: revokeAuthCredential
@@ -3962,10 +3962,10 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of an existing verified authentication credential on the same internal account (other than the one being revoked) and base64-encoded. Required on the signed retry; ignored on the initial call.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified authentication credential on the same internal account (other than the one being revoked). Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
         - name: Request-Id
           in: header
           required: false
@@ -3975,7 +3975,7 @@ paths:
           example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
         '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of an existing verified credential on the same internal account (other than the one being revoked), along with a `requestId` that must be echoed back on the retry.
+          description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account (other than the one being revoked), then echo `requestId` on the retry.
           content:
             application/json:
               schema:
@@ -4232,7 +4232,7 @@ paths:
 
         1. Call `DELETE /auth/sessions/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign the `payloadToSign` with the session private key of a verified session on the same internal account (this can be the session being revoked, for self-logout) and retry the same `DELETE` request with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
+        2. Use the session API keypair of a verified session on the same internal account (this can be the session being revoked, for self-logout) to build an API-key stamp over `payloadToSign`, then retry the same `DELETE` request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
       operationId: revokeAuthSession
       tags:
         - Embedded Wallet Auth
@@ -4248,10 +4248,10 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified session on the same internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified session on the same internal account. Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
         - name: Request-Id
           in: header
           required: false
@@ -4261,7 +4261,7 @@ paths:
           example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
         '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified session on the same internal account, along with a `requestId` that must be echoed back on the retry.
+          description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified session on the same internal account, then echo `requestId` on the retry.
           content:
             application/json:
               schema:
@@ -13566,7 +13566,7 @@ components:
             $ref: '#/components/schemas/Permission'
     InternalAccountExportRequest:
       title: Internal Account Export Request
-      description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.
+      description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent stamp in `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.
       type: object
       required:
         - clientPublicKey
@@ -13588,8 +13588,11 @@ components:
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         encryptedWalletCredentials:
           type: string
-          description: Encrypted wallet mnemonic, sealed to the `clientPublicKey` supplied on the verify request. Decrypt with the matching private key, then manage the mnemonic securely — it is the master key of the self-custodial Embedded Wallet. Encoded as base58check (same format as `AuthSession.encryptedSessionSigningKey`).
-          example: 5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp
+          description: |-
+            Encrypted wallet mnemonic, sealed to the `clientPublicKey` from the request body using HPKE: DHKEM(P-256, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM. Decrypt with the matching private key, then manage the mnemonic securely because it is the master key of the self-custodial Embedded Wallet.
+            The value is a JSON string of the form `{"version": "v1.0.0", "data": "<hex>", "dataSignature": "<hex>", "enclaveQuorumPublic": "<hex>"}`. `data` hex-decodes to JSON `{"encappedPublic": "<hex>", "ciphertext": "<hex>", "organizationId": "<id>"}`, where `encappedPublic` is the uncompressed SEC1 ephemeral public key. `dataSignature` is an ECDSA-P256-SHA256 signature over the `data` bytes produced by the issuer key in `enclaveQuorumPublic`; verify before decrypting.
+            In sandbox, `dataSignature` and `enclaveQuorumPublic` are empty strings. Clients should bypass attestation verification when calling against sandbox.
+          example: '{"version":"v1.0.0","data":"7b22656e6361707065645075626c6963223a22303433...","dataSignature":"3045022100c9...","enclaveQuorumPublic":"04a1b2c3..."}'
     SignedRequestChallenge:
       title: Signed Request Challenge
       type: object
@@ -13601,7 +13604,7 @@ components:
       properties:
         payloadToSign:
           type: string
-          description: Payload that must be signed with the session private key of a verified authentication credential. The resulting signature is passed as the `Grid-Wallet-Signature` header on the retry of the originating request to complete the operation.
+          description: Canonical payload for the retry authorization stamp. Build an API-key stamp over this exact value with the session API keypair, then send the full base64url-encoded stamp in `Grid-Wallet-Signature` on the retry that completes the original request.
           example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
         requestId:
           type: string
