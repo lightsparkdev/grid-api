@@ -22,8 +22,8 @@ post:
     on the same internal account to build an API-key stamp over
     `payloadToSign`, then retry with that full stamp as the
     `Grid-Wallet-Signature` header and the `requestId` echoed back as
-    the `Request-Id` header. The
-    retry body must carry the **same** `clientPublicKey` submitted in
+    the `Request-Id` header. The retry body must carry the **same**
+    `clientPublicKey` submitted in
     step 1 — Grid rejects the retry with `401` if it disagrees with
     what was bound into `payloadToSign`. The signed retry returns
     `200` with `encryptedWalletCredentials`, which the client decrypts
@@ -57,7 +57,7 @@ post:
         ignored on the initial call.
       schema:
         type: string
-      example: eyJwdWJsaWNLZXkiOiIuLi4iLCJzaWduYXR1cmUiOiIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2In0
+      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
     - name: Request-Id
       in: header
       required: false
