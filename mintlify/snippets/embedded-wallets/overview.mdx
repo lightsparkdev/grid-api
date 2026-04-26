@@ -1,10 +1,11 @@
-An Embedded Wallet is a self-custodial wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment.
+An Embedded Wallet is a self-custodial [Spark](https://spark.money) wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment.
 
 ## Why an Embedded Wallet?
 
-- **Self-custody.** Grid never has unilateral access to move funds. The customer's device is the only party that can authorize a transaction.
-- **Stablecoin-denominated.** Balances are held as USDB. Use the standard `/quotes` API to convert in from fiat or out to any supported Grid bank-account rail (ACH, PIX, CLABE, UPI, IBAN, UMA, …).
+- **Self-custody.** Grid never has unilateral access to move user funds, and neither do you. The customer's device is the only party that can authorize a transaction.
+- **Stablecoin-denominated.** Balances are held as stablecoins like [Brale-issued USDB](https://brale.xyz/stablecoins/USDB). Use the standard `/quotes` API to convert in from fiat or out to any supported Grid bank-account rail (ACH, PIX, CLABE, UPI, IBAN, UMA, …).
 - **Grid-native.** You reuse the customer, internal-account, quote, transaction, and webhook primitives you already integrated for Payouts or P2P. The only thing that's new is an auth + signing layer at the wallet.
+- **Built on Bitcoin.** Embedded wallets run on Spark, a Lightning-compatible Bitcoin L2 that supports instant, low-fee Bitcoin and Stablecoin transfers. You get the benefits of running on Bitcoin, the most neutral, decentralized, and secure network for money.
 
 ## Payment flow
 
@@ -44,7 +45,7 @@ See <a href="client-keys">Client keys & signing</a> for the full key-management 
 ## Prerequisites
 
 <Warning>
-  Customers who hold an Embedded Wallet must be KYC/KYB verified before any funds can move in or out. This quickstart picks up after KYC is complete.
+  Customers who hold an Embedded Wallet must be KYC/KYB verified before any wallet funds can move from or to fiat rails. This quickstart picks up after KYC is complete.
 
   In sandbox, customers are automatically KYC approved on creation so you can skip straight to wallet setup.
 </Warning>
@@ -323,7 +324,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
 
     Post the assertion plus `clientPublicKey` (uncompressed hex) back to your backend.
   </Step>
-  <Step title="Your backend verifies the assertion to mint a session">
+  <Step title="Your backend verifies the assertion with Grid to mint a session">
     ```bash
     curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/verify" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
