@@ -1,0 +1,30 @@
+---
+title: "Client keys"
+description: "Understand the client keys used to sign Global Account actions."
+icon: "/images/icons/key2.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Client keys bind a signed Global Account action to the customer's current device.
+
+When a customer authorizes an outbound action, the client generates a key pair and sends the public key to Grid during credential verification. Grid encrypts the short-lived session signing key to that public key. Only the device with the matching private key can decrypt it and sign the action.
+
+## What client keys protect
+
+Client keys help ensure that:
+
+- The session signing key is delivered only to the device that requested it
+- A stolen encrypted session key cannot be used by another device
+- A signed withdrawal or account action is tied to an authenticated customer session
+
+## Signing responsibilities
+
+Your frontend or mobile app handles device-local key generation, decryption, and signing. Your backend holds Grid API credentials and brokers requests to Grid.
+
+The client should never receive your Grid client secret.
+
+## Full technical reference
+
+The detailed signing guide lives in the Embedded Wallets technical docs because the API primitive is still named Embedded Wallet.
+
+See [Client keys and signing](/payouts-and-b2b/embedded-wallets/client-keys) for full key formats, signing steps, and examples.

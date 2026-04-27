@@ -1,0 +1,50 @@
+---
+title: "Funding"
+description: "Fund a Global Account with supported Grid payment and account flows."
+icon: "/images/icons/arrow-inbox.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Funding adds value to a customer's Global Account. Incoming funds behave like other Grid account deposits: the customer does not need to sign an incoming transfer.
+
+## Funding model
+
+A Global Account can receive funds through supported Grid flows for your platform, such as prefunded balances, just-in-time funding, or quotes from another supported source.
+
+The account appears as an `InternalAccount:...` with `type: "EMBEDDED_WALLET"`, so you can use it as the destination in quote-based flows.
+
+## Sandbox funding
+
+In sandbox, fund the account directly:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 100000
+  }'
+```
+
+Grid sends an incoming payment webhook when the balance updates.
+
+## Quote-based funding
+
+To fund from another supported source, create a quote with the Global Account as the destination.
+
+```json
+{
+  "destination": {
+    "destinationType": "ACCOUNT",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+  }
+}
+```
+
+The available source currencies, funding rails, and settlement behavior depend on your platform configuration.
+
+## Reconciliation
+
+Use transaction webhooks to update your product state when funds arrive. Do not rely only on client-side state or a successful request response.
+
+See [Webhooks](/global-accounts/webhooks) for details.

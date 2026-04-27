@@ -1,0 +1,34 @@
+---
+title: "Webhooks"
+description: "Use webhooks to reconcile Global Account funding, withdrawals, and account activity."
+icon: "/images/icons/bell.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Use webhooks to keep your product state in sync with Global Account activity.
+
+Global Accounts use the standard Grid transaction lifecycle. Your backend should listen for transaction events when funds arrive, withdrawals execute, or payments settle.
+
+## What to track
+
+For Global Accounts, webhooks are especially important for:
+
+- Incoming account funding
+- Quote execution status
+- Withdrawal settlement
+- Failed or rejected transactions
+- Refunds or reversals when applicable
+- Customer-facing balance updates
+
+## Recommended pattern
+
+1. Store the customer, account, quote, and transaction IDs from API responses.
+2. Process transaction webhooks idempotently.
+3. Update customer-visible state only after confirmed webhook events when settlement status matters.
+4. Reconcile webhook state against API reads for operational workflows.
+
+## Related docs
+
+- [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle)
+- [API reference webhooks](/api-reference/webhooks)
+- [Payouts & B2B webhooks](/payouts-and-b2b/platform-tools/webhooks)

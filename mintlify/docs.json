@@ -73,6 +73,44 @@
         ]
       },
       {
+        "tab": "Global Accounts",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "global-accounts/index",
+              "global-accounts/implementation-overview",
+              "global-accounts/quickstart"
+            ]
+          },
+          {
+            "group": "Account setup",
+            "pages": [
+              "global-accounts/customers",
+              "global-accounts/funding",
+              "global-accounts/withdrawals"
+            ]
+          },
+          {
+            "group": "Account security",
+            "pages": [
+              "global-accounts/client-keys",
+              "global-accounts/authentication",
+              "global-accounts/managing-sessions",
+              "global-accounts/exporting-wallet"
+            ]
+          },
+          {
+            "group": "Platform tools",
+            "pages": [
+              "global-accounts/webhooks",
+              "global-accounts/sandbox-testing",
+              "global-accounts/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Payouts & B2B",
         "groups": [
           {
@@ -163,16 +201,6 @@
             ]
           },
           {
-            "group": "Embedded Wallets",
-            "pages": [
-              "ramps/embedded-wallets/overview",
-              "ramps/embedded-wallets/client-keys",
-              "ramps/embedded-wallets/authentication",
-              "ramps/embedded-wallets/managing-sessions",
-              "ramps/embedded-wallets/exporting-wallet"
-            ]
-          },
-          {
             "group": "Platform Tools",
             "pages": [
               "ramps/platform-tools/webhooks",
@@ -212,16 +240,6 @@
             "pages": [
               "rewards/developer-guides/distributing-rewards",
               "rewards/developer-guides/listing-transactions"
-            ]
-          },
-          {
-            "group": "Embedded Wallets",
-            "pages": [
-              "rewards/embedded-wallets/overview",
-              "rewards/embedded-wallets/client-keys",
-              "rewards/embedded-wallets/authentication",
-              "rewards/embedded-wallets/managing-sessions",
-              "rewards/embedded-wallets/exporting-wallet"
             ]
           },
           {
@@ -269,16 +287,6 @@
               "global-p2p/sending-receiving-payments/receiving-payments",
               "global-p2p/sending-receiving-payments/reconciliation",
               "global-p2p/sending-receiving-payments/error-handling"
-            ]
-          },
-          {
-            "group": "Embedded Wallets",
-            "pages": [
-              "global-p2p/embedded-wallets/overview",
-              "global-p2p/embedded-wallets/client-keys",
-              "global-p2p/embedded-wallets/authentication",
-              "global-p2p/embedded-wallets/managing-sessions",
-              "global-p2p/embedded-wallets/exporting-wallet"
             ]
           },
           {

@@ -1,0 +1,34 @@
+---
+title: "Sandbox testing"
+description: "Test Global Accounts flows in sandbox without moving real funds."
+icon: "/images/icons/sandbox.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Sandbox lets you test the Global Accounts integration before moving real funds.
+
+## Sandbox behavior
+
+In sandbox:
+
+- Customers can be automatically approved for test flows
+- You can fund internal accounts with sandbox endpoints
+- Email OTP verification uses `000000`
+- Signed account actions can use `sandbox-valid-signature`
+- Webhooks mirror the production event model
+
+## Suggested test path
+
+1. Create a sandbox customer.
+2. Find the customer's Global Account by filtering internal accounts with `type=EMBEDDED_WALLET`.
+3. Fund the account with the sandbox funding endpoint.
+4. Create a test external account.
+5. Create a withdrawal quote.
+6. Execute with `Grid-Wallet-Signature: sandbox-valid-signature`.
+7. Confirm webhooks arrive and update your internal state.
+
+## Related docs
+
+- [Quickstart](/global-accounts/quickstart)
+- [Sandbox testing](/api-reference/sandbox-testing)
+- [Payouts & B2B sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing)

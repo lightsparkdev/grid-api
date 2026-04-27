@@ -1,0 +1,45 @@
+---
+title: "Authentication"
+description: "Authenticate customers before signed Global Account actions."
+icon: "/images/icons/shield.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Global Accounts require customer authentication before outbound actions, credential changes, session revocation, and wallet export.
+
+The current API calls this area `Embedded Wallet Auth` because Global Accounts are powered by the embedded wallet account primitive.
+
+## Supported credential types
+
+Global Accounts support the same credential types as Embedded Wallet Auth:
+
+| Credential | Common use |
+| --- | --- |
+| Passkey | Biometric or device-native authentication with WebAuthn-compatible flows. |
+| OAuth | Authentication through your existing identity provider. |
+| Email OTP | Email-based verification and recovery flows. |
+
+## Session pattern
+
+Most signed actions use this pattern:
+
+1. Register or select a customer credential.
+2. Request a challenge for that credential.
+3. Verify the challenge response with Grid.
+4. Receive an encrypted session signing key.
+5. Decrypt the session signing key on the client.
+6. Sign the action payload.
+7. Send the signature to Grid with the action request.
+
+## Sandbox shortcut
+
+Sandbox accepts fixed values for testing:
+
+- Email OTP code: `000000`
+- Wallet signature: `sandbox-valid-signature`
+
+Use these only in sandbox. Production requires real verification and signing.
+
+## Full technical reference
+
+See [Embedded Wallet authentication](/payouts-and-b2b/embedded-wallets/authentication) for complete passkey, OAuth, email OTP, and signed-retry examples.

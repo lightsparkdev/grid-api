@@ -1,0 +1,40 @@
+---
+title: "Customers"
+description: "Configure customers before issuing and using Global Accounts."
+icon: "/images/icons/people.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+A Global Account belongs to a Grid customer. Before the account can move funds to or from fiat rails, the customer must satisfy the required KYC or KYB checks for your platform and use case.
+
+## Customer types
+
+Global Accounts can be used with individual or business customers, depending on your platform configuration.
+
+- Use an **individual customer** when the account belongs to a person.
+- Use a **business customer** when the account belongs to a company or organization.
+
+Your compliance model determines whether Grid hosts the KYC/KYB flow or your platform provides verified customer information.
+
+## Account provisioning
+
+When a customer is created on a platform enabled for Global Accounts, Grid provisions a Global Account as an internal account with `type: "EMBEDDED_WALLET"`.
+
+Use the customer's `Customer:...` ID to list internal accounts:
+
+```bash
+curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Compliance before movement
+
+<Warning>
+  Do not let customers move funds to or from fiat rails until the required KYC or KYB checks are complete. Sandbox can approve customers automatically for testing, but production behavior depends on your platform setup.
+</Warning>
+
+## Related docs
+
+- [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers)
+- [Account model](/platform-overview/core-concepts/account-model)
+- [Implementation overview](/global-accounts/implementation-overview)

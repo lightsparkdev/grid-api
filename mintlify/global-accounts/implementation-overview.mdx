@@ -1,0 +1,41 @@
+---
+title: "Implementation overview"
+description: "Understand how Global Accounts map to Grid API objects and payment flows."
+icon: "/images/icons/code.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Global Accounts are implemented with the same Grid objects you use for other payment flows. The difference is that the customer's account can hold value and requires customer authorization before outbound funds move.
+
+## Object model
+
+| Concept | API object | What it does |
+| --- | --- | --- |
+| Platform | Platform configuration | Controls supported currencies, rails, environments, and permissions. |
+| Customer | `Customer` | Represents the user or business receiving a Global Account. |
+| Global Account | `InternalAccount` with `type: "EMBEDDED_WALLET"` | Holds the customer's balance and participates in Grid quotes. |
+| Destination account | `ExternalAccount` or supported destination | Represents where funds are withdrawn or sent. |
+| Quote | `Quote` | Prices and prepares movement between the account and a destination. |
+| Credential | `AuthMethod` | Lets the customer authenticate with passkey, OAuth, or email OTP. |
+| Session | `Session` | Issues a short-lived signing key for signed account actions. |
+| Webhook | Transaction event | Tells your backend when funds move or settle. |
+
+## Core flow
+
+1. Create or configure the customer.
+2. Complete required KYC or KYB before moving funds to or from fiat rails.
+3. List the customer's internal accounts and find the Global Account by filtering for `type=EMBEDDED_WALLET`.
+4. Register at least one customer credential.
+5. Fund the account through a supported Grid funding flow.
+6. Create a quote from the Global Account to a destination.
+7. Authenticate the customer, sign the quote's `payloadToSign`, and execute the quote with `Grid-Wallet-Signature`.
+8. Listen for transaction webhooks to reconcile the movement.
+
+<Tip>
+  Incoming funds do not require a customer signature. Outbound movement from the Global Account does.
+</Tip>
+
+## Where to go next
+
+- Use [Quickstart](/global-accounts/quickstart) for an end-to-end sandbox flow.
+- Use [Authentication](/global-accounts/authentication) and [Client keys](/global-accounts/client-keys) for signed action details.

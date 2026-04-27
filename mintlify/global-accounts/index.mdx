@@ -1,0 +1,74 @@
+---
+title: "Global Accounts"
+sidebarTitle: "Introduction"
+description: "Give your customers a branded global dollar account powered by Grid."
+icon: "/images/icons/wallet1.svg"
+mode: "wide"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<img
+  src="/images/heroes/hero-gga.webp"
+  alt="Grid Global Accounts hero"
+  className="page-hero"
+/>
+
+Grid Global Accounts let platforms give customers a branded dollar account without building banking, wallet, FX, and payout infrastructure from scratch. Your users can hold a stable dollar balance, receive funds, and move money out through supported Grid rails.
+
+Under the hood, a Global Account is built on Grid primitives: customers, internal accounts, quotes, payment instructions, signed withdrawals, sessions, and webhooks.
+
+<Info>
+  In the API, a Global Account is represented as an internal account with `type: "EMBEDDED_WALLET"`. You will also see API names such as `Embedded Wallet Auth`, `Grid-Wallet-Signature`, and `InternalAccount:...`. Those are the technical primitives behind the Global Accounts product.
+</Info>
+
+## What you can build today
+
+Use the current Grid API to:
+
+- Create and verify customers before funds move to or from fiat rails
+- Find the customer's Global Account by listing internal accounts
+- Fund the account through supported Grid funding flows
+- Create quotes to withdraw or transfer funds out of the account
+- Require customer authorization for outbound movement with signed requests
+- Register credentials, issue sessions, revoke sessions, and export wallet credentials
+- Reconcile account activity with transaction webhooks
+- Test the flow in sandbox before production launch
+
+## Core capabilities
+
+Global Accounts package account, funding, movement, and authorization flows into one embedded account experience.
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Branded dollar accounts">
+    Give each customer a branded account experience backed by Grid account infrastructure.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/coins.svg" title="Stablecoin balances">
+    Hold dollar-denominated value and use Grid quotes to move between account balances and supported rails.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Local off-ramps">
+    Let customers move value to supported local bank rails, including corridors such as PIX, UPI, SEPA, FPS, and more.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="Customer authorization">
+    Require customer approval for outbound account actions with credentials, sessions, and signed requests.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bitcoin.svg" title="Native Bitcoin">
+    Support Bitcoin and stablecoin flows using the same Grid account and quote model where enabled for your platform.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks and reconciliation">
+    Track funding, withdrawals, and settlement status with standard Grid transaction webhooks.
+  </FeatureCard>
+</FeatureCardGrid>
+
+## How to think about Global Accounts
+
+Global Accounts are the product surface. Embedded Wallets are the technical account primitive that power the signed account behavior in the API.
+
+If you are evaluating the product, start with [Implementation overview](/global-accounts/implementation-overview). If you are integrating today, continue to the [Quickstart](/global-accounts/quickstart) and the account security guides.
+
+## Additional capabilities
+
+Looking for card programs or advanced account controls? Some Global Accounts capabilities require platform enablement before you can build with them.
+
+If you are interested in enabling these capabilities for your platform, [contact the Lightspark team](https://www.lightspark.com/contact).

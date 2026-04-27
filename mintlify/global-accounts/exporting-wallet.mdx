@@ -1,0 +1,29 @@
+---
+title: "Exporting wallet credentials"
+description: "Let a customer export the wallet credentials behind their Global Account."
+icon: "/images/icons/arrow-path-right.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Global Accounts are powered by an embedded wallet primitive. Export lets a customer take the wallet credentials off Grid when your product supports that flow.
+
+Export is a sensitive action. It requires customer authentication and a signed request.
+
+## Export flow
+
+At a high level:
+
+1. The customer authenticates with a registered credential.
+2. The client generates or selects a key for encrypted delivery.
+3. Grid returns a challenge for the export action.
+4. The customer signs the export payload.
+5. Grid returns encrypted wallet credentials.
+6. The client decrypts and handles the credentials according to your product's security requirements.
+
+<Warning>
+  Wallet export gives the customer control of credentials that can move funds. Design this flow carefully and avoid exposing secrets to your backend or logs.
+</Warning>
+
+## Full technical reference
+
+See [Exporting a wallet](/payouts-and-b2b/embedded-wallets/exporting-wallet) for endpoint examples and signed export details.

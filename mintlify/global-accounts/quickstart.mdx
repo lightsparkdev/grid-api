@@ -1,0 +1,159 @@
+---
+title: "Quickstart"
+description: "Create a customer, find their Global Account, fund it, and execute a signed withdrawal."
+icon: "/images/icons/rocket.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+This quickstart walks through the core Global Accounts flow in sandbox.
+
+You will create a customer, find the customer's Global Account, fund it, create a withdrawal quote, sign the quote, and execute it.
+
+## Prerequisites
+
+You need:
+
+- Sandbox API credentials
+- A platform enabled for Global Accounts
+- Access to `Internal Accounts`, `Quotes`, and `Embedded Wallet Auth`
+
+```bash
+export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
+export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
+export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
+```
+
+<Note>
+  In sandbox, customers are automatically approved for testing. Production customers must complete the required KYC or KYB checks before funds can move to or from fiat rails.
+</Note>
+
+## 1. Create a customer
+
+Create the customer who will receive a Global Account.
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerType": "INDIVIDUAL",
+    "platformCustomerId": "customer-123",
+    "region": "US",
+    "email": "jane@example.com",
+    "fullName": "Jane Doe",
+    "birthDate": "1990-01-15",
+    "nationality": "US"
+  }'
+```
+
+Save the returned `Customer:...` ID.
+
+## 2. Find the Global Account
+
+Global Accounts appear in the API as internal accounts with `type=EMBEDDED_WALLET`.
+
+```bash
+curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Save the returned `InternalAccount:...` ID. You will use this account as the source or destination in quote requests.
+
+## 3. Register a credential
+
+Outbound movement from a Global Account requires customer authorization. Register a credential such as a passkey, OAuth credential, or email OTP.
+
+For the full credential flows, see [Authentication](/global-accounts/authentication).
+
+## 4. Fund the account
+
+In sandbox, use the sandbox funding endpoint to add test funds to the account.
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 100000
+  }'
+```
+
+Grid sends an incoming payment webhook when the balance updates.
+
+## 5. Create a withdrawal destination
+
+Create or reuse an external account for the destination.
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "platformAccountId": "jane-checking",
+    "accountInfo": {
+      "accountType": "USD_ACCOUNT",
+      "accountNumber": "1234567890",
+      "routingNumber": "021000021",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Jane Doe",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
+        "address": {
+          "line1": "123 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+  }'
+```
+
+## 6. Create a withdrawal quote
+
+Create a quote with the Global Account as the source and the external account as the destination.
+
+```bash
+curl -X POST "$GRID_BASE_URL/quotes" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "description": "Withdrawal to checking"
+  }'
+```
+
+If the quote requires customer authorization, Grid returns a `payloadToSign` in the payment instructions.
+
+## 7. Sign and execute
+
+Authenticate the customer, sign the `payloadToSign`, and execute the quote with the `Grid-Wallet-Signature` header.
+
+```bash
+curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -H "Grid-Wallet-Signature: sandbox-valid-signature"
+```
+
+<Tip>
+  Sandbox accepts `sandbox-valid-signature` so you can test the flow without implementing client-side signing first. Production requires a real signature from a verified session signing key.
+</Tip>
+
+## 8. Reconcile with webhooks
+
+Listen for transaction webhooks to track settlement and reconcile customer balances. See [Webhooks](/global-accounts/webhooks) for the Global Accounts webhook model.
