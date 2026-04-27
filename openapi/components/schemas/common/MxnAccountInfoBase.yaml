@@ -14,3 +14,6 @@ properties:
     minLength: 18
     maxLength: 18
     pattern: ^[0-9]{18}$
+example:
+  accountType: MXN_ACCOUNT
+  clabeNumber: '123456789012345678'

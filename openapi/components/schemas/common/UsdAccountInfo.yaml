@@ -13,4 +13,3 @@ allOf:
         - WIRE
         - RTP
         - FEDNOW
-        - BANK_TRANSFER

@@ -2,7 +2,8 @@ title: Individual Beneficiary
 type: object
 required:
 - beneficiaryType
-- countryOfResidence
+- documentNumber
+- documentType
 - fullName
 properties:
   beneficiaryType:
@@ -27,11 +28,11 @@ properties:
   countryOfResidence:
     type: string
     description: The country of residence of the beneficiary
+  address:
+    $ref: ./Address.yaml
   documentType:
     type: string
     description: The type of identity document (e.g., national ID, passport)
   documentNumber:
     type: string
     description: The identity document number
-  address:
-    $ref: ./Address.yaml

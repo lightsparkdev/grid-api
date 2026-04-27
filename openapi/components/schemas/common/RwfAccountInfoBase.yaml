@@ -20,3 +20,7 @@ properties:
     description: The mobile money provider name
     minLength: 1
     maxLength: 255
+example:
+  accountType: RWF_ACCOUNT
+  phoneNumber: '+250781234567'
+  provider: Example Provider
