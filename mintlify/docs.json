@@ -92,14 +92,14 @@
             ]
           },
           {
-            "group": "Managing Accounts",
+            "group": "Managing accounts",
             "pages": [
               "payouts-and-b2b/depositing-funds/internal-accounts",
               "payouts-and-b2b/depositing-funds/external-accounts"
             ]
           },
           {
-            "group": "Sending Payments",
+            "group": "Sending payments",
             "pages": [
               "payouts-and-b2b/depositing-funds/depositing-funds",
               "payouts-and-b2b/payment-flow/send-payment",
@@ -109,7 +109,7 @@
             ]
           },
           {
-            "group": "Embedded Wallets",
+            "group": "Embedded wallets",
             "pages": [
               "payouts-and-b2b/embedded-wallets/overview",
               "payouts-and-b2b/embedded-wallets/client-keys",
@@ -119,7 +119,7 @@
             ]
           },
           {
-            "group": "Platform Tools",
+            "group": "Platform tools",
             "pages": [
               "payouts-and-b2b/platform-tools/webhooks",
               "payouts-and-b2b/platform-tools/sandbox-testing",
@@ -148,14 +148,14 @@
             ]
           },
           {
-            "group": "Managing Accounts",
+            "group": "Managing accounts",
             "pages": [
               "ramps/accounts/internal-accounts",
               "ramps/accounts/external-accounts"
             ]
           },
           {
-            "group": "Conversion Flows",
+            "group": "Conversion flows",
             "pages": [
               "ramps/accounts/depositing-funds",
               "ramps/conversion-flows/fiat-crypto-conversion",
@@ -163,7 +163,7 @@
             ]
           },
           {
-            "group": "Embedded Wallets",
+            "group": "Embedded wallets",
             "pages": [
               "ramps/embedded-wallets/overview",
               "ramps/embedded-wallets/client-keys",
@@ -173,7 +173,7 @@
             ]
           },
           {
-            "group": "Platform Tools",
+            "group": "Platform tools",
             "pages": [
               "ramps/platform-tools/webhooks",
               "ramps/platform-tools/sandbox-testing",
@@ -201,21 +201,21 @@
             ]
           },
           {
-            "group": "Managing Accounts",
+            "group": "Managing accounts",
             "pages": [
               "rewards/developer-guides/internal-accounts",
               "rewards/developer-guides/external-accounts"
             ]
           },
           {
-            "group": "Distributing Rewards",
+            "group": "Distributing rewards",
             "pages": [
               "rewards/developer-guides/distributing-rewards",
               "rewards/developer-guides/listing-transactions"
             ]
           },
           {
-            "group": "Embedded Wallets",
+            "group": "Embedded wallets",
             "pages": [
               "rewards/embedded-wallets/overview",
               "rewards/embedded-wallets/client-keys",
@@ -225,7 +225,7 @@
             ]
           },
           {
-            "group": "Platform Tools",
+            "group": "Platform tools",
             "pages": [
               "rewards/platform-tools/webhooks",
               "rewards/platform-tools/sandbox-testing",
@@ -255,14 +255,14 @@
             ]
           },
           {
-            "group": "Managing Accounts",
+            "group": "Managing accounts",
             "pages": [
               "global-p2p/managing-accounts/internal-accounts",
               "global-p2p/managing-accounts/external-accounts"
             ]
           },
           {
-            "group": "Sending & Receiving Payments",
+            "group": "Sending & receiving payments",
             "pages": [
               "global-p2p/sending-receiving-payments/depositing-funds",
               "global-p2p/sending-receiving-payments/sending-payments",
@@ -272,7 +272,7 @@
             ]
           },
           {
-            "group": "Embedded Wallets",
+            "group": "Embedded wallets",
             "pages": [
               "global-p2p/embedded-wallets/overview",
               "global-p2p/embedded-wallets/client-keys",
@@ -282,7 +282,7 @@
             ]
           },
           {
-            "group": "Platform Tools",
+            "group": "Platform tools",
             "pages": [
               "global-p2p/platform-tools/webhooks",
               "global-p2p/platform-tools/sandbox-testing",
@@ -293,7 +293,7 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "API reference",
         "groups": [
           {
             "group": "Using the API",
@@ -337,7 +337,7 @@
         "icon": "github"
       },
       {
-        "label": "Contact sales",
+        "label": "Book a live demo",
         "href": "https://www.lightspark.com/contact"
       },
       {

@@ -145,7 +145,7 @@ export default function Home() {
               <path d="M33.9432 3.75552V18.2426H36.3211V3.75552H33.9432Z" fill="currentColor"/>
             </svg>
             <a href="https://lightspark.com/contact" className={styles.headerLink}>
-              Contact sales
+              Book a live demo
             </a>
           </div>
         )}
