@@ -1,5 +1,5 @@
 ---
-title: "Payouts & B2B"
+title: "Global Accounts & Payouts"
 sidebarTitle: "Introduction"
 icon: "/images/icons/paper-plane-top-right.svg"
 mode: "wide"
@@ -13,64 +13,94 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <img 
   src="/images/heroes/hero-payouts.jpg" 
-  alt="Payouts & B2B hero"
+  alt="Global Accounts & Payouts hero"
   className="page-hero"
 />
 
-With {payToBankProductName}, you can send and receive low cost real-time payments to bank accounts worldwide through a single, simple API. {topLevelProductName} automatically routes each payment across its network of {topLevelProductName} switches, handling FX, blockchain settlement, and instant banking off-ramps for you.
+{topLevelProductName} packages two products into a single integration so platforms can give their customers a branded dollar account *and* send and receive payments to bank accounts worldwide — through one API.
+
+- **Global Accounts** give each customer a branded, self-custody dollar account that holds a stable balance and can move money out through any supported {topLevelProductName} rail.
+- **Payouts** route low-cost real-time payments across the {topLevelProductName} switch network, handling FX, blockchain settlement, and instant banking off-ramps for you.
 
 <FeatureCardGrid cols={3}>
-  <FeatureCard icon="/images/icons/lightning.svg" title="Instant Conversion">
-    Single API, global reach. {payToBankProductName} interacts with the Money Grid to route your payments globally.
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Branded dollar accounts">
+    Issue a Global Account to every customer without building wallet, FX, or banking infrastructure from scratch.
   </FeatureCard>
-  <FeatureCard icon="/images/icons/shield.svg" title="Simplified Infrastructure">
-    No crypto handling. {payToBankProductName} converts between fiat and crypto instantly to simplify your implementation and minimize FX costs.
+  <FeatureCard icon="/images/icons/lightning.svg" title="Instant conversion">
+    A single API converts between fiat and stablecoins on the fly, routing each payment across the Money Grid.
   </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Global Settlement">
-    Real-time settlement. Leverages local instant banking rails and global low latency crypto rails to settle payments in real-time.
+  <FeatureCard icon="/images/icons/globe.svg" title="Global settlement">
+    Local instant banking rails (ACH, SEPA, PIX, UPI, FPS, CLABE, IBAN) plus crypto rails for real-time delivery.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="Customer authorization">
+    Outbound account actions are signed by the customer's device — Grid never has unilateral access to user funds.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks & reconciliation">
+    Track funding, withdrawals, and settlement state changes with standard transaction webhooks.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bitcoin.svg" title="Native Bitcoin">
+    Stablecoin and Bitcoin flows share the same account and quote model where enabled for your platform.
   </FeatureCard>
 </FeatureCardGrid>
 
+<Info>
+  In the API, a Global Account is represented as an internal account with `type: "EMBEDDED_WALLET"`. You'll also see API names like `Embedded Wallet Auth`, `Grid-Wallet-Signature`, and `InternalAccount:...` — those are the technical primitives behind the product.
+</Info>
+
+## What you can build today
+
+Use the current {topLevelProductName} API to:
+
+- Create and KYC/KYB-verify customers before funds move to or from fiat rails
+- Provision a Global Account per customer and find it by listing internal accounts
+- Fund accounts via prefunded balances, ACH, SEPA Instant, wire, Lightning, or stablecoin deposits
+- Generate quotes for cross-border payouts with a locked exchange rate
+- Withdraw to bank accounts on supported local rails worldwide
+- Require customer authorization for outbound movement using signed requests
+- Register credentials, issue sessions, revoke sessions, and export wallet credentials
+- Reconcile activity with transaction webhooks
+- Test the full flow in sandbox before production launch
+
 <PaymentFlow/>
 
-## {payToBankProductName} Features
-Customers interact with {payToBankProductName} through two main interfaces.
+## How customers interact with {topLevelProductName}
+
 <Tabs>
   <Tab title="API">
-   Programmatic access to create customers, quotes, fund the account, send payments and reconcile via webhooks.
+    Programmatic access to create customers, provision Global Accounts, generate quotes, fund accounts, send payments, and reconcile via webhooks.
   </Tab>
   <Tab title="Dashboard">
-   Your development and operations team can use the dashboard to monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
+    Your development and operations team can monitor payments and webhooks, manage API keys and environments, and troubleshoot with logs.
   </Tab>
 </Tabs>
 
-Implementing cross-border payments with {payToBankProductName} is simple. Here's a quick overview of the main steps.
+Implementing {topLevelProductName} is a few discrete steps — here's the high-level flow.
 
 ### Onboarding customers
 
 <Info>
-{payToBankProductName} has two customer onboarding options - one for non regulated entities where {payToBankProductName} handles the KYC/KYB process and one for regulated entities where you handle the KYC/KYB process.
+{topLevelProductName} has two customer onboarding options — one for non-regulated entities where {topLevelProductName} handles the KYC/KYB process, and one for regulated entities where you handle the KYC/KYB process.
 
-When creating customers, you'll be able to also connect external accounts or internal accounts to a specific customer and also add accounts for counterparties on the receiving end. 
-To learn more about accounts read our [internal accounts guide](/payouts-and-b2b/depositing-funds/internal-accounts) or setting up [external accounts guide](/payouts-and-b2b/depositing-funds/external-accounts)
+When creating customers, you can also connect external accounts or internal accounts to a specific customer and add accounts for counterparties on the receiving end.
+To learn more about accounts read our [internal accounts guide](/payouts-and-b2b/depositing-funds/internal-accounts) or setting up [external accounts guide](/payouts-and-b2b/depositing-funds/external-accounts).
 </Info>
 
-### Funding Payments
-{payToBankProductName} supports multiple transaction funding options including prefunded accounts and real-time funding. You can prefund an account using several payment rails such as ACH, SEPA Instant, wire transfers, Lightning, and more.  
+### Funding accounts and payments
+{topLevelProductName} supports multiple funding options including prefunded accounts, real-time funding, and Global Account balances. You can prefund an internal account using ACH, SEPA Instant, wire transfers, Lightning, and more.
 
-With real-time funding, you'll receive payment instructions as part of the quote. Once payment is received by our services, we'll initiate the payment to the receiver. 
+With real-time funding, you'll receive payment instructions as part of the quote. Once the funding is received, {topLevelProductName} initiates the payment to the receiver.
 
-### Sending Payments
-To send with {payToBankProductName}, onboard an account for a customer and the counter party, then execute and fund a quote. {payToBankProductName} resolves the receiver by external bank details, returns min/max and an exchange rate, and provides funding instructions. Once funded, {payToBankProductName} handles FX and delivery to the receiving account.
+### Sending payments
+To send a payout, onboard a customer (and the counterparty if needed), then create and execute a quote. {topLevelProductName} resolves the receiver by external bank details, returns min/max and an exchange rate, and provides funding instructions. Once funded, {topLevelProductName} handles FX and delivery to the receiving account. Withdrawals from a Global Account follow the same pattern, with the customer's signature attached on execute.
 
 ### Environments
 
 <Note>
-{payToBankProductName} supports two environments: Sandbox and Production. Sandbox mirrors production behavior and webhooks so you can test receiver resolution, quotes and funding instructions, settlement status changes, and full end‑to‑end flows without moving real funds. Production uses live credentials and base URLs for real payments once you’re ready to launch.
+{topLevelProductName} supports two environments: Sandbox and Production. Sandbox mirrors production behavior and webhooks so you can test receiver resolution, quotes and funding instructions, settlement status changes, and full end‑to‑end flows without moving real funds. Production uses live credentials and base URLs for real payments once you're ready to launch.
 </Note>
 
 ---
 
-### Country Availability
+### Country availability
 
 <CountrySupport />
