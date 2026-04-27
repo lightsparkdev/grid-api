@@ -33,8 +33,8 @@ Before sending payments, ensure you have:
 
 <Tip>
   If you don't have these set up yet, review the [Internal
-  Accounts](/payouts-and-b2b/depositing-funds/internal-accounts) and [External
-  Accounts](/payouts-and-b2b/depositing-funds/external-accounts) guides first.
+  Accounts](/global-accounts-and-payouts/depositing-funds/internal-accounts) and [External
+  Accounts](/global-accounts-and-payouts/depositing-funds/external-accounts) guides first.
 </Tip>
 
 ## Same-Currency Transfers
@@ -402,7 +402,7 @@ app.post("/webhooks/grid", (req, res) => {
 ```
 
 <Tip>
-  See the [Webhooks guide](/payouts-and-b2b/platform-tools/webhooks) for complete
+  See the [Webhooks guide](/global-accounts-and-payouts/platform-tools/webhooks) for complete
   webhook implementation details including signature verification.
 </Tip>
 
@@ -485,13 +485,13 @@ await db.payments.update(
 ## Next Steps
 
 <FeatureCardGrid cols={2}>
-  <FeatureCard icon="/images/icons/square-info.svg" title="Error Handling" href="/payouts-and-b2b/payment-flow/error-handling">
+  <FeatureCard icon="/images/icons/square-info.svg" title="Error Handling" href="/global-accounts-and-payouts/payment-flow/error-handling">
     Handle payment failures and error scenarios
   </FeatureCard>
-  <FeatureCard icon="/images/icons/file-text.svg" title="List Transactions" href="/payouts-and-b2b/payment-flow/list-transactions">
+  <FeatureCard icon="/images/icons/file-text.svg" title="List Transactions" href="/global-accounts-and-payouts/payment-flow/list-transactions">
     Query and filter transaction history
   </FeatureCard>
-  <FeatureCard icon="/images/icons/receipt-check.svg" title="Reconciliation" href="/payouts-and-b2b/payment-flow/reconciliation">
+  <FeatureCard icon="/images/icons/receipt-check.svg" title="Reconciliation" href="/global-accounts-and-payouts/payment-flow/reconciliation">
     Match payments with your internal systems
   </FeatureCard>
 </FeatureCardGrid>

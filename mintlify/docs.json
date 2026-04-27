@@ -78,52 +78,52 @@
           {
             "group": "Overview",
             "pages": [
-              "payouts-and-b2b/index",
-              "payouts-and-b2b/terminology",
-              "payouts-and-b2b/onboarding/implementation-overview",
-              "payouts-and-b2b/quickstart"
+              "global-accounts-and-payouts/index",
+              "global-accounts-and-payouts/terminology",
+              "global-accounts-and-payouts/onboarding/implementation-overview",
+              "global-accounts-and-payouts/quickstart"
             ]
           },
           {
             "group": "Onboarding",
             "pages": [
-              "payouts-and-b2b/onboarding/platform-configuration",
-              "payouts-and-b2b/onboarding/configuring-customers"
+              "global-accounts-and-payouts/onboarding/platform-configuration",
+              "global-accounts-and-payouts/onboarding/configuring-customers"
             ]
           },
           {
             "group": "Managing accounts",
             "pages": [
-              "payouts-and-b2b/depositing-funds/internal-accounts",
-              "payouts-and-b2b/depositing-funds/external-accounts"
+              "global-accounts-and-payouts/depositing-funds/internal-accounts",
+              "global-accounts-and-payouts/depositing-funds/external-accounts"
             ]
           },
           {
             "group": "Sending payments",
             "pages": [
-              "payouts-and-b2b/depositing-funds/depositing-funds",
-              "payouts-and-b2b/payment-flow/send-payment",
-              "payouts-and-b2b/payment-flow/list-transactions",
-              "payouts-and-b2b/payment-flow/reconciliation",
-              "payouts-and-b2b/payment-flow/error-handling"
+              "global-accounts-and-payouts/depositing-funds/depositing-funds",
+              "global-accounts-and-payouts/payment-flow/send-payment",
+              "global-accounts-and-payouts/payment-flow/list-transactions",
+              "global-accounts-and-payouts/payment-flow/reconciliation",
+              "global-accounts-and-payouts/payment-flow/error-handling"
             ]
           },
           {
             "group": "Global Accounts",
             "pages": [
-              "payouts-and-b2b/global-accounts/overview",
-              "payouts-and-b2b/global-accounts/client-keys",
-              "payouts-and-b2b/global-accounts/authentication",
-              "payouts-and-b2b/global-accounts/managing-sessions",
-              "payouts-and-b2b/global-accounts/exporting-wallet"
+              "global-accounts-and-payouts/global-accounts/overview",
+              "global-accounts-and-payouts/global-accounts/client-keys",
+              "global-accounts-and-payouts/global-accounts/authentication",
+              "global-accounts-and-payouts/global-accounts/managing-sessions",
+              "global-accounts-and-payouts/global-accounts/exporting-wallet"
             ]
           },
           {
             "group": "Platform tools",
             "pages": [
-              "payouts-and-b2b/platform-tools/webhooks",
-              "payouts-and-b2b/platform-tools/sandbox-testing",
-              "payouts-and-b2b/platform-tools/postman-collection"
+              "global-accounts-and-payouts/platform-tools/webhooks",
+              "global-accounts-and-payouts/platform-tools/sandbox-testing",
+              "global-accounts-and-payouts/platform-tools/postman-collection"
             ]
           }
         ]
@@ -405,11 +405,32 @@
     ]
   },
   "redirects": [
-    { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/payouts-and-b2b/global-accounts/overview" },
-    { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/payouts-and-b2b/global-accounts/client-keys" },
-    { "source": "/payouts-and-b2b/embedded-wallets/authentication", "destination": "/payouts-and-b2b/global-accounts/authentication" },
-    { "source": "/payouts-and-b2b/embedded-wallets/managing-sessions", "destination": "/payouts-and-b2b/global-accounts/managing-sessions" },
-    { "source": "/payouts-and-b2b/embedded-wallets/exporting-wallet", "destination": "/payouts-and-b2b/global-accounts/exporting-wallet" },
+    { "source": "/payouts-and-b2b/index", "destination": "/global-accounts-and-payouts/index" },
+    { "source": "/payouts-and-b2b/terminology", "destination": "/global-accounts-and-payouts/terminology" },
+    { "source": "/payouts-and-b2b/quickstart", "destination": "/global-accounts-and-payouts/quickstart" },
+    { "source": "/payouts-and-b2b/onboarding/implementation-overview", "destination": "/global-accounts-and-payouts/onboarding/implementation-overview" },
+    { "source": "/payouts-and-b2b/onboarding/platform-configuration", "destination": "/global-accounts-and-payouts/onboarding/platform-configuration" },
+    { "source": "/payouts-and-b2b/onboarding/configuring-customers", "destination": "/global-accounts-and-payouts/onboarding/configuring-customers" },
+    { "source": "/payouts-and-b2b/depositing-funds/internal-accounts", "destination": "/global-accounts-and-payouts/depositing-funds/internal-accounts" },
+    { "source": "/payouts-and-b2b/depositing-funds/external-accounts", "destination": "/global-accounts-and-payouts/depositing-funds/external-accounts" },
+    { "source": "/payouts-and-b2b/depositing-funds/depositing-funds", "destination": "/global-accounts-and-payouts/depositing-funds/depositing-funds" },
+    { "source": "/payouts-and-b2b/payment-flow/send-payment", "destination": "/global-accounts-and-payouts/payment-flow/send-payment" },
+    { "source": "/payouts-and-b2b/payment-flow/list-transactions", "destination": "/global-accounts-and-payouts/payment-flow/list-transactions" },
+    { "source": "/payouts-and-b2b/payment-flow/reconciliation", "destination": "/global-accounts-and-payouts/payment-flow/reconciliation" },
+    { "source": "/payouts-and-b2b/payment-flow/error-handling", "destination": "/global-accounts-and-payouts/payment-flow/error-handling" },
+    { "source": "/payouts-and-b2b/global-accounts/overview", "destination": "/global-accounts-and-payouts/global-accounts/overview" },
+    { "source": "/payouts-and-b2b/global-accounts/client-keys", "destination": "/global-accounts-and-payouts/global-accounts/client-keys" },
+    { "source": "/payouts-and-b2b/global-accounts/authentication", "destination": "/global-accounts-and-payouts/global-accounts/authentication" },
+    { "source": "/payouts-and-b2b/global-accounts/managing-sessions", "destination": "/global-accounts-and-payouts/global-accounts/managing-sessions" },
+    { "source": "/payouts-and-b2b/global-accounts/exporting-wallet", "destination": "/global-accounts-and-payouts/global-accounts/exporting-wallet" },
+    { "source": "/payouts-and-b2b/platform-tools/webhooks", "destination": "/global-accounts-and-payouts/platform-tools/webhooks" },
+    { "source": "/payouts-and-b2b/platform-tools/sandbox-testing", "destination": "/global-accounts-and-payouts/platform-tools/sandbox-testing" },
+    { "source": "/payouts-and-b2b/platform-tools/postman-collection", "destination": "/global-accounts-and-payouts/platform-tools/postman-collection" },
+    { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/global-accounts-and-payouts/global-accounts/overview" },
+    { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/global-accounts-and-payouts/global-accounts/client-keys" },
+    { "source": "/payouts-and-b2b/embedded-wallets/authentication", "destination": "/global-accounts-and-payouts/global-accounts/authentication" },
+    { "source": "/payouts-and-b2b/embedded-wallets/managing-sessions", "destination": "/global-accounts-and-payouts/global-accounts/managing-sessions" },
+    { "source": "/payouts-and-b2b/embedded-wallets/exporting-wallet", "destination": "/global-accounts-and-payouts/global-accounts/exporting-wallet" },
     { "source": "/ramps/embedded-wallets/overview", "destination": "/ramps/global-accounts/overview" },
     { "source": "/ramps/embedded-wallets/client-keys", "destination": "/ramps/global-accounts/client-keys" },
     { "source": "/ramps/embedded-wallets/authentication", "destination": "/ramps/global-accounts/authentication" },
