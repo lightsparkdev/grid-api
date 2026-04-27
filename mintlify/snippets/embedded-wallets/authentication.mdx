@@ -357,7 +357,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "OAUTH",
-    "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
     "oidcToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9..."
   }'
 ```
@@ -413,7 +413,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "EMAIL_OTP",
-    "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
     "email": "jane@example.com"
   }'
 ```
@@ -423,7 +423,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
 ```json
 {
   "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000004",
-  "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+  "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EMAIL_OTP",
   "nickname": "jane@example.com",
   "createdAt": "2026-04-19T12:00:00Z",
@@ -472,7 +472,7 @@ Every Embedded Wallet starts with a single credential — the one used in the <a
 ### List credentials
 
 ```bash
-curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002" \
+curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=InternalAccount:019542f5-b3e7-1d02-0000-000000000002" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
@@ -483,7 +483,7 @@ curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=EmbeddedWallet:019542f5-b
   "data": [
     {
       "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000001",
-      "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "PASSKEY",
       "nickname": "iPhone Face-ID",
       "createdAt": "2026-04-08T15:30:01Z",
@@ -491,7 +491,7 @@ curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=EmbeddedWallet:019542f5-b
     },
     {
       "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000004",
-      "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "EMAIL_OTP",
       "nickname": "jane@example.com",
       "createdAt": "2026-04-09T10:15:00Z",
@@ -542,7 +542,7 @@ Requires an active session on an *existing* credential on the same account. The 
       -H "Content-Type: application/json" \
       -d '{
         "type": "EMAIL_OTP",
-        "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
         "email": "jane@example.com"
       }'
     ```
@@ -552,7 +552,7 @@ Requires an active session on an *existing* credential on the same account. The 
     ```json
     {
       "type": "EMAIL_OTP",
-      "payloadToSign": "{\"requestId\":\"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21\",\"type\":\"EMAIL_OTP\",\"accountId\":\"EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002\",\"expiresAt\":\"2026-04-08T15:35:00Z\"}",
+      "payloadToSign": "{\"requestId\":\"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21\",\"type\":\"EMAIL_OTP\",\"accountId\":\"InternalAccount:019542f5-b3e7-1d02-0000-000000000002\",\"expiresAt\":\"2026-04-08T15:35:00Z\"}",
       "requestId": "7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
       "expiresAt": "2026-04-08T15:35:00Z"
     }
@@ -572,7 +572,7 @@ Requires an active session on an *existing* credential on the same account. The 
       -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
       -d '{
         "type": "EMAIL_OTP",
-        "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
         "email": "jane@example.com"
       }'
     ```
