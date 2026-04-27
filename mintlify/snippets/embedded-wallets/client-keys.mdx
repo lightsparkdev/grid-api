@@ -126,6 +126,10 @@ Grid encrypts the session signing key with **HPKE** (RFC 9180) using the suite:
 
 The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag).
 
+<Note>
+  **In sandbox, `encryptedSessionSigningKey` is a stub** — random bytes shaped like a real HPKE payload but not encrypted to your `clientPublicKey`. Decrypt attempts will fail. Skip this step entirely on sandbox and use the literal `Grid-Wallet-Signature: sandbox-valid-signature` for any signed action (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>). The decrypt path below applies only to production.
+</Note>
+
 ## 3. Decrypt the session signing key
 
 <CodeGroup>
@@ -223,6 +227,10 @@ Grid returns `payloadToSign` strings from several endpoints:
 - `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export` — all 202 response bodies.
 
 Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The signature is ECDSA over SHA-256 using the session signing key, DER-encoded, then base64-encoded. Pass it as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, the `Request-Id` header echoed back from the 202).
+
+<Note>
+  **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed wallet action. Sandbox skips the ECDSA check, so you don't need a real session signing key or an extracted `payloadToSign`. The signing pattern below applies only to production.
+</Note>
 
 <CodeGroup>
 ```typescript Web (TypeScript)
