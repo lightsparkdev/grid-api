@@ -9,10 +9,9 @@ interface Props {
   disabled: boolean
 }
 
-// Backend route TODO: POST /api/auth/credentials
-// Two-phase: client gets a registration challenge, runs navigator.credentials.create(),
-// then posts the WebAuthn attestation to the backend, which forwards to Grid.
-// See https://grid.lightspark.com/payouts-and-b2b/embedded-wallets/authentication
+// Two-phase: backend mints a WebAuthn challenge, client runs
+// navigator.credentials.create(), client posts the attestation back, backend
+// forwards to Grid as POST /auth/credentials.
 export default function RegisterPasskey({
   walletAccountId,
   customerId,
@@ -29,24 +28,23 @@ export default function RegisterPasskey({
     setError(null)
     setResponse(null)
     try {
-      // Step 1: ask backend for a registration challenge from Grid.
-      const challenge = await apiPost<{
+      const reg = await apiPost<{
         challenge: string
         rp: PublicKeyCredentialRpEntity
         user: { id: string; name: string; displayName: string }
       }>('/api/auth/credentials/registration-challenge', {
         accountId: walletAccountId,
         customerId,
+        rpId: window.location.hostname,
       })
 
-      // Step 2: invoke the platform authenticator.
       const credential = (await navigator.credentials.create({
         publicKey: {
-          challenge: base64urlToBytes(challenge.challenge),
-          rp: challenge.rp,
+          challenge: base64urlToBytes(reg.challenge),
+          rp: reg.rp,
           user: {
-            ...challenge.user,
-            id: base64urlToBytes(challenge.user.id),
+            ...reg.user,
+            id: base64urlToBytes(reg.user.id),
           },
           pubKeyCredParams: [
             { type: 'public-key', alg: -7 },   // ES256
@@ -60,17 +58,26 @@ export default function RegisterPasskey({
       if (!credential) throw new Error('No credential returned from authenticator')
 
       const att = credential.response as AuthenticatorAttestationResponse
+      const transports =
+        (att as AuthenticatorAttestationResponse & { getTransports?: () => string[] })
+          .getTransports?.() ?? []
 
-      // Step 3: send the attestation to the backend → Grid.
-      const data = await apiPost<{ authMethodId: string }>('/api/auth/credentials', {
+      const data = await apiPost<Record<string, unknown>>('/api/auth/credentials', {
         accountId: walletAccountId,
-        credentialId: credential.id,
-        clientDataJSON: bytesToBase64url(new Uint8Array(att.clientDataJSON)),
-        attestationObject: bytesToBase64url(new Uint8Array(att.attestationObject)),
+        challenge: reg.challenge,
+        nickname: 'Grid Global Account passkey',
+        attestation: {
+          credentialId: credential.id,
+          clientDataJson: bytesToBase64url(new Uint8Array(att.clientDataJSON)),
+          attestationObject: bytesToBase64url(new Uint8Array(att.attestationObject)),
+          transports,
+        },
       })
 
       setResponse(JSON.stringify(data, null, 2))
-      onComplete(data)
+      const authMethodId = (data.id ?? data.authMethodId) as string | undefined
+      if (!authMethodId) throw new Error('No auth method id in response')
+      onComplete({ authMethodId })
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -81,11 +88,10 @@ export default function RegisterPasskey({
   return (
     <div>
       <p className="text-sm text-gray-400 mb-2">
-        Register a passkey on this device to authorize future withdrawals.
+        Register a passkey on this device to authorize future Grid Global Account actions.
       </p>
       <p className="text-xs text-yellow-300/80 mb-3">
-        Requires a backend that proxies <code>POST /auth/credentials</code> and a registration
-        challenge endpoint. WebAuthn requires HTTPS or localhost.
+        Your browser will prompt for a biometric. WebAuthn requires HTTPS or localhost.
       </p>
       <button
         onClick={submit}

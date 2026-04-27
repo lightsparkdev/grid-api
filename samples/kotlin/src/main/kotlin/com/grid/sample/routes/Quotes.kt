@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.quotes.QuoteCreateParams
 import com.lightspark.grid.models.quotes.QuoteCreateParams.LockedCurrencySide
 import com.lightspark.grid.models.quotes.QuoteCreateParams.PurposeOfPayment
+import com.lightspark.grid.models.quotes.QuoteExecuteParams
 import com.lightspark.grid.models.quotes.QuoteSourceOneOf
 import com.lightspark.grid.models.quotes.QuoteSourceOneOf.AccountQuoteSource
 import com.lightspark.grid.models.quotes.QuoteSourceOneOf.RealtimeFundingQuoteSource
@@ -74,9 +75,22 @@ fun Route.quoteRoutes() {
                         HttpStatusCode.BadRequest
                     )
 
+                // Withdrawals from a Global Account require a client-supplied
+                // Grid-Wallet-Signature; for non-wallet quotes the header is absent.
+                val signature = call.request.headers["Grid-Wallet-Signature"]
+                val idempotencyKey = call.request.headers["Idempotency-Key"]
                 Log.incoming("POST", "/api/quotes/$quoteId/execute")
-                Log.gridRequest("quotes.execute", "quoteId=$quoteId")
-                val quote = GridClientBuilder.client.quotes().execute(quoteId)
+
+                val params = QuoteExecuteParams.builder()
+                    .quoteId(quoteId)
+                    .apply {
+                        signature?.let { gridWalletSignature(it) }
+                        idempotencyKey?.let { idempotencyKey(it) }
+                    }
+                    .build()
+
+                Log.gridRequest("quotes.execute", "quoteId=$quoteId signed=${signature != null}")
+                val quote = GridClientBuilder.client.quotes().execute(params)
                 val responseJson = JsonUtils.prettyPrint(quote)
                 Log.gridResponse("quotes.execute", responseJson)
 
