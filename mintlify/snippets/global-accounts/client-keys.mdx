@@ -1,9 +1,9 @@
-Every signed Embedded Wallet action uses two key pairs:
+Every signed Global Account action uses two key pairs:
 
 | Key pair | Where it lives | What it does |
 |---|---|---|
 | **Client key pair** (P-256) | On the customer's device, generated fresh per verification request | Used as the HPKE recipient key so Grid can encrypt the session signing key to the client. Ephemeral — one pair per `POST /auth/credentials/{id}/verify` call. |
-| **Session signing key** (P-256) | Issued by Grid, encrypted to the client public key, decrypted and held on the device | Signs every wallet action for the lifetime of the session (default 15 minutes). |
+| **Session signing key** (P-256) | Issued by Grid, encrypted to the client public key, decrypted and held on the device | Signs every account action for the lifetime of the session (default 15 minutes). |
 
 This page covers generating the client key pair, sending the public key to your backend, decrypting the session signing key, and signing payloads. Everything here runs **on the client**; your integrator backend only relays opaque byte strings.
 
@@ -222,14 +222,14 @@ The plaintext is a **32-byte P-256 private scalar**. Treat it as the session sig
 
 Grid returns `payloadToSign` strings from several endpoints:
 
-- `POST /quotes` (when the source is an Embedded Wallet) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
+- `POST /quotes` (when the source is a Global Account) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
 - `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export` — all 202 response bodies.
 
 Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The signature is ECDSA over SHA-256 using the session signing key, DER-encoded, then base64-encoded. Pass it as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, the `Request-Id` header echoed back from the 202).
 
 <Note>
-  **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed wallet action. Sandbox skips the ECDSA check, so you don't need a real session signing key or an extracted `payloadToSign`. The signing pattern below applies only to production.
+  **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed account action. Sandbox skips the ECDSA check, so you don't need a real session signing key or an extracted `payloadToSign`. The signing pattern below applies only to production.
 </Note>
 
 <CodeGroup>

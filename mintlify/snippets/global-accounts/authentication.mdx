@@ -1,4 +1,4 @@
-Every Embedded Wallet action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of three **credential types** on the wallet's internal account:
+Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of three **credential types** on the account:
 
 | Type | When to use it |
 |---|---|
@@ -467,7 +467,7 @@ Same pattern as the first activation: call `/challenge` to send a new OTP, then 
 
 ## Managing credentials
 
-Every Embedded Wallet starts with a single credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a second credential of a different type (e.g., an email OTP alongside a passkey) so the wallet is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
+Every Global Account starts with a single credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a second credential of a different type (e.g., an email OTP alongside a passkey) so the account is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
 
 ### List credentials
 

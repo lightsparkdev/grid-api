@@ -109,13 +109,13 @@
             ]
           },
           {
-            "group": "Embedded wallets",
+            "group": "Global Accounts",
             "pages": [
-              "payouts-and-b2b/embedded-wallets/overview",
-              "payouts-and-b2b/embedded-wallets/client-keys",
-              "payouts-and-b2b/embedded-wallets/authentication",
-              "payouts-and-b2b/embedded-wallets/managing-sessions",
-              "payouts-and-b2b/embedded-wallets/exporting-wallet"
+              "payouts-and-b2b/global-accounts/overview",
+              "payouts-and-b2b/global-accounts/client-keys",
+              "payouts-and-b2b/global-accounts/authentication",
+              "payouts-and-b2b/global-accounts/managing-sessions",
+              "payouts-and-b2b/global-accounts/exporting-wallet"
             ]
           },
           {
@@ -163,13 +163,13 @@
             ]
           },
           {
-            "group": "Embedded wallets",
+            "group": "Global Accounts",
             "pages": [
-              "ramps/embedded-wallets/overview",
-              "ramps/embedded-wallets/client-keys",
-              "ramps/embedded-wallets/authentication",
-              "ramps/embedded-wallets/managing-sessions",
-              "ramps/embedded-wallets/exporting-wallet"
+              "ramps/global-accounts/overview",
+              "ramps/global-accounts/client-keys",
+              "ramps/global-accounts/authentication",
+              "ramps/global-accounts/managing-sessions",
+              "ramps/global-accounts/exporting-wallet"
             ]
           },
           {
@@ -215,13 +215,13 @@
             ]
           },
           {
-            "group": "Embedded wallets",
+            "group": "Global Accounts",
             "pages": [
-              "rewards/embedded-wallets/overview",
-              "rewards/embedded-wallets/client-keys",
-              "rewards/embedded-wallets/authentication",
-              "rewards/embedded-wallets/managing-sessions",
-              "rewards/embedded-wallets/exporting-wallet"
+              "rewards/global-accounts/overview",
+              "rewards/global-accounts/client-keys",
+              "rewards/global-accounts/authentication",
+              "rewards/global-accounts/managing-sessions",
+              "rewards/global-accounts/exporting-wallet"
             ]
           },
           {
@@ -272,13 +272,13 @@
             ]
           },
           {
-            "group": "Embedded wallets",
+            "group": "Global Accounts",
             "pages": [
-              "global-p2p/embedded-wallets/overview",
-              "global-p2p/embedded-wallets/client-keys",
-              "global-p2p/embedded-wallets/authentication",
-              "global-p2p/embedded-wallets/managing-sessions",
-              "global-p2p/embedded-wallets/exporting-wallet"
+              "global-p2p/global-accounts/overview",
+              "global-p2p/global-accounts/client-keys",
+              "global-p2p/global-accounts/authentication",
+              "global-p2p/global-accounts/managing-sessions",
+              "global-p2p/global-accounts/exporting-wallet"
             ]
           },
           {
@@ -403,5 +403,27 @@
         "crossOrigin": "anonymous"
       }
     ]
-  }
+  },
+  "redirects": [
+    { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/payouts-and-b2b/global-accounts/overview" },
+    { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/payouts-and-b2b/global-accounts/client-keys" },
+    { "source": "/payouts-and-b2b/embedded-wallets/authentication", "destination": "/payouts-and-b2b/global-accounts/authentication" },
+    { "source": "/payouts-and-b2b/embedded-wallets/managing-sessions", "destination": "/payouts-and-b2b/global-accounts/managing-sessions" },
+    { "source": "/payouts-and-b2b/embedded-wallets/exporting-wallet", "destination": "/payouts-and-b2b/global-accounts/exporting-wallet" },
+    { "source": "/ramps/embedded-wallets/overview", "destination": "/ramps/global-accounts/overview" },
+    { "source": "/ramps/embedded-wallets/client-keys", "destination": "/ramps/global-accounts/client-keys" },
+    { "source": "/ramps/embedded-wallets/authentication", "destination": "/ramps/global-accounts/authentication" },
+    { "source": "/ramps/embedded-wallets/managing-sessions", "destination": "/ramps/global-accounts/managing-sessions" },
+    { "source": "/ramps/embedded-wallets/exporting-wallet", "destination": "/ramps/global-accounts/exporting-wallet" },
+    { "source": "/rewards/embedded-wallets/overview", "destination": "/rewards/global-accounts/overview" },
+    { "source": "/rewards/embedded-wallets/client-keys", "destination": "/rewards/global-accounts/client-keys" },
+    { "source": "/rewards/embedded-wallets/authentication", "destination": "/rewards/global-accounts/authentication" },
+    { "source": "/rewards/embedded-wallets/managing-sessions", "destination": "/rewards/global-accounts/managing-sessions" },
+    { "source": "/rewards/embedded-wallets/exporting-wallet", "destination": "/rewards/global-accounts/exporting-wallet" },
+    { "source": "/global-p2p/embedded-wallets/overview", "destination": "/global-p2p/global-accounts/overview" },
+    { "source": "/global-p2p/embedded-wallets/client-keys", "destination": "/global-p2p/global-accounts/client-keys" },
+    { "source": "/global-p2p/embedded-wallets/authentication", "destination": "/global-p2p/global-accounts/authentication" },
+    { "source": "/global-p2p/embedded-wallets/managing-sessions", "destination": "/global-p2p/global-accounts/managing-sessions" },
+    { "source": "/global-p2p/embedded-wallets/exporting-wallet", "destination": "/global-p2p/global-accounts/exporting-wallet" }
+  ]
 }

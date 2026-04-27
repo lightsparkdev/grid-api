@@ -1,17 +1,17 @@
-An Embedded Wallet is a self-custodial [Spark](https://spark.money) wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment.
+A Global Account is powered by a self-custody embedded [Spark](https://spark.money) wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment.
 
-## Why an Embedded Wallet?
+## Why a Global Account?
 
 - **Self-custody.** Grid never has unilateral access to move user funds, and neither do you. The customer's device is the only party that can authorize a transaction.
 - **Stablecoin-denominated.** Balances are held as stablecoins like [Brale-issued USDB](https://brale.xyz/stablecoins/USDB). Use the standard `/quotes` API to convert in from fiat or out to any supported Grid bank-account rail (ACH, PIX, CLABE, UPI, IBAN, UMA, …).
-- **Grid-native.** You reuse the customer, internal-account, quote, transaction, and webhook primitives you already integrated for Payouts or P2P. The only thing that's new is an auth + signing layer at the wallet.
-- **Built on Bitcoin.** Embedded wallets run on Spark, a Lightning-compatible Bitcoin L2 that supports instant, low-fee Bitcoin and Stablecoin transfers. You get the benefits of running on Bitcoin, the most neutral, decentralized, and secure network for money.
+- **Grid-native.** You reuse the customer, internal-account, quote, transaction, and webhook primitives you already integrated for Payouts or P2P. The only thing that's new is an auth + signing layer at the account.
+- **Built on Bitcoin.** Global Accounts run on Spark, a Lightning-compatible Bitcoin L2 that supports instant, low-fee Bitcoin and Stablecoin transfers. You get the benefits of running on Bitcoin, the most neutral, decentralized, and secure network for money.
 
 ## Payment flow
 
-Embedded Wallets ride on the same `/quotes` + `/quotes/{id}/execute` pattern as every other Grid payment. The only thing that's different is that outbound transfers need a client signature.
+Global Accounts ride on the same `/quotes` + `/quotes/{id}/execute` pattern as every other Grid payment. The only thing that's different is that outbound transfers need a client signature.
 
-- **Incoming funds.** Funding a wallet works like any other internal account. Create a quote with the Embedded Wallet as the `destination`, execute it, and Grid converts the source currency into USDB and credits the wallet. No customer approval needed — incoming value is passive.
+- **Incoming funds.** Funding an account works like any other internal account. Create a quote with the Global Account as the `destination`, execute it, and Grid converts the source currency into USDB and credits the account. No customer approval needed — incoming value is passive.
 - **Outgoing funds.** Withdrawals and transfers out require the customer to authorize them on their device. Grid returns a `payloadToSign` in the quote's `paymentInstructions`; the client signs those bytes with its session signing key and passes the base64 signature as the `Grid-Wallet-Signature` header on `/quotes/{id}/execute`. Only then does Grid release the funds.
 
 Sessions are short-lived (15 minutes by default) and bound to a specific device via the client key pair, so a stolen signature can't be replayed from a different device or after the session expires. Standard transaction webhooks fire throughout the lifecycle — see [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle). The [Quickstart](#quickstart) below walks through an end-to-end withdrawal.
@@ -24,19 +24,19 @@ Three parties participate in every signed action:
 |---|---|
 | **Client** | The customer's device (browser, iOS app, or Android app). Generates the client key pair, runs WebAuthn, decrypts the session signing key, and signs outbound requests. |
 | **Integrator backend** | Your server. Holds your Grid API credentials, brokers every call to Grid on behalf of the client, and issues WebAuthn challenges for initial passkey registration. |
-| **Grid** | Verifies auth credentials, issues session signing keys (encrypted to the client's public key), and enforces that every wallet action is authorized. |
+| **Grid** | Verifies auth credentials, issues session signing keys (encrypted to the client's public key), and enforces that every account action is authorized. |
 
 The client **never** talks to Grid directly. Every request flows client → integrator backend → Grid.
 
 ## Auth credentials, client keys, and session signing keys
 
-Three distinct pieces of crypto collaborate to authorize actions on the Embedded Wallet (withdrawals, credential changes, session revocations, and wallet exports):
+Three distinct pieces of crypto collaborate to authorize actions on the Global Account (withdrawals, credential changes, session revocations, and wallet exports):
 
 | Piece | Where it lives | How long it lives | What it proves |
 |---|---|---|---|
-| **Auth credential** — passkey, OIDC token, or email OTP | Registered on the wallet; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this wallet."* Used to authenticate the user at the start of each session. |
+| **Auth credential** — passkey, OIDC token, or email OTP | Registered on the account; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this account."* Used to authenticate the user at the start of each session. |
 | **Client key pair** (P-256) | Generated on the client device for each verification request; private key stays in device-local secure storage | One verification request | Binds a given session signing key delivery to the exact device that asked for it — Grid encrypts the session to this public key, so only this device can decrypt. |
-| **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific wallet action was approved on an authenticated device."* Signs the `payloadToSign` Grid returns on quotes, credential changes, session revocations, and wallet exports. |
+| **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific account action was approved on an authenticated device."* Signs the `payloadToSign` Grid returns on quotes, credential changes, session revocations, and wallet exports. |
 
 The flow is always the same: verify an auth credential → receive a short-lived session signing key → sign `payloadToSign` bytes on the client → pass the signature as the `Grid-Wallet-Signature` header on the request that actually moves funds or changes account state. This applies to withdrawals, adding or removing credentials, revoking sessions, and exporting the wallet seed.
 
@@ -45,9 +45,9 @@ See <a href="client-keys">Client keys & signing</a> for the full key-management 
 ## Prerequisites
 
 <Warning>
-  Customers who hold an Embedded Wallet must be KYC/KYB verified before any wallet funds can move from or to fiat rails. This quickstart picks up after KYC is complete.
+  Customers who hold a Global Account must be KYC/KYB verified before any account funds can move from or to fiat rails. This quickstart picks up after KYC is complete.
 
-  In sandbox, customers are automatically KYC approved on creation so you can skip straight to wallet setup.
+  In sandbox, customers are automatically KYC approved on creation so you can skip straight to account setup.
 </Warning>
 
 You also need:
@@ -65,18 +65,18 @@ export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
   **Testing in sandbox.** Sandbox accepts two fixed magic values so you can exercise the auth + signing flow without managing real OTP delivery or device-side keys:
 
   - **Email OTP code:** always `000000` for any `EMAIL_OTP` credential's `verify` call.
-  - **Wallet signature:** the `Grid-Wallet-Signature` header accepts the literal string `sandbox-valid-signature` for any signed wallet action. The `encryptedSessionSigningKey` returned by `/verify` in sandbox is a stub and is not meant to decrypt — skip the HPKE decrypt step entirely.
+  - **Wallet signature:** the `Grid-Wallet-Signature` header accepts the literal string `sandbox-valid-signature` for any signed account action. The `encryptedSessionSigningKey` returned by `/verify` in sandbox is a stub and is not meant to decrypt — skip the HPKE decrypt step entirely.
 
   These shortcuts apply only on sandbox platforms. Production runs the real OTP, HPKE, and ECDSA flows described below.
 </Note>
 
 ## Quickstart
 
-The walkthrough below is the happy path: create a customer, find the auto-provisioned wallet, register a passkey, fund it, and withdraw to a bank account. Each step shows the HTTP request your integrator backend makes on behalf of the client.
+The walkthrough below is the happy path: create a customer, find the auto-provisioned account, register a passkey, fund it, and withdraw to a bank account. Each step shows the HTTP request your integrator backend makes on behalf of the client.
 
 ### 1. Create a customer
 
-Create the customer record. An Embedded Wallet is provisioned automatically whenever a customer is created on a platform that has `USDB` in its supported currencies — you don't need to pass it on the customer.
+Create the customer record. A Global Account is provisioned automatically whenever a customer is created on a platform that has `USDB` in its supported currencies — you don't need to pass it on the customer.
 
 ```bash
 curl -X POST "$GRID_BASE_URL/customers" \
@@ -95,9 +95,9 @@ curl -X POST "$GRID_BASE_URL/customers" \
 
 **Response:** `201 Created` with the new `Customer:...` id. In sandbox, the customer is KYC-approved immediately; in production you would now run them through the [KYC / KYB flow](../onboarding/configuring-customers) before any funds can move.
 
-### 2. Find the Embedded Wallet
+### 2. Find the Global Account
 
-When a customer is created on a USDB-enabled platform, Grid automatically provisions an Embedded Wallet alongside their other internal accounts. Fetch it by filtering the customer's internal accounts by `type=EMBEDDED_WALLET`.
+When a customer is created on a USDB-enabled platform, Grid automatically provisions a Global Account alongside their other internal accounts. Fetch it by filtering the customer's internal accounts by `type=EMBEDDED_WALLET`.
 
 ```bash
 curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
@@ -135,9 +135,9 @@ Hold onto the `InternalAccount:...` id — every auth credential is scoped to it
 
 ### 3. Register a passkey credential
 
-Embedded Wallets support three authentication credential types: **passkey**, **OAuth (OIDC)**, and **email OTP**. A passkey is a user-friendly default: biometric, phishing-resistant, and usable across the user's devices.
+Global Accounts support three authentication credential types: **passkey**, **OAuth (OIDC)**, and **email OTP**. A passkey is a user-friendly default: biometric, phishing-resistant, and usable across the user's devices.
 
-Registration only binds the passkey to the wallet — it doesn't issue a session. Sessions are created on-demand, when the customer initiates an action that needs a signature (step 7). The full flow with sequence diagram is documented in <a href="authentication#passkey-registration">Authentication</a>; the condensed version:
+Registration only binds the passkey to the account — it doesn't issue a session. Sessions are created on-demand, when the customer initiates an action that needs a signature (step 7). The full flow with sequence diagram is documented in <a href="authentication#passkey-registration">Authentication</a>; the condensed version:
 
 <Steps>
   <Step title="Your backend issues a WebAuthn challenge">
@@ -169,11 +169,11 @@ Registration only binds the passkey to the wallet — it doesn't issue a session
   </Step>
 </Steps>
 
-The passkey is now bound to the wallet. You'll use it to authorize the withdrawal in step 7.
+The passkey is now bound to the account. You'll use it to authorize the withdrawal in step 7.
 
-### 4. Fund the wallet
+### 4. Fund the Account
 
-Embedded Wallets behave like any other internal account on the way in — incoming funds do not need the customer's signature. In sandbox, use the sandbox funding endpoint to skip straight to a funded state:
+Global Accounts behave like any other internal account on the way in — incoming funds do not need the customer's signature. In sandbox, use the sandbox funding endpoint to skip straight to a funded state:
 
 ```bash
 curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
@@ -184,15 +184,15 @@ curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-
   }'
 ```
 
-You will receive an `INCOMING_PAYMENT` webhook when the balance updates. The wallet now holds 1,000.00 USDB.
+You will receive an `INCOMING_PAYMENT` webhook when the balance updates. The account now holds 1,000.00 USDB.
 
 <Tip>
-  To fund from another currency (USD ACH, USDC on-chain, etc.), create a quote with `destination.destinationType: "ACCOUNT"` pointing at the Embedded Wallet's `InternalAccount` id. The quote's `sourceCurrency` can be any supported platform currency; Grid will convert into USDB on execute.
+  To fund from another currency (USD ACH, USDC on-chain, etc.), create a quote with `destination.destinationType: "ACCOUNT"` pointing at the Global Account's `InternalAccount` id. The quote's `sourceCurrency` can be any supported platform currency; Grid will convert into USDB on execute.
 </Tip>
 
 ### 5. Add an external bank account
 
-Add the destination the customer wants to withdraw to. This is a standard external account — nothing Embedded Wallet-specific.
+Add the destination the customer wants to withdraw to. This is a standard external account — nothing Global Account-specific.
 
 ```bash
 curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
@@ -227,7 +227,7 @@ curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
 
 ### 6. Create a withdrawal quote
 
-Create a quote with the Embedded Wallet as the source. Grid returns a `payloadToSign` in the quote's payment instructions — this is what the client will sign to authorize the transfer.
+Create a quote with the Global Account as the source. Grid returns a `payloadToSign` in the quote's payment instructions — this is what the client will sign to authorize the transfer.
 
 ```bash
 curl -X POST "$GRID_BASE_URL/quotes" \
@@ -377,7 +377,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
   Sign the `payloadToSign` bytes exactly as Grid returned them. Do not parse, re-serialize, trim, or normalize the JSON — the signature must cover the same bytes Grid's verifier hashes.
 </Warning>
 
-The session signing key is now valid for 15 minutes, so subsequent wallet actions within that window (for example, a second withdrawal) can reuse it without another `/challenge` + `/verify` round-trip.
+The session signing key is now valid for 15 minutes, so subsequent account actions within that window (for example, a second withdrawal) can reuse it without another `/challenge` + `/verify` round-trip.
 
 ### 8. Execute the quote
 
