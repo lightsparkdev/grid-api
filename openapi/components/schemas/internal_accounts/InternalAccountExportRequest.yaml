@@ -3,7 +3,7 @@ description: >-
   Request body for `POST /internal-accounts/{id}/export`. The
   `clientPublicKey` is required on both steps of the signed-retry
   flow. On step 1 Grid binds it into `payloadToSign` so the
-  subsequent `Grid-Wallet-Signature` commits to the target pubkey;
+  subsequent stamp in `Grid-Wallet-Signature` commits to the target pubkey;
   on step 2 the client echoes the same `clientPublicKey` back and
   Grid uses it to encrypt the wallet credentials returned in the
   `200` response.

@@ -15,10 +15,11 @@ properties:
   payloadToSign:
     type: string
     description: >-
-      Payload that must be signed with the session private key of a
-      verified authentication credential. The resulting signature is
-      passed as the `Grid-Wallet-Signature` header on the retry of the
-      originating request to complete the operation.
+      Canonical payload for the retry authorization stamp. Build an
+      API-key stamp over this exact value with the session API keypair,
+      then send the full base64url-encoded stamp in
+      `Grid-Wallet-Signature` on the retry that completes the original
+      request.
     example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
   requestId:
     type: string
