@@ -15,7 +15,7 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
   className="page-hero"
 />
 
-Grid Global Accounts let platforms give customers a branded dollar account without building banking, wallet, FX, and payout infrastructure from scratch. Your users can hold a stable dollar balance, receive funds, and move money out through supported Grid rails.
+Grid Global Accounts let platforms give customers a branded, self-custody dollar account without building banking, wallet, FX, and payout infrastructure from scratch. Your users can hold a stable dollar balance, receive funds, and move money out through supported Grid rails.
 
 Under the hood, a Global Account uses core Grid APIs: customers, internal accounts, quotes, payment instructions, signed withdrawals, sessions, and webhooks.
 
@@ -46,11 +46,11 @@ Global Accounts package account, funding, movement, and authorization flows into
   <FeatureCard icon="/images/icons/globe.svg" title="Local off-ramps">
     Let customers move value to supported local bank rails, including corridors such as PIX, UPI, SEPA, FPS, and more.
   </FeatureCard>
-  <FeatureCard icon="/images/icons/shield.svg" title="Customer authorization">
-    Require customer approval for outbound account actions with credentials, sessions, and signed requests.
+  <FeatureCard icon="/images/icons/shield.svg" title="Self-custody authorization">
+    Require customer approval for outbound account actions. Grid and your platform cannot unilaterally move customer funds.
   </FeatureCard>
-  <FeatureCard icon="/images/icons/bitcoin.svg" title="Native Bitcoin">
-    Support Bitcoin and stablecoin flows using the same Grid account and quote model where enabled for your platform.
+  <FeatureCard icon="/images/icons/bitcoin.svg" title="Built on Spark">
+    Use Spark, a Lightning-compatible Bitcoin L2, to support Bitcoin and stablecoin flows where enabled for your platform.
   </FeatureCard>
   <FeatureCard icon="/images/icons/bell.svg" title="Webhooks and reconciliation">
     Track funding, withdrawals, and settlement status with standard Grid account and transaction webhooks.
