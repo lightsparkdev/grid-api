@@ -48,14 +48,19 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
     info[field.name] = field.example;
   }
 
-  // Beneficiary goes inside accountInfo per API spec
+  // Beneficiary goes inside accountInfo. We emit only the documented minimum
+  // for individual beneficiaries — `beneficiaryType` and `fullName` always,
+  // plus `address` for the countries that require it (US, UK, EU). Per docs,
+  // `birthDate` and `nationality` are optional but recommended.
   if (spec.beneficiaryRequired) {
-    info.beneficiary = {
+    const beneficiary: Record<string, unknown> = {
       beneficiaryType: 'INDIVIDUAL',
       fullName: sel.examplePerson.fullName,
-      birthDate: '1985-06-20',
-      nationality: sel.examplePerson.nationality,
     };
+    if (spec.beneficiaryAddressRequired && spec.beneficiaryAddressExample) {
+      beneficiary.address = spec.beneficiaryAddressExample;
+    }
+    info.beneficiary = beneficiary;
   }
 
   return info;
