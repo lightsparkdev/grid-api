@@ -8098,20 +8098,13 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
-        - branchCode
         - phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - BDT_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8139,7 +8132,6 @@ components:
           pattern: ^\+[0-9]{6,14}$
       example:
         accountType: BDT_ACCOUNT
-        bankName: Example Bank
         accountNumber: '1234567890'
         branchCode: '11111'
         swiftCode: DEUTDEFF
@@ -8278,7 +8270,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - phoneNumber
       properties:
@@ -8286,11 +8277,6 @@ components:
           type: string
           enum:
             - GHS_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8305,7 +8291,6 @@ components:
           pattern: ^\+[0-9]{6,14}$
       example:
         accountType: GHS_ACCOUNT
-        bankName: Example Bank
         accountNumber: '1234567890'
         phoneNumber: '+1234567890'
     GhsAccountInfo:
@@ -8339,7 +8324,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - bankAccountType
       properties:
@@ -8347,11 +8331,6 @@ components:
           type: string
           enum:
             - GTQ_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8365,7 +8344,6 @@ components:
             - SAVINGS
       example:
         accountType: GTQ_ACCOUNT
-        bankName: Example Bank
         accountNumber: '1234567890'
         bankAccountType: CHECKING
     GtqAccountInfo:
@@ -8444,7 +8422,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - branchCode
         - bankAccountType
@@ -8453,11 +8430,6 @@ components:
           type: string
           enum:
             - JMD_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8477,7 +8449,6 @@ components:
             - SAVINGS
       example:
         accountType: JMD_ACCOUNT
-        bankName: Example Bank
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
@@ -8511,19 +8482,14 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - phoneNumber
+        - bankName
       properties:
         accountType:
           type: string
           enum:
             - PKR_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -8543,12 +8509,17 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: PKR_ACCOUNT
-        bankName: Example Bank
         accountNumber: '1234567890'
         iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
+        bankName: Example Bank
     PkrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PkrAccountInfoBase'
@@ -10381,6 +10352,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10591,6 +10563,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10644,7 +10617,6 @@ components:
         - beneficiaryType
         - countryOfResidence
         - fullName
-        - phoneNumber
       properties:
         beneficiaryType:
           type: string
@@ -10695,6 +10667,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10747,6 +10720,7 @@ components:
       required:
         - beneficiaryType
         - address
+        - countryOfResidence
         - fullName
         - phoneNumber
       properties:
@@ -10799,6 +10773,7 @@ components:
       type: object
       required:
         - beneficiaryType
+        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:

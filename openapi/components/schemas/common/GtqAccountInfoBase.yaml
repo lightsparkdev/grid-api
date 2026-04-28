@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- bankName
 - accountNumber
 - bankAccountType
 properties:
@@ -9,11 +8,6 @@ properties:
     type: string
     enum:
     - GTQ_ACCOUNT
-  bankName:
-    type: string
-    description: The name of the bank
-    minLength: 1
-    maxLength: 255
   accountNumber:
     type: string
     description: The account number of the bank
@@ -27,6 +21,5 @@ properties:
     - SAVINGS
 example:
   accountType: GTQ_ACCOUNT
-  bankName: Example Bank
   accountNumber: '1234567890'
   bankAccountType: CHECKING
