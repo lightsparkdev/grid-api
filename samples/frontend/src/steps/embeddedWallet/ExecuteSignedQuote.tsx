@@ -28,7 +28,10 @@ export default function ExecuteSignedQuote({
     setResponse(null)
     try {
       const path = `/api/quotes/${encodeURIComponent(quoteId)}/execute`
-      const data = await apiPost<Record<string, unknown>>(path, { signature })
+      const data = await apiPost<Record<string, unknown>>(path, undefined, {
+        'Grid-Wallet-Signature': signature,
+        'Idempotency-Key': crypto.randomUUID(),
+      })
       setResponse(JSON.stringify(data, null, 2))
       onComplete(data)
     } catch (e) {

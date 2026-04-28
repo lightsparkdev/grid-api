@@ -20,7 +20,7 @@ export default function FundEmbeddedWallet({ walletAccountId, onComplete, disabl
   useEffect(() => {
     setBody(JSON.stringify({
       currencyCode: 'USDB',
-      currencyAmount: 100_00, // 100.00 USDB in minor units
+      currencyAmount: 100_000_000, // 100 USDB (6 decimals)
     }, null, 2))
   }, [walletAccountId])
 

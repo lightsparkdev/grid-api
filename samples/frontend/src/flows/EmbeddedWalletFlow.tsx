@@ -18,7 +18,7 @@ export default function EmbeddedWalletFlow() {
   const [quoteId, setQuoteId] = useState<string | null>(null)
   const [payloadToSign, setPayloadToSign] = useState<string | null>(null)
   const [signature, setSignature] = useState<string | null>(null)
-  const [selectedCountry, setSelectedCountry] = useState('MX')
+  const [selectedCountry, setSelectedCountry] = useState('US')
 
   const advance = () => setActiveStep((s) => s + 1)
 

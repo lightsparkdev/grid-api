@@ -136,13 +136,23 @@ fun Route.authCredentialRoutes() {
                         ContentType.Application.Json,
                         HttpStatusCode.BadRequest
                     )
-                Log.incoming("POST", "/api/auth/credentials/$authMethodId/challenge")
+                // Body is required for PASSKEY (carries clientPublicKey so Grid can
+                // seal the session signing key to the device). Empty body is fine
+                // for EMAIL_OTP and OAUTH.
+                val body = runCatching { call.receiveText() }.getOrDefault("")
+                val clientPublicKey = body.takeIf { it.isNotBlank() }
+                    ?.let { JsonUtils.mapper.readTree(it).optText("clientPublicKey") }
+                Log.incoming("POST", "/api/auth/credentials/$authMethodId/challenge", body)
 
                 val params = CredentialResendChallengeParams.builder()
                     .id(authMethodId)
+                    .apply { clientPublicKey?.let { clientPublicKey(it) } }
                     .build()
 
-                Log.gridRequest("auth.credentials.resendChallenge", "id=$authMethodId")
+                Log.gridRequest(
+                    "auth.credentials.resendChallenge",
+                    "id=$authMethodId clientPublicKey=${clientPublicKey != null}",
+                )
                 val response = GridClientBuilder.client.auth().credentials().resendChallenge(params)
                 val responseJson = JsonUtils.prettyPrint(response)
                 Log.gridResponse("auth.credentials.resendChallenge", responseJson)
@@ -191,9 +201,10 @@ fun Route.authCredentialRoutes() {
                     }
                     .build()
 
+                // clientPublicKey moved to /challenge in SDK 1.7.x; verify carries
+                // the assertion only.
                 val verifyRequest = PasskeyCredentialVerifyRequest.builder()
                     .type(PasskeyCredentialVerifyRequest.Type.PASSKEY)
-                    .clientPublicKey(json.get("clientPublicKey").asText())
                     .assertion(assertion)
                     .build()
 

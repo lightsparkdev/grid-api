@@ -28,17 +28,18 @@ export default function CreateWithdrawalQuote({
   useEffect(() => {
     setBody(JSON.stringify({
       source: {
-        sourceType: 'INTERNAL_ACCOUNT',
+        sourceType: 'ACCOUNT',
         accountId: walletAccountId ?? '<wallet-account-id>',
-        currency: 'USDB',
+        customerId: customerId ?? '<customer-id>',
       },
       destination: {
-        destinationType: 'EXTERNAL_ACCOUNT',
+        destinationType: 'ACCOUNT',
         accountId: externalAccountId ?? '<external-account-id>',
       },
-      lockedSide: 'SOURCE',
-      sourceAmount: 25_00,
-      customerId: customerId ?? '<customer-id>',
+      lockedCurrencySide: 'SENDING',
+      // USDB has 6 decimals — 10_000_000 minor units = 10 USDB.
+      lockedCurrencyAmount: 10_000_000,
+      description: 'Withdrawal from Global Account',
     }, null, 2))
   }, [customerId, walletAccountId, externalAccountId])
 
@@ -50,14 +51,26 @@ export default function CreateWithdrawalQuote({
       const data = await apiPost<{
         id?: string
         quoteId?: string
-        paymentInstructions?: { payloadToSign?: string }
+        paymentInstructions?: Array<{
+          accountOrWalletInfo?: { accountType?: string; payloadToSign?: string }
+          payloadToSign?: string
+        }>
         payloadToSign?: string
       }>('/api/quotes', JSON.parse(body))
       setResponse(JSON.stringify(data, null, 2))
+      // paymentInstructions is an array — for an embedded-wallet source, look
+      // for the instruction whose accountOrWalletInfo carries the payloadToSign.
+      const signingInstruction = data.paymentInstructions?.find(
+        (i) => i.accountOrWalletInfo?.payloadToSign || i.payloadToSign,
+      )
+      const payloadToSign =
+        signingInstruction?.accountOrWalletInfo?.payloadToSign ??
+        signingInstruction?.payloadToSign ??
+        data.payloadToSign ??
+        ''
       onComplete({
         quoteId: (data.quoteId ?? data.id) as string,
-        payloadToSign:
-          data.paymentInstructions?.payloadToSign ?? data.payloadToSign ?? '',
+        payloadToSign,
       })
     } catch (e) {
       setError((e as Error).message)

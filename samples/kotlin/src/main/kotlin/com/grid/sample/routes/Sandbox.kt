@@ -26,9 +26,13 @@ fun Route.sandboxRoutes() {
                 val json = JsonUtils.mapper.readTree(body)
                 Log.incoming("POST", "/api/sandbox/internal-accounts/$accountId/fund", body)
 
+                val amount = (json.get("amount") ?: json.get("currencyAmount"))
+                    ?.takeIf { !it.isNull }
+                    ?.asLong()
+                    ?: throw IllegalArgumentException("amount (or currencyAmount) is required")
                 val params = InternalAccountFundParams.builder()
                     .accountId(accountId)
-                    .amount(json.get("amount").asLong())
+                    .amount(amount)
                     .build()
 
                 Log.gridRequest("sandbox.internalAccounts.fund", body)
