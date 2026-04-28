@@ -1,0 +1,75 @@
+---
+title: "Global Accounts"
+sidebarTitle: "Introduction"
+description: "Give your customers a branded, self-custody dollar account powered by Grid."
+icon: "/images/icons/wallet1.svg"
+mode: "wide"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+import Concepts from '/snippets/global-accounts/concepts.mdx';
+
+<img
+  src="/images/heroes/hero-gga.webp"
+  alt="Grid Global Accounts hero"
+  className="page-hero"
+/>
+
+<Concepts />
+
+## Core capabilities
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Branded dollar accounts">
+    Give each customer a branded account experience backed by Grid account infrastructure.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/coins.svg" title="Stablecoin balances">
+    Hold dollar-denominated value and use Grid quotes to move between account balances and supported rails.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/globe.svg" title="Local off-ramps">
+    Let customers move value to supported local bank rails, including corridors such as PIX, UPI, SEPA, FPS, and more.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="Self-custody authorization">
+    Require customer approval for outbound account actions. Grid and your platform cannot unilaterally move customer funds.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bitcoin.svg" title="Built on Spark">
+    Use Spark, a Lightning-compatible Bitcoin L2, to support Bitcoin and stablecoin flows where enabled for your platform.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks and reconciliation">
+    Track funding, withdrawals, and settlement status with standard Grid account and transaction webhooks.
+  </FeatureCard>
+</FeatureCardGrid>
+
+## Additional capabilities
+
+Some Global Accounts capabilities require platform enablement before you can build with them. [Book a demo](https://www.lightspark.com/contact) to see how they fit your platform.
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/credit-card1.svg" title="Card programs">
+    Issue cards tied to Global Account balances where enabled for your platform.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/agent.svg" title="Agentic payments">
+    Support bounded account access for AI agents with policy-controlled movement.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/IconSquareChecklistMagnifyingGlass.svg" title="Advanced account controls">
+    Configure limits, permissions, and controls for more complex account programs.
+  </FeatureCard>
+</FeatureCardGrid>
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Implementation overview" href="/global-accounts/implementation-overview" icon="rocket">
+    End-to-end walkthrough: create a customer, register a passkey, fund the account, and execute a signed withdrawal.
+  </Card>
+  <Card title="Authentication" href="/global-accounts/authentication" icon="shield-check">
+    Passkey, OAuth (OIDC), and email OTP registration and reauthentication flows.
+  </Card>
+  <Card title="Client keys & signing" href="/global-accounts/client-keys" icon="key">
+    Generate the P-256 key pair, decrypt the session signing key, and sign payloads on Web, iOS, and Android.
+  </Card>
+  <Card title="Sandbox testing" href="/global-accounts/platform-tools/sandbox-testing" icon="hammer">
+    Magic values for OTP, signatures, and OAuth tokens that exercise the full request shape without standing up real auth providers.
+  </Card>
+</CardGroup>

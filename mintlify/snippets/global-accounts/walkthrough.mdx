@@ -1,47 +1,3 @@
-A Global Account is powered by a self-custody embedded [Spark](https://spark.money) wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment.
-
-## Why a Global Account?
-
-- **Self-custody.** Grid never has unilateral access to move user funds, and neither do you. The customer's device is the only party that can authorize a transaction.
-- **Stablecoin-denominated.** Balances are held as stablecoins like [Brale-issued USDB](https://brale.xyz/stablecoins/USDB). Use the standard `/quotes` API to convert in from fiat or out to any supported Grid bank-account rail (ACH, PIX, CLABE, UPI, IBAN, UMA, …).
-- **Grid-native.** You reuse the customer, internal-account, quote, transaction, and webhook primitives you already integrated for Payouts or P2P. The only thing that's new is an auth + signing layer at the account.
-- **Built on Bitcoin.** Global Accounts run on Spark, a Lightning-compatible Bitcoin L2 that supports instant, low-fee Bitcoin and Stablecoin transfers. You get the benefits of running on Bitcoin, the most neutral, decentralized, and secure network for money.
-
-## Payment flow
-
-Global Accounts ride on the same `/quotes` + `/quotes/{id}/execute` pattern as every other Grid payment. The only thing that's different is that outbound transfers need a client signature.
-
-- **Incoming funds.** Funding an account works like any other internal account. Create a quote with the Global Account as the `destination`, execute it, and Grid converts the source currency into USDB and credits the account. No customer approval needed — incoming value is passive.
-- **Outgoing funds.** Withdrawals and transfers out require the customer to authorize them on their device. Grid returns a `payloadToSign` in the quote's `paymentInstructions`; the client signs those bytes with its session signing key and passes the base64 signature as the `Grid-Wallet-Signature` header on `/quotes/{id}/execute`. Only then does Grid release the funds.
-
-Sessions are short-lived (15 minutes by default) and bound to a specific device via the client key pair, so a stolen signature can't be replayed from a different device or after the session expires. Standard transaction webhooks fire throughout the lifecycle — see [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle). The [Quickstart](#quickstart) below walks through an end-to-end withdrawal.
-
-## Architecture
-
-Three parties participate in every signed action:
-
-| Party | Role |
-|---|---|
-| **Client** | The customer's device (browser, iOS app, or Android app). Generates the client key pair, runs WebAuthn, decrypts the session signing key, and signs outbound requests. |
-| **Integrator backend** | Your server. Holds your Grid API credentials, brokers every call to Grid on behalf of the client, and issues WebAuthn challenges for initial passkey registration. |
-| **Grid** | Verifies auth credentials, issues session signing keys (encrypted to the client's public key), and enforces that every account action is authorized. |
-
-The client **never** talks to Grid directly. Every request flows client → integrator backend → Grid.
-
-## Auth credentials, client keys, and session signing keys
-
-Three distinct pieces of crypto collaborate to authorize actions on the Global Account (withdrawals, credential changes, session revocations, and wallet exports):
-
-| Piece | Where it lives | How long it lives | What it proves |
-|---|---|---|---|
-| **Auth credential** — passkey, OIDC token, or email OTP | Registered on the account; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this account."* Used to authenticate the user at the start of each session. |
-| **Client key pair** (P-256) | Generated on the client device for each verification request; private key stays in device-local secure storage | One verification request | Binds a given session signing key delivery to the exact device that asked for it — Grid encrypts the session to this public key, so only this device can decrypt. |
-| **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific account action was approved on an authenticated device."* Signs the `payloadToSign` Grid returns on quotes, credential changes, session revocations, and wallet exports. |
-
-The flow is always the same: verify an auth credential → receive a short-lived session signing key → sign `payloadToSign` bytes on the client → pass the signature as the `Grid-Wallet-Signature` header on the request that actually moves funds or changes account state. This applies to withdrawals, adding or removing credentials, revoking sessions, and exporting the wallet seed.
-
-See <a href="client-keys">Client keys & signing</a> for the full key-management and signing reference, and <a href="authentication">Authentication</a> for the per-credential-type flows.
-
 ## Prerequisites
 
 <Warning>
@@ -61,7 +17,7 @@ export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
 export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
 ```
 
-## Quickstart
+## Walkthrough
 
 The walkthrough below is the happy path: create a customer, find the auto-provisioned account, register a passkey, fund it, and withdraw to a bank account. Each step shows the HTTP request your integrator backend makes on behalf of the client.
 
@@ -84,7 +40,7 @@ curl -X POST "$GRID_BASE_URL/customers" \
   }'
 ```
 
-**Response:** `201 Created` with the new `Customer:...` id. In sandbox, the customer is KYC-approved immediately; in production you would now run them through the [KYC / KYB flow](../onboarding/configuring-customers) before any funds can move.
+**Response:** `201 Created` with the new `Customer:...` id. In sandbox, the customer is KYC-approved immediately; in production you would now run them through the KYC / KYB flow before any funds can move.
 
 ### 2. Find the Global Account
 
@@ -276,13 +232,19 @@ curl -X POST "$GRID_BASE_URL/quotes" \
 
 ### 7. Authenticate and sign
 
-The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with — this is when the passkey actually gets used. The flow is challenge → assertion → verify → decrypt → sign.
+The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with — this is when the passkey actually gets used. The flow is keypair → challenge → assertion → verify → decrypt → sign.
 
 <Steps>
-  <Step title="Your backend requests a fresh challenge">
+  <Step title="Your backend requests a fresh challenge sealed to the client public key">
+    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 client key pair</a> and posts the public key (uncompressed hex) to your backend, which forwards it to Grid. Grid bakes the public key into the session-creation payload so the resulting session signing key is sealed to that device.
+
     ```bash
     curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/challenge" \
-      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
     ```
 
     **Response (200):**
@@ -303,8 +265,8 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
 
     Return `challenge` and `requestId` to the client.
   </Step>
-  <Step title="Client generates a key pair and runs the WebAuthn assertion">
-    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 client key pair</a>, then prompts the authenticator with the Grid-issued challenge:
+  <Step title="Client runs the WebAuthn assertion against the Grid-issued challenge">
+    Prompt the authenticator with the `challenge` returned in the previous step:
 
     ```js
     const base64urlToBytes = (value) => {
@@ -322,7 +284,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     });
     ```
 
-    Post the assertion plus `clientPublicKey` (uncompressed hex) back to your backend.
+    Post the assertion (and the `requestId` from the previous step) back to your backend.
   </Step>
   <Step title="Your backend verifies the assertion with Grid to mint a session">
     ```bash
@@ -337,10 +299,11 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
           "clientDataJson": "eyJjaGFsbGVuZ2UiOiJWalo2bzhLZkU5VjNxM0xrUjJuSDVlWjZkTTh5QTF4VyIsIm9yaWdpbiI6Imh0dHBzOi8veW91cmFwcC5jb20iLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0",
           "authenticatorData": "PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA",
           "signature": "MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900"
-        },
-        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+        }
       }'
     ```
+
+    `clientPublicKey` is no longer required here — Grid already has it from the `/challenge` call. The `Request-Id` header ties this verify to that earlier challenge.
 
     **Response (200):**
 

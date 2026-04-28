@@ -3722,7 +3722,7 @@ paths:
 
         **First credential on an internal account**
 
-        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests. For `OAUTH` credentials, the supplied `oidcToken` is validated inline against the issuer's `.well-known` OpenID configuration (the token's `iat` must be less than 60 seconds before the request); activation still happens via `POST /auth/credentials/{id}/verify`. For `PASSKEY` credentials, the client completes a WebAuthn registration (`navigator.credentials.create()`) using a `challenge` issued by the platform backend and submits the resulting `attestation` here; the credential must still be activated via `POST /auth/credentials/{id}/verify` by completing a WebAuthn assertion. Unlike the registration `challenge` (platform-issued), the challenge for the first authentication is issued by Grid and returned inline on the `201` response alongside the `AuthMethod` fields, plus a `requestId` and challenge `expiresAt` (see `PasskeyAuthChallenge`). The client uses that Grid-issued `challenge` to produce the assertion and submits it with `Request-Id: <requestId>` to `POST /auth/credentials/{id}/verify`. On every subsequent reauthentication the challenge is re-issued via `POST /auth/credentials/{id}/challenge`. Only one `PASSKEY` credential is supported per internal account in v1.
+        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests. For `OAUTH` credentials, the supplied `oidcToken` is validated inline against the issuer's `.well-known` OpenID configuration (the token's `iat` must be less than 60 seconds before the request); activation still happens via `POST /auth/credentials/{id}/verify`. For `PASSKEY` credentials, the client completes a WebAuthn registration (`navigator.credentials.create()`) using a `challenge` issued by the platform backend and submits the resulting `attestation` here. The registration response is a plain `AuthMethod` (no inline authentication challenge). To produce the first session, the client follows registration with two further calls: `POST /auth/credentials/{id}/challenge` (carrying the client's ephemeral `clientPublicKey`) returns a Grid-issued WebAuthn challenge plus `requestId`, and `POST /auth/credentials/{id}/verify` (with `Request-Id: <requestId>`) consumes the resulting assertion and issues the session. The same two-step pattern is used on every subsequent reauthentication. Only one `PASSKEY` credential is supported per internal account in v1.
 
         **Adding an additional credential**
 
@@ -3781,11 +3781,11 @@ paths:
                       - hybrid
       responses:
         '201':
-          description: Authentication credential created successfully. For `EMAIL_OTP` and `OAUTH`, the body is a plain `AuthMethod`. For `PASSKEY`, the body is a `PasskeyAuthChallenge` — an `AuthMethod` with the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the first authentication assertion.
+          description: Authentication credential created successfully. The body is the created `AuthMethod` for all three credential types. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+                $ref: '#/components/schemas/AuthMethodResponse'
               examples:
                 emailOtp:
                   summary: Email OTP credential created
@@ -3806,7 +3806,7 @@ paths:
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
                 passkey:
-                  summary: Passkey credential created with first-authentication challenge
+                  summary: Passkey credential created
                   value:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
@@ -3814,9 +3814,6 @@ paths:
                     nickname: iPhone Face-ID
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
-                    challenge: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
-                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
-                    expiresAt: '2026-04-08T15:35:00Z'
         '202':
           description: An existing authentication credential is already registered on the internal account. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
           content:
@@ -4102,7 +4099,7 @@ paths:
 
         For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file. The response is a plain `AuthMethod`; there is no challenge body to surface because the OTP is delivered out-of-band via email. After the user receives the new OTP, call `POST /auth/credentials/{id}/verify` to complete verification and issue a session.
 
-        For `PASSKEY` credentials, this issues a fresh Grid-generated WebAuthn challenge for reauthentication. The response is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the new `challenge`, `requestId`, and `expiresAt`. The client passes the `challenge` into `navigator.credentials.get()` and submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid-generated WebAuthn challenge for reauthentication. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the new `challenge`, `requestId`, and `expiresAt`. The client passes the `challenge` into `navigator.credentials.get()` and submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -4115,6 +4112,21 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        description: Request body. Required when re-challenging a `PASSKEY` credential (must carry `clientPublicKey`). Ignored for `EMAIL_OTP` and `OAUTH`, where the credential type alone is sufficient — the OTP is delivered out-of-band (EMAIL_OTP) or there is no server-side challenge (OAUTH).
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentialChallengeRequest'
+            examples:
+              passkey:
+                summary: Re-challenge a passkey credential
+                value:
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+              emailOtpOrOauth:
+                summary: Re-challenge an email-OTP or OAuth credential (empty body)
+                value: {}
       responses:
         '200':
           description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` the body is a plain `AuthMethod` and a new OTP email has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
@@ -6543,22 +6555,22 @@ components:
             - DKK_ACCOUNT
         iban:
           type: string
-          description: The IBAN of the bank account
-          example: DE89370400440532013000
-          minLength: 15
-          maxLength: 34
-          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+          description: Danish IBAN (18 characters, starting with DK)
+          example: DK5000400040116243
+          minLength: 18
+          maxLength: 18
+          pattern: ^DK[0-9]{16}$
         swiftCode:
           type: string
           description: The SWIFT/BIC code of the bank
-          example: DEUTDEFF
+          example: DABADKKK
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: DKK_ACCOUNT
-        iban: DE89370400440532013000
-        swiftCode: DEUTDEFF
+        iban: DK5000400040116243
+        swiftCode: DABADKKK
     DkkAccountInfo:
       allOf:
         - $ref: '#/components/schemas/DkkAccountInfoBase'
@@ -8203,15 +8215,15 @@ components:
           maxLength: 34
         iban:
           type: string
-          description: The IBAN of the bank account
-          example: DE89370400440532013000
-          minLength: 15
-          maxLength: 34
-          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+          description: Egyptian IBAN (29 characters, starting with EG)
+          example: EG380019000500000000263180002
+          minLength: 29
+          maxLength: 29
+          pattern: ^EG[0-9]{27}$
         swiftCode:
           type: string
           description: The SWIFT/BIC code of the bank
-          example: DEUTDEFF
+          example: NBEGEGCX
           minLength: 8
           maxLength: 11
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
@@ -8219,8 +8231,8 @@ components:
         accountType: EGP_ACCOUNT
         bankName: Example Bank
         accountNumber: '1234567890'
-        iban: DE89370400440532013000
-        swiftCode: DEUTDEFF
+        iban: EG380019000500000000263180002
+        swiftCode: NBEGEGCX
     EgpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/EgpAccountInfoBase'
@@ -8504,11 +8516,11 @@ components:
           maxLength: 34
         iban:
           type: string
-          description: The IBAN of the bank account
-          example: DE89370400440532013000
-          minLength: 15
-          maxLength: 34
-          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+          description: Pakistani IBAN (24 characters, starting with PK)
+          example: PK36SCBL0000001123456702
+          minLength: 24
+          maxLength: 24
+          pattern: ^PK[0-9]{2}[A-Z]{4}[0-9]{16}$
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -8520,7 +8532,7 @@ components:
         accountType: PKR_ACCOUNT
         bankName: Example Bank
         accountNumber: '1234567890'
-        iban: DE89370400440532013000
+        iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
     PkrAccountInfo:
       allOf:
@@ -13969,46 +13981,10 @@ components:
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
     AuthMethodResponse:
       title: Auth Method Response
-      description: 'Strict wrapper around `AuthMethod` used inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH` branches. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
+      description: 'Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` (all three credential types) and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH` branches of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
       unevaluatedProperties: false
-    PasskeyAuthChallenge:
-      title: Passkey Auth Challenge
-      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials` (first-authentication case) and `POST /auth/credentials/{id}/challenge` (reauthentication case). Adds a Grid-issued `challenge`, the corresponding `requestId`, and the challenge's `expiresAt` to the base `AuthMethod` fields. The client signs the challenge with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
-      allOf:
-        - $ref: '#/components/schemas/AuthMethod'
-        - type: object
-          required:
-            - challenge
-            - requestId
-            - expiresAt
-          properties:
-            challenge:
-              type: string
-              description: Base64url-encoded challenge issued by Grid for the pending passkey authentication. The client passes it into `navigator.credentials.get()` as the WebAuthn challenge; the resulting assertion is submitted to `POST /auth/credentials/{id}/verify`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
-              example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
-            requestId:
-              type: string
-              description: Unique identifier for this pending passkey authentication request. Must be echoed as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
-              example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
-            expiresAt:
-              type: string
-              format: date-time
-              description: Timestamp after which the issued challenge is no longer valid. The assertion must reach `POST /auth/credentials/{id}/verify` before this time; otherwise the client must request a fresh challenge via `POST /auth/credentials/{id}/challenge`.
-              example: '2026-04-08T15:35:00Z'
-    AuthCredentialResponseOneOf:
-      title: Auth Credential Response
-      description: Discriminated response shape returned from `POST /auth/credentials` (on successful registration) and `POST /auth/credentials/{id}/challenge` (on challenge re-issue). For `EMAIL_OTP` and `OAUTH` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion.
-      oneOf:
-        - $ref: '#/components/schemas/AuthMethodResponse'
-        - $ref: '#/components/schemas/PasskeyAuthChallenge'
-      discriminator:
-        propertyName: type
-        mapping:
-          EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
-          OAUTH: '#/components/schemas/AuthMethodResponse'
-          PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
     AuthSignedRequestChallenge:
       title: Authentication Signed Request Challenge
       description: 202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), and `DELETE /auth/sessions/{id}` (revoking a session). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, being revoked, or that issued the session being revoked). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
@@ -14033,7 +14009,6 @@ components:
       required:
         - type
         - otp
-        - clientPublicKey
       properties:
         type:
           type: string
@@ -14112,7 +14087,6 @@ components:
       required:
         - type
         - assertion
-        - clientPublicKey
       properties:
         type:
           type: string
@@ -14121,10 +14095,6 @@ components:
           description: Discriminator value identifying this as a passkey verification.
         assertion:
           $ref: '#/components/schemas/PasskeyAssertion'
-        clientPublicKey:
-          type: string
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
     PasskeyCredentialVerifyRequest:
       title: Passkey Credential Verify Request
       allOf:
@@ -14167,6 +14137,54 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
+    AuthCredentialChallengeRequest:
+      title: Auth Credential Challenge Request
+      description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `OAUTH`, where the credential type alone is sufficient (the OTP is delivered out-of-band for `EMAIL_OTP`; there is no server-side challenge for `OAUTH`).
+      type: object
+      properties:
+        clientPublicKey:
+          type: string
+          pattern: ^04[0-9a-fA-F]{128}$
+          minLength: 130
+          maxLength: 130
+          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the Turnkey session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP` and `OAUTH` credentials.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    PasskeyAuthChallenge:
+      title: Passkey Auth Challenge
+      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials` (first-authentication case) and `POST /auth/credentials/{id}/challenge` (reauthentication case). Adds a Grid-issued `challenge`, the corresponding `requestId`, and the challenge's `expiresAt` to the base `AuthMethod` fields. The client signs the challenge with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          required:
+            - challenge
+            - requestId
+            - expiresAt
+          properties:
+            challenge:
+              type: string
+              description: Base64url-encoded challenge issued by Grid for the pending passkey authentication. The client passes it into `navigator.credentials.get()` as the WebAuthn challenge; the resulting assertion is submitted to `POST /auth/credentials/{id}/verify`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
+              example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+            requestId:
+              type: string
+              description: Unique identifier for this pending passkey authentication request. Must be echoed as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
+              example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+            expiresAt:
+              type: string
+              format: date-time
+              description: Timestamp after which the issued challenge is no longer valid. The assertion must reach `POST /auth/credentials/{id}/verify` before this time; otherwise the client must request a fresh challenge via `POST /auth/credentials/{id}/challenge`.
+              example: '2026-04-08T15:35:00Z'
+    AuthCredentialResponseOneOf:
+      title: Auth Credential Response
+      description: Discriminated response shape returned from `POST /auth/credentials/{id}/challenge`. For `EMAIL_OTP` and `OAUTH` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion. Registration responses from `POST /auth/credentials` use the simpler `AuthMethodResponse` shape directly for all three credential types.
+      oneOf:
+        - $ref: '#/components/schemas/AuthMethodResponse'
+        - $ref: '#/components/schemas/PasskeyAuthChallenge'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
+          OAUTH: '#/components/schemas/AuthMethodResponse'
+          PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
     Error429:
       type: object
       required:

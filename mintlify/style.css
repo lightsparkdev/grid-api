@@ -3250,7 +3250,7 @@ html.dark .hero-tagline {
 .hero-banner-bg {
   position: absolute;
   inset: 0;
-  background-image: url('/images/home/sand.png');
+  background-image: url('/images/home/banner-bg.webp');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -3326,15 +3326,6 @@ html.dark .hero-tagline {
   .hero-banner-button {
     align-self: flex-start;
   }
-}
-
-html.dark .hero-banner-button {
-  background: var(--ls-gray-950);
-  color: var(--ls-gray-050);
-}
-
-html.dark .hero-banner-button:hover {
-  background: var(--ls-gray-900);
 }
 
 /* ===========================================

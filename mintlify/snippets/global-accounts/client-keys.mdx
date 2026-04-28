@@ -9,7 +9,7 @@ This page covers generating the client key pair, sending the public key to your 
 
 ## 1. Generate a client key pair
 
-Generate a fresh P-256 key pair for every `POST /auth/credentials/{id}/verify` call and for every wallet export. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded — a 130-character string starting with `04` — to your integrator backend, which passes it to Grid as `clientPublicKey`. The Web Crypto, iOS, and Android APIs shown below all produce this format natively.
+Generate a fresh P-256 key pair for every authentication and for every wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `EMAIL_OTP` and `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded — a 130-character string starting with `04` — through your integrator backend. The Web Crypto, iOS, and Android APIs shown below all produce this format natively.
 
 <Tip>
   For local development, you can generate a P-256 key pair from the command line:
