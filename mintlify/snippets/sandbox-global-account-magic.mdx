@@ -24,7 +24,18 @@ Any other code returns `401 UNAUTHORIZED` with `reason: "Invalid OTP code"`.
 
 Pass `sandbox-valid-passkey-signature` as `assertion.signature` on `POST /auth/credentials/{id}/verify` when the credential type is `PASSKEY`. The sandbox accepts the rest of the assertion as-is and skips the WebAuthn signature check.
 
+Passkey reauthentication is a two-step `/challenge` → `/verify` flow. The `clientPublicKey` is sent on `/challenge` (so Grid can seal the session signing key to your device) — the magic value bypasses the credential check, not the HPKE plumbing, so the public key is still required.
+
 ```bash
+# 1. /challenge with clientPublicKey
+curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMethod:abc123/challenge \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientPublicKey": "04f45f2a..."
+  }'
+
+# 2. /verify with the magic signature, no clientPublicKey
 curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMethod:abc123/verify \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
@@ -36,12 +47,11 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
       "clientDataJson": "...",
       "authenticatorData": "...",
       "signature": "sandbox-valid-passkey-signature"
-    },
-    "clientPublicKey": "04f45f2a..."
+    }
   }'
 ```
 
-Any other signature returns `401 UNAUTHORIZED` with `reason: "Invalid passkey signature"`. `clientPublicKey` is still required — the magic value bypasses the credential check, not the HPKE plumbing that seals the session signing key to the public key you supply.
+Any other signature returns `401 UNAUTHORIZED` with `reason: "Invalid passkey signature"`.
 
 ### OAuth (OIDC) token
 
