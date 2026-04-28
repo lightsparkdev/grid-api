@@ -11,8 +11,9 @@ interface Props {
   disabled: boolean
 }
 
-// Backend route: POST /api/quotes (existing)
-// Source for embedded wallet withdrawals is the wallet's internal account.
+// Creates a quote with the Global Account as the source. The quote response
+// carries a payloadToSign — step 7 signs it, step 8 executes the quote with
+// that signature in the Grid-Wallet-Signature header.
 export default function CreateWithdrawalQuote({
   customerId,
   walletAccountId,

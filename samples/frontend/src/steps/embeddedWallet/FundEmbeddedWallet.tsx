@@ -9,8 +9,8 @@ interface Props {
   disabled: boolean
 }
 
-// Backend route TODO: POST /api/sandbox/internal-accounts/{id}/fund
-// → Grid: POST /sandbox/internal-accounts/{id}/fund
+// Sandbox-only: deposits funds straight into the Global Account so the
+// withdrawal flow has a balance to draw from.
 export default function FundEmbeddedWallet({ walletAccountId, onComplete, disabled }: Props) {
   const [body, setBody] = useState('')
   const [response, setResponse] = useState<string | null>(null)

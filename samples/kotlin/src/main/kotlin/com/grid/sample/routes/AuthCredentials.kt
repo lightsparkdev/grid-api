@@ -45,18 +45,23 @@ fun Route.authCredentialRoutes() {
             val body = call.receiveText()
             Log.incoming("POST", "/api/auth/credentials/registration-challenge", body)
             val json = JsonUtils.mapper.readTree(body)
-            val accountId = json.optText("accountId") ?: ""
+            // accountId is the Global Account id the credential will be bound
+            // to. user.id derives from it so the authenticator can recognize
+            // the same user across registration attempts on the same device.
+            val accountId = json.optText("accountId")
+                ?: return@post call.respondText(
+                    """{"error": "accountId is required"}""",
+                    ContentType.Application.Json,
+                    HttpStatusCode.BadRequest
+                )
             val customerId = json.optText("customerId") ?: ""
-            // rpId must match the page's effective domain. Frontend supplies its
-            // window.location.hostname so the same backend works for any host.
+            // rpId must match the page's effective domain. The frontend sends
+            // window.location.hostname so the same backend works on any host.
             val rpId = json.optText("rpId") ?: "localhost"
 
             val challenge = RegistrationChallengeStore.mint()
-            // user.id is opaque to the relying party but must be stable per
-            // Global Account; account id is a natural choice.
-            val userIdSeed = accountId.ifEmpty { "anonymous-${System.nanoTime()}" }
             val userId = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(userIdSeed.toByteArray())
+                .encodeToString(accountId.toByteArray())
 
             val response = mapOf(
                 "challenge" to challenge,

@@ -8,8 +8,8 @@ interface Props {
   disabled: boolean
 }
 
-// Backend route TODO: GET /api/internal-accounts?customerId=...&type=EMBEDDED_WALLET
-// → Grid: GET /internal-accounts (filter to EMBEDDED_WALLET)
+// Lists the customer's internal accounts and surfaces the auto-provisioned
+// Global Account (type: EMBEDDED_WALLET) so subsequent steps can reference it.
 export default function FindEmbeddedWallet({ customerId, onComplete, disabled }: Props) {
   const [response, setResponse] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)

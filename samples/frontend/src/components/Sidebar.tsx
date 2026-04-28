@@ -14,8 +14,8 @@ const FLOWS: FlowEntry[] = [
   },
   {
     key: 'embedded-wallet',
-    label: 'Embedded Wallets',
-    description: 'Create a wallet and move funds on behalf of a user',
+    label: 'Global Account',
+    description: 'Issue a self-custody dollar account and withdraw on behalf of a user',
   },
 ]
 

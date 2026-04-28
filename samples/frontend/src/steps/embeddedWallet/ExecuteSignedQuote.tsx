@@ -9,8 +9,8 @@ interface Props {
   disabled: boolean
 }
 
-// Backend route TODO: POST /api/quotes/{quoteId}/execute
-// Backend forwards to Grid with the `Grid-Wallet-Signature` header set to the base64 signature.
+// Submits the signed withdrawal. Backend (POST /api/quotes/{quoteId}/execute)
+// forwards Grid-Wallet-Signature and Idempotency-Key headers to Grid.
 export default function ExecuteSignedQuote({
   quoteId,
   signature,

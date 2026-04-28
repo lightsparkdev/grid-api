@@ -10,8 +10,8 @@ const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
     subtitle: 'Send a real time payment funded with USDC',
   },
   'embedded-wallet': {
-    title: 'Embedded Wallets',
-    subtitle: 'Create a wallet and move funds on behalf of a user',
+    title: 'Global Account',
+    subtitle: 'Issue a self-custody dollar account and withdraw on behalf of a user',
   },
 }
 
