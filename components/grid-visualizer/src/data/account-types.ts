@@ -4,10 +4,26 @@ export interface AccountFieldSpec {
   description?: string;
 }
 
+export interface BeneficiaryAddressExample {
+  line1: string;
+  city: string;
+  state?: string;
+  postalCode: string;
+  country: string;
+}
+
 export interface AccountTypeSpec {
   accountType: string;
   fields: AccountFieldSpec[];
   beneficiaryRequired: boolean;
+  // Whether the beneficiary needs a postal address. Per docs
+  // (https://grid.lightspark.com/payouts-and-b2b/depositing-funds/external-accounts):
+  //   - US (USD), UK (GBP), Europe (EUR): address required
+  //   - Mexico (MXN), Brazil (BRL), Philippines (PHP): explicitly not required
+  //   - Other countries: not in the documented minimum-fields table; left
+  //     undefined here so the generated payload matches the docs minimum.
+  beneficiaryAddressRequired?: boolean;
+  beneficiaryAddressExample?: BeneficiaryAddressExample;
 }
 
 export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
@@ -18,6 +34,14 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'routingNumber', example: '021000021' },
     ],
     beneficiaryRequired: true,
+    beneficiaryAddressRequired: true,
+    beneficiaryAddressExample: {
+      line1: '123 Main Street',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94105',
+      country: 'US',
+    },
   },
   EUR_ACCOUNT: {
     accountType: 'EUR_ACCOUNT',
@@ -26,6 +50,13 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'swiftCode', example: 'DEUTDEFF', description: 'Optional' },
     ],
     beneficiaryRequired: true,
+    beneficiaryAddressRequired: true,
+    beneficiaryAddressExample: {
+      line1: 'Friedrichstraße 43',
+      city: 'Berlin',
+      postalCode: '10117',
+      country: 'DE',
+    },
   },
   GBP_ACCOUNT: {
     accountType: 'GBP_ACCOUNT',
@@ -34,6 +65,13 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '12345678' },
     ],
     beneficiaryRequired: true,
+    beneficiaryAddressRequired: true,
+    beneficiaryAddressExample: {
+      line1: '10 Downing Street',
+      city: 'London',
+      postalCode: 'SW1A 2AA',
+      country: 'GB',
+    },
   },
   BRL_ACCOUNT: {
     accountType: 'BRL_ACCOUNT',
@@ -43,6 +81,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'taxId', example: '12345678901' },
     ],
     beneficiaryRequired: true,
+    beneficiaryAddressRequired: false,
   },
   MXN_ACCOUNT: {
     accountType: 'MXN_ACCOUNT',
@@ -50,6 +89,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'clabeNumber', example: '123456789012345678' },
     ],
     beneficiaryRequired: true,
+    beneficiaryAddressRequired: false,
   },
   INR_ACCOUNT: {
     accountType: 'INR_ACCOUNT',
@@ -90,6 +130,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '001234567890' },
     ],
     beneficiaryRequired: true,
+    beneficiaryAddressRequired: false,
   },
   SGD_ACCOUNT: {
     accountType: 'SGD_ACCOUNT',
