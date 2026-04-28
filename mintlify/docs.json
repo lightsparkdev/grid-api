@@ -73,6 +73,35 @@
         ]
       },
       {
+        "tab": "Global Accounts",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "global-accounts/index",
+              "global-accounts/implementation-overview"
+            ]
+          },
+          {
+            "group": "Account security",
+            "pages": [
+              "global-accounts/authentication",
+              "global-accounts/client-keys",
+              "global-accounts/managing-sessions",
+              "global-accounts/exporting-wallet"
+            ]
+          },
+          {
+            "group": "Platform tools",
+            "pages": [
+              "global-accounts/platform-tools/webhooks",
+              "global-accounts/platform-tools/sandbox-testing",
+              "global-accounts/platform-tools/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Payouts & B2B",
         "groups": [
           {
