@@ -1121,7 +1121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlatformExternalAccountListResponse'
+                $ref: '#/components/schemas/ExternalAccountListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -11818,26 +11818,6 @@ components:
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
-    PlatformExternalAccountListResponse:
-      type: object
-      required:
-        - data
-        - hasMore
-      properties:
-        data:
-          type: array
-          description: List of external accounts matching the filter criteria
-          items:
-            $ref: '#/components/schemas/ExternalAccount'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page
-        nextCursor:
-          type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true)
-        totalCount:
-          type: integer
-          description: Total number of platform external accounts matching the criteria (excluding pagination)
     PlatformExternalAccountCreateRequest:
       type: object
       required:

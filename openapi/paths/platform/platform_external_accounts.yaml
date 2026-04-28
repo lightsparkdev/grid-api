@@ -37,7 +37,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/external_accounts/PlatformExternalAccountListResponse.yaml
+            $ref: ../../components/schemas/external_accounts/ExternalAccountListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:
