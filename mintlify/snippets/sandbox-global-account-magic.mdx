@@ -1,0 +1,15 @@
+The Grid sandbox accepts four magic values that bypass real auth and credential checks for Global Account flows. Each one is scoped to a specific request location, so the sandbox can recognize and accept it without any other call-site changes.
+
+| Magic value | Where it goes | Used by |
+|---|---|---|
+| `000000` | Request body `otp` field | `POST /auth/credentials/{id}/verify` (when `type: EMAIL_OTP`) |
+| `sandbox-valid-oidc-token` | Request body `oidcToken` field | `POST /auth/credentials` (`type: OAUTH` create) and `POST /auth/credentials/{id}/verify` (`type: OAUTH`) |
+| `sandbox-valid-passkey-signature` | Request body `assertion.signature` field | `POST /auth/credentials/{id}/verify` (`type: PASSKEY`) |
+| `sandbox-valid-signature` | HTTP header `Grid-Wallet-Signature` | All signed-retry flows: `POST /auth/credentials` (add-additional-credential signed retry), `DELETE /auth/credentials/{id}` (revoke credential), `DELETE /auth/sessions/{id}` (revoke session), `POST /internal-accounts/{id}/export` (export wallet), and `POST /quotes/{quoteId}/execute` when the source is an embedded wallet |
+
+<Note>
+  - **OAUTH create still requires a JWT-shaped token.** `sandbox-valid-oidc-token` is accepted by `verify` without IdP validation, but the initial `POST /auth/credentials` (OAUTH create) requires the `oidcToken` to be a structurally valid JWT (`header.payload.signature`) so Grid can decode the `iss` claim to resolve the provider name. The sandbox token bypasses signature verification, not JWT structure parsing.
+  - **Wrong magic value** returns `401 UNAUTHORIZED` with a specific reason: `Invalid OTP code`, `Invalid OIDC token`, `Invalid passkey signature`, or `Invalid Grid-Wallet-Signature`.
+  - **Sandbox-only.** Production enforces real Turnkey signature verification, WebAuthn assertion, and OIDC nonce binding — the magic values don't apply.
+  - **Bring your own `clientPublicKey`** on every `verify` call and on PASSKEY rechallenge. Magic values bypass credential checks, not the HPKE encryption-key plumbing — sessions are still sealed to the public key the integrator supplies.
+</Note>
