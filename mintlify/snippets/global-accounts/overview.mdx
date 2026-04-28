@@ -285,13 +285,19 @@ curl -X POST "$GRID_BASE_URL/quotes" \
 
 ### 7. Authenticate and sign
 
-The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with — this is when the passkey actually gets used. The flow is challenge → assertion → verify → decrypt → sign.
+The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with — this is when the passkey actually gets used. The flow is keypair → challenge → assertion → verify → decrypt → sign.
 
 <Steps>
-  <Step title="Your backend requests a fresh challenge">
+  <Step title="Your backend requests a fresh challenge sealed to the client public key">
+    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 client key pair</a> and posts the public key (uncompressed hex) to your backend, which forwards it to Grid. Grid bakes the public key into the session-creation payload so the resulting session signing key is sealed to that device.
+
     ```bash
     curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/challenge" \
-      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
     ```
 
     **Response (200):**
@@ -312,8 +318,8 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
 
     Return `challenge` and `requestId` to the client.
   </Step>
-  <Step title="Client generates a key pair and runs the WebAuthn assertion">
-    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 client key pair</a>, then prompts the authenticator with the Grid-issued challenge:
+  <Step title="Client runs the WebAuthn assertion against the Grid-issued challenge">
+    Prompt the authenticator with the `challenge` returned in the previous step:
 
     ```js
     const base64urlToBytes = (value) => {
@@ -331,7 +337,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     });
     ```
 
-    Post the assertion plus `clientPublicKey` (uncompressed hex) back to your backend.
+    Post the assertion (and the `requestId` from the previous step) back to your backend.
   </Step>
   <Step title="Your backend verifies the assertion with Grid to mint a session">
     ```bash
@@ -346,10 +352,11 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
           "clientDataJson": "eyJjaGFsbGVuZ2UiOiJWalo2bzhLZkU5VjNxM0xrUjJuSDVlWjZkTTh5QTF4VyIsIm9yaWdpbiI6Imh0dHBzOi8veW91cmFwcC5jb20iLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0",
           "authenticatorData": "PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA",
           "signature": "MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900"
-        },
-        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+        }
       }'
     ```
+
+    `clientPublicKey` is no longer required here — Grid already has it from the `/challenge` call. The `Request-Id` header ties this verify to that earlier challenge.
 
     **Response (200):**
 
