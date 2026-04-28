@@ -1,0 +1,63 @@
+---
+title: "Sandbox testing"
+description: "Exercise the Global Account auth, signing, and funding flows without standing up real OTP delivery, WebAuthn, or OIDC providers"
+icon: "/images/icons/hammer.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
+
+The Grid sandbox lets you exercise the full Global Accounts integration — customer creation, account lookup, credential registration, funding, and signed withdrawals — without moving real money or standing up real auth providers. All API endpoints work the same way as in production, but money movements are simulated and real auth checks are bypassed via a small set of magic values.
+
+## Sandbox setup
+
+To use the sandbox environment:
+
+1. Go to [app.lightspark.com](https://app.lightspark.com), create an account, and generate your sandbox API keys from the dashboard.
+2. Add your sandbox API token and secret to your environment variables.
+3. Use the normal production base URL: `https://api.lightspark.com/grid/2025-10-13`.
+4. Authenticate using your sandbox token with HTTP Basic Auth.
+
+In sandbox, customers are KYC-approved on creation, and a Global Account is provisioned automatically alongside any other internal accounts whenever the platform has `USDB` in its supported currencies.
+
+## Funding a Global Account
+
+Real Global Accounts are funded by following payment instructions or by executing a quote into the account. In sandbox, you can instantly add USDB to any internal account using the sandbox funding endpoint:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:abc123/fund" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 100000
+  }'
+```
+
+This credits the account immediately and fires the standard `INCOMING_PAYMENT` webhook. Use this to skip straight to a funded state when you're testing withdrawals.
+
+## Magic values
+
+<SandboxGlobalAccountMagic />
+
+## Webhooks
+
+All webhook events fire normally in sandbox. Configure your webhook URL in the dashboard, perform any signed action, and your endpoint receives the same `INCOMING_PAYMENT`, `OUTGOING_PAYMENT`, and account-state events as production.
+
+<Warning>
+  Do not try to send real money to any sandbox addresses or accounts. These are not real destinations and will not receive funds.
+</Warning>
+
+## Moving to production
+
+When you're ready to go live:
+
+1. Generate production API tokens in the dashboard and swap them for the sandbox credentials in your environment.
+2. Remove any sandbox magic values from your client and server code — production runs the real OTP, HPKE, WebAuthn, and ECDSA flows.
+3. Configure production webhook endpoints.
+4. Test with small amounts first.
+
+## Next steps
+
+- [Implementation overview](/global-accounts/implementation-overview) — end-to-end walkthrough of the happy path.
+- [Authentication](/global-accounts/authentication) — per-credential-type registration and reauthentication flows.
+- [Webhooks](/global-accounts/platform-tools/webhooks) — event handling reference.
