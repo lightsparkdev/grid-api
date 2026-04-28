@@ -36,6 +36,8 @@ fun Application.module() {
     routing {
         customerRoutes()
         externalAccountRoutes()
+        internalAccountRoutes()
+        authCredentialRoutes()
         quoteRoutes()
         sandboxRoutes()
         webhookRoutes()

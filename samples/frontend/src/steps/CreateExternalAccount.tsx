@@ -117,6 +117,29 @@ const COUNTRY_CONFIGS: Record<string, {
       fullName: "James Smith",
       countryOfResidence: "GB"
     }
+  },
+  US: {
+    label: "🇺🇸 United States (USD)",
+    currency: "USD",
+    description: "USD account (ACH)",
+    accountInfo: {
+      accountType: "USD_ACCOUNT",
+      accountNumber: "1234567890",
+      routingNumber: "021000021",
+      paymentRails: ["ACH"]
+    },
+    beneficiary: {
+      beneficiaryType: "INDIVIDUAL",
+      fullName: "Jane Doe",
+      countryOfResidence: "US",
+      address: {
+        line1: "123 Main Street",
+        city: "San Francisco",
+        state: "CA",
+        postalCode: "94105",
+        country: "US"
+      }
+    }
   }
 }
 

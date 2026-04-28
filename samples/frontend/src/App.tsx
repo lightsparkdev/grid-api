@@ -1,107 +1,39 @@
 import { useState } from 'react'
-import StepWizard from './components/StepWizard'
+import Sidebar, { FlowKey } from './components/Sidebar'
 import WebhookStream from './components/WebhookStream'
-import CreateCustomer from './steps/CreateCustomer'
-import CreateExternalAccount from './steps/CreateExternalAccount'
-import CreateQuote from './steps/CreateQuote'
-import SandboxFund from './steps/SandboxFund'
+import PayoutFlow from './flows/PayoutFlow'
+import EmbeddedWalletFlow from './flows/EmbeddedWalletFlow'
+
+const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
+  payout: {
+    title: 'Payout to Bank Account',
+    subtitle: 'Send a real time payment funded with USDC',
+  },
+  'embedded-wallet': {
+    title: 'Global Account',
+    subtitle: 'Issue a self-custody dollar account and withdraw on behalf of a user',
+  },
+}
 
 export default function App() {
-  const [activeStep, setActiveStep] = useState(0)
-  const [customerId, setCustomerId] = useState<string | null>(null)
-  const [externalAccountId, setExternalAccountId] = useState<string | null>(null)
-  const [quoteId, setQuoteId] = useState<string | null>(null)
-  const [selectedCountry, setSelectedCountry] = useState('MX')
-
-  const advance = () => setActiveStep((s) => s + 1)
-
-  const restartFromExternalAccount = () => {
-    setExternalAccountId(null)
-    setQuoteId(null)
-    setActiveStep(1)
-  }
-
-  const steps = [
-    {
-      title: '1. Create Customer',
-      summary: customerId ? `ID: ${customerId}` : null,
-      content: (
-        <CreateCustomer
-          disabled={activeStep !== 0}
-          onComplete={(data) => {
-            setCustomerId(data.id as string)
-            advance()
-          }}
-        />
-      ),
-    },
-    {
-      title: '2. Create External Account',
-      summary: externalAccountId ? `ID: ${externalAccountId}` : null,
-      content: (
-        <CreateExternalAccount
-          customerId={customerId}
-          disabled={activeStep !== 1}
-          selectedCountry={selectedCountry}
-          onCountryChange={setSelectedCountry}
-          onComplete={(data) => {
-            setExternalAccountId(data.id as string)
-            advance()
-          }}
-        />
-      ),
-    },
-    {
-      title: '3. Create Quote',
-      summary: quoteId ? `ID: ${quoteId}` : null,
-      content: (
-        <CreateQuote
-          customerId={customerId}
-          externalAccountId={externalAccountId}
-          selectedCountry={selectedCountry}
-          disabled={activeStep !== 2}
-          onComplete={(data) => {
-            setQuoteId((data.quoteId ?? data.id) as string)
-            advance()
-          }}
-        />
-      ),
-    },
-    {
-      title: '4. Simulate Funding (Sandbox Only)',
-      summary: activeStep > 3 ? 'Funded' : null,
-      content: (
-        <SandboxFund
-          quoteId={quoteId}
-          disabled={activeStep !== 3}
-          onComplete={() => advance()}
-        />
-      ),
-    },
-  ]
+  const [activeFlow, setActiveFlow] = useState<FlowKey>('payout')
+  const meta = FLOW_META[activeFlow]
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div className="min-h-screen bg-gray-950 text-gray-100 pb-12">
       <header className="border-b border-gray-800 px-6 py-4">
         <h1 className="text-xl font-bold">Grid API Sample</h1>
-        <p className="text-sm text-gray-400">Send a real time payment funded with USDC</p>
+        <p className="text-sm text-gray-400">{meta.subtitle}</p>
       </header>
       <div className="flex">
-        <main className="w-3/5 p-6 border-r border-gray-800 min-h-[calc(100vh-73px)]">
-          <StepWizard steps={steps} activeStep={activeStep} />
-          {activeStep >= 1 && (
-            <button
-              onClick={restartFromExternalAccount}
-              className="mt-6 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium text-gray-300"
-            >
-              Start New Payment
-            </button>
-          )}
+        <Sidebar activeFlow={activeFlow} onSelect={setActiveFlow} />
+        <main className="flex-1 p-6 min-h-[calc(100vh-73px)] max-w-5xl">
+          <h2 className="text-lg font-semibold mb-4">{meta.title}</h2>
+          {activeFlow === 'payout' && <PayoutFlow key="payout" />}
+          {activeFlow === 'embedded-wallet' && <EmbeddedWalletFlow key="embedded-wallet" />}
         </main>
-        <aside className="w-2/5 p-6 min-h-[calc(100vh-73px)]">
-          <WebhookStream />
-        </aside>
       </div>
+      <WebhookStream />
     </div>
   )
 }
