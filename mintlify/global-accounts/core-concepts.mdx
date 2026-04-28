@@ -5,7 +5,13 @@ icon: "/images/icons/file-text.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
-Global Accounts are the product your customers see. This page defines the key objects and names you will see in the API. For the ordered build flow, see [Implementation overview](/global-accounts/implementation-overview).
+This page focuses on the concepts specific to Global Accounts. For the full Grid entity model, see [Entities](/platform-overview/core-concepts/entities) and [Account model](/platform-overview/core-concepts/account-model).
+
+## How Global Accounts fit into Grid
+
+A platform creates customers. Each eligible customer gets a Global Account. In the API, that account is an internal account with `type: "EMBEDDED_WALLET"`. Funding and withdrawals use quotes, while outbound movement requires customer authorization.
+
+For a step-by-step implementation path, see [Implementation overview](/global-accounts/implementation-overview).
 
 ## Key objects
 
@@ -35,8 +41,8 @@ You may also see endpoint groups such as `Embedded Wallet Auth`; those are the a
 
 ## Global Accounts vs Payouts
 
-Use the **Global Accounts** docs when you are building a customer-owned account experience: issuing an account, showing a balance, funding it, requiring customer authorization, and moving money out of that account.
+Choose **Global Accounts** when you are building a customer-owned account experience: issuing an account, showing a balance, funding it, requiring customer authorization, and moving money out of that account.
 
-Use the **Payouts & B2B** docs when you are building a payouts-only flow: sending money from platform-managed or customer-managed balances to bank accounts and other payout destinations, especially if there is no customer-owned Global Account experience.
+Choose **Payouts & B2B** when you are building a payouts-only flow: sending money from platform-managed or customer-managed balances to bank accounts and other payout destinations, without a customer-owned account experience.
 
 The APIs overlap because both products use customers, accounts, quotes, transactions, and webhooks. The difference is the account model and authorization requirement: outbound movement from a Global Account requires a customer signature with `Grid-Wallet-Signature`.
