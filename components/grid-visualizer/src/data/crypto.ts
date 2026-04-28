@@ -33,6 +33,7 @@ export const cryptoAssets: CryptoAsset[] = [
       { type: 'SOLANA_WALLET', label: 'Wallet', network: 'Solana' },
       { type: 'POLYGON_WALLET', label: 'Wallet', network: 'Polygon' },
       { type: 'BASE_WALLET', label: 'Wallet', network: 'Base' },
+      { type: 'ETHEREUM_WALLET', label: 'Wallet', network: 'Ethereum' },
     ],
     examplePerson: { fullName: 'Alex Rivera', nationality: 'US' },
   },
