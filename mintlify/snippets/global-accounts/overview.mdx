@@ -61,15 +61,6 @@ export GRID_CLIENT_ID="YOUR_SANDBOX_CLIENT_ID"
 export GRID_CLIENT_SECRET="YOUR_SANDBOX_CLIENT_SECRET"
 ```
 
-<Note>
-  **Testing in sandbox.** Sandbox accepts two fixed magic values so you can exercise the auth + signing flow without managing real OTP delivery or device-side keys:
-
-  - **Email OTP code:** always `000000` for any `EMAIL_OTP` credential's `verify` call.
-  - **Wallet signature:** the `Grid-Wallet-Signature` header accepts the literal string `sandbox-valid-signature` for any signed account action. The `encryptedSessionSigningKey` returned by `/verify` in sandbox is a stub and is not meant to decrypt — skip the HPKE decrypt step entirely.
-
-  These shortcuts apply only on sandbox platforms. Production runs the real OTP, HPKE, and ECDSA flows described below.
-</Note>
-
 ## Quickstart
 
 The walkthrough below is the happy path: create a customer, find the auto-provisioned account, register a passkey, fund it, and withdraw to a bank account. Each step shows the HTTP request your integrator backend makes on behalf of the client.
