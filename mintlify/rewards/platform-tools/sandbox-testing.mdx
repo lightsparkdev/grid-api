@@ -5,6 +5,8 @@ icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-rewards.png"
 ---
 
+import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
+
 ## Overview
 
 The Grid sandbox environment allows you to test your rewards integration without moving real money or cryptocurrency. All API endpoints work the same way in sandbox as they do in production, but transactions are simulated and you can control test scenarios using special test values.
@@ -321,6 +323,10 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 # Check status immediately - will show PENDING
 # Wait 30s, check again - will show FAILED
 ```
+
+## Global Account magic values
+
+<SandboxGlobalAccountMagic />
 
 ## Sandbox Limitations
 

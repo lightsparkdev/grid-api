@@ -3,6 +3,9 @@ title: "Sandbox Testing"
 icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-global-p2p.png"
 ---
+
+import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
+
 The Grid sandbox environment allows you to test your integration without making real payments. When you set up your account, you can configure production and sandbox API tokens. The sandbox token is specifically for testing and development purposes.
 It corresponds to a separate platform instance in "sandbox" mode, which can only transact with the sandbox UMA addresses for testing.
 
@@ -223,6 +226,10 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$non.existent.
 ```
 
 Each of these will trigger appropriate error webhooks and status updates to help you test your error handling.
+
+## Global Account magic values
+
+<SandboxGlobalAccountMagic />
 
 ## Production vs Sandbox
 
