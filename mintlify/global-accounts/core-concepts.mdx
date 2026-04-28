@@ -1,7 +1,7 @@
 ---
 title: "Core concepts"
 description: "Learn the key Global Accounts concepts and API object names."
-icon: "/images/icons/book-open.svg"
+icon: "/images/icons/file-text.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
@@ -21,9 +21,9 @@ Global Accounts are the product your customers see. This page defines the key ob
 
 ## API naming
 
-Use **Global Accounts** in your product and user-facing language.
+In these docs, **Global Account** refers to the customer-facing account product. In the API, that account is represented as an internal account with `type: "EMBEDDED_WALLET"`.
 
-In API responses and endpoint names, you will also see **Embedded Wallet** and `EMBEDDED_WALLET`. The most important mapping is:
+You may also see endpoint groups such as `Embedded Wallet Auth`; those are the authentication and signing APIs used by Global Accounts. The most important mapping is:
 
 ```json
 {
