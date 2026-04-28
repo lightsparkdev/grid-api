@@ -11,6 +11,7 @@ import SandboxTransferPatterns from '/snippets/sandbox-transfer-patterns.mdx';
 import SandboxQuotePatterns from '/snippets/sandbox-quote-patterns.mdx';
 import SandboxUmaAddresses from '/snippets/sandbox-uma-addresses.mdx';
 import SandboxKybVerification from '/snippets/sandbox-kyb-verification.mdx';
+import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
 
 The Grid sandbox environment simulates real payment flows without moving real money. You can control test outcomes using special account number patterns and test addresses.
 
@@ -97,3 +98,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive \
     "receivingCurrencyAmount": 5000
   }'
 ```
+
+## Global Account magic values
+
+<SandboxGlobalAccountMagic />

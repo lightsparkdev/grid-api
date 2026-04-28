@@ -1,0 +1,97 @@
+---
+title: "External accounts"
+description: "Create and manage withdrawal destinations for Global Accounts."
+icon: "/images/icons/bank.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+External accounts are destinations outside Grid, such as bank accounts or wallets. Global Accounts use external accounts when a customer withdraws funds to a supported rail.
+
+## Create a destination
+
+Create external accounts with `POST /customers/external-accounts`. Include the customer who owns the destination and the account information required for the rail.
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "platformAccountId": "jane-primary-checking",
+    "accountInfo": {
+      "accountType": "USD_ACCOUNT",
+      "accountNumber": "1234567890",
+      "routingNumber": "021000021",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Jane Doe",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
+        "address": {
+          "line1": "123 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      }
+    }
+  }'
+```
+
+Save the returned `ExternalAccount:...` ID. You can use it as the destination account when creating a withdrawal quote.
+
+## List destinations for a customer
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers/external-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+You can also filter by currency when your product lets a customer choose among multiple withdrawal destinations.
+
+## Supported destination account types
+
+The required `accountInfo` fields depend on the destination country, currency, and rail. Common examples include:
+
+| Destination | Typical account type | Common rail |
+| --- | --- | --- |
+| United States bank account | `USD_ACCOUNT` | ACH, wire, RTP, FedNow |
+| Brazil bank account | `BRL_ACCOUNT` | PIX |
+| Mexico bank account | `MXN_ACCOUNT` | SPEI / CLABE |
+| Europe bank account | `EUR_ACCOUNT` | SEPA / IBAN |
+| United Kingdom bank account | `GBP_ACCOUNT` | Faster Payments |
+| India bank account | `INR_ACCOUNT` | UPI |
+| Spark wallet | `SPARK_WALLET` | Spark |
+
+The `accountType` value identifies the country or wallet account shape. Rails such as PIX, CLABE, IBAN, and UPI are represented by the account details and rail support for that destination, not by separate `accountType` values.
+
+Some corridors require bank names or beneficiary fields to match Grid's expected values. Use the Discoveries API when the receiving institution must come from a supported list.
+
+## Use a destination in a withdrawal quote
+
+Once the destination exists, create a quote from the Global Account to the external account:
+
+```json
+{
+  "source": {
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+  },
+  "destination": {
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+  },
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 10000
+}
+```
+
+Because the source is a Global Account, quote execution requires a customer signature.
+
+## Related docs
+
+- [Withdrawals](/global-accounts/withdrawals)
+- [Discoveries API](/api-reference/discoveries/list-available-receiving-institution-names)
+- [Currencies and rails](/platform-overview/core-concepts/currencies-and-rails)

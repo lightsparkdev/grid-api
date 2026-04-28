@@ -38,7 +38,7 @@ The list endpoint returns all **active** sessions; expired sessions are not incl
 
 ## Revoke a session
 
-Session revocation uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential management. Unlike credential revocation, a session **can revoke itself** — this is how self-logout works: sign with the session key you are about to invalidate.
+Session revocation uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential management. Unlike credential revocation, a session **can revoke itself** — this is how self-logout works: build the retry stamp with the session key you are about to invalidate.
 
 <Steps>
   <Step title="First call — receive the challenge">
@@ -58,14 +58,14 @@ Session revocation uses the same <a href="authentication#the-signed-retry-patter
     }
     ```
   </Step>
-  <Step title="Client signs the payload">
-    Sign `payloadToSign` with any active session signing key on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
+  <Step title="Client builds the retry stamp">
+    Build an API-key stamp over `payloadToSign` with any active session API keypair on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
   </Step>
   <Step title="Signed retry — session is revoked">
     ```bash
     curl -X DELETE "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ" \
       -H "Request-Id: 2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
     ```
 

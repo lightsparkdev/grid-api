@@ -5,6 +5,8 @@ icon: "/images/icons/sandbox.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
+import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
+
 Sandbox lets you test the Global Accounts integration before moving real funds.
 
 ## Sandbox behavior
@@ -16,6 +18,25 @@ In sandbox:
 - Email OTP verification uses `000000`
 - Signed account actions can use `sandbox-valid-signature`
 - Webhooks mirror the production event model
+
+## Magic values
+
+<SandboxGlobalAccountMagic />
+
+## Sandbox funding
+
+Use the sandbox funding endpoint to add test funds to a Global Account:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 100000
+  }'
+```
+
+The response is the updated internal account. Use `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks to test balance reconciliation.
 
 ## Suggested test path
 
@@ -30,5 +51,6 @@ In sandbox:
 ## Related docs
 
 - [Quickstart](/global-accounts/quickstart)
+- [Funding](/global-accounts/funding)
+- [Authentication](/global-accounts/authentication)
 - [Sandbox testing](/api-reference/sandbox-testing)
-- [Payouts & B2B sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing)

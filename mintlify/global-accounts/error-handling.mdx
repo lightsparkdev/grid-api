@@ -1,0 +1,72 @@
+---
+title: "Error handling"
+description: "Handle Global Account API errors, quote failures, and signed-action retries."
+icon: "/images/icons/shield.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Global Accounts use the same Grid error model as other payment flows, with additional cases for customer authorization and signed account actions.
+
+## HTTP status codes
+
+| Status | Meaning | Common Global Accounts case |
+| --- | --- | --- |
+| `400` | Bad request | Invalid account ID, amount, destination, or request body. |
+| `401` | Unauthorized | Invalid API credentials or missing/invalid `Grid-Wallet-Signature`. |
+| `403` | Forbidden | Platform or customer is not enabled for the requested action. |
+| `404` | Not found | Customer, account, quote, credential, or session does not exist. |
+| `409` | Conflict | Quote already executed, expired, or in an invalid state. |
+| `500` | Server error | Unexpected Grid service error. Retry safely where appropriate. |
+
+## Quote execution errors
+
+When executing a withdrawal quote from a Global Account, handle:
+
+- Expired quotes: create a new quote and ask the customer to authorize the new `payloadToSign`.
+- Insufficient balance: prompt the customer to fund the account or lower the amount.
+- Missing signature: authenticate the customer, sign the payload, and retry execution with `Grid-Wallet-Signature`.
+- Invalid signature: discard the signature, fetch or create the current action payload, and sign the exact bytes returned by Grid.
+
+<Warning>
+  Never reuse a signature across different quotes or edited payloads. Sign the exact `payloadToSign` returned for the action you are executing.
+</Warning>
+
+## Signed-retry errors
+
+Some sensitive account actions return `202 Accepted` with a `payloadToSign` and `requestId`. Your client builds an API-key stamp over the payload, then your backend retries the same request with:
+
+```bash
+-H "Grid-Wallet-Signature: <api-key-stamp>" \
+-H "Request-Id: <request-id-from-202-response>"
+```
+
+If the retry fails:
+
+| Failure | Recovery |
+| --- | --- |
+| Missing `Request-Id` | Retry with the `requestId` from the challenge response. |
+| Expired challenge | Start the action again and sign the new payload. |
+| Signature mismatch | Verify the client stamped the exact `payloadToSign` bytes and sent the complete API-key stamp. |
+| Session expired | Reauthenticate the customer and issue a new session signing key. |
+
+## Webhook processing errors
+
+Your webhook endpoint should verify signatures, process events idempotently, and return a `2xx` response after successful handling.
+
+If your handler fails, Grid retries delivery. Use dashboard logs plus transaction queries to identify missed events and reconcile state.
+
+## Customer-facing recovery
+
+For user-facing Global Account flows:
+
+- Show clear retry paths for expired quotes and sessions.
+- Ask the customer to reauthenticate when a session is no longer valid.
+- Do not show final success until Grid confirms the action or a webhook reaches the expected state.
+- Store enough IDs to support customer support and operational debugging.
+
+## Related docs
+
+- [Authentication](/global-accounts/authentication)
+- [Client keys](/global-accounts/client-keys)
+- [Withdrawals](/global-accounts/withdrawals)
+- [Reconciliation](/global-accounts/reconciliation)

@@ -16,6 +16,55 @@ Global Accounts can be used with individual or business customers, depending on 
 
 Your compliance model determines whether Grid hosts the KYC/KYB flow or your platform provides verified customer information.
 
+## Create a customer
+
+Create a customer with `POST /customers`. Use `platformCustomerId` to connect the Grid customer to the user or business in your system.
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerType": "INDIVIDUAL",
+    "platformCustomerId": "customer-123",
+    "region": "US",
+    "email": "jane@example.com",
+    "fullName": "Jane Doe",
+    "birthDate": "1990-01-15",
+    "nationality": "US",
+    "address": {
+      "line1": "123 Main Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "US"
+    }
+  }'
+```
+
+The response includes the Grid-assigned `Customer:...` ID. Store both IDs:
+
+- `Customer:...` for Grid API calls
+- `platformCustomerId` for your internal records and hosted KYC links
+
+## KYC/KYB options
+
+Global Accounts can only move funds to or from fiat rails after the required compliance checks are complete.
+
+| Platform model | Typical flow |
+| --- | --- |
+| Regulated platform | Your platform performs KYC/KYB and creates or updates customers through the API. |
+| Non-regulated platform | Grid can host the KYC/KYB flow and notify you when verification state changes. |
+
+For hosted verification, generate a KYC link for the customer:
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers/kyc-link?platformCustomerId=customer-123&redirectUri=https://yourapp.com/onboarding-complete" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+After the customer completes hosted verification, use customer or verification webhooks to update your product state.
+
 ## Account provisioning
 
 When a customer is created on a platform enabled for Global Accounts, Grid provisions a Global Account as an internal account with `type: "EMBEDDED_WALLET"`.
@@ -23,9 +72,15 @@ When a customer is created on a platform enabled for Global Accounts, Grid provi
 Use the customer's `Customer:...` ID to list internal accounts:
 
 ```bash
-curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
+
+If no `EMBEDDED_WALLET` account appears, confirm that:
+
+- The platform is enabled for Global Accounts.
+- The customer is eligible for the configured Global Accounts currencies.
+- The customer has completed the required KYC/KYB checks before attempting fiat movement.
 
 ## Compliance before movement
 
@@ -33,8 +88,39 @@ curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-
   Do not let customers move funds to or from fiat rails until the required KYC or KYB checks are complete. Sandbox can approve customers automatically for testing, but production behavior depends on your platform setup.
 </Warning>
 
+## Updating and finding customers
+
+Retrieve a customer by ID:
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Or find customers by your own platform ID:
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers?platformCustomerId=customer-123" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+If customer information changes, update it before starting payment flows that rely on that information:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerType": "INDIVIDUAL",
+    "fullName": "Jane Doe",
+    "birthDate": "1990-01-15",
+    "nationality": "US"
+  }'
+```
+
 ## Related docs
 
-- [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers)
+- [Internal accounts](/global-accounts/internal-accounts)
 - [Account model](/platform-overview/core-concepts/account-model)
 - [Implementation overview](/global-accounts/implementation-overview)
+- [Webhooks](/global-accounts/webhooks)

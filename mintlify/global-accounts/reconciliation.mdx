@@ -1,0 +1,71 @@
+---
+title: "Reconciliation"
+description: "Reconcile Global Account balances, withdrawals, and transaction state."
+icon: "/images/icons/checkmark1.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Reconciliation keeps your product ledger aligned with Grid. For Global Accounts, use both real-time webhooks and periodic API reads.
+
+<Tip>
+  Use webhooks for immediate customer-visible updates and scheduled transaction queries as a backstop for missed or delayed events.
+</Tip>
+
+## What to reconcile
+
+Track these IDs together in your system:
+
+| ID | Why it matters |
+| --- | --- |
+| `Customer:...` | Owner of the Global Account. |
+| `InternalAccount:...` | The Global Account balance source of truth in Grid. |
+| `ExternalAccount:...` | Withdrawal destination. |
+| `Quote:...` | The priced funding or withdrawal plan. |
+| `Transaction:...` | The settled or in-progress movement created by execution. |
+| Webhook ID | Idempotency key for webhook processing. |
+
+## Webhook-first updates
+
+Listen for account and transaction events:
+
+- `INTERNAL_ACCOUNT.BALANCE_UPDATED` when the Global Account balance changes
+- `OUTGOING_PAYMENT.*` for withdrawal lifecycle events
+- `INCOMING_PAYMENT.*` when your Global Account flow receives payments through UMA-address-based incoming payment flows
+- Customer and verification events if customer approval gates account use
+
+Process webhook deliveries idempotently. Store the event ID, event type, related resource ID, and the raw payload for auditability.
+
+## Query backstop
+
+Periodically query transactions for the customer or account and compare the results with your ledger.
+
+```bash
+curl -X GET "$GRID_BASE_URL/transactions?accountIdentifier=InternalAccount:019542f5-b3e7-1d02-0000-000000000002&startDate=2026-04-01T00:00:00Z&endDate=2026-04-01T23:59:59Z&limit=100" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Always follow pagination until `hasMore` is `false`.
+
+## Balance handling
+
+Treat Grid as the source of truth for the Global Account balance.
+
+- Update customer-visible balances from `INTERNAL_ACCOUNT.BALANCE_UPDATED` events or fresh internal account reads.
+- Use transaction status to explain why a balance changed.
+- Account for refunds or reversals when an outgoing payment fails after funds have been debited.
+
+## Failure recovery
+
+If state does not match:
+
+1. Re-query the Global Account with `GET /customers/internal-accounts`.
+2. Re-query transactions for the affected customer or account.
+3. Check webhook delivery logs in the dashboard.
+4. Reprocess missed webhook payloads idempotently.
+5. Escalate with the relevant `Customer:...`, `InternalAccount:...`, `Quote:...`, and `Transaction:...` IDs.
+
+## Related docs
+
+- [List transactions](/global-accounts/list-transactions)
+- [Webhooks](/global-accounts/webhooks)
+- [Error handling](/global-accounts/error-handling)

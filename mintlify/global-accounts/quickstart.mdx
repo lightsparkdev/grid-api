@@ -46,31 +46,66 @@ curl -X POST "$GRID_BASE_URL/customers" \
   }'
 ```
 
-Save the returned `Customer:...` ID.
+Save the returned `Customer:...` ID for later commands:
+
+```bash
+export CUSTOMER_ID="Customer:019542f5-b3e7-1d02-0000-000000000001"
+```
 
 ## 2. Find the Global Account
 
 Global Accounts appear in the API as internal accounts with `type=EMBEDDED_WALLET`.
 
 ```bash
-curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&type=EMBEDDED_WALLET" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 Save the returned `InternalAccount:...` ID. You will use this account as the source or destination in quote requests.
 
+```bash
+export GLOBAL_ACCOUNT_ID="InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+```
+
 ## 3. Register a credential
 
-Outbound movement from a Global Account requires customer authorization. Register a credential such as a passkey, OAuth credential, or email OTP.
+Outbound movement from a Global Account requires customer authorization. For this sandbox quickstart, register an email OTP credential against the Global Account.
 
-For the full credential flows, see [Authentication](/global-accounts/authentication).
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "EMAIL_OTP",
+    "accountId": "'"$GLOBAL_ACCOUNT_ID"'"
+  }'
+```
+
+Save the returned `AuthMethod:...` ID, then verify it with the sandbox OTP code. The `clientPublicKey` is required by the API; in sandbox, the returned `encryptedSessionSigningKey` is a stub because you will use `sandbox-valid-signature` later.
+
+```bash
+export AUTH_METHOD_ID="AuthMethod:019542f5-b3e7-1d02-0000-000000000001"
+```
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/$AUTH_METHOD_ID/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "EMAIL_OTP",
+    "otp": "000000",
+    "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+  }'
+```
+
+For production passkey, OAuth, email OTP, and signing flows, see [Authentication](/global-accounts/authentication) and [Client keys](/global-accounts/client-keys).
 
 ## 4. Fund the account
 
 In sandbox, use the sandbox funding endpoint to add test funds to the account.
 
 ```bash
-curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
+curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/$GLOBAL_ACCOUNT_ID/fund" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -78,7 +113,7 @@ curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-
   }'
 ```
 
-Grid sends an incoming payment webhook when the balance updates.
+Grid returns the updated internal account. If webhooks are configured, Grid sends an `INTERNAL_ACCOUNT.BALANCE_UPDATED` event when the balance changes.
 
 ## 5. Create a withdrawal destination
 
@@ -89,7 +124,7 @@ curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "customerId": "'"$CUSTOMER_ID"'",
     "currency": "USD",
     "platformAccountId": "jane-checking",
     "accountInfo": {
@@ -113,6 +148,12 @@ curl -X POST "$GRID_BASE_URL/customers/external-accounts" \
   }'
 ```
 
+Save the returned `ExternalAccount:...` ID.
+
+```bash
+export EXTERNAL_ACCOUNT_ID="ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+```
+
 ## 6. Create a withdrawal quote
 
 Create a quote with the Global Account as the source and the external account as the destination.
@@ -124,11 +165,11 @@ curl -X POST "$GRID_BASE_URL/quotes" \
   -d '{
     "source": {
       "sourceType": "ACCOUNT",
-      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+      "accountId": "'"$GLOBAL_ACCOUNT_ID"'"
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+      "accountId": "'"$EXTERNAL_ACCOUNT_ID"'"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
@@ -136,16 +177,21 @@ curl -X POST "$GRID_BASE_URL/quotes" \
   }'
 ```
 
-If the quote requires customer authorization, Grid returns a `payloadToSign` in the payment instructions.
+Because the quote source is a Global Account, Grid returns a `payloadToSign` in `paymentInstructions[].accountOrWalletInfo`.
+
+Save the returned `Quote:...` ID.
+
+```bash
+export QUOTE_ID="Quote:019542f5-b3e7-1d02-0000-000000000006"
+```
 
 ## 7. Sign and execute
 
 Authenticate the customer, sign the `payloadToSign`, and execute the quote with the `Grid-Wallet-Signature` header.
 
 ```bash
-curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
+curl -X POST "$GRID_BASE_URL/quotes/$QUOTE_ID/execute" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
   -H "Idempotency-Key: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
   -H "Grid-Wallet-Signature: sandbox-valid-signature"
 ```
@@ -156,4 +202,14 @@ curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/e
 
 ## 8. Reconcile with webhooks
 
-Listen for transaction webhooks to track settlement and reconcile customer balances. See [Webhooks](/global-accounts/webhooks) for the Global Accounts webhook model.
+Listen for account and transaction webhooks to track balance changes, settlement, and refunds. See [Webhooks](/global-accounts/webhooks) for the Global Accounts webhook model.
+
+## Production checklist
+
+Before going live:
+
+- Complete the required KYC/KYB flow before moving funds to or from fiat rails.
+- Replace `sandbox-valid-signature` with a real `Grid-Wallet-Signature` generated from the returned `payloadToSign`.
+- Verify webhook signatures with `X-Grid-Signature`.
+- Use idempotency keys for quote execution retries.
+- Store `Customer:...`, `InternalAccount:...`, `ExternalAccount:...`, `Quote:...`, and `Transaction:...` IDs for reconciliation and support.

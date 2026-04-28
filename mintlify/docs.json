@@ -79,29 +79,46 @@
             "group": "Overview",
             "pages": [
               "global-accounts/index",
+              "global-accounts/core-concepts",
               "global-accounts/implementation-overview",
               "global-accounts/quickstart"
             ]
           },
           {
-            "group": "Account setup",
+            "group": "Onboarding",
             "pages": [
-              "global-accounts/customers",
-              "global-accounts/funding",
-              "global-accounts/withdrawals"
+              "global-accounts/platform-configuration",
+              "global-accounts/customers"
+            ]
+          },
+          {
+            "group": "Managing Accounts",
+            "pages": [
+              "global-accounts/internal-accounts",
+              "global-accounts/external-accounts"
             ]
           },
           {
             "group": "Account security",
             "pages": [
-              "global-accounts/client-keys",
               "global-accounts/authentication",
+              "global-accounts/client-keys",
               "global-accounts/managing-sessions",
               "global-accounts/exporting-wallet"
             ]
           },
           {
-            "group": "Platform tools",
+            "group": "Moving Money",
+            "pages": [
+              "global-accounts/funding",
+              "global-accounts/withdrawals",
+              "global-accounts/list-transactions",
+              "global-accounts/reconciliation",
+              "global-accounts/error-handling"
+            ]
+          },
+          {
+            "group": "Platform Tools",
             "pages": [
               "global-accounts/webhooks",
               "global-accounts/sandbox-testing",

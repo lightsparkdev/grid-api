@@ -9,6 +9,10 @@ Withdrawals move funds out of a Global Account to a supported destination, such 
 
 Unlike incoming funds, outbound movement requires customer authorization.
 
+<Info>
+  Global Account withdrawals use the quotes flow. Create a quote, have the customer authorize the returned `payloadToSign`, then execute the quote with `Grid-Wallet-Signature`.
+</Info>
+
 ## Withdrawal flow
 
 1. Create or select a destination account.
@@ -17,7 +21,7 @@ Unlike incoming funds, outbound movement requires customer authorization.
 4. Authenticate the customer and create a session.
 5. Sign the payload with the session signing key.
 6. Execute the quote with the `Grid-Wallet-Signature` header.
-7. Reconcile status with transaction webhooks.
+7. Reconcile status with account and transaction webhooks.
 
 ## Create a quote
 
@@ -40,7 +44,11 @@ curl -X POST "$GRID_BASE_URL/quotes" \
   }'
 ```
 
+The quote response includes the payment instructions for the withdrawal. When the source account is `EMBEDDED_WALLET`, the response includes a `payloadToSign` value under `paymentInstructions[].accountOrWalletInfo`.
+
 ## Execute with a signature
+
+The signature covers the exact `paymentInstructions[].accountOrWalletInfo.payloadToSign` value returned by the quote.
 
 ```bash
 curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
@@ -54,8 +62,24 @@ curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/e
   In production, sign the exact `payloadToSign` bytes returned by Grid. Do not parse, reserialize, trim, or normalize the payload before signing.
 </Warning>
 
+## Same-currency and cross-currency withdrawals
+
+If the source and destination use the same currency, the quote can represent a same-currency withdrawal. If the destination uses a different currency, the quote locks the conversion details before execution.
+
+In both cases, the customer signature requirement comes from the source account type, not from the currency pair. If the source is an `EMBEDDED_WALLET`, execute the quote with `Grid-Wallet-Signature`.
+
+## Reconciliation
+
+After execution, track the withdrawal through transaction and account webhooks:
+
+- `OUTGOING_PAYMENT.*` events track the payment lifecycle.
+- `INTERNAL_ACCOUNT.BALANCE_UPDATED` events track balance changes on the Global Account.
+- Transaction reads provide a backstop for webhook delivery gaps.
+
 ## Related docs
 
 - [Authentication](/global-accounts/authentication)
 - [Client keys](/global-accounts/client-keys)
+- [External accounts](/global-accounts/external-accounts)
+- [Reconciliation](/global-accounts/reconciliation)
 - [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle)

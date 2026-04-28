@@ -100,7 +100,7 @@ curl -X POST "$GRID_BASE_URL/customers" \
 When a customer is created on a USDB-enabled platform, Grid automatically provisions an Embedded Wallet alongside their other internal accounts. Fetch it by filtering the customer's internal accounts by `type=EMBEDDED_WALLET`.
 
 ```bash
-curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
@@ -184,7 +184,7 @@ curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-
   }'
 ```
 
-You will receive an `INCOMING_PAYMENT` webhook when the balance updates. The wallet now holds 1,000.00 USDB.
+You will receive an `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook when the balance updates. The wallet now holds 1,000.00 USDB.
 
 <Tip>
   To fund from another currency (USD ACH, USDC on-chain, etc.), create a quote with `destination.destinationType: "ACCOUNT"` pointing at the Embedded Wallet's `InternalAccount` id. The quote's `sourceCurrency` can be any supported platform currency; Grid will convert into USDB on execute.
@@ -257,12 +257,12 @@ curl -X POST "$GRID_BASE_URL/quotes" \
   "createdAt": "2026-04-19T12:05:00Z",
   "expiresAt": "2026-04-19T12:10:00Z",
   "source": {
-    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-    "currency": "USDB"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "USD"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": { "code": "USDB", "name": "USDB", "decimals": 2 },
   "receivingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
@@ -369,7 +369,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     Return `encryptedSessionSigningKey` and `expiresAt` to the client.
   </Step>
   <Step title="Client decrypts the session signing key and signs the payload">
-    The client <a href="client-keys#3-decrypt-the-session-signing-key">decrypts</a> `encryptedSessionSigningKey` with the matching client private key, then <a href="client-keys#4-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the resulting session signing key. Return the base64 signature to your backend.
+    The client <a href="client-keys#3-decrypt-the-session-signing-key">decrypts</a> `encryptedSessionSigningKey` with the matching client private key, then <a href="client-keys#4-authorize-a-payloadtosign">signs the quote's `payloadToSign`</a> with the resulting session signing key. Return the base64 signature to your backend.
   </Step>
 </Steps>
 

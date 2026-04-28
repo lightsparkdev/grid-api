@@ -1,0 +1,42 @@
+---
+title: "Core concepts"
+description: "Learn the key Global Accounts concepts and API object names."
+icon: "/images/icons/book-open.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Global Accounts are the product your customers see. This page defines the key objects and names you will see in the API. For the ordered build flow, see [Implementation overview](/global-accounts/implementation-overview).
+
+## Key objects
+
+| Object | Meaning |
+| --- | --- |
+| Global Account | A branded account experience that lets a customer hold a stable dollar balance and move funds through supported Grid rails. |
+| Customer | The person or business that owns the Global Account. Customers are represented by `Customer:...` IDs. |
+| Internal account | The Grid account object that holds the balance. A Global Account is an internal account with `type: "EMBEDDED_WALLET"`. |
+| External account | A bank account, wallet, or other destination outside Grid used for withdrawals and payouts. External accounts use `ExternalAccount:...` IDs. |
+| Quote | A priced payment plan that locks amounts, currencies, fees, and payment instructions before execution. Quotes use `Quote:...` IDs. |
+| Session | A short-lived signing context issued after the customer verifies a credential. Sessions use `Session:...` IDs. |
+| Auth method | A registered customer credential such as passkey, OAuth, or email OTP. Auth methods use `AuthMethod:...` IDs. |
+
+## API naming
+
+Use **Global Accounts** in your product and user-facing language.
+
+In API responses and endpoint names, you will also see **Embedded Wallet** and `EMBEDDED_WALLET`. The most important mapping is:
+
+```json
+{
+  "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "type": "EMBEDDED_WALLET"
+}
+```
+
+## Global Accounts vs Payouts
+
+Use the **Global Accounts** docs when you are building a customer-owned account experience: issuing an account, showing a balance, funding it, requiring customer authorization, and moving money out of that account.
+
+Use the **Payouts & B2B** docs when you are building a payouts-only flow: sending money from platform-managed or customer-managed balances to bank accounts and other payout destinations, especially if there is no customer-owned Global Account experience.
+
+The APIs overlap because both products use customers, accounts, quotes, transactions, and webhooks. The difference is the account model and authorization requirement: outbound movement from a Global Account requires a customer signature with `Grid-Wallet-Signature`.

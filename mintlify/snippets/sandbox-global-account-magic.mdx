@@ -1,0 +1,86 @@
+The Grid sandbox accepts a small set of magic values that bypass real auth and credential checks for Global Account flows, so you can exercise the full request shape without standing up Turnkey, WebAuthn, or an OIDC provider. These values are sandbox-only — production enforces real signature verification, WebAuthn assertion, and OIDC nonce binding.
+
+A wrong magic value (or any other value) returns `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed.
+
+### Email OTP code
+
+Pass `000000` as the body `otp` on `POST /auth/credentials/{id}/verify` when the credential type is `EMAIL_OTP`. The sandbox skips OTP delivery and accepts this value as a valid response to the issued challenge.
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:abc123/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "EMAIL_OTP",
+    "otp": "000000",
+    "clientPublicKey": "04f45f2a..."
+  }'
+```
+
+Any other code returns `401 UNAUTHORIZED` with `reason: "Invalid OTP code"`.
+
+### Passkey assertion signature
+
+Pass `sandbox-valid-passkey-signature` as `assertion.signature` on `POST /auth/credentials/{id}/verify` when the credential type is `PASSKEY`. The sandbox accepts the rest of the assertion as-is and skips the WebAuthn signature check.
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:abc123/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "PASSKEY",
+    "assertion": {
+      "credentialId": "...",
+      "clientDataJson": "...",
+      "authenticatorData": "...",
+      "signature": "sandbox-valid-passkey-signature"
+    },
+    "clientPublicKey": "04f45f2a..."
+  }'
+```
+
+Any other signature returns `401 UNAUTHORIZED` with `reason: "Invalid passkey signature"`. `clientPublicKey` is still required — the magic value bypasses the credential check, not the HPKE plumbing that seals the session signing key to the public key you supply.
+
+### OAuth (OIDC) token
+
+Pass `sandbox-valid-oidc-token` as the body `oidcToken` on both `POST /auth/credentials` (OAUTH create) and `POST /auth/credentials/{id}/verify` (OAUTH).
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:abc123/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "OAUTH",
+    "oidcToken": "sandbox-valid-oidc-token",
+    "clientPublicKey": "04f45f2a..."
+  }'
+```
+
+Any other token returns `401 UNAUTHORIZED` with `reason: "Invalid OIDC token"`.
+
+<Note>
+  **OAUTH create still requires a JWT-shaped token.** On the initial `POST /auth/credentials` (OAUTH create), the `oidcToken` must be a structurally valid JWT (`header.payload.signature`) so Grid can decode the `iss` claim and resolve the provider name. The literal `sandbox-valid-oidc-token` works on `verify` but not on `create` — for `create`, sign your own dummy JWT with any payload that includes a recognized `iss` claim. The sandbox bypasses signature verification, not JWT structure parsing.
+</Note>
+
+### Wallet signature header
+
+Pass `sandbox-valid-signature` as the `Grid-Wallet-Signature` HTTP header on any signed-retry flow:
+
+- `POST /auth/credentials` (add-additional-credential signed retry)
+- `DELETE /auth/credentials/{id}` (revoke credential)
+- `DELETE /auth/sessions/{id}` (revoke session)
+- `POST /internal-accounts/{id}/export` (export wallet)
+- `POST /quotes/{quoteId}/execute` (when source is an embedded wallet)
+
+```bash
+curl -X POST "$GRID_BASE_URL/quotes/Quote:abc123/execute" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -H "Grid-Wallet-Signature: sandbox-valid-signature"
+```
+
+Any other header value returns `401 UNAUTHORIZED` with `reason: "Invalid Grid-Wallet-Signature"`.

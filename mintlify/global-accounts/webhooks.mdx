@@ -7,28 +7,67 @@ icon: "/images/icons/bell.svg"
 
 Use webhooks to keep your product state in sync with Global Account activity.
 
-Global Accounts use the standard Grid transaction lifecycle. Your backend should listen for transaction events when funds arrive, withdrawals execute, or payments settle.
+Global Accounts use Grid account and transaction events. Your backend should listen for balance updates when funds arrive or leave the account, and transaction events when withdrawals execute, settle, fail, or refund.
 
 ## What to track
 
 For Global Accounts, webhooks are especially important for:
 
-- Incoming account funding
-- Quote execution status
-- Withdrawal settlement
-- Failed or rejected transactions
-- Refunds or reversals when applicable
-- Customer-facing balance updates
+- `INTERNAL_ACCOUNT.BALANCE_UPDATED` events for customer-facing balance changes
+- `OUTGOING_PAYMENT.*` events for withdrawals and payment settlement
+- `INCOMING_PAYMENT.*` events when your Global Account flow receives payments through UMA-address-based incoming payment flows
+- Withdrawal settlement, failures, refunds, and reversals
+- Transaction state that results from executed quotes
+- Customer or verification state changes when KYC/KYB gates account use
 
 ## Recommended pattern
 
 1. Store the customer, account, quote, and transaction IDs from API responses.
-2. Process transaction webhooks idempotently.
-3. Update customer-visible state only after confirmed webhook events when settlement status matters.
-4. Reconcile webhook state against API reads for operational workflows.
+2. Verify the `X-Grid-Signature` header before processing.
+3. Process account and transaction webhooks idempotently.
+4. Update customer-visible state only after confirmed webhook events when settlement status matters.
+5. Reconcile webhook state against API reads for operational workflows.
+
+## Balance updates
+
+When a Global Account balance changes, Grid sends an internal account status webhook:
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "type": "INTERNAL_ACCOUNT.BALANCE_UPDATED",
+  "timestamp": "2026-04-19T12:30:00Z",
+  "data": {
+    "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "type": "EMBEDDED_WALLET",
+    "balance": {
+      "amount": 100000,
+      "currency": {
+        "code": "USDB",
+        "decimals": 2
+      }
+    }
+  }
+}
+```
+
+Use this event to refresh customer-visible balances.
+
+## Withdrawal events
+
+Withdrawals from a Global Account create outgoing payment activity after quote execution. Track the resulting transaction through terminal states such as `COMPLETED`, `FAILED`, or `EXPIRED`, and handle refund events when applicable.
+
+Grid does not send quote-specific webhook events. If your webhook handler misses an event, use [List transactions](/global-accounts/list-transactions) as a backstop.
+
+## Incoming payment events
+
+If your platform receives funds through UMA-address-based incoming payment flows, Grid can send `INCOMING_PAYMENT.PENDING`, `INCOMING_PAYMENT.COMPLETED`, and `INCOMING_PAYMENT.FAILED` webhooks. Pending incoming payments can require your platform to approve or reject the payment synchronously in the webhook response, or asynchronously with `POST /transactions/{transactionId}/approve` or `POST /transactions/{transactionId}/reject`.
+
+Not every Global Account funding path uses incoming payment webhooks. For direct account balance updates, use `INTERNAL_ACCOUNT.BALANCE_UPDATED` as the account balance signal.
 
 ## Related docs
 
 - [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle)
 - [API reference webhooks](/api-reference/webhooks)
-- [Payouts & B2B webhooks](/payouts-and-b2b/platform-tools/webhooks)
+- [Reconciliation](/global-accounts/reconciliation)

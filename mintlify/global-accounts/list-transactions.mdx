@@ -1,0 +1,93 @@
+---
+title: "List transactions"
+description: "Query Global Account funding, withdrawal, and settlement history."
+icon: "/images/icons/file-text.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Use the Transactions API to reconcile Global Account activity, build account history, and investigate payment state.
+
+Transactions are returned in descending order by default and can be filtered by customer, account, status, type, and date range.
+
+## List recent transactions
+
+```bash
+curl -X GET "$GRID_BASE_URL/transactions?limit=20" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Filter by customer
+
+Use the Grid customer ID or your platform customer ID to show a customer's Global Account activity.
+
+```bash
+curl -X GET "$GRID_BASE_URL/transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```bash
+curl -X GET "$GRID_BASE_URL/transactions?platformCustomerId=customer-123" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Filter by Global Account
+
+Use account filters when you need the ledger for a specific Global Account.
+
+```bash
+# Any transaction involving the Global Account
+curl -X GET "$GRID_BASE_URL/transactions?accountIdentifier=InternalAccount:019542f5-b3e7-1d02-0000-000000000002" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+
+# Only transactions sent from the Global Account
+curl -X GET "$GRID_BASE_URL/transactions?senderAccountIdentifier=InternalAccount:019542f5-b3e7-1d02-0000-000000000002" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+
+# Only transactions received by the Global Account
+curl -X GET "$GRID_BASE_URL/transactions?receiverAccountIdentifier=InternalAccount:019542f5-b3e7-1d02-0000-000000000002" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Filter by status and type
+
+```bash
+curl -X GET "$GRID_BASE_URL/transactions?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=OUTGOING&status=COMPLETED" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Common transaction statuses include:
+
+| Status | Meaning |
+| --- | --- |
+| `CREATED` | Initial transaction record or lookup has been created. |
+| `PENDING` | Transaction created and waiting for processing. |
+| `PROCESSING` | Transaction is moving through the payment rail. |
+| `COMPLETED` | Transaction reached a successful terminal state. |
+| `REJECTED` | Receiving institution, wallet, or approval flow rejected the payment. |
+| `FAILED` | Transaction failed. Inspect `failureReason` when present. |
+| `EXPIRED` | Quote expired before execution. |
+| `REFUNDED` | Funds were returned after a failed or reversed movement. |
+
+## Paginate results
+
+Follow `nextCursor` while `hasMore` is `true`.
+
+```bash
+curl -X GET "$GRID_BASE_URL/transactions?accountIdentifier=InternalAccount:019542f5-b3e7-1d02-0000-000000000002&limit=100&cursor=eyJpZCI6IlRyYW5z..." \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Recommended pattern
+
+Use webhooks for real-time product updates, then use transaction queries as a backstop:
+
+1. Store `Customer:...`, `InternalAccount:...`, `Quote:...`, and `Transaction:...` IDs from API responses.
+2. Process webhooks idempotently.
+3. Query transactions by customer, account, and date range during daily reconciliation.
+4. Follow pagination until `hasMore` is `false`.
+
+## Related docs
+
+- [Webhooks](/global-accounts/webhooks)
+- [Reconciliation](/global-accounts/reconciliation)
+- [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle)

@@ -1,11 +1,11 @@
 ---
 title: "Implementation overview"
-description: "Understand how Global Accounts map to Grid API objects and payment flows."
+description: "Follow the end-to-end Global Accounts implementation flow."
 icon: "/images/icons/code.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
-Global Accounts are implemented with the same Grid objects you use for other payment flows. The difference is that the customer's account can hold value and requires customer authorization before outbound funds move.
+Global Accounts are implemented with the same Grid objects you use for other payment flows. This page shows the build sequence from customer creation through signed withdrawal and reconciliation.
 
 ## Object model
 
@@ -17,8 +17,8 @@ Global Accounts are implemented with the same Grid objects you use for other pay
 | Destination account | `ExternalAccount` or supported destination | Represents where funds are withdrawn or sent. |
 | Quote | `Quote` | Prices and prepares movement between the account and a destination. |
 | Credential | `AuthMethod` | Lets the customer authenticate with passkey, OAuth, or email OTP. |
-| Session | `Session` | Issues a short-lived signing key for signed account actions. |
-| Webhook | Transaction event | Tells your backend when funds move or settle. |
+| Session | `Session` (`AuthSession` response) | Issues a short-lived signing key for signed account actions. |
+| Webhook | Account or transaction event | Tells your backend when balances change, funds move, or payments settle. |
 
 ## Core flow
 
@@ -29,7 +29,7 @@ Global Accounts are implemented with the same Grid objects you use for other pay
 5. Fund the account through a supported Grid funding flow.
 6. Create a quote from the Global Account to a destination.
 7. Authenticate the customer, sign the quote's `payloadToSign`, and execute the quote with `Grid-Wallet-Signature`.
-8. Listen for transaction webhooks to reconcile the movement.
+8. Listen for account and transaction webhooks to reconcile the movement.
 
 <Tip>
   Incoming funds do not require a customer signature. Outbound movement from the Global Account does.
@@ -38,4 +38,5 @@ Global Accounts are implemented with the same Grid objects you use for other pay
 ## Where to go next
 
 - Use [Quickstart](/global-accounts/quickstart) for an end-to-end sandbox flow.
+- Use [Funding](/global-accounts/funding) and [Withdrawals](/global-accounts/withdrawals) for the money movement paths.
 - Use [Authentication](/global-accounts/authentication) and [Client keys](/global-accounts/client-keys) for signed action details.

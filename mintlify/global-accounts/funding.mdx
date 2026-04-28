@@ -9,9 +9,48 @@ Funding adds value to a customer's Global Account. Incoming funds behave like ot
 
 ## Funding model
 
-A Global Account can receive funds through supported Grid flows for your platform, such as prefunded balances, just-in-time funding, or quotes from another supported source.
+A Global Account can receive funds through supported Grid flows for your platform, such as direct account funding instructions, just-in-time funding, or quote-based movement from another supported source.
 
 The account appears as an `InternalAccount:...` with `type: "EMBEDDED_WALLET"`, so you can use it as the destination in quote-based flows.
+
+## Find the account to fund
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Use the returned `InternalAccount:...` ID as the destination account.
+
+## Funding with payment instructions
+
+If the account response includes `fundingPaymentInstructions`, display those instructions in your app so the customer can push funds to the account.
+
+```json
+{
+  "fundingPaymentInstructions": [
+    {
+      "instructionsNotes": "Include the reference code in your transfer memo",
+      "accountOrWalletInfo": {
+        "accountType": "USD_ACCOUNT",
+        "reference": "FUND-ABC123",
+        "accountNumber": "9876543210",
+        "routingNumber": "021000021",
+        "accountHolderName": "Lightspark Payments FBO Jane Doe",
+        "bankName": "JP Morgan Chase"
+      }
+    }
+  ]
+}
+```
+
+Show reference codes, memo instructions, and notes exactly as returned. They help Grid match incoming funds to the right account.
+
+## Just-in-time funding
+
+In some flows, Grid returns payment instructions as part of a quote. Once the required funds arrive, Grid initiates the payment described by the quote.
+
+Use just-in-time funding when your product does not keep a prefunded balance in the Global Account before the payment starts.
 
 ## Sandbox funding
 
@@ -26,11 +65,11 @@ curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-
   }'
 ```
 
-Grid sends an incoming payment webhook when the balance updates.
+Grid returns the updated internal account. If webhooks are configured, Grid sends an `INTERNAL_ACCOUNT.BALANCE_UPDATED` event when the balance changes.
 
 ## Quote-based funding
 
-To fund from another supported source, create a quote with the Global Account as the destination.
+To fund from another supported source, create a quote with the Global Account as the destination. The source depends on your enabled rails and platform configuration.
 
 ```json
 {
@@ -45,6 +84,12 @@ The available source currencies, funding rails, and settlement behavior depend o
 
 ## Reconciliation
 
-Use transaction webhooks to update your product state when funds arrive. Do not rely only on client-side state or a successful request response.
+Use account and transaction webhooks to update your product state when funds arrive. Do not rely only on client-side state or a successful request response.
 
 See [Webhooks](/global-accounts/webhooks) for details.
+
+## Related docs
+
+- [Internal accounts](/global-accounts/internal-accounts)
+- [Quickstart](/global-accounts/quickstart)
+- [Reconciliation](/global-accounts/reconciliation)

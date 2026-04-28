@@ -5,13 +5,17 @@ icon: "/images/icons/IconPostman.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
+import PostmanCollection from '/snippets/postman-collection.mdx';
+
 Use the Grid Postman collection to test the API calls behind Global Accounts.
 
 The same collection covers customers, internal accounts, external accounts, quotes, auth credentials, sessions, and webhooks.
 
+<PostmanCollection />
+
 ## Recommended setup
 
-1. Import the Grid Postman collection.
+1. Open the Grid Postman collection above.
 2. Set your sandbox `GRID_CLIENT_ID` and `GRID_CLIENT_SECRET`.
 3. Set `GRID_BASE_URL` to the current Grid API base URL.
 4. Run the requests from the [Quickstart](/global-accounts/quickstart) in order.
@@ -21,4 +25,5 @@ The same collection covers customers, internal accounts, external accounts, quot
 
 - [API environments](/api-reference/environments)
 - [API authentication](/api-reference/authentication)
-- [Payouts & B2B Postman collection](/payouts-and-b2b/platform-tools/postman-collection)
+- [Quickstart](/global-accounts/quickstart)
+- [Sandbox testing](/global-accounts/sandbox-testing)

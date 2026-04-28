@@ -5,6 +5,8 @@ icon: "/images/icons/arrows-repeat-circle.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
+import Sessions from '/snippets/embedded-wallets/managing-sessions.mdx';
+
 A session represents a short-lived authorization window for signed Global Account actions.
 
 Sessions are created when a customer verifies a registered credential. The session signing key is encrypted to the client device and used to sign action payloads, such as quote execution from a Global Account.
@@ -20,8 +22,8 @@ List or revoke sessions when you need to:
 
 ## Revocation requires a signed action
 
-Session revocation can require the same signed-retry pattern as other sensitive account actions. The customer authenticates, signs the revocation payload, and your backend retries the request with `Grid-Wallet-Signature`.
+Session revocation can require the same signed-retry pattern as other sensitive account actions. The customer authenticates, authorizes the revocation payload, and your backend retries the request with `Grid-Wallet-Signature`.
 
-## Full technical reference
+## Session endpoints
 
-See [Embedded Wallet sessions](/payouts-and-b2b/embedded-wallets/managing-sessions) for endpoint examples and signed revocation details.
+<Sessions />

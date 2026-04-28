@@ -17,11 +17,7 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 Grid Global Accounts let platforms give customers a branded dollar account without building banking, wallet, FX, and payout infrastructure from scratch. Your users can hold a stable dollar balance, receive funds, and move money out through supported Grid rails.
 
-Under the hood, a Global Account is built on Grid primitives: customers, internal accounts, quotes, payment instructions, signed withdrawals, sessions, and webhooks.
-
-<Info>
-  In the API, a Global Account is represented as an internal account with `type: "EMBEDDED_WALLET"`. You will also see API names such as `Embedded Wallet Auth`, `Grid-Wallet-Signature`, and `InternalAccount:...`. Those are the technical primitives behind the Global Accounts product.
-</Info>
+Under the hood, a Global Account uses core Grid APIs: customers, internal accounts, quotes, payment instructions, signed withdrawals, sessions, and webhooks.
 
 ## What you can build today
 
@@ -33,7 +29,7 @@ Use the current Grid API to:
 - Create quotes to withdraw or transfer funds out of the account
 - Require customer authorization for outbound movement with signed requests
 - Register credentials, issue sessions, revoke sessions, and export wallet credentials
-- Reconcile account activity with transaction webhooks
+- Reconcile account activity with account and transaction webhooks
 - Test the flow in sandbox before production launch
 
 ## Core capabilities
@@ -57,15 +53,21 @@ Global Accounts package account, funding, movement, and authorization flows into
     Support Bitcoin and stablecoin flows using the same Grid account and quote model where enabled for your platform.
   </FeatureCard>
   <FeatureCard icon="/images/icons/bell.svg" title="Webhooks and reconciliation">
-    Track funding, withdrawals, and settlement status with standard Grid transaction webhooks.
+    Track funding, withdrawals, and settlement status with standard Grid account and transaction webhooks.
   </FeatureCard>
 </FeatureCardGrid>
 
-## How to think about Global Accounts
+## Start building
 
-Global Accounts are the product surface. Embedded Wallets are the technical account primitive that power the signed account behavior in the API.
+If you are evaluating the product, start with [Core concepts](/global-accounts/core-concepts) and [Implementation overview](/global-accounts/implementation-overview).
 
-If you are evaluating the product, start with [Implementation overview](/global-accounts/implementation-overview). If you are integrating today, continue to the [Quickstart](/global-accounts/quickstart) and the account security guides.
+If you are integrating today, continue to the [Quickstart](/global-accounts/quickstart), then set up [Authentication](/global-accounts/authentication) for customer-authorized actions.
+
+## Global Accounts or Payouts?
+
+Use Global Accounts when you want each customer to have a branded account, hold a balance, and authorize outbound movement from their own account.
+
+Use [Payouts & B2B](/payouts-and-b2b) when you only need to send payments to bank accounts or other destinations and do not need a customer-owned account experience.
 
 ## Additional capabilities
 

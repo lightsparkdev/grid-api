@@ -127,7 +127,7 @@ Grid encrypts the session signing key with **HPKE** (RFC 9180) using the suite:
 The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag).
 
 <Note>
-  **In sandbox, `encryptedSessionSigningKey` is a stub** — random bytes shaped like a real HPKE payload but not encrypted to your `clientPublicKey`. Decrypt attempts will fail. Skip this step entirely on sandbox and use the literal `Grid-Wallet-Signature: sandbox-valid-signature` for any signed action (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>). The decrypt path below applies only to production.
+  **In sandbox, `encryptedSessionSigningKey` is a stub** — random bytes shaped like a real HPKE payload but not encrypted to your `clientPublicKey`. Decrypt attempts will fail. Skip this step entirely on sandbox and use the literal `Grid-Wallet-Signature: sandbox-valid-signature` for any signed action (see <a href="#4-authorize-a-payloadtosign">Authorize a `payloadToSign`</a>). The decrypt path below applies only to production.
 </Note>
 
 ## 3. Decrypt the session signing key
@@ -218,7 +218,7 @@ func decryptSessionSigningKey(
 
 The plaintext is a **32-byte P-256 private scalar**. Treat it as the session signing key for the rest of the session.
 
-## 4. Sign a `payloadToSign`
+## 4. Authorize a `payloadToSign`
 
 Grid returns `payloadToSign` strings from several endpoints:
 
@@ -226,11 +226,22 @@ Grid returns `payloadToSign` strings from several endpoints:
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
 - `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export` — all 202 response bodies.
 
-Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The signature is ECDSA over SHA-256 using the session signing key, DER-encoded, then base64-encoded. Pass it as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, the `Request-Id` header echoed back from the 202).
+Always authorize the payload **byte-for-byte as returned**. Do not re-parse, re-serialize, trim, or normalize whitespace.
+
+There are two authorization shapes:
+
+| Flow | What to send in `Grid-Wallet-Signature` |
+|---|---|
+| Quote execution (`POST /quotes/{quoteId}/execute`) | A base64 ECDSA signature over the quote `payloadToSign`. |
+| Signed retries (`POST /auth/credentials`, `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export`) | A full API-key stamp over the `payloadToSign`, built with the session API keypair. Also echo `Request-Id` from the `202` response. |
 
 <Note>
-  **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed wallet action. Sandbox skips the ECDSA check, so you don't need a real session signing key or an extracted `payloadToSign`. The signing pattern below applies only to production.
+  **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed account action. Sandbox skips signature and stamp verification, so you don't need a real session signing key or an extracted `payloadToSign`. The authorization patterns below apply only to production.
 </Note>
+
+### Quote execution signature
+
+For quote execution, sign the quote `payloadToSign` with the session signing key. The signature is ECDSA over SHA-256, DER-encoded, then base64-encoded.
 
 <CodeGroup>
 ```typescript Web (TypeScript)
@@ -302,6 +313,17 @@ Your backend adds the signature to the retry request:
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE="
+```
+
+### Signed-retry stamp
+
+For signed retries, use the session API keypair to build a full API-key stamp over the `payloadToSign`. Send that complete stamp as `Grid-Wallet-Signature` and include the `Request-Id` returned with the challenge.
+
+```bash
+curl -X DELETE "https://api.lightspark.com/grid/2025-10-13/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ" \
+  -H "Request-Id: 2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
 ```
 
 ## Session lifetime

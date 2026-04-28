@@ -1,0 +1,65 @@
+---
+title: "Platform configuration"
+description: "Configure currencies, credentials, and webhooks before issuing Global Accounts."
+icon: "/images/icons/settings-gear2.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Before you issue Global Accounts, your platform must be configured for the currencies, environments, credentials, and webhooks your integration uses.
+
+## Supported currencies
+
+Global Accounts are provisioned from your platform configuration. When your platform is enabled for Global Accounts, Grid provisions an internal account with `type: "EMBEDDED_WALLET"` for each eligible customer.
+
+In sandbox, Global Accounts are available for testing on enabled platforms. In production, supported currencies and funding rails depend on your platform setup.
+
+<Info>
+  If you expect a customer to receive a Global Account but do not see an `EMBEDDED_WALLET` account when listing internal accounts, confirm that the platform and customer are enabled for Global Accounts.
+</Info>
+
+## API credentials
+
+Create API credentials in the Grid dashboard. Credentials are scoped to an environment and cannot be used across Sandbox and Production.
+
+Use HTTP Basic Auth for server-to-server calls:
+
+```bash
+export GRID_BASE_URL="https://api.lightspark.com/grid/2025-10-13"
+export GRID_CLIENT_ID="YOUR_CLIENT_ID"
+export GRID_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+
+curl -X GET "$GRID_BASE_URL/config" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Never expose your Grid client secret to browsers or mobile apps. Your client talks to your backend, and your backend calls Grid.
+
+## Required API areas
+
+Most Global Accounts integrations use:
+
+| Area | Why it matters |
+| --- | --- |
+| Customers | Create and verify the people or businesses that own accounts. |
+| Internal Accounts | Find the customer’s Global Account and read account state. |
+| External Accounts | Store withdrawal destinations such as bank accounts or wallets. |
+| Quotes | Fund accounts, withdraw funds, and lock exchange rates where applicable. |
+| Embedded Wallet Auth | Register credentials, issue sessions, and sign account actions. |
+| Transactions | Reconcile funding, withdrawals, refunds, and settlement status. |
+| Webhooks | Keep your product state in sync with account and payment events. |
+
+## Webhooks
+
+Configure a public HTTPS webhook endpoint in the Grid dashboard and verify every webhook using the `X-Grid-Signature` header.
+
+For Global Accounts, listen for:
+
+- `INTERNAL_ACCOUNT.BALANCE_UPDATED` when a Global Account balance changes
+- `OUTGOING_PAYMENT.*` events for withdrawals and payment settlement
+- Customer and verification events if your onboarding flow depends on Grid-hosted KYC/KYB status
+
+## Environments
+
+Use Sandbox to test account creation, sandbox funding, signed quote execution, webhook handling, and transaction reconciliation without moving real funds.
+
+Move to Production only after your platform configuration, credential handling, webhook verification, and customer-facing signing flows are ready.

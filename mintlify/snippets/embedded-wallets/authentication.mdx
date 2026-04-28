@@ -385,7 +385,7 @@ The lowest-friction credential type — works on any device with email access an
 
 ### Email OTP registration
 
-Creating the credential triggers an OTP email to the address you pass. The user reads the code off the email and submits it through your UI.
+Creating the credential triggers an OTP email to the email address on the customer record tied to the internal account. The user reads the code off the email and submits it through your UI.
 
 ```mermaid
 sequenceDiagram
@@ -394,8 +394,8 @@ sequenceDiagram
   participant G as Grid
   participant E as Email
 
-  C->>IB: POST /my-backend/otp/register { email }
-  IB->>G: POST /auth/credentials { type: EMAIL_OTP, email, accountId }
+  C->>IB: POST /my-backend/otp/register
+  IB->>G: POST /auth/credentials { type: EMAIL_OTP, accountId }
   G->>E: deliver OTP email
   G-->>IB: 201 AuthMethod
   IB-->>C: { credentialId }
@@ -413,8 +413,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "EMAIL_OTP",
-    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-    "email": "jane@example.com"
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
   }'
 ```
 
@@ -467,7 +466,7 @@ Same pattern as the first activation: call `/challenge` to send a new OTP, then 
 
 ## Managing credentials
 
-Every Embedded Wallet starts with a single credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a second credential of a different type (e.g., an email OTP alongside a passkey) so the wallet is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
+Every Embedded Wallet starts with a single credential. In production, encourage customers to register a second credential of a different type (e.g., an email OTP alongside a passkey) so the wallet is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
 
 ### List credentials
 
@@ -505,7 +504,7 @@ The response is not paginated — each account holds a small, bounded number of 
 
 ### The signed-retry pattern
 
-Adding an additional credential, revoking a credential, revoking a session, and exporting a wallet all share the same shape:
+Adding an additional credential, revoking a credential, revoking a session, and exporting a wallet all share the same signed-retry shape:
 
 ```mermaid
 sequenceDiagram
@@ -516,17 +515,17 @@ sequenceDiagram
   IB->>G: Request (no headers)
   G-->>IB: 202 { payloadToSign, requestId, expiresAt }
   IB-->>C: { payloadToSign, requestId }
-  C->>C: sign(payloadToSign, sessionPrivateKey)
-  C->>IB: { signature }
-  IB->>G: Same request<br/>Grid-Wallet-Signature: signature<br/>Request-Id: requestId
+  C->>C: build API-key stamp over payloadToSign
+  C->>IB: { stamp }
+  IB->>G: Same request<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
   G-->>IB: 2xx (terminal success)
   IB-->>C: done
 ```
 
 Key rules:
 
-- Always sign the `payloadToSign` **byte-for-byte as Grid returned it**. Do not re-parse, re-serialize, or modify whitespace.
-- Sign with the **session private key** held on the client — never ship it back to your backend.
+- Build the API-key stamp over the `payloadToSign` **byte-for-byte as Grid returned it**. Do not re-parse, re-serialize, or modify whitespace.
+- Build the stamp with the **session API keypair** held on the client — never ship the private key material back to your backend.
 - The retry must reach Grid before `expiresAt` (typically 5 minutes from issue).
 - The `requestId` is single-use; reusing one yields `401`.
 
@@ -542,8 +541,7 @@ Requires an active session on an *existing* credential on the same account. The 
       -H "Content-Type: application/json" \
       -d '{
         "type": "EMAIL_OTP",
-        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-        "email": "jane@example.com"
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
       }'
     ```
 
@@ -558,22 +556,21 @@ Requires an active session on an *existing* credential on the same account. The 
     }
     ```
   </Step>
-  <Step title="Client signs the payload">
-    Send `payloadToSign` to the client. The client signs with the session signing key from the existing credential's active session — see <a href="client-keys#4-sign-a-payloadtosign">signing payloads</a>.
+  <Step title="Client builds the stamp">
+    Send `payloadToSign` to the client. The client builds an API-key stamp with the session API keypair from the existing credential's active session — see <a href="client-keys#4-authorize-a-payloadtosign">authorizing payloads</a>.
   </Step>
   <Step title="Signed retry — credential is created">
-    Re-run the same request with the signature and request id in headers:
+    Re-run the same request with the stamp and request id in headers:
 
     ```bash
     curl -X POST "$GRID_BASE_URL/auth/credentials" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
-      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ" \
       -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
       -d '{
         "type": "EMAIL_OTP",
-        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-        "email": "jane@example.com"
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
       }'
     ```
 
@@ -590,7 +587,7 @@ Requires an active session on an *existing* credential on the same account. The 
 
 ### Revoke a credential
 
-A credential is revoked by signing with a session from **a different credential on the same account**. This prevents a compromised credential from revoking itself to lock the legitimate owner out. An account must keep at least one credential — if only one exists, the revoke call returns `400`.
+A credential is revoked by stamping the retry with a session from **a different credential on the same account**. This prevents a compromised credential from revoking itself to lock the legitimate owner out. An account must keep at least one credential — if only one exists, the revoke call returns `400`.
 
 <Steps>
   <Step title="First call — receive the challenge">
@@ -610,14 +607,14 @@ A credential is revoked by signing with a session from **a different credential 
     }
     ```
   </Step>
-  <Step title="Client signs with a different credential's session">
-    The client signs `payloadToSign` with the session signing key of an active session on any *other* credential (not the one being revoked).
+  <Step title="Client builds a stamp with a different credential's session">
+    The client builds the API-key stamp with the session API keypair of an active session on any *other* credential (not the one being revoked).
   </Step>
   <Step title="Signed retry — credential is revoked">
     ```bash
     curl -X DELETE "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ" \
       -H "Request-Id: 9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45"
     ```
 

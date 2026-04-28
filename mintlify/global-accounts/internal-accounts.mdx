@@ -1,0 +1,77 @@
+---
+title: "Internal accounts"
+description: "Find and use the internal account that represents a customer’s Global Account."
+icon: "/images/icons/wallet1.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+A Global Account appears in the API as a customer internal account with `type: "EMBEDDED_WALLET"`.
+
+You use this `InternalAccount:...` ID when you fund the account, show its balance, create withdrawal quotes, register customer credentials, manage sessions, or export wallet credentials.
+
+## Find a customer's Global Account
+
+List the customer's internal accounts and filter to `type=EMBEDDED_WALLET`:
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&type=EMBEDDED_WALLET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "EMBEDDED_WALLET",
+      "balance": {
+        "amount": 100000,
+        "currency": {
+          "code": "USDB",
+          "name": "USDB",
+          "symbol": "$",
+          "decimals": 2
+        }
+      },
+      "fundingPaymentInstructions": [],
+      "createdAt": "2026-04-19T12:00:00Z",
+      "updatedAt": "2026-04-19T12:00:00Z"
+    }
+  ],
+  "hasMore": false,
+  "totalCount": 1
+}
+```
+
+Save the `InternalAccount:...` ID. It is the account identifier your backend uses for Global Account operations.
+
+## How Global Accounts differ from other internal accounts
+
+| Internal account type | Common owner | Outbound authorization |
+| --- | --- | --- |
+| `EMBEDDED_WALLET` | Customer | Customer signs outbound actions with a session signing key. |
+| `INTERNAL_FIAT` | Platform or customer, depending on configuration | Standard API authorization. |
+| `INTERNAL_CRYPTO` | Platform or customer, depending on configuration | Standard API authorization. |
+
+## Funding instructions
+
+Some internal accounts include `fundingPaymentInstructions` that describe how to push funds into the account. The available instructions depend on the currency and your platform configuration.
+
+Use these instructions only as returned by the API. They can include bank details, payment URLs, references, or wallet information.
+
+<Tip>
+  If you present funding instructions to customers, show reference codes and notes exactly as returned so deposits can be matched to the right account.
+</Tip>
+
+## Balance updates
+
+Global Account balances change when funding arrives, withdrawals execute, refunds post, or other account movements settle.
+
+Use `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks and transaction queries to reconcile balances on your backend. Do not rely only on client-side state.
+
+## Related docs
+
+- [Funding](/global-accounts/funding)
+- [Withdrawals](/global-accounts/withdrawals)
+- [Authentication](/global-accounts/authentication)
