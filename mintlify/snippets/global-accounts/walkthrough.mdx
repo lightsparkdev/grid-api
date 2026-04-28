@@ -65,7 +65,7 @@ curl -X GET "$GRID_BASE_URL/internal-accounts?customerId=Customer:019542f5-b3e7-
         "currency": {
           "code": "USDB",
           "name": "USDB",
-          "decimals": 2
+          "decimals": 6
         }
       },
       "fundingPaymentInstructions": [],
@@ -127,9 +127,11 @@ curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "amount": 100000
+    "amount": 1000000000
   }'
 ```
+
+`amount` is in the smallest unit of the account's currency. USDB has 6 decimals, so `1000000000` is 1,000.00 USDB.
 
 You will receive an `INCOMING_PAYMENT` webhook when the balance updates. The account now holds 1,000.00 USDB.
 
@@ -190,10 +192,12 @@ curl -X POST "$GRID_BASE_URL/quotes" \
       "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
     },
     "lockedCurrencySide": "SENDING",
-    "lockedCurrencyAmount": 10000,
+    "lockedCurrencyAmount": 10000000,
     "description": "Withdrawal to checking"
   }'
 ```
+
+`lockedCurrencyAmount` is in the smallest unit of the locked side's currency. Here the sending currency is USDB (6 decimals), so `10000000` is 10.00 USDB.
 
 **Response:**
 
@@ -211,12 +215,12 @@ curl -X POST "$GRID_BASE_URL/quotes" \
     "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
     "currency": "USD"
   },
-  "sendingCurrency": { "code": "USDB", "name": "USDB", "decimals": 2 },
+  "sendingCurrency": { "code": "USDB", "name": "USDB", "decimals": 6 },
   "receivingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
-  "totalSendingAmount": 10000,
-  "totalReceivingAmount": 9975,
+  "totalSendingAmount": 10000000,
+  "totalReceivingAmount": 975,
   "exchangeRate": 1.0,
-  "feesIncluded": 25,
+  "feesIncluded": 250000,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
   "paymentInstructions": [
     {
@@ -352,9 +356,9 @@ curl -X POST "$GRID_BASE_URL/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/e
   "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PROCESSING",
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
-  "totalSendingAmount": 10000,
-  "totalReceivingAmount": 9975,
-  "feesIncluded": 25
+  "totalSendingAmount": 10000000,
+  "totalReceivingAmount": 975,
+  "feesIncluded": 250000
 }
 ```
 
