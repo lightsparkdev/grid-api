@@ -1100,13 +1100,28 @@ paths:
           required: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlatformExternalAccountListResponse'
+                $ref: '#/components/schemas/ExternalAccountListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -11803,16 +11818,6 @@ components:
               example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
-    PlatformExternalAccountListResponse:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          description: List of external accounts matching the filter criteria
-          items:
-            $ref: '#/components/schemas/ExternalAccount'
     PlatformExternalAccountCreateRequest:
       type: object
       required:

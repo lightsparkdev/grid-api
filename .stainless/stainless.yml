@@ -185,9 +185,7 @@ resources:
     subresources:
       external_accounts:
         methods:
-          list:
-            endpoint: get /platform/external-accounts
-            paginated: false
+          list: get /platform/external-accounts
           create: post /platform/external-accounts
         models:
           aed_account_info: "#/components/schemas/AedAccountInfo"
