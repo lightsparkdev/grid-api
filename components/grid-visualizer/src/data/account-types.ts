@@ -352,6 +352,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890123456' },
       { name: 'phoneNumber', example: '+923001234567' },
       { name: 'iban', example: 'PK36SCBL0000001123456702', description: 'Optional' },
+      { name: 'bankName', example: 'HBL', description: 'Required for Mobile Money' },
     ],
     beneficiaryRequired: true,
   },
