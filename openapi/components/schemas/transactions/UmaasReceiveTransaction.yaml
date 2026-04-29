@@ -1,0 +1,32 @@
+title: UMAaas Receive Transaction
+description: A receive transaction from the UMAaas service
+allOf:
+  - $ref: ./UmaasBaseTransaction.yaml
+  - type: object
+    required:
+      - type
+      - receivedAmount
+    properties:
+      type:
+        type: string
+        enum:
+          - UMAAS_RECEIVE
+      receivedAmount:
+        $ref: ../common/CurrencyAmount.yaml
+        description: Amount received in the recipient's currency
+      senderAmount:
+        $ref: ../common/CurrencyAmount.yaml
+        description: Original amount sent by the sender (if known)
+      exchangeRate:
+        type: number
+        description: Number of sending currency units per receiving currency unit
+        exclusiveMinimum: 0
+        example: 1.08
+      invoice:
+        type: string
+        description: Lightning invoice that was paid
+        example: "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
+      preimage:
+        type: string
+        description: Lightning payment preimage (proof of payment)
+        example: "0000000000000000000000000000000000000000000000000000000000000000"

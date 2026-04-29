@@ -2,4 +2,14 @@ type: string
 enum:
   - INCOMING
   - OUTGOING
-description: Type of transaction (incoming payment or outgoing payment)
+  - UMAAS_SEND
+  - UMAAS_RECEIVE
+description: |
+  Type of transaction.
+
+  | Type | Description |
+  |------|-------------|
+  | `INCOMING` | Incoming payment received through Grid |
+  | `OUTGOING` | Outgoing payment sent through Grid |
+  | `UMAAS_SEND` | Outgoing payment sent through UMAaas |
+  | `UMAAS_RECEIVE` | Incoming payment received through UMAaas |

@@ -1,0 +1,52 @@
+type: object
+required:
+  - id
+  - status
+  - type
+  - senderUmaAddress
+  - receiverUmaAddress
+  - createdAt
+properties:
+  id:
+    type: string
+    description: Unique identifier for the UMAaas transaction
+    example: UmaasTransaction:019542f5-b3e7-1d02-0000-000000000004
+  externalId:
+    type: string
+    description: Original transaction ID from the UMAaas service
+    example: "550e8400-e29b-41d4-a716-446655440000"
+  status:
+    $ref: ./TransactionStatus.yaml
+  type:
+    $ref: ./TransactionType.yaml
+  senderUmaAddress:
+    type: string
+    description: UMA address of the sender
+    example: $sender@uma.domain.com
+  receiverUmaAddress:
+    type: string
+    description: UMA address of the receiver
+    example: $receiver@uma.domain.com
+  paymentHash:
+    type: string
+    description: Lightning payment hash for the transaction
+    example: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  createdAt:
+    type: string
+    format: date-time
+    description: When the transaction was created
+    example: '2025-08-15T14:25:18Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the transaction was last updated
+    example: '2025-08-15T14:30:00Z'
+  settledAt:
+    type: string
+    format: date-time
+    description: When the payment was settled
+    example: '2025-08-15T14:30:00Z'
+  description:
+    type: string
+    description: Optional memo or description for the payment
+    example: 'Payment for services'

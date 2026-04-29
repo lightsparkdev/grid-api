@@ -5190,7 +5190,17 @@ components:
       enum:
         - INCOMING
         - OUTGOING
-      description: Type of transaction (incoming payment or outgoing payment)
+        - UMAAS_SEND
+        - UMAAS_RECEIVE
+      description: |
+        Type of transaction.
+
+        | Type | Description |
+        |------|-------------|
+        | `INCOMING` | Incoming payment received through Grid |
+        | `OUTGOING` | Outgoing payment sent through Grid |
+        | `UMAAS_SEND` | Outgoing payment sent through UMAaas |
+        | `UMAAS_RECEIVE` | Incoming payment received through UMAaas |
     PlatformCurrencyConfig:
       type: object
       properties:
@@ -12736,15 +12746,149 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+    UmaasBaseTransaction:
+      type: object
+      required:
+        - id
+        - status
+        - type
+        - senderUmaAddress
+        - receiverUmaAddress
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the UMAaas transaction
+          example: UmaasTransaction:019542f5-b3e7-1d02-0000-000000000004
+        externalId:
+          type: string
+          description: Original transaction ID from the UMAaas service
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        senderUmaAddress:
+          type: string
+          description: UMA address of the sender
+          example: $sender@uma.domain.com
+        receiverUmaAddress:
+          type: string
+          description: UMA address of the receiver
+          example: $receiver@uma.domain.com
+        paymentHash:
+          type: string
+          description: Lightning payment hash for the transaction
+          example: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        createdAt:
+          type: string
+          format: date-time
+          description: When the transaction was created
+          example: '2025-08-15T14:25:18Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the transaction was last updated
+          example: '2025-08-15T14:30:00Z'
+        settledAt:
+          type: string
+          format: date-time
+          description: When the payment was settled
+          example: '2025-08-15T14:30:00Z'
+        description:
+          type: string
+          description: Optional memo or description for the payment
+          example: Payment for services
+    UmaasSendTransaction:
+      title: UMAaas Send Transaction
+      description: A send transaction from the UMAaas service
+      allOf:
+        - $ref: '#/components/schemas/UmaasBaseTransaction'
+        - type: object
+          required:
+            - type
+            - sendingAmount
+            - receivingAmount
+          properties:
+            type:
+              type: string
+              enum:
+                - UMAAS_SEND
+            sendingAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount sent in the sender's currency
+            receivingAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount received in the recipient's currency
+            exchangeRate:
+              type: number
+              description: Number of sending currency units per receiving currency unit
+              exclusiveMinimum: 0
+              example: 1.08
+            fees:
+              type: integer
+              format: int64
+              description: The fees associated with the transaction in the smallest unit of the sending currency (e.g., cents)
+              minimum: 0
+              example: 10
+            invoice:
+              type: string
+              description: Lightning invoice used for the payment
+              example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+            preimage:
+              type: string
+              description: Lightning payment preimage (proof of payment)
+              example: '0000000000000000000000000000000000000000000000000000000000000000'
+            failureReason:
+              type: string
+              description: If the transaction failed, this field provides the reason
+              example: RECIPIENT_UNAVAILABLE
+    UmaasReceiveTransaction:
+      title: UMAaas Receive Transaction
+      description: A receive transaction from the UMAaas service
+      allOf:
+        - $ref: '#/components/schemas/UmaasBaseTransaction'
+        - type: object
+          required:
+            - type
+            - receivedAmount
+          properties:
+            type:
+              type: string
+              enum:
+                - UMAAS_RECEIVE
+            receivedAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Amount received in the recipient's currency
+            senderAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: Original amount sent by the sender (if known)
+            exchangeRate:
+              type: number
+              description: Number of sending currency units per receiving currency unit
+              exclusiveMinimum: 0
+              example: 1.08
+            invoice:
+              type: string
+              description: Lightning invoice that was paid
+              example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+            preimage:
+              type: string
+              description: Lightning payment preimage (proof of payment)
+              example: '0000000000000000000000000000000000000000000000000000000000000000'
     TransactionOneOf:
       oneOf:
         - $ref: '#/components/schemas/IncomingTransaction'
         - $ref: '#/components/schemas/OutgoingTransaction'
+        - $ref: '#/components/schemas/UmaasSendTransaction'
+        - $ref: '#/components/schemas/UmaasReceiveTransaction'
       discriminator:
         propertyName: type
         mapping:
           INCOMING: '#/components/schemas/IncomingTransaction'
           OUTGOING: '#/components/schemas/OutgoingTransaction'
+          UMAAS_SEND: '#/components/schemas/UmaasSendTransaction'
+          UMAAS_RECEIVE: '#/components/schemas/UmaasReceiveTransaction'
     TransferOutRequest:
       type: object
       required:

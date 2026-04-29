@@ -1,8 +1,12 @@
 oneOf:
   - $ref: ./IncomingTransaction.yaml
   - $ref: ./OutgoingTransaction.yaml
+  - $ref: ./UmaasSendTransaction.yaml
+  - $ref: ./UmaasReceiveTransaction.yaml
 discriminator:
   propertyName: type
   mapping:
     INCOMING: ./IncomingTransaction.yaml
     OUTGOING: ./OutgoingTransaction.yaml
+    UMAAS_SEND: ./UmaasSendTransaction.yaml
+    UMAAS_RECEIVE: ./UmaasReceiveTransaction.yaml
