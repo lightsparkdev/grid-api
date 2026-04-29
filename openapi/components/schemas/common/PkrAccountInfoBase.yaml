@@ -1,9 +1,11 @@
 type: object
 required:
 - accountType
-- accountNumber
-- phoneNumber
-- bankName
+description: 'Required fields depend on the selected paymentRails:
+
+  - BANK_TRANSFER: accountNumber
+
+  - MOBILE_MONEY: bankName, phoneNumber'
 properties:
   accountType:
     type: string
