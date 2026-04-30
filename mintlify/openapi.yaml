@@ -15439,7 +15439,7 @@ components:
           $ref: '#/components/schemas/AuthMethodType'
         nickname:
           type: string
-          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the nickname provided at registration time.
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
           example: example@lightspark.com
         createdAt:
           type: string
@@ -15557,7 +15557,7 @@ components:
           description: Discriminator value identifying this as a passkey credential.
         nickname:
           type: string
-          description: Human-readable identifier for the passkey, chosen by the user at registration time (e.g. "iPhone Face-ID", "YubiKey 5C"). Shown back on `AuthMethod` responses and in credential listings.
+          description: 'Human-readable identifier for the passkey, chosen by the user at registration time (e.g. "iPhone Face-ID", "YubiKey 5C"). Leading and trailing whitespace is ignored. Must be 1-100 characters and may contain Unicode letters, numbers, spaces, and the following separators: period, underscore, hyphen, apostrophe, and parentheses. Shown back on AuthMethod responses and in credential listings.'
           example: iPhone Face-ID
         challenge:
           type: string
