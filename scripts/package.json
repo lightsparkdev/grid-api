@@ -1,0 +1,14 @@
+{
+  "name": "@lightspark/grid-api-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Helper scripts for Grid offramp / embedded-wallet flows",
+  "bin": {
+    "embedded-wallet-sign": "./embedded-wallet-sign.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@turnkey/api-key-stamper": "^0.6.5",
+    "@turnkey/crypto": "^2.8.14"
+  }
+}
