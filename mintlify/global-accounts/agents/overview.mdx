@@ -13,6 +13,23 @@ This section describes experimental Grid functionality. Details may evolve as th
 
 Use Grid-managed agent connectivity to let your users connect AI agents to Global Accounts. The connected agent may run in your product, on the user's device, or through a third-party tool such as OpenClaw or Codex. Grid does not run the agent runtime. Grid powers install, delegated credentials, policy evaluation, approval state, and execution boundaries for agent-initiated actions, while your product surfaces the connection, approval, and history experience to the end user.
 
+## Design principles
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/shield.svg" title="Customer-owned funds">
+    Delegation does not transfer account ownership. The customer can still require approvals, pause access, or revoke the agent entirely.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/IconSquareChecklistMagnifyingGlass.svg" title="Grid-managed policy">
+    Permissions, spend limits, account restrictions, and approval thresholds are evaluated by Grid before any agent-initiated action executes.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/agent.svg" title="Bounded execution">
+    Agents operate with a narrow, explicit capability set such as viewing balances, preparing withdrawals, or initiating transfers under Grid-defined controls.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Auditable activity">
+    Every agent-initiated action stays traceable through Grid policy decisions, approval state, and final settlement outcomes.
+  </FeatureCard>
+</FeatureCardGrid>
+
 ## How it works
 
 In this model:
@@ -57,23 +74,6 @@ sequenceDiagram
 6. The request is either denied, executed automatically, or delivered to your product as a permission request.
 7. Your user reviews the request in a trusted surface you control.
 8. Grid then sends the resulting activity, transaction, and settlement updates back to your product.
-
-## Design principles
-
-<FeatureCardGrid cols={2}>
-  <FeatureCard icon="/images/icons/shield.svg" title="Customer-owned funds">
-    Delegation does not transfer account ownership. The customer can still require approvals, pause access, or revoke the agent entirely.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/IconSquareChecklistMagnifyingGlass.svg" title="Grid-managed policy">
-    Permissions, spend limits, account restrictions, and approval thresholds are evaluated by Grid before any agent-initiated action executes.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/agent.svg" title="Bounded execution">
-    Agents operate with a narrow, explicit capability set such as viewing balances, preparing withdrawals, or initiating transfers under Grid-defined controls.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/bell.svg" title="Auditable activity">
-    Every agent-initiated action stays traceable through Grid policy decisions, approval state, and final settlement outcomes.
-  </FeatureCard>
-</FeatureCardGrid>
 
 ## Where Global Accounts fits
 
