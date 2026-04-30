@@ -57,3 +57,6 @@ scripts/export-icons.js
 
 # Superset
 .superset/
+
+# Skill eval workspaces (local artifacts from skill-creator iteration runs)
+.claude/skills/*-workspace/

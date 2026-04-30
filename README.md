@@ -891,11 +891,31 @@ npm run lint
 # Or: make lint
 ```
 
-## Claude Code Skill
+## Claude Code Skills
 
-This repository includes a [Claude Code](https://claude.ai/code) skill for interacting with the Grid API. The skill enables Claude to execute API operations, answer documentation questions, and guide you through payment workflows.
+This repository ships two [Claude Code](https://claude.ai/code) skills for working with the Grid API. Both install via [`npx skills`](https://github.com/vercel-labs/skills):
 
-### Setup
+```bash
+# Install both skills globally for Claude Code
+npx skills add lightsparkdev/grid-api --skill '*' -g -a claude-code
+```
+
+### grid-api — execute API calls
+
+Curl-based skill for sending payments, managing customers, creating quotes, and answering questions about Grid endpoints. Best once you know your way around the API.
+
+```bash
+npx skills add lightsparkdev/grid-api --skill grid-api -g -a claude-code
+```
+
+Invoke it with `/grid-api` or ask things like:
+
+- "Send a payment to Mexico"
+- "Create a quote from USDC to INR"
+- "What currencies does Grid support?"
+- "Help me set up a UPI account"
+
+#### Setup
 
 Before using the skill, build the CLI tool:
 ```bash
@@ -904,16 +924,22 @@ cd cli && npm install && npm run build && cd ..
 
 Then configure credentials (see Configuration section below).
 
-### Usage
+### grid-tutorial — learn by building
 
-When using Claude Code in this repository, invoke the skill with `/grid-api` or ask questions like:
+Hands-on, interactive tutorial that scaffolds a small Next.js + TypeScript demo into your working directory and walks you through the Grid happy path with real sandbox API calls. About 10 minutes, end-to-end. Best if you've never used Grid.
 
-- "Send a payment to Mexico"
-- "Create a quote from USDC to INR"
-- "What currencies does Grid support?"
-- "Help me set up a UPI account"
+```bash
+npx skills add lightsparkdev/grid-api --skill grid-tutorial -g -a claude-code
+```
 
-The skill uses the CLI at `cli/dist/index.js` to execute operations against the Grid API.
+Then in Claude Code, say something like:
+
+- "Walk me through Grid"
+- "I want to try Grid for the first time"
+- "Build me a Grid demo that sends USD to a Mexican CLABE account"
+- "Show me how Grid Global Accounts work end-to-end"
+
+See `.claude/skills/grid-tutorial/README.md` for details.
 
 ### Configuration
 
