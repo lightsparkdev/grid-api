@@ -37,14 +37,12 @@ sequenceDiagram
     P->>G: Start Grid-powered install flow
     G-->>P: Agent connection + delegated credentials
     A->>G: Request action
-    alt Approval required
-        G-->>P: Permission request
-        P-->>U: Show approval UI
-        U->>P: Approve or reject
-        P->>G: Send decision
-    else Auto-approved
-        G-->>P: Action executed
-    end
+    Note over G,P: If approval is required
+    G-->>P: Permission request
+    P-->>U: Show approval UI
+    U->>P: Approve or reject
+    P->>G: Send decision
+    G-->>P: Action executed automatically or after approval
     G-->>P: Activity, transaction, and audit updates
 ```
 
