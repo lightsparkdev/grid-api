@@ -16,7 +16,7 @@ Treat approval requests like first-class user tasks. They should be easy to find
 When an agent requests an action that is not eligible for automatic execution:
 
 1. Grid creates a permission request for your product.
-2. Grid dispatches that request to your product.
+2. Grid dispatches that request to your product, typically via webhook or another configured callback mechanism.
 3. Your app or dashboard shows the user the requested amount, source account, destination, and reason.
 4. The user approves or rejects the action from that trusted surface.
 5. Grid executes or rejects the action based on the latest account and policy state.
@@ -61,14 +61,24 @@ For example, a permission request surfaced in your product might look like:
   "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
   "status": "PENDING",
   "actionType": "EXECUTE_QUOTE",
-  "sourceAccountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-  "amount": 50000,
-  "currency": "USD",
-  "destination": {
-    "destinationType": "EXTERNAL_ACCOUNT",
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000025",
+  "source": {
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "currency": "USD"
   },
-  "reason": "Send supplier payout",
+  "destination": {
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "currency": "EUR"
+  },
+  "sendingAmount": {
+    "amount": 50000,
+    "currency": {
+      "code": "USD",
+      "decimals": 2
+    }
+  },
+  "description": "Send supplier payout",
+  "policyDecision": "APPROVAL_REQUIRED",
   "createdAt": "2025-10-03T15:00:00Z"
 }
 ```

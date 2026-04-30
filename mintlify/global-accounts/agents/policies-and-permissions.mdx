@@ -86,7 +86,7 @@ Thresholds should complement permissions and limits, not replace them.
 
 ## Example policy shape
 
-At a minimum, store:
+At a minimum, the policy configuration for a connection should include:
 
 - Allowed permissions
 - Default execution mode
@@ -95,7 +95,7 @@ At a minimum, store:
 - Per-account overrides
 - Approval thresholds
 
-For example:
+For example, Grid stores and enforces a policy object shaped like:
 
 ```json
 {
@@ -144,7 +144,7 @@ For example:
 ```
 
 <Info>
-Monetary thresholds use the standard Grid amount shape: `amount` plus a `currency` object with `code`, `symbol`, and `decimals`. The numeric `amount` is still in the smallest unit of that currency, so `50000` with `USD` and `decimals: 2` means $500.00.
+Monetary thresholds use the standard Grid amount shape: `amount` plus a `currency` object with `code`, `symbol`, and `decimals`. The numeric `amount` is still in the smallest unit of that currency, so `50000` with `USD` and `decimals: 2` means $500.00. If Grid needs to compare the action against a threshold across currencies or assets, it uses the current exchange rate at evaluation time, not the rate when the policy was configured.
 </Info>
 
 <Info>
