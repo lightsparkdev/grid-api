@@ -5,11 +5,17 @@ icon: "/images/icons/shield.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
+<Note>
+Agent connectivity is currently limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
 <Info>
 Grid evaluates and enforces agent policy. Your product should let users review and update that policy, then reflect the resulting approval behavior in the UI.
 </Info>
 
 Grid attaches policy to the Grid-managed agent connection, so your product does not need to implement a separate delegated credential model.
+
+That policy applies to the connected agent regardless of whether it runs in your app, on the user's device, or through a third-party tool.
 
 Use this page to decide how much authority to give a connected agent and when that authority should stop and ask the user.
 
@@ -109,19 +115,11 @@ For example, Grid stores and enforces a policy object shaped like:
   "spendingLimits": {
     "perTransaction": {
       "amount": 50000,
-      "currency": {
-        "code": "USD",
-        "symbol": "$",
-        "decimals": 2
-      }
+      "currency": "USD"
     },
     "daily": {
       "amount": 200000,
-      "currency": {
-        "code": "USD",
-        "symbol": "$",
-        "decimals": 2
-      }
+      "currency": "USD"
     },
     "dailyTransactionCount": 5
   },
@@ -131,20 +129,14 @@ For example, Grid stores and enforces a policy object shaped like:
     ]
   },
   "approvalThresholds": {
-    "amount": {
-      "amount": 25000,
-      "currency": {
-        "code": "USD",
-        "symbol": "$",
-        "decimals": 2
-      }
-    }
+    "amount": 25000,
+    "currency": "USD"
   }
 }
 ```
 
 <Info>
-Monetary thresholds use the standard Grid amount shape: `amount` plus a `currency` object with `code`, `symbol`, and `decimals`. The numeric `amount` is still in the smallest unit of that currency, so `50000` with `USD` and `decimals: 2` means $500.00. If Grid needs to compare the action against a threshold across currencies or assets, it uses the current exchange rate at evaluation time, not the rate when the policy was configured.
+In policy configuration, monetary limits and thresholds use `amount` plus a `currency` code string. The numeric `amount` is still in the smallest unit of that currency, so `50000` with `"currency": "USD"` means $500.00. If Grid needs to compare the action against a threshold across currencies or assets, it uses the current exchange rate at evaluation time, not the rate when the policy was configured.
 </Info>
 
 <Info>

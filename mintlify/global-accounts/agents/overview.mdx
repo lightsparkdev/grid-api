@@ -8,17 +8,18 @@ icon: "/images/icons/agent.svg"
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <Note>
-This section describes experimental Grid functionality. Details may evolve as the agent product surface expands.
+This section describes experimental Grid functionality. Details may evolve as the agent product surface expands. Agent connectivity is currently limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
 
-Use Grid-managed agent connectivity to let your users connect AI agents to Global Accounts. Grid powers install, delegated credentials, policy evaluation, approval state, and execution boundaries for agent-initiated actions, while your product surfaces the connection, approval, and history experience to the end user.
+Use Grid-managed agent connectivity to let your users connect AI agents to Global Accounts. The connected agent may run in your product, on the user's device, or through a third-party tool such as OpenClaw or Codex. Grid does not run the agent runtime. Grid powers install, delegated credentials, policy evaluation, approval state, and execution boundaries for agent-initiated actions, while your product surfaces the connection, approval, and history experience to the end user.
 
 ## How it works
 
 In this model:
 
 - The customer still owns the Global Account and remains the ultimate authority over outbound movement.
-- You let users connect one or more AI agents to their Grid-backed account experience.
+- You let users connect one or more AI agents they already use to their Grid-backed account experience.
+- The connected agent may run in your app, on the user's device, or through a third-party tool.
 - Grid powers agent install and delegated credentials for the connected agent.
 - Grid manages the agent's allowed capabilities, evaluation rules, and approval requirements.
 - The agent can propose or execute only the actions Grid allows for that customer and account scope.
@@ -31,7 +32,7 @@ sequenceDiagram
     participant U as User
     participant P as Partner app
     participant G as Grid
-    participant A as AI agent
+    participant A as Connected agent
 
     U->>P: Connect agent
     P->>G: Start Grid-powered install flow
@@ -45,6 +46,17 @@ sequenceDiagram
     G-->>P: Action executed automatically or after approval
     G-->>P: Activity, transaction, and audit updates
 ```
+
+## Typical flow
+
+1. Your platform creates or links a Global Account for the customer.
+2. The customer connects an existing agent through a Grid-powered install flow embedded in your product.
+3. Grid creates the agent connection, provisions delegated credentials, and saves the configured policy.
+4. The agent requests an action such as creating a quote, creating an external account, or executing a withdrawal.
+5. Grid applies the saved policy for that connection.
+6. The request is either denied, executed automatically, or delivered to your product as a permission request.
+7. Your user reviews the request in a trusted surface you control.
+8. Grid then sends the resulting activity, transaction, and settlement updates back to your product.
 
 ## Design principles
 
@@ -62,17 +74,6 @@ sequenceDiagram
     Every agent-initiated action stays traceable through Grid policy decisions, approval state, and final settlement outcomes.
   </FeatureCard>
 </FeatureCardGrid>
-
-## Typical flow
-
-1. Your platform creates or links a Global Account for the customer.
-2. The customer connects an agent through a Grid-powered install flow embedded in your product.
-3. Grid creates the agent connection, provisions delegated credentials, and saves the configured policy.
-4. The agent requests an action such as creating a quote, creating an external account, or executing a withdrawal.
-5. Grid applies the saved policy for that connection.
-6. The request is either denied, executed automatically, or delivered to your product as a permission request.
-7. Your user reviews the request in a trusted surface you control.
-8. Grid then sends the resulting activity, transaction, and settlement updates back to your product.
 
 ## Where Global Accounts fits
 
