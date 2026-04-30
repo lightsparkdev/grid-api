@@ -98,6 +98,14 @@
               "global-accounts/platform-tools/sandbox-testing",
               "global-accounts/platform-tools/postman-collection"
             ]
+          },
+          {
+            "group": "Agents (experimental)",
+            "pages": [
+              "global-accounts/agents/overview",
+              "global-accounts/agents/policies-and-permissions",
+              "global-accounts/agents/approvals-and-audit"
+            ]
           }
         ]
       },

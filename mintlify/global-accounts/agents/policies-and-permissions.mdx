@@ -1,0 +1,165 @@
+---
+title: "Policies & permissions"
+description: "Define bounded agent access for Global Accounts with permissions, limits, restrictions, and approval thresholds"
+icon: "/images/icons/shield.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+<Info>
+Grid evaluates and enforces agent policy. Your product should let users review and update that policy, then reflect the resulting approval behavior in the UI.
+</Info>
+
+Grid attaches policy to the Grid-managed agent connection, so your product does not need to implement a separate delegated credential model.
+
+Use this page to decide how much authority to give a connected agent and when that authority should stop and ask the user.
+
+<Tip>
+Your app or dashboard should also surface the policy configuration screen itself so users can review and update permissions, limits, and approval behavior without leaving your product.
+</Tip>
+
+An agent policy should answer four questions:
+
+1. What actions may this agent take?
+2. Which accounts may it act on?
+3. How much value may it move?
+4. When must Grid request user approval through your product?
+
+## Permissions
+
+Grid exposes explicit allowlists instead of broad agent access. Common permissions include:
+
+- View balances and account details
+- View transaction history
+- Create external accounts
+- Create quotes
+- Execute withdrawals or quote-backed transfers
+- Fund or move value between allowed accounts
+
+These permissions are intentionally narrow and map to concrete Grid-backed actions rather than broad scopes such as "manage wallet."
+
+## Account restrictions
+
+If a customer has multiple internal accounts, an agent should not automatically access all of them.
+
+Use account restrictions to define:
+
+- Which internal account IDs are in scope
+- Whether some accounts are view-only
+- Whether some accounts require stricter execution rules than others
+
+This is especially useful when a customer has separate balances for treasury, payroll, or operational use cases and only one pool should be agent-accessible.
+
+## Spending limits
+
+Use value-based limits to contain damage if the agent behaves unexpectedly or the agent connection is misused.
+
+Common controls:
+
+- Per-transaction limit
+- Daily spend limit
+- Monthly spend limit
+- Daily transaction count limit
+
+Keep limits in the smallest currency unit used by Grid so comparisons are exact and auditable.
+
+## Execution modes
+
+Each action should resolve to one of two execution modes:
+
+- `auto`: Grid may execute the action immediately after policy validation.
+- `approval_required`: Grid creates a pending approval and dispatches it to your product for customer confirmation.
+
+You can apply execution mode globally or per account. A practical pattern is to allow automatic execution for low-risk actions and require approvals for higher-value withdrawals or new destination setup.
+
+## Approval thresholds
+
+Approval thresholds let Grid mix automation with customer oversight.
+
+Examples:
+
+- Auto-execute transfers below a configured amount
+- Require approval above that amount
+- Always require approval when the destination is new
+- Always require approval for specific action types, regardless of amount
+
+Thresholds should complement permissions and limits, not replace them.
+
+## Example policy shape
+
+At a minimum, store:
+
+- Allowed permissions
+- Default execution mode
+- Spending limits
+- Allowed account IDs
+- Per-account overrides
+- Approval thresholds
+
+For example:
+
+```json
+{
+  "permissions": [
+    "view_balances",
+    "view_transactions",
+    "create_external_accounts",
+    "execute_withdrawals"
+  ],
+  "defaultExecutionMode": "approval_required",
+  "spendingLimits": {
+    "perTransaction": {
+      "amount": 50000,
+      "currency": {
+        "code": "USD",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "daily": {
+      "amount": 200000,
+      "currency": {
+        "code": "USD",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "dailyTransactionCount": 5
+  },
+  "accountRestrictions": {
+    "allowedAccountIds": [
+      "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    ]
+  },
+  "approvalThresholds": {
+    "amount": {
+      "amount": 25000,
+      "currency": {
+        "code": "USD",
+        "symbol": "$",
+        "decimals": 2
+      }
+    }
+  }
+}
+```
+
+<Info>
+Monetary thresholds use the standard Grid amount shape: `amount` plus a `currency` object with `code`, `symbol`, and `decimals`. The numeric `amount` is still in the smallest unit of that currency, so `50000` with `USD` and `decimals: 2` means $500.00.
+</Info>
+
+<Info>
+When users update permissions, limits, or approval thresholds, refresh the policy view in your UI so the displayed behavior matches the latest saved configuration.
+</Info>
+
+## Practical guidance
+
+- Default new agents to the smallest possible permission set.
+- Separate read permissions from money movement permissions.
+- Require approval for destination creation until you trust your identity, sanctions, and beneficiary review flow.
+- Make the current policy visible to the customer in your app or dashboard.
+
+## Next steps
+
+- [Global Accounts overview](/global-accounts)
+- [Implementation overview](/global-accounts/implementation-overview)
+- [Approvals & audit](/global-accounts/agents/approvals-and-audit)

@@ -1,0 +1,118 @@
+---
+title: "Approvals & audit"
+description: "Design approval, activity, and revoke experiences for agent-driven Global Account flows"
+icon: "/images/icons/receipt-check.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+Use this page to design how permission requests, decisions, and agent history appear in your app or dashboard. Grid owns approval state, execution gating, and audit history, while your surfaces present those requests and records to the user.
+
+<Info>
+Treat approval requests like first-class user tasks. They should be easy to find, easy to understand, and safe to retry without duplicating execution.
+</Info>
+
+## Approval lifecycle
+
+When an agent requests an action that is not eligible for automatic execution:
+
+1. Grid creates a permission request for your product.
+2. Grid dispatches that request to your product.
+3. Your app or dashboard shows the user the requested amount, source account, destination, and reason.
+4. The user approves or rejects the action from that trusted surface.
+5. Grid executes or rejects the action based on the latest account and policy state.
+6. Grid records the final status and links it to the resulting transaction or quote execution.
+
+## Approval outcomes
+
+An approval request shown to the user is still subject to the latest account and policy state when Grid processes the decision.
+
+For example, between the original request and the final decision:
+
+- The agent may have been paused
+- The customer's limits may have been reduced
+- The permitted accounts may have changed
+- Another action may already have consumed the available daily spend
+
+<Warning>
+An approval in your UI is not always a guarantee that the original request will execute successfully. Your product should be ready to show a final rejected or failed state if the request is no longer valid when Grid processes it.
+</Warning>
+
+## Activity and audit records
+
+The activity and audit data returned by Grid should make it easy for customers and operators to understand both intent and outcome.
+
+Each activity record should capture:
+
+- Agent ID and display name
+- Action type
+- Requested amount and asset
+- Source and destination context
+- Reason or natural-language detail
+- Policy decision
+- Approval status
+- Linked Grid quote ID or transaction ID, when available
+- Created, approved, rejected, and completed timestamps
+
+For example, a permission request surfaced in your product might look like:
+
+```json
+{
+  "id": "Approval:019542f5-b3e7-1d02-0000-000000000099",
+  "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
+  "status": "PENDING",
+  "actionType": "EXECUTE_QUOTE",
+  "sourceAccountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+  "amount": 50000,
+  "currency": "USD",
+  "destination": {
+    "destinationType": "EXTERNAL_ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+  },
+  "reason": "Send supplier payout",
+  "createdAt": "2025-10-03T15:00:00Z"
+}
+```
+
+This lets you present a clean customer-facing activity feed while preserving an operator-friendly audit trail.
+
+## Pause and revoke
+
+Customers need immediate control over delegated access.
+
+Support at least two controls:
+
+- `Pause`: temporarily block new executions while preserving the agent configuration.
+- `Revoke`: permanently remove delegated access and invalidate the agent connection.
+
+Pause is useful for temporary uncertainty. Revoke is appropriate when a device is lost, a credential is exposed, or the customer no longer wants the agent connected.
+
+Grid enforces these controls. Your product should surface the current connection state and expose the relevant actions in your own experience.
+
+## What to show in the approval UI
+
+Your approval UI should answer:
+
+- What is the agent trying to do?
+- Which account is affected?
+- How much value is moving?
+- Who or what is on the other side of the transaction?
+- Why is approval required?
+
+If the user cannot answer those questions quickly, the approval surface is too opaque.
+
+## Integration guidance
+
+- Use Grid events or webhooks to reconcile approval decisions with the final activity and transaction state.
+- Treat approval decisions as idempotent in your integration so duplicate taps or retries do not create a confusing UX.
+- Preserve status history in your UI instead of collapsing everything into a single final state.
+- Make agent connection status, approval queue state, and audit history easy to surface in your apps and dashboards.
+
+<Tip>
+Show approvals and audit history close to the account or transaction views users already trust. That reduces confusion and makes agent activity feel like part of the main account lifecycle rather than a separate subsystem.
+</Tip>
+
+## Next steps
+
+- [Agents overview](/global-accounts/agents/overview)
+- [Policies & permissions](/global-accounts/agents/policies-and-permissions)
+- [Webhooks](/global-accounts/platform-tools/webhooks)
