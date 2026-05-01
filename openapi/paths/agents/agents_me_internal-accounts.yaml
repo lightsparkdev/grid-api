@@ -1,0 +1,61 @@
+get:
+  summary: List agent's internal accounts
+  description: >
+    Retrieve the internal accounts belonging to the customer this agent operates on behalf of.
+    Use this to discover available source accounts for transfers and quotes, and to verify
+    which accounts are accessible under the agent's `accountRestrictions` policy.
+  operationId: agentListInternalAccounts
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: currency
+      in: query
+      description: Filter by currency code
+      required: false
+      schema:
+        type: string
+    - name: type
+      in: query
+      description: >-
+        Filter by internal account type. Use `EMBEDDED_WALLET` to find the
+        self-custodial wallet provisioned for the customer, or `INTERNAL_FIAT` /
+        `INTERNAL_CRYPTO` for platform-managed holding accounts.
+      required: false
+      schema:
+        $ref: ../../components/schemas/customers/InternalAccountType.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/InternalAccountListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

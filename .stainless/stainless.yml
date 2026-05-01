@@ -362,6 +362,43 @@ resources:
         models:
           session_list_response: '#/components/schemas/SessionListResponse'
 
+  agents:
+    models:
+      agent: '#/components/schemas/Agent'
+      agent_create_request: '#/components/schemas/AgentCreateRequest'
+      agent_create_response: '#/components/schemas/AgentCreateResponse'
+      agent_update_request: '#/components/schemas/AgentUpdateRequest'
+      agent_list_response: '#/components/schemas/AgentListResponse'
+      agent_device_code: '#/components/schemas/AgentDeviceCode'
+      agent_device_code_status_response: '#/components/schemas/AgentDeviceCodeStatusResponse'
+      agent_device_code_redeem_response: '#/components/schemas/AgentDeviceCodeRedeemResponse'
+      agent_action: '#/components/schemas/AgentAction'
+      agent_action_list_response: '#/components/schemas/AgentActionListResponse'
+      agent_action_reject_request: '#/components/schemas/AgentActionRejectRequest'
+    methods:
+      create: post /agents
+      list: get /agents
+      retrieve: get /agents/{agentId}
+      update: patch /agents/{agentId}
+      delete: delete /agents/{agentId}
+      list_approvals: get /agents/approvals
+    subresources:
+      policy:
+        models:
+          agent_policy: '#/components/schemas/AgentPolicy'
+          agent_policy_update_request: '#/components/schemas/AgentPolicyUpdateRequest'
+        methods:
+          update: patch /agents/{agentId}/policy
+      device_codes:
+        methods:
+          regenerate: post /agents/{agentId}/device-codes
+          get_status: get /agents/device-codes/{code}/status
+          redeem: post /agents/device-codes/{code}/redeem
+      actions:
+        methods:
+          approve: post /agents/{agentId}/actions/{actionId}/approve
+          reject: post /agents/{agentId}/actions/{actionId}/reject
+
   internal_accounts:
     methods:
       export: post /internal-accounts/{id}/export
@@ -500,6 +537,16 @@ client_settings:
         role: password
       description: API token authentication using format `<api token id>:<api client secret>`
       read_env: GRID_CLIENT_SECRET
+    agent_access_token:
+      type: string
+      nullable: true
+      auth:
+        security_scheme: AgentAuth
+      description: >-
+        Bearer access token obtained by redeeming a device code. Required when calling
+        agent-scoped endpoints (e.g. `GET /agents/me/...`). Leave unset for platform-scoped
+        operations.
+      read_env: GRID_AGENT_ACCESS_TOKEN
     webhook_signature:
       type: string
       nullable: true

@@ -1,0 +1,103 @@
+post:
+  summary: Agent action pending approval webhook
+  description: >
+    Fired when an agent submits an action that requires platform approval before
+    Grid will execute it. Use this to send a push notification to the customer
+    so they can review and approve or reject the action in your app.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    The payload contains the full `AgentAction` — including the embedded quote
+    or transfer details — so you can render the approval UI without a second
+    API call. Approve or reject via
+    `POST /agents/{agentId}/actions/{actionId}/approve` or
+    `POST /agents/{agentId}/actions/{actionId}/reject`.
+  operationId: agentActionWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/webhooks/AgentActionWebhook.yaml'
+        examples:
+          pendingApproval:
+            summary: Agent action pending approval
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000020
+              type: AGENT_ACTION.PENDING_APPROVAL
+              timestamp: '2025-10-03T15:00:00Z'
+              data:
+                id: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+                agentId: Agent:019542f5-b3e7-1d02-0000-000000000042
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000010
+                platformCustomerId: user-a1b2c3
+                status: PENDING_APPROVAL
+                type: EXECUTE_QUOTE
+                quote:
+                  id: Quote:019542f5-b3e7-1d02-0000-000000000006
+                  status: PENDING
+                  expiresAt: '2025-10-03T15:00:30Z'
+                  createdAt: '2025-10-03T15:00:00Z'
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  sendingCurrency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                  receivingCurrency:
+                    code: INR
+                    name: Indian Rupee
+                    symbol: ₹
+                    decimals: 2
+                  totalSendingAmount: 50000
+                  totalReceivingAmount: 4625000
+                  exchangeRate: 92.5
+                  feesIncluded: 250
+                  transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                createdAt: '2025-10-03T15:00:00Z'
+                updatedAt: '2025-10-03T15:00:00Z'
+  responses:
+    '200':
+      description: Webhook received and acknowledged.
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

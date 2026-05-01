@@ -1,0 +1,18 @@
+type: object
+description: Optional restrictions that limit the agent to specific accounts or override policy per account.
+properties:
+  allowedAccountIds:
+    type:
+      - array
+      - 'null'
+    description: >-
+      If set, restricts the agent to operate only on the specified internal account IDs.
+      Null means the agent can access all accounts.
+    items:
+      type: string
+      example: Account:019542f5-b3e7-1d02-0000-000000000001
+  accountRules:
+    type: array
+    description: Per-account rules that override the agent's default policy for specific accounts.
+    items:
+      $ref: ./AgentAccountRule.yaml

@@ -27,6 +27,7 @@ enum:
   - INVITATION.CLAIMED
   - BULK_UPLOAD.COMPLETED
   - BULK_UPLOAD.FAILED
+  - AGENT_ACTION.PENDING_APPROVAL
   - TEST
 description: >-
   Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot

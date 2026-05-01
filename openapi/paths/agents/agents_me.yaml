@@ -1,0 +1,30 @@
+get:
+  summary: Get current agent
+  description: >
+    Retrieve the authenticated agent's own profile, policy, and current usage.
+    This endpoint is called by the agent software itself using its own credentials
+    (obtained via device code redemption) rather than platform credentials.
+  operationId: getAgentMe
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/Agent.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -32,14 +32,15 @@ An agent policy should answer four questions:
 
 ## Permissions
 
-Grid exposes explicit allowlists instead of broad agent access. Common permissions include:
+Grid exposes explicit allowlists instead of broad agent access. Available permissions are:
 
-- View balances and account details
-- View transaction history
-- Create external accounts
-- Create quotes
-- Execute withdrawals or quote-backed transfers
-- Fund or move value between allowed accounts
+| Permission | What it allows |
+|---|---|
+| `VIEW_TRANSACTIONS` | List and retrieve transactions and account balances |
+| `CREATE_TRANSFERS` | Initiate same-currency transfers |
+| `CREATE_QUOTES` | Create cross-currency quotes |
+| `EXECUTE_QUOTES` | Execute cross-currency quotes |
+| `MANAGE_EXTERNAL_ACCOUNTS` | Create and manage external accounts |
 
 These permissions are intentionally narrow and map to concrete Grid-backed actions rather than broad scopes such as "manage wallet."
 
@@ -72,8 +73,8 @@ Keep limits in the smallest currency unit used by Grid so comparisons are exact 
 
 Each action should resolve to one of two execution modes:
 
-- `auto`: Grid may execute the action immediately after policy validation.
-- `approval_required`: Grid creates a pending approval and dispatches it to your product for customer confirmation.
+- `AUTO`: Grid may execute the action immediately after policy validation.
+- `APPROVAL_REQUIRED`: Grid creates a pending approval and dispatches it to your product for customer confirmation.
 
 You can apply execution mode globally or per account. A practical pattern is to allow automatic execution for low-risk actions and require approvals for higher-value withdrawals or new destination setup.
 
@@ -106,22 +107,17 @@ For example, Grid stores and enforces a policy object shaped like:
 ```json
 {
   "permissions": [
-    "view_balances",
-    "view_transactions",
-    "create_external_accounts",
-    "execute_withdrawals"
+    "VIEW_TRANSACTIONS",
+    "CREATE_QUOTES",
+    "EXECUTE_QUOTES",
+    "MANAGE_EXTERNAL_ACCOUNTS"
   ],
-  "defaultExecutionMode": "approval_required",
+  "defaultExecutionMode": "APPROVAL_REQUIRED",
   "spendingLimits": {
-    "perTransaction": {
-      "amount": 50000,
-      "currency": "USD"
-    },
-    "daily": {
-      "amount": 200000,
-      "currency": "USD"
-    },
-    "dailyTransactionCount": 5
+    "currency": "USD",
+    "perTransactionLimit": 50000,
+    "dailyLimit": 200000,
+    "dailyTransactionLimit": 5
   },
   "accountRestrictions": {
     "allowedAccountIds": [
@@ -129,14 +125,14 @@ For example, Grid stores and enforces a policy object shaped like:
     ]
   },
   "approvalThresholds": {
-    "amount": 25000,
-    "currency": "USD"
+    "currency": "USD",
+    "amount": 25000
   }
 }
 ```
 
 <Info>
-Policy amounts use the smallest unit of the specified currency. For example, `50000` with `"currency": "USD"` means $500.00. If Grid compares across currencies or assets, it uses the current exchange rate at evaluation time.
+Policy amounts are integers in the smallest unit of the specified currency. For example, `50000` with `"currency": "USD"` means $500.00. When a transaction is denominated in a different currency, Grid converts using the current exchange rate at evaluation time.
 </Info>
 
 ## Practical guidance

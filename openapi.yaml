@@ -48,6 +48,10 @@ tags:
     description: Endpoints for discovering available payment rails, banks, and providers for a given country and currency corridor.
   - name: Embedded Wallet Auth
     description: Endpoints for registering and verifying end-user authentication credentials (email OTP, OAuth, passkey) used to sign Embedded Wallet actions.
+  - name: Agent Management
+    description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
+  - name: Agent Operations
+    description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
 paths:
   /config:
     get:
@@ -4319,7 +4323,1623 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents:
+    post:
+      summary: Create an agent
+      description: |
+        Create a new agent with a specified policy. Returns the created agent and a device code that must be redeemed by the agent software to complete installation.
+      operationId: createAgent
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCreateRequest'
+      responses:
+        '201':
+          description: Agent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCreateResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List agents
+      description: Retrieve a paginated list of agents for the authenticated platform.
+      operationId: listAgents
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+        - name: isPaused
+          in: query
+          description: Filter by paused status
+          required: false
+          schema:
+            type: boolean
+        - name: isConnected
+          in: query
+          description: Filter by connection status (whether the device code has been redeemed)
+          required: false
+          schema:
+            type: boolean
+        - name: createdAfter
+          in: query
+          description: Filter agents created after this timestamp (inclusive)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: createdBefore
+          in: query
+          description: Filter agents created before this timestamp (inclusive)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: updatedAfter
+          in: query
+          description: Filter agents updated after this timestamp (inclusive)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: updatedBefore
+          in: query
+          description: Filter agents updated before this timestamp (inclusive)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/approvals:
+    get:
+      summary: List agent transaction approval requests
+      description: |
+        Retrieve a paginated list of agent actions that require platform approval. Filter by `agentId` or `customerId` to scope results to a specific agent or customer. Approve or reject individual actions via `POST /agents/{agentId}/actions/{actionId}/approve` or `POST /agents/{agentId}/actions/{actionId}/reject`.
+      operationId: listAgentApprovals
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: agentId
+          in: query
+          description: Filter by agent ID
+          required: false
+          schema:
+            type: string
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          description: Filter by start date (inclusive) in ISO 8601 format
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          description: Filter by end date (inclusive) in ISO 8601 format
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          description: Order to sort results in
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentActionListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me:
+    get:
+      summary: Get current agent
+      description: |
+        Retrieve the authenticated agent's own profile, policy, and current usage. This endpoint is called by the agent software itself using its own credentials (obtained via device code redemption) rather than platform credentials.
+      operationId: getAgentMe
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get agent by ID
+      description: Retrieve an agent by its system-generated ID.
+      operationId: getAgentById
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update agent
+      description: Update an agent's name or paused state.
+      operationId: updateAgent
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentUpdateRequest'
+      responses:
+        '200':
+          description: Agent updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete agent
+      description: Permanently delete an agent. Connected agent software will lose access immediately.
+      operationId: deleteAgent
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Agent deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/policy:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: Update agent policy
+      description: |
+        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately.
+      operationId: updateAgentPolicy
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPolicyUpdateRequest'
+      responses:
+        '200':
+          description: Agent policy updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/device-codes:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Regenerate a device code
+      description: |
+        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. Any previously issued unredeemed device codes for this agent are invalidated.
+      operationId: regenerateAgentDeviceCode
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '201':
+          description: New device code generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeviceCode'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Agent already has an active connection and cannot regenerate a device code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/actions/{actionId}/approve:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: actionId
+        in: path
+        description: Unique identifier of the agent action to approve
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Approve an agent action
+      description: |
+        Approve a pending agent action, allowing Grid to proceed with execution. The action must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying operation (quote execution or transfer) and the action transitions to `APPROVED`.
+        For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
+        This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
+      operationId: approveAgentAction
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Action approved successfully. Returns the updated AgentAction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Bad request - Action cannot be approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent or action not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Action is not pending approval or has already been processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/actions/{actionId}/reject:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: actionId
+        in: path
+        description: Unique identifier of the agent action to reject
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reject an agent action
+      description: |
+        Reject a pending agent action, preventing execution. The action must have status `PENDING_APPROVAL`. Once rejected, the action transitions to `REJECTED` and the underlying operation is not executed.
+        This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
+      operationId: rejectAgentAction
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentActionRejectRequest'
+      responses:
+        '200':
+          description: Action rejected successfully. Returns the updated AgentAction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Bad request - Action cannot be rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Agent or action not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Action is not pending approval or has already been processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/device-codes/{code}/status:
+    parameters:
+      - name: code
+        in: path
+        description: The device code to check
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get device code status
+      description: |
+        Check whether a device code has been redeemed. Use this to poll for agent installation completion after creating an agent.
+      operationId: getAgentDeviceCodeStatus
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeviceCodeStatusResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Device code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/device-codes/{code}/redeem:
+    parameters:
+      - name: code
+        in: path
+        description: The device code to redeem
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Redeem device code
+      description: |
+        Redeem a device code to obtain agent credentials. This endpoint is called by the agent software during installation. On success, returns a Bearer access token that the agent uses for all subsequent API calls. The token is returned only once and must be stored securely.
+        This endpoint does not require platform authentication — the device code itself serves as proof of authorization.
+      operationId: redeemAgentDeviceCode
+      tags:
+        - Agent Management
+      security: []
+      responses:
+        '200':
+          description: Device code redeemed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeviceCodeRedeemResponse'
+        '400':
+          description: Bad request (e.g., code already redeemed or expired)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '404':
+          description: Device code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/transactions:
+    get:
+      summary: List agent transactions
+      description: |
+        Retrieve a paginated list of transactions for the authenticated agent's customer. Results are automatically scoped to the agent's associated customer — no customer filter is needed or accepted.
+      operationId: agentListTransactions
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: accountIdentifier
+          in: query
+          description: Filter by account identifier (matches either sender or receiver)
+          required: false
+          schema:
+            type: string
+        - name: senderAccountIdentifier
+          in: query
+          description: Filter by sender account identifier
+          required: false
+          schema:
+            type: string
+        - name: receiverAccountIdentifier
+          in: query
+          description: Filter by receiver account identifier
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by transaction status
+          required: false
+          schema:
+            $ref: '#/components/schemas/TransactionStatus'
+        - name: type
+          in: query
+          description: Filter by transaction type
+          required: false
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+        - name: reference
+          in: query
+          description: Filter by reference
+          required: false
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          description: Filter by start date (inclusive) in ISO 8601 format
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          description: Filter by end date (inclusive) in ISO 8601 format
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          description: Order to sort results in
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/transactions/{transactionId}:
+    parameters:
+      - name: transactionId
+        in: path
+        description: Unique identifier of the transaction
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get agent transaction by ID
+      description: |
+        Retrieve a specific transaction belonging to the authenticated agent's customer. Returns 404 if the transaction exists but belongs to a different customer.
+      operationId: agentGetTransaction
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionOneOf'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/quotes:
+    post:
+      summary: Create a transfer quote
+      description: |
+        Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
+        If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
+      operationId: agentCreateQuote
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        '201':
+          description: Transfer quote created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: Bad request - Missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent policy does not permit this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '412':
+          description: Counterparty doesn't support UMA version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error412'
+        '424':
+          description: Counterparty issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error424'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/quotes/{quoteId}:
+    parameters:
+      - name: quoteId
+        in: path
+        description: ID of the quote to retrieve
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get agent quote by ID
+      description: |
+        Retrieve a quote created by the authenticated agent. Returns 404 if the quote exists but was not created by this agent.
+      operationId: agentGetQuote
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/quotes/{quoteId}/execute:
+    parameters:
+      - name: quoteId
+        in: path
+        required: true
+        description: The unique identifier of the quote to execute
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Execute a quote
+      description: |
+        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+        Once executed, the quote cannot be cancelled.
+      operationId: agentExecuteQuote
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet and base64-encoded. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+      responses:
+        '200':
+          description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Bad request - Quote cannot be executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Quote already executed, expired, or in invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/actions:
+    get:
+      summary: List agent's own actions
+      description: |
+        Retrieve a paginated list of actions submitted by the authenticated agent. Use this to poll for approval decisions after submitting an action that requires approval.
+      operationId: agentListActions
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by action status
+          required: false
+          schema:
+            $ref: '#/components/schemas/AgentActionStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentActionListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/actions/{actionId}:
+    parameters:
+      - name: actionId
+        in: path
+        description: Unique identifier of the agent action
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an agent action
+      description: |
+        Retrieve a specific action submitted by the authenticated agent. Poll this endpoint after submitting an action that requires approval to check whether it has been approved, rejected, or has failed.
+      operationId: agentGetAction
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Action not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/transfer-in:
+    post:
+      summary: Create a transfer-in
+      description: |
+        Transfer funds from an external account to an internal account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
+        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the payment instructions on the internal account to deposit funds.
+      operationId: agentCreateTransferIn
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferInRequest'
+            examples:
+              transferIn:
+                summary: Transfer from external to internal account
+                value:
+                  source:
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  destination:
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  amount: 12550
+      responses:
+        '201':
+          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/transfer-out:
+    post:
+      summary: Create a transfer-out
+      description: |
+        Transfer funds from an internal account to an external account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
+        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+      operationId: agentCreateTransferOut
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferOutRequest'
+            examples:
+              transferOut:
+                summary: Transfer from internal to external account
+                value:
+                  source:
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  destination:
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  amount: 12550
+      responses:
+        '201':
+          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/internal-accounts:
+    get:
+      summary: List agent's internal accounts
+      description: |
+        Retrieve the internal accounts belonging to the customer this agent operates on behalf of. Use this to discover available source accounts for transfers and quotes, and to verify which accounts are accessible under the agent's `accountRestrictions` policy.
+      operationId: agentListInternalAccounts
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: currency
+          in: query
+          description: Filter by currency code
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts.
+          required: false
+          schema:
+            $ref: '#/components/schemas/InternalAccountType'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccountListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/external-accounts:
+    get:
+      summary: List agent external accounts
+      description: |
+        Retrieve a paginated list of external accounts belonging to the authenticated agent's customer. Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy.
+      operationId: agentListExternalAccounts
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: currency
+          in: query
+          description: Filter by currency code
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccountListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Add an external account
+      description: |
+        Register a new external bank account or wallet for the authenticated agent's customer. Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy. The `customerId` field is optional and will be inferred from the agent's associated customer if omitted.
+      operationId: agentCreateExternalAccount
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAccountCreateRequest'
+            examples:
+              usBankAccount:
+                summary: Create external US bank account
+                value:
+                  currency: USD
+                  accountInfo:
+                    accountType: USD_ACCOUNT
+                    accountNumber: '12345678901'
+                    routingNumber: '123456789'
+                    bankAccountType: CHECKING
+                    bankName: Chase Bank
+                    beneficiary:
+                      beneficiaryType: INDIVIDUAL
+                      fullName: John Doe
+                      birthDate: '1990-01-15'
+                      nationality: US
+                      address:
+                        line1: 123 Main Street
+                        city: San Francisco
+                        state: CA
+                        postalCode: '94105'
+                        country: US
+              sparkWallet:
+                summary: Create external Spark wallet
+                value:
+                  currency: BTC
+                  accountInfo:
+                    accountType: SPARK_WALLET
+                    address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+      responses:
+        '201':
+          description: External account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - External account already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/external-accounts/{externalAccountId}:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: System-generated unique external account identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get agent external account by ID
+      description: |
+        Retrieve an external account belonging to the authenticated agent's customer. Returns 404 if the account exists but belongs to a different customer. Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy.
+      operationId: agentGetExternalAccount
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete agent external account
+      description: |
+        Delete an external account belonging to the authenticated agent's customer. Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy.
+      operationId: agentDeleteExternalAccount
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '204':
+          description: External account deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
+  agent-action:
+    post:
+      summary: Agent action pending approval webhook
+      description: |
+        Fired when an agent submits an action that requires platform approval before Grid will execute it. Use this to send a push notification to the customer so they can review and approve or reject the action in your app.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        The payload contains the full `AgentAction` — including the embedded quote or transfer details — so you can render the approval UI without a second API call. Approve or reject via `POST /agents/{agentId}/actions/{actionId}/approve` or `POST /agents/{agentId}/actions/{actionId}/reject`.
+      operationId: agentActionWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentActionWebhook'
+            examples:
+              pendingApproval:
+                summary: Agent action pending approval
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000020
+                  type: AGENT_ACTION.PENDING_APPROVAL
+                  timestamp: '2025-10-03T15:00:00Z'
+                  data:
+                    id: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+                    agentId: Agent:019542f5-b3e7-1d02-0000-000000000042
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000010
+                    platformCustomerId: user-a1b2c3
+                    status: PENDING_APPROVAL
+                    type: EXECUTE_QUOTE
+                    quote:
+                      id: Quote:019542f5-b3e7-1d02-0000-000000000006
+                      status: PENDING
+                      expiresAt: '2025-10-03T15:00:30Z'
+                      createdAt: '2025-10-03T15:00:00Z'
+                      source:
+                        sourceType: ACCOUNT
+                        accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                      destination:
+                        destinationType: ACCOUNT
+                        accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                      sendingCurrency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                      receivingCurrency:
+                        code: INR
+                        name: Indian Rupee
+                        symbol: ₹
+                        decimals: 2
+                      totalSendingAmount: 50000
+                      totalReceivingAmount: 4625000
+                      exchangeRate: 92.5
+                      feesIncluded: 250
+                      transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                    createdAt: '2025-10-03T15:00:00Z'
+                    updatedAt: '2025-10-03T15:00:00Z'
+      responses:
+        '200':
+          description: Webhook received and acknowledged.
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
   incoming-payment:
     post:
       summary: Incoming payment webhook and approval mechanism
@@ -5136,6 +6756,10 @@ components:
       type: http
       scheme: basic
       description: API token authentication using format `<api token id>:<api client secret>`
+    AgentAuth:
+      type: http
+      scheme: bearer
+      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/{code}/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
     WebhookSignature:
       type: apiKey
       in: header
@@ -12369,6 +13993,10 @@ components:
           format: date-time
           description: When the transaction was last updated
           example: '2025-08-15T14:30:00Z'
+        agentId:
+          type: string
+          description: If this transaction was initiated by an agent, the system-generated ID of that agent. Absent for platform-initiated transactions.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         description:
           type: string
           description: Optional memo or description for the payment
@@ -14195,6 +15823,507 @@ components:
           description: List of active authentication sessions for the internal account.
           items:
             $ref: '#/components/schemas/AuthSession'
+    AgentPermission:
+      type: string
+      enum:
+        - VIEW_TRANSACTIONS
+        - CREATE_TRANSFERS
+        - CREATE_QUOTES
+        - EXECUTE_QUOTES
+        - MANAGE_EXTERNAL_ACCOUNTS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_TRANSFERS: Can initiate same-currency transfers. CREATE_QUOTES: Can create cross-currency quotes. EXECUTE_QUOTES: Can execute cross-currency quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+    AgentExecutionMode:
+      type: string
+      enum:
+        - AUTO
+        - APPROVAL_REQUIRED
+      description: 'Execution mode controlling whether agent actions require human approval. AUTO: The agent can execute actions autonomously without explicit approval. APPROVAL_REQUIRED: All agent actions require explicit human approval before execution.'
+    AgentSpendingLimits:
+      type: object
+      description: Spending limits that cap the agent's transaction amounts and frequency. All amount fields are integers in the smallest unit of the specified currency. When a transaction is denominated in a different currency, Grid converts using the exchange rate at evaluation time.
+      required:
+        - currency
+        - perTransactionLimit
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that all amount limits are denominated in.
+          example: USD
+        perTransactionLimit:
+          type: integer
+          description: Maximum amount the agent can transfer in a single transaction.
+          example: 50000
+        dailyLimit:
+          type:
+            - integer
+            - 'null'
+          description: Maximum total amount the agent can transfer per day. Null means no daily limit.
+          example: 500000
+        dailyTransactionLimit:
+          type: integer
+          description: Maximum number of transactions the agent can initiate per day.
+          example: 10
+        monthlyLimit:
+          type:
+            - integer
+            - 'null'
+          description: Maximum total amount the agent can transfer per month. Null means no monthly limit.
+          example: 5000000
+    AgentAccountRule:
+      type: object
+      description: Per-account policy override that takes precedence over the agent's default policy for a specific account.
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: The internal account ID this rule applies to.
+          example: Account:019542f5-b3e7-1d02-0000-000000000001
+        executionMode:
+          $ref: '#/components/schemas/AgentExecutionMode'
+        perTransactionLimit:
+          type:
+            - integer
+            - 'null'
+          description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+          example: 10000
+    AgentAccountRestrictions:
+      type: object
+      description: Optional restrictions that limit the agent to specific accounts or override policy per account.
+      properties:
+        allowedAccountIds:
+          type:
+            - array
+            - 'null'
+          description: If set, restricts the agent to operate only on the specified internal account IDs. Null means the agent can access all accounts.
+          items:
+            type: string
+            example: Account:019542f5-b3e7-1d02-0000-000000000001
+        accountRules:
+          type: array
+          description: Per-account rules that override the agent's default policy for specific accounts.
+          items:
+            $ref: '#/components/schemas/AgentAccountRule'
+    AgentApprovalThresholds:
+      type: object
+      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+          example: USD
+        amount:
+          type:
+            - integer
+            - 'null'
+          description: If set, any transaction above this amount (in the smallest unit of the specified currency) will require explicit approval even when the agent's defaultExecutionMode is AUTO. Null means no threshold override.
+          example: 100000
+    AgentPolicy:
+      type: object
+      description: Policy governing what an agent can do, how it executes actions, and its spending boundaries.
+      required:
+        - permissions
+        - defaultExecutionMode
+        - spendingLimits
+      properties:
+        permissions:
+          type: array
+          description: List of permissions granted to the agent.
+          items:
+            $ref: '#/components/schemas/AgentPermission'
+        defaultExecutionMode:
+          $ref: '#/components/schemas/AgentExecutionMode'
+        spendingLimits:
+          $ref: '#/components/schemas/AgentSpendingLimits'
+        accountRestrictions:
+          $ref: '#/components/schemas/AgentAccountRestrictions'
+        approvalThresholds:
+          $ref: '#/components/schemas/AgentApprovalThresholds'
+    AgentUsage:
+      type: object
+      description: Real-time counters tracking the agent's spending and transaction activity against its policy limits.
+      required:
+        - dailyTransactionCount
+        - dailySpend
+        - monthlySpend
+      properties:
+        dailyTransactionCount:
+          type: integer
+          description: Number of transactions initiated by the agent today.
+          example: 3
+        dailySpend:
+          type: integer
+          description: Total amount spent by the agent today, in the smallest unit of the policy's `spendingLimits.currency`.
+          example: 150000
+        dailyResetDate:
+          type: string
+          format: date
+          description: The date when daily usage counters will reset.
+          example: '2025-07-22'
+        monthlySpend:
+          type: integer
+          description: Total amount spent by the agent this month, in the smallest unit of the policy's `spendingLimits.currency`.
+          example: 750000
+        monthlyResetMonth:
+          type: string
+          description: The year-month (YYYY-MM) when monthly usage counters will reset.
+          example: 2025-08
+    Agent:
+      type: object
+      description: A programmatic agent with scoped permissions and a spending policy, used to automate payment workflows.
+      required:
+        - id
+        - name
+        - customerId
+        - isPaused
+        - isConnected
+        - policy
+        - usage
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the agent.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          description: Human-readable name for the agent.
+          example: Payroll Automation Agent
+        customerId:
+          type: string
+          description: The ID of the customer this agent operates on behalf of.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        isPaused:
+          type: boolean
+          description: Whether the agent is currently paused. Paused agents cannot initiate any actions.
+          example: false
+        isConnected:
+          type: boolean
+          description: Whether the agent has been installed and connected (i.e., its device code has been redeemed).
+          example: true
+        policy:
+          $ref: '#/components/schemas/AgentPolicy'
+        usage:
+          $ref: '#/components/schemas/AgentUsage'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2025-07-21T17:32:28Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2025-07-21T17:32:28Z'
+    AgentListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of agents matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/Agent'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of agents matching the criteria (excluding pagination).
+    AgentCreateRequest:
+      type: object
+      required:
+        - name
+        - customerId
+        - policy
+      properties:
+        name:
+          type: string
+          description: Human-readable name to identify the agent.
+          example: Payroll Automation Agent
+        customerId:
+          type: string
+          description: The ID of the customer this agent will operate on behalf of.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        policy:
+          $ref: '#/components/schemas/AgentPolicy'
+    AgentDeviceCode:
+      type: object
+      required:
+        - code
+        - agentId
+        - expiresAt
+        - redeemed
+      properties:
+        code:
+          type: string
+          description: Human-readable device code used to install and connect the agent software.
+          example: GRID-AGENT-X7K9-M2P4
+        agentId:
+          type: string
+          description: The agent this device code belongs to.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000001
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp when this device code expires.
+          example: '2025-07-22T17:32:28Z'
+        redeemed:
+          type: boolean
+          description: Whether this device code has already been redeemed by the agent.
+          example: false
+    AgentCreateResponse:
+      type: object
+      description: Response returned when an agent is created, including the agent and a device code for installation.
+      required:
+        - agent
+        - deviceCode
+      properties:
+        agent:
+          $ref: '#/components/schemas/Agent'
+        deviceCode:
+          $ref: '#/components/schemas/AgentDeviceCode'
+    AgentActionStatus:
+      type: string
+      enum:
+        - PENDING_APPROVAL
+        - APPROVED
+        - REJECTED
+        - FAILED
+      description: |
+        Status of an agent action.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
+        | `APPROVED` | Approved by the platform; execution is in progress or completed |
+        | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
+        | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+    AgentActionType:
+      type: string
+      enum:
+        - EXECUTE_QUOTE
+        - TRANSFER_OUT
+        - TRANSFER_IN
+      description: |
+        The type of action the agent is requesting.
+
+        | Type | Description |
+        |------|-------------|
+        | `EXECUTE_QUOTE` | Execute a cross-currency quote |
+        | `TRANSFER_OUT` | Transfer from an internal account to an external account |
+        | `TRANSFER_IN` | Transfer from an external account to an internal account |
+    AgentTransferDetails:
+      type: object
+      description: Details of a transfer-type agent action (TRANSFER_OUT or TRANSFER_IN).
+      required:
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Transfer amount in the smallest unit of the specified currency.
+          example: 50000
+        currency:
+          type: string
+          description: ISO 4217 currency code for the transfer amount.
+          example: USD
+        sourceAccountId:
+          type: string
+          description: ID of the source account (internal or external).
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        destinationAccountId:
+          type: string
+          description: ID of the destination account (internal or external).
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+    AgentAction:
+      type: object
+      description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
+      required:
+        - id
+        - agentId
+        - customerId
+        - platformCustomerId
+        - status
+        - type
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for this action.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        agentId:
+          type: string
+          description: The agent that submitted this action.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        customerId:
+          type: string
+          description: The customer on whose behalf the action was submitted.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000010
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the customer.
+          example: user-a1b2c3
+        status:
+          $ref: '#/components/schemas/AgentActionStatus'
+        type:
+          $ref: '#/components/schemas/AgentActionType'
+        quote:
+          allOf:
+            - $ref: '#/components/schemas/Quote'
+          description: The quote being executed. Populated for `EXECUTE_QUOTE` actions; absent for transfer actions. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
+        transferDetails:
+          allOf:
+            - $ref: '#/components/schemas/AgentTransferDetails'
+          description: Details of the transfer being requested. Populated for `TRANSFER_OUT` and `TRANSFER_IN` actions; absent for `EXECUTE_QUOTE` actions.
+        transaction:
+          allOf:
+            - $ref: '#/components/schemas/TransactionOneOf'
+          description: The resulting transaction, populated once the action has been approved and execution has begun. Absent while the action is `PENDING_APPROVAL` or `REJECTED`.
+        rejectionReason:
+          type: string
+          description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
+          example: Transaction amount exceeds customer's current risk limit.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the action was submitted by the agent.
+          example: '2025-10-03T15:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the action was last updated.
+          example: '2025-10-03T15:02:00Z'
+    AgentActionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of agent actions matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/AgentAction'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of actions matching the criteria (excluding pagination).
+    AgentUpdateRequest:
+      type: object
+      description: Partial update to an agent's basic fields. At least one field must be provided.
+      properties:
+        name:
+          type: string
+          description: Updated name for the agent.
+          example: Updated Payroll Agent
+        isPaused:
+          type: boolean
+          description: Set to true to pause the agent or false to resume it.
+          example: true
+    AgentSpendingLimitsUpdate:
+      type: object
+      description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that all amount limits are denominated in. Updating this recasts all existing limits into the new currency denomination.
+          example: USD
+        perTransactionLimit:
+          type: integer
+          description: Maximum amount per transaction.
+          example: 50000
+        dailyLimit:
+          type:
+            - integer
+            - 'null'
+          description: Maximum daily spend. Set to null to remove the daily limit.
+          example: 500000
+        dailyTransactionLimit:
+          type: integer
+          description: Maximum number of transactions per day.
+          example: 10
+        monthlyLimit:
+          type:
+            - integer
+            - 'null'
+          description: Maximum monthly spend. Set to null to remove the monthly limit.
+          example: 5000000
+    AgentPolicyUpdateRequest:
+      type: object
+      description: Partial update to an agent's policy. Only provided fields will be updated; omitted fields retain their current values.
+      properties:
+        permissions:
+          type: array
+          description: Updated list of permissions. Replaces the entire permissions list when provided.
+          items:
+            $ref: '#/components/schemas/AgentPermission'
+        defaultExecutionMode:
+          $ref: '#/components/schemas/AgentExecutionMode'
+        spendingLimits:
+          $ref: '#/components/schemas/AgentSpendingLimitsUpdate'
+        accountRestrictions:
+          $ref: '#/components/schemas/AgentAccountRestrictions'
+        approvalThresholds:
+          $ref: '#/components/schemas/AgentApprovalThresholds'
+    AgentActionRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
+          example: Transaction amount exceeds customer's current risk limit.
+    AgentDeviceCodeStatusResponse:
+      type: object
+      required:
+        - code
+        - redeemed
+      properties:
+        code:
+          type: string
+          description: The device code.
+          example: GRID-AGENT-X7K9-M2P4
+        redeemed:
+          type: boolean
+          description: Whether this device code has been redeemed.
+          example: false
+    AgentDeviceCodeRedeemResponse:
+      type: object
+      required:
+        - agentId
+        - agentName
+        - accessToken
+        - policy
+      properties:
+        agentId:
+          type: string
+          description: The agent's system-generated ID.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000001
+        agentName:
+          type: string
+          description: The agent's name.
+          example: Payroll Automation Agent
+        accessToken:
+          type: string
+          description: 'Bearer token used to authenticate all subsequent API calls as this agent. Pass as `Authorization: Bearer <accessToken>`. This token is returned only once and must be stored securely — it cannot be retrieved again.'
+          example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
+        policy:
+          $ref: '#/components/schemas/AgentPolicy'
     WebhookType:
       type: string
       enum:
@@ -14225,6 +16354,7 @@ components:
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
+        - AGENT_ACTION.PENDING_APPROVAL
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -14246,6 +16376,19 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the webhook was sent
           example: '2025-08-15T14:32:00Z'
+    AgentActionWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/AgentAction'
+            type:
+              type: string
+              enum:
+                - AGENT_ACTION.PENDING_APPROVAL
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:

@@ -1382,6 +1382,18 @@ ul#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
   background-image: url('/images/icons/lock.svg') !important;
 }
 
+/* Agent Management */
+#sidebar-group > li[data-title="Agent Management"] > button::before,
+ul#sidebar-group > li[data-title="Agent Management"] > button::before {
+  background-image: url('/images/icons/agent.svg') !important;
+}
+
+/* Agent Operations */
+#sidebar-group > li[data-title="Agent Operations"] > button::before,
+ul#sidebar-group > li[data-title="Agent Operations"] > button::before {
+  background-image: url('/images/icons/prompt.svg') !important;
+}
+
 
 /* ===========================================
    Main Content Area

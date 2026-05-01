@@ -1,0 +1,20 @@
+type: object
+description: Policy governing what an agent can do, how it executes actions, and its spending boundaries.
+required:
+  - permissions
+  - defaultExecutionMode
+  - spendingLimits
+properties:
+  permissions:
+    type: array
+    description: List of permissions granted to the agent.
+    items:
+      $ref: ./AgentPermission.yaml
+  defaultExecutionMode:
+    $ref: ./AgentExecutionMode.yaml
+  spendingLimits:
+    $ref: ./AgentSpendingLimits.yaml
+  accountRestrictions:
+    $ref: ./AgentAccountRestrictions.yaml
+  approvalThresholds:
+    $ref: ./AgentApprovalThresholds.yaml

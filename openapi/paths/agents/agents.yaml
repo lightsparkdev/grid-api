@@ -1,0 +1,136 @@
+post:
+  summary: Create an agent
+  description: >
+    Create a new agent with a specified policy. Returns the created agent and a device code
+    that must be redeemed by the agent software to complete installation.
+  operationId: createAgent
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentCreateRequest.yaml
+  responses:
+    '201':
+      description: Agent created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCreateResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List agents
+  description: Retrieve a paginated list of agents for the authenticated platform.
+  operationId: listAgents
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: Filter by customer ID
+      required: false
+      schema:
+        type: string
+    - name: isPaused
+      in: query
+      description: Filter by paused status
+      required: false
+      schema:
+        type: boolean
+    - name: isConnected
+      in: query
+      description: Filter by connection status (whether the device code has been redeemed)
+      required: false
+      schema:
+        type: boolean
+    - name: createdAfter
+      in: query
+      description: Filter agents created after this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: createdBefore
+      in: query
+      description: Filter agents created before this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: updatedAfter
+      in: query
+      description: Filter agents updated after this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: updatedBefore
+      in: query
+      description: Filter agents updated before this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

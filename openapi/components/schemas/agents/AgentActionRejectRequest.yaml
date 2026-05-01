@@ -1,0 +1,6 @@
+type: object
+properties:
+  reason:
+    type: string
+    description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
+    example: Transaction amount exceeds customer's current risk limit.

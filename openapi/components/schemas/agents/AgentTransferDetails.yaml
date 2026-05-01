@@ -1,0 +1,25 @@
+type: object
+description: Details of a transfer-type agent action (TRANSFER_OUT or TRANSFER_IN).
+required:
+  - amount
+  - currency
+  - sourceAccountId
+  - destinationAccountId
+properties:
+  amount:
+    type: integer
+    format: int64
+    description: Transfer amount in the smallest unit of the specified currency.
+    example: 50000
+  currency:
+    type: string
+    description: ISO 4217 currency code for the transfer amount.
+    example: USD
+  sourceAccountId:
+    type: string
+    description: ID of the source account (internal or external).
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  destinationAccountId:
+    type: string
+    description: ID of the destination account (internal or external).
+    example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965

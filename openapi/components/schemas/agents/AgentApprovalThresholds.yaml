@@ -1,0 +1,19 @@
+type: object
+description: >-
+  Thresholds that force approval for high-value transactions, overriding the default execution mode.
+  When a transaction is denominated in a different currency than the threshold, Grid converts using
+  the exchange rate at evaluation time.
+properties:
+  currency:
+    type: string
+    description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+    example: USD
+  amount:
+    type:
+      - integer
+      - 'null'
+    description: >-
+      If set, any transaction above this amount (in the smallest unit of the specified currency)
+      will require explicit approval even when the agent's defaultExecutionMode is AUTO.
+      Null means no threshold override.
+    example: 100000

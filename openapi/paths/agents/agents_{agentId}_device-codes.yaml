@@ -1,0 +1,56 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Regenerate a device code
+  description: >
+    Generate a new device code for an existing agent. Use this when the original
+    device code has expired before being redeemed, or when the agent software needs
+    to be reinstalled. Any previously issued unredeemed device codes for this agent
+    are invalidated.
+  operationId: regenerateAgentDeviceCode
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '201':
+      description: New device code generated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeviceCode.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Agent already has an active connection and cannot regenerate a device code
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

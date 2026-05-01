@@ -1,0 +1,42 @@
+parameters:
+  - name: transactionId
+    in: path
+    description: Unique identifier of the transaction
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get agent transaction by ID
+  description: >
+    Retrieve a specific transaction belonging to the authenticated agent's customer.
+    Returns 404 if the transaction exists but belongs to a different customer.
+  operationId: agentGetTransaction
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

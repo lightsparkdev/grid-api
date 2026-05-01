@@ -1,0 +1,51 @@
+get:
+  summary: List agent's own actions
+  description: >
+    Retrieve a paginated list of actions submitted by the authenticated agent.
+    Use this to poll for approval decisions after submitting an action that requires approval.
+  operationId: agentListActions
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: status
+      in: query
+      description: Filter by action status
+      required: false
+      schema:
+        $ref: ../../components/schemas/agents/AgentActionStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentActionListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

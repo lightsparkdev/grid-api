@@ -1,0 +1,99 @@
+parameters:
+  - name: quoteId
+    in: path
+    required: true
+    description: The unique identifier of the quote to execute
+    schema:
+      type: string
+    example: Quote:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Execute a quote
+  description: >
+    Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES
+    permission in the agent's policy.
+
+    If the agent's policy requires approval for this amount (based on execution mode
+    or approval thresholds), the transaction will be created in a pending state and
+    must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+
+    Once executed, the quote cannot be cancelled.
+  operationId: agentExecuteQuote
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple times,
+        the server will return the same response as the first request.
+      schema:
+        type: string
+        example: <uuid>
+    - name: Grid-Wallet-Signature
+      in: header
+      required: false
+      description: >-
+        Signature over the `payloadToSign` returned in the quote's
+        `paymentInstructions[].accountOrWalletInfo` entry, produced with the
+        session private key of a verified authentication credential on the
+        source Embedded Wallet and base64-encoded. Required when the quote's
+        source is an internal account of type `EMBEDDED_WALLET`; ignored for
+        other source types.
+      schema:
+        type: string
+      example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+  responses:
+    '200':
+      description: >-
+        Action submitted successfully. If the agent's policy requires approval, the returned
+        `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the
+        policy permits automatic execution, status will be `APPROVED` and `transaction` will
+        be populated. Note: if approval is required, the underlying quote may expire before
+        the platform approves — in that case the action will transition to `FAILED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '400':
+      description: Bad request - Quote cannot be executed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: >-
+        Unauthorized. Also returned when the quote's source is an internal
+        account of type `EMBEDDED_WALLET` and the provided
+        `Grid-Wallet-Signature` header is missing, malformed, or does not
+        match the quote's `payloadToSign`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Quote not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Quote already executed, expired, or in invalid state
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
