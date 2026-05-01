@@ -248,6 +248,8 @@ paths:
     $ref: paths/agents/agents_me_transfer-in.yaml
   /agents/me/transfer-out:
     $ref: paths/agents/agents_me_transfer-out.yaml
+  /agents/me/internal-accounts:
+    $ref: paths/agents/agents_me_internal-accounts.yaml
   /agents/me/external-accounts:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
