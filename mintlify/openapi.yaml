@@ -10357,7 +10357,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10568,7 +10567,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10622,6 +10620,7 @@ components:
         - beneficiaryType
         - countryOfResidence
         - fullName
+        - phoneNumber
       properties:
         beneficiaryType:
           type: string
@@ -10672,7 +10671,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -10725,7 +10723,6 @@ components:
       required:
         - beneficiaryType
         - address
-        - countryOfResidence
         - fullName
         - phoneNumber
       properties:
@@ -10778,7 +10775,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
