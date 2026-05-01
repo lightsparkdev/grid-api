@@ -1,3 +1,4 @@
+title: Agent Policy Update Request
 type: object
 description: >-
   Partial update to an agent's policy. Only provided fields will be updated;

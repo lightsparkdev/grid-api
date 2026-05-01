@@ -1,3 +1,4 @@
+title: Agent Create Response
 type: object
 description: Response returned when an agent is created, including the agent and a device code for installation.
 required:

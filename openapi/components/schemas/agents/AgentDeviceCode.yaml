@@ -1,3 +1,4 @@
+title: Agent Device Code
 type: object
 required:
   - code

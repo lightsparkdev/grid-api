@@ -15612,6 +15612,7 @@ components:
         - APPROVAL_REQUIRED
       description: 'Execution mode controlling whether agent actions require human approval. AUTO: The agent can execute actions autonomously without explicit approval. APPROVAL_REQUIRED: All agent actions require explicit human approval before execution.'
     AgentSpendingLimits:
+      title: Agent Spending Limits
       type: object
       description: Spending limits that cap the agent's transaction amounts and frequency. All amount fields are integers in the smallest unit of the specified currency. When a transaction is denominated in a different currency, Grid converts using the exchange rate at evaluation time.
       required:
@@ -15643,6 +15644,7 @@ components:
           description: Maximum total amount the agent can transfer per month. Null means no monthly limit.
           example: 5000000
     AgentAccountRule:
+      title: Agent Account Rule
       type: object
       description: Per-account policy override that takes precedence over the agent's default policy for a specific account.
       required:
@@ -15661,6 +15663,7 @@ components:
           description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
           example: 10000
     AgentAccountRestrictions:
+      title: Agent Account Restrictions
       type: object
       description: Optional restrictions that limit the agent to specific accounts or override policy per account.
       properties:
@@ -15678,6 +15681,7 @@ components:
           items:
             $ref: '#/components/schemas/AgentAccountRule'
     AgentApprovalThresholds:
+      title: Agent Approval Thresholds
       type: object
       description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
       properties:
@@ -15692,6 +15696,7 @@ components:
           description: If set, any transaction above this amount (in the smallest unit of the specified currency) will require explicit approval even when the agent's defaultExecutionMode is AUTO. Null means no threshold override.
           example: 100000
     AgentPolicy:
+      title: Agent Policy
       type: object
       description: Policy governing what an agent can do, how it executes actions, and its spending boundaries.
       required:
@@ -15713,6 +15718,7 @@ components:
         approvalThresholds:
           $ref: '#/components/schemas/AgentApprovalThresholds'
     AgentUsage:
+      title: Agent Usage
       type: object
       description: Real-time counters tracking the agent's spending and transaction activity against its policy limits.
       required:
@@ -15742,6 +15748,7 @@ components:
           description: The year-month (YYYY-MM) when monthly usage counters will reset.
           example: 2025-08
     Agent:
+      title: Agent
       type: object
       description: A programmatic agent with scoped permissions and a spending policy, used to automate payment workflows.
       required:
@@ -15790,6 +15797,7 @@ components:
           description: Last update timestamp.
           example: '2025-07-21T17:32:28Z'
     AgentListResponse:
+      title: Agent List Response
       type: object
       required:
         - data
@@ -15810,6 +15818,7 @@ components:
           type: integer
           description: Total number of agents matching the criteria (excluding pagination).
     AgentCreateRequest:
+      title: Agent Create Request
       type: object
       required:
         - name
@@ -15827,6 +15836,7 @@ components:
         policy:
           $ref: '#/components/schemas/AgentPolicy'
     AgentDeviceCode:
+      title: Agent Device Code
       type: object
       required:
         - code
@@ -15852,6 +15862,7 @@ components:
           description: Whether this device code has already been redeemed by the agent.
           example: false
     AgentCreateResponse:
+      title: Agent Create Response
       type: object
       description: Response returned when an agent is created, including the agent and a device code for installation.
       required:
@@ -15863,6 +15874,7 @@ components:
         deviceCode:
           $ref: '#/components/schemas/AgentDeviceCode'
     AgentUpdateRequest:
+      title: Agent Update Request
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
       properties:
@@ -15875,6 +15887,7 @@ components:
           description: Set to true to pause the agent or false to resume it.
           example: true
     AgentSpendingLimitsUpdate:
+      title: Agent Spending Limits Update
       type: object
       description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
       properties:
@@ -15903,6 +15916,7 @@ components:
           description: Maximum monthly spend. Set to null to remove the monthly limit.
           example: 5000000
     AgentPolicyUpdateRequest:
+      title: Agent Policy Update Request
       type: object
       description: Partial update to an agent's policy. Only provided fields will be updated; omitted fields retain their current values.
       properties:
@@ -15920,6 +15934,7 @@ components:
         approvalThresholds:
           $ref: '#/components/schemas/AgentApprovalThresholds'
     AgentDeviceCodeStatusResponse:
+      title: Agent Device Code Status
       type: object
       required:
         - code
@@ -15934,6 +15949,7 @@ components:
           description: Whether this device code has been redeemed.
           example: false
     AgentDeviceCodeRedeemResponse:
+      title: Agent Device Code Redeem Response
       type: object
       required:
         - agentId

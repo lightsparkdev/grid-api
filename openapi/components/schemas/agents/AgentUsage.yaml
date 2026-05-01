@@ -1,3 +1,4 @@
+title: Agent Usage
 type: object
 description: Real-time counters tracking the agent's spending and transaction activity against its policy limits.
 required:

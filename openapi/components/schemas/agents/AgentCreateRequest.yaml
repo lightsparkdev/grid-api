@@ -1,3 +1,4 @@
+title: Agent Create Request
 type: object
 required:
   - name

@@ -1,3 +1,4 @@
+title: Agent Update Request
 type: object
 description: Partial update to an agent's basic fields. At least one field must be provided.
 properties:
