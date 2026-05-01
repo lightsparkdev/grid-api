@@ -15,6 +15,7 @@ servers:
     description: Production server
 security:
   - BasicAuth: []
+  - AgentAuth: []
 tags:
   - name: Platform Configuration
     description: Platform configuration endpoints for managing global settings. You can also configure these settings in the Grid dashboard.
@@ -5288,7 +5289,7 @@ paths:
       summary: Execute a quote
       description: |
         Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy.
-        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
         Once executed, the quote cannot be cancelled.
       operationId: agentExecuteQuote
       tags:
@@ -5452,7 +5453,7 @@ paths:
       summary: Create a transfer-in
       description: |
         Transfer funds from an external account to an internal account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
         This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the payment instructions on the internal account to deposit funds.
       operationId: agentCreateTransferIn
       tags:
@@ -5525,7 +5526,7 @@ paths:
       summary: Create a transfer-out
       description: |
         Transfer funds from an internal account to an external account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/transactions/{transactionId}/approve`.
+        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
       operationId: agentCreateTransferOut
       tags:
         - Agent Operations

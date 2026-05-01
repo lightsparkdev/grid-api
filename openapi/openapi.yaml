@@ -279,3 +279,4 @@ webhooks:
     $ref: webhooks/verification-update.yaml
 security:
   - BasicAuth: []
+  - AgentAuth: []
