@@ -1,4 +1,3 @@
-title: Agent Spending Limits Update
 type: object
 description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
 properties:

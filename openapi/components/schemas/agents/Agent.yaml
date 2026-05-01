@@ -1,4 +1,3 @@
-title: Agent
 type: object
 description: A programmatic agent with scoped permissions and a spending policy, used to automate payment workflows.
 required:

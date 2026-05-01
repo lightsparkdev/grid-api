@@ -1,4 +1,3 @@
-title: Agent Account Restrictions
 type: object
 description: Optional restrictions that limit the agent to specific accounts or override policy per account.
 properties:

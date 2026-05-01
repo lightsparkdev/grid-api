@@ -1,4 +1,3 @@
-title: Agent Policy
 type: object
 description: Policy governing what an agent can do, how it executes actions, and its spending boundaries.
 required:

@@ -1,4 +1,3 @@
-title: Agent Approval Thresholds
 type: object
 description: >-
   Thresholds that force approval for high-value transactions, overriding the default execution mode.

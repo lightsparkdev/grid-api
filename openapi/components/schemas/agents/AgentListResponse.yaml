@@ -1,4 +1,3 @@
-title: Agent List Response
 type: object
 required:
   - data

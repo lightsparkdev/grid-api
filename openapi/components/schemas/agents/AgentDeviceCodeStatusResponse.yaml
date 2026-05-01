@@ -1,4 +1,3 @@
-title: Agent Device Code Status
 type: object
 required:
   - code

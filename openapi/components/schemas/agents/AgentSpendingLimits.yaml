@@ -1,4 +1,3 @@
-title: Agent Spending Limits
 type: object
 description: >-
   Spending limits that cap the agent's transaction amounts and frequency. All amount

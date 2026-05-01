@@ -1,4 +1,3 @@
-title: Agent Device Code Redeem Response
 type: object
 required:
   - agentId

@@ -1,4 +1,3 @@
-title: Agent Account Rule
 type: object
 description: Per-account policy override that takes precedence over the agent's default policy for a specific account.
 required:
