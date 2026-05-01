@@ -7,6 +7,11 @@ are HPKE bundle decrypt and Turnkey API stamp construction, which live in
 [`embedded-wallet-sign.js`](./embedded-wallet-sign.js) (using
 `@turnkey/crypto` and `@turnkey/api-key-stamper`).
 
+> **For production integrations**, prefer the official Grid SDKs at
+> <https://grid.lightspark.com>. This README is intended for hands-on
+> tinkering, debugging, and end-to-end validation — it favors curl and
+> the minimal signing helpers over a full SDK stack.
+
 ## Prereqs
 
 Install once:
@@ -48,14 +53,18 @@ g -X POST -H 'Content-Type: application/json' \
 
 Capture the returned `id` (e.g. `Customer:01...`) into `$CUSTOMER_ID`.
 
-### 1.2 Wait for KYB / KYC approval
+### 1.2 Wait for KYC / KYB approval
 
-Customer creation returns `kybStatus: "UNVERIFIED"`. Internal accounts
-auto-provision **after** approval. Poll:
+Internal accounts auto-provision **after** approval.
 
-```bash
-g "$GRID_BASE_URL/customers/$CUSTOMER_ID" | jq '{kybStatus}'
-```
+- **`INDIVIDUAL` customers** are auto-KYC'd today — they jump straight to
+  `kycStatus: "APPROVED"` on creation, so there's nothing to wait for.
+- **`BUSINESS` customers** start at `kybStatus: "UNVERIFIED"` and require
+  an out-of-band verification step. Poll until approved:
+
+  ```bash
+  g "$GRID_BASE_URL/customers/$CUSTOMER_ID" | jq '{kybStatus}'
+  ```
 
 ### 1.3 Find the embedded-wallet accounts
 
@@ -171,6 +180,9 @@ g -X POST -H 'Content-Type: application/json' -d '{}' \
 
 Read the OTP code from the email and assign to `$OTP`.
 
+> **Sandbox tip**: in sandbox mode, no email is sent — verify with the fixed
+> OTP code `000000`.
+
 ### 3.3 Verify the OTP and decrypt the session key
 
 ```bash
@@ -205,10 +217,28 @@ PAYLOAD=$(echo "$QUOTE" \
            | select(.accountType=="EMBEDDED_WALLET").payloadToSign')
 ```
 
-The quote response also includes a `SPARK_WALLET` invoice — that's the
-alternative funding path (pay USDB into the invoice from an external Spark
-wallet). The embedded-wallet path uses the existing on-chain balance and
-needs a stamp.
+The quote response returns **both** signing/funding options in
+`paymentInstructions`:
+
+```json
+"paymentInstructions": [
+  { "accountOrWalletInfo": { "accountType": "SPARK_WALLET",
+                             "address": "spark1...",
+                             "invoice": "spark1..." } },
+  { "accountOrWalletInfo": { "accountType": "EMBEDDED_WALLET",
+                             "payloadToSign": "{...}" } }
+]
+```
+
+These are alternatives — pick one:
+
+- **`EMBEDDED_WALLET` path** (this README): debits the customer's existing
+  on-chain USDB balance. Needs a Turnkey-stamped signature over
+  `payloadToSign`.
+- **`SPARK_WALLET` path**: pay USDB into the `invoice` from any external
+  Spark wallet. No stamp needed; the deposit drives the offramp once
+  detected. Used by `test_token_offramp_e2e` via
+  `spark-cli fulfillsparkinvoice`.
 
 ### 3.5 Stamp the payload
 
@@ -223,7 +253,15 @@ g -X POST -H 'Content-Type: application/json' \
    -H "Grid-Wallet-Signature: $STAMP" \
    -d '{}' \
    "$GRID_BASE_URL/quotes/$QUOTE_ID/execute" | jq '.status'
+```
 
+> **Sandbox tip**: in sandbox mode you can skip the keypair / decrypt /
+> stamp dance entirely. Use the fixed value
+> `Grid-Wallet-Signature: sandbox-valid-signature`; any other value is
+> rejected with the same `INVALID_INPUT` shape a bad real stamp would
+> produce.
+
+```bash
 # Poll — typically 60–180s for the full chain to reach COMPLETED.
 while :; do
   S=$(g "$GRID_BASE_URL/transactions/$TXN_ID" | jq -r .status)
