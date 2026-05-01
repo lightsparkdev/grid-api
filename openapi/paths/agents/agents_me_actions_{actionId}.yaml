@@ -1,0 +1,43 @@
+parameters:
+  - name: actionId
+    in: path
+    description: Unique identifier of the agent action
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get an agent action
+  description: >
+    Retrieve a specific action submitted by the authenticated agent.
+    Poll this endpoint after submitting an action that requires approval to check
+    whether it has been approved, rejected, or has failed.
+  operationId: agentGetAction
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Action not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

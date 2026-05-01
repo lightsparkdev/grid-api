@@ -47,11 +47,16 @@ post:
       example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
   responses:
     '200':
-      description: Quote executed successfully. Transfer has been initiated.
+      description: >-
+        Action submitted successfully. If the agent's policy requires approval, the returned
+        `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the
+        policy permits automatic execution, status will be `APPROVED` and `transaction` will
+        be populated. Note: if approval is required, the underlying quote may expire before
+        the platform approves — in that case the action will transition to `FAILED`.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/quotes/Quote.yaml
+            $ref: ../../components/schemas/agents/AgentAction.yaml
     '400':
       description: Bad request - Quote cannot be executed
       content:

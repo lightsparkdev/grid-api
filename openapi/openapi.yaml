@@ -225,10 +225,10 @@ paths:
     $ref: paths/agents/agents_{agentId}_policy.yaml
   /agents/{agentId}/device-codes:
     $ref: paths/agents/agents_{agentId}_device-codes.yaml
-  /agents/{agentId}/transactions/{transactionId}/approve:
-    $ref: paths/agents/agents_{agentId}_transactions_{transactionId}_approve.yaml
-  /agents/{agentId}/transactions/{transactionId}/reject:
-    $ref: paths/agents/agents_{agentId}_transactions_{transactionId}_reject.yaml
+  /agents/{agentId}/actions/{actionId}/approve:
+    $ref: paths/agents/agents_{agentId}_actions_{actionId}_approve.yaml
+  /agents/{agentId}/actions/{actionId}/reject:
+    $ref: paths/agents/agents_{agentId}_actions_{actionId}_reject.yaml
   /agents/device-codes/{code}/status:
     $ref: paths/agents/agents_device-codes_{code}_status.yaml
   /agents/device-codes/{code}/redeem:
@@ -244,6 +244,10 @@ paths:
     $ref: paths/agents/agents_me_quotes_{quoteId}.yaml
   /agents/me/quotes/{quoteId}/execute:
     $ref: paths/agents/agents_me_quotes_{quoteId}_execute.yaml
+  /agents/me/actions:
+    $ref: paths/agents/agents_me_actions.yaml
+  /agents/me/actions/{actionId}:
+    $ref: paths/agents/agents_me_actions_{actionId}.yaml
   /agents/me/transfer-in:
     $ref: paths/agents/agents_me_transfer-in.yaml
   /agents/me/transfer-out:

@@ -1,11 +1,11 @@
 get:
   summary: List agent transaction approval requests
   description: >
-    Retrieve a paginated list of transactions initiated by agents that require
-    platform approval. Filter by `agentId` or `customerId` to scope results to a
-    specific agent or customer. Approve or reject individual transactions via
-    `POST /agents/{agentId}/transactions/{transactionId}/approve` or
-    `POST /agents/{agentId}/transactions/{transactionId}/reject`.
+    Retrieve a paginated list of agent actions that require platform approval.
+    Filter by `agentId` or `customerId` to scope results to a specific agent or customer.
+    Approve or reject individual actions via
+    `POST /agents/{agentId}/actions/{actionId}/approve` or
+    `POST /agents/{agentId}/actions/{actionId}/reject`.
   operationId: listAgentApprovals
   tags:
     - Agent Management
@@ -69,7 +69,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/transactions/TransactionListResponse.yaml
+            $ref: ../../components/schemas/agents/AgentActionListResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

@@ -44,11 +44,15 @@ post:
               amount: 12550
   responses:
     '201':
-      description: Transfer-in created successfully
+      description: >-
+        Action submitted successfully. If the agent's policy requires approval, the returned
+        `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the
+        policy permits automatic execution, status will be `APPROVED` and `transaction` will
+        be populated.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+            $ref: ../../components/schemas/agents/AgentAction.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

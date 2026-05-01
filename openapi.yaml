@@ -4463,7 +4463,7 @@ paths:
     get:
       summary: List agent transaction approval requests
       description: |
-        Retrieve a paginated list of transactions initiated by agents that require platform approval. Filter by `agentId` or `customerId` to scope results to a specific agent or customer. Approve or reject individual transactions via `POST /agents/{agentId}/transactions/{transactionId}/approve` or `POST /agents/{agentId}/transactions/{transactionId}/reject`.
+        Retrieve a paginated list of agent actions that require platform approval. Filter by `agentId` or `customerId` to scope results to a specific agent or customer. Approve or reject individual actions via `POST /agents/{agentId}/actions/{actionId}/approve` or `POST /agents/{agentId}/actions/{actionId}/reject`.
       operationId: listAgentApprovals
       tags:
         - Agent Management
@@ -4527,7 +4527,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionListResponse'
+                $ref: '#/components/schemas/AgentActionListResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -4798,7 +4798,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/{agentId}/transactions/{transactionId}/approve:
+  /agents/{agentId}/actions/{actionId}/approve:
     parameters:
       - name: agentId
         in: path
@@ -4806,37 +4806,32 @@ paths:
         required: true
         schema:
           type: string
-      - name: transactionId
+      - name: actionId
         in: path
-        description: Unique identifier of the transaction to approve
+        description: Unique identifier of the agent action to approve
         required: true
         schema:
           type: string
     post:
-      summary: Approve an agent-initiated transaction
+      summary: Approve an agent action
       description: |
-        Approve a pending transaction that was initiated by an agent and is awaiting platform approval. A transaction enters a pending state when the agent's policy requires approval — either because the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the transaction amount exceeds the agent's approvalThresholds.
+        Approve a pending agent action, allowing Grid to proceed with execution. The action must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying operation (quote execution or transfer) and the action transitions to `APPROVED`.
+        For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
-      operationId: approveAgentTransaction
+      operationId: approveAgentAction
       tags:
         - Agent Management
       security:
         - BasicAuth: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApprovePaymentRequest'
       responses:
         '200':
-          description: Transaction approved successfully
+          description: Action approved successfully. Returns the updated AgentAction.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request - Transaction cannot be approved
+          description: Bad request - Action cannot be approved
           content:
             application/json:
               schema:
@@ -4848,13 +4843,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: Agent or transaction not found
+          description: Agent or action not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - Transaction is not pending approval or has already been processed
+          description: Conflict - Action is not pending approval or has already been processed
           content:
             application/json:
               schema:
@@ -4865,7 +4860,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/{agentId}/transactions/{transactionId}/reject:
+  /agents/{agentId}/actions/{actionId}/reject:
     parameters:
       - name: agentId
         in: path
@@ -4873,18 +4868,18 @@ paths:
         required: true
         schema:
           type: string
-      - name: transactionId
+      - name: actionId
         in: path
-        description: Unique identifier of the transaction to reject
+        description: Unique identifier of the agent action to reject
         required: true
         schema:
           type: string
     post:
-      summary: Reject an agent-initiated transaction
+      summary: Reject an agent action
       description: |
-        Reject a pending transaction that was initiated by an agent and is awaiting platform approval. A transaction enters a pending state when the agent's policy requires approval — either because the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the transaction amount exceeds the agent's approvalThresholds.
+        Reject a pending agent action, preventing execution. The action must have status `PENDING_APPROVAL`. Once rejected, the action transitions to `REJECTED` and the underlying operation is not executed.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
-      operationId: rejectAgentTransaction
+      operationId: rejectAgentAction
       tags:
         - Agent Management
       security:
@@ -4894,16 +4889,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RejectPaymentRequest'
+              $ref: '#/components/schemas/AgentActionRejectRequest'
       responses:
         '200':
-          description: Transaction rejected successfully
+          description: Action rejected successfully. Returns the updated AgentAction.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request - Transaction cannot be rejected
+          description: Bad request - Action cannot be rejected
           content:
             application/json:
               schema:
@@ -4915,13 +4910,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: Agent or transaction not found
+          description: Agent or action not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - Transaction is not pending approval or has already been processed
+          description: Conflict - Action is not pending approval or has already been processed
           content:
             application/json:
               schema:
@@ -5318,11 +5313,11 @@ paths:
           example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
       responses:
         '200':
-          description: Quote executed successfully. Transfer has been initiated.
+          description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentAction'
         '400':
           description: Bad request - Quote cannot be executed
           content:
@@ -5353,6 +5348,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/actions:
+    get:
+      summary: List agent's own actions
+      description: |
+        Retrieve a paginated list of actions submitted by the authenticated agent. Use this to poll for approval decisions after submitting an action that requires approval.
+      operationId: agentListActions
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by action status
+          required: false
+          schema:
+            $ref: '#/components/schemas/AgentActionStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentActionListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/actions/{actionId}:
+    parameters:
+      - name: actionId
+        in: path
+        description: Unique identifier of the agent action
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an agent action
+      description: |
+        Retrieve a specific action submitted by the authenticated agent. Poll this endpoint after submitting an action that requires approval to check whether it has been approved, rejected, or has failed.
+      operationId: agentGetAction
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Action not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -5397,11 +5485,11 @@ paths:
                   amount: 12550
       responses:
         '201':
-          description: Transfer-in created successfully
+          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/AgentAction'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -5469,11 +5557,11 @@ paths:
                   amount: 12550
       responses:
         '201':
-          description: Transfer-out created successfully
+          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionOneOf'
+                $ref: '#/components/schemas/AgentAction'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -15919,6 +16007,141 @@ components:
           $ref: '#/components/schemas/Agent'
         deviceCode:
           $ref: '#/components/schemas/AgentDeviceCode'
+    AgentActionStatus:
+      type: string
+      enum:
+        - PENDING_APPROVAL
+        - APPROVED
+        - REJECTED
+        - FAILED
+      description: |
+        Status of an agent action.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
+        | `APPROVED` | Approved by the platform; execution is in progress or completed |
+        | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
+        | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+    AgentActionType:
+      type: string
+      enum:
+        - EXECUTE_QUOTE
+        - TRANSFER_OUT
+        - TRANSFER_IN
+      description: |
+        The type of action the agent is requesting.
+
+        | Type | Description |
+        |------|-------------|
+        | `EXECUTE_QUOTE` | Execute a cross-currency quote |
+        | `TRANSFER_OUT` | Transfer from an internal account to an external account |
+        | `TRANSFER_IN` | Transfer from an external account to an internal account |
+    AgentTransferDetails:
+      type: object
+      description: Details of a transfer-type agent action (TRANSFER_OUT or TRANSFER_IN).
+      required:
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Transfer amount in the smallest unit of the specified currency.
+          example: 50000
+        currency:
+          type: string
+          description: ISO 4217 currency code for the transfer amount.
+          example: USD
+        sourceAccountId:
+          type: string
+          description: ID of the source account (internal or external).
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        destinationAccountId:
+          type: string
+          description: ID of the destination account (internal or external).
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+    AgentAction:
+      type: object
+      description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
+      required:
+        - id
+        - agentId
+        - customerId
+        - platformCustomerId
+        - status
+        - type
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for this action.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        agentId:
+          type: string
+          description: The agent that submitted this action.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        customerId:
+          type: string
+          description: The customer on whose behalf the action was submitted.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000010
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the customer.
+          example: user-a1b2c3
+        status:
+          $ref: '#/components/schemas/AgentActionStatus'
+        type:
+          $ref: '#/components/schemas/AgentActionType'
+        quote:
+          allOf:
+            - $ref: '#/components/schemas/Quote'
+          description: The quote being executed. Populated for `EXECUTE_QUOTE` actions; absent for transfer actions. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
+        transferDetails:
+          allOf:
+            - $ref: '#/components/schemas/AgentTransferDetails'
+          description: Details of the transfer being requested. Populated for `TRANSFER_OUT` and `TRANSFER_IN` actions; absent for `EXECUTE_QUOTE` actions.
+        transaction:
+          allOf:
+            - $ref: '#/components/schemas/TransactionOneOf'
+          description: The resulting transaction, populated once the action has been approved and execution has begun. Absent while the action is `PENDING_APPROVAL` or `REJECTED`.
+        rejectionReason:
+          type: string
+          description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
+          example: Transaction amount exceeds customer's current risk limit.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the action was submitted by the agent.
+          example: '2025-10-03T15:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the action was last updated.
+          example: '2025-10-03T15:02:00Z'
+    AgentActionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of agent actions matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/AgentAction'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of actions matching the criteria (excluding pagination).
     AgentUpdateRequest:
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
@@ -15976,6 +16199,13 @@ components:
           $ref: '#/components/schemas/AgentAccountRestrictions'
         approvalThresholds:
           $ref: '#/components/schemas/AgentApprovalThresholds'
+    AgentActionRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
+          example: Transaction amount exceeds customer's current risk limit.
     AgentDeviceCodeStatusResponse:
       type: object
       required:

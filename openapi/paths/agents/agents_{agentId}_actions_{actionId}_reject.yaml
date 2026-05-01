@@ -5,23 +5,22 @@ parameters:
     required: true
     schema:
       type: string
-  - name: transactionId
+  - name: actionId
     in: path
-    description: Unique identifier of the transaction to approve
+    description: Unique identifier of the agent action to reject
     required: true
     schema:
       type: string
 post:
-  summary: Approve an agent-initiated transaction
+  summary: Reject an agent action
   description: >
-    Approve a pending transaction that was initiated by an agent and is awaiting
-    platform approval. A transaction enters a pending state when the agent's policy
-    requires approval — either because the agent's defaultExecutionMode is
-    APPROVAL_REQUIRED, or the transaction amount exceeds the agent's approvalThresholds.
+    Reject a pending agent action, preventing execution. The action must have status
+    `PENDING_APPROVAL`. Once rejected, the action transitions to `REJECTED` and the
+    underlying operation is not executed.
 
     This endpoint is called by the platform's backend using platform credentials,
     not by the agent itself.
-  operationId: approveAgentTransaction
+  operationId: rejectAgentAction
   tags:
     - Agent Management
   security:
@@ -31,16 +30,16 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/transactions/ApprovePaymentRequest.yaml
+          $ref: ../../components/schemas/agents/AgentActionRejectRequest.yaml
   responses:
     '200':
-      description: Transaction approved successfully
+      description: Action rejected successfully. Returns the updated AgentAction.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+            $ref: ../../components/schemas/agents/AgentAction.yaml
     '400':
-      description: Bad request - Transaction cannot be approved
+      description: Bad request - Action cannot be rejected
       content:
         application/json:
           schema:
@@ -52,13 +51,13 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: Agent or transaction not found
+      description: Agent or action not found
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
-      description: Conflict - Transaction is not pending approval or has already been processed
+      description: Conflict - Action is not pending approval or has already been processed
       content:
         application/json:
           schema:
