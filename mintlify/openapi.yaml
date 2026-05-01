@@ -15613,19 +15613,24 @@ components:
       description: 'Execution mode controlling whether agent actions require human approval. AUTO: The agent can execute actions autonomously without explicit approval. APPROVAL_REQUIRED: All agent actions require explicit human approval before execution.'
     AgentSpendingLimits:
       type: object
-      description: Spending limits that cap the agent's transaction amounts and frequency.
+      description: Spending limits that cap the agent's transaction amounts and frequency. All amount fields are integers in the smallest unit of the specified currency. When a transaction is denominated in a different currency, Grid converts using the exchange rate at evaluation time.
       required:
+        - currency
         - perTransactionLimit
       properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that all amount limits are denominated in.
+          example: USD
         perTransactionLimit:
           type: integer
-          description: Maximum amount the agent can transfer in a single transaction, in the smallest unit of the relevant currency.
+          description: Maximum amount the agent can transfer in a single transaction.
           example: 50000
         dailyLimit:
           type:
             - integer
             - 'null'
-          description: Maximum total amount the agent can transfer per day, in the smallest unit of the relevant currency. Null means no daily limit.
+          description: Maximum total amount the agent can transfer per day. Null means no daily limit.
           example: 500000
         dailyTransactionLimit:
           type: integer
@@ -15635,7 +15640,7 @@ components:
           type:
             - integer
             - 'null'
-          description: Maximum total amount the agent can transfer per month, in the smallest unit of the relevant currency. Null means no monthly limit.
+          description: Maximum total amount the agent can transfer per month. Null means no monthly limit.
           example: 5000000
     AgentAccountRule:
       type: object
@@ -15674,13 +15679,17 @@ components:
             $ref: '#/components/schemas/AgentAccountRule'
     AgentApprovalThresholds:
       type: object
-      description: Thresholds that force approval for high-value transactions, overriding the default execution mode.
+      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
       properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+          example: USD
         amount:
           type:
             - integer
             - 'null'
-          description: If set, any transaction above this amount (in the smallest unit of the relevant currency) will require explicit approval even when the agent's defaultExecutionMode is AUTO. Null means no threshold override.
+          description: If set, any transaction above this amount (in the smallest unit of the specified currency) will require explicit approval even when the agent's defaultExecutionMode is AUTO. Null means no threshold override.
           example: 100000
     AgentPolicy:
       type: object
@@ -15869,15 +15878,19 @@ components:
       type: object
       description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
       properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that all amount limits are denominated in. Updating this recasts all existing limits into the new currency denomination.
+          example: USD
         perTransactionLimit:
           type: integer
-          description: Maximum amount per transaction, in the smallest unit of the relevant currency.
+          description: Maximum amount per transaction.
           example: 50000
         dailyLimit:
           type:
             - integer
             - 'null'
-          description: Maximum daily spend, in the smallest unit of the relevant currency. Set to null to remove the daily limit.
+          description: Maximum daily spend. Set to null to remove the daily limit.
           example: 500000
         dailyTransactionLimit:
           type: integer
@@ -15887,7 +15900,7 @@ components:
           type:
             - integer
             - 'null'
-          description: Maximum monthly spend, in the smallest unit of the relevant currency. Set to null to remove the monthly limit.
+          description: Maximum monthly spend. Set to null to remove the monthly limit.
           example: 5000000
     AgentPolicyUpdateRequest:
       type: object

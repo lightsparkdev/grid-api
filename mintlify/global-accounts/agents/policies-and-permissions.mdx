@@ -114,6 +114,7 @@ For example, Grid stores and enforces a policy object shaped like:
   ],
   "defaultExecutionMode": "APPROVAL_REQUIRED",
   "spendingLimits": {
+    "currency": "USD",
     "perTransactionLimit": 50000,
     "dailyLimit": 200000,
     "dailyTransactionLimit": 5
@@ -124,13 +125,14 @@ For example, Grid stores and enforces a policy object shaped like:
     ]
   },
   "approvalThresholds": {
+    "currency": "USD",
     "amount": 25000
   }
 }
 ```
 
 <Info>
-Policy amounts are integers in the smallest unit of the relevant currency. Grid infers the currency from the account or transaction context — no currency field is needed in the policy itself. For example, `50000` in a USD context means $500.00.
+Policy amounts are integers in the smallest unit of the specified currency. For example, `50000` with `"currency": "USD"` means $500.00. When a transaction is denominated in a different currency, Grid converts using the current exchange rate at evaluation time.
 </Info>
 
 ## Practical guidance
