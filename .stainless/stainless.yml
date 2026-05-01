@@ -500,6 +500,27 @@ client_settings:
         role: password
       description: API token authentication using format `<api token id>:<api client secret>`
       read_env: GRID_CLIENT_SECRET
+    agent_client_id:
+      type: string
+      nullable: true
+      auth:
+        security_scheme: AgentAuth
+        role: username
+      description: >-
+        Agent client ID obtained from redeeming a device code. Required when calling
+        agent-scoped endpoints (e.g. `GET /agents/me/...`). Leave unset for platform-scoped
+        operations.
+      read_env: GRID_AGENT_CLIENT_ID
+    agent_client_secret:
+      type: string
+      nullable: true
+      auth:
+        security_scheme: AgentAuth
+        role: password
+      description: >-
+        Agent client secret obtained from redeeming a device code. Required when calling
+        agent-scoped endpoints. Leave unset for platform-scoped operations.
+      read_env: GRID_AGENT_CLIENT_SECRET
     webhook_signature:
       type: string
       nullable: true

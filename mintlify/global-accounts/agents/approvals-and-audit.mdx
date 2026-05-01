@@ -49,7 +49,9 @@ Pending approval requests are transactions with a `PENDING` status, returned by 
 - `agentId` — the agent that initiated the action
 - `customerId` / `platformCustomerId` — the customer on whose behalf the agent acted
 - `status` — `PENDING` while awaiting approval; updated to `COMPLETED`, `REJECTED`, or `FAILED` after the decision is processed
-- `type` — transaction type (e.g. outgoing payment, cross-currency transfer)
+- `type` — always `OUTGOING` for agent-initiated payment requests
+- `sentAmount` — amount and currency the customer will send
+- `receivedAmount` — amount and currency the recipient will receive (may differ for cross-currency transfers)
 - `destination` — destination account or UMA address
 - `description` — optional memo set by the agent
 - `createdAt` / `updatedAt` — timestamps for the request lifecycle
@@ -60,10 +62,18 @@ For example, a pending approval request surfaced in your product might look like
 {
   "id": "Transaction:019542f5-b3e7-1d02-0000-000000000099",
   "status": "PENDING",
-  "type": "OUTGOING_PAYMENT",
+  "type": "OUTGOING",
   "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
   "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000010",
   "platformCustomerId": "user-a1b2c3",
+  "sentAmount": {
+    "amount": 50000,
+    "currency": "USD"
+  },
+  "receivedAmount": {
+    "amount": 4625000,
+    "currency": "INR"
+  },
   "destination": {
     "type": "EXTERNAL_ACCOUNT",
     "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
