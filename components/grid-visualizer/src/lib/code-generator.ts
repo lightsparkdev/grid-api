@@ -55,6 +55,7 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
       fullName: sel.examplePerson.fullName,
       birthDate: '1985-06-20',
       nationality: sel.examplePerson.nationality,
+      countryOfResidence: sel.examplePerson.nationality,
     };
   }
 

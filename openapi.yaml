@@ -10954,10 +10954,6 @@ components:
             beneficiaryVerifiedData:
               $ref: '#/components/schemas/BeneficiaryVerifiedData'
               description: Verified beneficiary data returned by the payment rail, if available
-            cryptoNetwork:
-              type: string
-              description: 'The blockchain network for this external account, if applicable. Present when the account is a cryptocurrency wallet. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
-              example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountListResponse:
@@ -11792,10 +11788,6 @@ components:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
               default: false
-            cryptoNetwork:
-              type: string
-              description: 'The blockchain network for this external account. Required when the account is a cryptocurrency wallet. Specifies which network the wallet is on. Example values: SOLANA_MAINNET, SOLANA_DEVNET, ETHEREUM_MAINNET, ETHEREUM_TESTNET, BASE_MAINNET, BASE_TESTNET, SPARK_MAINNET, SPARK_TESTNET, LIGHTNING_MAINNET, LIGHTNING_REGTEST.'
-              example: SOLANA_MAINNET
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
     PlatformExternalAccountCreateRequest:
