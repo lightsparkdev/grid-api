@@ -17,74 +17,87 @@ Treat approval requests like first-class user tasks. They should be easy to find
 
 ## Approval lifecycle
 
-When an agent requests an action that is not eligible for automatic execution:
+When an agent submits an action that is not eligible for automatic execution, Grid creates an `AgentAction` in `PENDING_APPROVAL` status and fires an `AGENT_ACTION.PENDING_APPROVAL` webhook to your backend. The full action payload is included in the webhook body so you can render the approval UI and send a push notification to the customer without a second API call.
 
-1. Grid creates a permission request for your product.
-2. Grid dispatches that request to your product, typically via webhook or another configured callback mechanism.
-3. Your app or dashboard shows the user the requested amount, source account, destination, and reason.
-4. The user approves or rejects the action from that trusted surface.
-5. Grid executes or rejects the action based on the latest account and policy state.
-6. Grid records the final status and links it to the resulting transaction or quote execution.
+1. Agent submits an action (quote execution or transfer).
+2. Grid creates an `AgentAction` with `status: PENDING_APPROVAL` and returns it to the agent.
+3. Grid fires `AGENT_ACTION.PENDING_APPROVAL` to your webhook endpoint with the full action payload.
+4. Your backend sends a push notification to the customer.
+5. Your app shows the customer the requested amount, accounts, and reason.
+6. The customer approves or rejects from that trusted surface.
+7. Your backend calls `POST /agents/{agentId}/actions/{actionId}/approve` or `.../reject`.
+8. Grid executes the action and the `AgentAction` transitions to `APPROVED`, then `COMPLETED` — or `REJECTED` if declined.
 
 ## Approval outcomes
 
-An approval request shown to the user is still subject to the latest account and policy state when Grid processes the decision.
-
-For example, between the original request and the final decision:
+An approved action is still subject to the latest account and policy state when Grid executes it. Between the original request and your approval decision:
 
 - The agent may have been paused
 - The customer's limits may have been reduced
 - The permitted accounts may have changed
-- Another action may already have consumed the available daily spend
+- Another action may have already consumed the available daily spend
+- For `EXECUTE_QUOTE` actions, the underlying quote may have expired
 
 <Warning>
-An approval in your UI is not always a guarantee that the original request will execute successfully. Your product should be ready to show a final rejected or failed state if the request is no longer valid when Grid processes it.
+An approval is not always a guarantee that the action will execute. Your product should be ready to show a `FAILED` state — for example, if a quote expired while waiting for approval. The `AgentAction.status` field reflects the final outcome.
 </Warning>
 
-## Activity and audit records
+## AgentAction fields
 
-Pending approval requests are transactions with a `PENDING` status, returned by `GET /agents/approvals`. Each record includes:
+`GET /agents/approvals` returns a paginated list of `AgentAction` objects. Filter by `agentId` or `customerId` to scope results. Each record includes:
 
-- `id` — transaction identifier
-- `agentId` — the agent that initiated the action
+- `id` — action identifier (e.g. `AgentAction:...`)
+- `agentId` — the agent that submitted the action
 - `customerId` / `platformCustomerId` — the customer on whose behalf the agent acted
-- `status` — `PENDING` while awaiting approval; updated to `COMPLETED`, `REJECTED`, or `FAILED` after the decision is processed
-- `type` — always `OUTGOING` for agent-initiated payment requests
-- `sentAmount` — amount and currency the customer will send
-- `receivedAmount` — amount and currency the recipient will receive (may differ for cross-currency transfers)
-- `destination` — destination account or UMA address
-- `description` — optional memo set by the agent
-- `createdAt` / `updatedAt` — timestamps for the request lifecycle
+- `status` — `PENDING_APPROVAL` while awaiting a decision; transitions to `APPROVED`, `REJECTED`, or `FAILED`
+- `type` — `EXECUTE_QUOTE`, `TRANSFER_OUT`, or `TRANSFER_IN`
+- `quote` — for `EXECUTE_QUOTE` actions, the full quote object including amounts, currencies, exchange rate, and destination
+- `transferDetails` — for `TRANSFER_OUT` / `TRANSFER_IN` actions, amount, currency, and source/destination account IDs
+- `transaction` — populated after the action is approved and execution begins; absent while pending or rejected
+- `rejectionReason` — optional reason string set when your platform rejects the action
+- `createdAt` / `updatedAt` — timestamps for the action lifecycle
 
-For example, a pending approval request surfaced in your product might look like:
+For example, a pending approval request delivered via webhook might look like:
 
 ```json
 {
-  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000099",
-  "status": "PENDING",
-  "type": "OUTGOING",
+  "id": "AgentAction:019542f5-b3e7-1d02-0000-000000000099",
   "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
   "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000010",
   "platformCustomerId": "user-a1b2c3",
-  "sentAmount": {
-    "amount": 50000,
-    "currency": "USD"
+  "status": "PENDING_APPROVAL",
+  "type": "EXECUTE_QUOTE",
+  "quote": {
+    "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "totalSendingAmount": 50000,
+    "sendingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
+    "totalReceivingAmount": 4625000,
+    "receivingCurrency": { "code": "INR", "name": "Indian Rupee", "symbol": "₹", "decimals": 2 },
+    "exchangeRate": 92.5,
+    "feesIncluded": 250,
+    "expiresAt": "2025-10-03T15:00:30Z"
   },
-  "receivedAmount": {
-    "amount": 4625000,
-    "currency": "INR"
-  },
-  "destination": {
-    "type": "EXTERNAL_ACCOUNT",
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
-  },
-  "description": "Send supplier payout",
   "createdAt": "2025-10-03T15:00:00Z",
   "updatedAt": "2025-10-03T15:00:00Z"
 }
 ```
 
-This lets you present a clean customer-facing activity feed while preserving an operator-friendly audit trail.
+## Approving and rejecting
+
+Call these endpoints from your platform backend using your platform credentials (`BasicAuth`):
+
+```bash
+# Approve
+POST /agents/{agentId}/actions/{actionId}/approve
+
+# Reject (optional reason body)
+POST /agents/{agentId}/actions/{actionId}/reject
+{
+  "reason": "Transaction amount exceeds customer's current risk limit."
+}
+```
+
+Both return the updated `AgentAction`. The `agentId` and `actionId` are available in the webhook payload.
 
 ## Pause and revoke
 
@@ -92,8 +105,8 @@ Customers need immediate control over delegated access.
 
 Support at least two controls:
 
-- `Pause`: temporarily block new executions while preserving the agent configuration.
-- `Revoke`: permanently remove delegated access and invalidate the agent connection.
+- **Pause** — temporarily block new executions while preserving the agent configuration. Use `PATCH /agents/{agentId}` with `isPaused: true`.
+- **Revoke** — permanently remove delegated access. Use `DELETE /agents/{agentId}`.
 
 Pause is useful for temporary uncertainty. Revoke is appropriate when a device is lost, a credential is exposed, or the customer no longer wants the agent connected.
 
@@ -105,18 +118,19 @@ Your approval UI should answer:
 
 - What is the agent trying to do?
 - Which account is affected?
-- How much value is moving?
+- How much value is moving, and in what currencies?
 - Who or what is on the other side of the transaction?
 - Why is approval required?
 
-If the user cannot answer those questions quickly, the approval surface is too opaque.
+All of this information is present in the `AgentAction` payload delivered via webhook. If the user cannot answer those questions quickly, the approval surface is too opaque.
 
 ## Integration guidance
 
-- Use Grid events or webhooks to reconcile approval decisions with the final activity and transaction state.
-- Treat approval decisions as idempotent in your integration so duplicate taps or retries do not create a confusing UX.
-- Preserve status history in your UI instead of collapsing everything into a single final state.
-- Make agent connection status, approval queue state, and audit history easy to surface in your apps and dashboards.
+- Subscribe to `AGENT_ACTION.PENDING_APPROVAL` webhooks and send the customer a push notification immediately — quote-based actions expire quickly.
+- Use `GET /agents/approvals` to build an in-app approval queue as a fallback for users who miss the push notification.
+- Treat approval and rejection calls as idempotent in your integration so duplicate taps or retries do not cause confusing UX.
+- Show `FAILED` and `REJECTED` outcomes clearly — they are distinct states with different meanings for the customer.
+- Make agent connection status, approval queue state, and action history easy to surface close to the customer's account view.
 
 <Tip>
 Show approvals and audit history close to the account or transaction views users already trust. That reduces confusion and makes agent activity feel like part of the main account lifecycle rather than a separate subsystem.
