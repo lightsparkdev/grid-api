@@ -852,11 +852,6 @@ div#mobile-nav div#navigation-items > div:first-child {
   margin-bottom: 0 !important;
 }
 
-div#mobile-nav div#navigation-items .flex.flex-wrap {
-  padding-bottom: 20px !important;
-  margin-bottom: 0 !important;
-}
-
 /* Mobile nav - sidebar group list: adjust spacing */
 div#mobile-nav ul.sidebar-group,
 div#mobile-nav ul#sidebar-group,
