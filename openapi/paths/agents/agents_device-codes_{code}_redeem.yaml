@@ -9,8 +9,8 @@ post:
   summary: Redeem device code
   description: >
     Redeem a device code to obtain agent credentials. This endpoint is called by the
-    agent software during installation. On success, returns a clientId and clientSecret
-    that the agent uses for all subsequent API calls. The secret is returned only once
+    agent software during installation. On success, returns a Bearer access token
+    that the agent uses for all subsequent API calls. The token is returned only once
     and must be stored securely.
 
     This endpoint does not require platform authentication — the device code itself

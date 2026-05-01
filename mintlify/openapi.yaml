@@ -4985,7 +4985,7 @@ paths:
     post:
       summary: Redeem device code
       description: |
-        Redeem a device code to obtain agent credentials. This endpoint is called by the agent software during installation. On success, returns a clientId and clientSecret that the agent uses for all subsequent API calls. The secret is returned only once and must be stored securely.
+        Redeem a device code to obtain agent credentials. This endpoint is called by the agent software during installation. On success, returns a Bearer access token that the agent uses for all subsequent API calls. The token is returned only once and must be stored securely.
         This endpoint does not require platform authentication — the device code itself serves as proof of authorization.
       operationId: redeemAgentDeviceCode
       tags:
@@ -6527,8 +6527,8 @@ components:
       description: API token authentication using format `<api token id>:<api client secret>`
     AgentAuth:
       type: http
-      scheme: basic
-      description: 'Agent authentication using format `<clientId>:<clientSecret>`, where the credentials are obtained by redeeming a device code via `POST /agents/device-codes/{code}/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
+      scheme: bearer
+      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/{code}/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
     WebhookSignature:
       type: apiKey
       in: header
@@ -15938,8 +15938,7 @@ components:
       required:
         - agentId
         - agentName
-        - clientId
-        - clientSecret
+        - accessToken
         - policy
       properties:
         agentId:
@@ -15950,14 +15949,10 @@ components:
           type: string
           description: The agent's name.
           example: Payroll Automation Agent
-        clientId:
+        accessToken:
           type: string
-          description: The client ID to use as the username in HTTP Basic Authentication when calling Grid API endpoints as this agent.
-          example: 01947d2284054f890000e63bca4810df
-        clientSecret:
-          type: string
-          description: The client secret to use as the password in HTTP Basic Authentication. This secret is returned only once and must be stored securely — it cannot be retrieved again.
-          example: ed0ad25881e234cc28fb2dec0a4fe64e4172
+          description: 'Bearer token used to authenticate all subsequent API calls as this agent. Pass as `Authorization: Bearer <accessToken>`. This token is returned only once and must be stored securely — it cannot be retrieved again.'
+          example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
         policy:
           $ref: '#/components/schemas/AgentPolicy'
     WebhookType:

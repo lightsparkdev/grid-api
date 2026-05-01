@@ -2,8 +2,7 @@ type: object
 required:
   - agentId
   - agentName
-  - clientId
-  - clientSecret
+  - accessToken
   - policy
 properties:
   agentId:
@@ -14,17 +13,12 @@ properties:
     type: string
     description: The agent's name.
     example: Payroll Automation Agent
-  clientId:
+  accessToken:
     type: string
     description: >-
-      The client ID to use as the username in HTTP Basic Authentication when calling
-      Grid API endpoints as this agent.
-    example: 01947d2284054f890000e63bca4810df
-  clientSecret:
-    type: string
-    description: >-
-      The client secret to use as the password in HTTP Basic Authentication. This secret
-      is returned only once and must be stored securely — it cannot be retrieved again.
-    example: ed0ad25881e234cc28fb2dec0a4fe64e4172
+      Bearer token used to authenticate all subsequent API calls as this agent.
+      Pass as `Authorization: Bearer <accessToken>`. This token is returned only
+      once and must be stored securely — it cannot be retrieved again.
+    example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
   policy:
     $ref: ./AgentPolicy.yaml

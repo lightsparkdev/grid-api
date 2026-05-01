@@ -84,10 +84,10 @@ components:
         secret>`
     AgentAuth:
       type: http
-      scheme: basic
+      scheme: bearer
       description: >-
-        Agent authentication using format `<clientId>:<clientSecret>`, where the
-        credentials are obtained by redeeming a device code via
+        Bearer token authentication for agent-scoped endpoints. The token is the
+        `accessToken` returned when redeeming a device code via
         `POST /agents/device-codes/{code}/redeem`. Agent credentials are
         user-scoped: all requests are automatically bound to the agent's
         associated customer and subject to the agent's policy.
