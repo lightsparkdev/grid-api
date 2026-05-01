@@ -11,7 +11,7 @@ properties:
     example: 3
   dailySpend:
     type: integer
-    description: Total amount spent by the agent today, in the smallest unit of the relevant currency.
+    description: Total amount spent by the agent today, in the smallest unit of the policy's `spendingLimits.currency`.
     example: 150000
   dailyResetDate:
     type: string
@@ -20,7 +20,7 @@ properties:
     example: '2025-07-22'
   monthlySpend:
     type: integer
-    description: Total amount spent by the agent this month, in the smallest unit of the relevant currency.
+    description: Total amount spent by the agent this month, in the smallest unit of the policy's `spendingLimits.currency`.
     example: 750000
   monthlyResetMonth:
     type: string
