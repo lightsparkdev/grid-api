@@ -26,7 +26,7 @@ When an agent submits an action that is not eligible for automatic execution, Gr
 5. Your app shows the customer the requested amount, accounts, and reason.
 6. The customer approves or rejects from that trusted surface.
 7. Your backend calls `POST /agents/{agentId}/actions/{actionId}/approve` or `.../reject`.
-8. Grid executes the action and the `AgentAction` transitions to `APPROVED`, then `COMPLETED` — or `REJECTED` if declined.
+8. Grid executes the action and the `AgentAction` transitions to `APPROVED` — or `REJECTED` if declined.
 
 ## Approval outcomes
 
