@@ -1,0 +1,28 @@
+type: object
+description: Real-time counters tracking the agent's spending and transaction activity against its policy limits.
+required:
+  - dailyTransactionCount
+  - dailySpend
+  - monthlySpend
+properties:
+  dailyTransactionCount:
+    type: integer
+    description: Number of transactions initiated by the agent today.
+    example: 3
+  dailySpend:
+    type: integer
+    description: Total amount spent by the agent today, in the smallest unit of the relevant currency.
+    example: 150000
+  dailyResetDate:
+    type: string
+    format: date
+    description: The date when daily usage counters will reset.
+    example: '2025-07-22'
+  monthlySpend:
+    type: integer
+    description: Total amount spent by the agent this month, in the smallest unit of the relevant currency.
+    example: 750000
+  monthlyResetMonth:
+    type: string
+    description: The year-month (YYYY-MM) when monthly usage counters will reset.
+    example: '2025-08'

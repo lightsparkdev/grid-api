@@ -43,47 +43,34 @@ An approval in your UI is not always a guarantee that the original request will 
 
 ## Activity and audit records
 
-The activity and audit data returned by Grid makes it easy for customers and operators to understand both intent and outcome.
+Pending approval requests are transactions with a `PENDING` status, returned by `GET /agents/approvals`. Each record includes:
 
-Each activity record captures:
+- `id` — transaction identifier
+- `agentId` — the agent that initiated the action
+- `customerId` / `platformCustomerId` — the customer on whose behalf the agent acted
+- `status` — `PENDING` while awaiting approval; updated to `COMPLETED`, `REJECTED`, or `FAILED` after the decision is processed
+- `type` — transaction type (e.g. outgoing payment, cross-currency transfer)
+- `destination` — destination account or UMA address
+- `description` — optional memo set by the agent
+- `createdAt` / `updatedAt` — timestamps for the request lifecycle
 
-- Agent ID and display name
-- Action type
-- Requested amount and asset
-- Source and destination context
-- Reason or natural-language detail
-- Policy decision
-- Approval status
-- Linked Grid quote ID or transaction ID, when available
-- Created, approved, rejected, and completed timestamps
-
-For example, a permission request surfaced in your product might look like:
+For example, a pending approval request surfaced in your product might look like:
 
 ```json
 {
-  "id": "Approval:019542f5-b3e7-1d02-0000-000000000099",
-  "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000099",
   "status": "PENDING",
-  "actionType": "EXECUTE_QUOTE",
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000025",
-  "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
-  },
+  "type": "OUTGOING_PAYMENT",
+  "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000010",
+  "platformCustomerId": "user-a1b2c3",
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "EUR"
-  },
-  "sendingAmount": {
-    "amount": 50000,
-    "currency": {
-      "code": "USD",
-      "decimals": 2
-    }
+    "type": "EXTERNAL_ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "description": "Send supplier payout",
-  "policyDecision": "APPROVAL_REQUIRED",
-  "createdAt": "2025-10-03T15:00:00Z"
+  "createdAt": "2025-10-03T15:00:00Z",
+  "updatedAt": "2025-10-03T15:00:00Z"
 }
 ```
 

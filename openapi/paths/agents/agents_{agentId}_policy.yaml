@@ -1,0 +1,54 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+patch:
+  summary: Update agent policy
+  description: >
+    Partially update an agent's policy. Only provided fields will be updated;
+    omitted fields retain their current values. Policy changes take effect immediately.
+  operationId: updateAgentPolicy
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentPolicyUpdateRequest.yaml
+  responses:
+    '200':
+      description: Agent policy updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/Agent.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

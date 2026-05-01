@@ -57,6 +57,20 @@ tags:
       Endpoints for registering and verifying end-user authentication
       credentials (email OTP, OAuth, passkey) used to sign Embedded Wallet
       actions.
+  - name: Agent Management
+    description: >-
+      Endpoints for creating and managing agents (experimental), called by the partner's
+      backend using platform credentials. Covers the full agent lifecycle: creation,
+      policy configuration, pausing, deletion, the device code installation flow, and
+      approving or rejecting transactions initiated by agents.
+  - name: Agent Operations
+    description: >-
+      Endpoints called by the agent itself using its own credentials (obtained via device
+      code redemption). Scoped to the agent's associated customer — all requests
+      automatically operate on behalf of that customer and are subject to the agent's
+      policy. When an action requires approval, the resulting transaction enters a pending
+      state and must be approved by the platform via
+      `POST /transactions/{transactionId}/approve`.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -68,6 +82,15 @@ components:
       description: >-
         API token authentication using format `<api token id>:<api client
         secret>`
+    AgentAuth:
+      type: http
+      scheme: basic
+      description: >-
+        Agent authentication using format `<clientId>:<clientSecret>`, where the
+        credentials are obtained by redeeming a device code via
+        `POST /agents/device-codes/{code}/redeem`. Agent credentials are
+        user-scoped: all requests are automatically bound to the agent's
+        associated customer and subject to the agent's policy.
     WebhookSignature:
       type: apiKey
       in: header
@@ -190,6 +213,45 @@ paths:
     $ref: paths/auth/auth_sessions.yaml
   /auth/sessions/{id}:
     $ref: paths/auth/auth_sessions_{id}.yaml
+  /agents:
+    $ref: paths/agents/agents.yaml
+  /agents/approvals:
+    $ref: paths/agents/agents_approvals.yaml
+  /agents/me:
+    $ref: paths/agents/agents_me.yaml
+  /agents/{agentId}:
+    $ref: paths/agents/agents_{agentId}.yaml
+  /agents/{agentId}/policy:
+    $ref: paths/agents/agents_{agentId}_policy.yaml
+  /agents/{agentId}/device-codes:
+    $ref: paths/agents/agents_{agentId}_device-codes.yaml
+  /agents/{agentId}/transactions/{transactionId}/approve:
+    $ref: paths/agents/agents_{agentId}_transactions_{transactionId}_approve.yaml
+  /agents/{agentId}/transactions/{transactionId}/reject:
+    $ref: paths/agents/agents_{agentId}_transactions_{transactionId}_reject.yaml
+  /agents/device-codes/{code}/status:
+    $ref: paths/agents/agents_device-codes_{code}_status.yaml
+  /agents/device-codes/{code}/redeem:
+    $ref: paths/agents/agents_device-codes_{code}_redeem.yaml
+  /agents/me/transactions:
+    $ref: paths/agents/agents_me_transactions.yaml
+  /agents/me/transactions/{transactionId}:
+    $ref: paths/agents/agents_me_transactions_{transactionId}.yaml
+
+  /agents/me/quotes:
+    $ref: paths/agents/agents_me_quotes.yaml
+  /agents/me/quotes/{quoteId}:
+    $ref: paths/agents/agents_me_quotes_{quoteId}.yaml
+  /agents/me/quotes/{quoteId}/execute:
+    $ref: paths/agents/agents_me_quotes_{quoteId}_execute.yaml
+  /agents/me/transfer-in:
+    $ref: paths/agents/agents_me_transfer-in.yaml
+  /agents/me/transfer-out:
+    $ref: paths/agents/agents_me_transfer-out.yaml
+  /agents/me/external-accounts:
+    $ref: paths/agents/agents_me_external-accounts.yaml
+  /agents/me/external-accounts/{externalAccountId}:
+    $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
 webhooks:
   incoming-payment:
     $ref: webhooks/incoming-payment.yaml

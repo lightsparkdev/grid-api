@@ -1,0 +1,13 @@
+type: object
+required:
+  - code
+  - redeemed
+properties:
+  code:
+    type: string
+    description: The device code.
+    example: GRID-AGENT-X7K9-M2P4
+  redeemed:
+    type: boolean
+    description: Whether this device code has been redeemed.
+    example: false

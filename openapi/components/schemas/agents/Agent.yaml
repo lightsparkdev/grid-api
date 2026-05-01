@@ -1,0 +1,47 @@
+type: object
+description: A programmatic agent with scoped permissions and a spending policy, used to automate payment workflows.
+required:
+  - id
+  - name
+  - customerId
+  - isPaused
+  - isConnected
+  - policy
+  - usage
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for the agent.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000001
+  name:
+    type: string
+    description: Human-readable name for the agent.
+    example: Payroll Automation Agent
+  customerId:
+    type: string
+    description: The ID of the customer this agent operates on behalf of.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  isPaused:
+    type: boolean
+    description: Whether the agent is currently paused. Paused agents cannot initiate any actions.
+    example: false
+  isConnected:
+    type: boolean
+    description: Whether the agent has been installed and connected (i.e., its device code has been redeemed).
+    example: true
+  policy:
+    $ref: ./AgentPolicy.yaml
+  usage:
+    $ref: ./AgentUsage.yaml
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2025-07-21T17:32:28Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2025-07-21T17:32:28Z'

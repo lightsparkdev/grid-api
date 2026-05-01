@@ -1,0 +1,71 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: transactionId
+    in: path
+    description: Unique identifier of the transaction to reject
+    required: true
+    schema:
+      type: string
+post:
+  summary: Reject an agent-initiated transaction
+  description: >
+    Reject a pending transaction that was initiated by an agent and is awaiting
+    platform approval. A transaction enters a pending state when the agent's policy
+    requires approval — either because the agent's defaultExecutionMode is
+    APPROVAL_REQUIRED, or the transaction amount exceeds the agent's approvalThresholds.
+
+    This endpoint is called by the platform's backend using platform credentials,
+    not by the agent itself.
+  operationId: rejectAgentTransaction
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/transactions/RejectPaymentRequest.yaml
+  responses:
+    '200':
+      description: Transaction rejected successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+    '400':
+      description: Bad request - Transaction cannot be rejected
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent or transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Transaction is not pending approval or has already been processed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

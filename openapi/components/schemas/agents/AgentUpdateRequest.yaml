@@ -1,0 +1,11 @@
+type: object
+description: Partial update to an agent's basic fields. At least one field must be provided.
+properties:
+  name:
+    type: string
+    description: Updated name for the agent.
+    example: Updated Payroll Agent
+  isPaused:
+    type: boolean
+    description: Set to true to pause the agent or false to resume it.
+    example: true

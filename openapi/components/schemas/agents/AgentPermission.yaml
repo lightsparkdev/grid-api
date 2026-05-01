@@ -1,0 +1,14 @@
+type: string
+enum:
+  - VIEW_TRANSACTIONS
+  - CREATE_TRANSFERS
+  - CREATE_QUOTES
+  - EXECUTE_QUOTES
+  - MANAGE_EXTERNAL_ACCOUNTS
+description: >-
+  Permission granted to an agent that determines what actions it can perform.
+  VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances.
+  CREATE_TRANSFERS: Can initiate same-currency transfers.
+  CREATE_QUOTES: Can create cross-currency quotes.
+  EXECUTE_QUOTES: Can execute cross-currency quotes.
+  MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.

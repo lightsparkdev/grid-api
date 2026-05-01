@@ -1,0 +1,114 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get agent by ID
+  description: Retrieve an agent by its system-generated ID.
+  operationId: getAgentById
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/Agent.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update agent
+  description: Update an agent's name or paused state.
+  operationId: updateAgent
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentUpdateRequest.yaml
+  responses:
+    '200':
+      description: Agent updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/Agent.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete agent
+  description: Permanently delete an agent. Connected agent software will lose access immediately.
+  operationId: deleteAgent
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Agent deleted successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

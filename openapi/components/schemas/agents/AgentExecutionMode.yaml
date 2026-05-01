@@ -1,0 +1,8 @@
+type: string
+enum:
+  - AUTO
+  - APPROVAL_REQUIRED
+description: >-
+  Execution mode controlling whether agent actions require human approval.
+  AUTO: The agent can execute actions autonomously without explicit approval.
+  APPROVAL_REQUIRED: All agent actions require explicit human approval before execution.

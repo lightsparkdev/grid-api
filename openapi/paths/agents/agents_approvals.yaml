@@ -1,0 +1,90 @@
+get:
+  summary: List agent transaction approval requests
+  description: >
+    Retrieve a paginated list of transactions initiated by agents that require
+    platform approval. Filter by `agentId` or `customerId` to scope results to a
+    specific agent or customer. Approve or reject individual transactions via
+    `POST /agents/{agentId}/transactions/{transactionId}/approve` or
+    `POST /agents/{agentId}/transactions/{transactionId}/reject`.
+  operationId: listAgentApprovals
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: agentId
+      in: query
+      description: Filter by agent ID
+      required: false
+      schema:
+        type: string
+    - name: customerId
+      in: query
+      description: Filter by customer ID
+      required: false
+      schema:
+        type: string
+    - name: startDate
+      in: query
+      description: Filter by start date (inclusive) in ISO 8601 format
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: endDate
+      in: query
+      description: Filter by end date (inclusive) in ISO 8601 format
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+    - name: sortOrder
+      in: query
+      description: Order to sort results in
+      required: false
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+        default: desc
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/TransactionListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

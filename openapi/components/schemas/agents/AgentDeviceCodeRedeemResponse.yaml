@@ -1,0 +1,30 @@
+type: object
+required:
+  - agentId
+  - agentName
+  - clientId
+  - clientSecret
+  - policy
+properties:
+  agentId:
+    type: string
+    description: The agent's system-generated ID.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000001
+  agentName:
+    type: string
+    description: The agent's name.
+    example: Payroll Automation Agent
+  clientId:
+    type: string
+    description: >-
+      The client ID to use as the username in HTTP Basic Authentication when calling
+      Grid API endpoints as this agent.
+    example: 01947d2284054f890000e63bca4810df
+  clientSecret:
+    type: string
+    description: >-
+      The client secret to use as the password in HTTP Basic Authentication. This secret
+      is returned only once and must be stored securely — it cannot be retrieved again.
+    example: ed0ad25881e234cc28fb2dec0a4fe64e4172
+  policy:
+    $ref: ./AgentPolicy.yaml

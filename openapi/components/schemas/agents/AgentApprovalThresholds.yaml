@@ -1,0 +1,12 @@
+type: object
+description: Thresholds that force approval for high-value transactions, overriding the default execution mode.
+properties:
+  amount:
+    type:
+      - integer
+      - 'null'
+    description: >-
+      If set, any transaction above this amount (in the smallest unit of the relevant currency)
+      will require explicit approval even when the agent's defaultExecutionMode is AUTO.
+      Null means no threshold override.
+    example: 100000

@@ -1,0 +1,24 @@
+type: object
+required:
+  - code
+  - agentId
+  - expiresAt
+  - redeemed
+properties:
+  code:
+    type: string
+    description: Human-readable device code used to install and connect the agent software.
+    example: GRID-AGENT-X7K9-M2P4
+  agentId:
+    type: string
+    description: The agent this device code belongs to.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000001
+  expiresAt:
+    type: string
+    format: date-time
+    description: Timestamp when this device code expires.
+    example: '2025-07-22T17:32:28Z'
+  redeemed:
+    type: boolean
+    description: Whether this device code has already been redeemed by the agent.
+    example: false

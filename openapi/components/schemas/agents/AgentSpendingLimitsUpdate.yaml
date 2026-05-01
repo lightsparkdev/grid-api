@@ -1,0 +1,23 @@
+type: object
+description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
+properties:
+  perTransactionLimit:
+    type: integer
+    description: Maximum amount per transaction, in the smallest unit of the relevant currency.
+    example: 50000
+  dailyLimit:
+    type:
+      - integer
+      - 'null'
+    description: Maximum daily spend, in the smallest unit of the relevant currency. Set to null to remove the daily limit.
+    example: 500000
+  dailyTransactionLimit:
+    type: integer
+    description: Maximum number of transactions per day.
+    example: 10
+  monthlyLimit:
+    type:
+      - integer
+      - 'null'
+    description: Maximum monthly spend, in the smallest unit of the relevant currency. Set to null to remove the monthly limit.
+    example: 5000000
