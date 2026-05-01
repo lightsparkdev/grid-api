@@ -259,6 +259,8 @@ paths:
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
 webhooks:
+  agent-action:
+    $ref: webhooks/agent-action.yaml
   incoming-payment:
     $ref: webhooks/incoming-payment.yaml
   outgoing-payment:
