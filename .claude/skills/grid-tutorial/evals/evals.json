@@ -1,0 +1,26 @@
+{
+  "skill_name": "grid-tutorial",
+  "evals": [
+    {
+      "id": 1,
+      "name": "first-time-grid",
+      "prompt": "I want to try Grid for the first time. Can you walk me through it from zero? I'm a TypeScript dev and learn best by building something I can run.",
+      "expected_output": "Skill triggers, explains what it'll do, asks routing questions (Payouts vs Global Accounts) via AskUserQuestion, walks through prereq checks, and sets up to scaffold a Next.js demo. Should NOT dump all 8 steps at once.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "usd-to-mxn-payout",
+      "prompt": "Build me a quick Grid demo that sends USD to a Mexican CLABE account. I want to see actual sandbox API calls happen.",
+      "expected_output": "Skill triggers, routes to Payouts branch (no need to ask the flow question — corridor is implied), confirms the user's destination as USD->MXN/CLABE, scaffolds the Next.js template, walks through customer creation -> KYC -> fund -> external account (CLABE) -> quote -> execute. References account-type-cheatsheet.md for CLABE format.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "global-accounts-walkthrough",
+      "prompt": "Show me how Grid Global Accounts work end-to-end. I'm comfortable with TypeScript and want to understand the embedded wallet flow.",
+      "expected_output": "Skill triggers, routes to Global Accounts branch via AskUserQuestion or directly (user phrasing makes the choice clear), explains sandbox magic values for passkey/OTP, walks through customer creation, account inspection, sandbox-mocked passkey registration, fund, external account, quote with session signing, execute. References references/global-accounts.md.",
+      "files": []
+    }
+  ]
+}

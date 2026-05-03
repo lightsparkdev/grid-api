@@ -105,6 +105,18 @@ It'll prompt you for your API Token ID and Client Secret, validate them, and sav
 Start in the sandbox environment to experiment safely. The Skill is great at generating fake account data to help you test different flows.
 </Tip>
 
+## Walk through your first Grid integration
+
+If you'd rather learn by building, the Grid Tutorial skill takes you from zero to a running Next.js demo making real sandbox API calls — about 10 minutes, end-to-end. Install it the same way as the API skill:
+
+```bash
+npx skills add lightsparkdev/grid-api --skill grid-tutorial -g -a claude-code
+```
+
+Then start Claude Code in any directory and say something like *"walk me through Grid"* or *"build me a Grid demo that sends USD to a Mexican CLABE account."* The skill picks the right flow (Payouts or Global Accounts), scaffolds a Next.js + TypeScript app into a directory you choose, and walks you through each API call interactively — pausing to explain *why* each step matters.
+
+You can install both Grid skills at once with `--skill '*'`. The tutorial is the right starting point if you've never used Grid; the API skill is the right tool once you know your way around and want to issue ad-hoc requests.
+
 ## MCP server
 
 Grid provides a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that gives AI agents access to Grid's documentation, so your agentic workflows have full context of the Grid API during implementation.
