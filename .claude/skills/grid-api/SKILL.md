@@ -258,7 +258,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -d '{
     "internalAccountId": "<internalAccountId>",
     "currency": "USDC",
-    "cryptoNetwork": "SOLANA_MAINNET",
+    "cryptoNetwork": "SOLANA",
     "amount": 1000000,
     "destinationAddress": "<blockchain-address>"
   }' \
@@ -272,7 +272,7 @@ Returns:
 - `totalFee` — total cost in withdrawal currency (network fee converted + application fee)
 - `netAmount` — amount recipient receives after all fees
 
-Supported networks: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `POLYGON_MAINNET`, `BASE_MAINNET`, `TRON_MAINNET`
+Supported networks: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`
 
 ### Quotes (Cross-Currency Transfers)
 
