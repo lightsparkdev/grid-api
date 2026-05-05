@@ -4,7 +4,7 @@ import com.grid.sample.Config
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
-import com.grid.sample.WebhookStream
+import com.grid.sample.SessionRegistry
 import com.lightspark.grid.utils.WebhookUtils
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -35,13 +35,23 @@ fun Route.webhookRoutes() {
                 val event = GridClientBuilder.client.webhooks().unwrap(rawBody)
                 val eventJson = JsonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event)
                 Log.gridResponse("webhooks.unwrap", eventJson)
-                WebhookStream.addEvent(eventJson)
+                routeToSession(eventJson)
             } catch (e: Exception) {
                 Log.gridError("webhooks.unwrap", e)
-                WebhookStream.addEvent(rawBody)
+                routeToSession(rawBody)
             }
 
             call.respond(HttpStatusCode.OK)
         }
     }
+}
+
+private fun routeToSession(eventJson: String) {
+    val tree = runCatching { JsonUtils.mapper.readTree(eventJson) }.getOrNull()
+    val sessionId = tree?.let { SessionRegistry.sessionFor(it) }
+    if (sessionId == null) {
+        println("Webhook had no tagged resource; dropping (no session to route to)")
+        return
+    }
+    SessionRegistry.emit(sessionId, eventJson)
 }

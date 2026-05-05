@@ -31,7 +31,10 @@ version = "0.0.1"
 
 application {
     mainClass = "io.ktor.server.netty.EngineMain"
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
+}
+
+tasks.named<JavaExec>("run") {
+    systemProperty("io.ktor.development", "true")
 }
 
 repositories {

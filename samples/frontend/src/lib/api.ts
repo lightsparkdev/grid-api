@@ -1,3 +1,5 @@
+import { getSessionId } from './session'
+
 export async function apiPost<T = unknown>(
   path: string,
   body?: unknown,
@@ -5,14 +7,20 @@ export async function apiPost<T = unknown>(
 ): Promise<T> {
   const res = await fetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...extraHeaders },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Session-Id': getSessionId(),
+      ...extraHeaders,
+    },
     body: body ? JSON.stringify(body) : undefined,
   })
   return parseResponse<T>(res)
 }
 
 export async function apiGet<T = unknown>(path: string): Promise<T> {
-  const res = await fetch(path)
+  const res = await fetch(path, {
+    headers: { 'X-Session-Id': getSessionId() },
+  })
   return parseResponse<T>(res)
 }
 

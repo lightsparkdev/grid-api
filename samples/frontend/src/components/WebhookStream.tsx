@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { getSessionId } from '../lib/session'
 
 interface WebhookEvent {
   timestamp: number
@@ -18,7 +19,7 @@ export default function WebhookStream() {
 
   useEffect(() => {
     const connect = () => {
-      const es = new EventSource('/api/sse')
+      const es = new EventSource(`/api/sse?sessionId=${encodeURIComponent(getSessionId())}`)
       eventSourceRef.current = es
 
       es.onopen = () => setConnected(true)

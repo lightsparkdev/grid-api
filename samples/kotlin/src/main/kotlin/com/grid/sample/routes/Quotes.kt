@@ -12,6 +12,7 @@ import com.lightspark.grid.models.quotes.QuoteDestinationOneOf
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
+import com.grid.sample.SessionRegistry
 import com.grid.sample.optText
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -54,6 +55,10 @@ fun Route.quoteRoutes() {
                 val quote = GridClientBuilder.client.quotes().create(params)
                 val responseJson = JsonUtils.prettyPrint(quote)
                 Log.gridResponse("quotes.create", responseJson)
+
+                val sessionId = call.request.header("X-Session-Id")
+                val quoteId = JsonUtils.mapper.readTree(responseJson).get("id")?.asText()
+                SessionRegistry.tag(quoteId, sessionId)
 
                 call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
             } catch (e: Exception) {

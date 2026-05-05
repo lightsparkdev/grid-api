@@ -25,6 +25,8 @@ fun Application.module() {
     }
     install(SSE)
 
+    SessionRegistry.startSweeper()
+
     intercept(ApplicationCallPipeline.Monitoring) {
         val method = call.request.httpMethod.value
         val path = call.request.path()
