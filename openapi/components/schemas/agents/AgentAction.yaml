@@ -1,0 +1,71 @@
+type: object
+description: >-
+  An action submitted by an agent that may require platform approval before execution.
+  All agent-initiated operations (quote execution, transfers) are represented as AgentActions,
+  giving the platform a consistent object to approve, reject, and audit regardless of the
+  underlying operation type.
+required:
+  - id
+  - agentId
+  - customerId
+  - platformCustomerId
+  - status
+  - type
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for this action.
+    example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+  agentId:
+    type: string
+    description: The agent that submitted this action.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  customerId:
+    type: string
+    description: The customer on whose behalf the action was submitted.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000010
+  platformCustomerId:
+    type: string
+    description: Platform-specific ID of the customer.
+    example: user-a1b2c3
+  status:
+    $ref: ./AgentActionStatus.yaml
+  type:
+    $ref: ./AgentActionType.yaml
+  quote:
+    allOf:
+      - $ref: ../quotes/Quote.yaml
+    description: >-
+      The quote being executed. Populated for `EXECUTE_QUOTE` actions; absent for transfer actions.
+      Contains the full amount, currency, destination, and rate details needed to present an
+      approval decision to the user.
+  transferDetails:
+    allOf:
+      - $ref: ./AgentTransferDetails.yaml
+    description: >-
+      Details of the transfer being requested. Populated for `TRANSFER_OUT` and `TRANSFER_IN`
+      actions; absent for `EXECUTE_QUOTE` actions.
+  transaction:
+    allOf:
+      - $ref: ../transactions/TransactionOneOf.yaml
+    description: >-
+      The resulting transaction, populated once the action has been approved and execution
+      has begun. Absent while the action is `PENDING_APPROVAL` or `REJECTED`.
+  rejectionReason:
+    type: string
+    description: >-
+      Human-readable reason provided by the platform when rejecting the action.
+      Only present when status is `REJECTED`.
+    example: Transaction amount exceeds customer's current risk limit.
+  createdAt:
+    type: string
+    format: date-time
+    description: When the action was submitted by the agent.
+    example: '2025-10-03T15:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the action was last updated.
+    example: '2025-10-03T15:02:00Z'

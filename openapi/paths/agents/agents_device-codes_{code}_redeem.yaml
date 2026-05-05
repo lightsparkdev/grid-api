@@ -1,0 +1,46 @@
+parameters:
+  - name: code
+    in: path
+    description: The device code to redeem
+    required: true
+    schema:
+      type: string
+post:
+  summary: Redeem device code
+  description: >
+    Redeem a device code to obtain agent credentials. This endpoint is called by the
+    agent software during installation. On success, returns a Bearer access token
+    that the agent uses for all subsequent API calls. The token is returned only once
+    and must be stored securely.
+
+    This endpoint does not require platform authentication — the device code itself
+    serves as proof of authorization.
+  operationId: redeemAgentDeviceCode
+  tags:
+    - Agent Management
+  security: []
+  responses:
+    '200':
+      description: Device code redeemed successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeviceCodeRedeemResponse.yaml
+    '400':
+      description: Bad request (e.g., code already redeemed or expired)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '404':
+      description: Device code not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

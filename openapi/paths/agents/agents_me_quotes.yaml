@@ -1,0 +1,74 @@
+post:
+  summary: Create a transfer quote
+  description: >
+    Generate a quote for a cross-currency transfer on behalf of the authenticated
+    agent's customer. Accounts referenced in the request must belong to the agent's
+    customer. Requires the CREATE_QUOTES permission in the agent's policy.
+
+    If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
+    exceeds the agent's approvalThresholds, the resulting transaction will require
+    explicit approval before funds move.
+  operationId: agentCreateQuote
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple times,
+        the server will return the same response as the first request.
+      schema:
+        type: string
+        example: <uuid>
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/quotes/QuoteRequest.yaml
+  responses:
+    '201':
+      description: Transfer quote created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/quotes/Quote.yaml
+    '400':
+      description: Bad request - Missing or invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent policy does not permit this operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '412':
+      description: Counterparty doesn't support UMA version
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error412.yaml
+    '424':
+      description: Counterparty issue
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error424.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

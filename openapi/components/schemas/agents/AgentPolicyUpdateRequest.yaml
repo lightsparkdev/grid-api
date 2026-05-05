@@ -1,0 +1,18 @@
+type: object
+description: >-
+  Partial update to an agent's policy. Only provided fields will be updated;
+  omitted fields retain their current values.
+properties:
+  permissions:
+    type: array
+    description: Updated list of permissions. Replaces the entire permissions list when provided.
+    items:
+      $ref: ./AgentPermission.yaml
+  defaultExecutionMode:
+    $ref: ./AgentExecutionMode.yaml
+  spendingLimits:
+    $ref: ./AgentSpendingLimitsUpdate.yaml
+  accountRestrictions:
+    $ref: ./AgentAccountRestrictions.yaml
+  approvalThresholds:
+    $ref: ./AgentApprovalThresholds.yaml

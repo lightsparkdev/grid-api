@@ -1,0 +1,10 @@
+type: object
+description: Response returned when an agent is created, including the agent and a device code for installation.
+required:
+  - agent
+  - deviceCode
+properties:
+  agent:
+    $ref: ./Agent.yaml
+  deviceCode:
+    $ref: ./AgentDeviceCode.yaml

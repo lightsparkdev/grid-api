@@ -852,11 +852,6 @@ div#mobile-nav div#navigation-items > div:first-child {
   margin-bottom: 0 !important;
 }
 
-div#mobile-nav div#navigation-items .flex.flex-wrap {
-  padding-bottom: 20px !important;
-  margin-bottom: 0 !important;
-}
-
 /* Mobile nav - sidebar group list: adjust spacing */
 div#mobile-nav ul.sidebar-group,
 div#mobile-nav ul#sidebar-group,
@@ -1385,6 +1380,18 @@ ul#sidebar-group > li[data-title="Discoveries"] > button::before {
 #sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before,
 ul#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
   background-image: url('/images/icons/lock.svg') !important;
+}
+
+/* Agent Management */
+#sidebar-group > li[data-title="Agent Management"] > button::before,
+ul#sidebar-group > li[data-title="Agent Management"] > button::before {
+  background-image: url('/images/icons/agent.svg') !important;
+}
+
+/* Agent Operations */
+#sidebar-group > li[data-title="Agent Operations"] > button::before,
+ul#sidebar-group > li[data-title="Agent Operations"] > button::before {
+  background-image: url('/images/icons/prompt.svg') !important;
 }
 
 

@@ -29,10 +29,8 @@ allOf:
           The crypto network to use for the funding source. Required when `currency` is a
           stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit
           on, so the correct deposit address can be generated. Example values:
-          `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `ETHEREUM_TESTNET`,
-          `BASE_MAINNET`, `BASE_TESTNET`, `SPARK_MAINNET`, `SPARK_TESTNET`,
-          `LIGHTNING_MAINNET`, `LIGHTNING_REGTEST`.
-        example: SOLANA_MAINNET
+          `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`.
+        example: SOLANA
     description: >-
       Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
       This will require manual just-in-time funding using `paymentInstructions` in the response.

@@ -1,0 +1,74 @@
+parameters:
+  - name: externalAccountId
+    in: path
+    description: System-generated unique external account identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get agent external account by ID
+  description: >
+    Retrieve an external account belonging to the authenticated agent's customer.
+    Returns 404 if the account exists but belongs to a different customer.
+    Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy.
+  operationId: agentGetExternalAccount
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete agent external account
+  description: >
+    Delete an external account belonging to the authenticated agent's customer.
+    Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy.
+  operationId: agentDeleteExternalAccount
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '204':
+      description: External account deleted successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

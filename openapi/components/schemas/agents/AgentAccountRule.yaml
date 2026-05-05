@@ -1,0 +1,17 @@
+type: object
+description: Per-account policy override that takes precedence over the agent's default policy for a specific account.
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: The internal account ID this rule applies to.
+    example: Account:019542f5-b3e7-1d02-0000-000000000001
+  executionMode:
+    $ref: ./AgentExecutionMode.yaml
+  perTransactionLimit:
+    type:
+      - integer
+      - 'null'
+    description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+    example: 10000

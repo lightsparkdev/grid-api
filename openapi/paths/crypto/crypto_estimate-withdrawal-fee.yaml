@@ -21,7 +21,7 @@ post:
             value:
               internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
               currency: USDC
-              cryptoNetwork: SOLANA_MAINNET
+              cryptoNetwork: SOLANA
               amount: 1000000
               destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
   responses:

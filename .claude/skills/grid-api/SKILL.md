@@ -8,7 +8,9 @@ description: >
   "fund sandbox account", "test a payment", "on-ramp", "off-ramp", "convert crypto to fiat",
   "convert fiat to crypto", "look up UMA", "real-time quote", "JIT funding", "check exchange rate",
   "FX rate", "payment corridor", "what rate will I get", "estimate withdrawal fee",
-  "crypto withdrawal fee", or any payment operations using the Grid API CLI.
+  "crypto withdrawal fee", "USDB", "USDB offramp", "embedded wallet", "embedded wallet sign",
+  "Grid-Wallet-Signature", "Turnkey stamp", "payloadToSign", "EMAIL_OTP credential",
+  "HPKE bundle", "decrypt credential bundle", or any payment operations using the Grid API CLI.
 allowed-tools:
   - Bash
   - Read
@@ -24,6 +26,17 @@ Assist users with global payment operations via the Grid API. Core capabilities:
 1. **Execute API Operations** - Use `curl` to interact with the Grid API directly
 2. **Answer Documentation Questions** - Fetch docs from <https://grid.lightspark.com/llms.txt> or the OpenAPI spec (<https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml>)
 3. **Guide Payment Workflows** - Help users send payments to bank accounts, UMA addresses, and crypto wallets
+
+## Embedded Wallet Offramp (USDB → USD bank)
+
+The full **USDB embedded wallet → USD bank** offramp flow has dedicated documentation and helper scripts in the grid-api repo:
+
+- **`scripts/README.md`** — step-by-step walkthrough: onboarding → on-ramp → off-ramp with copy-pasteable curl, including the OTP / HPKE / Turnkey-stamp dance.
+- **`scripts/embedded-wallet-sign.js`** — three subcommands (`gen-keypair`, `decrypt-bundle`, `stamp`) wrapping `@turnkey/crypto` and `@turnkey/api-key-stamper`. One-time setup: `cd scripts && npm install`.
+
+**Read `scripts/README.md` whenever the user asks about**: USDB offramp, embedded-wallet signing, `payloadToSign`, `Grid-Wallet-Signature`, Turnkey stamp, OTP verify, HPKE bundle decrypt, the `EMAIL_OTP` credential flow, or the `/auth/credentials/{id}/verify` and `/auth/credentials/{id}/challenge` endpoints.
+
+**Onboarding gotcha**: register an `EMAIL_OTP` auth credential against the USDB embedded wallet **before the first quote**. Without it, on-ramp quotes fail with `to_network INTERNAL_FUNDED_FIAT does not support USDB` because the Turnkey sub-org / Spark network wallet aren't bootstrapped until the credential triggers it.
 
 ## Supporting References
 
@@ -245,7 +258,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -d '{
     "internalAccountId": "<internalAccountId>",
     "currency": "USDC",
-    "cryptoNetwork": "SOLANA_MAINNET",
+    "cryptoNetwork": "SOLANA",
     "amount": 1000000,
     "destinationAddress": "<blockchain-address>"
   }' \
@@ -259,7 +272,7 @@ Returns:
 - `totalFee` — total cost in withdrawal currency (network fee converted + application fee)
 - `netAmount` — amount recipient receives after all fees
 
-Supported networks: `SOLANA_MAINNET`, `SOLANA_DEVNET`, `ETHEREUM_MAINNET`, `POLYGON_MAINNET`, `BASE_MAINNET`, `TRON_MAINNET`
+Supported networks: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`
 
 ### Quotes (Cross-Currency Transfers)
 

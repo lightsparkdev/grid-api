@@ -1,0 +1,67 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: actionId
+    in: path
+    description: Unique identifier of the agent action to approve
+    required: true
+    schema:
+      type: string
+post:
+  summary: Approve an agent action
+  description: >
+    Approve a pending agent action, allowing Grid to proceed with execution. The action
+    must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying
+    operation (quote execution or transfer) and the action transitions to `APPROVED`.
+
+    For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between
+    submission and approval — in that case the action will transition to `FAILED` instead.
+
+    This endpoint is called by the platform's backend using platform credentials,
+    not by the agent itself.
+  operationId: approveAgentAction
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Action approved successfully. Returns the updated AgentAction.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '400':
+      description: Bad request - Action cannot be approved
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Agent or action not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Action is not pending approval or has already been processed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
