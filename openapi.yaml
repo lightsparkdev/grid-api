@@ -4195,7 +4195,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '429':
-          description: Too many requests. Returned with `RATE_LIMITED` when challenge re-issues are requested more frequently than the OTP rate limit allows. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          description: Too many requests. Returned with `RATE_LIMITED` when challenge re-issues are requested more frequently than the credential challenge rate limit allows. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
           headers:
             Retry-After:
               description: Number of seconds to wait before retrying the request.
