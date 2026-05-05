@@ -4,6 +4,7 @@ import com.lightspark.grid.models.customers.CustomerListInternalAccountsParams
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
+import com.grid.sample.SessionRegistry
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -42,6 +43,14 @@ fun Route.internalAccountRoutes() {
                 )
                 val responseJson = JsonUtils.prettyPrint(responsePayload)
                 Log.gridResponse("customers.listInternalAccounts", responseJson)
+
+                val sessionId = call.request.header("X-Session-Id")
+                if (sessionId != null) {
+                    SessionRegistry.tag(customerId, sessionId)
+                    JsonUtils.mapper.readTree(responseJson).get("data")?.forEach { acct ->
+                        SessionRegistry.tag(acct.get("id")?.asText(), sessionId)
+                    }
+                }
 
                 call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.OK)
             } catch (e: Exception) {

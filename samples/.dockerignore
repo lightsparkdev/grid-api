@@ -1,0 +1,11 @@
+**/.git
+**/.gradle
+**/build
+**/node_modules
+**/dist
+**/test-results
+**/.env
+**/.env.*
+**/*.tsbuildinfo
+kotlin/bin
+kotlin/main

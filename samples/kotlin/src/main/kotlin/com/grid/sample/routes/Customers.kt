@@ -8,6 +8,7 @@ import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
+import com.grid.sample.SessionRegistry
 import com.grid.sample.optText
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -55,6 +56,10 @@ fun Route.customerRoutes() {
                 val customer = GridClientBuilder.client.customers().create(params)
                 val responseJson = JsonUtils.prettyPrint(customer)
                 Log.gridResponse("customers.create", responseJson)
+
+                val sessionId = call.request.header("X-Session-Id")
+                val customerId = JsonUtils.mapper.readTree(responseJson).get("id")?.asText()
+                SessionRegistry.tag(customerId, sessionId)
 
                 call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
             } catch (e: Exception) {
