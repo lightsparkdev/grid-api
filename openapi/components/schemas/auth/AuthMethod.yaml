@@ -22,8 +22,8 @@ properties:
     description: >-
       Human-readable identifier for this credential. For EMAIL_OTP credentials
       this is the email address; for OAUTH credentials it is typically the email
-      claim from the OIDC token; for PASSKEY credentials it is the nickname
-      provided at registration time.
+      claim from the OIDC token; for PASSKEY credentials it is the validated
+      nickname provided at registration time.
     example: example@lightspark.com
   createdAt:
     type: string
