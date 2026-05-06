@@ -5,7 +5,11 @@ get:
     internal accounts that match the specified filters. If no filters are provided, returns all internal accounts
     (paginated).
 
-    Internal accounts are created automatically when a customer is created based on the platform configuration.
+    Internal accounts are created automatically when a customer is created
+    based on the platform configuration. Platforms configured with an
+    Embedded Wallet currency create an internal account with type
+    `EMBEDDED_WALLET`; use the `type` filter to retrieve it for auth and
+    payment flows.
   operationId: listCustomerInternalAccounts
   tags:
     - Internal Accounts

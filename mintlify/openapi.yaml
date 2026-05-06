@@ -757,7 +757,11 @@ paths:
         internal accounts that match the specified filters. If no filters are provided, returns all internal accounts
         (paginated).
 
-        Internal accounts are created automatically when a customer is created based on the platform configuration.
+        Internal accounts are created automatically when a customer is created
+        based on the platform configuration. Platforms configured with an
+        Embedded Wallet currency create an internal account with type
+        `EMBEDDED_WALLET`; use the `type` filter to retrieve it for auth and
+        payment flows.
       operationId: listCustomerInternalAccounts
       tags:
         - Internal Accounts
@@ -7813,7 +7817,7 @@ components:
         email:
           type: string
           format: email
-          description: Email address for the customer.
+          description: Email address for the customer. Required when the customer will receive an Embedded Wallet internal account, because the initial `EMAIL_OTP` credential is tied to the customer email.
           example: john.doe@example.com
         umaAddress:
           type: string
@@ -7958,7 +7962,7 @@ components:
         email:
           type: string
           format: email
-          description: Email address for the customer.
+          description: Email address for the customer. For Embedded Wallet customers, this is the email used for `EMAIL_OTP` credentials.
           example: john.doe@example.com
         umaAddress:
           type: string
@@ -8010,7 +8014,7 @@ components:
 
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
-        - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
+        - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer based on platform currency configuration. Outbound transfers require a session signature produced by the customer's device.
     CurrencyAmount:
       type: object
       required:

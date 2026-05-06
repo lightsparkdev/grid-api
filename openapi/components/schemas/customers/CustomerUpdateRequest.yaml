@@ -20,7 +20,9 @@ properties:
   email:
     type: string
     format: email
-    description: Email address for the customer.
+    description: >-
+      Email address for the customer. For Embedded Wallet customers, this is
+      the email used for `EMAIL_OTP` credentials.
     example: john.doe@example.com
   umaAddress:
     type: string

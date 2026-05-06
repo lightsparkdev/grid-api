@@ -15,5 +15,5 @@ description: >-
   stablecoin such as USDC.
 
   - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the
-  customer. Outbound transfers require a session signature produced by the
-  customer's device — see the Embedded Wallets guide.
+  customer based on platform currency configuration. Outbound transfers
+  require a session signature produced by the customer's device.

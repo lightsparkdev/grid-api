@@ -34,7 +34,10 @@ properties:
   email:
     type: string
     format: email
-    description: Email address for the customer.
+    description: >-
+      Email address for the customer. Required when the customer will receive
+      an Embedded Wallet internal account, because the initial `EMAIL_OTP`
+      credential is tied to the customer email.
     example: john.doe@example.com
   umaAddress:
     type: string
