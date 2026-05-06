@@ -89,6 +89,8 @@ resources:
       individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
       business_customer_fields: "#/components/schemas/BusinessCustomerFields"
       business_info: "#/components/schemas/BusinessInfo"
+      internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
+      internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
     methods:
       create:
         endpoint: post /customers
@@ -101,6 +103,7 @@ resources:
       delete: delete /customers/{customerId}
       get_kyc_link: get /customers/kyc-link
       list_internal_accounts: get /customers/internal-accounts
+      export: post /internal-accounts/{id}/export
     # Subresources define resources that are nested within another for more powerful
     # logical groupings, e.g. `cards.payments`.
     subresources:
@@ -172,6 +175,8 @@ resources:
         methods:
           list: get /customers/external-accounts
           create: post /customers/external-accounts
+          retrieve: get /customers/external-accounts/{externalAccountId}
+          delete: delete /customers/external-accounts/{externalAccountId}
       bulk:
         methods:
           upload_csv: post /customers/bulk/csv
@@ -187,6 +192,8 @@ resources:
         methods:
           list: get /platform/external-accounts
           create: post /platform/external-accounts
+          retrieve: get /platform/external-accounts/{externalAccountId}
+          delete: delete /platform/external-accounts/{externalAccountId}
         models:
           aed_account_info: "#/components/schemas/AedAccountInfo"
           bdt_account_info: "#/components/schemas/BdtAccountInfo"
@@ -318,93 +325,6 @@ resources:
       list: get /tokens
       retrieve: get /tokens/{tokenId}
       delete: delete /tokens/{tokenId}
-
-  auth:
-    subresources:
-      credentials:
-        methods:
-          create: post /auth/credentials
-          list: get /auth/credentials
-          verify: post /auth/credentials/{id}/verify
-          challenge: post /auth/credentials/{id}/challenge
-          delete: delete /auth/credentials/{id}
-        models:
-          auth_method_type: '#/components/schemas/AuthMethodType'
-          auth_method: '#/components/schemas/AuthMethod'
-          auth_session: '#/components/schemas/AuthSession'
-          auth_credential_list_response: '#/components/schemas/AuthCredentialListResponse'
-          auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
-          auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
-          auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
-          auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
-          auth_signed_request_challenge: '#/components/schemas/AuthSignedRequestChallenge'
-          email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
-          email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
-          email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
-          email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
-          oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
-          oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
-          oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
-          oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
-          passkey_attestation: '#/components/schemas/PasskeyAttestation'
-          passkey_assertion: '#/components/schemas/PasskeyAssertion'
-          passkey_credential_create_request: '#/components/schemas/PasskeyCredentialCreateRequest'
-          passkey_credential_create_request_fields: '#/components/schemas/PasskeyCredentialCreateRequestFields'
-          passkey_auth_challenge: '#/components/schemas/PasskeyAuthChallenge'
-          auth_method_response: '#/components/schemas/AuthMethodResponse'
-          auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
-          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
-          passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
-      sessions:
-        methods:
-          list: get /auth/sessions
-          delete: delete /auth/sessions/{id}
-        models:
-          session_list_response: '#/components/schemas/SessionListResponse'
-
-  agents:
-    models:
-      agent: '#/components/schemas/Agent'
-      agent_create_request: '#/components/schemas/AgentCreateRequest'
-      agent_create_response: '#/components/schemas/AgentCreateResponse'
-      agent_update_request: '#/components/schemas/AgentUpdateRequest'
-      agent_list_response: '#/components/schemas/AgentListResponse'
-      agent_device_code: '#/components/schemas/AgentDeviceCode'
-      agent_device_code_status_response: '#/components/schemas/AgentDeviceCodeStatusResponse'
-      agent_device_code_redeem_response: '#/components/schemas/AgentDeviceCodeRedeemResponse'
-      agent_action: '#/components/schemas/AgentAction'
-      agent_action_list_response: '#/components/schemas/AgentActionListResponse'
-      agent_action_reject_request: '#/components/schemas/AgentActionRejectRequest'
-    methods:
-      create: post /agents
-      list: get /agents
-      retrieve: get /agents/{agentId}
-      update: patch /agents/{agentId}
-      delete: delete /agents/{agentId}
-      list_approvals: get /agents/approvals
-    subresources:
-      policy:
-        models:
-          agent_policy: '#/components/schemas/AgentPolicy'
-          agent_policy_update_request: '#/components/schemas/AgentPolicyUpdateRequest'
-        methods:
-          update: patch /agents/{agentId}/policy
-      device_codes:
-        methods:
-          regenerate: post /agents/{agentId}/device-codes
-          get_status: get /agents/device-codes/{code}/status
-          redeem: post /agents/device-codes/{code}/redeem
-      actions:
-        methods:
-          approve: post /agents/{agentId}/actions/{actionId}/approve
-          reject: post /agents/{agentId}/actions/{actionId}/reject
-
-  internal_accounts:
-    methods:
-      export: post /internal-accounts/{id}/export
-    models:
-      internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
-      internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
   exchange_rates:
     methods:
       list:
@@ -478,7 +398,7 @@ resources:
       pkr_beneficiary: "#/components/schemas/PkrBeneficiary"
       ethereum_wallet_external_account_info: "#/components/schemas/EthereumWalletExternalAccountInfo"
       verification_error: "#/components/schemas/VerificationError"
-      signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
+      agent_transfer_details: "#/components/schemas/AgentTransferDetails"
   crypto:
     methods:
       estimate_withdrawal_fee: post /crypto/estimate-withdrawal-fee
@@ -507,6 +427,121 @@ resources:
       list:
         endpoint: get /discoveries
         paginated: false
+  auth:
+    subresources:
+      credentials:
+        methods:
+          create:
+            endpoint: post /auth/credentials
+            body_param_name: AuthCredentialCreateRequest
+          verify:
+            endpoint: post /auth/credentials/{id}/verify
+            body_param_name: AuthCredentialVerifyRequest
+          challenge: post /auth/credentials/{id}/challenge
+          list:
+            endpoint: get /auth/credentials
+            paginated: false
+          delete: delete /auth/credentials/{id}
+        models:
+          auth_method_type: '#/components/schemas/AuthMethodType'
+          auth_method: '#/components/schemas/AuthMethod'
+          auth_session: '#/components/schemas/AuthSession'
+          auth_credential_list_response: '#/components/schemas/AuthCredentialListResponse'
+          auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
+          auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
+          auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
+          auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
+          auth_signed_request_challenge: '#/components/schemas/AuthSignedRequestChallenge'
+          email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
+          email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+          email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
+          email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
+          oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
+          oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
+          oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
+          oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
+          passkey_attestation: '#/components/schemas/PasskeyAttestation'
+          passkey_assertion: '#/components/schemas/PasskeyAssertion'
+          passkey_credential_create_request: '#/components/schemas/PasskeyCredentialCreateRequest'
+          passkey_credential_create_request_fields: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+          passkey_auth_challenge: '#/components/schemas/PasskeyAuthChallenge'
+          auth_method_response: '#/components/schemas/AuthMethodResponse'
+          auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
+          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
+          passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
+          signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
+      sessions:
+        methods:
+          list:
+            endpoint: get /auth/sessions
+            paginated: false
+          delete: delete /auth/sessions/{id}
+        models:
+          session_list_response: '#/components/schemas/SessionListResponse'
+
+  agents:
+    methods:
+      create: post /agents
+      list: get /agents
+      list_approvals: get /agents/approvals
+      retrieve: get /agents/{agentId}
+      update: patch /agents/{agentId}
+      delete: delete /agents/{agentId}
+      update_policy: patch /agents/{agentId}/policy
+    subresources:
+      me:
+        methods:
+          retrieve: get /agents/me
+          create_transfer_in: post /agents/me/transfer-in
+          create_transfer_out: post /agents/me/transfer-out
+          list_internal_accounts: get /agents/me/internal-accounts
+        subresources:
+          transactions:
+            methods:
+              list: get /agents/me/transactions
+              retrieve: get /agents/me/transactions/{transactionId}
+          quotes:
+            methods:
+              create: post /agents/me/quotes
+              retrieve: get /agents/me/quotes/{quoteId}
+              execute: post /agents/me/quotes/{quoteId}/execute
+          external_accounts:
+            methods:
+              list: get /agents/me/external-accounts
+              add: post /agents/me/external-accounts
+              retrieve: get /agents/me/external-accounts/{externalAccountId}
+              delete: delete /agents/me/external-accounts/{externalAccountId}
+          actions:
+            methods:
+              list: get /agents/me/actions
+              retrieve: get /agents/me/actions/{actionId}
+      device_codes:
+        methods:
+          regenerate: post /agents/{agentId}/device-codes
+          get_status: get /agents/device-codes/{code}/status
+          redeem: post /agents/device-codes/{code}/redeem
+      transactions:
+        methods:
+          approve: post /agents/{agentId}/actions/{actionId}/approve
+          reject: post /agents/{agentId}/actions/{actionId}/reject
+      actions:
+        methods:
+          approve: post /agents/{agentId}/actions/{actionId}/approve
+          reject: post /agents/{agentId}/actions/{actionId}/reject
+    models:
+      agent: '#/components/schemas/Agent'
+      agent_create_request: '#/components/schemas/AgentCreateRequest'
+      agent_create_response: '#/components/schemas/AgentCreateResponse'
+      agent_update_request: '#/components/schemas/AgentUpdateRequest'
+      agent_list_response: '#/components/schemas/AgentListResponse'
+      agent_device_code: '#/components/schemas/AgentDeviceCode'
+      agent_device_code_status_response: '#/components/schemas/AgentDeviceCodeStatusResponse'
+      agent_device_code_redeem_response: '#/components/schemas/AgentDeviceCodeRedeemResponse'
+      agent_action: '#/components/schemas/AgentAction'
+      agent_action_list_response: '#/components/schemas/AgentActionListResponse'
+      agent_action_reject_request: '#/components/schemas/AgentActionRejectRequest'
+      agent_policy: "#/components/schemas/AgentPolicy"
+      agent_usage: "#/components/schemas/AgentUsage"
 
 settings:
   # All generated integration tests that hit the prism mock http server are marked
@@ -523,7 +558,7 @@ client_settings:
   opts:
     username:
       type: string
-      nullable: false
+      nullable: true
       auth:
         security_scheme: BasicAuth
         role: username
@@ -531,22 +566,22 @@ client_settings:
       read_env: GRID_CLIENT_ID
     password:
       type: string
-      nullable: false
+      nullable: true
       auth:
         security_scheme: BasicAuth
         role: password
       description: API token authentication using format `<api token id>:<api client secret>`
       read_env: GRID_CLIENT_SECRET
     agent_access_token:
-      type: string
-      nullable: true
-      auth:
-        security_scheme: AgentAuth
-      description: >-
-        Bearer access token obtained by redeeming a device code. Required when calling
-        agent-scoped endpoints (e.g. `GET /agents/me/...`). Leave unset for platform-scoped
-        operations.
-      read_env: GRID_AGENT_ACCESS_TOKEN
+        type: string
+        nullable: true
+        auth:
+          security_scheme: AgentAuth
+        description: >-
+          Bearer access token obtained by redeeming a device code. Required when calling
+          agent-scoped endpoints (e.g. `GET /agents/me/...`). Leave unset for platform-scoped
+          operations.
+        read_env: GRID_AGENT_ACCESS_TOKEN
     webhook_signature:
       type: string
       nullable: true
@@ -802,7 +837,6 @@ openapi:
           - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentEthereumWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentEmbeddedWalletInfo.allOf[0]"
         keys: [ "$ref" ]
 
     # ── Remove $ref to BaseExternalAccountInfo from external account variants ──
@@ -918,7 +952,6 @@ openapi:
           - "$.components.schemas.AuthCredentialCreateRequest.properties"
           - "$.components.schemas.AuthCredentialVerifyRequest.properties"
         keys: [ "type" ]
-
     # ── Remove $ref to AuthCredentialVerifyRequest from verify variants ──
     - command: remove
       reason: >-
@@ -942,3 +975,4 @@ diagnostics:
     Schema/EnumHasOneMember: true
     Schema/RequiredPropertyNotDefined: true
     Schema/IsAmbiguous: true
+    Schema/IntersectionInlineEntriesIgnored: true
