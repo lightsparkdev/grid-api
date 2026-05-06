@@ -143,7 +143,7 @@ fun Route.authCredentialRoutes() {
                     )
                 // Body is required for PASSKEY (carries clientPublicKey so Grid can
                 // seal the session signing key to the device). Empty body is fine
-                // for EMAIL_OTP and OAUTH.
+                // for EMAIL_OTP. OAUTH does not need a challenge; verify directly.
                 val body = runCatching { call.receiveText() }.getOrDefault("")
                 val clientPublicKey = body.takeIf { it.isNotBlank() }
                     ?.let { JsonUtils.mapper.readTree(it).optText("clientPublicKey") }

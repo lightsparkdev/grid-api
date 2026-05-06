@@ -2,12 +2,11 @@ title: Auth Method Response
 description: >-
   Strict wrapper around `AuthMethod`. Used directly as the registration
   response on `POST /auth/credentials` (all three credential types) and
-  inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` and `OAUTH`
-  branches of `POST /auth/credentials/{id}/challenge`. The only
-  difference from `AuthMethod` is `unevaluatedProperties: false`, which
-  disambiguates the oneOf against `PasskeyAuthChallenge` — without the
-  strictness, an `AuthMethod` with extra fields would ambiguously match
-  both branches.
+  inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` branch of
+  `POST /auth/credentials/{id}/challenge`. The only difference from
+  `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the
+  oneOf against `PasskeyAuthChallenge` — without the strictness, an
+  `AuthMethod` with extra fields would ambiguously match both branches.
 allOf:
   - $ref: ./AuthMethod.yaml
 unevaluatedProperties: false
