@@ -15615,6 +15615,7 @@ components:
       required:
         - type
         - otp
+        - clientPublicKey
       properties:
         type:
           type: string
