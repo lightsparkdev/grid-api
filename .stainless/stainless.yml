@@ -453,12 +453,10 @@ resources:
           auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
           auth_signed_request_challenge: '#/components/schemas/AuthSignedRequestChallenge'
           email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
-          email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
           email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
           email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
           oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
           oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
-          oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
           oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
           passkey_attestation: '#/components/schemas/PasskeyAttestation'
           passkey_assertion: '#/components/schemas/PasskeyAssertion'
@@ -467,7 +465,6 @@ resources:
           passkey_auth_challenge: '#/components/schemas/PasskeyAuthChallenge'
           auth_method_response: '#/components/schemas/AuthMethodResponse'
           auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
-          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
           passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
           signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
       sessions:
