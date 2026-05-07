@@ -1,0 +1,14 @@
+title: Email OTP Auth Method
+description: Authentication credential response for an EMAIL_OTP auth method.
+allOf:
+  - $ref: ./AuthMethodBase.yaml
+  - type: object
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        enum:
+          - EMAIL_OTP
+        description: >-
+          Discriminator value identifying this as an email OTP credential.

@@ -1,0 +1,13 @@
+title: OAuth Auth Method
+description: Authentication credential response for an OAUTH auth method.
+allOf:
+  - $ref: ./AuthMethodBase.yaml
+  - type: object
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        enum:
+          - OAUTH
+        description: Discriminator value identifying this as an OAuth credential.
