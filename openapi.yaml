@@ -3740,13 +3740,9 @@ paths:
       description: |
         Register an authentication credential for an Embedded Wallet customer.
 
-        **First credential on an internal account**
+        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`OAUTH` or `PASSKEY`), or to add `EMAIL_OTP` back after it has been removed. Only one `EMAIL_OTP` credential and one `PASSKEY` credential are supported per internal account.
 
-        If the target internal account does not yet have any authentication credential registered, call this endpoint with the credential details. The response is `201` with the created `AuthMethod`. For `EMAIL_OTP` credentials, this call also triggers a one-time password email to the address on the customer record tied to the internal account; the credential must be activated via `POST /auth/credentials/{id}/verify` before it can sign requests. For `OAUTH` credentials, the supplied `oidcToken` is validated inline against the issuer's `.well-known` OpenID configuration (the token's `iat` must be less than 60 seconds before the request); activation still happens via `POST /auth/credentials/{id}/verify`. For `PASSKEY` credentials, the client completes a WebAuthn registration (`navigator.credentials.create()`) using a `challenge` issued by the platform backend and submits the resulting `attestation` here. The registration response is a plain `AuthMethod` (no inline authentication challenge). To produce the first session, the client follows registration with two further calls: `POST /auth/credentials/{id}/challenge` (carrying the client's ephemeral `clientPublicKey`) returns a Grid-issued WebAuthn challenge plus `requestId`, and `POST /auth/credentials/{id}/verify` (with `Request-Id: <requestId>`) consumes the resulting assertion and issues the session. The same two-step pattern is used on every subsequent reauthentication. Only one `PASSKEY` credential is supported per internal account in v1.
-
-        **Adding an additional credential**
-
-        Registering an additional credential against an internal account that already has one requires a signature from an existing verified credential. Call this endpoint with the new credential's details; if an existing credential is already registered on the internal account the response is `202` with a `payloadToSign` and a `requestId`. Use the session API keypair of an existing verified credential on the same internal account (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -3756,14 +3752,14 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified authentication credential on the target internal account. Required when registering an additional credential on an internal account that already has one; ignored when the internal account has no existing credentials.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified authentication credential on the target internal account. Required on the signed retry.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering an additional credential; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering a credential; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
           example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
@@ -3775,18 +3771,18 @@ paths:
               $ref: '#/components/schemas/AuthCredentialCreateRequestOneOf'
             examples:
               emailOtp:
-                summary: Register an email OTP credential
+                summary: Add an email OTP credential
                 value:
                   type: EMAIL_OTP
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
               oauth:
-                summary: Register an OAuth credential
+                summary: Add an OAuth credential
                 value:
                   type: OAUTH
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
               passkey:
-                summary: Register a passkey credential
+                summary: Add a passkey credential
                 value:
                   type: PASSKEY
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
@@ -3801,7 +3797,7 @@ paths:
                       - hybrid
       responses:
         '201':
-          description: Authentication credential created successfully. The body is the created `AuthMethod` for all three credential types. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
+          description: Authentication credential created successfully. The body is the created `AuthMethod` for all three credential types. For `EMAIL_OTP`, the email is the customer email tied to the internal account. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
             application/json:
               schema:
@@ -3835,7 +3831,7 @@ paths:
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
         '202':
-          description: An existing authentication credential is already registered on the internal account. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
+          description: Challenge issued. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
           content:
             application/json:
               schema:
@@ -3863,7 +3859,7 @@ paths:
                     requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an `EMAIL_OTP` credential on an internal account that already has one — only one email OTP credential is supported per internal account at this time. Returned with `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a `PASSKEY` credential on an internal account that already has one — only one passkey credential is supported per internal account in v1.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a credential type that already exists on the internal account. Only one email OTP credential and one passkey credential are supported per internal account at this time.
           content:
             application/json:
               schema:
@@ -15783,7 +15779,7 @@ components:
               example: '2026-04-08T15:35:00Z'
     AuthCredentialResponseOneOf:
       title: Auth Credential Response
-      description: Discriminated response shape returned from `POST /auth/credentials/{id}/challenge`. For `EMAIL_OTP` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion. OAuth credentials do not use the challenge endpoint; call `POST /auth/credentials/{id}/verify` with a fresh OIDC token instead. Registration responses from `POST /auth/credentials` use the simpler `AuthMethodResponse` shape directly for all three credential types.
+      description: Discriminated response shape returned from `POST /auth/credentials/{id}/challenge`. For `EMAIL_OTP` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the base `AuthMethod` fields plus the Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion. OAuth credentials do not use the challenge endpoint. Registration responses from `POST /auth/credentials` use the simpler `AuthMethodResponse` shape directly for all three credential types.
       oneOf:
         - $ref: '#/components/schemas/AuthMethodResponse'
         - $ref: '#/components/schemas/PasskeyAuthChallenge'
