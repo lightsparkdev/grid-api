@@ -25,10 +25,10 @@ properties:
   requestId:
     type: string
     description: >-
-      Unique identifier for this request. Must be echoed in the
-      `Request-Id` header on the signed retry so the server can
-      correlate the retry with the issued challenge.
-    example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      Grid-issued `Request:<uuid>` identifier for this pending request.
+      Echo this value exactly in the `Request-Id` header on the signed
+      retry so the server can correlate the retry with the issued challenge.
+    example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
   expiresAt:
     type: string
     format: date-time

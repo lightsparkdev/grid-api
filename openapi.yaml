@@ -3820,10 +3820,10 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -3897,10 +3897,10 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering a credential; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering a credential; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -3979,22 +3979,22 @@ paths:
                   summary: Additional email OTP credential challenge
                   value:
                     type: EMAIL_OTP
-                    payloadToSign: '{"requestId":"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21","type":"EMAIL_OTP","accountId":"InternalAccount:01HF3Z4QWERTY","expiresAt":"2026-04-08T15:35:00Z"}'
-                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    payloadToSign: '{"requestId":"Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21","type":"EMAIL_OTP","accountId":"InternalAccount:01HF3Z4QWERTY","expiresAt":"2026-04-08T15:35:00Z"}'
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
                 oauth:
                   summary: Additional OAuth credential challenge
                   value:
                     type: OAUTH
                     payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
-                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
                 passkey:
                   summary: Additional passkey credential challenge
                   value:
                     type: PASSKEY
                     payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
-                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a credential type that already exists on the internal account. Only one email OTP credential and one passkey credential are supported per internal account at this time.
@@ -4235,10 +4235,10 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
         '202':
           description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account (other than the one being revoked), then echo `requestId` on the retry.
@@ -4296,10 +4296,10 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned alongside the Grid-issued `challenge` from `POST /auth/credentials/{id}/challenge`, echoed back here so Grid can correlate the assertion with the pending challenge.
+          description: The `requestId` returned alongside the Grid-issued `challenge` from `POST /auth/credentials/{id}/challenge`, echoed back exactly here so Grid can correlate the assertion with the pending challenge.
           schema:
             type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -4425,7 +4425,7 @@ paths:
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
                     challenge: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
-                    requestId: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request
@@ -4538,10 +4538,10 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
         '202':
           description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified session on the same internal account, then echo `requestId` on the retry.
@@ -15758,8 +15758,8 @@ components:
           example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
         requestId:
           type: string
-          description: Unique identifier for this request. Must be echoed in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          description: Grid-issued `Request:<uuid>` identifier for this pending request. Echo this value exactly in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
         expiresAt:
           type: string
           format: date-time
@@ -16176,8 +16176,8 @@ components:
               example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
             requestId:
               type: string
-              description: Unique identifier for this pending passkey authentication request. Must be echoed as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
-              example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+              description: Grid-issued `Request:<uuid>` identifier for this pending passkey authentication request. Echo this value exactly as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
+              example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
             expiresAt:
               type: string
               format: date-time
