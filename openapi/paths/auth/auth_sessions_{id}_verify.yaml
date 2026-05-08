@@ -1,0 +1,108 @@
+post:
+  summary: Verify a session reauthentication challenge
+  description: >
+    Complete mid-session reauthentication for an active Embedded Wallet auth
+    session and create a new session signing key.
+
+
+    This is the signed retry for `POST /auth/sessions/{id}/challenge`. The
+    request must include the full API-key stamp over the prior `payloadToSign`
+    as `Grid-Wallet-Signature`, the challenge `requestId` as `Request-Id`, and
+    the same `clientPublicKey` that was supplied on the challenge step. On
+    success, Grid returns a new `AuthSession` with an
+    `encryptedSessionSigningKey` sealed to that client public key.
+
+
+    This endpoint requires the original session to still be active so it can
+    authorize the refresh. If the session has already expired, use the
+    credential reauthentication flow instead.
+  operationId: verifyAuthSession
+  tags:
+    - Embedded Wallet Auth
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      description: The id of the active session being reauthenticated.
+      required: true
+      schema:
+        type: string
+      example: Session:019542f5-b3e7-1d02-0000-000000000003
+    - name: Grid-Wallet-Signature
+      in: header
+      required: true
+      description: >-
+        Full API-key stamp built over the prior `payloadToSign` with the current
+        session API keypair.
+      schema:
+        type: string
+      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+    - name: Request-Id
+      in: header
+      required: true
+      description: >-
+        The `requestId` returned in the prior challenge response, echoed back so
+        the server can correlate this signed retry with the issued challenge.
+      schema:
+        type: string
+      example: Request:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/auth/AuthSessionReauthRequest.yaml
+        examples:
+          reauth:
+            summary: Complete mid-session reauthentication
+            value:
+              clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+  responses:
+    '201':
+      description: New authentication session created successfully.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/auth/AuthSession.yaml
+          examples:
+            session:
+              summary: Refreshed authentication session
+              value:
+                id: Session:019542f5-b3e7-1d02-0000-000000000011
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                type: EMAIL_OTP
+                encryptedSessionSigningKey: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
+                nickname: example@lightspark.com
+                createdAt: '2026-04-08T15:30:01Z'
+                updatedAt: '2026-04-08T15:35:00Z'
+                expiresAt: '2026-04-08T15:50:00Z'
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: >-
+        Unauthorized. Returned when the provided `Grid-Wallet-Signature` is
+        missing, malformed, or does not match the pending reauthentication
+        challenge, when the `Request-Id` does not match an unexpired pending
+        challenge, or when the retry's `clientPublicKey` does not match the one
+        bound into `payloadToSign` on the challenge step.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Session not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

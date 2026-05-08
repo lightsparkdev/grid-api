@@ -2,7 +2,8 @@ title: Authentication Session
 description: >-
   An authentication session on an Embedded Wallet internal account.
   Returned from `GET /auth/sessions` (list) and
-  `POST /auth/credentials/{id}/verify` (on credential verification).
+  `POST /auth/credentials/{id}/verify` (on credential verification) or
+  `POST /auth/sessions/{id}/verify` (on mid-session reauthentication).
   Only the verify response includes `encryptedSessionSigningKey` — it
   is delivered exactly once at the moment the session is issued and
   is never returned by the list endpoint.
@@ -34,11 +35,12 @@ allOf:
           Wallet requests until `expiresAt`.
 
 
-          Only returned from `POST /auth/credentials/{id}/verify`
-          (where the session is first issued). Omitted from responses
-          that simply surface existing sessions (e.g.
-          `GET /auth/sessions`) — Grid does not retain the plaintext
-          key after the client has decrypted it.
+          Only returned from session-issuing responses like
+          `POST /auth/credentials/{id}/verify` and
+          `POST /auth/sessions/{id}/verify`. Omitted from responses that
+          simply surface existing sessions (e.g. `GET /auth/sessions`) —
+          Grid does not retain the plaintext key after the client has
+          decrypted it.
         example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
       expiresAt:
         type: string
