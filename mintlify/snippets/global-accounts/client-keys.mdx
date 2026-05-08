@@ -224,7 +224,7 @@ Grid returns `payloadToSign` strings from several endpoints:
 
 - `POST /quotes` (when the source is a Global Account) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
-- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export` — all 202 response bodies.
+- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}` — all 202 response bodies.
 
 Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The signature is ECDSA over SHA-256 using the session signing key, DER-encoded, then base64-encoded. Pass it as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, the `Request-Id` header echoed back from the 202).
 
