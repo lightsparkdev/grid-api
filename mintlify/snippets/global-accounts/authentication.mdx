@@ -430,7 +430,7 @@ sequenceDiagram
   participant E as Email
 
   C->>IB: POST /my-backend/otp/register { email }
-  IB->>G: POST /auth/credentials { type: EMAIL_OTP, email, accountId }
+  IB->>G: POST /auth/credentials { type: EMAIL_OTP, accountId }
   G->>E: deliver OTP email
   G-->>IB: 201 AuthMethod
   IB-->>C: { credentialId }
@@ -448,8 +448,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "EMAIL_OTP",
-    "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
-    "email": "jane@example.com"
+    "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002"
   }'
 ```
 
@@ -577,8 +576,7 @@ Requires an active session on an *existing* credential on the same account. The 
       -H "Content-Type: application/json" \
       -d '{
         "type": "EMAIL_OTP",
-        "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
-        "email": "jane@example.com"
+        "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002"
       }'
     ```
 
@@ -607,8 +605,7 @@ Requires an active session on an *existing* credential on the same account. The 
       -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
       -d '{
         "type": "EMAIL_OTP",
-        "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002",
-        "email": "jane@example.com"
+        "accountId": "EmbeddedWallet:019542f5-b3e7-1d02-0000-000000000002"
       }'
     ```
 

@@ -77,24 +77,27 @@ g "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID" \
 
 Capture the **USDB account id** into `$USDB_ACCT`.
 
-### 1.4 Bootstrap the embedded wallet (register an EMAIL_OTP credential)
+### 1.4 Bootstrap the embedded wallet (verify the EMAIL_OTP credential)
 
 > **Required before the first quote.** The USDB embedded wallet's Turnkey
 > sub-org and Spark network wallet aren't fully provisioned at customer
-> creation time. Registering an auth credential triggers that bootstrap.
-> Skipping causes the first on-ramp quote to fail with
+> creation time. Verifying the auto-created auth credential triggers that
+> bootstrap. Skipping causes the first on-ramp quote to fail with
 > `to_network INTERNAL_FUNDED_FIAT does not support USDB`.
 
+An `EMAIL_OTP` credential is automatically created when the embedded wallet
+is provisioned. Find it and issue a challenge to send the OTP email:
+
 ```bash
-CRED=$(g -X POST -H 'Content-Type: application/json' \
-  -d '{"type": "EMAIL_OTP", "accountId": "'$USDB_ACCT'"}' \
-  "$GRID_BASE_URL/auth/credentials")
-CRED_ID=$(echo "$CRED" | jq -r .id)
+CRED_ID=$(g "$GRID_BASE_URL/auth/credentials?accountId=$USDB_ACCT" \
+  | jq -r '.data[] | select(.type=="EMAIL_OTP") | .id')
+
+g -X POST "$GRID_BASE_URL/auth/credentials/$CRED_ID/challenge"
 ```
 
-This also sends an OTP email to the address on the customer record. Keep
-the code handy; you'll use it for the offramp signing step (3.3) within
-the OTP TTL (~5 min). If it expires, re-issue via `/challenge` (3.2).
+This sends an OTP email to the address on the customer record. Keep the code
+handy; you'll use it for the offramp signing step (3.3) within the OTP TTL
+(~5 min). If it expires, re-issue via `/challenge` (3.2).
 
 ### 1.5 Add a destination bank (USD external account)
 
