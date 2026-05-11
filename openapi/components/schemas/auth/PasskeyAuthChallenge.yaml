@@ -1,20 +1,28 @@
 title: Passkey Auth Challenge
 description: >-
   Extended `AuthMethod` shape returned for `PASSKEY` credentials from
-  `POST /auth/credentials` (first-authentication case) and
-  `POST /auth/credentials/{id}/challenge` (reauthentication case). Adds a
-  Grid-issued `challenge`, the corresponding `requestId`, and the
-  challenge's `expiresAt` to the base `AuthMethod` fields. The client signs
-  the challenge with the passkey to produce the assertion submitted to
-  `POST /auth/credentials/{id}/verify`.
+  `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn
+  `credentialId` needed to target the passkey, plus the Grid-issued
+  `challenge`, corresponding `requestId`, and challenge `expiresAt`. The
+  client signs the challenge with the passkey to produce the assertion
+  submitted to `POST /auth/credentials/{id}/verify`.
 allOf:
   - $ref: ./AuthMethod.yaml
   - type: object
     required:
+      - credentialId
       - challenge
       - requestId
       - expiresAt
     properties:
+      credentialId:
+        type: string
+        description: >-
+          Base64url-encoded WebAuthn credential identifier for this passkey.
+          Corresponds to `PublicKeyCredential.rawId`; pass this value as
+          `allowCredentials[].id` when requesting a passkey assertion for this
+          auth method.
+        example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
       challenge:
         type: string
         description: >-
