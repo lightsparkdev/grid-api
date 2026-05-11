@@ -17,6 +17,14 @@ properties:
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   type:
     $ref: ./AuthMethodType.yaml
+  credentialId:
+    type: string
+    description: >-
+      Base64url-encoded WebAuthn credential identifier for this passkey.
+      Present only for `PASSKEY` authentication credentials. Corresponds to
+      `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id`
+      when requesting a passkey assertion for this auth method.
+    example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
   nickname:
     type: string
     description: >-
