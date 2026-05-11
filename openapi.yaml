@@ -15414,13 +15414,23 @@ components:
           format: date-time
           description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
           example: '2026-04-08T15:35:00Z'
-    AuthMethodBase:
-      title: Auth Method Base
-      description: Shared fields for authentication credential responses.
+    AuthMethodType:
+      type: string
+      enum:
+        - OAUTH
+        - EMAIL_OTP
+        - PASSKEY
+      description: |-
+        The type of authentication credential.
+        - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
+        - `EMAIL_OTP`: A one-time password delivered to the user's email address.
+        - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+    AuthMethod:
       type: object
       required:
         - id
         - accountId
+        - type
         - nickname
         - createdAt
         - updatedAt
@@ -15433,6 +15443,12 @@ components:
           type: string
           description: Identifier of the internal account that this credential authenticates.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        credentialId:
+          type: string
+          description: Base64url-encoded WebAuthn credential identifier for this passkey. Present only for `PASSKEY` authentication credentials. Corresponds to `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id` when requesting a passkey assertion for this auth method.
+          example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
         nickname:
           type: string
           description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
@@ -15447,66 +15463,6 @@ components:
           format: date-time
           description: Last update timestamp.
           example: '2026-04-08T15:35:00Z'
-    EmailOtpAuthMethod:
-      title: Email OTP Auth Method
-      description: Authentication credential response for an EMAIL_OTP auth method.
-      allOf:
-        - $ref: '#/components/schemas/AuthMethodBase'
-        - type: object
-          required:
-            - type
-          properties:
-            type:
-              type: string
-              enum:
-                - EMAIL_OTP
-              description: Discriminator value identifying this as an email OTP credential.
-    OauthAuthMethod:
-      title: OAuth Auth Method
-      description: Authentication credential response for an OAUTH auth method.
-      allOf:
-        - $ref: '#/components/schemas/AuthMethodBase'
-        - type: object
-          required:
-            - type
-          properties:
-            type:
-              type: string
-              enum:
-                - OAUTH
-              description: Discriminator value identifying this as an OAuth credential.
-    PasskeyAuthMethod:
-      title: Passkey Auth Method
-      description: Authentication credential response for a PASSKEY auth method. Extends the base auth method fields with the WebAuthn credential identifier needed by clients to target this passkey in `navigator.credentials.get()`.
-      allOf:
-        - $ref: '#/components/schemas/AuthMethodBase'
-        - type: object
-          required:
-            - type
-            - credentialId
-          properties:
-            type:
-              type: string
-              enum:
-                - PASSKEY
-              description: Discriminator value identifying this as a passkey credential.
-            credentialId:
-              type: string
-              description: Base64url-encoded WebAuthn credential identifier for this passkey. Corresponds to `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id` when requesting a passkey assertion for this auth method.
-              example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
-    AuthCredentialListItem:
-      title: Auth Credential List Item
-      description: Authentication credential returned from `GET /auth/credentials`. Passkey credentials include the WebAuthn `credentialId` needed to target a specific registered passkey; email OTP and OAuth credentials use the base list item shape.
-      oneOf:
-        - $ref: '#/components/schemas/EmailOtpAuthMethod'
-        - $ref: '#/components/schemas/OauthAuthMethod'
-        - $ref: '#/components/schemas/PasskeyAuthMethod'
-      discriminator:
-        propertyName: type
-        mapping:
-          EMAIL_OTP: '#/components/schemas/EmailOtpAuthMethod'
-          OAUTH: '#/components/schemas/OauthAuthMethod'
-          PASSKEY: '#/components/schemas/PasskeyAuthMethod'
     AuthCredentialListResponse:
       type: object
       required:
@@ -15516,18 +15472,7 @@ components:
           type: array
           description: List of authentication credentials registered on the internal account.
           items:
-            $ref: '#/components/schemas/AuthCredentialListItem'
-    AuthMethodType:
-      type: string
-      enum:
-        - OAUTH
-        - EMAIL_OTP
-        - PASSKEY
-      description: |-
-        The type of authentication credential.
-        - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
-        - `EMAIL_OTP`: A one-time password delivered to the user's email address.
-        - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+            $ref: '#/components/schemas/AuthMethod'
     AuthCredentialCreateRequest:
       type: object
       required:
@@ -15648,17 +15593,6 @@ components:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
-    AuthMethod:
-      title: Auth Method
-      description: Authentication credential response.
-      allOf:
-        - $ref: '#/components/schemas/AuthMethodBase'
-        - type: object
-          required:
-            - type
-          properties:
-            type:
-              $ref: '#/components/schemas/AuthMethodType'
     AuthMethodResponse:
       title: Auth Method Response
       description: 'Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` (all three credential types) and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` branch of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
