@@ -74,7 +74,10 @@ properties:
     format: int64
     description: >-
       The fees associated with the quote in the smallest unit of the sending
-      currency (eg. cents).
+      currency (eg. cents). Note: this value may fluctuate between quotes —
+      some underlying fee components are defined in the receiving currency,
+      so their equivalent in the sending currency moves with the FX rate.
+      The fees shown here are locked only for the lifetime of this quote.
     minimum: 0
     example: 10
   paymentInstructions:

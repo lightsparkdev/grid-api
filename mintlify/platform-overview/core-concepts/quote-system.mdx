@@ -340,6 +340,15 @@ Fees are deducted from the sending amount, so:
 - **Amount converted**: $995.00
 - **Recipient receives**: €915.40 (at 0.92 rate)
 
+<Note>
+  Quoted fees may fluctuate between quotes. Some fee components (e.g.
+  `counterpartyFixedFee` on outgoing transfers, and `gridApiFixedFee` on
+  incoming transfers) are denominated in the receiving currency, so their
+  value in the sending currency moves with the FX rate. Always reference the
+  fees in the latest quote response — they are locked only for the lifetime
+  of that quote.
+</Note>
+
 ## Best Practices
 
 <AccordionGroup>
