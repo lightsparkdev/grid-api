@@ -1,0 +1,67 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID to generate a KYC link for.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Generate a hosted KYC link for an existing customer
+  description: |
+    Generate a single-use hosted URL the customer can complete to verify their identity, and (where supported) a provider-specific `token` for embedding the verification flow directly via the provider's SDK.
+
+    The customer must already exist — create them with `POST /customers` first. Calling this endpoint does not change the customer's `kycStatus`; the customer remains `PENDING` until they complete (or fail) the hosted flow.
+
+    Each call returns a fresh link. Previously-issued links are not invalidated, but they remain single-use and will expire on their own. For request-level retry safety, include an `Idempotency-Key` header.
+  operationId: createCustomerKycLink
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple times,
+        the server will return the same response as the first request.
+      schema:
+        type: string
+        example: <uuid>
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/KycLinkCreateRequest.yaml
+  responses:
+    '201':
+      description: KYC link generated
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/KycLinkResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

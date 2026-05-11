@@ -123,8 +123,8 @@ paths:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
-  /customers/kyc-link:
-    $ref: paths/customers/customers_kyc_link.yaml
+  /customers/{customerId}/kyc-link:
+    $ref: paths/customers/customers_{customerId}_kyc-link.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:

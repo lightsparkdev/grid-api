@@ -1,0 +1,8 @@
+type: string
+description: >-
+  The KYC provider that will perform identity verification for the customer. Grid selects the
+  provider based on the customer's region and platform configuration; the value is informational
+  for platforms that want to integrate directly with the provider's SDK.
+enum:
+  - SUMSUB
+example: SUMSUB

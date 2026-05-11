@@ -708,41 +708,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /customers/kyc-link:
+  /customers/{customerId}/kyc-link:
     parameters:
-      - name: redirectUri
-        in: query
-        description: An optional uri a customer will be redirected to after completing the hosted KYC flow
-        required: false
-        schema:
-          type: string
-      - name: platformCustomerId
-        in: query
-        description: The platform id of the customer to onboard
+      - name: customerId
+        in: path
+        description: The Grid customer ID to generate a KYC link for.
         required: true
         schema:
           type: string
-    get:
-      summary: Get a KYC link for onboarding a customer
-      description: Generate a hosted KYC link to onboard a customer
-      operationId: getKycLinkForCustomer
+    post:
+      summary: Generate a hosted KYC link for an existing customer
+      description: |
+        Generate a single-use hosted URL the customer can complete to verify their identity, and (where supported) a provider-specific `token` for embedding the verification flow directly via the provider's SDK.
+
+        The customer must already exist — create them with `POST /customers` first. Calling this endpoint does not change the customer's `kycStatus`; the customer remains `PENDING` until they complete (or fail) the hosted flow.
+
+        Each call returns a fresh link. Previously-issued links are not invalidated, but they remain single-use and will expire on their own. For request-level retry safety, include an `Idempotency-Key` header.
+      operationId: createCustomerKycLink
       tags:
         - KYC/KYB Verifications
       security:
         - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: <uuid>
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycLinkCreateRequest'
       responses:
-        '200':
-          description: Successful operation
+        '201':
+          description: KYC link generated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/KycLinkResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7983,21 +8009,44 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    KycLinkCreateRequest:
+      type: object
+      description: Request body for generating a hosted KYC link for an existing customer.
+      properties:
+        redirectUri:
+          type: string
+          format: uri
+          description: URI the customer is redirected to after completing the hosted KYC flow. Must start with `https://` (or `http://` for local development). Embedded in the returned `kycUrl`.
+          example: https://app.example.com/onboarding/completed
+    KycProvider:
+      type: string
+      description: The KYC provider that will perform identity verification for the customer. Grid selects the provider based on the customer's region and platform configuration; the value is informational for platforms that want to integrate directly with the provider's SDK.
+      enum:
+        - SUMSUB
+      example: SUMSUB
     KycLinkResponse:
       type: object
+      description: A hosted KYC link that the customer can complete to verify their identity.
+      required:
+        - kycUrl
+        - expiresAt
+        - provider
       properties:
         kycUrl:
           type: string
-          description: A hosted KYC link for your customer to complete KYC
-          example: https://example.com/redirect
-        platformCustomerId:
+          description: Hosted URL the customer should be sent to in order to complete verification. The URL is single-use and expires at `expiresAt`. To generate a new link (for example, after the previous one expires or is abandoned), call this endpoint again.
+          example: https://kyc.lightspark.com/onboard/abc123def456
+        expiresAt:
           type: string
-          description: The platform id of the customer to onboard
-          example: 019542f5-b3e7-1d02-0000-000000000001
-        customerId:
+          format: date-time
+          description: Time at which the hosted link expires and can no longer be used.
+          example: '2027-01-15T14:32:00Z'
+        provider:
+          $ref: '#/components/schemas/KycProvider'
+        token:
           type: string
-          description: The customer id of the newly created customer on the system
-          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+          description: Provider-specific token that can be used in place of the hosted URL — for example, to embed the provider's SDK directly in your application. Only returned for providers that support direct SDK integration. Whether to use the hosted URL or the embedded SDK is up to you; both flows result in the same `kycStatus` update on the customer.
+          example: _act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     InternalAccountType:
       title: Internal Account Type
       type: string
