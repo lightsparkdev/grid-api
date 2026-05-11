@@ -1,13 +1,10 @@
 title: Internal Account Update Request
 description: >-
-  Request body for `PATCH /internal-accounts/{id}`. The `privateEnabled`
-  value is required on both steps of the signed-retry flow. On step 1 Grid
-  binds it into `payloadToSign`; on step 2 the client echoes the same value
-  back and Grid updates the wallet privacy setting for the internal account's
-  Embedded Wallet.
+  Partial request body for `PATCH /internal-accounts/{id}`. At least one
+  update field must be provided. On step 1 of the signed-retry flow Grid binds
+  the submitted update fields into `payloadToSign`; on step 2 the client echoes
+  the same fields back and Grid applies the update to the internal account.
 type: object
-required:
-  - privateEnabled
 properties:
   privateEnabled:
     type: boolean
