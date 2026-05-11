@@ -437,6 +437,9 @@ resources:
           verify:
             endpoint: post /auth/credentials/{id}/verify
             body_param_name: AuthCredentialVerifyRequest
+          update:
+            endpoint: patch /auth/credentials/{id}
+            body_param_name: AuthCredentialUpdateRequest
           challenge: post /auth/credentials/{id}/challenge
           list:
             endpoint: get /auth/credentials
@@ -448,6 +451,7 @@ resources:
           auth_session: '#/components/schemas/AuthSession'
           auth_credential_list_response: '#/components/schemas/AuthCredentialListResponse'
           auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
+          auth_credential_update_request: '#/components/schemas/AuthCredentialUpdateRequest'
           auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
           auth_credential_create_request_one_of: '#/components/schemas/AuthCredentialCreateRequestOneOf'
           auth_credential_verify_request_one_of: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
