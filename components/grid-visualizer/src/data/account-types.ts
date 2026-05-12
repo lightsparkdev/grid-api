@@ -298,10 +298,8 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   COP_ACCOUNT: {
     accountType: 'COP_ACCOUNT',
     fields: [
-      { name: 'accountNumber', example: '1234567890' },
-      { name: 'bankAccountType', example: 'SAVINGS', description: 'CHECKING or SAVINGS' },
-      { name: 'bankName', example: 'Bancolombia' },
-      { name: 'phoneNumber', example: '+573001234567' },
+      { name: 'accountNumber', example: '1234567890', description: 'For bank transfer' },
+      { name: 'phoneNumber', example: '+573001234567', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
   },
