@@ -89,6 +89,9 @@ resources:
       individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
       business_customer_fields: "#/components/schemas/BusinessCustomerFields"
       business_info: "#/components/schemas/BusinessInfo"
+      kyc_link_create: "#/components/schemas/KycLinkCreateRequest"
+      kyc_link_response: "#/components/schemas/KycLinkResponse"
+      kyc_provider: "#/components/schemas/KycProvider"
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
     methods:
@@ -101,7 +104,9 @@ resources:
         endpoint: patch /customers/{customerId}
         body_param_name: UpdateCustomerRequest
       delete: delete /customers/{customerId}
-      get_kyc_link: get /customers/kyc-link
+      create_kyc_link:
+        endpoint: post /customers/{customerId}/kyc-link
+        body_param_name: KycLinkCreateRequest
       list_internal_accounts: get /customers/internal-accounts
       export: post /internal-accounts/{id}/export
     # Subresources define resources that are nested within another for more powerful

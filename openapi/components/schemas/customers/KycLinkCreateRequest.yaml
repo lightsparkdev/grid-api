@@ -1,0 +1,10 @@
+type: object
+description: Request body for generating a hosted KYC link for an existing customer.
+properties:
+  redirectUri:
+    type: string
+    format: uri
+    description: >-
+      URI the customer is redirected to after completing the hosted KYC flow. Must start with
+      `https://` (or `http://` for local development). Embedded in the returned `kycUrl`.
+    example: https://app.example.com/onboarding/completed

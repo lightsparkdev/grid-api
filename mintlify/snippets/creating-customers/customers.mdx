@@ -132,29 +132,49 @@ curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
 
 ### Onboarding customers (unregulated institutions)
 
-Unregulated institutions should initiate a hosted KYC/KYB flow. Generate a link and redirect the customer to complete verification. While KYC is pending, allow account setup but block funding and money movement.
+Unregulated institutions should initiate a hosted KYC/KYB flow in two steps: create the customer, then generate a hosted KYC link for that customer. While KYC is pending, allow account setup but block funding and money movement.
 
-1. Request a hosted KYC link for a customer using your `platformCustomerId` (optional `redirectUri` to return the customer to your app when finished):
+1. Create the customer with `POST /customers`, supplying any information you already have. Only `customerType` is required.
 
 ```bash
-curl -sS -G "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link" \
+curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  --data-urlencode "platformCustomerId=9f84e0c2a72c4fa" \
-  --data-urlencode "redirectUri=https://app.example.com/onboarding/completed"
+  -H "Content-Type: application/json" \
+  -d '{{
+    "customerType": "INDIVIDUAL",
+    "platformCustomerId": "9f84e0c2a72c4fa",
+    "region": "US",
+    "currencies": ["USD", "USDC"],
+    "email": "jane.doe@example.com",
+    "fullName": "Jane Doe"
+  }}'
+```
+
+2. Generate a hosted KYC link for the new customer:
+
+```bash
+curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers/Customer:019542f5-b3e7-1d02-0000-000000000001/kyc-link" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{{
+    "redirectUri": "https://app.example.com/onboarding/completed"
+  }}'
 ```
 
 Response:
 ```json
 {{
   "kycUrl": "https://kyc.grid.example/onboard/abc123",
-  "platformCustomerId": "9f84e0c2a72c4fa",
-  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+  "expiresAt": "2027-01-15T14:32:00Z",
+  "provider": "SUMSUB",
+  "token": "_act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }}
 ```
 
-2. Redirect the customer to `kycUrl` to complete KYC/KYB in their locale.
-3. After the customer is redirected back to your app, they can continue with account setup until KYC review is complete.  
-4. Handle the KYC status webhook. Grid notifies you when a decision is reached; update your records and unlock funding on APPROVED.
+3. Redirect the customer to `kycUrl`, or pass the optional `token` to the provider's SDK to embed verification directly in your UI.
+4. After the customer is redirected back to your app, they can continue with account setup until KYC review is complete.
+5. Track the decision via the `KYC_STATUS` webhook, or poll `GET /customers/{customerId}` and inspect `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
 Webhook example:
 ```json

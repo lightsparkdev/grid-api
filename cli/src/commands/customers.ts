@@ -198,23 +198,31 @@ export function registerCustomersCommand(
       outputResponse(response);
     });
 
+  interface KycLinkResponse {
+    kycUrl: string;
+    expiresAt: string;
+    provider: string;
+    token?: string;
+  }
+
   customersCmd
-    .command("kyc-link")
-    .description("Generate a KYC link for a customer")
-    .requiredOption("--customer-id <id>", "Customer ID")
-    .requiredOption("--redirect-url <url>", "Redirect URL after KYC completion")
-    .action(async (options) => {
+    .command("kyc-link <customerId>")
+    .description("Generate a hosted KYC link for an existing customer")
+    .option(
+      "--redirect-uri <uri>",
+      "URI to redirect the customer to after completing the hosted flow"
+    )
+    .action(async (customerId: string, options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
 
-      const body = {
-        customerId: options.customerId,
-        redirectUrl: options.redirectUrl,
+      const body: Record<string, unknown> = {
+        redirectUri: options.redirectUri,
       };
 
-      const response = await client.post<{ kycUrl: string }>(
-        "/customers/kyc-link",
+      const response = await client.post<KycLinkResponse>(
+        `/customers/${customerId}/kyc-link`,
         body
       );
       outputResponse(response);
