@@ -481,9 +481,15 @@ resources:
           list:
             endpoint: get /auth/sessions
             paginated: false
+          refresh:
+            endpoint: post /auth/sessions/{id}/refresh
+            body_param_name: AuthSessionRefreshRequest
           delete: delete /auth/sessions/{id}
         models:
           session_list_response: '#/components/schemas/SessionListResponse'
+          auth_session_refresh_request: '#/components/schemas/AuthSessionRefreshRequest'
+          auth_session: '#/components/schemas/AuthSession'
+          signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
 
   agents:
     methods:
