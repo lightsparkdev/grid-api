@@ -34,6 +34,7 @@ oneOf:
 - $ref: ./HtgExternalAccountCreateInfo.yaml
 - $ref: ./JmdExternalAccountCreateInfo.yaml
 - $ref: ./PkrExternalAccountCreateInfo.yaml
+- $ref: ./SlvExternalAccountCreateInfo.yaml
 - $ref: ./SparkWalletExternalAccountInfo.yaml
 - $ref: ./LightningExternalAccountInfo.yaml
 - $ref: ./SolanaWalletExternalAccountInfo.yaml
@@ -79,6 +80,7 @@ discriminator:
     HTG_ACCOUNT: ./HtgExternalAccountCreateInfo.yaml
     JMD_ACCOUNT: ./JmdExternalAccountCreateInfo.yaml
     PKR_ACCOUNT: ./PkrExternalAccountCreateInfo.yaml
+    SLV_ACCOUNT: ./SlvExternalAccountCreateInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml

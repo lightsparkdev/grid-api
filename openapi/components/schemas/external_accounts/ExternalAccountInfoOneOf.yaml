@@ -41,6 +41,7 @@ oneOf:
 - $ref: ./HtgExternalAccountInfo.yaml
 - $ref: ./JmdExternalAccountInfo.yaml
 - $ref: ./PkrExternalAccountInfo.yaml
+- $ref: ./SlvExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -87,3 +88,4 @@ discriminator:
     JMD_ACCOUNT: ./JmdExternalAccountInfo.yaml
     LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
     PKR_ACCOUNT: ./PkrExternalAccountInfo.yaml
+    SLV_ACCOUNT: ./SlvExternalAccountInfo.yaml
