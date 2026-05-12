@@ -213,10 +213,8 @@ paths:
     $ref: paths/auth/auth_sessions.yaml
   /auth/sessions/{id}:
     $ref: paths/auth/auth_sessions_{id}.yaml
-  /auth/sessions/{id}/challenge:
-    $ref: paths/auth/auth_sessions_{id}_challenge.yaml
-  /auth/sessions/{id}/verify:
-    $ref: paths/auth/auth_sessions_{id}_verify.yaml
+  /auth/sessions/{id}/refresh:
+    $ref: paths/auth/auth_sessions_{id}_refresh.yaml
   /agents:
     $ref: paths/agents/agents.yaml
   /agents/approvals:
