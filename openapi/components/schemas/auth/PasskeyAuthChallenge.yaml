@@ -37,11 +37,12 @@ allOf:
       requestId:
         type: string
         description: >-
-          Unique identifier for this pending passkey authentication
-          request. Must be echoed as the `Request-Id` header on the
-          subsequent `POST /auth/credentials/{id}/verify` call so Grid
-          can correlate the assertion with the issued challenge.
-        example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+          Grid-issued `Request:<uuid>` identifier for this pending passkey
+          authentication request. Echo this value exactly as the
+          `Request-Id` header on the subsequent
+          `POST /auth/credentials/{id}/verify` call so Grid can correlate
+          the assertion with the issued challenge.
+        example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       expiresAt:
         type: string
         format: date-time
