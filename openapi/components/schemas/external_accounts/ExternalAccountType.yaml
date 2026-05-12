@@ -42,5 +42,6 @@ enum:
 - HTG_ACCOUNT
 - JMD_ACCOUNT
 - PKR_ACCOUNT
+- SLV_ACCOUNT
 description: Type of external account or wallet
 example: GBP_ACCOUNT
