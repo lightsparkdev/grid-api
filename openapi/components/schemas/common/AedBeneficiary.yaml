@@ -2,6 +2,7 @@ title: Individual Beneficiary
 type: object
 required:
 - beneficiaryType
+- address
 - fullName
 properties:
   beneficiaryType:
