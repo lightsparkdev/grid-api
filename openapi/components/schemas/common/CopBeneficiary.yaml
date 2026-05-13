@@ -28,3 +28,11 @@ properties:
     description: The country of residence of the beneficiary
   address:
     $ref: ./Address.yaml
+  documentType:
+    type: string
+    description: Identity document type — required by most Colombian banks
+      (e.g. CC for Cédula de Ciudadanía, CE for Cédula de Extranjería, NIT,
+      PP for passport)
+  documentNumber:
+    type: string
+    description: Identity document number — required by most Colombian banks
