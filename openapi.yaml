@@ -592,12 +592,36 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update customer by ID
-      description: Update a customer's metadata by their system-generated ID
+      description: |
+        Update a customer's metadata by their system-generated ID.
+
+        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, the email change uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer email and every tied `EMAIL_OTP` credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer email is not changed.
+
+        For an Embedded Wallet email update:
+
+        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet email OTP credentials that must be updated.
+
+        2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the same update fields submitted in step 1. The signed retry returns `200` with the updated customer.
       operationId: updateCustomerById
       tags:
         - Customers
       security:
         - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email updates; ignored on the initial call and on customer updates that complete synchronously.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email updates; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: Request:019542f5-b3e7-1d02-0000-000000000010
       requestBody:
         required: true
         content:
@@ -638,13 +662,31 @@ paths:
                     state: CA
                     postalCode: '94304'
                     country: US
+              embeddedWalletEmailUpdate:
+                summary: Embedded Wallet email update request (both steps)
+                value:
+                  customerType: INDIVIDUAL
+                  email: john.smith@example.com
       responses:
         '200':
-          description: Customer updated successfully
+          description: Customer updated successfully. For Embedded Wallet email updates, this is returned only on the signed retry after the customer email and all tied email OTP credentials have been updated.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerOneOf'
+        '202':
+          description: Challenge issued for an Embedded Wallet email update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedRequestChallenge'
+              examples:
+                embeddedWalletEmailUpdate:
+                  summary: Embedded Wallet customer email update challenge
+                  value:
+                    payloadToSign: '{"requestId":"Request:019542f5-b3e7-1d02-0000-000000000010","customerId":"Customer:019542f5-b3e7-1d02-0000-000000000001","email":"john.smith@example.com","credentialIds":["AuthMethod:019542f5-b3e7-1d02-0000-000000000101","AuthMethod:019542f5-b3e7-1d02-0000-000000000102"],"expiresAt":"2026-04-08T15:35:00Z"}'
+                    requestId: Request:019542f5-b3e7-1d02-0000-000000000010
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request
           content:
@@ -652,7 +694,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized
+          description: Unauthorized. Also returned for Embedded Wallet email update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
           content:
             application/json:
               schema:
@@ -663,6 +705,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential on this or another internal account, or when the tied Embedded Wallet email OTP credential set changed between the initial `202` challenge and the signed retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '424':
+          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet email OTP credentials. The customer email is not changed unless all tied credentials are updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error424'
         '500':
           description: Internal service error
           content:
@@ -8113,10 +8167,12 @@ components:
             | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
+            | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
+            - EMAIL_OTP_CREDENTIAL_SET_CHANGED
         message:
           type: string
           description: Error message
@@ -8193,6 +8249,8 @@ components:
           description: Additional error details
           additionalProperties: true
     CustomerUpdateRequest:
+      title: Customer Update Request
+      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential across all tied Embedded Wallets through the endpoint's signed-retry flow.
       type: object
       required:
         - customerType
@@ -8211,7 +8269,7 @@ components:
         email:
           type: string
           format: email
-          description: Email address for the customer.
+          description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
           example: john.doe@example.com
         umaAddress:
           type: string
@@ -8236,6 +8294,63 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    SignedRequestChallenge:
+      title: Signed Request Challenge
+      type: object
+      required:
+        - payloadToSign
+        - requestId
+        - expiresAt
+      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential registration or revocation, session refresh or revocation, wallet export, customer email updates, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
+      properties:
+        payloadToSign:
+          type: string
+          description: Canonical payload for the retry authorization stamp. Build an API-key stamp over this exact value with the session API keypair, then send the full base64url-encoded stamp in `Grid-Wallet-Signature` on the retry that completes the original request.
+          example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+        requestId:
+          type: string
+          description: Grid-issued `Request:<uuid>` identifier for this pending request. Echo this value exactly in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
+          example: '2026-04-08T15:35:00Z'
+    Error424:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 424
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | PAYREQ_REQUEST_FAILED | Payment request failed |
+            | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
+            | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
+            | LNURLP_REQUEST_FAILED | LNURLP request failed |
+            | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
+          enum:
+            - PAYREQ_REQUEST_FAILED
+            - COUNTERPARTY_PUBKEY_FETCH_ERROR
+            - NO_COMPATIBLE_UMA_VERSION
+            - LNURLP_REQUEST_FAILED
+            - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     KycLinkCreateRequest:
       type: object
       description: Request body for generating a hosted KYC link for an existing customer.
@@ -14881,39 +14996,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    Error424:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 424
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | PAYREQ_REQUEST_FAILED | Payment request failed |
-            | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
-            | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
-            | LNURLP_REQUEST_FAILED | LNURLP request failed |
-          enum:
-            - PAYREQ_REQUEST_FAILED
-            - COUNTERPARTY_PUBKEY_FETCH_ERROR
-            - NO_COMPATIBLE_UMA_VERSION
-            - LNURLP_REQUEST_FAILED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     ReceiverExternalAccountLookupResponse:
       allOf:
         - $ref: '#/components/schemas/ReceiverLookupResponse'
@@ -15781,28 +15863,6 @@ components:
           type: boolean
           description: Whether wallet privacy should be enabled for the Embedded Wallet.
           example: true
-    SignedRequestChallenge:
-      title: Signed Request Challenge
-      type: object
-      required:
-        - payloadToSign
-        - requestId
-        - expiresAt
-      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential registration or revocation, session refresh or revocation, wallet export, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
-      properties:
-        payloadToSign:
-          type: string
-          description: Canonical payload for the retry authorization stamp. Build an API-key stamp over this exact value with the session API keypair, then send the full base64url-encoded stamp in `Grid-Wallet-Signature` on the retry that completes the original request.
-          example: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
-        requestId:
-          type: string
-          description: Grid-issued `Request:<uuid>` identifier for this pending request. Echo this value exactly in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
-          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
-        expiresAt:
-          type: string
-          format: date-time
-          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
-          example: '2026-04-08T15:35:00Z'
     InternalAccountExportRequest:
       title: Internal Account Export Request
       description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent stamp in `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.

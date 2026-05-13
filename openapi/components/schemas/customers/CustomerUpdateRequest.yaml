@@ -1,3 +1,9 @@
+title: Customer Update Request
+description: >-
+  Request body for `PATCH /customers/{customerId}`. When `email` changes for a
+  customer with tied Embedded Wallet internal accounts, Grid updates the
+  customer email and every tied `EMAIL_OTP` credential across all tied Embedded
+  Wallets through the endpoint's signed-retry flow.
 type: object
 required:
   - customerType
@@ -20,7 +26,10 @@ properties:
   email:
     type: string
     format: email
-    description: Email address for the customer.
+    description: >-
+      Email address for the customer. For customers with tied Embedded Wallet
+      internal accounts, changing this value also updates every tied
+      `EMAIL_OTP` credential across all tied Embedded Wallets.
     example: john.doe@example.com
   umaAddress:
     type: string
