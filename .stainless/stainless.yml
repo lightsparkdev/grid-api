@@ -95,6 +95,7 @@ resources:
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
+      signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
     methods:
       create:
         endpoint: post /customers

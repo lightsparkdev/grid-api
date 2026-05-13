@@ -17,10 +17,12 @@ properties:
       | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
       | UMA_ADDRESS_EXISTS | UMA address already exists |
       | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
+      | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
       - UMA_ADDRESS_EXISTS
       - EMAIL_OTP_EMAIL_ALREADY_EXISTS
+      - EMAIL_OTP_CREDENTIAL_SET_CHANGED
   message:
     type: string
     description: Error message
