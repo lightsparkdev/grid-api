@@ -34,6 +34,10 @@ post:
     account changes. The `data` payload contains the full internal account
     object.
 
+    - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal
+    account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the
+    full internal account object.
+
 
   operationId: internalAccountStatusWebhook
   tags:
@@ -57,6 +61,28 @@ post:
                 id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 type: INTERNAL_FIAT
+                status: ACTIVE
+                balance:
+                  amount: 10000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                fundingPaymentInstructions: []
+                createdAt: '2025-08-01T10:00:00Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+          statusUpdated:
+            summary: The status of an internal account changed (e.g., frozen by Grid)
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+              type: INTERNAL_ACCOUNT.STATUS_UPDATED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: INTERNAL_FIAT
+                status: FROZEN
                 balance:
                   amount: 10000
                   currency:
