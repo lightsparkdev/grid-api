@@ -12498,29 +12498,41 @@ components:
         - accountType
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
+        - BANK_TRANSFER: bankName, accountNumber, bankAccountType
         - MOBILE_MONEY: phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - COP_ACCOUNT
+        bankName:
+          type: string
+          description: The name of the bank (BANK_TRANSFER only)
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
-          description: The account number of the bank
+          description: The account number of the bank (BANK_TRANSFER only)
           minLength: 1
           maxLength: 34
+        bankAccountType:
+          type: string
+          description: The bank account type (BANK_TRANSFER only)
+          enum:
+            - CHECKING
+            - SAVINGS
         phoneNumber:
           type: string
-          description: The phone number in international format
+          description: The phone number in international format (MOBILE_MONEY only — Nequi, Daviplata)
           example: '+1234567890'
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
       example:
         accountType: COP_ACCOUNT
+        bankName: Bancolombia
         accountNumber: '1234567890'
-        phoneNumber: '+1234567890'
+        bankAccountType: CHECKING
     CopAccountInfo:
       allOf:
         - $ref: '#/components/schemas/CopAccountInfoBase'
@@ -12566,6 +12578,20 @@ components:
           description: The country of residence of the beneficiary
         address:
           $ref: '#/components/schemas/Address'
+        documentType:
+          type: string
+          description: 'Identity document type — required by most Colombian banks. CC: Cédula de Ciudadanía, CE: Cédula de Extranjería, TI: Tarjeta de Identidad, NIT: Número de Identificación Tributaria, PP: Passport'
+          enum:
+            - CC
+            - CE
+            - TI
+            - NIT
+            - PP
+        documentNumber:
+          type: string
+          description: Identity document number — required by most Colombian banks
+          minLength: 1
+          maxLength: 50
     CopExternalAccountInfo:
       title: COP Account
       allOf:
