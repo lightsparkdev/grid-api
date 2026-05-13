@@ -255,4 +255,14 @@ export const currencies: FiatCurrency[] = [
     allRails: ['Mobile Money'],
     examplePerson: { fullName: 'Amadou Diallo', nationality: 'SN' },
   },
+  {
+    code: 'USD',
+    name: 'US Dollar (El Salvador)',
+    countryCode: 'sv',
+    accountType: 'SLV_ACCOUNT',
+    accountLabel: 'El Salvador Bank/Mobile',
+    instantRails: [],
+    allRails: ['Bank Transfer', 'Mobile Money'],
+    examplePerson: { fullName: 'Carlos Morales', nationality: 'SV' },
+  },
 ];
