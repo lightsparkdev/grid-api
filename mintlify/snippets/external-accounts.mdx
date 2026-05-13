@@ -149,6 +149,75 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 <Tip>Key types: `CPF`, `CNPJ`, `EMAIL`, `PHONE`, or `RANDOM`</Tip>
 </Tab>
 
+<Tab title="El Salvador">
+**Bank Transfer or Mobile Money (Tigo Money)**
+
+El Salvador supports two payment rails: bank transfer and mobile money.
+
+**Bank Transfer:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "USD",
+    "platformAccountId": "sv_bank_001",
+    "accountInfo": {
+      "accountType": "SLV_ACCOUNT",
+      "bankName": "Banco Cuscatlan",
+      "accountNumber": "0123456789",
+      "bankAccountType": "CHECKING",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Carlos Morales",
+        "birthDate": "1990-05-20",
+        "nationality": "SV",
+        "address": {
+          "line1": "Colonia Escalon 123",
+          "city": "San Salvador",
+          "postalCode": "01101",
+          "country": "SV"
+        }
+      }
+    }
+  }'
+```
+
+**Mobile Money (Tigo Money):**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "USD",
+    "platformAccountId": "sv_mobile_001",
+    "accountInfo": {
+      "accountType": "SLV_ACCOUNT",
+      "phoneNumber": "+50312345678",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Ana Martinez",
+        "birthDate": "1985-08-15",
+        "nationality": "SV",
+        "address": {
+          "line1": "Avenida Roosevelt 456",
+          "city": "San Salvador",
+          "postalCode": "01101",
+          "country": "SV"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Bank transfer requires `bankName`, `accountNumber`, and `bankAccountType` (CHECKING or SAVINGS).
+  Mobile money requires `phoneNumber` in international format (e.g., +50312345678).
+</Note>
+</Tab>
+
 <Tab title="Europe">
 **IBAN/SEPA**
 

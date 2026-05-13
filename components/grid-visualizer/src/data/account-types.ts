@@ -356,4 +356,14 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  SLV_ACCOUNT: {
+    accountType: 'SLV_ACCOUNT',
+    fields: [
+      { name: 'bankName', example: 'Banco Cuscatlan', description: 'BANK_TRANSFER only' },
+      { name: 'accountNumber', example: '0123456789', description: 'BANK_TRANSFER only' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS (BANK_TRANSFER only)' },
+      { name: 'phoneNumber', example: '+50312345678', description: 'MOBILE_MONEY only (Tigo Money)' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
