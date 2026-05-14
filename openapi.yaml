@@ -3791,6 +3791,7 @@ paths:
                     id: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     type: EMBEDDED_WALLET
+                    status: ACTIVE
                     balance:
                       amount: 12550
                       currency:
@@ -6920,6 +6921,7 @@ webhooks:
 
         ### Event types
         - `INTERNAL_ACCOUNT.BALANCE_UPDATED` — Fired when the balance of an internal account changes. The `data` payload contains the full internal account object.
+        - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the full internal account object.
       operationId: internalAccountStatusWebhook
       tags:
         - Webhooks
@@ -6942,6 +6944,28 @@ webhooks:
                     id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     type: INTERNAL_FIAT
+                    status: ACTIVE
+                    balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    fundingPaymentInstructions: []
+                    createdAt: '2025-08-01T10:00:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+              statusUpdated:
+                summary: The status of an internal account changed (e.g., frozen by Grid)
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: INTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: INTERNAL_FIAT
+                    status: FROZEN
                     balance:
                       amount: 10000
                       currency:
@@ -8402,6 +8426,22 @@ components:
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
+    InternalAccountStatus:
+      title: Internal Account Status
+      type: string
+      enum:
+        - PENDING
+        - ACTIVE
+        - CLOSED
+        - FROZEN
+      description: |-
+        Status of a Grid internal account. The status determines whether the account can send or receive payments.
+
+        - `PENDING`: The account is under review and is being provisioned. The account cannot send or receive payments until provisioning completes.
+        - `ACTIVE`: The account is ready to send and receive payments.
+        - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.
+        - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
+      example: ACTIVE
     CurrencyAmount:
       type: object
       required:
@@ -10764,6 +10804,7 @@ components:
       required:
         - id
         - type
+        - status
         - balance
         - fundingPaymentInstructions
         - createdAt
@@ -10779,6 +10820,8 @@ components:
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         type:
           $ref: '#/components/schemas/InternalAccountType'
+        status:
+          $ref: '#/components/schemas/InternalAccountStatus'
         balance:
           $ref: '#/components/schemas/CurrencyAmount'
         fundingPaymentInstructions:
@@ -16885,6 +16928,7 @@ components:
         - VERIFICATION.PENDING_MANUAL_REVIEW
         - VERIFICATION.READY_FOR_VERIFICATION
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
+        - INTERNAL_ACCOUNT.STATUS_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
@@ -17065,6 +17109,7 @@ components:
               type: string
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
+                - INTERNAL_ACCOUNT.STATUS_UPDATED
     VerificationWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
