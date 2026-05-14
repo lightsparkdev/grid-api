@@ -47,7 +47,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-account
   }'
 ```
 
-This endpoint returns the updated `InternalAccount` object with the new balance. You'll also receive an `ACCOUNT_STATUS` webhook showing the balance change.
+This endpoint returns the updated `InternalAccount` object with the new balance. You'll also receive an `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook showing the balance change.
 
 <Note>
   In production, ACH transfers typically take 1-3 business days to settle. In sandbox, funding is instant.

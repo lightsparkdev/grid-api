@@ -140,28 +140,26 @@ When the funds are received and the internal account balance is updated, you'll 
 
 ```json
 {
-  "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-  "oldBalance": {
-    "amount": 0,
-    "currency": {
-      "code": "USD",
-      "name": "United States Dollar",
-      "symbol": "$",
-      "decimals": 2
-    }
-  },
-  "newBalance": {
-    "amount": 200000,
-    "currency": {
-      "code": "USD",
-      "name": "United States Dollar",
-      "symbol": "$",
-      "decimals": 2
-    }
-  },
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "INTERNAL_ACCOUNT.BALANCE_UPDATED",
   "timestamp": "2025-10-03T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-  "type": "ACCOUNT_STATUS"
+  "data": {
+    "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+    "type": "INTERNAL_FIAT",
+    "status": "ACTIVE",
+    "balance": {
+      "amount": 200000,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "fundingPaymentInstructions": [],
+    "createdAt": "2025-10-03T12:00:00Z",
+    "updatedAt": "2025-10-03T14:32:00Z"
+  }
 }
 ```
 

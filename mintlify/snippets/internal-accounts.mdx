@@ -47,6 +47,8 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
     {
       "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "INTERNAL_FIAT",
+      "status": "ACTIVE",
       "balance": {
         "amount": 50000,
         "currency": {
@@ -249,6 +251,8 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
   "data": {
     "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "type": "INTERNAL_FIAT",
+    "status": "ACTIVE",
     "balance": {
       "amount": 50000,
       "currency": {
@@ -307,7 +311,7 @@ Show the payment details prominently in your UI:
 Set up webhook listeners to receive notifications when deposits are credited to the internal account. The account balance will update automatically.
 
 <Info>
-You'll receive `ACCOUNT_STATUS` webhook events when the internal account balance changes.
+You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook events when the internal account balance changes.
 </Info>
 </Step>
 </Steps>
