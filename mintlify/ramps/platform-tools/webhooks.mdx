@@ -47,29 +47,62 @@ Grid sends webhooks for key events in the ramp lifecycle:
   </Check>
 </Tab>
 
-<Tab title="ACCOUNT_STATUS">
+<Tab title="INTERNAL_ACCOUNT.BALANCE_UPDATED">
   Sent when internal account balances change (deposits, conversions, withdrawals).
   
   ```json
   {
-    "accountId": "InternalAccount:btc456",
-    "oldBalance": {
-      "amount": 10000000,
-      "currency": { "code": "BTC", "decimals": 8 }
-    },
-    "newBalance": {
-      "amount": 5000000,
-      "currency": { "code": "BTC", "decimals": 8 }
-    },
+    "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+    "type": "INTERNAL_ACCOUNT.BALANCE_UPDATED",
     "timestamp": "2025-10-03T15:03:00Z",
-    "webhookId": "Webhook:webhook001",
-    "type": "ACCOUNT_STATUS"
+    "data": {
+      "id": "InternalAccount:btc456",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "INTERNAL_CRYPTO",
+      "status": "ACTIVE",
+      "balance": {
+        "amount": 5000000,
+        "currency": { "code": "BTC", "name": "Bitcoin", "symbol": "₿", "decimals": 8 }
+      },
+      "fundingPaymentInstructions": [],
+      "createdAt": "2025-08-01T10:00:00Z",
+      "updatedAt": "2025-10-03T15:03:00Z"
+    }
   }
   ```
   
   <Info>
   Critical for tracking crypto deposits (for off-ramps) and fiat balance changes.
   </Info>
+</Tab>
+
+<Tab title="INTERNAL_ACCOUNT.STATUS_UPDATED">
+  Sent when the status of an internal account changes (e.g., PENDING → ACTIVE, ACTIVE → FROZEN).
+  
+  ```json
+  {
+    "id": "Webhook:019542f5-b3e7-1d02-0000-000000000008",
+    "type": "INTERNAL_ACCOUNT.STATUS_UPDATED",
+    "timestamp": "2025-10-03T15:03:00Z",
+    "data": {
+      "id": "InternalAccount:btc456",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "INTERNAL_CRYPTO",
+      "status": "FROZEN",
+      "balance": {
+        "amount": 5000000,
+        "currency": { "code": "BTC", "name": "Bitcoin", "symbol": "₿", "decimals": 8 }
+      },
+      "fundingPaymentInstructions": [],
+      "createdAt": "2025-08-01T10:00:00Z",
+      "updatedAt": "2025-10-03T15:03:00Z"
+    }
+  }
+  ```
+  
+  <Warning>
+  Account status values: `PENDING` (provisioning), `ACTIVE` (ready for payments), `CLOSED` (customer-initiated), `FROZEN` (compliance/fraud hold). Frozen accounts cannot send or receive payments.
+  </Warning>
 </Tab>
 
 <Tab title="KYC_STATUS">
@@ -240,8 +273,9 @@ if (type === "OUTGOING_PAYMENT.COMPLETED") {
 Track crypto deposits for off-ramp liquidity:
 
 ```javascript
-if (type === "ACCOUNT_STATUS") {
-  const { accountId, newBalance, oldBalance } = req.body;
+if (type === "INTERNAL_ACCOUNT.BALANCE_UPDATED") {
+  const { data } = req.body;
+  const { id: accountId, balance: newBalance } = data;
 
   // Crypto deposit detected
   if (

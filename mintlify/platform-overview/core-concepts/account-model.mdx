@@ -212,7 +212,7 @@ PENDING → ACTIVE
 - **INACTIVE**: Disabled (can be reactivated)
 - **REJECTED**: Failed verification
 
-You'll receive `ACCOUNT_STATUS` webhooks as status changes.
+You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, and `INTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., ACTIVE to FROZEN).
 
 ### Using External Accounts
 
