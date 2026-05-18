@@ -14843,7 +14843,7 @@ components:
           description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
           example: UMA-Q12345-REF
     IncomingRateDetails:
-      description: Details about the rate and fees for an incoming transaction.
+      description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
       type: object
       required:
         - gridApiMultiplier
@@ -14970,7 +14970,7 @@ components:
           description: Reason for the refund
           example: TRANSACTION_FAILED
     OutgoingRateDetails:
-      description: Details about the rate and fees for an outgoing transaction or quote.
+      description: 'Details about the rate and fees for an outgoing transaction or quote. Note: `counterpartyFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
       type: object
       required:
         - counterpartyMultiplier
@@ -15424,7 +15424,7 @@ components:
         feesIncluded:
           type: integer
           format: int64
-          description: The fees associated with the quote in the smallest unit of the sending currency (eg. cents).
+          description: 'The fees associated with the quote in the smallest unit of the sending currency (eg. cents). Note: this value may fluctuate between quotes — some underlying fee components are defined in the receiving currency, so their equivalent in the sending currency moves with the FX rate. The fees shown here are locked only for the lifetime of this quote.'
           minimum: 0
           example: 10
         paymentInstructions:
