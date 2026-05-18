@@ -1,0 +1,56 @@
+type: object
+description: |
+  Per-platform embedded-wallet configuration. Controls branding and OTP
+  behavior for the email sent when a customer authenticates with an
+  EMAIL_OTP credential. Fields omitted from a request are left unchanged.
+properties:
+  appName:
+    type: string
+    maxLength: 255
+    description: App name displayed in the default OTP email template.
+    example: Acme Wallet
+  otpLength:
+    type: integer
+    minimum: 4
+    maximum: 12
+    description: |
+      Number of digits / characters in the OTP code. Defaults to 6 when
+      not set.
+    example: 6
+  alphanumeric:
+    type: boolean
+    description: |
+      If true, OTP includes letters in addition to digits. Defaults to
+      numeric-only when not set.
+    example: false
+  expirationSeconds:
+    type: integer
+    minimum: 1
+    maximum: 86400
+    description: |
+      OTP validity window in seconds. Defaults to 300 when not set.
+    example: 300
+  sendFromEmailAddress:
+    type: string
+    format: email
+    maxLength: 255
+    description: Custom sender email address for OTP emails.
+    example: noreply@acme.com
+  sendFromEmailSenderName:
+    type: string
+    maxLength: 255
+    description: |
+      Custom sender display name. Defaults to "Notifications" when not set.
+    example: Acme Notifications
+  replyToEmailAddress:
+    type: string
+    format: email
+    maxLength: 255
+    description: Custom reply-to email address for OTP emails.
+    example: support@acme.com
+  logoUrl:
+    type: string
+    format: uri
+    maxLength: 512
+    description: URL to a PNG logo for the OTP email. Resized to 340x124px.
+    example: https://acme.com/logo.png

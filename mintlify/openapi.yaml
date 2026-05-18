@@ -113,6 +113,12 @@ paths:
                       mandatory: true
                     - name: BIRTH_DATE
                       mandatory: true
+              embeddedWalletConfig:
+                appName: Acme Wallet
+                sendFromEmailAddress: noreply@acme.com
+                sendFromEmailSenderName: Acme Notifications
+                replyToEmailAddress: support@acme.com
+                logoUrl: https://acme.com/logo.png
       responses:
         '200':
           description: Configuration updated successfully
@@ -7205,6 +7211,63 @@ components:
         - maxAmount
         - requiredCounterpartyFields
         - enabledTransactionTypes
+    EmbeddedWalletConfig:
+      type: object
+      description: |
+        Per-platform embedded-wallet configuration. Controls branding and OTP
+        behavior for the email sent when a customer authenticates with an
+        EMAIL_OTP credential. Fields omitted from a request are left unchanged.
+      properties:
+        appName:
+          type: string
+          maxLength: 255
+          description: App name displayed in the default OTP email template.
+          example: Acme Wallet
+        otpLength:
+          type: integer
+          minimum: 4
+          maximum: 12
+          description: |
+            Number of digits / characters in the OTP code. Defaults to 6 when
+            not set.
+          example: 6
+        alphanumeric:
+          type: boolean
+          description: |
+            If true, OTP includes letters in addition to digits. Defaults to
+            numeric-only when not set.
+          example: false
+        expirationSeconds:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          description: |
+            OTP validity window in seconds. Defaults to 300 when not set.
+          example: 300
+        sendFromEmailAddress:
+          type: string
+          format: email
+          maxLength: 255
+          description: Custom sender email address for OTP emails.
+          example: noreply@acme.com
+        sendFromEmailSenderName:
+          type: string
+          maxLength: 255
+          description: |
+            Custom sender display name. Defaults to "Notifications" when not set.
+          example: Acme Notifications
+        replyToEmailAddress:
+          type: string
+          format: email
+          maxLength: 255
+          description: Custom reply-to email address for OTP emails.
+          example: support@acme.com
+        logoUrl:
+          type: string
+          format: uri
+          maxLength: 512
+          description: URL to a PNG logo for the OTP email. Resized to 340x124px.
+          example: https://acme.com/logo.png
     PlatformConfig:
       type: object
       properties:
@@ -7240,6 +7303,12 @@ components:
             the KYC link flow. This can only be set by Lightspark during platform
             creation.
           example: false
+        embeddedWalletConfig:
+          $ref: '#/components/schemas/EmbeddedWalletConfig'
+          description: |
+            Embedded-wallet branding and OTP settings for this platform. Present
+            only when the platform has configured embedded-wallet support;
+            omitted otherwise.
         createdAt:
           type: string
           format: date-time
@@ -7323,6 +7392,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PlatformCurrencyConfig'
+        embeddedWalletConfig:
+          $ref: '#/components/schemas/EmbeddedWalletConfig'
+          description: |
+            Update or create the embedded-wallet configuration for this platform.
+            Fields omitted from the nested object are left unchanged. Omit this
+            field at the top level to leave the embedded-wallet configuration
+            unchanged entirely.
     Error400:
       type: object
       required:
