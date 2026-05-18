@@ -1,0 +1,19 @@
+title: SWIFT Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/SwiftAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/SwiftBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/SwiftBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml

@@ -10911,31 +10911,33 @@ components:
     ExternalAccountType:
       type: string
       enum:
-        - GBP_ACCOUNT
-        - PHP_ACCOUNT
-        - SGD_ACCOUNT
-        - SPARK_WALLET
-        - LIGHTNING
-        - SOLANA_WALLET
-        - TRON_WALLET
-        - POLYGON_WALLET
-        - BASE_WALLET
-        - ETHEREUM_WALLET
         - AED_ACCOUNT
+        - BDT_ACCOUNT
         - BRL_ACCOUNT
         - BWP_ACCOUNT
         - CAD_ACCOUNT
+        - COP_ACCOUNT
         - DKK_ACCOUNT
+        - EGP_ACCOUNT
         - EUR_ACCOUNT
+        - GBP_ACCOUNT
+        - GHS_ACCOUNT
+        - GTQ_ACCOUNT
         - HKD_ACCOUNT
+        - HTG_ACCOUNT
         - IDR_ACCOUNT
         - INR_ACCOUNT
+        - JMD_ACCOUNT
         - KES_ACCOUNT
         - MWK_ACCOUNT
         - MXN_ACCOUNT
         - MYR_ACCOUNT
         - NGN_ACCOUNT
+        - PHP_ACCOUNT
+        - PKR_ACCOUNT
         - RWF_ACCOUNT
+        - SGD_ACCOUNT
+        - SLV_ACCOUNT
         - THB_ACCOUNT
         - TZS_ACCOUNT
         - UGX_ACCOUNT
@@ -10945,17 +10947,16 @@ components:
         - XOF_ACCOUNT
         - ZAR_ACCOUNT
         - ZMW_ACCOUNT
-        - BDT_ACCOUNT
-        - COP_ACCOUNT
-        - EGP_ACCOUNT
-        - GHS_ACCOUNT
-        - GTQ_ACCOUNT
-        - HTG_ACCOUNT
-        - JMD_ACCOUNT
-        - PKR_ACCOUNT
-        - SLV_ACCOUNT
+        - SWIFT_ACCOUNT
+        - BASE_WALLET
+        - ETHEREUM_WALLET
+        - LIGHTNING
+        - POLYGON_WALLET
+        - SOLANA_WALLET
+        - SPARK_WALLET
+        - TRON_WALLET
       description: Type of external account or wallet
-      example: GBP_ACCOUNT
+      example: AED_ACCOUNT
     BaseExternalAccountInfo:
       type: object
       required:
@@ -10963,6 +10964,140 @@ components:
       properties:
         accountType:
           $ref: '#/components/schemas/ExternalAccountType'
+    AedBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          description: The legal name of the business
+        registrationNumber:
+          type: string
+          description: The registration number of the business
+        taxId:
+          type: string
+          description: The tax identification number of the business
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    AedExternalAccountInfo:
+      title: AED Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/AedAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/AedBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/AedBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BdtBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BdtExternalAccountInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BdtBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     BrlAccountInfoBase:
       type: object
       required:
@@ -11044,37 +11179,6 @@ components:
           description: The country of residence of the beneficiary
         address:
           $ref: '#/components/schemas/Address'
-    BusinessBeneficiary:
-      title: Business Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - legalName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - BUSINESS
-        legalName:
-          type: string
-          description: The legal name of the business
-        registrationNumber:
-          type: string
-          description: The registration number of the business
-        taxId:
-          type: string
-          description: The tax identification number of the business
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
     BrlExternalAccountInfo:
       title: BRL Account
       allOf:
@@ -11094,6 +11198,57 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/BrlBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BwpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    BwpExternalAccountInfo:
+      title: BWP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BwpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BwpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BwpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CadBeneficiary:
       title: Individual Beneficiary
@@ -11149,6 +11304,126 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/CadBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopAccountInfoBase:
+      type: object
+      required:
+        - accountType
+      description: |-
+        Required fields depend on the selected paymentRails:
+        - BANK_TRANSFER: bankName, accountNumber, bankAccountType
+        - MOBILE_MONEY: phoneNumber
+      properties:
+        accountType:
+          type: string
+          enum:
+            - COP_ACCOUNT
+        bankName:
+          type: string
+          description: The name of the bank (BANK_TRANSFER only)
+          minLength: 1
+          maxLength: 255
+        accountNumber:
+          type: string
+          description: The account number of the bank (BANK_TRANSFER only)
+          minLength: 1
+          maxLength: 34
+        bankAccountType:
+          type: string
+          description: The bank account type (BANK_TRANSFER only)
+          enum:
+            - CHECKING
+            - SAVINGS
+        phoneNumber:
+          type: string
+          description: The phone number in international format (MOBILE_MONEY only — Nequi, Daviplata)
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+      example:
+        accountType: COP_ACCOUNT
+        bankName: Bancolombia
+        accountNumber: '1234567890'
+        bankAccountType: CHECKING
+    CopAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/CopAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+                  - MOBILE_MONEY
+    CopBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+        documentType:
+          type: string
+          description: 'Identity document type — required by most Colombian banks. CC: Cédula de Ciudadanía, CE: Cédula de Extranjería, TI: Tarjeta de Identidad, NIT: Número de Identificación Tributaria, PP: Passport'
+          enum:
+            - CC
+            - CE
+            - TI
+            - NIT
+            - PP
+        documentNumber:
+          type: string
+          description: Identity document number — required by most Colombian banks
+          minLength: 1
+          maxLength: 50
+    CopExternalAccountInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CopBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     DkkBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -11199,6 +11474,60 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EgpBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - countryOfResidence
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    EgpExternalAccountInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EgpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     EurBeneficiary:
       title: Individual Beneficiary
@@ -11303,6 +11632,110 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GhsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GhsExternalAccountInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GhsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GtqBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    GtqExternalAccountInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GtqBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     HkdBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -11353,6 +11786,57 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/HkdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HtgBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    HtgExternalAccountInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HtgBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     IdrBeneficiary:
       title: Individual Beneficiary
@@ -11455,6 +11939,59 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/InrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    JmdBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    JmdExternalAccountInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/JmdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     KesBeneficiary:
       title: Individual Beneficiary
@@ -11762,6 +12299,57 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PkrBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    PkrExternalAccountInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PkrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     RwfBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -11863,6 +12451,57 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    SlvBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    SlvExternalAccountInfo:
+      title: SLV Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SlvAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SlvBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SlvBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ThbBeneficiary:
       title: Individual Beneficiary
@@ -12119,6 +12758,57 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/VndBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    XafBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    XafExternalAccountInfo:
+      title: XAF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/XafAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/XafBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/XafBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     XofBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -12272,11 +12962,131 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ZmwBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    SparkWalletExternalAccountInfo:
-      title: Spark Wallet
+    SwiftAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - swiftCode
+        - bankName
+        - country
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SWIFT_ACCOUNT
+        country:
+          type: string
+          description: The ISO 3166-1 alpha-2 country code of the bank account
+          example: NG
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+        bankName:
+          type: string
+          description: The name of the bank
+          example: Deutsche Bank
+          minLength: 1
+          maxLength: 255
+        accountNumber:
+          type: string
+          description: The bank account number. Required for most corridors. Use iban instead for IBAN-only corridors (e.g. BR, GB).
+          example: '1234567890'
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account. Required for IBAN-only corridors (e.g. BR, GB). Use accountNumber for all other corridors.
+          example: GB29NWBK60161331926819
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+      example:
+        accountType: SWIFT_ACCOUNT
+        country: NG
+        swiftCode: DEUTDEFF
+        bankName: Deutsche Bank
+        accountNumber: '1234567890'
+    SwiftAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SwiftAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SWIFT
+    SwiftBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    SwiftExternalAccountInfo:
+      title: SWIFT Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SparkWalletInfo'
+        - $ref: '#/components/schemas/SwiftAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SwiftBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BaseWalletExternalAccountInfo:
+      title: Base Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BaseWalletInfo'
+    EthereumWalletExternalAccountInfo:
+      title: Ethereum L1 Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EthereumWalletInfo'
     LightningInfo:
       type: object
       description: |
@@ -12305,812 +13115,120 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/LightningInfo'
-    SolanaWalletExternalAccountInfo:
-      title: Solana Wallet
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SolanaWalletInfo'
-    TronWalletExternalAccountInfo:
-      title: Tron Wallet
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/TronWalletInfo'
     PolygonWalletExternalAccountInfo:
       title: Polygon Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
-    BaseWalletExternalAccountInfo:
-      title: Base Wallet
+    SolanaWalletExternalAccountInfo:
+      title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BaseWalletInfo'
-    EthereumWalletExternalAccountInfo:
-      title: Ethereum L1 Wallet
+        - $ref: '#/components/schemas/SolanaWalletInfo'
+    SparkWalletExternalAccountInfo:
+      title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/EthereumWalletInfo'
-    AedBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - address
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    AedExternalAccountInfo:
-      title: AED Account
+        - $ref: '#/components/schemas/SparkWalletInfo'
+    TronWalletExternalAccountInfo:
+      title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/AedAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/AedBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/AedBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    BwpBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    BwpExternalAccountInfo:
-      title: BWP Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BwpAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/BwpBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/BwpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    XafBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    XafExternalAccountInfo:
-      title: XAF Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/XafAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/XafBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/XafBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    BdtBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    BdtExternalAccountInfo:
-      title: BDT Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BdtAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/BdtBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    CopAccountInfoBase:
-      type: object
-      required:
-        - accountType
-      description: |-
-        Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: bankName, accountNumber, bankAccountType
-        - MOBILE_MONEY: phoneNumber
-      properties:
-        accountType:
-          type: string
-          enum:
-            - COP_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank (BANK_TRANSFER only)
-          minLength: 1
-          maxLength: 255
-        accountNumber:
-          type: string
-          description: The account number of the bank (BANK_TRANSFER only)
-          minLength: 1
-          maxLength: 34
-        bankAccountType:
-          type: string
-          description: The bank account type (BANK_TRANSFER only)
-          enum:
-            - CHECKING
-            - SAVINGS
-        phoneNumber:
-          type: string
-          description: The phone number in international format (MOBILE_MONEY only — Nequi, Daviplata)
-          example: '+1234567890'
-          minLength: 7
-          maxLength: 15
-          pattern: ^\+[0-9]{6,14}$
-      example:
-        accountType: COP_ACCOUNT
-        bankName: Bancolombia
-        accountNumber: '1234567890'
-        bankAccountType: CHECKING
-    CopAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/CopAccountInfoBase'
-        - type: object
-          required:
-            - paymentRails
-          properties:
-            paymentRails:
-              type: array
-              items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
-    CopBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-        documentType:
-          type: string
-          description: 'Identity document type — required by most Colombian banks. CC: Cédula de Ciudadanía, CE: Cédula de Extranjería, TI: Tarjeta de Identidad, NIT: Número de Identificación Tributaria, PP: Passport'
-          enum:
-            - CC
-            - CE
-            - TI
-            - NIT
-            - PP
-        documentNumber:
-          type: string
-          description: Identity document number — required by most Colombian banks
-          minLength: 1
-          maxLength: 50
-    CopExternalAccountInfo:
-      title: COP Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CopAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/CopBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    EgpBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - address
-        - countryOfResidence
-        - fullName
-        - phoneNumber
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    EgpExternalAccountInfo:
-      title: EGP Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/EgpAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/EgpBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    GhsBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    GhsExternalAccountInfo:
-      title: GHS Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GhsAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/GhsBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    GtqBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - countryOfResidence
-        - fullName
-        - phoneNumber
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    GtqExternalAccountInfo:
-      title: GTQ Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GtqAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/GtqBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    HtgBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    HtgExternalAccountInfo:
-      title: HTG Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/HtgAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/HtgBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    JmdBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - address
-        - fullName
-        - phoneNumber
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    JmdExternalAccountInfo:
-      title: JMD Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/JmdAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/JmdBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    PkrBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    PkrExternalAccountInfo:
-      title: PKR Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PkrAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/PkrBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    SlvBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    SlvExternalAccountInfo:
-      title: SLV Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SlvAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/SlvBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/SlvBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+        - $ref: '#/components/schemas/TronWalletInfo'
     ExternalAccountInfoOneOf:
       oneOf:
+        - $ref: '#/components/schemas/AedExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtExternalAccountInfo'
         - $ref: '#/components/schemas/BrlExternalAccountInfo'
+        - $ref: '#/components/schemas/BwpExternalAccountInfo'
         - $ref: '#/components/schemas/CadExternalAccountInfo'
+        - $ref: '#/components/schemas/CopExternalAccountInfo'
         - $ref: '#/components/schemas/DkkExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpExternalAccountInfo'
         - $ref: '#/components/schemas/EurExternalAccountInfo'
         - $ref: '#/components/schemas/GbpExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqExternalAccountInfo'
         - $ref: '#/components/schemas/HkdExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgExternalAccountInfo'
         - $ref: '#/components/schemas/IdrExternalAccountInfo'
         - $ref: '#/components/schemas/InrExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdExternalAccountInfo'
         - $ref: '#/components/schemas/KesExternalAccountInfo'
         - $ref: '#/components/schemas/MwkExternalAccountInfo'
         - $ref: '#/components/schemas/MxnExternalAccountInfo'
         - $ref: '#/components/schemas/MyrExternalAccountInfo'
         - $ref: '#/components/schemas/NgnExternalAccountInfo'
         - $ref: '#/components/schemas/PhpExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrExternalAccountInfo'
         - $ref: '#/components/schemas/RwfExternalAccountInfo'
         - $ref: '#/components/schemas/SgdExternalAccountInfo'
+        - $ref: '#/components/schemas/SlvExternalAccountInfo'
         - $ref: '#/components/schemas/ThbExternalAccountInfo'
         - $ref: '#/components/schemas/TzsExternalAccountInfo'
         - $ref: '#/components/schemas/UgxExternalAccountInfo'
         - $ref: '#/components/schemas/UsdExternalAccountInfo'
         - $ref: '#/components/schemas/VndExternalAccountInfo'
+        - $ref: '#/components/schemas/XafExternalAccountInfo'
         - $ref: '#/components/schemas/XofExternalAccountInfo'
         - $ref: '#/components/schemas/ZarExternalAccountInfo'
         - $ref: '#/components/schemas/ZmwExternalAccountInfo'
-        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/LightningExternalAccountInfo'
-        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/SwiftExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/AedExternalAccountInfo'
-        - $ref: '#/components/schemas/BwpExternalAccountInfo'
-        - $ref: '#/components/schemas/XafExternalAccountInfo'
-        - $ref: '#/components/schemas/BdtExternalAccountInfo'
-        - $ref: '#/components/schemas/CopExternalAccountInfo'
-        - $ref: '#/components/schemas/EgpExternalAccountInfo'
-        - $ref: '#/components/schemas/GhsExternalAccountInfo'
-        - $ref: '#/components/schemas/GtqExternalAccountInfo'
-        - $ref: '#/components/schemas/HtgExternalAccountInfo'
-        - $ref: '#/components/schemas/JmdExternalAccountInfo'
-        - $ref: '#/components/schemas/PkrExternalAccountInfo'
-        - $ref: '#/components/schemas/SlvExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningExternalAccountInfo'
+        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
+          AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
+          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountInfo'
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
+          BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
           CAD_ACCOUNT: '#/components/schemas/CadExternalAccountInfo'
+          COP_ACCOUNT: '#/components/schemas/CopExternalAccountInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
+          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountInfo'
           EUR_ACCOUNT: '#/components/schemas/EurExternalAccountInfo'
           GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountInfo'
+          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountInfo'
+          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountInfo'
           HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountInfo'
+          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountInfo'
           IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountInfo'
           INR_ACCOUNT: '#/components/schemas/InrExternalAccountInfo'
+          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountInfo'
           KES_ACCOUNT: '#/components/schemas/KesExternalAccountInfo'
           MWK_ACCOUNT: '#/components/schemas/MwkExternalAccountInfo'
           MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountInfo'
           MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountInfo'
           NGN_ACCOUNT: '#/components/schemas/NgnExternalAccountInfo'
           PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountInfo'
+          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountInfo'
           RWF_ACCOUNT: '#/components/schemas/RwfExternalAccountInfo'
           SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountInfo'
+          SLV_ACCOUNT: '#/components/schemas/SlvExternalAccountInfo'
           THB_ACCOUNT: '#/components/schemas/ThbExternalAccountInfo'
           TZS_ACCOUNT: '#/components/schemas/TzsExternalAccountInfo'
           UGX_ACCOUNT: '#/components/schemas/UgxExternalAccountInfo'
           USD_ACCOUNT: '#/components/schemas/UsdExternalAccountInfo'
           VND_ACCOUNT: '#/components/schemas/VndExternalAccountInfo'
+          XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
           XOF_ACCOUNT: '#/components/schemas/XofExternalAccountInfo'
           ZAR_ACCOUNT: '#/components/schemas/ZarExternalAccountInfo'
           ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountInfo'
-          SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
-          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
-          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
-          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
-          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          SWIFT_ACCOUNT: '#/components/schemas/SwiftExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
           ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
-          AED_ACCOUNT: '#/components/schemas/AedExternalAccountInfo'
-          BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
-          XAF_ACCOUNT: '#/components/schemas/XafExternalAccountInfo'
-          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountInfo'
-          COP_ACCOUNT: '#/components/schemas/CopExternalAccountInfo'
-          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountInfo'
-          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountInfo'
-          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountInfo'
-          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountInfo'
-          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountInfo'
+          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
-          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountInfo'
-          SLV_ACCOUNT: '#/components/schemas/SlvExternalAccountInfo'
+          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
+          SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
+          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -13192,6 +13310,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/AedBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BdtExternalAccountCreateInfo:
+      title: BDT Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BdtAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/BdtBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     BrlExternalAccountCreateInfo:
       title: BRL Account
       allOf:
@@ -13252,6 +13390,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/CadBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CopExternalAccountCreateInfo:
+      title: COP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CopAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CopBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     DkkExternalAccountCreateInfo:
       title: DKK Account
       allOf:
@@ -13271,6 +13429,26 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/DkkBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    EgpExternalAccountCreateInfo:
+      title: EGP Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/EgpAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/EgpBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     EurExternalAccountCreateInfo:
       title: EUR Account
@@ -13312,6 +13490,46 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/GbpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GhsExternalAccountCreateInfo:
+      title: GHS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GhsAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GhsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    GtqExternalAccountCreateInfo:
+      title: GTQ Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/GtqAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/GtqBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     HkdExternalAccountCreateInfo:
       title: HKD Account
       allOf:
@@ -13331,6 +13549,26 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/HkdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    HtgExternalAccountCreateInfo:
+      title: HTG Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/HtgAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/HtgBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     IdrExternalAccountCreateInfo:
       title: IDR Account
@@ -13371,6 +13609,26 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/InrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    JmdExternalAccountCreateInfo:
+      title: JMD Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/JmdAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/JmdBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     KesExternalAccountCreateInfo:
       title: KES Account
@@ -13492,6 +13750,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/PhpBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PkrExternalAccountCreateInfo:
+      title: PKR Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PkrAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PkrBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     RwfExternalAccountCreateInfo:
       title: RWF Account
       allOf:
@@ -13531,6 +13809,26 @@ components:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SgdBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    SlvExternalAccountCreateInfo:
+      title: SLV Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SlvAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SlvBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SlvBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ThbExternalAccountCreateInfo:
       title: THB Account
@@ -13712,11 +14010,11 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ZmwBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    BdtExternalAccountCreateInfo:
-      title: BDT Account
+    SwiftExternalAccountCreateInfo:
+      title: SWIFT Account
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/BdtAccountInfoBase'
+        - $ref: '#/components/schemas/SwiftAccountInfoBase'
         - type: object
           required:
             - beneficiary
@@ -13724,194 +14022,43 @@ components:
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
-                  $ref: '#/components/schemas/BdtBeneficiary'
+                  $ref: '#/components/schemas/SwiftBeneficiary'
                 - title: Business Beneficiary
                   $ref: '#/components/schemas/BusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
-                  INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    CopExternalAccountCreateInfo:
-      title: COP Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CopAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/CopBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/CopBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    EgpExternalAccountCreateInfo:
-      title: EGP Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/EgpAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/EgpBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    GhsExternalAccountCreateInfo:
-      title: GHS Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GhsAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/GhsBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/GhsBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    GtqExternalAccountCreateInfo:
-      title: GTQ Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/GtqAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/GtqBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/GtqBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    HtgExternalAccountCreateInfo:
-      title: HTG Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/HtgAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/HtgBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/HtgBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    JmdExternalAccountCreateInfo:
-      title: JMD Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/JmdAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/JmdBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/JmdBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    PkrExternalAccountCreateInfo:
-      title: PKR Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/PkrAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/PkrBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/PkrBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    SlvExternalAccountCreateInfo:
-      title: SLV Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/SlvAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/SlvBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/SlvBeneficiary'
+                  INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/BdtExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BrlExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BwpExternalAccountCreateInfo'
         - $ref: '#/components/schemas/CadExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/CopExternalAccountCreateInfo'
         - $ref: '#/components/schemas/DkkExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/EgpExternalAccountCreateInfo'
         - $ref: '#/components/schemas/EurExternalAccountCreateInfo'
         - $ref: '#/components/schemas/GbpExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/GhsExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/GtqExternalAccountCreateInfo'
         - $ref: '#/components/schemas/HkdExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/HtgExternalAccountCreateInfo'
         - $ref: '#/components/schemas/IdrExternalAccountCreateInfo'
         - $ref: '#/components/schemas/InrExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/JmdExternalAccountCreateInfo'
         - $ref: '#/components/schemas/KesExternalAccountCreateInfo'
         - $ref: '#/components/schemas/MwkExternalAccountCreateInfo'
         - $ref: '#/components/schemas/MxnExternalAccountCreateInfo'
         - $ref: '#/components/schemas/MyrExternalAccountCreateInfo'
         - $ref: '#/components/schemas/NgnExternalAccountCreateInfo'
         - $ref: '#/components/schemas/PhpExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/PkrExternalAccountCreateInfo'
         - $ref: '#/components/schemas/RwfExternalAccountCreateInfo'
         - $ref: '#/components/schemas/SgdExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/SlvExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ThbExternalAccountCreateInfo'
         - $ref: '#/components/schemas/TzsExternalAccountCreateInfo'
         - $ref: '#/components/schemas/UgxExternalAccountCreateInfo'
@@ -13921,43 +14068,44 @@ components:
         - $ref: '#/components/schemas/XofExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ZarExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ZmwExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/BdtExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/CopExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/EgpExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/GhsExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/GtqExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/HtgExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/JmdExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/PkrExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/SlvExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/LightningExternalAccountInfo'
-        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
-        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/SwiftExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/LightningExternalAccountInfo'
+        - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
           AED_ACCOUNT: '#/components/schemas/AedExternalAccountCreateInfo'
+          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountCreateInfo'
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountCreateInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountCreateInfo'
           CAD_ACCOUNT: '#/components/schemas/CadExternalAccountCreateInfo'
+          COP_ACCOUNT: '#/components/schemas/CopExternalAccountCreateInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountCreateInfo'
+          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountCreateInfo'
           EUR_ACCOUNT: '#/components/schemas/EurExternalAccountCreateInfo'
           GBP_ACCOUNT: '#/components/schemas/GbpExternalAccountCreateInfo'
+          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountCreateInfo'
+          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountCreateInfo'
           HKD_ACCOUNT: '#/components/schemas/HkdExternalAccountCreateInfo'
+          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountCreateInfo'
           IDR_ACCOUNT: '#/components/schemas/IdrExternalAccountCreateInfo'
           INR_ACCOUNT: '#/components/schemas/InrExternalAccountCreateInfo'
+          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountCreateInfo'
           KES_ACCOUNT: '#/components/schemas/KesExternalAccountCreateInfo'
           MWK_ACCOUNT: '#/components/schemas/MwkExternalAccountCreateInfo'
           MXN_ACCOUNT: '#/components/schemas/MxnExternalAccountCreateInfo'
           MYR_ACCOUNT: '#/components/schemas/MyrExternalAccountCreateInfo'
           NGN_ACCOUNT: '#/components/schemas/NgnExternalAccountCreateInfo'
           PHP_ACCOUNT: '#/components/schemas/PhpExternalAccountCreateInfo'
+          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountCreateInfo'
           RWF_ACCOUNT: '#/components/schemas/RwfExternalAccountCreateInfo'
           SGD_ACCOUNT: '#/components/schemas/SgdExternalAccountCreateInfo'
+          SLV_ACCOUNT: '#/components/schemas/SlvExternalAccountCreateInfo'
           THB_ACCOUNT: '#/components/schemas/ThbExternalAccountCreateInfo'
           TZS_ACCOUNT: '#/components/schemas/TzsExternalAccountCreateInfo'
           UGX_ACCOUNT: '#/components/schemas/UgxExternalAccountCreateInfo'
@@ -13967,22 +14115,14 @@ components:
           XOF_ACCOUNT: '#/components/schemas/XofExternalAccountCreateInfo'
           ZAR_ACCOUNT: '#/components/schemas/ZarExternalAccountCreateInfo'
           ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountCreateInfo'
-          BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountCreateInfo'
-          COP_ACCOUNT: '#/components/schemas/CopExternalAccountCreateInfo'
-          EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountCreateInfo'
-          GHS_ACCOUNT: '#/components/schemas/GhsExternalAccountCreateInfo'
-          GTQ_ACCOUNT: '#/components/schemas/GtqExternalAccountCreateInfo'
-          HTG_ACCOUNT: '#/components/schemas/HtgExternalAccountCreateInfo'
-          JMD_ACCOUNT: '#/components/schemas/JmdExternalAccountCreateInfo'
-          PKR_ACCOUNT: '#/components/schemas/PkrExternalAccountCreateInfo'
-          SLV_ACCOUNT: '#/components/schemas/SlvExternalAccountCreateInfo'
-          SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
-          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
-          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
-          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
-          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          SWIFT_ACCOUNT: '#/components/schemas/SwiftExternalAccountCreateInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
           ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
+          LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
+          POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
+          SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
+          TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
     ExternalAccountCreateRequest:
       allOf:
         - type: object
