@@ -56,6 +56,12 @@ patch:
                   mandatory: true
                 - name: BIRTH_DATE
                   mandatory: true
+          embeddedWalletConfig:
+            appName: Acme Wallet
+            sendFromEmailAddress: noreply@acme.com
+            sendFromEmailSenderName: Acme Notifications
+            replyToEmailAddress: support@acme.com
+            logoUrl: https://acme.com/logo.png
   responses:
     '200':
       description: Configuration updated successfully
