@@ -1,13 +1,14 @@
 ---
 name: grid-test
 description: >
-  This skill should be used when the user asks to "test Grid", "run USDC tests", "test deposits",
-  "test withdrawals", "test Solana flows", "test Base flows", "test Polygon flows",
-  "test Ethereum flows", "test ETH L1", "run e2e tests",
-  "test sandbox", "test USDC to USD", "test USDC to MXN", "run all Grid tests", "test transfer out",
-  "test realtime funding", "test quote flows", "test deposits and withdrawals",
-  "run sandbox tests", "test USDC sandbox", "test Grid API", "run e2e USDC test",
-  "test USDC on [chain]", or wants to verify Grid's USDC deposit/withdrawal/quote pipeline.
+  This skill should be used when the user asks to "test Grid", "run USDC tests", "run USDT tests",
+  "test deposits", "test withdrawals", "test Solana flows", "test Base flows", "test Polygon flows",
+  "test Ethereum flows", "test ETH L1", "test Tron flows", "test USDT on Tron", "run e2e tests",
+  "test sandbox", "test USDC to USD", "test USDT to USD", "test USDC to MXN", "run all Grid tests",
+  "test transfer out", "test realtime funding", "test quote flows", "test deposits and withdrawals",
+  "run sandbox tests", "test USDC sandbox", "test USDT sandbox", "test Grid API", "run e2e USDC test",
+  "run e2e USDT test", "test USDC on [chain]", "test USDT on [chain]", or wants to verify Grid's
+  stablecoin deposit/withdrawal/quote pipeline (USDC on Solana/Base/Polygon/Ethereum, USDT on Tron).
   Even if the user mentions just one chain, one test, or one corridor, this skill applies.
   This replaces both grid-solana-usdc-sandbox and grid-base-usdc-test.
 allowed-tools:
@@ -20,15 +21,17 @@ allowed-tools:
 
 # Grid API Test Suite
 
-End-to-end tests for USDC flows on Solana, Base, Polygon, and Ethereum L1: deposits, withdrawals, and cross-currency quotes using real testnet (or mainnet) funds.
+End-to-end tests for stablecoin flows: USDC on Solana, Base, Polygon, and Ethereum L1, and USDT on Tron. Covers deposits, withdrawals, and cross-currency quotes using real testnet (or mainnet) funds.
+
+Each chain has a single supported stablecoin (`STABLE_ASSET` / `STABLE_CURRENCY` in the catalog). For Solana/Base/Polygon/Ethereum this is USDC; for Tron it is USDT. The tests themselves are asset-agnostic and parameterized over the chain's stablecoin.
 
 ## Step 1: Parse the User's Prompt
 
 Determine what to run from the user's request:
 
 **Chains** (default: all available — see step 3 for which have keys):
-- `solana`, `base`, `polygon`, `ethereum`, or `all`
-- Multiple chains: "test solana and base", "run base and polygon tests", "test ethereum"
+- `solana`, `base`, `polygon`, `ethereum`, `tron`, or `all`
+- Multiple chains: "test solana and base", "run base and polygon tests", "test tron"
 
 **Tests** (default: all):
 - By number: "run test 4 on solana"
@@ -98,26 +101,30 @@ For each chain the user wants to test, set the chain-specific variables and veri
 
 **Testnet (sandbox/dev):**
 
-| Variable | Solana | Base | Polygon | Ethereum |
-|---|---|---|---|---|
-| `CRYPTO_NETWORK` | `SOLANA_DEVNET` | `BASE_TESTNET` | `POLYGON_TESTNET` | `ETHEREUM_TESTNET` |
-| `WALLET_TYPE` | `SOLANA_WALLET` | `BASE_WALLET` | `POLYGON_WALLET` | `ETHEREUM_WALLET` |
-| `CRED_KEY` | `solanaDevnetPrivateKey` | `baseTestnetPrivateKey` | `polygonTestnetPrivateKey` | `ethereumTestnetPrivateKey` |
-| `HELPER_SCRIPT` | `scripts/solana_helper.py` | `scripts/base_helper.py` | `scripts/polygon_helper.py` | `scripts/ethereum_helper.py` |
-| `GAS_CMD` | `sol-balance` | `eth-balance` | `pol-balance` | `eth-balance` |
-| `GAS_TOKEN` | SOL | ETH | POL | ETH |
-| `GAS_MIN` | 0.1 | 0.001 | 0.1 | 0.01 |
-| `TRANSFER_OUT_AMT` | 100000 | 200000 | 200000 | 200000 |
-| `PIP_DEPS` | `solders solana base58` | `web3` | `web3` | `web3` |
+| Variable | Solana | Base | Polygon | Ethereum | Tron |
+|---|---|---|---|---|---|
+| `CRYPTO_NETWORK` | `SOLANA_DEVNET` | `BASE_TESTNET` | `POLYGON_TESTNET` | `ETHEREUM_TESTNET` | `TRON_TESTNET` |
+| `WALLET_TYPE` | `SOLANA_WALLET` | `BASE_WALLET` | `POLYGON_WALLET` | `ETHEREUM_WALLET` | `TRON_WALLET` |
+| `STABLE_ASSET` | `usdc` | `usdc` | `usdc` | `usdc` | `usdt` |
+| `STABLE_CURRENCY` | `USDC` | `USDC` | `USDC` | `USDC` | `USDT` |
+| `CRED_KEY` | `solanaDevnetPrivateKey` | `baseTestnetPrivateKey` | `polygonTestnetPrivateKey` | `ethereumTestnetPrivateKey` | `tronTestnetPrivateKey` |
+| `HELPER_SCRIPT` | `scripts/solana_helper.py` | `scripts/base_helper.py` | `scripts/polygon_helper.py` | `scripts/ethereum_helper.py` | `scripts/tron_helper.py` |
+| `GAS_CMD` | `sol-balance` | `eth-balance` | `pol-balance` | `eth-balance` | `trx-balance` |
+| `GAS_TOKEN` | SOL | ETH | POL | ETH | TRX |
+| `GAS_MIN` | 0.1 | 0.001 | 0.1 | 0.01 | 50 |
+| `TRANSFER_OUT_AMT` | 100000 | 200000 | 200000 | 200000 | 200000 |
+| `PIP_DEPS` | `solders solana base58` | `web3` | `web3` | `web3` | `tronpy` |
 
 **Mainnet (non-sandbox production):**
 
-| Variable | Solana | Base | Polygon | Ethereum |
-|---|---|---|---|---|
-| `CRYPTO_NETWORK` | `SOLANA_MAINNET` | `BASE_MAINNET` | `POLYGON_MAINNET` | `ETHEREUM_MAINNET` |
-| `WALLET_TYPE` | `SOLANA_WALLET` | `BASE_WALLET` | `POLYGON_WALLET` | `ETHEREUM_WALLET` |
-| `CRED_KEY` | `solanaMainnetPrivateKey` | `baseMainnetPrivateKey` | `polygonMainnetPrivateKey` | `ethereumMainnetPrivateKey` |
-| Other vars | Same as testnet | Same as testnet | Same as testnet | Same as testnet |
+| Variable | Solana | Base | Polygon | Ethereum | Tron |
+|---|---|---|---|---|---|
+| `CRYPTO_NETWORK` | `SOLANA_MAINNET` | `BASE_MAINNET` | `POLYGON_MAINNET` | `ETHEREUM_MAINNET` | `TRON_MAINNET` |
+| `WALLET_TYPE` | `SOLANA_WALLET` | `BASE_WALLET` | `POLYGON_WALLET` | `ETHEREUM_WALLET` | `TRON_WALLET` |
+| `CRED_KEY` | `solanaMainnetPrivateKey` | `baseMainnetPrivateKey` | `polygonMainnetPrivateKey` | `ethereumMainnetPrivateKey` | `tronMainnetPrivateKey` |
+| Other vars | Same as testnet | Same as testnet | Same as testnet | Same as testnet | Same as testnet |
+
+`STABLE_ASSET` is the lowercase asset name used in helper subcommands (`$STABLE_ASSET-balance`, `send-$STABLE_ASSET`). `STABLE_CURRENCY` is the uppercase Grid currency code used in API request bodies. Tron uses USDT; every other chain uses USDC.
 
 ### Per-chain prerequisites
 
@@ -146,23 +153,25 @@ For each selected chain, run these checks. Skip a chain (with a warning) if its 
 
 4. **Check gas balance:**
    ```bash
-   $CHAIN_HELPER $GAS_CMD
+   chain_helper $GAS_CMD
    ```
    If below `GAS_MIN`, warn the user with instructions for obtaining testnet gas:
    - Solana: `chain_helper airdrop-sol --amount 1000000000`
    - Base: https://www.alchemy.com/faucets/base-sepolia
    - Polygon: https://faucet.polygon.technology/
    - Ethereum: https://www.alchemy.com/faucets/ethereum-sepolia
+   - Tron: https://shasta.tronex.io/ (Shasta testnet TRX faucet)
 
-5. **Check USDC balance:**
+5. **Check stablecoin balance:**
    ```bash
-   $CHAIN_HELPER usdc-balance
+   chain_helper $STABLE_ASSET-balance
    ```
-   If `amount` < 1.0 USDC, warn the user. Testnet USDC sources:
-   - Solana: Solana devnet USDC faucet
-   - Base: https://faucet.circle.com/ (select Base Sepolia)
-   - Polygon: https://faucet.circle.com/ (select Polygon Amoy)
-   - Ethereum: https://faucet.circle.com/ (select Ethereum Sepolia)
+   If `amount` < 1.0, warn the user. Testnet stablecoin sources:
+   - Solana (USDC): Solana devnet USDC faucet
+   - Base (USDC): https://faucet.circle.com/ (select Base Sepolia)
+   - Polygon (USDC): https://faucet.circle.com/ (select Polygon Amoy)
+   - Ethereum (USDC): https://faucet.circle.com/ (select Ethereum Sepolia)
+   - Tron (USDT): https://shasta.tronex.io/ (Shasta testnet faucet — request TRX, then swap or fund via the TRC-20 USDT contract `TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs`)
 
 6. **Get wallet address:**
    ```bash
@@ -187,6 +196,7 @@ If running a subset, create the customer (Test 1) silently as setup, then run on
 - Base: `CHAIN_PREFIX="base-test"`
 - Polygon: `CHAIN_PREFIX="polygon-test"`
 - Ethereum: `CHAIN_PREFIX="ethereum-test"`
+- Tron: `CHAIN_PREFIX="tron-test"`
 
 ## Step 6: Results Summary
 
@@ -194,24 +204,26 @@ After all tests complete, print a results table per chain:
 
 ```
 ## Solana Results
-| # | Test Case                              | Status | Details |
-|---|----------------------------------------|--------|---------|
-| 1  | Customer + USDC Account Creation          | PASS   | ...     |
-| 2  | Fund Internal Account (deposit)           | PASS   | ...     |
-| 3  | Transfer Out (→ wallet)                   | PASS   | ...     |
-| 4  | USDC → USD (RT funded → internal)         | PASS   | ...     |
-| 5  | USDC → USD (RT funded → external bank)    | PASS   | ...     |
-| 6  | USDC → MXN (RT funded → CLABE)            | PASS   | ...     |
-| 7  | USD → USDC (Account funded → wallet)      | PASS   | ...     |
-| 8  | USDC → USD (Account funded → internal)    | PASS   | ...     |
-| 9  | USDC → MXN (Account funded → CLABE)       | PASS   | ...     |
-| 10 | USDC → USD (RT funded → UMA)              | PASS   | ...     |
-| 11 | USD → USD (Account funded → UMA)          | PASS   | ...     |
+| # | Test Case                                         | Status | Details |
+|---|---------------------------------------------------|--------|---------|
+| 1  | Customer + Stablecoin Account Creation            | PASS   | ...     |
+| 2  | Fund Internal Account (deposit)                   | PASS   | ...     |
+| 3  | Transfer Out (→ wallet)                           | PASS   | ...     |
+| 4  | Stablecoin → USD (RT funded → internal)           | PASS   | ...     |
+| 5  | Stablecoin → USD (RT funded → external bank)      | PASS   | ...     |
+| 6  | Stablecoin → MXN (RT funded → CLABE)              | PASS   | ...     |
+| 7  | USD → Stablecoin (Account funded → wallet)        | PASS   | ...     |
+| 8  | Stablecoin → USD (Account funded → internal)      | PASS   | ...     |
+| 9  | Stablecoin → MXN (Account funded → CLABE)         | PASS   | ...     |
+| 10 | Stablecoin → USD (RT funded → UMA)                | PASS   | ...     |
+| 11 | USD → USD (Account funded → UMA)                  | PASS   | ...     |
+
+(For USDC chains, "Stablecoin" = USDC. For Tron, "Stablecoin" = USDT.)
 
 ## Base Results
 ...
 
-## Polygon Results
+## Tron Results
 ...
 ```
 
@@ -226,6 +238,7 @@ If multiple chains were tested, add an aggregate summary:
 | Solana  | 7/7    | 0      | 0       |
 | Base    | 6/7    | 1      | 0       |
 | Polygon | 0/7    | 0      | 7       |
+| Tron    | 7/7    | 0      | 0       |
 ```
 
 ## Error Handling
@@ -241,21 +254,21 @@ If multiple chains were tested, add an aggregate summary:
 
 ## Amounts Reference
 
-All tests use small amounts to conserve testnet funds:
+All tests use small amounts to conserve testnet funds. Amounts are denominated in the chain's stablecoin (USDC for Solana/Base/Polygon/Ethereum, USDT for Tron) at 6 decimals.
 
 | Test | Amount | Notes |
 |------|--------|-------|
-| 2 (deposit) | 0.50 USDC (500000) | |
-| 3 (transfer-out) | Solana: 0.10 USDC (100000), Base/Polygon/Ethereum: 0.20 USDC (200000) | EVM chains must exceed ~100100 custody fee |
-| 4-5 (USDC→USD RT) | $0.10 locked receiving (10 cents) | |
-| 6 (USDC→MXN RT) | 11.00 MXN locked receiving (1100 centavos, ~$0.55) | Some envs enforce 1100 minimum |
-| 7 (USD→USDC) | $0.50 sending (50 cents) | Requires sandbox or prior USD balance |
-| 8 (USDC→USD acct) | 0.05 USDC sending (50000) | Requires USDC from test 2 |
-| 9 (USDC→MXN acct) | 0.05 USDC sending (50000) | Requires USDC from test 2 |
-| 10 (USDC→UMA RT) | $0.10 locked receiving (10 cents) | Requires valid UMA receiver |
+| 2 (deposit) | 0.50 stablecoin (500000) | |
+| 3 (transfer-out) | Solana: 0.10 (100000), Base/Polygon/Ethereum/Tron: 0.20 (200000) | EVM chains must exceed ~100100 custody fee; Tron mirrors the EVM minimum |
+| 4-5 (Stablecoin→USD RT) | $0.10 locked receiving (10 cents) | |
+| 6 (Stablecoin→MXN RT) | 11.00 MXN locked receiving (1100 centavos, ~$0.55) | Some envs enforce 1100 minimum |
+| 7 (USD→Stablecoin) | $0.50 sending (50 cents) | Requires sandbox or prior USD balance |
+| 8 (Stablecoin→USD acct) | 0.05 stablecoin sending (50000) | Requires stablecoin from test 2 |
+| 9 (Stablecoin→MXN acct) | 0.05 stablecoin sending (50000) | Requires stablecoin from test 2 |
+| 10 (Stablecoin→UMA RT) | $0.10 locked receiving (10 cents) | Requires valid UMA receiver |
 | 11 (USD→UMA acct) | $0.10 sending (10 cents) | Requires USD balance + valid UMA receiver |
 
-**Total per chain: ~1.3-1.5 USDC + gas fees**
+**Total per chain: ~1.3-1.5 stablecoin units + gas fees**
 
 ## Credential Schema
 
@@ -273,7 +286,9 @@ All tests use small amounts to conserve testnet funds:
   "polygonTestnetPrivateKey": "hex-private-key-with-or-without-0x",
   "polygonMainnetPrivateKey": "hex-private-key-with-or-without-0x",
   "ethereumTestnetPrivateKey": "hex-private-key-with-or-without-0x",
-  "ethereumMainnetPrivateKey": "hex-private-key-with-or-without-0x"
+  "ethereumMainnetPrivateKey": "hex-private-key-with-or-without-0x",
+  "tronTestnetPrivateKey": "hex-private-key-with-or-without-0x",
+  "tronMainnetPrivateKey": "hex-private-key-with-or-without-0x"
 }
 ```
 
