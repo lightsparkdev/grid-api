@@ -2,20 +2,24 @@
 
 All tests use these chain variables (set per-chain in SKILL.md Step 4):
 - `chain_helper` — shell function wrapping the chain's helper script (defined in SKILL.md Step 4)
-- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`
-- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`
+- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `TRON_TESTNET`
+- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `TRON_WALLET`
 - `$WALLET_ADDRESS` — the test wallet's on-chain address
+- `$STABLE_ASSET` — lowercase stablecoin name for helper subcommands (`usdc` or `usdt`)
+- `$STABLE_CURRENCY` — uppercase Grid currency code for API bodies (`USDC` or `USDT`)
 - `$TRANSFER_OUT_AMT` — chain-specific minimum transfer-out amount
 - `$IS_SANDBOX` — whether the platform is sandbox
-- `$CHAIN_PREFIX` — unique prefix for this chain run (e.g., `solana-test`, `base-test`, `polygon-test`)
+- `$CHAIN_PREFIX` — unique prefix for this chain run (e.g., `solana-test`, `base-test`, `polygon-test`, `tron-test`)
+
+Shell variables referenced below (`STABLE_INTERNAL_ID`, `STABLE_EXTERNAL_ID`, etc.) hold the IDs of internal/external accounts denominated in the chain's stablecoin — USDC for Solana/Base/Polygon/Ethereum, USDT for Tron.
 
 API credentials are in environment variables: `$GRID_API_TOKEN_ID`, `$GRID_API_CLIENT_SECRET`, `$GRID_BASE_URL`.
 
 ---
 
-## Test 1: Customer + USDC Account Creation
+## Test 1: Customer + Stablecoin Account Creation
 
-**Goal:** Create a customer and verify USDC internal account with chain-specific wallet funding instructions.
+**Goal:** Create a customer and verify the chain's stablecoin (`$STABLE_CURRENCY`) internal account exists with chain-specific wallet funding instructions.
 
 **Steps:**
 
@@ -45,36 +49,36 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 ```
 
 3. From the response, extract:
-   - `USDC_INTERNAL_ID`: the `id` of the internal account where `balance.currency` is `USDC`
+   - `STABLE_INTERNAL_ID`: the `id` of the internal account where `balance.currency` matches `$STABLE_CURRENCY`
    - `USD_INTERNAL_ID`: the `id` of the internal account where `balance.currency` is `USD`
-   - `DEPOSIT_ADDRESS`: from the USDC account's `fundingPaymentInstructions` array, find the entry where `accountOrWalletInfo.accountType` is `$WALLET_TYPE` and extract `accountOrWalletInfo.address`
+   - `DEPOSIT_ADDRESS`: from the stablecoin account's `fundingPaymentInstructions` array, find the entry where `accountOrWalletInfo.accountType` is `$WALLET_TYPE` and extract `accountOrWalletInfo.address`
 
 4. **PASS criteria:**
    - Customer created successfully
-   - USDC internal account exists
+   - `$STABLE_CURRENCY` internal account exists
    - `fundingPaymentInstructions` contains a `$WALLET_TYPE` entry with a non-empty `address`
 
 ---
 
-## Test 2: Fund Internal Account with Real Testnet USDC
+## Test 2: Fund Internal Account with Real Testnet Stablecoin
 
-**Goal:** Send real USDC on the chain's testnet and verify Grid detects the deposit.
+**Goal:** Send real stablecoin (`$STABLE_CURRENCY`) on the chain's testnet and verify Grid detects the deposit.
 
 **Steps:**
 
-1. Record initial USDC balance from internal account:
+1. Record initial stablecoin balance from internal account:
 
 ```bash
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=USDC"
+  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=$STABLE_CURRENCY"
 ```
 
-Save initial `balance.amount` as `INITIAL_USDC_BALANCE`.
+Save initial `balance.amount` as `INITIAL_STABLE_BALANCE`.
 
-2. Send 0.50 USDC to the deposit address:
+2. Send 0.50 of the stablecoin to the deposit address:
 
 ```bash
-chain_helper send-usdc --to $DEPOSIT_ADDRESS --amount 500000
+chain_helper send-$STABLE_ASSET --to $DEPOSIT_ADDRESS --amount 500000
 ```
 
 Verify the send was confirmed (status = "confirmed").
@@ -83,16 +87,16 @@ Verify the send was confirmed (status = "confirmed").
 
 ```bash
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=USDC"
+  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=$STABLE_CURRENCY"
 ```
 
-4. **PASS criteria:** USDC internal account `balance.amount` increases above `INITIAL_USDC_BALANCE`.
+4. **PASS criteria:** `$STABLE_CURRENCY` internal account `balance.amount` increases above `INITIAL_STABLE_BALANCE`.
 
 ---
 
-## Test 3: Transfer Out (USDC internal -> external wallet)
+## Test 3: Transfer Out (stablecoin internal -> external wallet)
 
-**Goal:** Withdraw USDC from internal account to an external wallet on this chain.
+**Goal:** Withdraw the chain's stablecoin from the internal account to an external wallet on this chain.
 
 **Steps:**
 
@@ -103,7 +107,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d "{
     \"customerId\": \"$CUSTOMER_ID\",
-    \"currency\": \"USDC\",
+    \"currency\": \"$STABLE_CURRENCY\",
     \"cryptoNetwork\": \"$CRYPTO_NETWORK\",
     \"accountInfo\": {
       \"accountType\": \"$WALLET_TYPE\",
@@ -113,15 +117,15 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/external-accounts"
 ```
 
-Save the `id` as `USDC_EXTERNAL_ID`.
+Save the `id` as `STABLE_EXTERNAL_ID`.
 
-2. Record initial on-chain USDC balance:
+2. Record initial on-chain stablecoin balance:
 
 ```bash
-chain_helper usdc-balance
+chain_helper $STABLE_ASSET-balance
 ```
 
-Save `raw` as `INITIAL_ONCHAIN_USDC`.
+Save `raw` as `INITIAL_ONCHAIN_STABLE`.
 
 3. Transfer out:
 
@@ -129,26 +133,26 @@ Save `raw` as `INITIAL_ONCHAIN_USDC`.
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d "{
-    \"source\": {\"accountId\": \"$USDC_INTERNAL_ID\"},
-    \"destination\": {\"accountId\": \"$USDC_EXTERNAL_ID\"},
+    \"source\": {\"accountId\": \"$STABLE_INTERNAL_ID\"},
+    \"destination\": {\"accountId\": \"$STABLE_EXTERNAL_ID\"},
     \"amount\": $TRANSFER_OUT_AMT
   }" \
   "$GRID_BASE_URL/transfer-out"
 ```
 
-4. Poll on-chain USDC balance every 5 seconds, up to 120 seconds:
+4. Poll on-chain stablecoin balance every 5 seconds, up to 120 seconds:
 
 ```bash
-chain_helper usdc-balance
+chain_helper $STABLE_ASSET-balance
 ```
 
-5. **PASS criteria:** On-chain USDC balance (`raw`) increases above `INITIAL_ONCHAIN_USDC`.
+5. **PASS criteria:** On-chain stablecoin balance (`raw`) increases above `INITIAL_ONCHAIN_STABLE`.
 
 ---
 
-## Test 4: USDC -> USD Quote (Real-Time Funded -> internal USD account)
+## Test 4: Stablecoin -> USD Quote (Real-Time Funded -> internal USD account)
 
-**Goal:** Use real-time funding to convert USDC to USD, depositing into the customer's internal USD account.
+**Goal:** Use real-time funding to convert the chain's stablecoin to USD, depositing into the customer's internal USD account.
 
 **Steps:**
 
@@ -161,7 +165,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     \"source\": {
       \"sourceType\": \"REALTIME_FUNDING\",
       \"customerId\": \"$CUSTOMER_ID\",
-      \"currency\": \"USDC\",
+      \"currency\": \"$STABLE_CURRENCY\",
       \"cryptoNetwork\": \"$CRYPTO_NETWORK\"
     },
     \"destination\": {
@@ -179,7 +183,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
    - `QUOTE_ID`: the `id` field
    - `TRANSACTION_ID`: the `transactionId` field
    - `PAYMENT_ADDRESS`: from `paymentInstructions`, find the `$WALLET_TYPE` entry and extract `accountOrWalletInfo.address`
-   - `TOTAL_SENDING_AMOUNT`: the `totalSendingAmount` field (micro-USDC amount to send)
+   - `TOTAL_SENDING_AMOUNT`: the `totalSendingAmount` field (smallest-unit stablecoin amount to send)
 
 3. Record initial USD internal account balance:
 
@@ -190,10 +194,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 Save `balance.amount` as `INITIAL_USD_BALANCE`.
 
-4. Send USDC to the payment instructions address:
+4. Send the stablecoin to the payment instructions address:
 
 ```bash
-chain_helper send-usdc --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
+chain_helper send-$STABLE_ASSET --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
 ```
 
 5. Poll USD internal account balance every 5 seconds, up to 120 seconds:
@@ -207,9 +211,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ---
 
-## Test 5: USDC -> USD Quote (Real-Time Funded -> external USD bank account)
+## Test 5: Stablecoin -> USD Quote (Real-Time Funded -> external USD bank account)
 
-**Goal:** Convert USDC to USD and send to an external bank account via ACH.
+**Goal:** Convert the chain's stablecoin to USD and send to an external bank account via ACH.
 
 **Steps:**
 
@@ -249,7 +253,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     \"source\": {
       \"sourceType\": \"REALTIME_FUNDING\",
       \"customerId\": \"$CUSTOMER_ID\",
-      \"currency\": \"USDC\",
+      \"currency\": \"$STABLE_CURRENCY\",
       \"cryptoNetwork\": \"$CRYPTO_NETWORK\"
     },
     \"destination\": {
@@ -266,10 +270,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 3. Extract `QUOTE_ID`, `TRANSACTION_ID`, `PAYMENT_ADDRESS`, and `TOTAL_SENDING_AMOUNT` as in Test 4.
 
-4. Send USDC to the payment instructions address:
+4. Send the stablecoin to the payment instructions address:
 
 ```bash
-chain_helper send-usdc --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
+chain_helper send-$STABLE_ASSET --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
 ```
 
 5. Poll transaction status every 5 seconds, up to 120 seconds:
@@ -283,9 +287,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ---
 
-## Test 6: USDC -> MXN Quote (Real-Time Funded -> external MXN CLABE account)
+## Test 6: Stablecoin -> MXN Quote (Real-Time Funded -> external MXN CLABE account)
 
-**Goal:** Convert USDC to MXN and send to a Mexican bank account via SPEI.
+**Goal:** Convert the chain's stablecoin to MXN and send to a Mexican bank account via SPEI.
 
 **Steps:**
 
@@ -323,7 +327,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     \"source\": {
       \"sourceType\": \"REALTIME_FUNDING\",
       \"customerId\": \"$CUSTOMER_ID\",
-      \"currency\": \"USDC\",
+      \"currency\": \"$STABLE_CURRENCY\",
       \"cryptoNetwork\": \"$CRYPTO_NETWORK\"
     },
     \"destination\": {
@@ -341,10 +345,10 @@ Note: `lockedCurrencyAmount: 1100` = 11.00 MXN (centavos), roughly ~$0.55 USD. S
 
 3. Extract `QUOTE_ID`, `TRANSACTION_ID`, `PAYMENT_ADDRESS`, and `TOTAL_SENDING_AMOUNT`.
 
-4. Send USDC:
+4. Send the stablecoin:
 
 ```bash
-chain_helper send-usdc --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
+chain_helper send-$STABLE_ASSET --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
 ```
 
 5. Poll transaction status every 5 seconds, up to 120 seconds:
@@ -358,9 +362,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ---
 
-## Test 7: USD -> USDC Quote (Account-Funded -> external wallet)
+## Test 7: USD -> Stablecoin Quote (Account-Funded -> external wallet)
 
-**Goal:** Convert USD from internal account to USDC delivered to our external wallet on this chain.
+**Goal:** Convert USD from internal account to the chain's stablecoin delivered to our external wallet on this chain.
 
 **Steps:**
 
@@ -377,17 +381,17 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
    Verify the balance increased.
 
-   **If `IS_SANDBOX=false`:** Check the current USD internal account balance. If balance is 0, skip this test with: "SKIP: Non-sandbox platform with no USD balance. Requires a prior USDC->USD conversion (Test 4) or manual funding." If balance > 0, proceed.
+   **If `IS_SANDBOX=false`:** Check the current USD internal account balance. If balance is 0, skip this test with: "SKIP: Non-sandbox platform with no USD balance. Requires a prior stablecoin->USD conversion (Test 4) or manual funding." If balance > 0, proceed.
 
-2. Record initial on-chain USDC balance:
+2. Record initial on-chain stablecoin balance:
 
 ```bash
-chain_helper usdc-balance
+chain_helper $STABLE_ASSET-balance
 ```
 
-Save `raw` as `INITIAL_ONCHAIN_USDC_T7`.
+Save `raw` as `INITIAL_ONCHAIN_STABLE_T7`.
 
-3. Ensure USDC external account exists (reuse `$USDC_EXTERNAL_ID` from Test 3). If Test 3 was skipped, create it now using the same pattern as Test 3 step 1.
+3. Ensure the stablecoin external account exists (reuse `$STABLE_EXTERNAL_ID` from Test 3). If Test 3 was skipped, create it now using the same pattern as Test 3 step 1.
 
 4. Create an account-funded quote:
 
@@ -401,7 +405,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     },
     \"destination\": {
       \"destinationType\": \"ACCOUNT\",
-      \"accountId\": \"$USDC_EXTERNAL_ID\"
+      \"accountId\": \"$STABLE_EXTERNAL_ID\"
     },
     \"lockedCurrencySide\": \"SENDING\",
     \"lockedCurrencyAmount\": 50,
@@ -420,30 +424,30 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   "$GRID_BASE_URL/quotes/$QUOTE_ID/execute"
 ```
 
-6. Poll on-chain USDC balance every 5 seconds, up to 120 seconds:
+6. Poll on-chain stablecoin balance every 5 seconds, up to 120 seconds:
 
 ```bash
-chain_helper usdc-balance
+chain_helper $STABLE_ASSET-balance
 ```
 
-7. **PASS criteria:** On-chain USDC balance (`raw`) increases above `INITIAL_ONCHAIN_USDC_T7`.
+7. **PASS criteria:** On-chain stablecoin balance (`raw`) increases above `INITIAL_ONCHAIN_STABLE_T7`.
 
 ---
 
-## Test 8: USDC -> USD Quote (Account-Funded -> internal USD account)
+## Test 8: Stablecoin -> USD Quote (Account-Funded -> internal USD account)
 
-**Goal:** Convert USDC from internal account to USD in the customer's internal USD account, using existing USDC balance (no real-time funding).
+**Goal:** Convert the chain's stablecoin from the internal account to USD in the customer's internal USD account, using the existing stablecoin balance (no real-time funding).
 
 **Steps:**
 
-1. Check USDC internal account balance:
+1. Check stablecoin internal account balance:
 
 ```bash
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=USDC"
+  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=$STABLE_CURRENCY"
 ```
 
-If `balance.amount` is 0, skip this test with: "SKIP: No USDC in internal account. Requires a prior deposit (Test 2)."
+If `balance.amount` is 0, skip this test with: "SKIP: No $STABLE_CURRENCY in internal account. Requires a prior deposit (Test 2)."
 
 2. Record initial USD internal account balance:
 
@@ -462,7 +466,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d "{
     \"source\": {
       \"sourceType\": \"ACCOUNT\",
-      \"accountId\": \"$USDC_INTERNAL_ID\"
+      \"accountId\": \"$STABLE_INTERNAL_ID\"
     },
     \"destination\": {
       \"destinationType\": \"ACCOUNT\",
@@ -496,20 +500,20 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ---
 
-## Test 9: USDC -> MXN Quote (Account-Funded -> external MXN CLABE account)
+## Test 9: Stablecoin -> MXN Quote (Account-Funded -> external MXN CLABE account)
 
-**Goal:** Convert USDC from internal account to MXN and send to a Mexican bank account, using existing USDC balance.
+**Goal:** Convert the chain's stablecoin from the internal account to MXN and send to a Mexican bank account, using the existing stablecoin balance.
 
 **Steps:**
 
-1. Check USDC internal account balance:
+1. Check stablecoin internal account balance:
 
 ```bash
 curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
-  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=USDC"
+  "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID&currency=$STABLE_CURRENCY"
 ```
 
-If `balance.amount` is 0, skip this test with: "SKIP: No USDC in internal account. Requires a prior deposit (Test 2)."
+If `balance.amount` is 0, skip this test with: "SKIP: No $STABLE_CURRENCY in internal account. Requires a prior deposit (Test 2)."
 
 2. Ensure MXN external account exists (reuse `$MXN_EXTERNAL_ID` from Test 6). If Test 6 was skipped, create it now:
 
@@ -544,7 +548,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   -d "{
     \"source\": {
       \"sourceType\": \"ACCOUNT\",
-      \"accountId\": \"$USDC_INTERNAL_ID\"
+      \"accountId\": \"$STABLE_INTERNAL_ID\"
     },
     \"destination\": {
       \"destinationType\": \"ACCOUNT\",
@@ -578,9 +582,9 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ---
 
-## Test 10: USDC -> USD Quote (Real-Time Funded -> UMA address)
+## Test 10: Stablecoin -> USD Quote (Real-Time Funded -> UMA address)
 
-**Goal:** Use real-time USDC funding to send USD to a UMA address.
+**Goal:** Use real-time stablecoin funding to send USD to a UMA address.
 
 **Steps:**
 
@@ -607,7 +611,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     \"source\": {
       \"sourceType\": \"REALTIME_FUNDING\",
       \"customerId\": \"$CUSTOMER_ID\",
-      \"currency\": \"USDC\",
+      \"currency\": \"$STABLE_CURRENCY\",
       \"cryptoNetwork\": \"$CRYPTO_NETWORK\"
     },
     \"destination\": {
@@ -628,10 +632,10 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
    - `PAYMENT_ADDRESS`: from `paymentInstructions`, find the `$WALLET_TYPE` entry and extract `accountOrWalletInfo.address`
    - `TOTAL_SENDING_AMOUNT`: the `totalSendingAmount` field
 
-4. Send USDC to the payment instructions address:
+4. Send the stablecoin to the payment instructions address:
 
 ```bash
-chain_helper send-usdc --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
+chain_helper send-$STABLE_ASSET --to $PAYMENT_ADDRESS --amount $TOTAL_SENDING_AMOUNT
 ```
 
 5. Poll transaction status every 5 seconds, up to 120 seconds:
