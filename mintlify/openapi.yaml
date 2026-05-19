@@ -2488,10 +2488,11 @@ paths:
         or has direct pull functionality (e.g. ACH pull with an external account).
 
         When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
-        the request must include a `Grid-Wallet-Signature` header. The signature is
-        produced by signing the `payloadToSign` value from the quote's
-        `paymentInstructions[].accountOrWalletInfo` entry with the session private
-        key of a verified authentication credential on the source Embedded Wallet.
+        the request must include a `Grid-Wallet-Signature` header. The header value
+        is the full Turnkey API-key stamp built over the `payloadToSign` value from
+        the quote's `paymentInstructions[].accountOrWalletInfo` entry with the
+        session private key of a verified authentication credential on the source
+        Embedded Wallet.
 
         Once executed, the quote cannot be cancelled and the transfer will be processed.
       operationId: executeQuote
@@ -2518,10 +2519,10 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet and base64-encoded. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          description: Full Turnkey API-key stamp over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
           schema:
             type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
           description: |
@@ -4625,7 +4626,7 @@ paths:
                 challenge:
                   summary: Session refresh challenge
                   value:
-                    payloadToSign: '{"type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"}}'
+                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
@@ -5636,10 +5637,10 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet and base64-encoded. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          description: Full Turnkey API-key stamp over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
           schema:
             type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
           description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
@@ -11648,7 +11649,7 @@ components:
               description: Discriminator value identifying this as Embedded Wallet payment instructions.
             payloadToSign:
               type: string
-              description: JSON-encoded transaction signing payload that must be signed, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting signature is base64-encoded and passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
+              description: JSON-encoded transaction signing payload that must be stamped, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting Turnkey API-key stamp is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     PaymentInstructions:
       type: object
@@ -16491,7 +16492,7 @@ components:
           description: |-
             Whether to immediately execute the quote after creation. If true, the quote will be executed and the transaction will be created at the current exchange rate. It should only be used if you don't want to lock and view rate details before executing the quote. If you are executing a pre-existing quote, use the `/quotes/{quoteId}/execute` endpoint instead. This is false by default.
             This can only be used for quotes with a `source` which is either an internal account, or has direct pull functionality (e.g. ACH pull with an external account).
-            Not supported when the `source` is an internal account of type `EMBEDDED_WALLET`: those transfers require a `Grid-Wallet-Signature` over the `payloadToSign` returned in the quote response, which is not available in a combined create-and-execute call. Create the quote first with `immediatelyExecute: false` and then call `POST /quotes/{quoteId}/execute` with the signature header.
+            Not supported when the `source` is an internal account of type `EMBEDDED_WALLET`: those transfers require a `Grid-Wallet-Signature` over the `payloadToSign` returned in the quote response, which is not available in a combined create-and-execute call. Create the quote first with `immediatelyExecute: false` and then call `POST /quotes/{quoteId}/execute` with the `Grid-Wallet-Signature` stamp header.
           example: false
         description:
           type: string

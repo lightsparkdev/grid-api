@@ -99,7 +99,7 @@ post:
             challenge:
               summary: Session refresh challenge
               value:
-                payloadToSign: '{"type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"}}'
+                payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
                 requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                 expiresAt: '2026-04-08T15:35:00Z'
     '400':
