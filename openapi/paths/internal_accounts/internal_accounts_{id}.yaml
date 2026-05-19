@@ -108,7 +108,7 @@ patch:
             challenge:
               summary: Internal account update challenge
               value:
-                payloadToSign: Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==
+                payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"encoding":"PAYLOAD_ENCODING_HEXADECIMAL","hashFunction":"HASH_FUNCTION_NO_OP","payload":"9f3b...","signWith":"sp1q..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2"}'
                 requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                 expiresAt: '2026-04-08T15:35:00Z'
     '400':

@@ -567,7 +567,7 @@ Key rules:
 - Always sign the `payloadToSign` **byte-for-byte as Grid returned it**. Do not re-parse, re-serialize, or modify whitespace.
 - Sign with the **session private key** held on the client — never ship it back to your backend.
 - The retry must reach Grid before `expiresAt` (typically 5 minutes from issue).
-- The `requestId` is single-use; reusing one yields `401`.
+- The `requestId` is returned as `Request:<uuid>` and is single-use; reusing one yields `401`.
 
 ### Add an additional credential
 
@@ -590,7 +590,7 @@ Requires an active session on an *existing* credential on the same account. The 
     ```json
     {
       "type": "EMAIL_OTP",
-      "payloadToSign": "{\"requestId\":\"Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21\",\"type\":\"EMAIL_OTP\",\"accountId\":\"InternalAccount:019542f5-b3e7-1d02-0000-000000000002\",\"expiresAt\":\"2026-04-08T15:35:00Z\"}",
+      "payloadToSign": "{\"organizationId\":\"org_2m9F...\",\"parameters\":{\"userEmail\":\"jane@example.com\",\"userId\":\"user_2m9F...\"},\"timestampMs\":\"1775681700000\",\"type\":\"ACTIVITY_TYPE_UPDATE_USER_EMAIL\"}",
       "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
       "expiresAt": "2026-04-08T15:35:00Z"
     }
@@ -641,7 +641,7 @@ A credential is revoked by signing with a session from **a different credential 
     ```json
     {
       "type": "PASSKEY",
-      "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
+      "payloadToSign": "{\"organizationId\":\"org_2m9F...\",\"parameters\":{\"authenticatorIds\":[\"authenticator_2m9F...\"],\"userId\":\"user_2m9F...\"},\"timestampMs\":\"1775681700000\",\"type\":\"ACTIVITY_TYPE_DELETE_AUTHENTICATORS\"}",
       "requestId": "Request:9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45",
       "expiresAt": "2026-04-08T15:35:00Z"
     }
