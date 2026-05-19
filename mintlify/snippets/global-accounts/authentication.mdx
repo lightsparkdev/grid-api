@@ -420,7 +420,7 @@ The lowest-friction credential type — works on any device with email access an
 
 ### Email OTP registration
 
-Creating the credential triggers an OTP email to the email address on the customer profile that owns this internal account. The user reads the code off the email and submits it through your UI.
+Creating the credential triggers an OTP email to the customer email on file for the internal account. Do not include an `email` field in the request body; Grid resolves the address from the account's customer record.
 
 ```mermaid
 sequenceDiagram
@@ -429,9 +429,9 @@ sequenceDiagram
   participant G as Grid
   participant E as Email
 
-  C->>IB: POST /my-backend/otp/register
+  C->>IB: POST /my-backend/otp/register { accountId }
   IB->>G: POST /auth/credentials { type: EMAIL_OTP, accountId }
-  G->>E: deliver OTP email (to customer profile address)
+  G->>E: deliver OTP email (to customer email on file)
   G-->>IB: 201 AuthMethod
   IB-->>C: { credentialId }
   E-->>C: OTP code
@@ -571,7 +571,7 @@ Key rules:
 
 ### Add an additional credential
 
-Requires an active session on an *existing* credential on the same account. The first call looks identical to the one used to create the first credential; Grid detects the pre-existing credential and responds `202` instead of `201`.
+Requires an active session on an *existing* credential on the same account. The first call looks identical to the one used to create the first credential; Grid detects the pre-existing credential and responds `202` instead of `201`. For `EMAIL_OTP`, Grid uses the customer email on file for the internal account.
 
 <Steps>
   <Step title="First call — receive the challenge">
