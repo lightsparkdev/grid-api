@@ -13,8 +13,8 @@ sequenceDiagram
   IB->>G: POST /internal-accounts/{id}/export { clientPublicKey }
   G-->>IB: 202 { payloadToSign, requestId, expiresAt }
   IB-->>C: { payloadToSign, requestId }
-  C->>C: sign(payloadToSign, sessionPrivateKey)
-  C->>IB: { signature }
+  C->>C: stamp(payloadToSign, sessionPrivateKey)
+  C->>IB: { stamp }
   IB->>G: POST /internal-accounts/{id}/export { same clientPublicKey }<br/>Grid-Wallet-Signature<br/>Request-Id
   G-->>IB: 200 { id, encryptedWalletCredentials }
   IB-->>C: { encryptedWalletCredentials }
@@ -42,15 +42,15 @@ sequenceDiagram
     }
     ```
   </Step>
-  <Step title="Client signs the payload">
-    Sign `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
+  <Step title="Client stamps the payload">
+    Build a Turnkey API-key stamp over `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
   </Step>
   <Step title="Signed retry — receive the encrypted seed">
     ```bash
     curl -X POST "$GRID_BASE_URL/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/export" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
-      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9" \
       -H "Request-Id: Request:c3f8a614-47e2-4a19-9f5d-2b0a91d47e08" \
       -d '{
         "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
