@@ -51,7 +51,3 @@ properties:
     type: string
     description: Country that issued the identification (ISO 3166-1 alpha-2)
     example: US
-  issuingAuthority:
-    type: string
-    description: Name of the government agency or organization that issued the identification
-    example: U.S. Department of State
