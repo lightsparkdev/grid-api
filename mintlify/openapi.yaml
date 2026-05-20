@@ -14426,6 +14426,10 @@ components:
           type: string
           description: Document identification number (e.g., passport number)
           example: A12345678
+        issuingAuthority:
+          type: string
+          description: Name of the government agency or organization that issued the document
+          example: U.S. Department of State
         fileName:
           type: string
           description: Original file name of the uploaded document
@@ -14488,6 +14492,10 @@ components:
           type: string
           description: Document identification number (e.g., passport number)
           example: A12345678
+        issuingAuthority:
+          type: string
+          description: Name of the government agency or organization that issued the document
+          example: U.S. Department of State
     DocumentUploadRequest:
       title: Document Upload Request
       allOf:
