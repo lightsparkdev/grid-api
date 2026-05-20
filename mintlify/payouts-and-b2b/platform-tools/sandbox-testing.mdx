@@ -140,8 +140,7 @@ POST /quotes
   },
   "destination": {
     "destinationType": "ACCOUNT",
-    "accountId": "ExternalAccount:...",
-    "currency": "EUR"
+    "accountId": "ExternalAccount:..."
   },
   "lockedCurrencySide": "SENDING",
   "lockedCurrencyAmount": 100000
@@ -159,17 +158,18 @@ For quotes from an external account source, execute as in production via `/quote
 3. Update transaction statuses immediately (no waiting for bank processing)
 4. Trigger webhooks for state changes
 
-For quotes with payment instructions (no source account), use the existing `/sandbox/send` endpoint to simulate payment:
+For quotes with real-time funding (no source account), use the `/sandbox/send` endpoint to simulate the inbound payment. Reference the quote by ID and specify the funding currency:
 
 ```bash
 POST /sandbox/send
 
 {
-  "reference": "UMA-Q12345-REF",  // From quote payment instructions
-  "currencyCode": "USD",
-  "currencyAmount": 100000
+  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "currencyCode": "USD"
 }
 ```
+
+`currencyCode` must match the quote's funding-source currency. `currencyAmount` is optional — when omitted, the amount is derived from the quote.
 
 ## Testing Webhooks
 
