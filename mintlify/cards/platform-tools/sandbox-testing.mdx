@@ -123,7 +123,7 @@ curl -X POST "$GRID_BASE_URL/cards" \
     "cardholderId": "Customer:...",
     "platformCardId": "card-test-happy",
     "form": "VIRTUAL",
-    "fundingSource": { "accountId": "InternalAccount:..." }
+    "fundingSources": ["InternalAccount:..."]
   }'
 
 # 2. Simulate auth — any non-magic descriptor approves

@@ -39,19 +39,29 @@ get:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
 patch:
-  summary: Freeze or unfreeze a card
+  summary: Update a card
   description: >
-    Freeze (`ACTIVE → FROZEN`) or unfreeze (`FROZEN → ACTIVE`) a card. Any
-    other transition is rejected with `409 INVALID_STATE_TRANSITION` — to
-    close a card, use `DELETE /cards/{id}`.
+    Update a card's `state` and / or its bound `fundingSources`. At least
+    one of the two fields must be supplied.
 
 
-    Because freeze / unfreeze is a sensitive state change, this endpoint
-    uses Grid's 202 → signed-retry pattern (same shape as
+    - `state` transitions are limited to `ACTIVE ⇄ FROZEN`. Any other
+    transition returns `409 INVALID_STATE_TRANSITION` — to close a card,
+    use `DELETE /cards/{id}`.
+
+    - `fundingSources`, when supplied, fully replaces the card's bound
+    funding sources. Array order determines the priority Authorization
+    Decisioning tries them in. Each id must belong to the cardholder and
+    be denominated in the card's currency; the list must contain at least
+    one source.
+
+
+    Because both updates are sensitive state changes, this endpoint uses
+    Grid's 202 → signed-retry pattern (same shape as
     `DELETE /auth/credentials/{id}` and `POST /internal-accounts/{id}/export`):
 
 
-    1. Call `PATCH /cards/{id}` with the target `state` and no signing
+    1. Call `PATCH /cards/{id}` with the target fields and no signing
     headers. The response is `202` with a `payloadToSign`, `requestId`, and
     `expiresAt`.
 
@@ -65,15 +75,20 @@ patch:
 
     Effects:
 
-    - `FROZEN`: Authorization Decisioning declines new auths with
+    - `state: FROZEN`: Authorization Decisioning declines new auths with
     `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue —
     freezing does not pause the lifecycle of authorizations that already
     passed.
 
-    - `ACTIVE`: normal authorization behavior resumes.
+    - `state: ACTIVE`: normal authorization behavior resumes.
+
+    - `fundingSources` change: emits `card.funding_source_change` reflecting
+    the new ordered binding.
 
 
-    The `card.state_change` webhook fires on every successful transition.
+    The `card.state_change` webhook fires on every successful `state`
+    transition; the `card.funding_source_change` webhook fires whenever
+    `fundingSources` is updated.
   operationId: updateCardById
   tags:
     - Cards
@@ -118,6 +133,18 @@ patch:
             summary: Unfreeze a frozen card
             value:
               state: ACTIVE
+          updateFundingSources:
+            summary: Replace the card's bound funding sources
+            value:
+              fundingSources:
+                - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+          freezeAndUpdateSources:
+            summary: Freeze the card and replace its funding sources in one call
+            value:
+              state: FROZEN
+              fundingSources:
+                - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   responses:
     '200':
       description: Signed retry accepted. Returns the updated card.
@@ -160,8 +187,11 @@ patch:
     '409':
       description: >-
         Conflict. Returned with `INVALID_STATE_TRANSITION` when the
-        requested transition is not `ACTIVE ⇄ FROZEN` (e.g. trying to
-        un-freeze a `CLOSED` card).
+        requested `state` transition is not `ACTIVE ⇄ FROZEN` (e.g.
+        trying to un-freeze a `CLOSED` card); with
+        `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does
+        not belong to the cardholder or is not denominated in the card's
+        currency; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.
       content:
         application/json:
           schema:

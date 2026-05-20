@@ -61,6 +61,7 @@ post:
                 panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                currency: USD
                 issuerRef: lithic_card_4f8d3a2b1c
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-08T14:11:00Z'
@@ -78,6 +79,7 @@ post:
                 form: VIRTUAL
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-08T14:12:00Z'
           frozen:
@@ -98,6 +100,7 @@ post:
                 expYear: 2029
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-09T09:00:00Z'
   responses:

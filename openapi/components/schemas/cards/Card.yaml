@@ -63,13 +63,21 @@ properties:
     type: array
     description: >-
       Internal account ids bound to this card as funding sources, in priority
-      order (lowest priority value is tried first by Authorization
-      Decisioning). Every card has at least one funding source.
+      order — the first entry is tried first by Authorization Decisioning.
+      Every card has at least one funding source.
     items:
       type: string
     example:
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  currency:
+    type: string
+    description: >-
+      Currency the card transacts in (ISO 4217 for fiat, tickers for crypto).
+      Derived from the funding sources at issue time — all funding sources
+      bound to a card must be denominated in the same card-eligible currency.
+    example: USD
+    readOnly: true
   issuerRef:
     type: string
     description: >-

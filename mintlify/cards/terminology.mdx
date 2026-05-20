@@ -19,10 +19,11 @@ card can be issued — otherwise `POST /cards` is rejected with
 
 An `InternalAccount` bound to a card. Every card must be bound to at
 least one funding source, and Authorization Decisioning checks the
-source's balance at auth time before approving a transaction. In v1 each
-card is backed by a single funding source; additional sources can be
-bound for future multi-source decisioning, but only the source with
-`priority: 1` is read today.
+source's balance at auth time before approving a transaction. The
+`fundingSources` array on the `Card` resource is ordered by priority —
+the first entry is tried first. In v1 only the first source is read by
+Authorization Decisioning; additional sources are stored for future
+multi-source decisioning.
 
 ## Authorization
 

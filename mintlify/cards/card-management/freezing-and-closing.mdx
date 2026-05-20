@@ -4,12 +4,19 @@ description: "Freeze, unfreeze, and close cards via the signed-retry pattern"
 icon: "/images/icons/lock.svg"
 ---
 
-Freeze and close are sensitive state changes, so they use Grid's
+Freeze, close, and other sensitive card updates use Grid's
 `202 → signed-retry` pattern — the same one used by Embedded Wallet
 credential revocation and wallet export. This page covers the flow,
 what each transition does, and how to handle the signing step.
 
-## Valid transitions
+
+`PATCH /cards/{id}` covers both freeze / unfreeze (`state`) and funding
+source updates (`fundingSources`); see
+[Funding sources](/cards/card-management/funding-sources) for the
+funding-source-only flow. The signed-retry mechanics below apply to all
+three.
+
+## Valid state transitions
 
 | From | To | Endpoint |
 |------|----|----------|
@@ -19,6 +26,10 @@ what each transition does, and how to handle the signing step.
 
 Any other transition returns `409 INVALID_STATE_TRANSITION`. In
 particular, you cannot un-freeze a `CLOSED` card — close is terminal.
+
+
+You can also combine a state change with a funding source replacement
+in one PATCH — just include both fields in the body.
 
 ## The signed-retry flow
 

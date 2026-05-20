@@ -271,10 +271,6 @@ paths:
     $ref: paths/cards/cards.yaml
   /cards/{id}:
     $ref: paths/cards/cards_{id}.yaml
-  /cards/{id}/funding-sources:
-    $ref: paths/cards/cards_{id}_funding-sources.yaml
-  /cards/{id}/funding-sources/{accountId}:
-    $ref: paths/cards/cards_{id}_funding-sources_{accountId}.yaml
   /cards/{id}/transactions:
     $ref: paths/cards/cards_{id}_transactions.yaml
   /sandbox/cards/{id}/simulate/authorization:

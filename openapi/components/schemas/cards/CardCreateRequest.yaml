@@ -2,7 +2,7 @@ type: object
 required:
   - cardholderId
   - form
-  - fundingSource
+  - fundingSources
 properties:
   cardholderId:
     type: string
@@ -19,19 +19,17 @@ properties:
     example: card-emp-aary-001
   form:
     $ref: ./CardForm.yaml
-  fundingSource:
-    type: object
-    required:
-      - accountId
+  fundingSources:
+    type: array
     description: >-
-      Initial funding source bound to the card at create time. Every card
-      must be bound to at least one source.
-    properties:
-      accountId:
-        type: string
-        description: >-
-          Internal account id to bind as the first funding source. Must
-          belong to the cardholder and must be denominated in a card-eligible
-          currency (USDB in v1); otherwise the request is rejected with
-          `FUNDING_SOURCE_INELIGIBLE`.
-        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      Internal account ids to bind as funding sources, in priority order.
+      The first entry is tried first by Authorization Decisioning. Every
+      card must be bound to at least one source, and every source must
+      belong to the cardholder and be denominated in a card-eligible
+      currency (USDB in v1); otherwise the request is rejected with
+      `FUNDING_SOURCE_INELIGIBLE`.
+    minItems: 1
+    items:
+      type: string
+    example:
+      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002

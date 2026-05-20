@@ -1,10 +1,10 @@
 post:
   summary: Card funding source change
   description: >
-    Webhook that is called when funding sources bound to a card change —
-    fires on every bind (`POST /cards/{id}/funding-sources`) and unbind
-    (`DELETE /cards/{id}/funding-sources/{accountId}`). The payload carries
-    the full `Card` resource with the post-change `fundingSources` array.
+    Webhook that is called when the funding sources bound to a card change.
+    Fires whenever `PATCH /cards/{id}` updates the `fundingSources` array.
+    The payload carries the full `Card` resource with the post-change
+    `fundingSources` array.
 
 
     This endpoint should be implemented by clients of the Grid API.
@@ -41,8 +41,8 @@ post:
         schema:
           $ref: ../components/schemas/webhooks/CardFundingSourceChangeWebhook.yaml
         examples:
-          fundingSourceAdded:
-            summary: Secondary funding source bound to a card
+          fundingSourcesReplaced:
+            summary: Funding sources replaced via PATCH /cards/{id}
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000030
               type: CARD.FUNDING_SOURCE_CHANGE
@@ -60,6 +60,7 @@ post:
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-08T14:30:00Z'
   responses:

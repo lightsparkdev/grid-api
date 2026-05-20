@@ -18,9 +18,9 @@ curl -X POST "$GRID_BASE_URL/cards" \
     "cardholderId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "platformCardId": "card-emp-aary-001",
     "form": "VIRTUAL",
-    "fundingSource": {
-      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
-    }
+    "fundingSources": [
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    ]
   }'
 ```
 
@@ -29,7 +29,11 @@ curl -X POST "$GRID_BASE_URL/cards" \
 | `cardholderId` | Yes | The `Customer` that owns the card. Must be `kycStatus: APPROVED`. |
 | `platformCardId` | No | Your own identifier. System-generated when omitted, mirroring `platformCustomerId`. |
 | `form` | Yes | `VIRTUAL` in v1. `PHYSICAL` will be added later. |
-| `fundingSource.accountId` | Yes | The `InternalAccount` to bind. Must belong to the cardholder. |
+| `fundingSources` | Yes | Ordered array of `InternalAccount` ids. Each must belong to the cardholder and share one card-eligible currency. The first entry is tried first by Authorization Decisioning. |
+
+The card's `currency` is derived from the funding sources at issue time
+and surfaces on the returned `Card` resource — all bound sources share
+one currency.
 
 ## The lifecycle
 
@@ -77,11 +81,12 @@ cross your servers.
 | 409 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
 | 400 | `INVALID_INPUT` | Validation failure on the request body. |
 
-## Adding more funding sources later
+## Changing funding sources later
 
-You can bind additional internal accounts to a card after issuance via
-`POST /cards/{id}/funding-sources`. See
-[Funding sources](/cards/card-management/funding-sources) for the rules.
+The bound funding sources can be replaced after issuance via
+`PATCH /cards/{id}` with a new `fundingSources` array. See
+[Funding sources](/cards/card-management/funding-sources) for the rules
+and the signed-retry flow.
 
 ## Listing cards
 
