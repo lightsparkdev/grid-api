@@ -104,10 +104,11 @@ Create a quote to convert USD to Bitcoin and deliver it to the Spark wallet. The
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
+      "sourceType": "REALTIME_FUNDING",
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USD"
     },
@@ -203,12 +204,11 @@ In Sandbox, you can simulate funding using the `/sandbox/send` endpoint:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "reference": "RAMP-ABC123",
-    "currencyCode": "USD",
-    "currencyAmount": 10000
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "currencyCode": "USD"
   }'
 ```
 
