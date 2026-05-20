@@ -1,0 +1,17 @@
+type: object
+required:
+  - count
+  - totalAmount
+properties:
+  count:
+    type: integer
+    description: >-
+      Number of settlement (clearing) events received for this transaction.
+    example: 1
+  totalAmount:
+    type: integer
+    format: int64
+    description: >-
+      Sum of all settled amounts in the smallest unit of the funding source's
+      currency.
+    example: 1500

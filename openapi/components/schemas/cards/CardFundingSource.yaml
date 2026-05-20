@@ -1,0 +1,20 @@
+type: object
+required:
+  - accountId
+  - priority
+properties:
+  accountId:
+    type: string
+    description: >-
+      Internal account id bound as a funding source for the card. Must belong
+      to the same cardholder as the card.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  priority:
+    type: integer
+    minimum: 1
+    description: >-
+      Order Authorization Decisioning tries this source at auth time (lower =
+      first). The lowest-priority active source is the default. In v1 only
+      the source with `priority: 1` is read by Authorization Decisioning;
+      additional sources are stored for future multi-source decisioning.
+    example: 2

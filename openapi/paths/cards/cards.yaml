@@ -1,0 +1,149 @@
+post:
+  summary: Issue a card
+  description: >
+    Issue a new card for a cardholder. Every card must be bound to at least
+    one funding source at create time. The cardholder must have KYC status
+    `APPROVED` before a card can be issued; otherwise the request is rejected
+    with `CARDHOLDER_KYC_NOT_APPROVED`.
+
+
+    New cards start in `state: "PENDING_ISSUE"` while the card issuer
+    provisions the card. The `card.state_change` webhook fires on the
+    transition to `ACTIVE` (or to `CLOSED` with `stateReason:
+    "ISSUER_REJECTED"` if provisioning fails).
+  operationId: createCard
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CardCreateRequest.yaml
+        examples:
+          virtualCard:
+            summary: Issue a virtual card with one funding source
+            value:
+              cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              platformCardId: card-emp-aary-001
+              form: VIRTUAL
+              fundingSource:
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  responses:
+    '201':
+      description: Card issued successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/Card.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
+        cardholder's KYC status is not `APPROVED`, and with
+        `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does
+        not belong to the cardholder or is not denominated in a
+        card-eligible currency.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List cards
+  description: >
+    Retrieve a paginated list of cards. Cards can be filtered by cardholder,
+    state, and platform-specific card identifier. If no filters are
+    provided, returns all cards visible to the caller.
+  operationId: listCards
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: cardholderId
+      in: query
+      description: Filter by cardholder (customer) id.
+      required: false
+      schema:
+        type: string
+    - name: platformCardId
+      in: query
+      description: Filter by platform-specific card identifier.
+      required: false
+      schema:
+        type: string
+    - name: state
+      in: query
+      description: Filter by card state.
+      required: false
+      schema:
+        $ref: ../../components/schemas/cards/CardState.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+    - name: sortOrder
+      in: query
+      description: Order to sort results in
+      required: false
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+        default: desc
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

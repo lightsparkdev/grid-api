@@ -1,0 +1,22 @@
+type: object
+required:
+  - data
+  - hasMore
+properties:
+  data:
+    type: array
+    description: List of cards matching the filter criteria
+    items:
+      $ref: ./Card.yaml
+  hasMore:
+    type: boolean
+    description: Indicates if more results are available beyond this page
+  nextCursor:
+    type: string
+    description: >-
+      Cursor to retrieve the next page of results (only present if
+      hasMore is true)
+  totalCount:
+    type: integer
+    description: >-
+      Total number of cards matching the criteria (excluding pagination)

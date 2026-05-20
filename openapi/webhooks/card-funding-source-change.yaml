@@ -1,0 +1,86 @@
+post:
+  summary: Card funding source change
+  description: >
+    Webhook that is called when funding sources bound to a card change —
+    fires on every bind (`POST /cards/{id}/funding-sources`) and unbind
+    (`DELETE /cards/{id}/funding-sources/{accountId}`). The payload carries
+    the full `Card` resource with the post-change `fundingSources` array.
+
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+  operationId: cardFundingSourceChangeWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/CardFundingSourceChangeWebhook.yaml
+        examples:
+          fundingSourceAdded:
+            summary: Secondary funding source bound to a card
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+              type: CARD.FUNDING_SOURCE_CHANGE
+              timestamp: '2026-05-08T14:30:00Z'
+              data:
+                id: Card:019542f5-b3e7-1d02-0000-000000000010
+                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                state: ACTIVE
+                stateReason: null
+                brand: VISA
+                form: VIRTUAL
+                last4: '4242'
+                expMonth: 12
+                expYear: 2029
+                fundingSources:
+                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                createdAt: '2026-05-08T14:10:00Z'
+                updatedAt: '2026-05-08T14:30:00Z'
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

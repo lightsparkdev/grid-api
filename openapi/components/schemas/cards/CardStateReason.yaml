@@ -1,0 +1,15 @@
+type: string
+enum:
+  - ISSUER_REJECTED
+  - CLOSED_BY_PLATFORM
+  - CLOSED_BY_GRID
+description: |
+  Reason a card reached a terminal or non-active state. Present on
+  `CLOSED` cards, and on cards that fail provisioning before reaching
+  `ACTIVE`.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PENDING_ISSUE`. |
+  | `CLOSED_BY_PLATFORM` | The card was closed via `DELETE /cards/{id}` by the platform. |
+  | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |

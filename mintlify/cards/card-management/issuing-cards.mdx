@@ -1,0 +1,95 @@
+---
+title: "Issuing Cards"
+description: "Create a virtual card and observe its lifecycle"
+icon: "/images/icons/credit-card1.svg"
+---
+
+A card is created with a single `POST /cards` request and progresses
+through a fixed lifecycle. This page covers the request shape, what
+happens after issuance, and the errors you should handle.
+
+## Request shape
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardholderId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCardId": "card-emp-aary-001",
+    "form": "VIRTUAL",
+    "fundingSource": {
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    }
+  }'
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `cardholderId` | Yes | The `Customer` that owns the card. Must be `kycStatus: APPROVED`. |
+| `platformCardId` | No | Your own identifier. System-generated when omitted, mirroring `platformCustomerId`. |
+| `form` | Yes | `VIRTUAL` in v1. `PHYSICAL` will be added later. |
+| `fundingSource.accountId` | Yes | The `InternalAccount` to bind. Must belong to the cardholder. |
+
+## The lifecycle
+
+```
+PENDING_ISSUE ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSED
+       │             │                              ▲
+       │             └──────────────────────────────┘
+       │
+       └─► CLOSED (stateReason: ISSUER_REJECTED)
+```
+
+| State | When you see it |
+|-------|-----------------|
+| `PENDING_ISSUE` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
+| `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
+| `FROZEN` | You called `PATCH /cards/{id}` with `state: "FROZEN"`. |
+| `CLOSED` | You called `DELETE /cards/{id}` (or the issuer rejected provisioning). Terminal. |
+
+`PENDING_KYC` is also a valid state but you should not see it in v1 —
+issuance is gated on KYC up front.
+
+## After issuance
+
+`POST /cards` returns immediately with `state: "PENDING_ISSUE"`. The
+issuer provisions the card asynchronously; on success a
+`CARD.STATE_CHANGE` webhook fires with the activated `Card` resource
+including the populated `last4`, `expMonth`, `expYear`, and
+`panEmbedUrl`.
+
+If the issuer rejects provisioning, the same webhook fires with
+`state: "CLOSED"` and `stateReason: "ISSUER_REJECTED"`. That card is
+terminal — issue a new one with a fresh `platformCardId` to retry.
+
+<Note>
+Render `panEmbedUrl` in an iframe in your client to display the full
+PAN, CVV, and expiry to the cardholder. The full credentials never
+cross your servers.
+</Note>
+
+## Errors to handle
+
+| Status | Code | What it means |
+|--------|------|---------------|
+| 409 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
+| 409 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
+| 400 | `INVALID_INPUT` | Validation failure on the request body. |
+
+## Adding more funding sources later
+
+You can bind additional internal accounts to a card after issuance via
+`POST /cards/{id}/funding-sources`. See
+[Funding sources](/cards/card-management/funding-sources) for the rules.
+
+## Listing cards
+
+```bash
+curl -X GET "$GRID_BASE_URL/cards?cardholderId=Customer:019542f5-b3e7-1d02-0000-000000000001&limit=20" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Filter by `cardholderId`, `platformCardId`, or `state`. The response is
+paginated using the standard cursor shape used by other Grid list
+endpoints.

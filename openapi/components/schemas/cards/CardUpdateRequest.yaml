@@ -1,0 +1,17 @@
+type: object
+required:
+  - state
+description: >-
+  Update request for `PATCH /cards/{id}`. In v1 only `state` is mutable, and
+  only the `ACTIVE ⇄ FROZEN` transition is permitted — every other transition
+  returns `409 INVALID_STATE_TRANSITION`.
+properties:
+  state:
+    type: string
+    enum:
+      - ACTIVE
+      - FROZEN
+    description: >-
+      Target state for the card. Only `ACTIVE ⇄ FROZEN` is permitted via this
+      endpoint. To close a card, use `DELETE /cards/{id}`.
+    example: FROZEN

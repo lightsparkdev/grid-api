@@ -1,0 +1,85 @@
+---
+title: "Funding Sources"
+description: "Bind and unbind internal accounts as card funding sources"
+icon: "/images/icons/wallet1.svg"
+---
+
+A card's `fundingSources` array is the list of internal accounts
+Authorization Decisioning can pull from when an auth lands. This page
+covers binding, unbinding, and the v1 single-source behavior.
+
+## v1 behavior: single active source
+
+You can bind more than one internal account to a card via
+`POST /cards/{id}/funding-sources`, but in v1 Authorization Decisioning
+only reads the source with `priority: 1`. Additional sources are
+accepted and stored so you can stage multi-source decisioning ahead of
+the v1.5+ rollout, but they don't change auth-time behavior today.
+
+The lowest active `priority` is the card's effective default. Lower
+number = tried first.
+
+## Bind an additional source
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/funding-sources" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000003",
+    "priority": 2
+  }'
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `accountId` | Yes | Must belong to the cardholder. Must be denominated in a card-eligible currency (USDB in v1). |
+| `priority` | No | Defaults to one greater than the current highest priority on the card (appended to the end). |
+
+`CARD.FUNDING_SOURCE_CHANGE` fires on every bind and unbind with the
+post-change `Card` resource.
+
+### Errors
+
+| Status | Code | What it means |
+|--------|------|---------------|
+| 409 | `FUNDING_SOURCE_INELIGIBLE` | Account belongs to a different customer, wrong currency, or already bound. |
+| 409 | `CARD_NOT_MUTABLE` | The card is `CLOSED`. |
+
+## Unbind a source
+
+```bash
+curl -X DELETE "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/funding-sources/InternalAccount:019542f5-b3e7-1d02-0000-000000000003" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+A successful unbind returns `204 No Content`.
+
+### Errors
+
+| Status | Code | What it means |
+|--------|------|---------------|
+| 409 | `LAST_FUNDING_SOURCE` | This is the only source on the card. Freeze or close the card instead — a card cannot exist without a source. |
+| 409 | `BINDING_HAS_OPEN_OBLIGATIONS` | Pending auths or pulls still reference this source. Retry after they reach a terminal state. |
+| 404 | — | Card or funding source not found. |
+
+<Warning>
+Unbinding does not refund or reverse pending authorizations against
+the source. If you need to stop a card from spending, freeze the card
+(`PATCH /cards/{id}` with `state: "FROZEN"`) instead of removing the
+source.
+</Warning>
+
+## When to use multiple sources
+
+Even though Authorization Decisioning only reads `priority: 1` today,
+binding additional sources is useful for:
+
+- **Pre-staging the migration to multi-source decisioning.** Once
+  multi-source goes live, the rest of the configuration is already in
+  place.
+- **Operational visibility.** All bound sources are reflected on the
+  `Card` resource and in `CARD.FUNDING_SOURCE_CHANGE` webhooks.
+
+If you don't need either of these, a single source is the simpler
+shape.

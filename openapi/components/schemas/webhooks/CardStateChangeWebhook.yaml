@@ -1,0 +1,12 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../cards/Card.yaml
+      type:
+        type: string
+        enum:
+          - CARD.STATE_CHANGE

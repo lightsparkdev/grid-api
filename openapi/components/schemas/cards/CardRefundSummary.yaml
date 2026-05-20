@@ -1,0 +1,16 @@
+type: object
+required:
+  - count
+  - totalAmount
+properties:
+  count:
+    type: integer
+    description: Number of refund (return) events received for this transaction.
+    example: 0
+  totalAmount:
+    type: integer
+    format: int64
+    description: >-
+      Sum of all refund amounts in the smallest unit of the funding source's
+      currency.
+    example: 0

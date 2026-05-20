@@ -1,0 +1,37 @@
+type: object
+required:
+  - cardholderId
+  - form
+  - fundingSource
+properties:
+  cardholderId:
+    type: string
+    description: >-
+      The id of the `Customer` to issue the card to. The customer must have
+      KYC status `APPROVED`; otherwise the request is rejected with
+      `CARDHOLDER_KYC_NOT_APPROVED`.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  platformCardId:
+    type: string
+    description: >-
+      Optional platform-specific card identifier. System-generated when
+      omitted, mirroring `platformCustomerId` semantics.
+    example: card-emp-aary-001
+  form:
+    $ref: ./CardForm.yaml
+  fundingSource:
+    type: object
+    required:
+      - accountId
+    description: >-
+      Initial funding source bound to the card at create time. Every card
+      must be bound to at least one source.
+    properties:
+      accountId:
+        type: string
+        description: >-
+          Internal account id to bind as the first funding source. Must
+          belong to the cardholder and must be denominated in a card-eligible
+          currency (USDB in v1); otherwise the request is rejected with
+          `FUNDING_SOURCE_INELIGIBLE`.
+        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
