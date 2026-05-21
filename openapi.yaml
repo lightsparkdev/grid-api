@@ -4065,13 +4065,13 @@ paths:
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending challenge for an additional credential on the target internal account, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending challenge for an additional credential on the target internal account, when the `Request-Id` does not match an unexpired pending challenge, or when OAuth token authentication fails during credential registration.
           content:
             application/json:
               schema:
@@ -4238,7 +4238,7 @@ paths:
       description: |
         Complete the verification step for a previously created authentication credential and issue a session signing key.
 
-        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
+        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
         On success, the response contains an `encryptedSessionSigningKey` that is encrypted to the supplied `clientPublicKey`, along with an `expiresAt` timestamp marking when the session expires. The `clientPublicKey` is ephemeral and one-time-use per verification request.
       operationId: verifyAuthCredential
@@ -4302,7 +4302,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed.
+          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, identity, nonce, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed.
           content:
             application/json:
               schema:
@@ -17180,7 +17180,7 @@ components:
           description: Discriminator value identifying this as an OAuth credential.
         oidcToken:
           type: string
-          description: OIDC ID token issued by the identity provider (e.g. Google, Apple). Grid fetches the issuer's signing key from the `iss` claim's `.well-known` OpenID configuration and verifies the token signature. The token's `iat` claim must be less than 60 seconds before the request timestamp.
+          description: OIDC ID token issued by the identity provider (e.g. Google, Apple). The token's `iss`, `aud`, and `sub` claims define the OAuth identity registered to this credential. In production, the provider signature is verified against the issuer's JWKS. In sandbox, the token must still be JWT-shaped with supported `iss`, non-empty `aud` and `sub`, numeric `iat` and `exp`, and `iat` less than 60 seconds before the request timestamp, but the signature segment may be a dummy value.
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
     OauthCredentialCreateRequest:
       title: OAuth Credential Create Request
@@ -17324,7 +17324,7 @@ components:
           description: Discriminator value identifying this as an OAuth verification.
         oidcToken:
           type: string
-          description: OIDC ID token issued by the identity provider. For reauthentication after a prior session expired, supply a fresh token — the token's `iat` claim must be less than 60 seconds before the request timestamp. Grid fetches the issuer's signing key from the `iss` claim's `.well-known` OpenID configuration and verifies the token signature.
+          description: OIDC ID token issued by the identity provider. For reauthentication after a prior session expired, supply a fresh token — the token's `iat` claim must be less than 60 seconds before the request timestamp. The token identity (`iss`, `aud`, and `sub`) must match the registered OAuth credential. In production, the provider signature is verified against the issuer's JWKS. In sandbox, the token must still be JWT-shaped with supported `iss`, non-empty `aud` and `sub`, numeric `iat` and `exp`, and a `nonce` equal to `sha256(clientPublicKey)`, but the signature segment may be a dummy value.
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
         clientPublicKey:
           type: string

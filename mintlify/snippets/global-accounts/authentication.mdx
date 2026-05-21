@@ -429,7 +429,11 @@ sequenceDiagram
   IB-->>C: { encryptedSessionSigningKey, expiresAt }
 ```
 
-Grid validates the OIDC token signature against the issuer's JWKS on every call and requires `iat` to be no more than **60 seconds** older than the request. Use a fresh token for each `verify` call; cached tokens will fail.
+Grid validates the OIDC token signature against the issuer's JWKS on every call and requires `iat` to be no more than **60 seconds** older than the request. Use a fresh token for each `verify` call; cached tokens will fail. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified.
+
+<Note>
+  In sandbox, OAuth still uses JWT-shaped OIDC tokens. The sandbox skips real IdP signature verification, but it validates the same identity and freshness claims. For `verify`, include `nonce` equal to `sha256(clientPublicKey)`. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing#oauth-oidc-token).
+</Note>
 
 ```bash
 curl -X POST "$GRID_BASE_URL/auth/credentials" \
