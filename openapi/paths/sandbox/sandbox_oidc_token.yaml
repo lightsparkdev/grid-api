@@ -1,0 +1,65 @@
+post:
+  summary: Create a sandbox OIDC token
+  description: >
+    Mint a JWT-shaped OIDC ID token for embedded-wallet OAuth sandbox flows.
+    Use the returned `oidcToken` anywhere the OAuth auth credential endpoints
+    expect an OIDC token. This endpoint only mints a mock token; it does not
+    create auth methods, wallets, sessions, or Turnkey state.
+
+    This endpoint is only for the sandbox environment and will fail for
+    production platforms/keys.
+  operationId: createSandboxOidcToken
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sandbox/SandboxOidcTokenRequest.yaml
+        examples:
+          credentialRegistration:
+            summary: Mint a token for OAuth credential registration
+            value:
+              provider: GOOGLE
+              subject: alice
+          credentialVerify:
+            summary: Mint a nonce-bound token for OAuth verification
+            value:
+              provider: GOOGLE
+              subject: alice
+              clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+              email: alice@example.com
+  responses:
+    '200':
+      description: Sandbox OIDC token created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sandbox/SandboxOidcTokenResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

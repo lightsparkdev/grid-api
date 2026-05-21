@@ -175,6 +175,8 @@ paths:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:
     $ref: paths/sandbox/sandbox_webhooks_test.yaml
+  /sandbox/oidc/token:
+    $ref: paths/sandbox/sandbox_oidc_token.yaml
   /customers/bulk/csv:
     $ref: paths/customers/customers_bulk_csv.yaml
   /customers/bulk/jobs/{jobId}:

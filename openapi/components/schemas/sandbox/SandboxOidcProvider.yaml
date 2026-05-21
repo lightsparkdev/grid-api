@@ -1,0 +1,6 @@
+type: string
+description: Sandbox OIDC provider to emulate.
+enum:
+  - GOOGLE
+  - APPLE
+example: GOOGLE

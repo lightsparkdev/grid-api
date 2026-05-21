@@ -2933,6 +2933,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /sandbox/oidc/token:
+    post:
+      summary: Create a sandbox OIDC token
+      description: |
+        Mint a JWT-shaped OIDC ID token for embedded-wallet OAuth sandbox flows. Use the returned `oidcToken` anywhere the OAuth auth credential endpoints expect an OIDC token. This endpoint only mints a mock token; it does not create auth methods, wallets, sessions, or Turnkey state.
+        This endpoint is only for the sandbox environment and will fail for production platforms/keys.
+      operationId: createSandboxOidcToken
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxOidcTokenRequest'
+            examples:
+              credentialRegistration:
+                summary: Mint a token for OAuth credential registration
+                value:
+                  provider: GOOGLE
+                  subject: alice
+              credentialVerify:
+                summary: Mint a nonce-bound token for OAuth verification
+                value:
+                  provider: GOOGLE
+                  subject: alice
+                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  email: alice@example.com
+      responses:
+        '200':
+          description: Sandbox OIDC token created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxOidcTokenResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/bulk/csv:
     post:
       summary: Upload customers via CSV file
@@ -15714,6 +15775,116 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    SandboxOidcProvider:
+      type: string
+      description: Sandbox OIDC provider to emulate.
+      enum:
+        - GOOGLE
+        - APPLE
+      example: GOOGLE
+    SandboxOidcTokenRequest:
+      type: object
+      required:
+        - provider
+        - subject
+      properties:
+        provider:
+          $ref: '#/components/schemas/SandboxOidcProvider'
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Fake identity-provider user ID. This becomes the OIDC token `sub` claim and is matched during OAuth credential verification.
+          example: alice
+        clientPublicKey:
+          type: string
+          minLength: 1
+          description: Optional client-generated public key hex. Include this when minting a token for OAuth credential verification. When present, Grid adds a `nonce` claim equal to `sha256(clientPublicKey)`.
+          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+        email:
+          type: string
+          minLength: 1
+          format: email
+          description: Optional email claim to include in the token. If omitted, Grid derives a deterministic sandbox email from `subject`.
+          example: alice@example.com
+    SandboxOidcTokenResponse:
+      type: object
+      required:
+        - oidcToken
+        - provider
+        - issuer
+        - audience
+        - subject
+        - email
+        - issuedAt
+        - expiresAt
+      properties:
+        oidcToken:
+          type: string
+          description: JWT-shaped OIDC ID token to pass as `oidcToken` to the OAuth auth credential endpoints.
+          example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImdyaWQtc2FuZGJveC1vYXV0aCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhdWQiOiJncmlkLXNhbmRib3gtb2F1dGgtY2xpZW50LWlkIiwic3ViIjoiYWxpY2UiLCJpYXQiOjE3NzkzOTM2MDAsImV4cCI6MTc3OTM5MzY2MCwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfQ.Z3JpZC1zYW5kYm94LXNpZ25hdHVyZQ
+        provider:
+          $ref: '#/components/schemas/SandboxOidcProvider'
+        issuer:
+          type: string
+          description: OIDC issuer derived from `provider`.
+          example: https://accounts.google.com
+        audience:
+          type: string
+          description: Fixed sandbox OAuth client ID used as the token `aud` claim.
+          example: grid-sandbox-oauth-client-id
+        subject:
+          type: string
+          description: Token `sub` claim.
+          example: alice
+        email:
+          type: string
+          format: email
+          description: Token `email` claim.
+          example: alice@example.com
+        issuedAt:
+          type: string
+          format: date-time
+          description: Token issue time matching the JWT `iat` claim.
+          example: '2026-05-21T20:00:00Z'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration time matching the JWT `exp` claim.
+          example: '2026-05-21T20:01:00Z'
+    Error403:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 403
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     BulkCustomerImportJobAccepted:
       type: object
       required:
@@ -15904,39 +16075,6 @@ components:
           type: string
           description: The UMA address of the customer claiming the invitation
           example: $invitee@uma.domain
-    Error403:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     SandboxSendRequest:
       type: object
       required:

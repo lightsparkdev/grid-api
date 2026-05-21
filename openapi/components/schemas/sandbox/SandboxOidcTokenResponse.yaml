@@ -1,0 +1,46 @@
+type: object
+required:
+  - oidcToken
+  - provider
+  - issuer
+  - audience
+  - subject
+  - email
+  - issuedAt
+  - expiresAt
+properties:
+  oidcToken:
+    type: string
+    description: >-
+      JWT-shaped OIDC ID token to pass as `oidcToken` to the OAuth auth
+      credential endpoints.
+    example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImdyaWQtc2FuZGJveC1vYXV0aCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhdWQiOiJncmlkLXNhbmRib3gtb2F1dGgtY2xpZW50LWlkIiwic3ViIjoiYWxpY2UiLCJpYXQiOjE3NzkzOTM2MDAsImV4cCI6MTc3OTM5MzY2MCwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfQ.Z3JpZC1zYW5kYm94LXNpZ25hdHVyZQ
+  provider:
+    $ref: ./SandboxOidcProvider.yaml
+  issuer:
+    type: string
+    description: OIDC issuer derived from `provider`.
+    example: https://accounts.google.com
+  audience:
+    type: string
+    description: Fixed sandbox OAuth client ID used as the token `aud` claim.
+    example: grid-sandbox-oauth-client-id
+  subject:
+    type: string
+    description: Token `sub` claim.
+    example: alice
+  email:
+    type: string
+    format: email
+    description: Token `email` claim.
+    example: alice@example.com
+  issuedAt:
+    type: string
+    format: date-time
+    description: Token issue time matching the JWT `iat` claim.
+    example: '2026-05-21T20:00:00Z'
+  expiresAt:
+    type: string
+    format: date-time
+    description: Token expiration time matching the JWT `exp` claim.
+    example: '2026-05-21T20:01:00Z'

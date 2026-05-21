@@ -7,7 +7,7 @@ icon: "/images/icons/hammer.svg"
 
 import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
 
-The Grid sandbox lets you exercise the full Global Accounts integration — customer creation, account lookup, credential registration, funding, and signed withdrawals — without moving real money or standing up real auth providers. All API endpoints work the same way as in production, but money movements are simulated. OTP, passkey, and wallet signatures use sandbox-only magic values, while OAuth uses JWT-shaped sandbox OIDC tokens with claim, freshness, identity, and nonce checks.
+The Grid sandbox lets you exercise the full Global Accounts integration — customer creation, account lookup, credential registration, funding, and signed withdrawals — without moving real money or standing up real auth providers. All API endpoints work the same way as in production, but money movements are simulated. OTP, passkey, and wallet signatures use sandbox-only magic values, while OAuth uses `POST /sandbox/oidc/token` to mint JWT-shaped sandbox OIDC tokens with claim, freshness, identity, and nonce checks.
 
 ## Sandbox setup
 
@@ -52,7 +52,7 @@ All webhook events fire normally in sandbox. Configure your webhook URL in the d
 When you're ready to go live:
 
 1. Generate production API tokens in the dashboard and swap them for the sandbox credentials in your environment.
-2. Remove sandbox magic values and unsigned sandbox OIDC tokens from your client and server code — production runs the real OTP, HPKE, WebAuthn, OIDC signature, and ECDSA flows.
+2. Remove sandbox magic values and sandbox OIDC helper calls from your client and server code — production runs the real OTP, HPKE, WebAuthn, OIDC signature, and ECDSA flows.
 3. Configure production webhook endpoints.
 4. Test with small amounts first.
 

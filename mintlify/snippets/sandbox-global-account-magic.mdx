@@ -1,4 +1,4 @@
-The Grid sandbox accepts a small set of magic values for Global Account flows, so you can exercise the full request shape without standing up Turnkey, WebAuthn, or an OIDC provider. OTP, passkey, and wallet signatures use fixed sandbox-only values. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates the token claims, freshness, credential identity, and verify-time nonce binding.
+The Grid sandbox accepts a small set of magic values for Global Account flows, so you can exercise the full request shape without standing up Turnkey, WebAuthn, or an OIDC provider. OTP, passkey, and wallet signatures use fixed sandbox-only values. OAuth uses `POST /sandbox/oidc/token` to mint JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates the token claims, freshness, credential identity, and verify-time nonce binding.
 
 A wrong magic value or sandbox OIDC authentication failure returns `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
 
@@ -55,49 +55,48 @@ Any other signature returns `401 UNAUTHORIZED` with `reason: "Invalid passkey si
 
 ### OAuth (OIDC) token
 
-OAuth does not use a fixed magic token in sandbox. Pass a JWT-shaped OIDC token as `oidcToken`. The JWT signature segment can be a dummy value, but the payload must look like a real ID token.
+OAuth does not use a fixed magic token in sandbox. Call `POST /sandbox/oidc/token` to mint a fresh JWT-shaped OIDC token, then pass the returned `oidcToken` to the same auth endpoints you use in production.
 
-For `POST /auth/credentials` with `type: "OAUTH"`, the sandbox token must include:
+For `POST /auth/credentials` with `type: "OAUTH"`, omit `clientPublicKey`:
 
-- `iss`: a supported issuer, such as `https://accounts.google.com`, `accounts.google.com`, or `https://appleid.apple.com`
-- `aud`: a non-empty string, or a single-element string array
-- `sub`: a non-empty subject identifier for the user
-- `iat`: a numeric issued-at timestamp no more than 60 seconds before the request, with 5 seconds of clock skew allowed
-- `exp`: a numeric expiration timestamp later than the request time
+```bash
+OIDC_TOKEN=$(curl -sS -X POST "$GRID_BASE_URL/sandbox/oidc/token" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "GOOGLE",
+    "subject": "sandbox-user-123",
+    "email": "sandbox-user-123@example.com"
+  }' | jq -r '.oidcToken')
 
-Grid stores the OAuth credential's registered identity from `iss`, `aud`, and `sub`. On `POST /auth/credentials/{id}/verify`, the fresh `oidcToken` must carry the same `iss`, `aud`, and `sub` as the credential being verified. It must also include `nonce` equal to `sha256(clientPublicKey)`, where `clientPublicKey` is the exact hex public key sent in the verify request.
+curl -X POST "$GRID_BASE_URL/auth/credentials" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "OAUTH",
+    "accountId": "InternalAccount:abc123",
+    "oidcToken": "'"$OIDC_TOKEN"'"
+  }'
+```
+
+Grid stores the OAuth credential's registered identity from `iss`, `aud`, and `sub`. On `POST /auth/credentials/{id}/verify`, mint a new token with the same `provider` and `subject`, and include `clientPublicKey` so Grid adds `nonce = sha256(clientPublicKey)`:
 
 ```bash
 export PUBLIC_KEY="04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
-OIDC_TOKEN=$(node - <<'NODE'
-const crypto = require("crypto");
 
-const publicKey = process.env.PUBLIC_KEY || "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2";
-const now = Math.floor(Date.now() / 1000);
-const b64url = (value) =>
-  Buffer.from(JSON.stringify(value)).toString("base64url");
-
-const payload = {
-  iss: "https://accounts.google.com",
-  sub: "sandbox-user-123",
-  aud: "grid-sandbox-oauth-client-id",
-  iat: now,
-  exp: now + 300,
-  nonce: crypto.createHash("sha256").update(publicKey).digest("hex"),
-  email: "sandbox-user-123@example.com",
-  email_verified: true
-};
-
-console.log(
-  `${b64url({ alg: "RS256", typ: "JWT" })}.${b64url(payload)}.sandbox-signature`
-);
-NODE
-)
-
-curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMethod:abc123/verify \
+OIDC_TOKEN=$(curl -sS -X POST "$GRID_BASE_URL/sandbox/oidc/token" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "provider": "GOOGLE",
+    "subject": "sandbox-user-123",
+    "clientPublicKey": "'"$PUBLIC_KEY"'",
+    "email": "sandbox-user-123@example.com"
+  }' | jq -r '.oidcToken')
+
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:abc123/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
   -d '{
     "type": "OAUTH",
     "oidcToken": "'"$OIDC_TOKEN"'",
@@ -106,7 +105,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 ```
 
 <Note>
-  The old literal `sandbox-valid-oidc-token` is no longer accepted. Use a freshly generated sandbox JWT for both OAuth credential registration and OAuth verification. Production requires a real ID token from your provider and verifies the provider signature.
+  The old literal `sandbox-valid-oidc-token` is no longer accepted. Use `POST /sandbox/oidc/token` to mint a fresh sandbox token for both OAuth credential registration and OAuth verification. Production requires a real ID token from your provider and verifies the provider signature.
 </Note>
 
 ### Wallet signature header
