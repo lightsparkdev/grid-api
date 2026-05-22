@@ -14,7 +14,7 @@ internal account, decision authorizations in real time against that
 account's balance, and reconcile every pull, clearing, and refund against
 the same ledger you already use for payouts.
 
-<FeatureCardGrid cols={3}>
+<FeatureCardGrid cols={2}>
   <FeatureCard icon="/images/icons/lightning.svg" title="Real-time decisioning">
     Authorizations are checked against the bound internal account at auth
     time, so the funding source and the card share a single source of
@@ -23,11 +23,6 @@ the same ledger you already use for payouts.
   <FeatureCard icon="/images/icons/shield.svg" title="No PAN in your stack">
     The full PAN and CVV are rendered directly to the cardholder through
     the issuer's iframe. Card credentials never cross your servers.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/lock.svg" title="Signed sensitive actions">
-    Freeze, close, and other sensitive state changes follow {topLevelProductName}'s
-    `202 → signed-retry` pattern, the same one used by Embedded Wallet
-    credential and session revocation.
   </FeatureCard>
 </FeatureCardGrid>
 
