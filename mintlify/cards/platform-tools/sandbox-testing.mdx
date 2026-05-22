@@ -9,7 +9,7 @@ so Sandbox exposes three simulate helpers that drive the same internal
 `authorize` and `reconcile` paths the issuer would call in production.
 Production returns `404` on these paths.
 
-```
+```text
 POST /sandbox/cards/{id}/simulate/authorization
 POST /sandbox/cards/{id}/simulate/clearing
 POST /sandbox/cards/{id}/simulate/return

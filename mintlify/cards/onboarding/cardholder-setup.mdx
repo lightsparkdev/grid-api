@@ -39,7 +39,7 @@ accounts are created automatically when the customer is created based
 on your platform configuration. You can list them with:
 
 ```bash
-curl -X GET "$GRID_BASE_URL/internal-account?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USDB" \
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USDB" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 

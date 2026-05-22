@@ -35,7 +35,7 @@ in one PATCH — just include both fields in the body.
 
 Each request follows the same two-call shape:
 
-```
+```text
 1. PATCH /cards/{id}                      ─►  202  with payloadToSign, requestId, expiresAt
 2. PATCH /cards/{id}                      ─►  200  with the updated Card
    Headers:
