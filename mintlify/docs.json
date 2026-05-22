@@ -330,6 +330,47 @@
         ]
       },
       {
+        "tab": "Cards",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "cards/index",
+              "cards/terminology",
+              "cards/onboarding/implementation-overview",
+              "cards/quickstart"
+            ]
+          },
+          {
+            "group": "Onboarding",
+            "pages": [
+              "cards/onboarding/cardholder-setup"
+            ]
+          },
+          {
+            "group": "Card Management",
+            "pages": [
+              "cards/card-management/issuing-cards",
+              "cards/card-management/funding-sources",
+              "cards/card-management/freezing-and-closing"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "cards/transactions/reconciliation"
+            ]
+          },
+          {
+            "group": "Platform Tools",
+            "pages": [
+              "cards/platform-tools/webhooks",
+              "cards/platform-tools/sandbox-testing"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API reference",
         "groups": [
           {

@@ -1,0 +1,7 @@
+type: string
+enum:
+  - VISA
+  - MASTERCARD
+description: |
+  Card network brand. Read-only — determined by Grid when the card is
+  provisioned with the issuer.

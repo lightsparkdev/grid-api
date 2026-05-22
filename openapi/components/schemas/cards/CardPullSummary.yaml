@@ -1,0 +1,27 @@
+type: object
+required:
+  - count
+  - totalAmount
+properties:
+  count:
+    type: integer
+    description: >-
+      Total number of pulls (debits) executed against the funding source for
+      this transaction. `> 1` indicates one or more post-hoc pulls — e.g.
+      restaurant tip / over-auth clearings.
+    example: 2
+  totalAmount:
+    type: integer
+    format: int64
+    description: >-
+      Sum of all pull amounts in the smallest unit of the funding source's
+      currency.
+    example: 1500
+  pendingCount:
+    type: integer
+    description: >-
+      Number of pulls still in the `PENDING` state. Drops to zero when every
+      pull has reached a terminal state. Non-zero values that persist beyond
+      the expected settlement window are an early signal for the
+      `EXCEPTION` path.
+    example: 0

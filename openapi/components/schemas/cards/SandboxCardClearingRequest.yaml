@@ -1,0 +1,26 @@
+type: object
+required:
+  - cardTransactionId
+  - amount
+description: >-
+  Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/clearing`.
+  Drives a clearing event against an existing `CardTransaction`. Pass an
+  `amount` greater than the authorized amount to exercise the over-auth /
+  restaurant-tip post-hoc-pull path; pass `0` to exercise
+  `AUTHORIZATION_EXPIRY`. Suffix-driven outcomes on the parent transaction's
+  id govern whether the post-hoc pull succeeds.
+properties:
+  cardTransactionId:
+    type: string
+    description: >-
+      The id of the `CardTransaction` to clear against. Must be in
+      `AUTHORIZED` or `PARTIALLY_SETTLED` state.
+    example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      Clearing amount in the smallest unit of the transaction's currency.
+      Set to `0` to simulate an authorization expiry with no clearing.
+    minimum: 0
+    example: 1500

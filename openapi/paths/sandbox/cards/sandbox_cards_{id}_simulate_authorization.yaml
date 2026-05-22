@@ -1,0 +1,101 @@
+post:
+  summary: Simulate a card authorization
+  description: >
+    Simulate an inbound card authorization in the sandbox environment.
+    Drives the same internal `authorize` + `reconcile` paths the card
+    issuer would call in production, so platforms can exercise Grid's
+    decisioning + funding-source pull behavior end-to-end without an
+    external network round-trip.
+
+
+    The decisioning outcome is controlled by the last three characters of
+    `merchant.descriptor`:
+
+
+    | Suffix | Outcome |
+    | ------ | ------- |
+    | `002`  | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) |
+    | `003`  | Decline — `CARD_PAUSED` (intended to verify a frozen card refuses auths) |
+    | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path |
+    | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert |
+    | any other | Approved |
+
+
+    Production returns `404` on this path.
+  operationId: sandboxSimulateCardAuthorization
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the card to simulate an authorization against.
+      schema:
+        type: string
+      example: Card:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../../components/schemas/cards/SandboxCardAuthorizationRequest.yaml
+        examples:
+          coffeeAuth:
+            summary: Approved $12.50 auth at a coffee shop
+            value:
+              amount: 1250
+              currency:
+                code: USD
+              merchant:
+                descriptor: BLUE BOTTLE COFFEE SF
+                mcc: '5814'
+                country: US
+          declinedInsufficientFunds:
+            summary: Declined — insufficient funds (descriptor suffix `002`)
+            value:
+              amount: 50000
+              currency:
+                code: USD
+              merchant:
+                descriptor: AMAZON RETAIL US-002
+                mcc: '5942'
+                country: US
+  responses:
+    '200':
+      description: Simulated authorization processed. Returns the resulting card transaction.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/cards/CardTransaction.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found (also returned in production for this path)
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml

@@ -53,6 +53,8 @@ tags:
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+  - name: Cards
+    description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
 paths:
   /config:
     get:
@@ -6163,6 +6165,533 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /cards:
+    post:
+      summary: Issue a card
+      description: |
+        Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
+
+        New cards start in `state: "PENDING_ISSUE"` while the card issuer provisions the card. The `card.state_change` webhook fires on the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
+      operationId: createCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardCreateRequest'
+            examples:
+              virtualCard:
+                summary: Issue a virtual card with one funding source
+                value:
+                  cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  platformCardId: card-emp-aary-001
+                  form: VIRTUAL
+                  fundingSources:
+                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '201':
+          description: Card issued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '400':
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List cards
+      description: |
+        Retrieve a paginated list of cards. Cards can be filtered by cardholder, bound funding-source internal account, state, and platform-specific card identifier. If no filters are provided, returns all cards visible to the caller.
+      operationId: listCards
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: cardholderId
+          in: query
+          description: Filter by cardholder (customer) id.
+          required: false
+          schema:
+            type: string
+        - name: accountId
+          in: query
+          description: Filter by internal account id. Returns cards whose `fundingSources` array contains the given internal account id.
+          required: false
+          schema:
+            type: string
+        - name: platformCardId
+          in: query
+          description: Filter by platform-specific card identifier.
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: Filter by card state.
+          required: false
+          schema:
+            $ref: '#/components/schemas/CardState'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          description: Order to sort results in
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /cards/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a card
+      description: Retrieve a card by its system-generated id.
+      operationId: getCardById
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a card
+      description: |
+        Update a card's `state` and / or its bound `fundingSources`. At least one of the two fields must be supplied.
+
+        - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
+        - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
+
+        Because both updates are sensitive state changes, this endpoint uses Grid's 202 → signed-retry pattern (same shape as `DELETE /auth/credentials/{id}` and `POST /internal-accounts/{id}/export`):
+
+        1. Call `PATCH /cards/{id}` with the target fields and no signing headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the card's owning internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the updated `Card`.
+
+        Effects:
+        - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
+        - `state: ACTIVE`: normal authorization behavior resumes.
+        - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
+        - `fundingSources` change: emits `card.funding_source_change` reflecting the new ordered binding.
+
+        The `card.state_change` webhook fires on every successful `state` transition; the `card.funding_source_change` webhook fires whenever `fundingSources` is updated.
+      operationId: updateCardById
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the card's owning internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
+          schema:
+            type: string
+          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardUpdateRequest'
+            examples:
+              freeze:
+                summary: Freeze an active card
+                value:
+                  state: FROZEN
+              unfreeze:
+                summary: Unfreeze a frozen card
+                value:
+                  state: ACTIVE
+              updateFundingSources:
+                summary: Replace the card's bound funding sources
+                value:
+                  fundingSources:
+                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+              freezeAndUpdateSources:
+                summary: Freeze the card and replace its funding sources in one call
+                value:
+                  state: FROZEN
+                  fundingSources:
+                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              close:
+                summary: Permanently close the card
+                value:
+                  state: CLOSED
+      responses:
+        '200':
+          description: Signed retry accepted. Returns the updated card.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '202':
+          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the card's owning internal account, along with a `requestId` that must be echoed back on the retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedRequestChallenge'
+        '400':
+          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending update challenge for this card, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when `state: CLOSED` is requested for a card that is already `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization:
+    post:
+      summary: Simulate a card authorization
+      description: |
+        Simulate an inbound card authorization in the sandbox environment. Drives the same internal `authorize` + `reconcile` paths the card issuer would call in production, so platforms can exercise Grid's decisioning + funding-source pull behavior end-to-end without an external network round-trip.
+
+        The decisioning outcome is controlled by the last three characters of `merchant.descriptor`:
+
+        | Suffix | Outcome | | ------ | ------- | | `002`  | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) | | `003`  | Decline — `CARD_PAUSED` (intended to verify a frozen card refuses auths) | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate an authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              coffeeAuth:
+                summary: Approved $12.50 auth at a coffee shop
+                value:
+                  amount: 1250
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: BLUE BOTTLE COFFEE SF
+                    mcc: '5814'
+                    country: US
+              declinedInsufficientFunds:
+                summary: Declined — insufficient funds (descriptor suffix `002`)
+                value:
+                  amount: 50000
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: AMAZON RETAIL US-002
+                    mcc: '5942'
+                    country: US
+      responses:
+        '200':
+          description: Simulated authorization processed. Returns the resulting card transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardTransaction'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/clearing:
+    post:
+      summary: Simulate a card clearing
+      description: |
+        Simulate a clearing (settlement) event against an existing `CardTransaction` in the sandbox environment.
+
+        - A clearing `amount` greater than the authorized amount exercises the over-auth post-hoc-pull path (e.g. restaurant tip on top of a 20% over-auth).
+        - A clearing `amount` of `0` exercises the `AUTHORIZATION_EXPIRY` path — the auth expires with no clearing posted.
+        - Suffix-driven outcomes on the parent transaction's id govern whether the post-hoc pull succeeds (use the suffix table from `simulate/authorization` to construct deterministic test cases).
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardClearing
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the clearing applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardClearingRequest'
+            examples:
+              tipOnTopClearing:
+                summary: Clearing larger than auth — exercises post-hoc pull
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 1500
+              authorizationExpiry:
+                summary: Clearing of 0 — exercises authorization expiry
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 0
+      responses:
+        '200':
+          description: Simulated clearing processed. Returns the updated card transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardTransaction'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/return:
+    post:
+      summary: Simulate a card return
+      description: |
+        Simulate a merchant-initiated `RETURN` against an existing settled card transaction in the sandbox environment. Creates a `CardRefund` on the parent and either flips the parent to `REFUNDED` (full refund) or keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardReturn
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the return applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardReturnRequest'
+            examples:
+              fullRefund:
+                summary: Full refund of a $15.00 settled transaction
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 1500
+      responses:
+        '200':
+          description: Simulated return processed. Returns the updated card transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardTransaction'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   agent-action:
     post:
@@ -7061,6 +7590,194 @@ webhooks:
                           - PROOF_OF_ADDRESS
                         reason: Proof of address document is required
                     createdAt: '2025-08-15T14:00:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  card-state-change:
+    post:
+      summary: Card state change
+      description: |
+        Webhook that is called when a card's lifecycle state changes. Fires on `PENDING_ISSUE → ACTIVE`, on `PENDING_ISSUE → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: cardStateChangeWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardStateChangeWebhook'
+            examples:
+              activated:
+                summary: Card transitioned from PENDING_ISSUE to ACTIVE
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000020
+                  type: CARD.STATE_CHANGE
+                  timestamp: '2026-05-08T14:11:00Z'
+                  data:
+                    id: Card:019542f5-b3e7-1d02-0000-000000000010
+                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCardId: card-emp-aary-001
+                    state: ACTIVE
+                    stateReason: null
+                    brand: VISA
+                    form: VIRTUAL
+                    last4: '4242'
+                    expMonth: 12
+                    expYear: 2029
+                    panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
+                    fundingSources:
+                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    currency: USD
+                    issuerRef: lithic_card_4f8d3a2b1c
+                    createdAt: '2026-05-08T14:10:00Z'
+                    updatedAt: '2026-05-08T14:11:00Z'
+              issuerRejected:
+                summary: Card rejected by issuer during provisioning
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+                  type: CARD.STATE_CHANGE
+                  timestamp: '2026-05-08T14:12:00Z'
+                  data:
+                    id: Card:019542f5-b3e7-1d02-0000-000000000011
+                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    state: CLOSED
+                    stateReason: ISSUER_REJECTED
+                    form: VIRTUAL
+                    fundingSources:
+                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    currency: USD
+                    createdAt: '2026-05-08T14:10:00Z'
+                    updatedAt: '2026-05-08T14:12:00Z'
+              frozen:
+                summary: Card frozen by the platform
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000022
+                  type: CARD.STATE_CHANGE
+                  timestamp: '2026-05-09T09:00:00Z'
+                  data:
+                    id: Card:019542f5-b3e7-1d02-0000-000000000010
+                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    state: FROZEN
+                    stateReason: null
+                    brand: VISA
+                    form: VIRTUAL
+                    last4: '4242'
+                    expMonth: 12
+                    expYear: 2029
+                    fundingSources:
+                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    currency: USD
+                    createdAt: '2026-05-08T14:10:00Z'
+                    updatedAt: '2026-05-09T09:00:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  card-funding-source-change:
+    post:
+      summary: Card funding source change
+      description: |
+        Webhook that is called when the funding sources bound to a card change. Fires whenever `PATCH /cards/{id}` updates the `fundingSources` array. The payload carries the full `Card` resource with the post-change `fundingSources` array.
+
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: cardFundingSourceChangeWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardFundingSourceChangeWebhook'
+            examples:
+              fundingSourcesReplaced:
+                summary: Funding sources replaced via PATCH /cards/{id}
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+                  type: CARD.FUNDING_SOURCE_CHANGE
+                  timestamp: '2026-05-08T14:30:00Z'
+                  data:
+                    id: Card:019542f5-b3e7-1d02-0000-000000000010
+                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    state: ACTIVE
+                    stateReason: null
+                    brand: VISA
+                    form: VIRTUAL
+                    last4: '4242'
+                    expMonth: 12
+                    expYear: 2029
+                    fundingSources:
+                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                    currency: USD
+                    createdAt: '2026-05-08T14:10:00Z'
+                    updatedAt: '2026-05-08T14:30:00Z'
       responses:
         '200':
           description: |
@@ -17125,6 +17842,414 @@ components:
           example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
         policy:
           $ref: '#/components/schemas/AgentPolicy'
+    CardState:
+      type: string
+      enum:
+        - PENDING_KYC
+        - PENDING_ISSUE
+        - ACTIVE
+        - FROZEN
+        - CLOSED
+      description: |
+        Lifecycle state of a card.
+
+        | State | Description |
+        |-------|-------------|
+        | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this state cannot transact. |
+        | `PENDING_ISSUE` | The card has been requested and is being provisioned with the issuer. |
+        | `ACTIVE` | The card is live and can authorize transactions. |
+        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
+        | `CLOSED` | The card is permanently closed. Terminal, irreversible state. |
+    CardStateReason:
+      type: string
+      enum:
+        - ISSUER_REJECTED
+        - CLOSED_BY_PLATFORM
+        - CLOSED_BY_GRID
+      description: |
+        Reason a card reached a terminal or non-active state. Present on
+        `CLOSED` cards, and on cards that fail provisioning before reaching
+        `ACTIVE`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PENDING_ISSUE`. |
+        | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
+        | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
+    CardBrand:
+      type: string
+      enum:
+        - VISA
+        - MASTERCARD
+      description: |
+        Card network brand. Read-only — determined by Grid when the card is
+        provisioned with the issuer.
+    CardForm:
+      type: string
+      enum:
+        - VIRTUAL
+      description: |
+        Physical form factor of the card. Only `VIRTUAL` is supported in v1;
+        `PHYSICAL` will be added in a later release.
+    Card:
+      type: object
+      required:
+        - id
+        - cardholderId
+        - state
+        - form
+        - fundingSources
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique card identifier
+          readOnly: true
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        cardholderId:
+          type: string
+          description: The id of the `Customer` who holds this card.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        platformCardId:
+          type: string
+          description: Platform-specific card identifier. Optional on create — system-generated if omitted, mirroring `platformCustomerId` semantics.
+          example: card-emp-aary-001
+        state:
+          $ref: '#/components/schemas/CardState'
+        stateReason:
+          oneOf:
+            - $ref: '#/components/schemas/CardStateReason'
+            - type: 'null'
+          description: Reason associated with the current `state`. Populated when the card is `CLOSED` or when provisioning was rejected; otherwise null.
+        brand:
+          $ref: '#/components/schemas/CardBrand'
+        form:
+          $ref: '#/components/schemas/CardForm'
+        last4:
+          type: string
+          description: Last four digits of the card PAN.
+          example: '4242'
+        expMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Card expiration month (1–12).
+          example: 12
+        expYear:
+          type: integer
+          description: Card expiration year (four digits).
+          example: 2029
+        panEmbedUrl:
+          type: string
+          format: uri
+          description: URL of the card issuer's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
+          example: https://embed.lithic.com/iframe/...?t=...
+        fundingSources:
+          type: array
+          description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
+          items:
+            type: string
+          example:
+            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        currency:
+          type: string
+          description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
+          example: USD
+          readOnly: true
+        issuerRef:
+          type: string
+          description: Opaque identifier for the card on the underlying issuer. Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
+          example: lithic_card_4f8d3a2b1c
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+          example: '2026-05-08T14:10:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+          example: '2026-05-08T14:11:00Z'
+    CardListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of cards matching the filter criteria
+          items:
+            $ref: '#/components/schemas/Card'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of cards matching the criteria (excluding pagination)
+    CardCreateRequest:
+      type: object
+      required:
+        - cardholderId
+        - form
+        - fundingSources
+      properties:
+        cardholderId:
+          type: string
+          description: The id of the `Customer` to issue the card to. The customer must have KYC status `APPROVED`; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        platformCardId:
+          type: string
+          description: Optional platform-specific card identifier. System-generated when omitted, mirroring `platformCustomerId` semantics.
+          example: card-emp-aary-001
+        form:
+          $ref: '#/components/schemas/CardForm'
+        fundingSources:
+          type: array
+          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency (USDB in v1); otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          minItems: 1
+          items:
+            type: string
+          example:
+            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    CardUpdateRequest:
+      type: object
+      description: Update request for `PATCH /cards/{id}`. At least one of `state` or `fundingSources` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
+      properties:
+        state:
+          type: string
+          enum:
+            - ACTIVE
+            - FROZEN
+            - CLOSED
+          description: Target state for the card. Permitted transitions are `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
+          example: FROZEN
+        fundingSources:
+          type: array
+          description: 'New ordered list of internal account ids to bind as funding sources. Fully replaces the previous binding. Each id must belong to the cardholder and be denominated in the card''s currency. The list must contain at least one source — to stop a card from spending without removing all sources, transition it to `FROZEN` instead. Cannot be supplied alongside `state: CLOSED`.'
+          minItems: 1
+          items:
+            type: string
+          example:
+            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+    CardMerchant:
+      type: object
+      required:
+        - descriptor
+      properties:
+        descriptor:
+          type: string
+          description: Merchant descriptor string captured from the card network at authorization time.
+          example: BLUE BOTTLE COFFEE SF
+        mcc:
+          type: string
+          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
+          example: '5814'
+        country:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
+          example: US
+    SandboxCardAuthorizationRequest:
+      type: object
+      required:
+        - amount
+        - currency
+        - merchant
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the endpoint documentation for the suffix table.
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Authorization amount in the smallest unit of `currency` (e.g. cents for USD).
+          exclusiveMinimum: 0
+          example: 1250
+        currency:
+          $ref: '#/components/schemas/Currency'
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+    CardTransactionStatus:
+      type: string
+      enum:
+        - AUTHORIZED
+        - PARTIALLY_SETTLED
+        - SETTLED
+        - REFUNDED
+        - EXCEPTION
+      description: |
+        Lifecycle status of a card transaction.
+
+        | Status | Description |
+        |--------|-------------|
+        | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
+        | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
+        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
+        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
+        | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
+    CardPullSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
+          example: 2
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
+          example: 1500
+        pendingCount:
+          type: integer
+          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
+          example: 0
+    CardRefundSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Number of refund (return) events received for this transaction.
+          example: 0
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
+          example: 0
+    CardSettlementSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Number of settlement (clearing) events received for this transaction.
+          example: 1
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
+          example: 1500
+    CardTransaction:
+      type: object
+      required:
+        - id
+        - cardId
+        - status
+        - merchant
+        - authorizedAmount
+        - accountId
+        - pullSummary
+        - refundSummary
+        - settlementSummary
+        - authorizedAt
+        - createdAt
+        - updatedAt
+      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
+      properties:
+        id:
+          type: string
+          description: System-generated unique card transaction identifier
+          readOnly: true
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        cardId:
+          type: string
+          description: The id of the `Card` this transaction was made on.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        issuerTransactionToken:
+          type: string
+          description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
+          example: lithic_txn_b81c2a4f
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/CardTransactionStatus'
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+        authorizedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        settledAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        refundedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        accountId:
+          type: string
+          description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        pullSummary:
+          $ref: '#/components/schemas/CardPullSummary'
+        refundSummary:
+          $ref: '#/components/schemas/CardRefundSummary'
+        settlementSummary:
+          $ref: '#/components/schemas/CardSettlementSummary'
+        authorizedAt:
+          type: string
+          format: date-time
+          description: When the auth was approved.
+          example: '2026-05-08T14:30:00Z'
+        lastEventAt:
+          type: string
+          format: date-time
+          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
+          example: '2026-05-08T15:42:11Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (same as `authorizedAt` for card transactions).
+          readOnly: true
+          example: '2026-05-08T14:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          readOnly: true
+          example: '2026-05-08T15:42:11Z'
+    SandboxCardClearingRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - amount
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/clearing`. Drives a clearing event against an existing `CardTransaction`. Pass an `amount` greater than the authorized amount to exercise the over-auth / restaurant-tip post-hoc-pull path; pass `0` to exercise `AUTHORIZATION_EXPIRY`. Suffix-driven outcomes on the parent transaction's id govern whether the post-hoc pull succeeds.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the `CardTransaction` to clear against. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: Clearing amount in the smallest unit of the transaction's currency. Set to `0` to simulate an authorization expiry with no clearing.
+          minimum: 0
+          example: 1500
+    SandboxCardReturnRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - amount
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`. Drives a `RETURN` event against an existing settled `CardTransaction`, which creates a `CardRefund` and pushes the parent transaction towards `REFUNDED` (full) or keeps it `SETTLED` (partial).
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the `CardTransaction` to refund against. Must have at least one settled clearing.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
+          exclusiveMinimum: 0
+          example: 1500
     WebhookType:
       type: string
       enum:
@@ -17157,6 +18282,8 @@ components:
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
+        - CARD.STATE_CHANGE
+        - CARD.FUNDING_SOURCE_CHANGE
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -17351,3 +18478,29 @@ components:
                 - VERIFICATION.RESOLVE_ERRORS
                 - VERIFICATION.IN_PROGRESS
                 - VERIFICATION.PENDING_MANUAL_REVIEW
+    CardStateChangeWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/Card'
+            type:
+              type: string
+              enum:
+                - CARD.STATE_CHANGE
+    CardFundingSourceChangeWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/Card'
+            type:
+              type: string
+              enum:
+                - CARD.FUNDING_SOURCE_CHANGE

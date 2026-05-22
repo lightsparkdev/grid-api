@@ -1,0 +1,20 @@
+type: object
+required:
+  - descriptor
+properties:
+  descriptor:
+    type: string
+    description: >-
+      Merchant descriptor string captured from the card network at
+      authorization time.
+    example: BLUE BOTTLE COFFEE SF
+  mcc:
+    type: string
+    description: >-
+      Merchant Category Code (ISO 18245) — four-digit numeric string.
+    example: '5814'
+  country:
+    type: string
+    description: >-
+      Two-letter ISO 3166-1 alpha-2 country code of the merchant.
+    example: US

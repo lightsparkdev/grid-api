@@ -1,0 +1,17 @@
+type: string
+enum:
+  - AUTHORIZED
+  - PARTIALLY_SETTLED
+  - SETTLED
+  - REFUNDED
+  - EXCEPTION
+description: |
+  Lifecycle status of a card transaction.
+
+  | Status | Description |
+  |--------|-------------|
+  | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
+  | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
+  | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
+  | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
+  | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
