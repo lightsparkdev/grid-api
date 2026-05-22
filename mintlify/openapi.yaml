@@ -6347,8 +6347,8 @@ paths:
       description: |
         Update a card's `state` and / or its bound `fundingSources`. At least one of the two fields must be supplied.
 
-        - `state` transitions are limited to `ACTIVE ⇄ FROZEN`. Any other transition returns `409 INVALID_STATE_TRANSITION` — to close a card, use `DELETE /cards/{id}`.
-        - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source.
+        - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
+        - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
 
         Because both updates are sensitive state changes, this endpoint uses Grid's 202 → signed-retry pattern (same shape as `DELETE /auth/credentials/{id}` and `POST /internal-accounts/{id}/export`):
 
@@ -6359,6 +6359,7 @@ paths:
         Effects:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `state: ACTIVE`: normal authorization behavior resumes.
+        - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
         - `fundingSources` change: emits `card.funding_source_change` reflecting the new ordered binding.
 
         The `card.state_change` webhook fires on every successful `state` transition; the `card.funding_source_change` webhook fires whenever `fundingSources` is updated.
@@ -6409,6 +6410,10 @@ paths:
                   state: FROZEN
                   fundingSources:
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              close:
+                summary: Permanently close the card
+                value:
+                  state: CLOSED
       responses:
         '200':
           description: Signed retry accepted. Returns the updated card.
@@ -6441,79 +6446,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `state` transition is not `ACTIVE ⇄ FROZEN` (e.g. trying to un-freeze a `CLOSED` card); with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-    delete:
-      summary: Close a card
-      description: |
-        Permanently close a card. Terminal and irreversible — the card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation.
-
-        Close uses Grid's 202 → signed-retry pattern:
-
-        1. Call `DELETE /cards/{id}` with no signing headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the card's owning internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the closed `Card`.
-
-        Side effects:
-        - All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails.
-        - Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
-        - The `card.state_change` webhook fires with `state: "CLOSED"`.
-      operationId: closeCardById
-      tags:
-        - Cards
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the card's owning internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
-          schema:
-            type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
-        - name: Request-Id
-          in: header
-          required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
-          schema:
-            type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
-      responses:
-        '200':
-          description: Signed retry accepted. Returns the closed card.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Card'
-        '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the card's owning internal account, along with a `requestId` that must be echoed back on the retry.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
-        '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending close challenge for this card, or when the `Request-Id` does not match an unexpired pending challenge.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Card not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '409':
-          description: Conflict. Returned with `CARD_ALREADY_CLOSED` when the card is already in the terminal `CLOSED` state.
+          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when `state: CLOSED` is requested for a card that is already `CLOSED`; with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card''s currency; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
           content:
             application/json:
               schema:
@@ -18220,7 +18153,7 @@ components:
         | Reason | Description |
         |--------|-------------|
         | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PENDING_ISSUE`. |
-        | `CLOSED_BY_PLATFORM` | The card was closed via `DELETE /cards/{id}` by the platform. |
+        | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
         | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
     CardBrand:
       type: string
@@ -18368,18 +18301,19 @@ components:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `state` or `fundingSources` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN`; any other transition returns `409 INVALID_STATE_TRANSITION`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
+      description: Update request for `PATCH /cards/{id}`. At least one of `state` or `fundingSources` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
       properties:
         state:
           type: string
           enum:
             - ACTIVE
             - FROZEN
-          description: Target state for the card. Only `ACTIVE ⇄ FROZEN` is permitted via this endpoint. To close a card, use `DELETE /cards/{id}`.
+            - CLOSED
+          description: Target state for the card. Permitted transitions are `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
           example: FROZEN
         fundingSources:
           type: array
-          description: New ordered list of internal account ids to bind as funding sources. Fully replaces the previous binding. Each id must belong to the cardholder and be denominated in the card's currency. The list must contain at least one source — to stop a card from spending without removing all sources, transition it to `FROZEN` instead.
+          description: 'New ordered list of internal account ids to bind as funding sources. Fully replaces the previous binding. Each id must belong to the cardholder and be denominated in the card''s currency. The list must contain at least one source — to stop a card from spending without removing all sources, transition it to `FROZEN` instead. Cannot be supplied alongside `state: CLOSED`.'
           minItems: 1
           items:
             type: string

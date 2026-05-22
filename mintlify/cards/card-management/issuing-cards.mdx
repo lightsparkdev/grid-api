@@ -50,7 +50,7 @@ PENDING_ISSUE ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSE
 | `PENDING_ISSUE` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
 | `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `state: "FROZEN"`. |
-| `CLOSED` | You called `DELETE /cards/{id}` (or the issuer rejected provisioning). Terminal. |
+| `CLOSED` | You called `PATCH /cards/{id}` with `state: "CLOSED"` (or the issuer rejected provisioning). Terminal. |
 
 `PENDING_KYC` is also a valid state but you should not see it in v1 —
 issuance is gated on KYC up front.

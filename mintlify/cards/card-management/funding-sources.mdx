@@ -91,7 +91,8 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -d '{ "state": "FROZEN" }'
 ```
 
-To permanently retire a card, close it with `DELETE /cards/{id}`.
+To permanently retire a card, close it with `PATCH /cards/{id}` and
+`state: "CLOSED"`.
 
 ## v1 behavior: single active source
 

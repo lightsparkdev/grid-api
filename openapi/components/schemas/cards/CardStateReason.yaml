@@ -11,5 +11,5 @@ description: |
   | Reason | Description |
   |--------|-------------|
   | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PENDING_ISSUE`. |
-  | `CLOSED_BY_PLATFORM` | The card was closed via `DELETE /cards/{id}` by the platform. |
+  | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
   | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
