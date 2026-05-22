@@ -16,8 +16,8 @@ description: >-
   Parent transaction row for a card authorization and all of the
   pulls / settlements / refunds that reconcile against it. Child events are
   rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary`
-  aggregates; full per-event detail is available via
-  `GET /cards/{id}/transactions/{transactionId}`.
+  aggregates. Delivered as the payload of `CARD_TRANSACTION.UPDATED`
+  webhooks on every transition.
 properties:
   id:
     type: string

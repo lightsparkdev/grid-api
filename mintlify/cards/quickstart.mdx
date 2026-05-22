@@ -138,22 +138,13 @@ A `CARD_TRANSACTION.UPDATED` webhook fires with the updated parent: the
 transaction moves to `SETTLED`, `pullSummary.count` becomes `2`, and
 `settlementSummary.totalAmount` is `1500`.
 
-## List card transactions
-
-```bash
-curl -X GET "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/transactions?limit=10" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-```
-
-Each row is the parent `CardTransaction` with child pull, clearing, and
-refund events rolled up into the `pullSummary`, `settlementSummary`,
-and `refundSummary` aggregates. See
-[Listing transactions](/cards/transactions/listing-transactions) for
-filtering, and [Reconciliation](/cards/transactions/reconciliation) for
-the full event model.
+The webhook payload carries the full parent `CardTransaction` with
+child pull, clearing, and refund events rolled up into the
+`pullSummary`, `settlementSummary`, and `refundSummary` aggregates —
+see [Reconciliation](/cards/transactions/reconciliation) for the full
+event model.
 
 <Check>
-You've issued a card, watched it activate, driven an over-auth
-transaction through pull and clearing, and listed the reconciled
-result.
+You've issued a card, watched it activate, and driven an over-auth
+transaction through pull and clearing.
 </Check>

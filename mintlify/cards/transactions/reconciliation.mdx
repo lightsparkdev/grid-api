@@ -56,10 +56,8 @@ tip). The auth comes in at $12.50, but the merchant clears for $15.00.
    `SETTLED` with `pullSummary.count = 2`,
    `settlementSummary.totalAmount = 1500`.
 
-This is what
-[Listing transactions](/cards/transactions/listing-transactions) shows
-in the example response: `authorizedAmount: 1250`,
-`settledAmount: 1500`, two pulls.
+The post-settlement parent carries `authorizedAmount: 1250`,
+`settledAmount: 1500`, and two pulls in its `pullSummary`.
 
 ## The EXCEPTION path
 
@@ -68,18 +66,10 @@ a settlement but Grid can't pull the matching amount from the funding
 source — typically because the cardholder's balance no longer covers
 the post-hoc difference.
 
-Signals to watch:
-
-- A `CARD_TRANSACTION.UPDATED` webhook with `status: "EXCEPTION"`.
-- `pullSummary.pendingCount > 0` that fails to drop to zero in the
-  expected settlement window.
-
-The on-call dashboard query is just:
-
-```bash
-curl -X GET "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/transactions?status=EXCEPTION" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-```
+Signal to watch: a `CARD_TRANSACTION.UPDATED` webhook with
+`status: "EXCEPTION"`. The payload includes the full parent
+`CardTransaction`, so your dashboard's exception view is driven
+entirely by webhook deliveries — there's no list endpoint to poll.
 
 Exceptions don't roll back automatically. The standard response is to
 top up the funding source (or move the customer to a state where their

@@ -358,7 +358,6 @@
           {
             "group": "Transactions",
             "pages": [
-              "cards/transactions/listing-transactions",
               "cards/transactions/reconciliation"
             ]
           },

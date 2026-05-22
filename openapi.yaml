@@ -6457,116 +6457,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /cards/{id}/transactions:
-    parameters:
-      - name: id
-        in: path
-        description: System-generated unique card identifier
-        required: true
-        schema:
-          type: string
-    get:
-      summary: List card transactions
-      description: |
-        Retrieve a paginated list of card transactions for a card.
-
-        Each row is the parent `CardTransaction` for an authorization and the pulls / clearings / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates — full per-event detail lives at `GET /cards/{id}/transactions/{transactionId}` and is out of scope of this endpoint.
-
-        A row in `status: "EXCEPTION"` is one where the transaction settled to the card network but the corresponding pull from the funding source failed — this is where the high-urgency reconciliation alerts surface. Querying with `?status=EXCEPTION` is the dashboard view for stuck reconciliations.
-      operationId: listCardTransactions
-      tags:
-        - Cards
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: status
-          in: query
-          description: Filter by card transaction status.
-          required: false
-          schema:
-            $ref: '#/components/schemas/CardTransactionStatus'
-        - name: merchantDescriptor
-          in: query
-          description: Substring match on the captured merchant descriptor string.
-          required: false
-          schema:
-            type: string
-        - name: mcc
-          in: query
-          description: Filter by Merchant Category Code (ISO 18245) — four-digit numeric string, exact match.
-          required: false
-          schema:
-            type: string
-        - name: startDate
-          in: query
-          description: Filter by start date (inclusive) in ISO 8601 format, applied to `createdAt`.
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: endDate
-          in: query
-          description: Filter by end date (inclusive) in ISO 8601 format, applied to `createdAt`.
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: limit
-          in: query
-          description: Maximum number of results to return (default 20, max 100)
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          description: Cursor for pagination (returned from previous request)
-          required: false
-          schema:
-            type: string
-        - name: sortOrder
-          in: query
-          description: Order to sort results in
-          required: false
-          schema:
-            type: string
-            enum:
-              - asc
-              - desc
-            default: desc
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardTransactionListResponse'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Card not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -18320,6 +18210,41 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+    CardMerchant:
+      type: object
+      required:
+        - descriptor
+      properties:
+        descriptor:
+          type: string
+          description: Merchant descriptor string captured from the card network at authorization time.
+          example: BLUE BOTTLE COFFEE SF
+        mcc:
+          type: string
+          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
+          example: '5814'
+        country:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
+          example: US
+    SandboxCardAuthorizationRequest:
+      type: object
+      required:
+        - amount
+        - currency
+        - merchant
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the endpoint documentation for the suffix table.
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Authorization amount in the smallest unit of `currency` (e.g. cents for USD).
+          exclusiveMinimum: 0
+          example: 1250
+        currency:
+          $ref: '#/components/schemas/Currency'
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
     CardTransactionStatus:
       type: string
       enum:
@@ -18338,23 +18263,6 @@ components:
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
         | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
-    CardMerchant:
-      type: object
-      required:
-        - descriptor
-      properties:
-        descriptor:
-          type: string
-          description: Merchant descriptor string captured from the card network at authorization time.
-          example: BLUE BOTTLE COFFEE SF
-        mcc:
-          type: string
-          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
-          example: '5814'
-        country:
-          type: string
-          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
-          example: US
     CardPullSummary:
       type: object
       required:
@@ -18419,7 +18327,7 @@ components:
         - authorizedAt
         - createdAt
         - updatedAt
-      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates; full per-event detail is available via `GET /cards/{id}/transactions/{transactionId}`.
+      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of `CARD_TRANSACTION.UPDATED` webhooks on every transition.
       properties:
         id:
           type: string
@@ -18477,44 +18385,6 @@ components:
           description: Last update timestamp.
           readOnly: true
           example: '2026-05-08T15:42:11Z'
-    CardTransactionListResponse:
-      type: object
-      required:
-        - data
-        - hasMore
-      properties:
-        data:
-          type: array
-          description: List of card transactions matching the filter criteria
-          items:
-            $ref: '#/components/schemas/CardTransaction'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page
-        nextCursor:
-          type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true)
-        totalCount:
-          type: integer
-          description: Total number of card transactions matching the criteria (excluding pagination)
-    SandboxCardAuthorizationRequest:
-      type: object
-      required:
-        - amount
-        - currency
-        - merchant
-      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the endpoint documentation for the suffix table.
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Authorization amount in the smallest unit of `currency` (e.g. cents for USD).
-          exclusiveMinimum: 0
-          example: 1250
-        currency:
-          $ref: '#/components/schemas/Currency'
-        merchant:
-          $ref: '#/components/schemas/CardMerchant'
     SandboxCardClearingRequest:
       type: object
       required:

@@ -93,9 +93,9 @@ When you're ready to go live:
 - Complete card-issuer onboarding through your Lightspark contact.
 - Confirm webhook security, monitoring, and alerting cover the
   `CARD.*` and `CARD_TRANSACTION.*` event types.
-- Build the `EXCEPTION` dashboard view (filter
-  `GET /cards/{id}/transactions?status=EXCEPTION`) and wire it into
-  on-call alerting.
+- Build the `EXCEPTION` dashboard view from
+  `CARD_TRANSACTION.UPDATED` webhooks (filter by
+  `status: "EXCEPTION"`) and wire it into on-call alerting.
 
 <Check>
 Contact your Lightspark representative to enable Production card
