@@ -1,3 +1,4 @@
+# Bundled into openapi.yaml + mintlify/openapi.yaml via `npm run build:openapi`.
 openapi: 3.1.0
 info:
   title: Grid API
