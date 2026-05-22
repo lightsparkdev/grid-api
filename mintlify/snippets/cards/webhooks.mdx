@@ -1,8 +1,12 @@
-Cards add three webhook event types on top of Grid's existing webhook
+Cards add two webhook event types on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
 [Webhooks](/api-reference/webhooks) for the underlying mechanics.
+
+Card-transaction lifecycle events are not card-specific webhooks —
+they ride on the generic transaction webhook stream (a follow-up
+extends the Transaction model with a card destination type).
 
 ## Event types
 
@@ -10,7 +14,6 @@ retry behavior are identical to the rest of Grid — see
 |------|----------|
 | `CARD.STATE_CHANGE` | `PENDING_ISSUE → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
-| `CARD_TRANSACTION.UPDATED` | Every reconcile event against a card transaction — authorization, clearing, refund, and lifecycle status transitions. |
 
 All three carry the standard envelope:
 
@@ -73,26 +76,14 @@ array. The `data` payload is the full `Card` resource with the
 post-change `fundingSources`, so a consumer that only cares about the
 current set of bindings can replace state wholesale.
 
-## CARD_TRANSACTION.UPDATED
+## Card-transaction lifecycle
 
-Fires on every reconcile event. The `data` payload is the
-`CardTransaction` parent — status follows the
-`AUTHORIZED → PARTIALLY_SETTLED → SETTLED → REFUNDED / EXCEPTION`
-lifecycle, and the `pullSummary`, `settlementSummary`, and
-`refundSummary` aggregates reflect every child event reconciled so
-far.
-
-This is the webhook to wire into your alerting for `EXCEPTION`
-transitions:
-
-```js
-if (event.type === 'CARD_TRANSACTION.UPDATED' &&
-    event.data.status === 'EXCEPTION') {
-  alertOnCall(event.data);
-}
-```
-
-See [Reconciliation](/cards/transactions/reconciliation) for the
+Authorization, pull, clearing, refund, and `EXCEPTION` transitions are
+not delivered through a dedicated card webhook. They flow through
+the generic transaction webhook stream that already carries
+outgoing-payment lifecycle events; a follow-up PR adds the card
+destination type to that stream. See
+[Reconciliation](/cards/transactions/reconciliation) for the
 underlying event model.
 
 ## Idempotency & retries

@@ -31,7 +31,6 @@ enum:
   - AGENT_ACTION.PENDING_APPROVAL
   - CARD.STATE_CHANGE
   - CARD.FUNDING_SOURCE_CHANGE
-  - CARD_TRANSACTION.UPDATED
   - TEST
 description: >-
   Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot

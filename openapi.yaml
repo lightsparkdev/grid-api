@@ -6200,7 +6200,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request - Invalid parameters
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -6211,12 +6211,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
-        '409':
-          description: Conflict. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, and with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -6226,7 +6220,7 @@ paths:
     get:
       summary: List cards
       description: |
-        Retrieve a paginated list of cards. Cards can be filtered by cardholder, state, and platform-specific card identifier. If no filters are provided, returns all cards visible to the caller.
+        Retrieve a paginated list of cards. Cards can be filtered by cardholder, bound funding-source internal account, state, and platform-specific card identifier. If no filters are provided, returns all cards visible to the caller.
       operationId: listCards
       tags:
         - Cards
@@ -6236,6 +6230,12 @@ paths:
         - name: cardholderId
           in: query
           description: Filter by cardholder (customer) id.
+          required: false
+          schema:
+            type: string
+        - name: accountId
+          in: query
+          description: Filter by internal account id. Returns cards whose `fundingSources` array contains the given internal account id.
           required: false
           schema:
             type: string
@@ -6428,7 +6428,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SignedRequestChallenge'
         '400':
-          description: Bad request - Invalid parameters
+          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -6446,7 +6446,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when `state: CLOSED` is requested for a card that is already `CLOSED`; with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card''s currency; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
+          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when `state: CLOSED` is requested for a card that is already `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
           content:
             application/json:
               schema:
@@ -7778,175 +7778,6 @@ webhooks:
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
-      responses:
-        '200':
-          description: |
-            Webhook received successfully
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized - Signature validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '409':
-          description: Conflict - Webhook has already been processed (duplicate id)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-  card-transaction-updated:
-    post:
-      summary: Card transaction updated
-      description: |
-        Webhook that is called on every reconcile event against a card transaction — authorization, clearing, refund, and lifecycle status transitions. Status values follow the Grid `CardTransactionStatus` enum (`AUTHORIZED | PARTIALLY_SETTLED | SETTLED | REFUNDED | EXCEPTION`); the issuer's raw event type is not surfaced.
-
-        This endpoint should be implemented by clients of the Grid API.
-
-        ### Authentication
-
-        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
-        To verify the signature:
-        1. Get the Grid public key provided to you during integration
-        2. Decode the base64 signature from the header
-        3. Create a SHA-256 hash of the request body
-        4. Verify the signature using the public key and the hash
-
-        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-      operationId: cardTransactionUpdatedWebhook
-      tags:
-        - Webhooks
-      security:
-        - WebhookSignature: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CardTransactionUpdatedWebhook'
-            examples:
-              authorized:
-                summary: Card transaction newly authorized
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
-                  type: CARD_TRANSACTION.UPDATED
-                  timestamp: '2026-05-08T14:30:00Z'
-                  data:
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
-                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
-                    issuerTransactionToken: lithic_txn_b81c2a4f
-                    status: AUTHORIZED
-                    merchant:
-                      descriptor: BLUE BOTTLE COFFEE SF
-                      mcc: '5814'
-                      country: US
-                    authorizedAmount:
-                      amount: 1250
-                      currency:
-                        code: USD
-                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 1250
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 0
-                      totalAmount: 0
-                    authorizedAt: '2026-05-08T14:30:00Z'
-                    createdAt: '2026-05-08T14:30:00Z'
-                    updatedAt: '2026-05-08T14:30:00Z'
-              settledOverAuth:
-                summary: Settlement larger than auth — tip / over-auth post-hoc pull
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
-                  type: CARD_TRANSACTION.UPDATED
-                  timestamp: '2026-05-08T15:42:11Z'
-                  data:
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
-                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
-                    issuerTransactionToken: lithic_txn_b81c2a4f
-                    status: SETTLED
-                    merchant:
-                      descriptor: BLUE BOTTLE COFFEE SF
-                      mcc: '5814'
-                      country: US
-                    authorizedAmount:
-                      amount: 1250
-                      currency:
-                        code: USD
-                    settledAmount:
-                      amount: 1500
-                      currency:
-                        code: USD
-                    refundedAmount:
-                      amount: 0
-                      currency:
-                        code: USD
-                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 2
-                      totalAmount: 1500
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 1500
-                    authorizedAt: '2026-05-08T14:30:00Z'
-                    lastEventAt: '2026-05-08T15:42:11Z'
-                    createdAt: '2026-05-08T14:30:00Z'
-                    updatedAt: '2026-05-08T15:42:11Z'
-              exception:
-                summary: Settled to network but funding pull failed — high-urgency alert
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
-                  type: CARD_TRANSACTION.UPDATED
-                  timestamp: '2026-05-08T15:50:00Z'
-                  data:
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
-                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
-                    issuerTransactionToken: lithic_txn_c92d3b5e
-                    status: EXCEPTION
-                    merchant:
-                      descriptor: AMAZON RETAIL US
-                      mcc: '5942'
-                      country: US
-                    authorizedAmount:
-                      amount: 5000
-                      currency:
-                        code: USD
-                    settledAmount:
-                      amount: 5000
-                      currency:
-                        code: USD
-                    refundedAmount:
-                      amount: 0
-                      currency:
-                        code: USD
-                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 0
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 5000
-                    authorizedAt: '2026-05-08T15:30:00Z'
-                    lastEventAt: '2026-05-08T15:50:00Z'
-                    createdAt: '2026-05-08T15:30:00Z'
-                    updatedAt: '2026-05-08T15:50:00Z'
       responses:
         '200':
           description: |
@@ -18327,7 +18158,7 @@ components:
         - authorizedAt
         - createdAt
         - updatedAt
-      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of `CARD_TRANSACTION.UPDATED` webhooks on every transition.
+      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
       properties:
         id:
           type: string
@@ -18453,7 +18284,6 @@ components:
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
         - CARD.FUNDING_SOURCE_CHANGE
-        - CARD_TRANSACTION.UPDATED
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -18674,16 +18504,3 @@ components:
               type: string
               enum:
                 - CARD.FUNDING_SOURCE_CHANGE
-    CardTransactionUpdatedWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - data
-          properties:
-            data:
-              $ref: '#/components/schemas/CardTransaction'
-            type:
-              type: string
-              enum:
-                - CARD_TRANSACTION.UPDATED

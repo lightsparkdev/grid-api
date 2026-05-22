@@ -178,7 +178,11 @@ patch:
           schema:
             $ref: ../../components/schemas/common/SignedRequestChallenge.yaml
     '400':
-      description: Bad request - Invalid parameters
+      description: >-
+        Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a
+        supplied funding source does not belong to the cardholder or is
+        not denominated in the card's currency, and for general invalid
+        parameters.
       content:
         application/json:
           schema:
@@ -206,10 +210,8 @@ patch:
         `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying
         to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when
         `state: CLOSED` is requested for a card that is already
-        `CLOSED`; with `FUNDING_SOURCE_INELIGIBLE` when a supplied
-        funding source does not belong to the cardholder or is not
-        denominated in the card's currency; and with `CARD_NOT_MUTABLE`
-        when the card is `CLOSED`.
+        `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is
+        `CLOSED`.
       content:
         application/json:
           schema:
