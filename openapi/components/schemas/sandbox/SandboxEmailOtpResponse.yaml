@@ -1,0 +1,42 @@
+type: object
+required:
+  - authMethodId
+  - accountId
+  - email
+  - otpId
+  - otpCode
+  - expiresAt
+  - attemptsRemaining
+properties:
+  authMethodId:
+    type: string
+    description: EMAIL_OTP auth method this sandbox code belongs to.
+    example: AuthMethod:019e509f-3f4c-0dca-0000-a55f43ba887e
+  accountId:
+    type: string
+    description: Internal account associated with the auth method's embedded wallet.
+    example: InternalAccount:019e509f-3a6b-0dca-0000-32c1a4a35df2
+  email:
+    type: string
+    format: email
+    description: Email address or display name associated with the auth method.
+    example: alice@example.com
+  otpId:
+    type: string
+    description: Sandbox Turnkey OTP identifier. The code is scoped to this OTP id and rotates when a new challenge is requested.
+    example: 019e509f-4556-0dca-0000-f20dd8312a6f
+  otpCode:
+    type: string
+    pattern: ^[0-9]{6}$
+    description: Six-digit sandbox OTP code to pass as `otp` to `POST /auth/credentials/{id}/verify`.
+    example: '381274'
+  expiresAt:
+    type: string
+    format: date-time
+    description: Time after which this sandbox OTP can no longer be verified.
+    example: '2026-05-21T20:15:00Z'
+  attemptsRemaining:
+    type: integer
+    minimum: 0
+    description: Number of remaining wrong-code attempts before this sandbox OTP is locked out.
+    example: 5

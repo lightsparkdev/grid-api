@@ -318,6 +318,11 @@ resources:
           internal_account: '#/components/schemas/InternalAccount'
         methods:
           fund: post /sandbox/internal-accounts/{accountId}/fund
+      email_otps:
+        models:
+          sandbox_email_otp_response: '#/components/schemas/SandboxEmailOtpResponse'
+        methods:
+          retrieve_latest: get /sandbox/email-otps/latest
       webhooks:
         methods:
           send_test: post /sandbox/webhooks/test

@@ -2948,6 +2948,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /sandbox/email-otps/latest:
+    get:
+      summary: Get the latest sandbox email OTP
+      description: |
+        Return the active one-time password for a sandbox `EMAIL_OTP` auth method. Use this as a sandbox test inbox after creating an email OTP credential or after requesting a new email OTP challenge.
+        This endpoint is only for the sandbox environment and will fail for production platforms/keys. Production OTP codes are delivered by email and are never exposed by Grid.
+      operationId: getLatestSandboxEmailOtp
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: authMethodId
+          in: query
+          required: true
+          description: Auth method ID returned by `POST /auth/credentials` or `GET /auth/credentials`.
+          schema:
+            type: string
+            example: AuthMethod:019e509f-3f4c-0dca-0000-a55f43ba887e
+      responses:
+        '200':
+          description: Sandbox email OTP found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxEmailOtpResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No active sandbox OTP exists for this auth method
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/bulk/csv:
     post:
       summary: Upload customers via CSV file
@@ -16528,6 +16584,82 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    SandboxEmailOtpResponse:
+      type: object
+      required:
+        - authMethodId
+        - accountId
+        - email
+        - otpId
+        - otpCode
+        - expiresAt
+        - attemptsRemaining
+      properties:
+        authMethodId:
+          type: string
+          description: EMAIL_OTP auth method this sandbox code belongs to.
+          example: AuthMethod:019e509f-3f4c-0dca-0000-a55f43ba887e
+        accountId:
+          type: string
+          description: Internal account associated with the auth method's embedded wallet.
+          example: InternalAccount:019e509f-3a6b-0dca-0000-32c1a4a35df2
+        email:
+          type: string
+          format: email
+          description: Email address or display name associated with the auth method.
+          example: alice@example.com
+        otpId:
+          type: string
+          description: Sandbox Turnkey OTP identifier. The code is scoped to this OTP id and rotates when a new challenge is requested.
+          example: 019e509f-4556-0dca-0000-f20dd8312a6f
+        otpCode:
+          type: string
+          pattern: ^[0-9]{6}$
+          description: Six-digit sandbox OTP code to pass as `otp` to `POST /auth/credentials/{id}/verify`.
+          example: '381274'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Time after which this sandbox OTP can no longer be verified.
+          example: '2026-05-21T20:15:00Z'
+        attemptsRemaining:
+          type: integer
+          minimum: 0
+          description: Number of remaining wrong-code attempts before this sandbox OTP is locked out.
+          example: 5
+    Error403:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 403
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     BulkCustomerImportJobAccepted:
       type: object
       required:
@@ -16718,39 +16850,6 @@ components:
           type: string
           description: The UMA address of the customer claiming the invitation
           example: $invitee@uma.domain
-    Error403:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     SandboxSendRequest:
       type: object
       required:

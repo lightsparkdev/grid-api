@@ -1,0 +1,60 @@
+get:
+  summary: Get the latest sandbox email OTP
+  description: >
+    Return the active one-time password for a sandbox `EMAIL_OTP` auth method.
+    Use this as a sandbox test inbox after creating an email OTP credential or
+    after requesting a new email OTP challenge.
+
+    This endpoint is only for the sandbox environment and will fail for
+    production platforms/keys. Production OTP codes are delivered by email and
+    are never exposed by Grid.
+  operationId: getLatestSandboxEmailOtp
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: authMethodId
+      in: query
+      required: true
+      description: Auth method ID returned by `POST /auth/credentials` or `GET /auth/credentials`.
+      schema:
+        type: string
+        example: AuthMethod:019e509f-3f4c-0dca-0000-a55f43ba887e
+  responses:
+    '200':
+      description: Sandbox email OTP found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sandbox/SandboxEmailOtpResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: No active sandbox OTP exists for this auth method
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

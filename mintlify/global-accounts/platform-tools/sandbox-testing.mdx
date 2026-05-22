@@ -1,13 +1,13 @@
 ---
 title: "Sandbox testing"
-description: "Exercise the Global Account auth, signing, and funding flows without standing up real OTP delivery, WebAuthn, or OIDC providers"
+description: "Exercise the Global Account auth, signing, and funding flows without real OTP delivery or WebAuthn ceremony"
 icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
 
 import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
 
-The Grid sandbox lets you exercise the full Global Accounts integration — customer creation, account lookup, credential registration, funding, and signed withdrawals — without moving real money or standing up real auth providers. All API endpoints work the same way as in production, but money movements are simulated. OTP, passkey, and wallet signatures use sandbox-only magic values, while OAuth uses JWT-shaped sandbox OIDC tokens with claim, freshness, identity, and nonce checks.
+The Grid sandbox lets you exercise the full Global Accounts integration — customer creation, account lookup, credential registration, funding, and signed withdrawals — without moving real money. All API endpoints work the same way as in production, but money movements are simulated. Email OTP uses a sandbox test inbox, passkey and wallet signatures use sandbox-only magic values, and OAuth validates OIDC token claims against the registered auth credential.
 
 ## Sandbox setup
 
@@ -52,7 +52,7 @@ All webhook events fire normally in sandbox. Configure your webhook URL in the d
 When you're ready to go live:
 
 1. Generate production API tokens in the dashboard and swap them for the sandbox credentials in your environment.
-2. Remove sandbox magic values and unsigned sandbox OIDC tokens from your client and server code — production runs the real OTP, HPKE, WebAuthn, OIDC signature, and ECDSA flows.
+2. Remove sandbox inbox calls, magic values, and unsigned sandbox OIDC test tokens from your client and server code — production runs the real OTP, HPKE, WebAuthn, OIDC signature, and ECDSA flows.
 3. Configure production webhook endpoints.
 4. Test with small amounts first.
 

@@ -181,6 +181,8 @@ paths:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:
     $ref: paths/sandbox/sandbox_webhooks_test.yaml
+  /sandbox/email-otps/latest:
+    $ref: paths/sandbox/sandbox_email-otps_latest.yaml
   /customers/bulk/csv:
     $ref: paths/customers/customers_bulk_csv.yaml
   /customers/bulk/jobs/{jobId}:
