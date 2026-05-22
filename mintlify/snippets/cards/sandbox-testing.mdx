@@ -1,0 +1,145 @@
+The card network can't reach into Sandbox to send real authorizations,
+so Sandbox exposes three simulate helpers that drive the same internal
+`authorize` and `reconcile` paths the issuer would call in production.
+Production returns `404` on these paths.
+
+```text
+POST /sandbox/cards/{id}/simulate/authorization
+POST /sandbox/cards/{id}/simulate/clearing
+POST /sandbox/cards/{id}/simulate/return
+```
+
+Outcomes are deterministic — driven by magic-value suffixes on the
+relevant id. The same approach is used by
+`/sandbox/internal-accounts/{id}/fund`.
+
+## Issuance suffixes (platformCardId)
+
+The last three characters of `platformCardId` (or `cardholderId` when
+`platformCardId` is omitted) control how `POST /cards` resolves:
+
+| Suffix | Behavior |
+|--------|----------|
+| `001` | Stays `PENDING_ISSUE` indefinitely (test the polling path) |
+| `002` | Issuer provisioning rejected → `state: CLOSED`, `stateReason: "ISSUER_REJECTED"` |
+| `005` | Delayed activation (~30s) before the `CARD.STATE_CHANGE` webhook fires |
+| any other | Instant activation → `state: ACTIVE`, `last4` deterministic from the suffix |
+
+## Funding-source suffixes (accountId)
+
+Binding a funding source resolves based on the last three characters
+of `accountId`:
+
+| Suffix | Behavior |
+|--------|----------|
+| `002` | `FUNDING_SOURCE_INELIGIBLE` (insufficient balance check) |
+| `003` | `FUNDING_SOURCE_INELIGIBLE` (account closed) |
+| any other | Success |
+
+## Authorization simulate
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/authorization" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 1250,
+    "currency": { "code": "USD" },
+    "merchant": {
+      "descriptor": "BLUE BOTTLE COFFEE SF",
+      "mcc": "5814",
+      "country": "US"
+    }
+  }'
+```
+
+Outcomes are controlled by the last three characters of
+`merchant.descriptor`:
+
+| Suffix | Outcome |
+|--------|---------|
+| `002` | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) |
+| `003` | Decline — `CARD_PAUSED` (use against a `FROZEN` card to verify) |
+| `005` | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path |
+| `006` | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert |
+| any other | Approved |
+
+The response is the resulting `CardTransaction`.
+
+## Clearing simulate
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/clearing" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "amount": 1500
+  }'
+```
+
+- `amount > authorizedAmount` exercises the over-auth post-hoc pull
+  path (restaurant tip / tip-on-top).
+- `amount = 0` exercises `AUTHORIZATION_EXPIRY` — the auth expires
+  with no clearing posted.
+
+Suffix-driven outcomes on the parent transaction's id govern whether
+the post-hoc pull succeeds — use them with the
+[merchant descriptor suffixes](#authorization-simulate) above to
+construct deterministic exception scenarios.
+
+## Return simulate
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/return" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "amount": 1500
+  }'
+```
+
+A full refund flips the parent to `REFUNDED`; a partial refund keeps
+it `SETTLED` with a non-zero `refundedAmount`.
+
+## End-to-end happy path
+
+A simple Sandbox loop that exercises issue → activate → auth → clear
+→ refund:
+
+```bash
+# 1. Issue (suffix not in the magic set → instant activation)
+curl -X POST "$GRID_BASE_URL/cards" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardholderId": "Customer:...",
+    "platformCardId": "card-test-happy",
+    "form": "VIRTUAL",
+    "fundingSources": ["InternalAccount:..."]
+  }'
+
+# 2. Simulate auth — any non-magic descriptor approves
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/authorization" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount": 1250, "currency": {"code":"USD"}, "merchant": {"descriptor":"BLUE BOTTLE COFFEE SF"} }'
+
+# 3. Clear the auth
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/clearing" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "cardTransactionId": "CardTransaction:...", "amount": 1500 }'
+
+# 4. Refund the cleared transaction
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/return" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "cardTransactionId": "CardTransaction:...", "amount": 1500 }'
+```
+
+At each step you'll see `CARD.STATE_CHANGE`,
+`CARD_TRANSACTION.UPDATED`, or `CARD.FUNDING_SOURCE_CHANGE` webhooks
+fire — wire those into your local webhook handler to validate
+end-to-end.

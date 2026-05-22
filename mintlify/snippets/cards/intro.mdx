@@ -1,0 +1,53 @@
+import { topLevelProductName } from '/snippets/variables.mdx';
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+With {topLevelProductName} Cards, you can issue virtual debit cards backed by an
+internal account, decision authorizations in real time against that
+account's balance, and reconcile every pull, clearing, and refund against
+the same ledger you already use for payouts.
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/lightning.svg" title="Real-time decisioning">
+    Authorizations are checked against the bound internal account at auth
+    time, so the funding source and the card share a single source of
+    truth.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/shield.svg" title="No PAN in your stack">
+    The full PAN and CVV are rendered directly to the cardholder through
+    the issuer's iframe. Card credentials never cross your servers.
+  </FeatureCard>
+</FeatureCardGrid>
+
+## Card lifecycle at a glance
+
+A card moves through five states:
+
+| State | Meaning |
+|-------|---------|
+| `PENDING_KYC` | Cardholder has not finished KYC; the card cannot transact yet. |
+| `PENDING_ISSUE` | Card has been requested and is being provisioned with the issuer. |
+| `ACTIVE` | Card is live and can authorize transactions. |
+| `FROZEN` | Card is temporarily disabled. New authorizations are declined; in-flight settlements continue. |
+| `CLOSED` | Card is permanently closed. Terminal, irreversible. |
+
+Every transition emits a `CARD.STATE_CHANGE` webhook so you can mirror
+state changes into your application.
+
+## What's covered in this tab
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/cards/quickstart">
+    Issue your first card, simulate an authorization, and watch it
+    reconcile against an internal account.
+  </Card>
+  <Card title="Card management" icon="credit-card" href="/cards/card-management/issuing-cards">
+    Issue cards, bind funding sources, freeze, unfreeze, and close.
+  </Card>
+  <Card title="Transactions & reconciliation" icon="checkmark" href="/cards/transactions/reconciliation">
+    The relationship between authorizations, pulls, clearings, and
+    refunds — and how to surface exceptions.
+  </Card>
+  <Card title="Sandbox testing" icon="flask" href="/cards/platform-tools/sandbox-testing">
+    Drive deterministic outcomes with the magic-value suffix tables.
+  </Card>
+</CardGroup>

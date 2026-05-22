@@ -1,0 +1,102 @@
+Cards add three webhook event types on top of Grid's existing webhook
+infrastructure. Signature verification (`X-Grid-Signature`) and
+retry behavior are identical to the rest of Grid — see
+[Authentication](/api-reference/authentication) and
+[Webhooks](/api-reference/webhooks) for the underlying mechanics.
+
+## Event types
+
+| Type | Fires on |
+|------|----------|
+| `CARD.STATE_CHANGE` | `PENDING_ISSUE → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
+| `CARD_TRANSACTION.UPDATED` | Every reconcile event against a card transaction — authorization, clearing, refund, and lifecycle status transitions. |
+
+All three carry the standard envelope:
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "CARD.STATE_CHANGE",
+  "timestamp": "2026-05-08T14:11:00Z",
+  "data": { /* the affected Card or CardTransaction resource */ }
+}
+```
+
+The `id` is unique per delivery and safe to use for idempotency.
+
+## CARD.STATE_CHANGE
+
+The `data` payload is the post-change `Card` resource. Example —
+activation after issuance:
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "CARD.STATE_CHANGE",
+  "timestamp": "2026-05-08T14:11:00Z",
+  "data": {
+    "id": "Card:019542f5-b3e7-1d02-0000-000000000010",
+    "cardholderId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "state": "ACTIVE",
+    "brand": "VISA",
+    "form": "VIRTUAL",
+    "last4": "4242",
+    "expMonth": 12,
+    "expYear": 2029,
+    "panEmbedUrl": "https://embed.lithic.com/iframe/...?t=...",
+    "fundingSources": [
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    ],
+    "currency": "USD",
+    "createdAt": "2026-05-08T14:10:00Z",
+    "updatedAt": "2026-05-08T14:11:00Z"
+  }
+}
+```
+
+Common branches to handle in your consumer:
+
+- `state: "ACTIVE"` after `PENDING_ISSUE` — the card is live; surface
+  `panEmbedUrl` to the cardholder.
+- `state: "CLOSED"`, `stateReason: "ISSUER_REJECTED"` — the issuer
+  rejected provisioning; offer to issue a new card.
+- `state: "FROZEN"` / `state: "ACTIVE"` — reflect the freeze toggle in
+  your UI.
+- `state: "CLOSED"`, `stateReason: "CLOSED_BY_PLATFORM"` — close
+  confirmed; stop showing the card.
+
+## CARD.FUNDING_SOURCE_CHANGE
+
+Fires whenever a `PATCH /cards/{id}` call changes the `fundingSources`
+array. The `data` payload is the full `Card` resource with the
+post-change `fundingSources`, so a consumer that only cares about the
+current set of bindings can replace state wholesale.
+
+## CARD_TRANSACTION.UPDATED
+
+Fires on every reconcile event. The `data` payload is the
+`CardTransaction` parent — status follows the
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED → REFUNDED / EXCEPTION`
+lifecycle, and the `pullSummary`, `settlementSummary`, and
+`refundSummary` aggregates reflect every child event reconciled so
+far.
+
+This is the webhook to wire into your alerting for `EXCEPTION`
+transitions:
+
+```js
+if (event.type === 'CARD_TRANSACTION.UPDATED' &&
+    event.data.status === 'EXCEPTION') {
+  alertOnCall(event.data);
+}
+```
+
+See [Reconciliation](/cards/transactions/reconciliation) for the
+underlying event model.
+
+## Idempotency & retries
+
+Webhook deliveries are at-least-once. Track processed `id` values and
+return `200` on duplicates, or return `409` and let Grid stop
+retrying. Both shapes are accepted by Grid's webhook infrastructure.

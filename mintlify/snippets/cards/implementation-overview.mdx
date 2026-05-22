@@ -1,0 +1,97 @@
+This page gives you a 10,000-ft view of an end-to-end Cards
+implementation. The detailed guides that follow cover concrete request
+shapes, edge cases, and step-by-step instructions.
+
+<Info>
+Cards sit on top of the same customer and internal-account primitives
+you already use for payouts. If you've already onboarded customers and
+funded internal accounts in Grid, the work to add cards is small.
+</Info>
+
+## Platform configuration
+
+You need an existing Grid platform configuration before you can issue
+cards. Cards do not require new webhook endpoints or new API
+credentials — they reuse what's already configured for the rest of
+Grid. You'll only need to:
+
+- Subscribe to the new card-specific webhook types (`CARD.STATE_CHANGE`,
+  `CARD.FUNDING_SOURCE_CHANGE`, `CARD_TRANSACTION.UPDATED`).
+- Confirm with your Lightspark contact that cards are enabled for your
+  platform — issuance requires an issuer-side onboarding.
+
+## Cardholder readiness
+
+A card can only be issued to a `Customer` with `kycStatus: APPROVED`.
+This is the same gate you use for Grid's other features. If the
+cardholder hasn't completed KYC, `POST /cards` returns
+`409 CARDHOLDER_KYC_NOT_APPROVED` — see
+[Cardholder setup](/cards/onboarding/cardholder-setup) for how to drive
+KYC to completion before issuing.
+
+## Funding sources
+
+Every card is bound to at least one `InternalAccount` as its funding
+source at issue time. Authorization Decisioning checks the source's
+balance before approving each auth, so:
+
+- Top up the funding source before you expect transactions.
+- Use existing funding instructions (ACH, SEPA, wires, stablecoin) the
+  same way you would for any other internal account.
+- See [Funding sources](/cards/card-management/funding-sources) for
+  rules around binding, unbinding, and the future multi-source path.
+
+## Issuing and lifecycle
+
+Issuance is a single `POST /cards` call. New cards start in
+`PENDING_ISSUE` while the issuer provisions them and transition to
+`ACTIVE` automatically — you observe both transitions via the
+`CARD.STATE_CHANGE` webhook. Day-to-day operational changes are:
+
+- `PATCH /cards/{id}` to freeze, unfreeze, or close permanently
+  (`state: "CLOSED"`).
+
+Both freeze and close use Grid's `202 → signed-retry` pattern (the same
+pattern as Embedded Wallet credential revocation). See
+[Freezing and closing cards](/cards/card-management/freezing-and-closing).
+
+## Transactions and reconciliation
+
+Each authorization on a card produces a parent `CardTransaction` row.
+Children (pulls, clearings, refunds) are reconciled against the parent
+and rolled up into `pullSummary`, `settlementSummary`, and
+`refundSummary` aggregates. The lifecycle status moves
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED → REFUNDED`, with
+`EXCEPTION` as the failure path for stuck post-hoc pulls.
+
+The full event model is covered in
+[Reconciliation](/cards/transactions/reconciliation).
+
+## Testing in Sandbox
+
+Sandbox cannot receive real authorizations from the card network, so
+it exposes three simulate endpoints that drive the same internal paths
+the issuer would call in production:
+
+- `POST /sandbox/cards/{id}/simulate/authorization`
+- `POST /sandbox/cards/{id}/simulate/clearing`
+- `POST /sandbox/cards/{id}/simulate/return`
+
+Outcomes are deterministic — driven by magic-value suffixes on the
+relevant id. See [Sandbox testing](/cards/platform-tools/sandbox-testing).
+
+## Enabling Production
+
+When you're ready to go live:
+
+- Complete card-issuer onboarding through your Lightspark contact.
+- Confirm webhook security, monitoring, and alerting cover the
+  `CARD.*` and `CARD_TRANSACTION.*` event types.
+- Build the `EXCEPTION` dashboard view from
+  `CARD_TRANSACTION.UPDATED` webhooks (filter by
+  `status: "EXCEPTION"`) and wire it into on-call alerting.
+
+<Check>
+Contact your Lightspark representative to enable Production card
+issuance and finalize issuer activations.
+</Check>
