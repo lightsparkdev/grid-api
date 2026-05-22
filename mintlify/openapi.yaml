@@ -17378,6 +17378,7 @@ components:
     PasskeyAssertion:
       title: Passkey Assertion
       type: object
+      description: WebAuthn assertion returned by `navigator.credentials.get()`. In sandbox, Grid validates the assertion against the registered passkey credential so the client-side flow can match production. In production, Turnkey validates the WebAuthn assertion.
       required:
         - credentialId
         - clientDataJson
