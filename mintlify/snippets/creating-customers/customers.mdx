@@ -8,7 +8,7 @@ export const Customers = ({ individualEnabled = true, businessEnabled = true, um
       There are two platform models for regulated and unregulated platforms.
 
       - Regulated institutions: Use your existing compliance processes. Create individual and business customers directly via `POST /customers`. The information you supply is used for beneficiary/counterparty compliance screening.
-      - Unregulated institutions: Grid performs KYC/KYB. Generate a hosted KYC/KYB link, redirect your customer to complete verification in their locale, receive a KYC result webhook. While KYC is pending, allow customers to finish account setup but block funding and money movement.
+      - Unregulated institutions: Grid performs KYC (individuals) and KYB (businesses). Choose either the **hosted link flow** (redirect or embed Grid's provider for verification) or **direct API onboarding** — for `INDIVIDUAL` customers, submit personal information through `POST /customers`; for `BUSINESS` customers, also register beneficial owners via `POST /beneficial-owners`. Use `POST /documents` for supporting documents and `POST /verifications` to submit for review. Both paths produce the same `kycStatus` transitions and emit the same `KYC_STATUS` webhooks. While verification is pending, allow customers to finish account setup but block funding and money movement.
 
       ## Customer Types
 
@@ -132,7 +132,7 @@ curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
 
 ### Onboarding customers (unregulated institutions)
 
-Unregulated institutions should initiate a hosted KYC/KYB flow in two steps: create the customer, then generate a hosted KYC link for that customer. While KYC is pending, allow account setup but block funding and money movement.
+Unregulated institutions can onboard customers either through a hosted KYC/KYB link or by submitting KYC data directly through the API. The hosted flow below covers the two-step link path; for direct API onboarding (beneficial owners, documents, verifications), see the [Configuring Customers guide](/payouts-and-b2b/onboarding/configuring-customers). While KYC is pending, allow account setup but block funding and money movement.
 
 1. Create the customer with `POST /customers`, supplying any information you already have. Only `customerType` is required.
 
