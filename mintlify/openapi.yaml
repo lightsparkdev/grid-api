@@ -9073,7 +9073,15 @@ components:
         - customerType
       properties:
         customerType:
-          $ref: '#/components/schemas/CustomerType'
+          allOf:
+            - $ref: '#/components/schemas/CustomerType'
+          description: |
+            Must equal the existing customer's `customerType`. This field is required
+            on PATCH because it discriminates the request body shape (INDIVIDUAL vs
+            BUSINESS); it is not the way to change customer type. Requests that
+            submit a different `customerType` than the existing record will be
+            rejected with `INVALID_INPUT`. To change the legal classification of a
+            customer, create a new customer and migrate its accounts.
         currencies:
           type: array
           items:
