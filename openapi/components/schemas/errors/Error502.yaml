@@ -1,0 +1,28 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    type: integer
+    enum:
+      - 502
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | VASP_UNREACHABLE | The counterparty VASP could not be reached (DNS, TLS, or network failure). Retryable. |
+      | VASP_INVALID_RESPONSE | The counterparty VASP returned a response that could not be parsed or violated the UMA protocol |
+    enum:
+      - VASP_UNREACHABLE
+      - VASP_INVALID_RESPONSE
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details
+    additionalProperties: true

@@ -1,0 +1,26 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    type: integer
+    enum:
+      - 405
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
+    enum:
+      - METHOD_NOT_ALLOWED
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details
+    additionalProperties: true

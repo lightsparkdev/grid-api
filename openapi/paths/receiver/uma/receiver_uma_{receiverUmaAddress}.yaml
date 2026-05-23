@@ -50,7 +50,9 @@ get:
           schema:
             $ref: ../../../components/schemas/errors/Error401.yaml
     '404':
-      description: UMA address not found
+      description: >-
+        UMA address not found. The address is well-formed but no receiver
+        exists at the counterparty VASP (`UMA_NOT_FOUND`).
       content:
         application/json:
           schema:
@@ -73,3 +75,13 @@ get:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error500.yaml
+    '502':
+      description: >-
+        Counterparty VASP failure. `VASP_UNREACHABLE` for network, DNS, or
+        TLS errors reaching the counterparty; `VASP_INVALID_RESPONSE` when
+        the counterparty returns a response that can't be parsed or violates
+        the UMA protocol. Both are retryable.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error502.yaml

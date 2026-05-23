@@ -22,6 +22,7 @@ properties:
       | TOKEN_NOT_FOUND | Token not found |
       | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
       | REFERENCE_NOT_FOUND | Reference not found |
+      | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
     enum:
       - TRANSACTION_NOT_FOUND
       - INVITATION_NOT_FOUND
@@ -31,6 +32,7 @@ properties:
       - TOKEN_NOT_FOUND
       - BULK_UPLOAD_JOB_NOT_FOUND
       - REFERENCE_NOT_FOUND
+      - UMA_NOT_FOUND
   message:
     type: string
     description: Error message
