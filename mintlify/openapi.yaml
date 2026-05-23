@@ -5792,8 +5792,15 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When this quote expires (typically 1-5 minutes after creation)
-          example: '2025-10-03T12:05:00Z'
+          description: |
+            Absolute UTC timestamp when the rate locked in this quote becomes invalid
+            and the quote can no longer be executed. The window is set by Grid based
+            on the rail and corridor: real-time / instant rails (Lightning, Spark,
+            USDC on Solana/Base/Polygon, SEPA Instant, RTP) typically expire in 1-5
+            minutes; rails with longer settlement guarantees may have longer windows.
+            Always rely on `expiresAt` rather than assuming a fixed window — re-fetch
+            the quote or create a new one when the timestamp is close.
+          example: '2026-05-22T22:05:00Z'
         source:
           $ref: '#/components/schemas/QuoteSource'
         destination:
