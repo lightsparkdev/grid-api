@@ -1,11 +1,11 @@
-<Warning>
-**Unregulated platforms** require full KYC/KYB verification of customers through hosted flows.
-</Warning>
+<Note>
+**Unregulated platforms** rely on Grid to run KYC for individuals and KYB for businesses. You can onboard customers either through the **hosted KYC/KYB link flow** below, or by **submitting customer data directly through the API**. Both paths produce the same `kycStatus` transitions and emit the same `KYC_STATUS` webhooks.
+</Note>
 
-Unregulated platforms must:
+Either path works for unregulated platforms:
 
-- **Hosted KYC Flow**: Use the hosted KYC link for complete identity verification
-- **Extended Review**: Customers may require manual review and approval in some cases
+- **Hosted flow**: Redirect customers to a Grid-hosted link (or embed the provider SDK) for identity verification. Best when you want Grid to handle the entire collection UX.
+- **Direct API onboarding**: Collect customer information in your own UI and submit it via the API. For `INDIVIDUAL` customers (KYC), personal information goes through `POST /customers`. For `BUSINESS` customers (KYB), you also register beneficial owners via `POST /beneficial-owners`. Submit for review with `POST /verifications`.
 
 ### Hosted KYC Link Flow
 
@@ -94,3 +94,216 @@ The response always includes `kycUrl` for the hosted flow. For providers that su
   On `APPROVED`, the customer is ready to transact — proceed with account setup and unlock funding. On `REJECTED` or `EXPIRED`, surface the appropriate next step (for example, regenerate the link or request manual review).
 </Step>
 </Steps>
+
+### Direct API Onboarding
+
+Prefer to collect identity information in your own UI and submit it to Grid yourself? Use the API directly instead of redirecting to a hosted link. The customer's `kycStatus` transitions the same way and you receive the same `KYC_STATUS` webhooks.
+
+The shape of the flow depends on the customer type:
+
+- **KYC (`INDIVIDUAL` customers)** — supply the customer's personal information through the customer endpoint. No beneficial owners are involved.
+- **KYB (`BUSINESS` customers)** — create the business customer, then register its beneficial owners, directors, and officers individually.
+
+<Tabs>
+<Tab title="KYC (individual)">
+<Steps>
+<Step title="Create the customer with personal information">
+  Call `POST /customers` with `customerType: INDIVIDUAL` and the personal information collected from the customer (legal name, date of birth, address, nationality, etc.). The returned `id` is the customer's Grid ID; `kycStatus` starts at `PENDING`.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerType": "INDIVIDUAL",
+      "platformCustomerId": "9f84e0c2a72c4fa",
+      "fullName": "Jane Doe",
+      "birthDate": "1985-06-15",
+      "nationality": "US",
+      "email": "jane.doe@example.com",
+      "address": {
+        "line1": "123 Pine Street",
+        "city": "Seattle",
+        "state": "WA",
+        "postalCode": "98101",
+        "country": "US"
+      }
+    }'
+  ```
+</Step>
+
+<Step title="Upload supporting documents (if requested)">
+  Some jurisdictions or currencies require an ID document or proof of address. Upload them with `POST /documents` using `multipart/form-data`, referencing the customer by `customerId`.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -F "customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+    -F "documentType=PASSPORT" \
+    -F "file=@./passport.jpg"
+  ```
+</Step>
+
+<Step title="Submit for verification">
+  Call `POST /verifications` to submit the customer for review. The response includes a `verificationStatus`. If anything is missing, `verificationStatus` is `RESOLVE_ERRORS` and the `errors` array describes exactly what to collect before retrying.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+    }'
+  ```
+
+  **Submitted successfully:**
+
+  ```json
+  {
+    "id": "Verification:019542f5-b3e7-1d02-0000-000000000002",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "verificationStatus": "IN_PROGRESS",
+    "errors": [],
+    "createdAt": "2025-10-03T12:00:00Z"
+  }
+  ```
+
+  **Blocked by missing data:**
+
+  ```json
+  {
+    "id": "Verification:019542f5-b3e7-1d02-0000-000000000001",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "verificationStatus": "RESOLVE_ERRORS",
+    "errors": [
+      {
+        "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "type": "MISSING_PROOF_OF_ADDRESS_DOCUMENT",
+        "acceptedDocumentTypes": ["PROOF_OF_ADDRESS"],
+        "reason": "Proof of address document is required"
+      }
+    ],
+    "createdAt": "2025-10-03T12:00:00Z"
+  }
+  ```
+</Step>
+
+<Step title="Track the decision">
+  Track terminal `kycStatus` transitions via the `KYC_STATUS` webhook (recommended) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
+</Step>
+</Steps>
+</Tab>
+
+<Tab title="KYB (business)">
+<Steps>
+<Step title="Create the business customer">
+  Call `POST /customers` with `customerType: BUSINESS` and the business information (legal name, registration number, tax ID, registered address).
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerType": "BUSINESS",
+      "platformCustomerId": "b87d2e4a9c13f5b",
+      "businessInfo": {
+        "legalName": "Acme Corporation",
+        "registrationNumber": "789012345",
+        "taxId": "123-45-6789"
+      },
+      "address": {
+        "line1": "456 Oak Avenue",
+        "city": "New York",
+        "state": "NY",
+        "postalCode": "10001",
+        "country": "US"
+      }
+    }'
+  ```
+</Step>
+
+<Step title="Register beneficial owners">
+  Register each beneficial owner, director, or officer with `POST /beneficial-owners`. Each one is verified individually with their own personal information.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/beneficial-owners" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "fullName": "Jane Doe",
+      "birthDate": "1985-06-15",
+      "role": "DIRECTOR",
+      "ownershipPercentage": 40
+    }'
+  ```
+</Step>
+
+<Step title="Upload supporting documents">
+  Upload business documents (registration, articles of incorporation) and any documents required for individual beneficial owners with `POST /documents`. Reference the company by `customerId` and each owner by `beneficialOwnerId`.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -F "beneficialOwnerId=BeneficialOwner:019542f5-b3e7-1d02-0000-00000000abcd" \
+    -F "documentType=PASSPORT" \
+    -F "file=@./owner-passport.jpg"
+  ```
+</Step>
+
+<Step title="Submit for verification">
+  Call `POST /verifications` to submit the business for review. The response includes a `verificationStatus`. If beneficial owners, fields, or documents are missing, `verificationStatus` is `RESOLVE_ERRORS` and the `errors` array tells you exactly what to collect — note that `resourceId` may point at either the customer or a specific beneficial owner.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+    }'
+  ```
+
+  **Blocked by missing data:**
+
+  ```json
+  {
+    "id": "Verification:019542f5-b3e7-1d02-0000-000000000001",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "verificationStatus": "RESOLVE_ERRORS",
+    "errors": [
+      {
+        "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "type": "MISSING_FIELD",
+        "field": "customer.address.line1",
+        "reason": "Business address line 1 is required"
+      },
+      {
+        "resourceId": "BeneficialOwner:019542f5-b3e7-1d02-0000-000000000002",
+        "type": "MISSING_FIELD",
+        "field": "personalInfo.birthDate",
+        "reason": "Date of birth is required for beneficial owners"
+      }
+    ],
+    "createdAt": "2025-10-03T12:00:00Z"
+  }
+  ```
+
+  **Submitted successfully:**
+
+  ```json
+  {
+    "id": "Verification:019542f5-b3e7-1d02-0000-000000000002",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "verificationStatus": "IN_PROGRESS",
+    "errors": [],
+    "createdAt": "2025-10-03T12:00:00Z"
+  }
+  ```
+</Step>
+
+<Step title="Track the decision">
+  Track terminal `kycStatus` transitions via the `KYC_STATUS` webhook (recommended) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
+</Step>
+</Steps>
+</Tab>
+</Tabs>

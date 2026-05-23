@@ -44,9 +44,7 @@ The on-ramp process consists of the following steps:
 
 ## Step 1: Customer Onboarding
 
-If your platform is a regulated financial institution that already has a KYC/KYB process in place,
-you can create a customer directly via the API. However, if your platform is not regulated, you must use the hosted KYC/KYB
-link flow to onboard your customers.
+If your platform is a regulated financial institution that already has a KYC/KYB process in place, you can create a customer directly via the API. Unregulated platforms can onboard customers either through the hosted KYC/KYB link flow or by submitting customer data directly through the API — for `INDIVIDUAL` customers (KYC), personal information goes through `POST /customers`; for `BUSINESS` customers (KYB), you also register beneficial owners via `POST /beneficial-owners`.
 
 <Tabs>
   <Tab title="Regulated Platforms">
