@@ -258,11 +258,10 @@ g -X POST -H 'Content-Type: application/json' \
    "$GRID_BASE_URL/quotes/$QUOTE_ID/execute" | jq '.status'
 ```
 
-> **Sandbox tip**: in sandbox mode you can skip the keypair / decrypt /
-> stamp dance entirely. Use the fixed value
-> `Grid-Wallet-Signature: sandbox-valid-signature`; any other value is
-> rejected with the same `INVALID_INPUT` shape a bad real stamp would
-> produce.
+> **Sandbox tip**: sandbox accepts the same decrypted session signing key and
+> `Grid-Wallet-Signature` stamp shape as production. The legacy fixed value
+> `Grid-Wallet-Signature: sandbox-valid-signature` is still accepted for
+> compatibility, but it does not exercise the production-shaped client path.
 
 ```bash
 # Poll — typically 60–180s for the full chain to reach COMPLETED.
