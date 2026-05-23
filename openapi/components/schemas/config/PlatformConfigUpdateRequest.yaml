@@ -5,6 +5,14 @@ properties:
     example: mycompany.com
   webhookEndpoint:
     type: string
+    format: uri
+    pattern: '^https://'
+    minLength: 9
+    description: |
+      HTTPS URL where Grid will POST webhook events. Must use the `https://` scheme;
+      `http://`, raw hostnames, and empty strings are rejected. Localhost and private
+      hostnames are not supported in production. To clear the webhook endpoint, omit
+      this field from the request rather than sending an empty string.
     example: https://api.mycompany.com/webhooks/uma
   supportedCurrencies:
     type: array
