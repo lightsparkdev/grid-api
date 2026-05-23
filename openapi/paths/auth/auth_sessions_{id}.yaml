@@ -21,9 +21,9 @@ delete:
     `id` does not match an active session — whether the session was
     never issued, was already revoked by a prior call, or has expired
     past its `expiresAt`. The response code reflects the resource
-    state, not an error in the client's flow: re-revoking an already-
-    revoked or expired session is safe and idempotent at the user
-    intent level.
+    state, not an error in the client's flow: re-revoking an
+    already-revoked or expired session is safe and idempotent at the
+    user intent level.
   operationId: revokeAuthSession
   tags:
     - Embedded Wallet Auth
