@@ -15,6 +15,15 @@ delete:
     then retry the same `DELETE` request with that full stamp as the
     `Grid-Wallet-Signature` header and the `requestId` echoed back as
     the `Request-Id` header. The signed retry returns `204`.
+
+
+    Sessions also expire on their own. `404` is returned whenever the
+    `id` does not match an active session — whether the session was
+    never issued, was already revoked by a prior call, or has expired
+    past its `expiresAt`. The response code reflects the resource
+    state, not an error in the client's flow: re-revoking an already-
+    revoked or expired session is safe and idempotent at the user
+    intent level.
   operationId: revokeAuthSession
   tags:
     - Embedded Wallet Auth
