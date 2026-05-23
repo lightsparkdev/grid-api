@@ -557,6 +557,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '405':
+          description: Method not allowed. Returned (as JSON, not HTML) when the request uses an HTTP method that is not supported on this path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
         '500':
           description: Internal service error
           content:
@@ -8929,6 +8935,33 @@ components:
         totalCount:
           type: integer
           description: Total number of customers matching the criteria (excluding pagination)
+    Error405:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 405
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
+          enum:
+            - METHOD_NOT_ALLOWED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     CustomerCreateRequest:
       type: object
       required:
@@ -8984,33 +9017,6 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
-    Error405:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 405
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
-          enum:
-            - METHOD_NOT_ALLOWED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     Error409:
       type: object
       required:
@@ -16075,7 +16081,7 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | VASP_UNREACHABLE | The counterparty VASP could not be reached (DNS, TLS, or network failure). Retryable. |
-            | VASP_INVALID_RESPONSE | The counterparty VASP returned a response that could not be parsed or violated the UMA protocol |
+            | VASP_INVALID_RESPONSE | The counterparty VASP returned a response that could not be parsed or violated the UMA protocol. Retryable. |
           enum:
             - VASP_UNREACHABLE
             - VASP_INVALID_RESPONSE
