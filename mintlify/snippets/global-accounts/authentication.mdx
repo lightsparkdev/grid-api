@@ -429,9 +429,9 @@ sequenceDiagram
   participant G as Grid
   participant E as Email
 
-  C->>IB: POST /my-backend/otp/register { email }
+  C->>IB: POST /my-backend/otp/register
   IB->>G: POST /auth/credentials { type: EMAIL_OTP, accountId }
-  G->>E: deliver OTP email
+  G->>E: deliver OTP email (to customer profile address)
   G-->>IB: 201 AuthMethod
   IB-->>C: { credentialId }
   E-->>C: OTP code
