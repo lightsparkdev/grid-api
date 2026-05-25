@@ -190,7 +190,7 @@ The shape of the flow depends on the customer type:
 </Step>
 
 <Step title="Track the decision">
-  Track terminal `kycStatus` transitions via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (recommended) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
+  Track terminal `kycStatus` transitions via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (recommended) or by polling `GET /customers/{customerId}`. `CUSTOMER.KYC_PENDING` also fires when the customer is submitted for review — subscribe to it if you want to surface an "under review" state. On `APPROVED`, unlock funding and money movement.
 </Step>
 </Steps>
 </Tab>
@@ -317,7 +317,7 @@ The shape of the flow depends on the customer type:
 </Step>
 
 <Step title="Track the decision">
-  Track terminal `kycStatus` transitions via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (recommended; use the `CUSTOMER.KYB_*` siblings for business customers) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
+  Track terminal `kycStatus` transitions via the `CUSTOMER.KYB_APPROVED` / `CUSTOMER.KYB_REJECTED` webhook (recommended) or by polling `GET /customers/{customerId}`. `CUSTOMER.KYB_PENDING` also fires when the business is submitted for review — subscribe to it if you want to surface an "under review" state. On `APPROVED`, unlock funding and money movement.
 </Step>
 </Steps>
 </Tab>
