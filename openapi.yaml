@@ -2214,12 +2214,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-        '502':
-          description: Counterparty VASP failure. `VASP_UNREACHABLE` for network, DNS, or TLS errors reaching the counterparty; `VASP_INVALID_RESPONSE` when the counterparty returns a response that can't be parsed or violates the UMA protocol. Both are retryable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error502'
   /receiver/external-account/{accountId}:
     get:
       summary: Look up an external account for payment
@@ -16056,35 +16050,6 @@ components:
             | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
           enum:
             - UNSUPPORTED_UMA_VERSION
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
-    Error502:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 502
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | VASP_UNREACHABLE | The counterparty VASP could not be reached (DNS, TLS, or network failure). Retryable. |
-            | VASP_INVALID_RESPONSE | The counterparty VASP returned a response that could not be parsed or violated the UMA protocol. Retryable. |
-          enum:
-            - VASP_UNREACHABLE
-            - VASP_INVALID_RESPONSE
         message:
           type: string
           description: Error message

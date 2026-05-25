@@ -75,13 +75,3 @@ get:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error500.yaml
-    '502':
-      description: >-
-        Counterparty VASP failure. `VASP_UNREACHABLE` for network, DNS, or
-        TLS errors reaching the counterparty; `VASP_INVALID_RESPONSE` when
-        the counterparty returns a response that can't be parsed or violates
-        the UMA protocol. Both are retryable.
-      content:
-        application/json:
-          schema:
-            $ref: ../../../components/schemas/errors/Error502.yaml
