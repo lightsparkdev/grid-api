@@ -119,7 +119,7 @@ function displayPaymentInstructions(quote) {
     bankName: instructions.accountOrWalletInfo.bankName,
     accountNumber: instructions.accountOrWalletInfo.accountNumber,
     routingNumber: instructions.accountOrWalletInfo.routingNumber,
-    referenceCode: instructions.reference, // User must include this
+    referenceCode: instructions.accountOrWalletInfo.reference, // User must include this
     expiresAt: quote.expiresAt,
     willReceive: `${quote.totalReceivingAmount / 100000000} BTC`,
   };

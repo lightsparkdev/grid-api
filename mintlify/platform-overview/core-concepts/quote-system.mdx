@@ -399,9 +399,9 @@ Fees are deducted from the sending amount, so:
 
     ```javascript
     app.post('/webhooks/grid', (req, res) => {
-      const {transaction, type} = req.body;
+      const {data: transaction, type} = req.body;
 
-      if (type === 'OUTGOING_PAYMENT' && transaction.quoteId) {
+      if (type.startsWith('OUTGOING_PAYMENT.') && transaction.quoteId) {
         // Quote was executed, transaction created
         updateCustomerUI(transaction);
       }

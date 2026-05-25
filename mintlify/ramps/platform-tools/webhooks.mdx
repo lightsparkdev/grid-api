@@ -306,20 +306,20 @@ if (type === "INTERNAL_ACCOUNT.BALANCE_UPDATED") {
 
 <AccordionGroup>
 <Accordion title="Process webhooks idempotently">
-  Handle duplicate webhooks gracefully using webhook IDs:
-  
+  Handle duplicate webhooks gracefully using the envelope `id`:
+
   ```javascript
-  const { webhookId } = req.body;
-  
+  const { id: webhookId } = req.body;
+
   // Check if already processed
   const existing = await db.webhooks.findUnique({ where: { webhookId } });
   if (existing) {
     return res.status(200).json({ received: true });
   }
-  
+
   // Process webhook
   await processRampWebhook(req.body);
-  
+
   // Record webhook ID
   await db.webhooks.create({
     data: { webhookId, processedAt: new Date() }
@@ -328,11 +328,11 @@ if (type === "INTERNAL_ACCOUNT.BALANCE_UPDATED") {
 </Accordion>
 
 <Accordion title="Use transaction IDs for deduplication">
-  Transaction IDs are unique identifiers for conversions:
-  
+  The transaction lives on `data` and its `id` uniquely identifies the conversion:
+
   ```javascript
-  const { transaction } = req.body;
-  
+  const { data: transaction } = req.body;
+
   // Upsert transaction (handles duplicates)
   await db.transactions.upsert({
     where: { gridTransactionId: transaction.id },
