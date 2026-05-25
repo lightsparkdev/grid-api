@@ -1,5 +1,5 @@
 <Note>
-**Unregulated platforms** rely on Grid to run KYC for individuals and KYB for businesses. You can onboard customers either through the **hosted KYC/KYB link flow** below, or by **submitting customer data directly through the API**. Both paths produce the same `kycStatus` transitions and emit the same `KYC_STATUS` webhooks.
+**Unregulated platforms** rely on Grid to run KYC for individuals and KYB for businesses. You can onboard customers either through the **hosted KYC/KYB link flow** below, or by **submitting customer data directly through the API**. Both paths produce the same `kycStatus` transitions and emit the same `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` / `CUSTOMER.KYC_PENDING` (and `CUSTOMER.KYB_*` equivalents) webhooks.
 </Note>
 
 Either path works for unregulated platforms:
@@ -86,18 +86,18 @@ The response always includes `kycUrl` for the hosted flow. For providers that su
 <Step title="Track the decision">
   Reaching your `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision in one of two ways:
 
-  - **Webhook (recommended):** Subscribe to `KYC_STATUS` to be notified when the customer reaches a terminal status (`APPROVED`, `REJECTED`, `EXPIRED`, or `CANCELED`).
+  - **Webhook (recommended):** Subscribe to `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` (and `CUSTOMER.KYB_APPROVED` / `CUSTOMER.KYB_REJECTED` for business customers) to be notified when the customer reaches a terminal status (`APPROVED` or `REJECTED`).
   - **Polling:** Call `GET /customers/{customerId}` and inspect `kycStatus`.
 </Step>
 
 <Step title="Handle completion">
-  On `APPROVED`, the customer is ready to transact — proceed with account setup and unlock funding. On `REJECTED` or `EXPIRED`, surface the appropriate next step (for example, regenerate the link or request manual review).
+  On `APPROVED`, the customer is ready to transact — proceed with account setup and unlock funding. On `REJECTED`, surface the appropriate next step (for example, regenerate the link or request manual review).
 </Step>
 </Steps>
 
 ### Direct API Onboarding
 
-Prefer to collect identity information in your own UI and submit it to Grid yourself? Use the API directly instead of redirecting to a hosted link. The customer's `kycStatus` transitions the same way and you receive the same `KYC_STATUS` webhooks.
+Prefer to collect identity information in your own UI and submit it to Grid yourself? Use the API directly instead of redirecting to a hosted link. The customer's `kycStatus` transitions the same way and you receive the same `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` / `CUSTOMER.KYC_PENDING` (and `CUSTOMER.KYB_*` equivalents) webhooks.
 
 The shape of the flow depends on the customer type:
 
@@ -138,8 +138,9 @@ The shape of the flow depends on the customer type:
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
     -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-    -F "customerId=Customer:019542f5-b3e7-1d02-0000-000000000001" \
+    -F "documentHolder=Customer:019542f5-b3e7-1d02-0000-000000000001" \
     -F "documentType=PASSPORT" \
+    -F "country=US" \
     -F "file=@./passport.jpg"
   ```
 </Step>
@@ -189,7 +190,7 @@ The shape of the flow depends on the customer type:
 </Step>
 
 <Step title="Track the decision">
-  Track terminal `kycStatus` transitions via the `KYC_STATUS` webhook (recommended) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
+  Track terminal `kycStatus` transitions via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (recommended) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
 </Step>
 </Steps>
 </Tab>
@@ -231,10 +232,23 @@ The shape of the flow depends on the customer type:
     -H "Content-Type: application/json" \
     -d '{
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "fullName": "Jane Doe",
-      "birthDate": "1985-06-15",
-      "role": "DIRECTOR",
-      "ownershipPercentage": 40
+      "roles": ["DIRECTOR"],
+      "ownershipPercentage": 40,
+      "personalInfo": {
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "birthDate": "1985-06-15",
+        "nationality": "US",
+        "address": {
+          "line1": "123 Pine Street",
+          "city": "Seattle",
+          "state": "WA",
+          "postalCode": "98101",
+          "country": "US"
+        },
+        "idType": "SSN",
+        "identifier": "123-45-6789"
+      }
     }'
   ```
 </Step>
@@ -245,8 +259,9 @@ The shape of the flow depends on the customer type:
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
     -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-    -F "beneficialOwnerId=BeneficialOwner:019542f5-b3e7-1d02-0000-00000000abcd" \
+    -F "documentHolder=BeneficialOwner:019542f5-b3e7-1d02-0000-00000000abcd" \
     -F "documentType=PASSPORT" \
+    -F "country=US" \
     -F "file=@./owner-passport.jpg"
   ```
 </Step>
@@ -302,7 +317,7 @@ The shape of the flow depends on the customer type:
 </Step>
 
 <Step title="Track the decision">
-  Track terminal `kycStatus` transitions via the `KYC_STATUS` webhook (recommended) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
+  Track terminal `kycStatus` transitions via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (recommended; use the `CUSTOMER.KYB_*` siblings for business customers) or by polling `GET /customers/{customerId}`. On `APPROVED`, unlock funding and money movement.
 </Step>
 </Steps>
 </Tab>

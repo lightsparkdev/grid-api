@@ -162,7 +162,7 @@ In this guide, the entities map as follows:
   {
     "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
     "exchangeRate": 16.85,
-    "fees": { "amount": 50, "currency": { "code": "USD", "decimals": 2 } },
+    "feesIncluded": 50,
     "paymentInstructions": [
       {
           "accountOrWalletInfo": {
@@ -201,6 +201,18 @@ In this guide, the entities map as follows:
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
     "status": "PROCESSING",
     "type": "OUTGOING",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "alice_user_id",
+    "source": {
+      "sourceType": "REALTIME_FUNDING",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+    },
+    "destination": {
+      "destinationType": "UMA_ADDRESS",
+      "umaAddress": "$bob@receiver.example"
+    },
+    "sentAmount": { "amount": 10000, "currency": { "code": "USDC", "decimals": 6 } },
+    "receivedAmount": { "amount": 9706, "currency": { "code": "MXN", "decimals": 2 } },
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
   }
   ```
@@ -210,18 +222,18 @@ In this guide, the entities map as follows:
   Webhook event:
   ```json
   {
-    "transaction": {
+    "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+    "type": "OUTGOING_PAYMENT.COMPLETED",
+    "timestamp": "2025-01-15T14:32:00Z",
+    "data": {
       "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
       "status": "COMPLETED",
       "type": "OUTGOING",
-      "senderUmaAddress": "$alice@yourapp.example",
+      "sentAmount": { "amount": 10000, "currency": { "code": "USDC", "decimals": 6 } },
       "receivedAmount": { "amount": 9706, "currency": { "code": "MXN", "decimals": 2 } },
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
-    },
-    "timestamp": "2025-01-15T14:32:00Z",
-    "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
-    "type": "OUTGOING_PAYMENT"
+      "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
+    }
   }
   ```
 

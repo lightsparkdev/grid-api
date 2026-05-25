@@ -112,7 +112,7 @@ Registration only binds the passkey to the account — it doesn't issue a sessio
       }'
     ```
 
-    Grid verifies the attestation and replies `201` with the new `AuthMethod:...` id plus the first-authentication `challenge`, `requestId`, and `expiresAt`. Persist the auth method id against the customer — you'll pass it to `/challenge` and `/verify` whenever the customer needs to sign.
+    Grid verifies the attestation and replies `201` with the new `AuthMethod:...` id. Persist the auth method id against the customer — to authenticate later you'll call `POST /auth/credentials/{id}/challenge` followed by `/verify`.
   </Step>
 </Steps>
 
@@ -208,12 +208,12 @@ curl -X POST "$GRID_BASE_URL/quotes" \
   "createdAt": "2026-04-19T12:05:00Z",
   "expiresAt": "2026-04-19T12:10:00Z",
   "source": {
-    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-    "currency": "USDB"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "USD"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": { "code": "USDB", "name": "USDB", "decimals": 6 },
   "receivingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
@@ -262,7 +262,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
       "createdAt": "2026-04-19T12:00:01Z",
       "updatedAt": "2026-04-19T12:05:00Z",
       "challenge": "VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW",
-      "requestId": "7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
+      "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
       "expiresAt": "2026-04-19T12:10:00Z"
     }
     ```
@@ -295,7 +295,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/verify" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
-      -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+      -H "Request-Id: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
       -d '{
         "type": "PASSKEY",
         "assertion": {

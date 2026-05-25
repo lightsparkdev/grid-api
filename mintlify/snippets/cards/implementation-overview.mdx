@@ -27,7 +27,7 @@ Grid. You'll only need to:
 A card can only be issued to a `Customer` with `kycStatus: APPROVED`.
 This is the same gate you use for Grid's other features. If the
 cardholder hasn't completed KYC, `POST /cards` returns
-`409 CARDHOLDER_KYC_NOT_APPROVED` — see
+`400 CARDHOLDER_KYC_NOT_APPROVED` — see
 [Cardholder setup](/cards/onboarding/cardholder-setup) for how to drive
 KYC to completion before issuing.
 

@@ -53,7 +53,7 @@ Session revocation uses the same <a href="authentication#the-signed-retry-patter
     {
       "type": "PASSKEY",
       "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
-      "requestId": "2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22",
+      "requestId": "Request:2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22",
       "expiresAt": "2026-04-19T12:10:00Z"
     }
     ```
@@ -66,7 +66,7 @@ Session revocation uses the same <a href="authentication#the-signed-retry-patter
     curl -X DELETE "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
-      -H "Request-Id: 2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
+      -H "Request-Id: Request:2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
     ```
 
     **Response:** `204 No Content`.

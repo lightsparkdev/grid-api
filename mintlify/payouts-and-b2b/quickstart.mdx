@@ -112,7 +112,7 @@ The hosted interface handles document collection, verification checks, and compl
 </Info>
 
 ### Track the decision
-Reaching the `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision via the `KYC_STATUS` webhook (recommended) or by polling `GET /customers/{customerId}` and inspecting `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
+Reaching the `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (use the `CUSTOMER.KYB_*` siblings for business customers) — recommended — or by polling `GET /customers/{customerId}` and inspecting `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
 ## Get the Customer's Internal Account
 
@@ -194,7 +194,10 @@ During the funding process, you'll receive transaction status update webhooks.
 **Webhook Notification:**
 ```json
 {
-  "transaction": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "INCOMING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T14:32:00Z",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000010",
     "status": "COMPLETED",
     "type": "INCOMING",
@@ -211,10 +214,7 @@ During the funding process, you'll receive transaction status update webhooks.
     "settledAt": "2025-10-03T14:30:00Z",
     "createdAt": "2025-10-03T14:25:00Z",
     "description": "Internal account funding"
-  },
-  "timestamp": "2025-10-03T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-  "type": "INCOMING_PAYMENT"
+  }
 }
 ```
 
@@ -313,17 +313,17 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 **Response:**
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PENDING",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "MXN"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -366,17 +366,17 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
 **Response:**
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PROCESSING",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "MXN"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -403,7 +403,10 @@ The quote status changes to `PROCESSING` and the transfer is initiated. You'll r
 **Completion Webhook:**
 ```json
 {
-  "transaction": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000025",
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T15:03:00Z",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
     "status": "COMPLETED",
     "type": "OUTGOING",
@@ -431,10 +434,7 @@ The quote status changes to `PROCESSING` and the transfer is initiated. You'll r
     "description": "Payment to Maria Garcia for services",
     "exchangeRate": 17.25,
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
-  },
-  "timestamp": "2025-10-03T15:03:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000025",
-  "type": "OUTGOING_PAYMENT"
+  }
 }
 ```
 

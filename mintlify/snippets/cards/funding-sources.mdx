@@ -29,7 +29,7 @@ Each source must:
   one currency.
 
 If any source fails these checks, the request is rejected with
-`409 FUNDING_SOURCE_INELIGIBLE`.
+`400 FUNDING_SOURCE_INELIGIBLE`.
 
 ## Replacing the binding
 
@@ -62,7 +62,7 @@ post-change `Card` resource.
 
 | Status | Code | What it means |
 |--------|------|---------------|
-| 409 | `FUNDING_SOURCE_INELIGIBLE` | A supplied account doesn't belong to the cardholder or isn't denominated in the card's currency. |
+| 400 | `FUNDING_SOURCE_INELIGIBLE` | A supplied account doesn't belong to the cardholder or isn't denominated in the card's currency. |
 | 409 | `CARD_NOT_MUTABLE` | The card is `CLOSED`. |
 | 400 | `INVALID_INPUT` | The `fundingSources` array is empty (a card must have at least one source). |
 

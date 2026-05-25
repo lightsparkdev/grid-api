@@ -181,8 +181,8 @@ const btcAccount = accounts.data.find(
 if (btcAccount.balance.amount >= requiredSats) {
   // Create quote to convert BTC to fiat
   const quote = await createQuote({
-    source: { accountId: btcAccount.id },
-    destination: { accountId: bankAccountId, currency: "USD" },
+    source: { sourceType: "ACCOUNT", accountId: btcAccount.id },
+    destination: { destinationType: "ACCOUNT", accountId: bankAccountId },
     lockedCurrencySide: "SENDING",
     lockedCurrencyAmount: requiredSats,
   });
