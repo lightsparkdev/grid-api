@@ -71,8 +71,8 @@ cross your servers.
 
 | Status | Code | What it means |
 |--------|------|---------------|
-| 409 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
-| 409 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
+| 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
+| 400 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
 | 400 | `INVALID_INPUT` | Validation failure on the request body. |
 
 ## Changing funding sources later

@@ -20,7 +20,8 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/config' \
       "currencyCode": "USD",
       "minAmount": 100,
       "maxAmount": 1000000,
-      "enabledTransactionTypes": ["OUTGOING", "INCOMING"]
+      "enabledTransactionTypes": ["OUTGOING", "INCOMING"],
+      "requiredCounterpartyFields": []
     }
   ],
   "createdAt": "2023-06-15T12:30:45Z",
@@ -49,6 +50,7 @@ curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
         "minAmount": 100,
         "maxAmount": 1000000,
         "enabledTransactionTypes": ["OUTGOING", "INCOMING"],
+        "requiredCounterpartyFields": []
       }
     ]
   }'
@@ -63,7 +65,8 @@ curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
       "currencyCode": "USD",
       "minAmount": 100,
       "maxAmount": 1000000,
-      "enabledTransactionTypes": ["OUTGOING", "INCOMING"]
+      "enabledTransactionTypes": ["OUTGOING", "INCOMING"],
+      "requiredCounterpartyFields": []
     }
   ],
   "createdAt": "2023-06-15T12:30:45Z",
@@ -96,9 +99,10 @@ The `supportedCurrencies` array allows you to define settings for each currency 
 - `minAmount`: (Integer, required) Minimum transaction amount in the smallest unit of the currency.
 - `maxAmount`: (Integer, required) Maximum transaction amount in the smallest unit of the currency.
 - `enabledTransactionTypes`: (Array, optional) Specifies which transaction types are allowed (e.g., `["OUTGOING", "INCOMING"]`).
+- `requiredCounterpartyFields`: (Array, required) Counterparty PII fields required for transactions in this currency. For non-UMA platforms with no PII requirements, send an empty array (`[]`).
 
 <Note>
-For payouts payments, you do not need UMA-specific fields like `providerRequiredCustomerFields` or `providerRequiredCounterpartyCustomerFields`. The configuration is simpler and focuses on basic currency requirements.
+For payouts payments, you do not need UMA-specific fields like `providerRequiredCustomerFields` or `providerRequiredCounterpartyCustomerFields`. `requiredCounterpartyFields` itself is structurally required — send `[]` when you don't need to collect counterparty PII.
 </Note>
 
 ## Verify Configuration

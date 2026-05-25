@@ -72,11 +72,6 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -d '{
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "BTC",
-    "beneficiary": {
-      "counterPartyType": "INDIVIDUAL",
-      "fullName": "John Doe",
-      "email": "john@example.com"
-    },
     "accountInfo": {
       "accountType": "SPARK_WALLET",
       "address": "spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu"
@@ -96,11 +91,6 @@ const externalAccount = await fetch(
     body: JSON.stringify({
       customerId: "Customer:019542f5-b3e7-1d02-0000-000000000001",
       currency: "BTC",
-      beneficiary: {
-        counterPartyType: "INDIVIDUAL",
-        fullName: "John Doe",
-        email: "john@example.com",
-      },
       accountInfo: {
         accountType: "SPARK_WALLET",
         address: sparkAddress,
@@ -129,11 +119,6 @@ response = requests.post(
     json={
         'customerId': 'Customer:019542f5-b3e7-1d02-0000-000000000001',
         'currency': 'BTC',
-        'beneficiary': {
-            'counterPartyType': 'INDIVIDUAL',
-            'fullName': 'John Doe',
-            'email': 'john@example.com'
-        },
         'accountInfo': {
             'accountType': 'SPARK_WALLET',
             'address': spark_address
