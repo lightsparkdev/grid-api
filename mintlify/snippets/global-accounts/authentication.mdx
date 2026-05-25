@@ -452,6 +452,10 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
   }'
 ```
 
+<Note>
+The request body carries only `type` and `accountId` — there is no `email` field. Grid sends the OTP to the email address on the customer profile that owns this internal account (the `email` field from `POST /customers`). That same address is returned as `nickname` on the response.
+</Note>
+
 **Response (201):**
 
 ```json
