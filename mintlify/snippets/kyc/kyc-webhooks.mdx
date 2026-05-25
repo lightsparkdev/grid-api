@@ -86,6 +86,23 @@ app.post('/webhooks/kyc-status', async (req, res) => {
       await markCustomerUnderReview(data.id);
       break;
 
+    case 'CUSTOMER.KYB_APPROVED':
+      // Business customer decision: activate
+      await activateCustomer(data.id);
+      await sendWelcomeEmail(data.id);
+      break;
+
+    case 'CUSTOMER.KYB_REJECTED':
+      // Business customer decision: notify
+      await notifySupport(data.id, 'KYB_REJECTED');
+      await sendRejectionEmail(data.id);
+      break;
+
+    case 'CUSTOMER.KYB_PENDING':
+      // Intermediate: business customer submitted for review
+      await markCustomerUnderReview(data.id);
+      break;
+
     default:
       // Log unexpected types
       console.log(`Unexpected webhook type ${type} for customer ${data.id}`);
