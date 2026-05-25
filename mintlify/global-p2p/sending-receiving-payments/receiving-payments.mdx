@@ -136,11 +136,11 @@ If you choose the asynchronous path, you must call the approve/reject endpoint w
 
 ## Receive completion notification and credit
 
-When the payment completes, you'll receive another webhook notifying you of the completion:
+When the payment completes, you'll receive another webhook notifying you of the completion. The envelope `id` is distinct from the `INCOMING_PAYMENT.PENDING` delivery above — use it for idempotent deduplication.
 
 ```json
 {
-  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000008",
   "type": "INCOMING_PAYMENT.COMPLETED",
   "timestamp": "2023-08-15T14:32:00Z",
   "data": {
