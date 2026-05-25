@@ -86,7 +86,7 @@ The response always includes `kycUrl` for the hosted flow. For providers that su
 <Step title="Track the decision">
   Reaching your `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision in one of two ways:
 
-  - **Webhook (recommended):** Subscribe to `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` (and `CUSTOMER.KYB_APPROVED` / `CUSTOMER.KYB_REJECTED` for business customers) to be notified when the customer reaches a terminal status (`APPROVED` or `REJECTED`).
+  - **Webhook (recommended):** Subscribe to `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` (and `CUSTOMER.KYB_APPROVED` / `CUSTOMER.KYB_REJECTED` for business customers) to be notified when the customer reaches a terminal status. `CUSTOMER.KYC_PENDING` (and the `KYB_PENDING` sibling) also fires when the customer is submitted for review — subscribe to it as well if you want to surface an "under review" state to the customer.
   - **Polling:** Call `GET /customers/{customerId}` and inspect `kycStatus`.
 </Step>
 

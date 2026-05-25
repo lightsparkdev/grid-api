@@ -61,8 +61,10 @@ The full customer resource object, same as the corresponding `GET /customers/{id
 
 <Accordion title="Webhook Implementation Example">
 ```javascript
-// Example webhook handler for KYC status updates
-// Note: Only final states trigger webhook notifications
+// Example webhook handler for KYC status updates.
+// CUSTOMER.KYC_APPROVED and CUSTOMER.KYC_REJECTED are terminal decisions;
+// CUSTOMER.KYC_PENDING is an intermediate signal that the customer has been
+// submitted for review (useful for surfacing "we're still reviewing" UI).
 app.post('/webhooks/kyc-status', async (req, res) => {
   const { type, data } = req.body;
 
@@ -77,6 +79,11 @@ app.post('/webhooks/kyc-status', async (req, res) => {
       // Notify support and customer
       await notifySupport(data.id, 'KYC_REJECTED');
       await sendRejectionEmail(data.id);
+      break;
+
+    case 'CUSTOMER.KYC_PENDING':
+      // Intermediate: customer submitted for review, no decision yet
+      await markCustomerUnderReview(data.id);
       break;
 
     default:

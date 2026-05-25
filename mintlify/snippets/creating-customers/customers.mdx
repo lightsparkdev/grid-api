@@ -174,7 +174,7 @@ Response:
 
 3. Redirect the customer to `kycUrl`, or pass the optional `token` to the provider's SDK to embed verification directly in your UI.
 4. After the customer is redirected back to your app, they can continue with account setup until KYC review is complete.
-5. Track the decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` / `CUSTOMER.KYC_PENDING` webhooks (use the `CUSTOMER.KYB_*` siblings for business customers), or poll `GET /customers/{customerId}` and inspect `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
+5. Track the decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhooks (use the `CUSTOMER.KYB_*` siblings for business customers), or poll `GET /customers/{customerId}` and inspect `kycStatus`. `CUSTOMER.KYC_PENDING` is an intermediate signal that the customer is under review — subscribe to it if you want to surface that state, but treat only `APPROVED` / `REJECTED` as the decision. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
 Webhook example:
 ```json
