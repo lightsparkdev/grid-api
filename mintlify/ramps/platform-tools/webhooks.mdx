@@ -105,17 +105,23 @@ Grid sends webhooks for key events in the ramp lifecycle:
   </Warning>
 </Tab>
 
-<Tab title="KYC_STATUS">
-  Sent when customer KYC verification completes (required before conversions).
+<Tab title="CUSTOMER.KYC_*">
+  Sent when customer KYC verification completes (required before conversions). Business customers emit the `CUSTOMER.KYB_*` siblings.
   
   ```json
   {
-    "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-    "type": "KYC_STATUS",
+    "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+    "type": "CUSTOMER.KYC_APPROVED",
     "timestamp": "2025-10-03T14:32:00Z",
-    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-    "kycStatus": "APPROVED",
-    "platformCustomerId": "user_12345"
+    "data": {
+      "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "platformCustomerId": "user_12345",
+      "customerType": "INDIVIDUAL",
+      "kycStatus": "APPROVED",
+      "fullName": "Jane Doe",
+      "createdAt": "2025-07-21T17:32:28Z",
+      "updatedAt": "2025-10-03T14:32:00Z"
+    }
   }
   ```
   

@@ -44,12 +44,11 @@ Unique identifier for this webhook delivery. Use this for idempotency to prevent
 </ResponseField>
 
 <ResponseField name="type" type="string" required>
-Status-specific event type. KYC webhooks use `CUSTOMER.*` types:
-- `CUSTOMER.KYC_APPROVED`: Customer verification completed successfully
-- `CUSTOMER.KYC_REJECTED`: Customer verification was rejected
-- `CUSTOMER.KYC_SUBMITTED`: KYC verification was initially submitted
-- `CUSTOMER.KYC_MANUALLY_APPROVED`: Customer was manually approved by platform
-- `CUSTOMER.KYC_MANUALLY_REJECTED`: Customer was manually rejected by platform
+Status-specific event type. KYC/KYB webhooks use `CUSTOMER.*` types:
+- `CUSTOMER.KYC_APPROVED`: Individual customer verification completed successfully
+- `CUSTOMER.KYC_REJECTED`: Individual customer verification was rejected
+- `CUSTOMER.KYC_PENDING`: Individual customer is awaiting review
+- `CUSTOMER.KYB_APPROVED` / `CUSTOMER.KYB_REJECTED` / `CUSTOMER.KYB_PENDING`: business equivalents (only fires for `customerType: BUSINESS`)
 </ResponseField>
 
 <ResponseField name="data" type="object" required>
@@ -57,7 +56,7 @@ The full customer resource object, same as the corresponding `GET /customers/{id
 </ResponseField>
 
 <Note>
-Intermediate states like `PENDING_REVIEW` do not trigger webhook notifications. Only final resolution states will send webhook notifications.
+`CUSTOMER.KYC_PENDING` (or `CUSTOMER.KYB_PENDING`) fires when a customer enters `kycStatus: PENDING` (for example, after they are submitted for review). Final outcomes use `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` (and the `CUSTOMER.KYB_*` siblings for business customers).
 </Note>
 
 <Accordion title="Webhook Implementation Example">
@@ -77,18 +76,6 @@ app.post('/webhooks/kyc-status', async (req, res) => {
     case 'CUSTOMER.KYC_REJECTED':
       // Notify support and customer
       await notifySupport(data.id, 'KYC_REJECTED');
-      await sendRejectionEmail(data.id);
-      break;
-
-    case 'CUSTOMER.KYC_MANUALLY_APPROVED':
-      // Handle manual approval
-      await activateCustomer(data.id);
-      await sendWelcomeEmail(data.id);
-      break;
-
-    case 'CUSTOMER.KYC_MANUALLY_REJECTED':
-      // Handle manual rejection
-      await notifySupport(data.id, 'KYC_MANUALLY_REJECTED');
       await sendRejectionEmail(data.id);
       break;
 

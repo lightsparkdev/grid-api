@@ -112,7 +112,7 @@ The hosted interface handles document collection, verification checks, and compl
 </Info>
 
 ### Track the decision
-Reaching the `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision via the `KYC_STATUS` webhook (recommended) or by polling `GET /customers/{customerId}` and inspecting `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
+Reaching the `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (use the `CUSTOMER.KYB_*` siblings for business customers) — recommended — or by polling `GET /customers/{customerId}` and inspecting `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
 ## Get the Customer's Internal Account
 
