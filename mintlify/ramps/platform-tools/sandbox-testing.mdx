@@ -344,11 +344,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:empty_btc"
     },
     "destination": {
-      "accountId": "ExternalAccount:bank001",
-      "currency": "USD"
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:bank001"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000000
