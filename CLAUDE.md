@@ -55,7 +55,7 @@ For the **USDB embedded wallet → USD bank offramp** flow, see [`scripts/README
 
 Both are wrapped by [`scripts/embedded-wallet-sign.js`](./scripts/embedded-wallet-sign.js) (uses `@turnkey/crypto` + `@turnkey/api-key-stamper`). One-time setup: `cd scripts && npm install`.
 
-**Important gotcha**: the USDB embedded wallet's Turnkey sub-org and Spark network wallet aren't fully bootstrapped when a customer is created. **Register an `EMAIL_OTP` auth credential against the USDB account before the first quote**, otherwise on-ramp quotes fail with `to_network INTERNAL_FUNDED_FIAT does not support USDB`. This is documented in `scripts/README.md` step 1.4.
+**Important gotcha**: the USDB embedded wallet's Turnkey sub-org and Spark network wallet aren't fully bootstrapped when a customer is created. **Verify the auto-created `EMAIL_OTP` auth credential on the USDB account before the first quote**, otherwise on-ramp quotes fail with `to_network INTERNAL_FUNDED_FIAT does not support USDB`. This is documented in `scripts/README.md` step 1.4.
 
 Read `scripts/README.md` whenever the task involves Turnkey signing, offramp, or `Grid-Wallet-Signature`.
 

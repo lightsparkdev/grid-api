@@ -112,7 +112,7 @@ Registration only binds the passkey to the account — it doesn't issue a sessio
       }'
     ```
 
-    Grid verifies the attestation and replies `201` with the new `AuthMethod:...` id plus the first-authentication `challenge`, `requestId`, and `expiresAt`. Persist the auth method id against the customer — you'll pass it to `/challenge` and `/verify` whenever the customer needs to sign.
+    Grid verifies the attestation and replies `201` with the new `AuthMethod:...` id. Persist the auth method id against the customer — you'll pass it to `/challenge` and `/verify` whenever the customer needs to sign.
   </Step>
 </Steps>
 
