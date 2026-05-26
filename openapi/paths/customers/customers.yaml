@@ -89,8 +89,19 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '405':
+      description: >-
+        Method not allowed. Returned (as JSON, not HTML) when the request
+        uses an HTTP method that is not supported on this path.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error405.yaml
     '409':
-      description: Conflict - Customer with the UMA address already exists
+      description: >-
+        Conflict. `UMA_ADDRESS_EXISTS` when the requested UMA address is
+        already taken; `CONFLICT` when `platformCustomerId` collides with
+        an existing active customer on the same platform.
       content:
         application/json:
           schema:
@@ -219,6 +230,14 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '405':
+      description: >-
+        Method not allowed. Returned (as JSON, not HTML) when the request
+        uses an HTTP method that is not supported on this path.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error405.yaml
     '500':
       description: Internal service error
       content:

@@ -424,8 +424,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '405':
+          description: Method not allowed. Returned (as JSON, not HTML) when the request uses an HTTP method that is not supported on this path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
         '409':
-          description: Conflict - Customer with the UMA address already exists
+          description: Conflict. `UMA_ADDRESS_EXISTS` when the requested UMA address is already taken; `CONFLICT` when `platformCustomerId` collides with an existing active customer on the same platform.
           content:
             application/json:
               schema:
@@ -551,6 +557,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '405':
+          description: Method not allowed. Returned (as JSON, not HTML) when the request uses an HTTP method that is not supported on this path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
         '500':
           description: Internal service error
           content:
@@ -2179,7 +2191,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: UMA address not found
+          description: UMA address not found. The address is well-formed but no receiver exists at the counterparty VASP (`UMA_NOT_FOUND`).
           content:
             application/json:
               schema:
@@ -8094,9 +8106,17 @@ components:
             |------------|-------------|
             | UNAUTHORIZED | Issue with API credentials |
             | INVALID_SIGNATURE | Signature header is invalid |
+            | WALLET_SIGNATURE_MISSING | The `Grid-Wallet-Signature` header is required for this Embedded Wallet action but was not supplied |
+            | WALLET_SIGNATURE_MALFORMED | The `Grid-Wallet-Signature` header could not be parsed (bad encoding, structure, or fields) |
+            | WALLET_SIGNATURE_BODY_MISMATCH | The `Grid-Wallet-Signature` was computed over a different request body than the one received |
+            | WALLET_SIGNATURE_INVALID | The `Grid-Wallet-Signature` failed cryptographic verification against the registered credential |
           enum:
             - UNAUTHORIZED
             - INVALID_SIGNATURE
+            - WALLET_SIGNATURE_MISSING
+            - WALLET_SIGNATURE_MALFORMED
+            - WALLET_SIGNATURE_BODY_MISMATCH
+            - WALLET_SIGNATURE_INVALID
         message:
           type: string
           description: Error message
@@ -8946,6 +8966,33 @@ components:
         totalCount:
           type: integer
           description: Total number of customers matching the criteria (excluding pagination)
+    Error405:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 405
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
+          enum:
+            - METHOD_NOT_ALLOWED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     CustomerCreateRequest:
       type: object
       required:
@@ -9022,11 +9069,13 @@ components:
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
+            | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
+            - CONFLICT
         message:
           type: string
           description: Error message
@@ -9059,6 +9108,7 @@ components:
             | TOKEN_NOT_FOUND | Token not found |
             | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
             | REFERENCE_NOT_FOUND | Reference not found |
+            | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -9068,6 +9118,7 @@ components:
             - TOKEN_NOT_FOUND
             - BULK_UPLOAD_JOB_NOT_FOUND
             - REFERENCE_NOT_FOUND
+            - UMA_NOT_FOUND
         message:
           type: string
           description: Error message
