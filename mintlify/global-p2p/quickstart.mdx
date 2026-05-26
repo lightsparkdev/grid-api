@@ -161,8 +161,22 @@ In this guide, the entities map as follows:
   ```json
   {
     "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "status": "PENDING",
+    "source": {
+      "sourceType": "REALTIME_FUNDING",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "USDC"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "sendingCurrency": { "code": "USDC", "name": "USD Coin", "symbol": "USDC", "decimals": 2 },
+    "receivingCurrency": { "code": "MXN", "name": "Mexican Peso", "symbol": "$", "decimals": 2 },
+    "totalSendingAmount": 10000,
+    "totalReceivingAmount": 168500,
     "exchangeRate": 16.85,
-    "fees": { "amount": 50, "currency": { "code": "USD", "decimals": 2 } },
+    "feesIncluded": 50,
     "paymentInstructions": [
       {
           "accountOrWalletInfo": {
@@ -178,8 +192,7 @@ In this guide, the entities map as follows:
               "assetType": "USDC"
           }
       }
-    ],
-    "status": "PENDING"
+    ]
   }
   ```
 ## Fund the quote (Sandbox simulation)
@@ -201,6 +214,19 @@ In this guide, the entities map as follows:
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
     "status": "PROCESSING",
     "type": "OUTGOING",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "alice_user_id",
+    "source": {
+      "sourceType": "REALTIME_FUNDING",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "USDC"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "sentAmount": { "amount": 10000, "currency": { "code": "USDC", "decimals": 2 } },
+    "receivedAmount": { "amount": 168500, "currency": { "code": "MXN", "decimals": 2 } },
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
   }
   ```
@@ -210,18 +236,18 @@ In this guide, the entities map as follows:
   Webhook event:
   ```json
   {
-    "transaction": {
+    "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+    "type": "OUTGOING_PAYMENT.COMPLETED",
+    "timestamp": "2025-01-15T14:32:00Z",
+    "data": {
       "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
       "status": "COMPLETED",
       "type": "OUTGOING",
-      "senderUmaAddress": "$alice@yourapp.example",
-      "receivedAmount": { "amount": 9706, "currency": { "code": "MXN", "decimals": 2 } },
+      "sentAmount": { "amount": 10000, "currency": { "code": "USDC", "decimals": 2 } },
+      "receivedAmount": { "amount": 168500, "currency": { "code": "MXN", "decimals": 2 } },
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
-    },
-    "timestamp": "2025-01-15T14:32:00Z",
-    "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
-    "type": "OUTGOING_PAYMENT"
+      "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
+    }
   }
   ```
 

@@ -83,7 +83,7 @@ POST /transfer-out
 
 {
   "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-  "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "USD"},
+  "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
   "amount": 100000
 }
 ```
@@ -106,7 +106,7 @@ Follows same lifecycle as quote-based outgoing transactions.
 POST /transfer-in
 
 {
-  "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "currency": "USD"},
+  "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
   "destination": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
   "amount": 100000
 }
@@ -419,11 +419,19 @@ When a transaction fails, a refund is initiated automatically. Track the refund 
   </Accordion>
 
   <Accordion title="Handle idempotency">
-    Use idempotency keys for safe retries:
+    Use the `Idempotency-Key` HTTP header for safe retries:
 
     ```javascript
     const idempotencyKey = `payment-${userId}-${Date.now()}`;
-    await createQuote({...params, idempotencyKey});
+    await fetch('https://api.lightspark.com/grid/2025-10-13/quotes', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${credentials}`,
+      },
+      body: JSON.stringify(params),
+    });
     ```
   </Accordion>
 

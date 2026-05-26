@@ -164,12 +164,13 @@ const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
   method: "POST",
   body: JSON.stringify({
     source: {
+      sourceType: "REALTIME_FUNDING",
       customerId: "Customer:019542f5-b3e7-1d02-0000-000000000001",
       currency: "USD",
     },
     destination: {
+      destinationType: "ACCOUNT",
       accountId: externalAccount.id,
-      currency: "BTC",
     },
     lockedCurrencySide: "SENDING",
     lockedCurrencyAmount: 10000, // $100.00
@@ -179,7 +180,7 @@ const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
 
 // Display payment instructions to user
 console.log("Send fiat to:", quote.paymentInstructions);
-console.log("Will receive:", `${quote.receivingAmount / 100000000} BTC`);
+console.log("Will receive:", `${quote.totalReceivingAmount / 100000000} BTC`);
 ```
 
 #### Option B: From internal account to self-custody wallet
@@ -220,7 +221,6 @@ app.post("/webhooks/grid", async (req, res) => {
       await notifyUser(data.customerId, {
         message: "Bitcoin sent to your wallet!",
         amount: `${data.receivedAmount.amount / 100000000} BTC`,
-        walletAddress: data.destination.accountInfo.address,
       });
       break;
 
@@ -395,6 +395,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:..."
     },
     "destination": {

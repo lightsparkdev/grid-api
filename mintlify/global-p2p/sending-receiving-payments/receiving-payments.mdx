@@ -23,12 +23,17 @@ When someone initiates a payment to one of your users' UMA addresses, you'll rec
 
 ```json
 {
-  "transaction": {
-    "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "type": "INCOMING_PAYMENT.PENDING",
+  "timestamp": "2023-08-15T14:32:00Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
     "status": "PENDING",
     "type": "INCOMING",
-    "senderUmaAddress": "$mary.sender@thelessgoodbank.com",
-    "receiverUmaAddress": "$john.receiver@thegoodbank.com",
+    "source": {
+      "sourceType": "UMA_ADDRESS",
+      "umaAddress": "$mary.sender@thelessgoodbank.com"
+    },
     "receivedAmount": {
       "amount": 50000,
       "currency": {
@@ -38,8 +43,8 @@ When someone initiates a payment to one of your users' UMA addresses, you'll rec
         "decimals": 2
       }
     },
-    "userId": "User:019542f5-b3e7-1d02-0000-000000000001",
-    "platformUserId": "9f84e0c2a72c4fa",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "9f84e0c2a72c4fa",
     "description": "Payment for services",
     "counterpartyInformation": {
       "FULL_NAME": "Mary Sender",
@@ -47,20 +52,17 @@ When someone initiates a payment to one of your users' UMA addresses, you'll rec
     },
     "reconciliationInstructions": {
       "reference": "REF-123456789"
-    }
-  },
-  "requestedReceiverUserInfoFields": [
-    { "name": "COUNTRY_OF_RESIDENCE", "mandatory": true },
-    { "name": "FULL_NAME", "mandatory": true },
-    { "name": "NATIONALITY", "mandatory": false }
-  ],
-  "timestamp": "2023-08-15T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
-  "type": "INCOMING_PAYMENT"
+    },
+    "requestedReceiverCustomerInfoFields": [
+      { "name": "COUNTRY_OF_RESIDENCE", "mandatory": true },
+      { "name": "FULL_NAME", "mandatory": true },
+      { "name": "NATIONALITY", "mandatory": false }
+    ]
+  }
 }
 ```
 
-The `counterpartyInformation` object contains PII about the sender, provided by their FI, based on your configured `requiredCounterpartyFields`. If present, `requestedReceiverUserInfoFields` lists information needed about your user to proceed. Provide those fields when approving.
+The `counterpartyInformation` object contains PII about the sender, provided by their FI, based on your configured `requiredCounterpartyFields`. If present, `requestedReceiverCustomerInfoFields` lists information needed about your customer to proceed. Provide those fields when approving.
 
 You can approve or reject the payment synchronously (recommended) or asynchronously:
 
@@ -68,14 +70,14 @@ You can approve or reject the payment synchronously (recommended) or asynchronou
 
 To approve the payment synchronously, respond with a `200 OK` status:
 
-- If the `requestedReceiverUserInfoFields` array was present in the webhook request and contained mandatory fields, your `200 OK` response **must** include a JSON body containing a `receiverUserInfo` object. This object should contain the key-value pairs for the information fields that were requested.
-- If `requestedReceiverUserInfoFields` was not present, was empty, or contained only non-mandatory fields for which you have no information, your `200 OK` response can have an empty body.
+- If the `requestedReceiverCustomerInfoFields` array was present in the webhook request and contained mandatory fields, your `200 OK` response **must** include a JSON body containing a `receiverCustomerInfo` object. This object should contain the key-value pairs for the information fields that were requested.
+- If `requestedReceiverCustomerInfoFields` was not present, was empty, or contained only non-mandatory fields for which you have no information, your `200 OK` response can have an empty body.
 
 Example `200 OK` response body when information was requested and provided:
 
 ```json
 {
-  "receiverUserInfo": {
+  "receiverCustomerInfo": {
     "COUNTRY_OF_RESIDENCE": "US",
     "FULL_NAME": "John Receiver"
   }
@@ -110,7 +112,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/transactions/Transactio
   -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "receiverUserInfo": {
+    "receiverCustomerInfo": {
       "COUNTRY_OF_RESIDENCE": "US",
       "FULL_NAME": "John Receiver"
     }
@@ -134,16 +136,21 @@ If you choose the asynchronous path, you must call the approve/reject endpoint w
 
 ## Receive completion notification and credit
 
-When the payment completes, you'll receive another webhook notifying you of the completion:
+When the payment completes, you'll receive another webhook notifying you of the completion. The envelope `id` is distinct from the `INCOMING_PAYMENT.PENDING` delivery above — use it for idempotent deduplication.
 
 ```json
 {
-  "transaction": {
-    "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000008",
+  "type": "INCOMING_PAYMENT.COMPLETED",
+  "timestamp": "2023-08-15T14:32:00Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
     "status": "COMPLETED",
     "type": "INCOMING",
-    "senderUmaAddress": "$mary.sender@thelessgoodbank.com",
-    "receiverUmaAddress": "$john.receiver@thegoodbank.com",
+    "source": {
+      "sourceType": "UMA_ADDRESS",
+      "umaAddress": "$mary.sender@thelessgoodbank.com"
+    },
     "receivedAmount": {
       "amount": 50000,
       "currency": {
@@ -153,9 +160,9 @@ When the payment completes, you'll receive another webhook notifying you of the 
         "decimals": 2
       }
     },
-    "userId": "User:019542f5-b3e7-1d02-0000-000000000001",
-    "platformUserId": "9f84e0c2a72c4fa",
-    "settlementTime": "2023-08-15T14:30:00Z",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "9f84e0c2a72c4fa",
+    "settledAt": "2023-08-15T14:30:00Z",
     "createdAt": "2023-08-15T14:25:18Z",
     "description": "Payment for services",
     "counterpartyInformation": {
@@ -165,10 +172,7 @@ When the payment completes, you'll receive another webhook notifying you of the 
     "reconciliationInstructions": {
       "reference": "REF-123456789"
     }
-  },
-  "timestamp": "2023-08-15T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
-  "type": "INCOMING_PAYMENT"
+  }
 }
 ```
 

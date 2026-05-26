@@ -219,6 +219,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
@@ -243,17 +244,17 @@ and exchange rate details before executing the quote, set `immediatelyExecute` t
 
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000020",
   "status": "PROCESSING",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456",
-    "currency": "BTC"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -288,7 +289,10 @@ When the Bitcoin transfer completes, you'll receive a webhook notification:
 
 ```json
 {
-  "transaction": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000030",
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T15:02:00Z",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
     "status": "COMPLETED",
     "type": "OUTGOING",
@@ -315,10 +319,7 @@ When the Bitcoin transfer completes, you'll receive a webhook notification:
     "description": "Bitcoin purchase for self-custody",
     "exchangeRate": 8.1,
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020"
-  },
-  "timestamp": "2025-10-03T15:02:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000030",
-  "type": "OUTGOING_PAYMENT"
+  }
 }
 ```
 

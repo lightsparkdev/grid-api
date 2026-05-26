@@ -70,17 +70,17 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
 
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000020",
   "status": "PROCESSING",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "BTC"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -175,7 +175,7 @@ Source is the customer ID or the platform itself — Grid provides payment instr
 
 ```json
 {
-  "quoteId": "Quote:...",
+  "id": "Quote:...",
   "paymentInstructions": [
     {
       "instructionsNotes": "Please ensure the reference code is included in the payment memo/description field",
@@ -217,11 +217,12 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
 
 ```json
 {
-  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000060",
-  "status": "PENDING",
-  "type": "OUTGOING",
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000050"
-  ...
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000050",
+  "status": "PROCESSING",
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000060",
+  "totalSendingAmount": 100000,
+  "totalReceivingAmount": 91540,
+  "feesIncluded": 500
 }
 ```
 
@@ -262,17 +263,17 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
 <Accordion title="Response">
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000020",
   "status": "COMPLETED",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "EUR"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -312,7 +313,7 @@ All fees are transparently displayed in the quote response:
 
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000020",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000020",
   "feesIncluded": 500,
   ... quote response ...
   "rateDetails": {
@@ -398,9 +399,9 @@ Fees are deducted from the sending amount, so:
 
     ```javascript
     app.post('/webhooks/grid', (req, res) => {
-      const {transaction, type} = req.body;
+      const {data: transaction, type} = req.body;
 
-      if (type === 'OUTGOING_PAYMENT' && transaction.quoteId) {
+      if (type.startsWith('OUTGOING_PAYMENT.') && transaction.quoteId) {
         // Quote was executed, transaction created
         updateCustomerUI(transaction);
       }
