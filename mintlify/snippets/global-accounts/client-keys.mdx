@@ -114,6 +114,47 @@ func generateClientKeyPair() -> ClientKeyPair {
   The private key **must not leave the device**. Your integrator backend only ever sees `publicKeyHex`.
 </Note>
 
+## Encrypt the OTP code (`EMAIL_OTP` only)
+
+`EMAIL_OTP` credentials never send the OTP code in plaintext. Instead, the client HPKE-encrypts the code (together with its `publicKeyHex`) to an enclave key, so the code is unreadable in transit and Grid is only a pass-through.
+
+Grid returns an `otpEncryptionTargetBundle` from `POST /auth/credentials` (registration) or `POST /auth/credentials/{id}/challenge` (re-issue). It's a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
+
+Use an HPKE library so you don't hand-roll the suite, `info`, or AAD — `@turnkey/crypto`'s `hpkeEncrypt` + `formatHpkeBuf` produce exactly the shape the enclave expects:
+
+```typescript Web (TypeScript)
+// npm i @turnkey/crypto @noble/hashes
+import { hpkeEncrypt, formatHpkeBuf } from "@turnkey/crypto";
+import { hexToBytes } from "@noble/hashes/utils";
+
+// otpEncryptionTargetBundle: from POST /auth/credentials or /challenge
+// clientPublicKeyHex: the uncompressed public key you generated in step 1
+// otp: the code the user typed ("000000" in sandbox)
+function buildEncryptedOtpBundle(
+  otpEncryptionTargetBundle: string,
+  clientPublicKeyHex: string,
+  otp: string,
+): string {
+  // Pull the enclave's target key out of the signed bundle.
+  const { data } = JSON.parse(otpEncryptionTargetBundle) as { data: string };
+  const { targetPublic } = JSON.parse(
+    new TextDecoder().decode(hexToBytes(data)),
+  ) as { targetPublic: string };
+
+  // Note the snake_case { otp_code, public_key } — that's what the enclave expects.
+  const plainTextBuf = new TextEncoder().encode(
+    JSON.stringify({ otp_code: otp, public_key: clientPublicKeyHex }),
+  );
+  return formatHpkeBuf(hpkeEncrypt({ plainTextBuf, targetKeyBuf: hexToBytes(targetPublic) }));
+}
+```
+
+<Note>
+  A production client should also verify the bundle's `dataSignature` against its `enclaveQuorumPublic` before trusting `targetPublic`.
+</Note>
+
+The private key of the pair you generated in step 1 stays on the device — it becomes the session signing key once verification completes (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>), so `EMAIL_OTP` responses omit `encryptedSessionSigningKey`.
+
 ## 2. Verify the credential and receive the encrypted session signing key
 
 Your client sends `publicKeyHex` to your integrator backend along with whatever the credential type requires (OTP value, OIDC token, or WebAuthn assertion — see <a href="authentication">Authentication</a>). Your backend calls `POST /auth/credentials/{id}/verify` and returns the `encryptedSessionSigningKey` from Grid's response to the client.

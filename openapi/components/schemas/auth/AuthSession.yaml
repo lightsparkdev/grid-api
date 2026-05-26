@@ -36,12 +36,13 @@ allOf:
           Wallet requests until `expiresAt`.
 
 
-          Only returned from session-issuing responses like
-          `POST /auth/credentials/{id}/verify` and
-          `POST /auth/sessions/{id}/refresh`. Omitted from responses that
-          simply surface existing sessions (e.g. `GET /auth/sessions`) —
-          Grid does not retain the plaintext key after the client has
-          decrypted it.
+          Returned only by session-issuing responses for `OAUTH` and
+          `PASSKEY` credentials. `EMAIL_OTP` sessions omit this field —
+          the client generates a TEK keypair before verification and
+          retains the private key throughout, so the server has nothing
+          to deliver. Always omitted from list responses
+          (`GET /auth/sessions`) since Grid does not retain the
+          plaintext key after the client has decrypted it.
         example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
       expiresAt:
         type: string
