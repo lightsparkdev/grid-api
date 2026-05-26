@@ -8,7 +8,7 @@ export const Customers = ({ individualEnabled = true, businessEnabled = true, um
       There are two platform models for regulated and unregulated platforms.
 
       - Regulated institutions: Use your existing compliance processes. Create individual and business customers directly via `POST /customers`. The information you supply is used for beneficiary/counterparty compliance screening.
-      - Unregulated institutions: Grid performs KYC (individuals) and KYB (businesses). Choose either the **hosted link flow** (redirect or embed Grid's provider for verification) or **direct API onboarding** — for `INDIVIDUAL` customers, submit personal information through `POST /customers`; for `BUSINESS` customers, also register beneficial owners via `POST /beneficial-owners`. Use `POST /documents` for supporting documents and `POST /verifications` to submit for review. Both paths produce the same `kycStatus` transitions and emit the same `KYC_STATUS` webhooks. While verification is pending, allow customers to finish account setup but block funding and money movement.
+      - Unregulated institutions: Grid performs KYC (individuals) and KYB (businesses). Choose either the **hosted link flow** (redirect or embed Grid's provider for verification) or **direct API onboarding** — for `INDIVIDUAL` customers, submit personal information through `POST /customers`; for `BUSINESS` customers, also register beneficial owners via `POST /beneficial-owners`. Use `POST /documents` for supporting documents and `POST /verifications` to submit for review. Both paths produce the same `kycStatus` transitions and emit the same `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` / `CUSTOMER.KYC_PENDING` (and `CUSTOMER.KYB_*` equivalents) webhooks. While verification is pending, allow customers to finish account setup but block funding and money movement.
 
       ## Customer Types
 
@@ -174,21 +174,23 @@ Response:
 
 3. Redirect the customer to `kycUrl`, or pass the optional `token` to the provider's SDK to embed verification directly in your UI.
 4. After the customer is redirected back to your app, they can continue with account setup until KYC review is complete.
-5. Track the decision via the `KYC_STATUS` webhook, or poll `GET /customers/{customerId}` and inspect `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
+5. Track the decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhooks (use the `CUSTOMER.KYB_*` siblings for business customers), or poll `GET /customers/{customerId}` and inspect `kycStatus`. `CUSTOMER.KYC_PENDING` is an intermediate signal that the customer is under review — subscribe to it if you want to surface that state, but treat only `APPROVED` / `REJECTED` as the decision. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
 Webhook example:
 ```json
 {{
-  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-  "kycStatus": "APPROVED",
-  "type": "KYC_STATUS",
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "type": "CUSTOMER.KYC_APPROVED",
   "timestamp": "2025-01-15T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000007"
+  "data": {
+    "id": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "kycStatus": "APPROVED"
+  }
 }}
 ```
 
 <Note>
-Possible final statuses include APPROVED, REJECTED, EXPIRED, CANCELED, MANUALLY_APPROVED, and MANUALLY_REJECTED. Verify `X-Grid-Signature` against the raw request body using the dashboard public key.
+Terminal `kycStatus` values are `APPROVED` and `REJECTED`. Verify `X-Grid-Signature` against the raw request body using the dashboard public key.
 </Note>
 
 
@@ -267,9 +269,9 @@ curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers/bulk/csv"
 The CSV file should follow a specific format with required and optional columns based on customer type. Here's an example:
 
 ```csv
-umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory\
-$john.doe@uma.domain.com,cust_user123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase Bank,chase_primary_1234,,222888888,SAVINGS
-$acme@uma.domain.com,cust_biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US,US_ACCOUNT,987654321,Bank of America,boa_business_5678,Acme Corp,121212121,CHECKING
+umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,businessLegalName
+$john.doe@uma.domain.com,cust_user123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,
+$acme@uma.domain.com,cust_biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US,Acme Corp
 ```
 
 <Tip>
@@ -296,21 +298,19 @@ Example job status response:
 
 ```json
 {{
-  "jobId": "job_123456789",
+  "id": "Job:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PROCESSING",
   "progress": {
     "total": 5000,
     "processed": 2500,
-    "successful": 2499,
-    "failed": 1
+    "successful": 2450,
+    "failed": 50
   },
   "errors": [
     {
-      "platformCustomerId": "cust_biz456",
-      "error": {
-        "code": "validation_error",
-        "message": "Invalid bank account number"
-      }
+      "correlationId": "cust_biz456",
+      "code": "INVALID_FIELD",
+      "message": "Invalid bank account number"
     }
   ]
 }}

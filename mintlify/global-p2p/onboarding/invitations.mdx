@@ -98,7 +98,7 @@ they claim it. The response will include the payment amount in the invitation de
 }
 ```
 
-When the invitee claims the invitation, your platform will receive an `INVITATION_CLAIMED` webhook. At this point, you should:
+When the invitee claims the invitation, your platform will receive an `INVITATION.CLAIMED` webhook. At this point, you should:
 
 1. Check the `amountToSend` field in the webhook payload
 2. Create a quote for the payment amount (sender-locked)
@@ -106,7 +106,7 @@ When the invitee claims the invitation, your platform will receive an `INVITATIO
 
 Note that the actual sending of the payment must be done by your platform after receiving the webhook. If your platform either does not send the payment or the payment fails, the invitee will not receive the amount. The `amountToSend` field is primarily used for display purposes on the claiming side of the invitation.
 
-These payments can only be sender-locked, meaning that the sender will not know ahead of time how much the receiver will receive in their local currency. The exchange rate will be determined at the time the payment is executed. If you'd like, you can also send a push notification to your sending user when you receive the `INVITATION_CLAIMED` webhook and have them approve the payment interactively instead.
+These payments can only be sender-locked, meaning that the sender will not know ahead of time how much the receiver will receive in their local currency. The exchange rate will be determined at the time the payment is executed. If you'd like, you can also send a push notification to your sending user when you receive the `INVITATION.CLAIMED` webhook and have them approve the payment interactively instead.
 
 ### Best practices
 
@@ -132,7 +132,7 @@ A successful claim will:
 
 1. Associate the invitee's UMA address with the invitation
 2. Change the invitation status from `PENDING` to `CLAIMED`
-3. Trigger an `INVITATION_CLAIMED` webhook to notify the inviter's platform of the claim
+3. Trigger an `INVITATION.CLAIMED` webhook to notify the inviter's platform of the claim
 
 ## Cancelling Invitations
 
@@ -177,7 +177,7 @@ You can check the status of an invitation at any time by making a GET request to
 
 ## Webhook Integration
 
-When an invitation is claimed, the Grid API will send an `INVITATION_CLAIMED` webhook to your configured webhook endpoint. This allows you to:
+When an invitation is claimed, the Grid API will send an `INVITATION.CLAIMED` webhook to your configured webhook endpoint. This allows you to:
 
 - Track invitation usage and conversion rates
 - Apply referral bonuses or rewards to the inviter
@@ -187,7 +187,10 @@ Example webhook payload:
 
 ```json
 {
-  "invitation": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000008",
+  "type": "INVITATION.CLAIMED",
+  "timestamp": "2023-09-01T15:45:00Z",
+  "data": {
     "code": "019542f5",
     "createdAt": "2023-09-01T14:30:00Z",
     "claimedAt": "2023-09-01T15:45:00Z",
@@ -195,10 +198,7 @@ Example webhook payload:
     "inviteeUma": "$invitee@uma.domain",
     "url": "https://uma.me/i/019542f5",
     "status": "CLAIMED"
-  },
-  "timestamp": "2023-09-01T15:45:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000008",
-  "type": "INVITATION_CLAIMED"
+  }
 }
 ```
 

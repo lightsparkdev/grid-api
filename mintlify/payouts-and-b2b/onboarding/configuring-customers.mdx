@@ -62,16 +62,18 @@ curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "bankAccountInfo": {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123456789",
-      "routingNumber": "987654321",
-      "bankName": "Chase Bank"
+    "customerType": "INDIVIDUAL",
+    "address": {
+      "line1": "456 Market St",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94103",
+      "country": "US"
     }
   }'
 ```
 
-Note that not all customer information can be updated. Particularly for non-regulated platforms, you cannot update personal information after the customer has been created.
+Note that not all customer information can be updated. Particularly for non-regulated platforms, you cannot update personal information after the customer has been created. The `customerType` discriminator is required on PATCH so the API knows which set of optional fields to validate. To update bank-account details, use the `/customers/external-accounts` endpoints — bank accounts are no longer managed inline on the customer resource.
 
 ## Bank Account Information
 
@@ -212,9 +214,9 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/bulk/csv" \
 The CSV file should follow a specific format with required and optional columns based on customer type. Here's an example:
 
 ```csv
-platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,accountType,accountNumber,bankName,platformAccountId,businessLegalName,routingNumber,accountCategory
-customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,US_ACCOUNT,123456789,Chase Bank,chase_primary_1234,,222888888,SAVINGS
-biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US,US_ACCOUNT,987654321,Bank of America,boa_business_5678,Acme Corp,121212121,CHECKING
+umaAddress,platformCustomerId,customerType,fullName,birthDate,addressLine1,city,state,postalCode,country,businessLegalName
+$john.doe@uma.domain.com,customer123,INDIVIDUAL,John Doe,1990-01-15,123 Main St,San Francisco,CA,94105,US,
+$acme@uma.domain.com,biz456,BUSINESS,,,400 Commerce Way,Austin,TX,78701,US,Acme Corp
 ```
 
 <Tip>
@@ -241,21 +243,19 @@ Example job status response:
 
 ```json
 {
-  "jobId": "job_123456789",
+  "id": "Job:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PROCESSING",
   "progress": {
     "total": 5000,
     "processed": 2500,
-    "successful": 2499,
-    "failed": 1
+    "successful": 2450,
+    "failed": 50
   },
   "errors": [
     {
-      "platformCustomerId": "biz456",
-      "error": {
-        "code": "validation_error",
-        "message": "Invalid bank account number"
-      }
+      "correlationId": "biz456",
+      "code": "INVALID_FIELD",
+      "message": "Invalid bank account number"
     }
   ]
 }
@@ -277,6 +277,7 @@ The CSV file should have the following columns:
 
 Required columns for all customers:
 
+- umaAddress: The customer's UMA address (e.g., `$john.doe@uma.domain.com`)
 - platformCustomerId: Your platform's unique identifier for the customer
 - customerType: Either "INDIVIDUAL" or "BUSINESS"
 
@@ -289,9 +290,6 @@ Required columns for individual customers:
 - state: State/Province/Region
 - postalCode: Postal/ZIP code
 - country: Country code (ISO 3166-1 alpha-2)
-- accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN, UPI)
-- accountNumber: Bank account number
-- bankName: Name of the bank
 
 Required columns for business customers:
 
@@ -301,9 +299,6 @@ Required columns for business customers:
 - state: State/Province/Region
 - postalCode: Postal/ZIP code
 - country: Country code (ISO 3166-1 alpha-2)
-- accountType: Bank account type (CLABE, US_ACCOUNT, PIX, IBAN, UPI)
-- accountNumber: Bank account number
-- bankName: Name of the bank
 
 Optional columns for all customers:
 
@@ -320,28 +315,5 @@ Optional columns for business customers:
 - businessRegistrationNumber: Business registration number
 - businessTaxId: Tax identification number
 
-Additional required columns based on account type:
-
-For US_ACCOUNT:
-
-- routingNumber: ACH routing number (9 digits)
-- accountCategory: Either "CHECKING" or "SAVINGS"
-
-For CLABE:
-
-- clabeNumber: 18-digit CLABE number
-
-For PIX:
-
-- pixKey: PIX key value
-- pixKeyType: Type of PIX key (CPF, CNPJ, EMAIL, PHONE, RANDOM)
-
-For UPI:
-
-- vpa: Virtual Payment Address for UPI payments
-
-For IBAN:
-
-- iban: International Bank Account Number
-- swiftBic: SWIFT/BIC code (8 or 11 characters)
+Bank-account details are no longer part of the bulk customer CSV — manage them separately via the `/customers/external-accounts` endpoints.
 
