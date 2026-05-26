@@ -34,6 +34,11 @@ allOf:
           currency (eg. cents).
         minimum: 0
         example: 10
+      reconciliationInstructions:
+        $ref: ../common/ReconciliationInstructions.yaml
+        description: >-
+          Reconciliation details for this transaction, including crypto
+          transaction hash when available.
       quoteId:
         type: string
         description: The ID of the quote that was used to trigger this payment
