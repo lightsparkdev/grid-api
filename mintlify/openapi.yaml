@@ -4308,6 +4308,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when verification attempts for this credential happen too frequently (for example, repeated bad OTPs or rapid-fire reauthentication retries). Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying the request.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -4471,6 +4482,8 @@ paths:
         1. Call `DELETE /auth/sessions/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Use the session API keypair of a verified session on the same internal account (this can be the session being revoked, for self-logout) to build an API-key stamp over `payloadToSign`, then retry the same `DELETE` request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
+
+        Sessions also expire on their own. `404` is returned whenever the `id` does not match an active session — whether the session was never issued, was already revoked by a prior call, or has expired past its `expiresAt`. The response code reflects the resource state, not an error in the client's flow: re-revoking an already-revoked or expired session is safe and idempotent at the user intent level.
       operationId: revokeAuthSession
       tags:
         - Embedded Wallet Auth
@@ -6217,6 +6230,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Card issuance is not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
     get:
       summary: List cards
       description: |
@@ -6301,6 +6320,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /cards/{id}:
     parameters:
       - name: id
@@ -6342,6 +6367,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
     patch:
       summary: Update a card
       description: |
@@ -6457,6 +6488,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -16194,7 +16231,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When this quote expires (typically 1-5 minutes after creation)
+          description: 'Absolute UTC timestamp when the rate locked in this quote becomes invalid and the quote can no longer be executed. The window depends on the rail and corridor: instant rails (Lightning, Spark, USDC on Solana/Base/Polygon, RTP, SEPA Instant) typically expire in 1–5 minutes; corridors with longer settlement guarantees may have longer windows. Always rely on this timestamp rather than assuming a fixed window.'
           example: '2025-10-03T12:05:00Z'
         source:
           $ref: '#/components/schemas/QuoteSourceOneOf'
@@ -17240,6 +17277,33 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
+    Error429:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 429
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+          enum:
+            - RATE_LIMITED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
@@ -17292,33 +17356,6 @@ components:
         mapping:
           EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
           PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
-    Error429:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 429
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
-          enum:
-            - RATE_LIMITED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     SessionListResponse:
       type: object
       required:
