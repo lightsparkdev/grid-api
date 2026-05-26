@@ -25,7 +25,7 @@ sequenceDiagram
   <Step title="First call — receive the challenge">
     ```bash
     curl -X POST "$GRID_BASE_URL/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/export" \
-      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
       -d '{
         "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
@@ -37,7 +37,7 @@ sequenceDiagram
     ```json
     {
       "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
-      "requestId": "c3f8a614-47e2-4a19-9f5d-2b0a91d47e08",
+      "requestId": "Request:c3f8a614-47e2-4a19-9f5d-2b0a91d47e08",
       "expiresAt": "2026-04-19T12:10:00Z"
     }
     ```
@@ -51,7 +51,7 @@ sequenceDiagram
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
       -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
-      -H "Request-Id: c3f8a614-47e2-4a19-9f5d-2b0a91d47e08" \
+      -H "Request-Id: Request:c3f8a614-47e2-4a19-9f5d-2b0a91d47e08" \
       -d '{
         "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
       }'

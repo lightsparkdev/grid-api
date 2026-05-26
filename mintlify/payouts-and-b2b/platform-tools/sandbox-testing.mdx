@@ -121,7 +121,7 @@ POST /customers/external-accounts
   "customerId": "Customer:123",
   "currency": "EUR",
   "accountInfo": {
-    "accountType": "IBAN_ACCOUNT",
+    "accountType": "EUR_ACCOUNT",
     "iban": "DE89370400440532013003",
     "beneficiary": {
       "beneficiaryType": "INDIVIDUAL",
@@ -183,7 +183,7 @@ All webhook events fire normally in sandbox. To test your webhook endpoint:
 You can also manually trigger a test webhook:
 
 ```bash
-POST /webhooks/test
+POST /sandbox/webhooks/test
 
 {
   "url": "https://your-app.com/webhooks"

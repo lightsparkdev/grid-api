@@ -4,7 +4,7 @@ covers the requirements and the order they must be satisfied in.
 
 ## KYC must be APPROVED
 
-`POST /cards` is rejected with `409 CARDHOLDER_KYC_NOT_APPROVED` if the
+`POST /cards` is rejected with `400 CARDHOLDER_KYC_NOT_APPROVED` if the
 cardholder's `kycStatus` is anything other than `APPROVED`. There is no
 "issue and verify later" path.
 
@@ -26,7 +26,7 @@ time. The account must:
 
 - Belong to the cardholder (no cross-customer funding in v1).
 - Be denominated in a card-eligible currency. In v1 this is USDB; the
-  request is rejected with `409 FUNDING_SOURCE_INELIGIBLE` otherwise.
+  request is rejected with `400 FUNDING_SOURCE_INELIGIBLE` otherwise.
 
 If the cardholder doesn't have an internal account yet, internal
 accounts are created automatically when the customer is created based
