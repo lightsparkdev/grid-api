@@ -30,9 +30,9 @@ Set up proxying so UMA‑related requests are forwarded to your assigned `proxyU
 
 - UMA domain determines the address format (e.g., `$alice@yourdomain.com`)
 - Proxy the following paths to `{proxyUmaSubdomain}`:
-  - `https://<umaDomain>/.well-known/lnurlp/*` -> `https://<proxyUmaSubdomain>.docs.lightspark.com/.well-known/lnurlp/*`
-  - `https://<umaDomain>/.well-known/lnurlpubkey` -> `https://<proxyUmaSubdomain>.docs.lightspark.com/.well-known/lnurlpubkey`
-  - `https://<umaDomain>/.well-known/uma-configuration` -> `https://<proxyUmaSubdomain>.docs.lightspark.com/.well-known/uma-configuration`
+  - `https://<umaDomain>/.well-known/lnurlp/*` -> `https://<proxyUmaSubdomain>.grid.lightspark.com/.well-known/lnurlp/*`
+  - `https://<umaDomain>/.well-known/lnurlpubkey` -> `https://<proxyUmaSubdomain>.grid.lightspark.com/.well-known/lnurlpubkey`
+  - `https://<umaDomain>/.well-known/uma-configuration` -> `https://<proxyUmaSubdomain>.grid.lightspark.com/.well-known/uma-configuration`
 
 Additionally, configure:
 - Supported currencies (min/max, enabled transaction types)
