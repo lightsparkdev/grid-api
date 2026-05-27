@@ -8335,6 +8335,7 @@ components:
         - SEPA
         - SEPA_INSTANT
         - SPEI
+        - SWIFT
         - UPI
         - WIRE
       description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.

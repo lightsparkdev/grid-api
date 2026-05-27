@@ -12,6 +12,7 @@ enum:
   - SEPA
   - SEPA_INSTANT
   - SPEI
+  - SWIFT
   - UPI
   - WIRE
 description: >-
