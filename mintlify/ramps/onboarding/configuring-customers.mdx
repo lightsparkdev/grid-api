@@ -59,7 +59,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
 <Accordion title="Business customers" icon="building">
 For corporate conversions and business accounts.
 
-**Required fields:** `customerType`. Most providers also require `businessInfo.legalName` and `address` for KYB.
+**Required fields:** `customerType`, plus `businessInfo.legalName`, `businessInfo.taxId`, and `businessInfo.incorporatedOn`. Most providers also require `address` for KYB.
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
@@ -71,7 +71,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
     "email": "finance@acme.com",
     "businessInfo": {
       "legalName": "Acme Corporation",
-      "taxId": "12-3456789"
+      "taxId": "12-3456789",
+      "incorporatedOn": "2018-03-14"
     },
     "address": {...}
   }'

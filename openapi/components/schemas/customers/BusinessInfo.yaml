@@ -2,6 +2,8 @@ type: object
 description: Additional information required for business entities
 required:
   - legalName
+  - taxId
+  - incorporatedOn
 properties:
   legalName:
     type: string
