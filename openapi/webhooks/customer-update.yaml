@@ -114,6 +114,7 @@ post:
                   legalName: Acme Corporation
                   registrationNumber: '12345678'
                   taxId: '98-7654321'
+                  incorporatedOn: '2018-03-14'
                 createdAt: '2025-07-21T17:32:28Z'
                 updatedAt: '2025-08-15T14:32:00Z'
                 isDeleted: false
@@ -140,6 +141,8 @@ post:
                   country: US
                 businessInfo:
                   legalName: Globex Inc
+                  taxId: '47-1234567'
+                  incorporatedOn: '2015-09-01'
                 createdAt: '2025-07-21T17:32:28Z'
                 updatedAt: '2025-08-15T14:32:00Z'
                 isDeleted: false
