@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Grid API
   description: |
-    API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://grid.lightspark.com/.
+    API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
   version: '2025-10-13'
   contact:
     name: Lightspark Support
@@ -16340,7 +16340,7 @@ components:
               example: Customer:019542f5-b3e7-1d02-0000-000000000009
             currency:
               type: string
-              description: Currency code for the funding source. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
+              description: Currency code for the funding source. See [Supported Currencies](https://docs.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: USD
             cryptoNetwork:
               type: string
@@ -16411,7 +16411,7 @@ components:
               example: $receiver@uma.domain.com
             currency:
               type: string
-              description: Currency code for the destination. See [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
+              description: Currency code for the destination. See [Supported Currencies](https://docs.lightspark.com/platform-overview/core-concepts/currencies-and-rails) for the full list of supported fiat and crypto currencies.
               example: EUR
           description: UMA address destination details
     QuoteDestinationOneOf:

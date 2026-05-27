@@ -110,7 +110,7 @@ Start in the sandbox environment to experiment safely. The Skill is great at gen
 Grid provides a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that lets AI agents search Grid's SDK documentation **and** execute Grid API operations directly. Your agentic workflows get full context of the Grid API during implementation and can run quotes, transfers, customer onboarding, and other operations end-to-end.
 
 ```text
-https://mcp.grid.lightspark.com/
+https://mcp.docs.lightspark.com/
 ```
 
 The MCP server exposes two tools:
@@ -137,7 +137,7 @@ The MCP server requires Grid API credentials. In the [Grid dashboard](https://ap
     "mcpServers": {
       "grid_mcp": {
         "type": "http",
-        "url": "https://mcp.grid.lightspark.com/",
+        "url": "https://mcp.docs.lightspark.com/",
         "headers": {
           "x-grid-client-id": "{client id}",
           "x-grid-client-secret": "{client secret}"
@@ -159,7 +159,7 @@ The MCP server requires Grid API credentials. In the [Grid dashboard](https://ap
         "args": [
           "-y",
           "mcp-remote",
-          "https://mcp.grid.lightspark.com/",
+          "https://mcp.docs.lightspark.com/",
           "--header",
           "x-grid-client-id: {client id}",
           "--header",
@@ -180,7 +180,7 @@ The MCP server requires Grid API credentials. In the [Grid dashboard](https://ap
   {
     "mcpServers": {
       "grid_mcp": {
-        "url": "https://mcp.grid.lightspark.com/",
+        "url": "https://mcp.docs.lightspark.com/",
         "headers": {
           "x-grid-client-id": "{client id}",
           "x-grid-client-secret": "{client secret}"
@@ -194,7 +194,7 @@ The MCP server requires Grid API credentials. In the [Grid dashboard](https://ap
 <Tab title="ChatGPT and others">
   Any client that supports MCP's streamable HTTP transport (ChatGPT, Windsurf, Zed, Cline, and others) can connect using the same URL and headers:
 
-  - **URL:** `https://mcp.grid.lightspark.com/`
+  - **URL:** `https://mcp.docs.lightspark.com/`
   - **Headers:** `x-grid-client-id: {client id}` and `x-grid-client-secret: {client secret}`
 
   For clients that don't yet support HTTP-transport MCP servers natively, use [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) as a bridge — see the Claude desktop app tab for an example.

@@ -8,7 +8,7 @@ are HPKE bundle decrypt and Turnkey API stamp construction, which live in
 `@turnkey/crypto` and `@turnkey/api-key-stamper`).
 
 > **For production integrations**, prefer the official Grid SDKs at
-> <https://grid.lightspark.com>. This README is intended for hands-on
+> <https://docs.lightspark.com>. This README is intended for hands-on
 > tinkering, debugging, and end-to-end validation — it favors curl and
 > the minimal signing helpers over a full SDK stack.
 
