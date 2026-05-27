@@ -20,7 +20,7 @@ allOf:
         type: string
         description: >-
           Currency code for the funding source. See
-          [Supported Currencies](https://grid.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
+          [Supported Currencies](https://docs.lightspark.com/platform-overview/core-concepts/currencies-and-rails)
           for the full list of supported fiat and crypto currencies.
         example: USD
       cryptoNetwork:

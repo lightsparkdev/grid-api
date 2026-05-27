@@ -43,7 +43,7 @@ export function Footer({ theme, setTheme }: FooterProps) {
       </button>
 
       <div className={styles.trailing}>
-          <a href="https://grid.lightspark.com" className={styles.link} target="_blank" rel="noopener noreferrer">
+          <a href="https://docs.lightspark.com" className={styles.link} target="_blank" rel="noopener noreferrer">
             View docs
           </a>
           <a

@@ -10,7 +10,7 @@ organization:
   # and headings.
   name: Lightspark Grid
   # Link to your API documentation.
-  docs: 'grid.lightspark.com'
+  docs: 'docs.lightspark.com'
   # Contact email for bug reports, questions, and support requests.
   contact: support@lightspark.com
 

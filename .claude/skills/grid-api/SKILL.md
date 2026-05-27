@@ -24,7 +24,7 @@ allowed-tools:
 Assist users with global payment operations via the Grid API. Core capabilities:
 
 1. **Execute API Operations** - Use `curl` to interact with the Grid API directly
-2. **Answer Documentation Questions** - Fetch docs from <https://grid.lightspark.com/llms.txt> or the OpenAPI spec (<https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml>)
+2. **Answer Documentation Questions** - Fetch docs from <https://docs.lightspark.com/llms.txt> or the OpenAPI spec (<https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml>)
 3. **Guide Payment Workflows** - Help users send payments to bank accounts, UMA addresses, and crypto wallets
 
 ## Embedded Wallet Offramp (USDB → USD bank)
@@ -99,9 +99,9 @@ export GRID_BASE_URL=$(jq -r '.baseUrl // "https://api.lightspark.com/grid/2025-
 
 For questions not covered by this skill's reference files, fetch additional information from the web:
 
-- **LLM-optimized docs**: Fetch `https://grid.lightspark.com/llms.txt` for a concise overview of the Grid API, or `https://grid.lightspark.com/llms-full.txt` for comprehensive documentation
+- **LLM-optimized docs**: Fetch `https://docs.lightspark.com/llms.txt` for a concise overview of the Grid API, or `https://docs.lightspark.com/llms-full.txt` for comprehensive documentation
 - **OpenAPI Spec**: Fetch `https://raw.githubusercontent.com/lightsparkdev/grid-api/refs/heads/main/openapi.yaml` for the full API schema with request/response definitions
-- **Published docs**: Browse `https://grid.lightspark.com` for guides, tutorials, and API reference. Any page can use the `.md` suffix for a more agent-readable format.
+- **Published docs**: Browse `https://docs.lightspark.com` for guides, tutorials, and API reference. Any page can use the `.md` suffix for a more agent-readable format.
 
 ## Making API Calls
 

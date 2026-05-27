@@ -57,3 +57,8 @@ scripts/export-icons.js
 
 # Superset
 .superset/
+
+# Claude Code scratch — never commit
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+error-audit/
