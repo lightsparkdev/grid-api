@@ -8110,6 +8110,7 @@ components:
             | WALLET_SIGNATURE_MALFORMED | The `Grid-Wallet-Signature` header could not be parsed (bad encoding, structure, or fields) |
             | WALLET_SIGNATURE_BODY_MISMATCH | The `Grid-Wallet-Signature` was computed over a different request body than the one received |
             | WALLET_SIGNATURE_INVALID | The `Grid-Wallet-Signature` failed cryptographic verification against the registered credential |
+            | REQUEST_ID_MISSING | The `Request-Id` header is required on the signed retry but was not supplied (paired with `Grid-Wallet-Signature`) |
           enum:
             - UNAUTHORIZED
             - INVALID_SIGNATURE
@@ -8117,6 +8118,7 @@ components:
             - WALLET_SIGNATURE_MALFORMED
             - WALLET_SIGNATURE_BODY_MISMATCH
             - WALLET_SIGNATURE_INVALID
+            - REQUEST_ID_MISSING
         message:
           type: string
           description: Error message
