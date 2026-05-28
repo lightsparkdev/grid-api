@@ -140,6 +140,8 @@ The shape of the flow depends on the customer type:
     -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     -F "documentHolder=Customer:019542f5-b3e7-1d02-0000-000000000001" \
     -F "documentType=PASSPORT" \
+    -F "documentNumber=A12345678" \
+    -F "issuingAuthority=U.S. Department of State" \
     -F "country=US" \
     -F "file=@./passport.jpg"
   ```
@@ -262,6 +264,8 @@ The shape of the flow depends on the customer type:
     -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     -F "documentHolder=BeneficialOwner:019542f5-b3e7-1d02-0000-00000000abcd" \
     -F "documentType=PASSPORT" \
+    -F "documentNumber=B98765432" \
+    -F "issuingAuthority=U.S. Department of State" \
     -F "country=US" \
     -F "file=@./owner-passport.jpg"
   ```
