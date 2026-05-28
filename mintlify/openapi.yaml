@@ -15271,12 +15271,15 @@ components:
       type: object
       required:
         - file
+        - documentType
         - country
       properties:
         file:
           type: string
           format: binary
           description: The document file (PDF, JPEG, or PNG, max 10 MB)
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
         side:
           type: string
           enum:
@@ -15288,207 +15291,30 @@ components:
           type: string
           description: Country that issued the document (ISO 3166-1 alpha-2)
           example: US
-    IdentityDocumentType:
-      type: string
-      enum:
-        - PASSPORT
-        - DRIVERS_LICENSE
-        - NATIONAL_ID
-      description: Identity document types issued by a government to verify an individual's identity.
-      example: PASSPORT
-    IdentityDocumentUploadRequest:
-      title: Identity Document Upload Request
-      description: Upload an identity document (passport, driver's license, or national ID).
-      allOf:
-        - $ref: '#/components/schemas/BaseDocumentRequest'
-        - type: object
-          required:
-            - documentHolder
-            - documentType
-            - documentNumber
-            - issuingAuthority
-          properties:
-            documentHolder:
-              type: string
-              description: ID of the entity that owns this document. Can be a Customer ID or a BeneficialOwner ID.
-              example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
-            documentType:
-              $ref: '#/components/schemas/IdentityDocumentType'
-            documentNumber:
-              type: string
-              description: Document identification number (e.g., passport number)
-              example: A12345678
-            issuingAuthority:
-              type: string
-              description: Name of the government agency or organization that issued the document
-              example: U.S. Department of State
-    NonIdentityDocumentType:
-      type: string
-      enum:
-        - PROOF_OF_ADDRESS
-        - BANK_STATEMENT
-        - TAX_RETURN
-        - CERTIFICATE_OF_INCORPORATION
-        - ARTICLES_OF_INCORPORATION
-        - ARTICLES_OF_ASSOCIATION
-        - STATE_REGISTRY_EXCERPT
-        - GOOD_STANDING_CERTIFICATE
-        - INFORMATION_STATEMENT
-        - INCUMBENCY_CERTIFICATE
-        - BUSINESS_LICENSE
-        - SHAREHOLDER_REGISTER
-        - POWER_OF_ATTORNEY
-        - UTILITY_BILL
-        - ELECTRICITY_BILL
-        - RENT_OR_LEASE_AGREEMENT
-        - DIRECTOR_REGISTRY
-        - TRUST_AGREEMENT
-        - STATE_COMPANY_REGISTRY
-        - PARTNERSHIP_CONTROL_AGREEMENT
-        - PARTNERSHIP_AGREEMENT
-        - SELFIE
-        - OTHER
-      description: |-
-        Non-identity verification documents.
-        **Business — Legal presence** — CERTIFICATE_OF_INCORPORATION, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, STATE_REGISTRY_EXCERPT
-        **Business — Control structure** — DIRECTOR_REGISTRY, TRUST_AGREEMENT, STATE_COMPANY_REGISTRY, PARTNERSHIP_CONTROL_AGREEMENT
-        **Business — Ownership structure** — SHAREHOLDER_REGISTER, TRUST_AGREEMENT, PARTNERSHIP_AGREEMENT
-        **Proof of address** — UTILITY_BILL, RENT_OR_LEASE_AGREEMENT, ELECTRICITY_BILL, BANK_STATEMENT, TAX_RETURN
-      example: UTILITY_BILL
-    NonIdentityDocumentUploadRequest:
-      title: Non-Identity Document Upload Request
-      description: Upload a non-identity verification document such as proof of address, business registry documents, or supporting evidence.
-      allOf:
-        - $ref: '#/components/schemas/BaseDocumentRequest'
-        - type: object
-          required:
-            - documentHolder
-            - documentType
-          properties:
-            documentHolder:
-              type: string
-              description: ID of the entity that owns this document. Can be a Customer ID or a BeneficialOwner ID.
-              example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
-            documentType:
-              $ref: '#/components/schemas/NonIdentityDocumentType'
-            documentNumber:
-              type: string
-              description: Optional document identification number
-              example: 20240312-INV-9821
-            issuingAuthority:
-              type: string
-              description: Optional name of the agency or organization that issued the document
-              example: City of San Francisco
+        documentNumber:
+          type: string
+          description: Document identification number (e.g., passport number)
+          example: A12345678
+        issuingAuthority:
+          type: string
+          description: Name of the government agency or organization that issued the document
+          example: U.S. Department of State
     DocumentUploadRequest:
       title: Document Upload Request
-      description: Upload a verification document.
-      oneOf:
-        - $ref: '#/components/schemas/IdentityDocumentUploadRequest'
-        - $ref: '#/components/schemas/NonIdentityDocumentUploadRequest'
-      discriminator:
-        propertyName: documentType
-        mapping:
-          PASSPORT: '#/components/schemas/IdentityDocumentUploadRequest'
-          DRIVERS_LICENSE: '#/components/schemas/IdentityDocumentUploadRequest'
-          NATIONAL_ID: '#/components/schemas/IdentityDocumentUploadRequest'
-          PROOF_OF_ADDRESS: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          BANK_STATEMENT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          TAX_RETURN: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          CERTIFICATE_OF_INCORPORATION: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          ARTICLES_OF_INCORPORATION: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          ARTICLES_OF_ASSOCIATION: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          STATE_REGISTRY_EXCERPT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          GOOD_STANDING_CERTIFICATE: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          INFORMATION_STATEMENT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          INCUMBENCY_CERTIFICATE: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          BUSINESS_LICENSE: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          SHAREHOLDER_REGISTER: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          POWER_OF_ATTORNEY: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          UTILITY_BILL: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          ELECTRICITY_BILL: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          RENT_OR_LEASE_AGREEMENT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          DIRECTOR_REGISTRY: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          TRUST_AGREEMENT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          STATE_COMPANY_REGISTRY: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          PARTNERSHIP_CONTROL_AGREEMENT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          PARTNERSHIP_AGREEMENT: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          SELFIE: '#/components/schemas/NonIdentityDocumentUploadRequest'
-          OTHER: '#/components/schemas/NonIdentityDocumentUploadRequest'
-    IdentityDocumentReplaceRequest:
-      title: Identity Document Replace Request
-      description: Replace an existing identity document.
       allOf:
         - $ref: '#/components/schemas/BaseDocumentRequest'
         - type: object
           required:
-            - documentType
-            - documentNumber
-            - issuingAuthority
+            - documentHolder
           properties:
-            documentType:
-              $ref: '#/components/schemas/IdentityDocumentType'
-            documentNumber:
+            documentHolder:
               type: string
-              description: Document identification number (e.g., passport number)
-              example: A12345678
-            issuingAuthority:
-              type: string
-              description: Name of the government agency or organization that issued the document
-              example: U.S. Department of State
-    NonIdentityDocumentReplaceRequest:
-      title: Non-Identity Document Replace Request
-      description: Replace an existing non-identity verification document.
-      allOf:
-        - $ref: '#/components/schemas/BaseDocumentRequest'
-        - type: object
-          required:
-            - documentType
-          properties:
-            documentType:
-              $ref: '#/components/schemas/NonIdentityDocumentType'
-            documentNumber:
-              type: string
-              description: Optional document identification number
-              example: 20240312-INV-9821
-            issuingAuthority:
-              type: string
-              description: Optional name of the agency or organization that issued the document
-              example: City of San Francisco
+              description: ID of the entity that owns this document. Can be a Customer ID or a BeneficialOwner ID.
+              example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
     DocumentReplaceRequest:
       title: Document Replace Request
-      description: Replace an existing document.
-      oneOf:
-        - $ref: '#/components/schemas/IdentityDocumentReplaceRequest'
-        - $ref: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-      discriminator:
-        propertyName: documentType
-        mapping:
-          PASSPORT: '#/components/schemas/IdentityDocumentReplaceRequest'
-          DRIVERS_LICENSE: '#/components/schemas/IdentityDocumentReplaceRequest'
-          NATIONAL_ID: '#/components/schemas/IdentityDocumentReplaceRequest'
-          PROOF_OF_ADDRESS: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          BANK_STATEMENT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          TAX_RETURN: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          CERTIFICATE_OF_INCORPORATION: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          ARTICLES_OF_INCORPORATION: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          ARTICLES_OF_ASSOCIATION: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          STATE_REGISTRY_EXCERPT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          GOOD_STANDING_CERTIFICATE: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          INFORMATION_STATEMENT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          INCUMBENCY_CERTIFICATE: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          BUSINESS_LICENSE: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          SHAREHOLDER_REGISTER: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          POWER_OF_ATTORNEY: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          UTILITY_BILL: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          ELECTRICITY_BILL: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          RENT_OR_LEASE_AGREEMENT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          DIRECTOR_REGISTRY: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          TRUST_AGREEMENT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          STATE_COMPANY_REGISTRY: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          PARTNERSHIP_CONTROL_AGREEMENT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          PARTNERSHIP_AGREEMENT: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          SELFIE: '#/components/schemas/NonIdentityDocumentReplaceRequest'
-          OTHER: '#/components/schemas/NonIdentityDocumentReplaceRequest'
+      allOf:
+        - $ref: '#/components/schemas/BaseDocumentRequest'
     VerificationStatus:
       type: string
       enum:
