@@ -15802,8 +15802,7 @@ components:
           REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
     ReconciliationInstructions:
       type: object
-      required:
-        - reference
+      minProperties: 1
       properties:
         reference:
           type: string

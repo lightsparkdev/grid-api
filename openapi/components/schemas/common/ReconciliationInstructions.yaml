@@ -1,6 +1,5 @@
 type: object
-required:
-  - reference
+minProperties: 1
 properties:
   reference:
     type: string
