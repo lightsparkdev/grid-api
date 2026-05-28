@@ -15802,13 +15802,16 @@ components:
           REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
     ReconciliationInstructions:
       type: object
-      required:
-        - reference
+      minProperties: 1
       properties:
         reference:
           type: string
-          description: Unique reference code that must be included with the payment to match it with the correct incoming transaction
+          description: Unique reference code to include with the payment to match it with the correct incoming transaction, when available.
           example: UMA-Q12345-REF
+        transactionHash:
+          type: string
+          description: Transaction hash for the crypto transfer that delivered funds to the transaction destination, when available.
+          example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingRateDetails:
       description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
       type: object
@@ -15872,6 +15875,12 @@ components:
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
               description: Amount received in the recipient's currency
+            fees:
+              type: integer
+              format: int64
+              description: The total fees available from the receive quote in the smallest unit of the receiving currency (eg. cents).
+              minimum: 0
+              example: 10
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Included for all transactions except those with "CREATED" status
@@ -16027,6 +16036,9 @@ components:
               description: The fees associated with the quote in the smallest unit of the sending currency (eg. cents).
               minimum: 0
               example: 10
+            reconciliationInstructions:
+              $ref: '#/components/schemas/ReconciliationInstructions'
+              description: Reconciliation details for this transaction, including crypto transaction hash when available.
             quoteId:
               type: string
               description: The ID of the quote that was used to trigger this payment

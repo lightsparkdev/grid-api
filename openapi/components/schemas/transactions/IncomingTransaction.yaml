@@ -15,6 +15,14 @@ allOf:
       receivedAmount:
         $ref: ../common/CurrencyAmount.yaml
         description: Amount received in the recipient's currency
+      fees:
+        type: integer
+        format: int64
+        description: >-
+          The total fees available from the receive quote in the smallest unit
+          of the receiving currency (eg. cents).
+        minimum: 0
+        example: 10
       reconciliationInstructions:
         $ref: ../common/ReconciliationInstructions.yaml
         description: Included for all transactions except those with "CREATED" status
