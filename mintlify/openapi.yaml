@@ -1599,11 +1599,7 @@ paths:
       security:
         - BasicAuth: []
       requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DocumentUploadRequest'
+        $ref: '#/components/requestBodies/DocumentUploadRequestBody'
       responses:
         '201':
           description: Document uploaded successfully
@@ -1749,11 +1745,7 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DocumentReplaceRequest'
+        $ref: '#/components/requestBodies/DocumentReplaceRequestBody'
       responses:
         '200':
           description: Document replaced successfully
@@ -18772,3 +18764,16 @@ components:
               type: string
               enum:
                 - CARD.FUNDING_SOURCE_CHANGE
+  requestBodies:
+    DocumentUploadRequestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/DocumentUploadRequest'
+    DocumentReplaceRequestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/DocumentReplaceRequest'

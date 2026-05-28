@@ -57,11 +57,7 @@ put:
       schema:
         type: string
   requestBody:
-    required: true
-    content:
-      multipart/form-data:
-        schema:
-          $ref: ../../components/schemas/documents/DocumentReplaceRequest.yaml
+    $ref: ../../components/schemas/documents/DocumentReplaceRequestBody.yaml
   responses:
     '200':
       description: Document replaced successfully
