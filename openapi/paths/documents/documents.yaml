@@ -13,11 +13,7 @@ post:
   security:
     - BasicAuth: []
   requestBody:
-    required: true
-    content:
-      multipart/form-data:
-        schema:
-          $ref: ../../components/schemas/documents/DocumentUploadRequest.yaml
+    $ref: ../../components/schemas/documents/DocumentUploadRequestBody.yaml
   responses:
     '201':
       description: Document uploaded successfully
