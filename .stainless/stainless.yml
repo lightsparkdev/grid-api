@@ -10,7 +10,7 @@ organization:
   # and headings.
   name: Lightspark Grid
   # Link to your API documentation.
-  docs: 'docs.lightspark.com'
+  docs: 'grid.lightspark.com'
   # Contact email for bug reports, questions, and support requests.
   contact: support@lightspark.com
 
@@ -48,6 +48,31 @@ targets:
     production_repo: null
     publish:
       pypi: false
+  ruby:
+    edition: ruby.2025-10-08
+    gem_name: grid
+    production_repo: null
+    publish:
+      rubygems: false
+  go:
+    edition: go.2026-04-15
+    package_name: grid
+    production_repo: null
+  csharp:
+    edition: csharp.2025-10-08
+    package_name: grid
+    production_repo: null
+    publish:
+      nuget: false
+  php:
+    edition: php.2025-10-08
+    package_name: grid
+    production_repo: null
+    composer_package_name: org-placeholder/grid
+  cli:
+    edition: cli.2025-10-08
+    binary_name: grid
+    production_repo: null
 
 # `environments` are a map of the name of the environment (e.g. "sandbox",
 # "production") to the corresponding url to use.
@@ -75,6 +100,7 @@ resources:
       customer_info_field_name: '#/components/schemas/CustomerInfoFieldName'
       platform_currency_config: '#/components/schemas/PlatformCurrencyConfig'
       platform_config: '#/components/schemas/PlatformConfig'
+      embedded_wallet_config: "#/components/schemas/EmbeddedWalletConfig"
     methods:
       retrieve: get /config
       update: patch /config
@@ -95,7 +121,6 @@ resources:
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
-      signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
     methods:
       create:
         endpoint: post /customers
@@ -111,6 +136,7 @@ resources:
         body_param_name: KycLinkCreateRequest
       list_internal_accounts: get /customers/internal-accounts
       export: post /internal-accounts/{id}/export
+      generate_kyc_link: post /customers/{customerId}/kyc-link
       update_internal_account:
         endpoint: patch /internal-accounts/{id}
         body_param_name: InternalAccountUpdateRequest
@@ -321,6 +347,18 @@ resources:
       webhooks:
         methods:
           send_test: post /sandbox/webhooks/test
+      cards:
+        subresources:
+          simulate:
+            methods:
+              authorization: post /sandbox/cards/{id}/simulate/authorization
+              clearing: post /sandbox/cards/{id}/simulate/clearing
+              return: post /sandbox/cards/{id}/simulate/return
+            models:
+              card_merchant: "#/components/schemas/CardMerchant"
+              card_pull_summary: "#/components/schemas/CardPullSummary"
+              card_refund_summary: "#/components/schemas/CardRefundSummary"
+              card_settlement_summary: "#/components/schemas/CardSettlementSummary"
 
   uma_providers:
     methods:
@@ -409,6 +447,9 @@ resources:
       ethereum_wallet_external_account_info: "#/components/schemas/EthereumWalletExternalAccountInfo"
       verification_error: "#/components/schemas/VerificationError"
       agent_transfer_details: "#/components/schemas/AgentTransferDetails"
+      slv_external_account_create_info: "#/components/schemas/SlvExternalAccountCreateInfo"
+      slv_beneficiary: "#/components/schemas/SlvBeneficiary"
+      swift_external_account_create_info: "#/components/schemas/SwiftExternalAccountCreateInfo"
   crypto:
     methods:
       estimate_withdrawal_fee: post /crypto/estimate-withdrawal-fee
@@ -455,7 +496,6 @@ resources:
         models:
           auth_method_type: '#/components/schemas/AuthMethodType'
           auth_method: '#/components/schemas/AuthMethod'
-          auth_session: '#/components/schemas/AuthSession'
           auth_credential_list_response: '#/components/schemas/AuthCredentialListResponse'
           auth_credential_create_request: '#/components/schemas/AuthCredentialCreateRequest'
           auth_credential_verify_request: '#/components/schemas/AuthCredentialVerifyRequest'
@@ -482,16 +522,14 @@ resources:
           list:
             endpoint: get /auth/sessions
             paginated: false
+          delete: delete /auth/sessions/{id}
           refresh:
             endpoint: post /auth/sessions/{id}/refresh
             body_param_name: AuthSessionRefreshRequest
-          delete: delete /auth/sessions/{id}
         models:
           session_list_response: '#/components/schemas/SessionListResponse'
           auth_session_refresh_request: '#/components/schemas/AuthSessionRefreshRequest'
           auth_session: '#/components/schemas/AuthSession'
-          signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
-
   agents:
     methods:
       create: post /agents
@@ -555,6 +593,14 @@ resources:
       agent_action_reject_request: '#/components/schemas/AgentActionRejectRequest'
       agent_policy: "#/components/schemas/AgentPolicy"
       agent_usage: "#/components/schemas/AgentUsage"
+      agent_account_restrictions: "#/components/schemas/AgentAccountRestrictions"
+      agent_approval_thresholds: "#/components/schemas/AgentApprovalThresholds"
+  cards:
+    methods:
+      issue: post /cards
+      list: get /cards
+      retrieve: get /cards/{id}
+      update: patch /cards/{id}
 
 settings:
   # All generated integration tests that hit the prism mock http server are marked
