@@ -24,11 +24,23 @@ Any other code returns `401 UNAUTHORIZED` with `reason: "Invalid OTP code"`.
 
 For new sandbox integrations, use the same WebAuthn calls you plan to use in production.
 
-1. Generate your own WebAuthn registration challenge and call `navigator.credentials.create()`.
-2. Register the passkey with `POST /auth/credentials`, passing the challenge and attestation returned by the browser.
-3. Reauthenticate with `POST /auth/credentials/{id}/challenge`, passing the P-256 `clientPublicKey` that Grid should seal the session signing key to.
-4. Pass the returned `challenge` into `navigator.credentials.get()` using the returned `credentialId` in `allowCredentials`.
-5. Verify with `POST /auth/credentials/{id}/verify`, passing the browser assertion and echoing `Request-Id` from the challenge response.
+<Steps>
+  <Step title="Create a WebAuthn credential">
+    Generate your own WebAuthn registration challenge and call `navigator.credentials.create()`.
+  </Step>
+  <Step title="Register the passkey">
+    Register the passkey with `POST /auth/credentials`, passing the challenge and attestation returned by the browser.
+  </Step>
+  <Step title="Request a challenge">
+    Reauthenticate with `POST /auth/credentials/{id}/challenge`, passing the P-256 `clientPublicKey` that Grid should seal the session signing key to.
+  </Step>
+  <Step title="Run the browser assertion">
+    Pass the returned `challenge` into `navigator.credentials.get()` using the returned `credentialId` in `allowCredentials`.
+  </Step>
+  <Step title="Verify the assertion">
+    Verify with `POST /auth/credentials/{id}/verify`, passing the browser assertion and echoing `Request-Id` from the challenge response.
+  </Step>
+</Steps>
 
 The sandbox validates the registered credential ID, WebAuthn challenge, origin/RP binding, user-presence bit, assertion signature, and signature counter. A successful verify response includes `encryptedSessionSigningKey`, sealed to the `clientPublicKey`, just like production.
 
