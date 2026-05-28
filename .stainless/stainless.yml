@@ -353,7 +353,7 @@ resources:
             methods:
               authorization: post /sandbox/cards/{id}/simulate/authorization
               clearing: post /sandbox/cards/{id}/simulate/clearing
-              return: post /sandbox/cards/{id}/simulate/return
+              refund: post /sandbox/cards/{id}/simulate/return
             models:
               card_merchant: "#/components/schemas/CardMerchant"
               card_pull_summary: "#/components/schemas/CardPullSummary"
