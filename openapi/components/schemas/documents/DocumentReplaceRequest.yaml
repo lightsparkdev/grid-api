@@ -1,34 +1,3 @@
 title: Document Replace Request
-description: Replace an existing document.
-oneOf:
-  - $ref: ./IdentityDocumentReplaceRequest.yaml
-  - $ref: ./NonIdentityDocumentReplaceRequest.yaml
-discriminator:
-  propertyName: documentType
-  mapping:
-    PASSPORT: ./IdentityDocumentReplaceRequest.yaml
-    DRIVERS_LICENSE: ./IdentityDocumentReplaceRequest.yaml
-    NATIONAL_ID: ./IdentityDocumentReplaceRequest.yaml
-    PROOF_OF_ADDRESS: ./NonIdentityDocumentReplaceRequest.yaml
-    BANK_STATEMENT: ./NonIdentityDocumentReplaceRequest.yaml
-    TAX_RETURN: ./NonIdentityDocumentReplaceRequest.yaml
-    CERTIFICATE_OF_INCORPORATION: ./NonIdentityDocumentReplaceRequest.yaml
-    ARTICLES_OF_INCORPORATION: ./NonIdentityDocumentReplaceRequest.yaml
-    ARTICLES_OF_ASSOCIATION: ./NonIdentityDocumentReplaceRequest.yaml
-    STATE_REGISTRY_EXCERPT: ./NonIdentityDocumentReplaceRequest.yaml
-    GOOD_STANDING_CERTIFICATE: ./NonIdentityDocumentReplaceRequest.yaml
-    INFORMATION_STATEMENT: ./NonIdentityDocumentReplaceRequest.yaml
-    INCUMBENCY_CERTIFICATE: ./NonIdentityDocumentReplaceRequest.yaml
-    BUSINESS_LICENSE: ./NonIdentityDocumentReplaceRequest.yaml
-    SHAREHOLDER_REGISTER: ./NonIdentityDocumentReplaceRequest.yaml
-    POWER_OF_ATTORNEY: ./NonIdentityDocumentReplaceRequest.yaml
-    UTILITY_BILL: ./NonIdentityDocumentReplaceRequest.yaml
-    ELECTRICITY_BILL: ./NonIdentityDocumentReplaceRequest.yaml
-    RENT_OR_LEASE_AGREEMENT: ./NonIdentityDocumentReplaceRequest.yaml
-    DIRECTOR_REGISTRY: ./NonIdentityDocumentReplaceRequest.yaml
-    TRUST_AGREEMENT: ./NonIdentityDocumentReplaceRequest.yaml
-    STATE_COMPANY_REGISTRY: ./NonIdentityDocumentReplaceRequest.yaml
-    PARTNERSHIP_CONTROL_AGREEMENT: ./NonIdentityDocumentReplaceRequest.yaml
-    PARTNERSHIP_AGREEMENT: ./NonIdentityDocumentReplaceRequest.yaml
-    SELFIE: ./NonIdentityDocumentReplaceRequest.yaml
-    OTHER: ./NonIdentityDocumentReplaceRequest.yaml
+allOf:
+  - $ref: ./BaseDocumentRequest.yaml

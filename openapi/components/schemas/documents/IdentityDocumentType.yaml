@@ -1,9 +1,0 @@
-type: string
-enum:
-  - PASSPORT
-  - DRIVERS_LICENSE
-  - NATIONAL_ID
-description: >-
-  Identity document types issued by a government to verify an individual's
-  identity.
-example: PASSPORT
