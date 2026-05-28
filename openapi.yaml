@@ -11218,23 +11218,15 @@ components:
       type: object
       required:
         - accountType
-        - bankName
-        - accountNumber
+      description: |-
+        Required fields depend on the selected paymentRails:
+        - BANK_TRANSFER: iban
+        - MOBILE_MONEY: phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - EGP_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
-        accountNumber:
-          type: string
-          description: The account number of the bank
-          minLength: 1
-          maxLength: 34
         iban:
           type: string
           description: Egyptian IBAN (29 characters, starting with EG)
@@ -11242,19 +11234,17 @@ components:
           minLength: 29
           maxLength: 29
           pattern: ^EG[0-9]{27}$
-        swiftCode:
+        phoneNumber:
           type: string
-          description: The SWIFT/BIC code of the bank
-          example: NBEGEGCX
-          minLength: 8
-          maxLength: 11
-          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
       example:
         accountType: EGP_ACCOUNT
-        bankName: Example Bank
-        accountNumber: '1234567890'
         iban: EG380019000500000000263180002
-        swiftCode: NBEGEGCX
+        phoneNumber: '+1234567890'
     EgpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/EgpAccountInfoBase'
@@ -11268,6 +11258,7 @@ components:
                 type: string
                 enum:
                   - BANK_TRANSFER
+                  - MOBILE_MONEY
     PaymentEgpAccountInfo:
       title: EGP Account
       allOf:
@@ -11651,6 +11642,83 @@ components:
               type: string
               description: JSON-encoded transaction signing payload that must be stamped, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting Turnkey API-key stamp is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
+    SwiftAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - swiftCode
+        - bankName
+        - country
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SWIFT_ACCOUNT
+        country:
+          type: string
+          description: The ISO 3166-1 alpha-2 country code of the bank account
+          example: NG
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+        swiftCode:
+          type: string
+          description: The SWIFT/BIC code of the bank
+          example: DEUTDEFF
+          minLength: 8
+          maxLength: 11
+          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
+        bankName:
+          type: string
+          description: The name of the bank
+          example: Deutsche Bank
+          minLength: 1
+          maxLength: 255
+        accountNumber:
+          type: string
+          description: The bank account number. Required for most corridors. Use iban instead for IBAN-only corridors (e.g. BR, GB).
+          example: '1234567890'
+          minLength: 1
+          maxLength: 34
+        iban:
+          type: string
+          description: The IBAN of the bank account. Required for IBAN-only corridors (e.g. BR, GB). Use accountNumber for all other corridors.
+          example: GB29NWBK60161331926819
+          minLength: 15
+          maxLength: 34
+          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
+      example:
+        accountType: SWIFT_ACCOUNT
+        country: NG
+        swiftCode: DEUTDEFF
+        bankName: Deutsche Bank
+        accountNumber: '1234567890'
+    SwiftAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SwiftAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - SWIFT
+    PaymentSwiftAccountInfo:
+      title: SWIFT Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/SwiftAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -11703,6 +11771,7 @@ components:
             - $ref: '#/components/schemas/PaymentJmdAccountInfo'
             - $ref: '#/components/schemas/PaymentPkrAccountInfo'
             - $ref: '#/components/schemas/PaymentSlvAccountInfo'
+            - $ref: '#/components/schemas/PaymentSwiftAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -11759,6 +11828,7 @@ components:
               PKR_ACCOUNT: '#/components/schemas/PaymentPkrAccountInfo'
               SLV_ACCOUNT: '#/components/schemas/PaymentSlvAccountInfo'
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
+              SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -12270,41 +12340,36 @@ components:
         - accountType
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: bankName, accountNumber, bankAccountType
+        - BANK_TRANSFER: accountNumber, bankAccountType
         - MOBILE_MONEY: phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - COP_ACCOUNT
-        bankName:
-          type: string
-          description: The name of the bank (BANK_TRANSFER only)
-          minLength: 1
-          maxLength: 255
         accountNumber:
           type: string
-          description: The account number of the bank (BANK_TRANSFER only)
+          description: The account number of the bank
           minLength: 1
           maxLength: 34
         bankAccountType:
           type: string
-          description: The bank account type (BANK_TRANSFER only)
+          description: The bank account type
           enum:
             - CHECKING
             - SAVINGS
         phoneNumber:
           type: string
-          description: The phone number in international format (MOBILE_MONEY only — Nequi, Daviplata)
+          description: The phone number in international format
           example: '+1234567890'
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
       example:
         accountType: COP_ACCOUNT
-        bankName: Bancolombia
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        phoneNumber: '+1234567890'
     CopAccountInfo:
       allOf:
         - $ref: '#/components/schemas/CopAccountInfoBase'
@@ -12352,7 +12417,7 @@ components:
           $ref: '#/components/schemas/Address'
         documentType:
           type: string
-          description: 'Identity document type — required by most Colombian banks. CC: Cédula de Ciudadanía, CE: Cédula de Extranjería, TI: Tarjeta de Identidad, NIT: Número de Identificación Tributaria, PP: Passport'
+          description: Identity document type (Colombia)
           enum:
             - CC
             - CE
@@ -12361,7 +12426,7 @@ components:
             - PP
         documentNumber:
           type: string
-          description: Identity document number — required by most Colombian banks
+          description: The identity document number
           minLength: 1
           maxLength: 50
     CopExternalAccountInfo:
@@ -12440,10 +12505,7 @@ components:
       type: object
       required:
         - beneficiaryType
-        - address
-        - countryOfResidence
         - fullName
-        - phoneNumber
       properties:
         beneficiaryType:
           type: string
@@ -13922,70 +13984,6 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ZmwBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
-    SwiftAccountInfoBase:
-      type: object
-      required:
-        - accountType
-        - swiftCode
-        - bankName
-        - country
-      properties:
-        accountType:
-          type: string
-          enum:
-            - SWIFT_ACCOUNT
-        country:
-          type: string
-          description: The ISO 3166-1 alpha-2 country code of the bank account
-          example: NG
-          minLength: 2
-          maxLength: 2
-          pattern: ^[A-Z]{2}$
-        swiftCode:
-          type: string
-          description: The SWIFT/BIC code of the bank
-          example: DEUTDEFF
-          minLength: 8
-          maxLength: 11
-          pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
-        bankName:
-          type: string
-          description: The name of the bank
-          example: Deutsche Bank
-          minLength: 1
-          maxLength: 255
-        accountNumber:
-          type: string
-          description: The bank account number. Required for most corridors. Use iban instead for IBAN-only corridors (e.g. BR, GB).
-          example: '1234567890'
-          minLength: 1
-          maxLength: 34
-        iban:
-          type: string
-          description: The IBAN of the bank account. Required for IBAN-only corridors (e.g. BR, GB). Use accountNumber for all other corridors.
-          example: GB29NWBK60161331926819
-          minLength: 15
-          maxLength: 34
-          pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
-      example:
-        accountType: SWIFT_ACCOUNT
-        country: NG
-        swiftCode: DEUTDEFF
-        bankName: Deutsche Bank
-        accountNumber: '1234567890'
-    SwiftAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/SwiftAccountInfoBase'
-        - type: object
-          required:
-            - paymentRails
-          properties:
-            paymentRails:
-              type: array
-              items:
-                type: string
-                enum:
-                  - SWIFT
     SwiftBeneficiary:
       title: Individual Beneficiary
       type: object

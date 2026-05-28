@@ -30,9 +30,7 @@ properties:
     $ref: ./Address.yaml
   documentType:
     type: string
-    description: 'Identity document type — required by most Colombian banks.
-      CC: Cédula de Ciudadanía, CE: Cédula de Extranjería, TI: Tarjeta de
-      Identidad, NIT: Número de Identificación Tributaria, PP: Passport'
+    description: Identity document type (Colombia)
     enum:
     - CC
     - CE
@@ -41,6 +39,6 @@ properties:
     - PP
   documentNumber:
     type: string
-    description: Identity document number — required by most Colombian banks
+    description: The identity document number
     minLength: 1
     maxLength: 50

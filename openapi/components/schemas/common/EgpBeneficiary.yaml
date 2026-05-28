@@ -2,10 +2,7 @@ title: Individual Beneficiary
 type: object
 required:
 - beneficiaryType
-- address
-- countryOfResidence
 - fullName
-- phoneNumber
 properties:
   beneficiaryType:
     type: string
