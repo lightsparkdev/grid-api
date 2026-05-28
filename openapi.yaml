@@ -3945,7 +3945,7 @@ paths:
       description: |
         Register an authentication credential for an Embedded Wallet customer.
 
-        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`OAUTH` or `PASSKEY`), or to add `EMAIL_OTP` back after it has been removed. Only one `EMAIL_OTP` credential and one `PASSKEY` credential are supported per internal account.
+        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`OAUTH` or `PASSKEY`), or to add `EMAIL_OTP` back after it has been removed. Only one `EMAIL_OTP` credential is supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
 
         Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
@@ -4064,7 +4064,7 @@ paths:
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a credential type that already exists on the internal account. Only one email OTP credential and one passkey credential are supported per internal account at this time.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account.
           content:
             application/json:
               schema:
@@ -8221,7 +8221,7 @@ components:
             | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
             | INCOMPLETE | Document is missing pages or sides |
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
-            | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential is already registered on the target internal account; only one passkey credential is supported per internal account in v1 |
+            | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO

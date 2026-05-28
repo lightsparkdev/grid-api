@@ -6,7 +6,7 @@ Every Global Account action beyond receiving funds must be authorized by a sessi
 | **`OAUTH`** | Your platform already authenticates the user via OIDC (Google, Apple, your own IdP) and you want Grid to trust the same identity. |
 | **`EMAIL_OTP`** | Lowest-friction option. Works on any device with email access — no biometric hardware, identity provider, or client SDK required beyond the code entry field. |
 
-A single internal account can hold one credential of each type concurrently. Only one `PASSKEY` and one `EMAIL_OTP` per account in v1.
+A single internal account can hold one `EMAIL_OTP` credential and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
 
 ## Registration vs. verification
 
@@ -505,7 +505,7 @@ Same pattern as the first activation: call `/challenge` to send a new OTP, then 
 
 ## Managing credentials
 
-Every Global Account starts with a single credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a second credential of a different type (e.g., an email OTP alongside a passkey) so the account is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
+Every Global Account starts with a single credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a backup credential, such as another passkey or an email OTP, so the account is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
 
 ### List credentials
 
@@ -622,7 +622,7 @@ Requires an active session on an *existing* credential on the same account. The 
 </Steps>
 
 <Note>
-  Only one credential of each type (`EMAIL_OTP`, `PASSKEY`) is allowed per internal account in v1. Registering a second credential of the same type returns `400 EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` or `400 PASSKEY_CREDENTIAL_ALREADY_EXISTS`.
+  Only one `EMAIL_OTP` credential is allowed per internal account. Multiple distinct `PASSKEY` credentials are allowed; registering the same WebAuthn credentialId twice returns `400 PASSKEY_CREDENTIAL_ALREADY_EXISTS`.
 </Note>
 
 ### Revoke a credential
