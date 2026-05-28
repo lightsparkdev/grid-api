@@ -1,0 +1,73 @@
+/* Grid Wallet Demo — adopts the Lightspark Origin design system,
+   matching grid-visualizer / flow-builder exactly. */
+
+@use '@lightsparkdev/origin/src/tokens/variables';
+@use '@lightsparkdev/origin/src/tokens/fonts';
+@use '@lightsparkdev/origin/src/tokens/typography';
+@use '@lightsparkdev/origin/src/tokens/effects';
+@use '@lightsparkdev/origin/src/tokens/reset';
+
+* {
+  corner-shape: squircle;
+}
+
+@supports (corner-shape: squircle) {
+  :root {
+    --corner-radius-2xs: 3.6px;
+    --corner-radius-xs: 7.2px;
+    --corner-radius-sm: 10.8px;
+    --corner-radius-md: 14.4px;
+    --corner-radius-lg: 21.6px;
+    --corner-radius-xl: 28.8px;
+    --corner-radius-2xl: 43.2px;
+    --corner-radius-3xl: 57.6px;
+    --corner-radius-4xl: 72px;
+  }
+}
+
+body {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-book);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iPhone mock palette — the wallet is a self-contained iOS app preview, so it
+   keeps its own iOS tokens (adapted from the keynote phone screens) rather than
+   Origin. These flip with Origin's [data-theme]. */
+/* iPhone palette — adapted 1:1 from the "bread" neobank app (sparkapp). */
+:root {
+  --p-accent: #11a967;
+  --p-accent-press: #0e8f57;
+  /* light variant */
+  --p-bg: #f4f4f5;
+  --p-screen: #ffffff;
+  --p-surface: #f4f4f5;
+  --p-surface-2: #ececee;
+  --p-text: #0a0a0a;
+  --p-text-2: #707070;
+  --p-text-3: #b4b4b8;
+  --p-separator: rgba(0, 0, 0, 0.08);
+  --p-blue: #3b82f6;
+  --p-green: #22c55e;
+  --p-fill: #0a0a0a; /* primary button bg */
+  --p-fg: #ffffff; /* text on primary button */
+  --p-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
+  --p-card: linear-gradient(150deg, #1f6feb 0%, #1bb6c9 100%);
+}
+
+[data-theme='dark'] {
+  --p-bg: #000000;
+  --p-screen: #000000;
+  --p-surface: #141414;
+  --p-surface-2: #1f1f1f;
+  --p-text: #ffffff;
+  --p-text-2: #8a8a8e;
+  --p-text-3: #5a5a5e;
+  --p-separator: rgba(255, 255, 255, 0.08);
+  --p-fill: #ffffff;
+  --p-fg: #0a0a0a;
+  --p-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
