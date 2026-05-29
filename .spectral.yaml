@@ -61,12 +61,15 @@ rules:
   # Discriminators and Polymorphism (README: OpenAPI Best Practices)
   # ============================================================
 
-  # oneOf must include a discriminator
+  # oneOf must include a discriminator (anywhere it appears — top-level
+  # schemas, properties, request/response bodies). oneOf implies a tagged
+  # union; for nullable values use anyOf instead.
   oneOf-must-have-discriminator:
     description: oneOf schemas must include a discriminator
-    message: "oneOf without a discriminator. See openapi/README.md#discriminators-and-polymorphism"
-    severity: warn
-    given: "$.components.schemas[?(@.oneOf)]"
+    message: "oneOf without a discriminator. Use anyOf for non-tagged unions (e.g. nullable values). See openapi/README.md#discriminators-and-polymorphism"
+    severity: error
+    resolved: false
+    given: "$..*[?(@ && @.oneOf)]"
     then:
       field: discriminator
       function: truthy
