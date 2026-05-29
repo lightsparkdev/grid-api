@@ -31,8 +31,17 @@ jobs:
           path: head
 
       - name: Install oasdiff
+        env:
+          OASDIFF_VERSION: 1.16.0
+          OASDIFF_SHA256: 2f424431c441a85e2d73ff884609f55c98c283ca2ce3d88537a7a029379dd521
         run: |
-          curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | sh
+          curl -fsSL \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz" \
+            -o /tmp/oasdiff.tgz
+          echo "${OASDIFF_SHA256}  /tmp/oasdiff.tgz" | sha256sum -c -
+          tar -xzf /tmp/oasdiff.tgz -C /tmp oasdiff
+          sudo mv /tmp/oasdiff /usr/local/bin/oasdiff
+          oasdiff --version
 
       - name: Run oasdiff breaking
         id: oasdiff
