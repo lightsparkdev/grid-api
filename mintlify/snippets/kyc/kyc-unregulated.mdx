@@ -1,3 +1,5 @@
+import KybDataRequirements from '/snippets/kyc/kyb-data-requirements.mdx'
+
 <Note>
 **Unregulated platforms** rely on Grid to run KYC for individuals and KYB for businesses. You can onboard customers either through the **hosted KYC/KYB link flow** below, or by **submitting customer data directly through the API**. Both paths produce the same `kycStatus` transitions and emit the same `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` / `CUSTOMER.KYC_PENDING` (and `CUSTOMER.KYB_*` equivalents) webhooks.
 </Note>
@@ -198,6 +200,9 @@ The shape of the flow depends on the customer type:
 </Tab>
 
 <Tab title="KYB (business)">
+
+<KybDataRequirements />
+
 <Steps>
 <Step title="Create the business customer">
   Call `POST /customers` with `customerType: BUSINESS` and the business information (legal name, registration number, tax ID, registered address).
