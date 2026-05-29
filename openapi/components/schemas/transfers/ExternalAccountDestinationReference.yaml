@@ -1,0 +1,15 @@
+type: object
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: Reference to an external account ID
+    example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  paymentRail:
+    description: >-
+      The payment rail to use for the transfer. Must be one of the rails
+      supported by the destination account. If not specified, the system
+      will select a default rail.
+    allOf:
+      - $ref: ../common/PaymentRail.yaml

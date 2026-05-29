@@ -31,6 +31,7 @@ post:
                 accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
               destination:
                 accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                paymentRail: ACH
               amount: 12550
   responses:
     '201':

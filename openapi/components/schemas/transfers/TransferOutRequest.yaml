@@ -7,7 +7,7 @@ properties:
     $ref: ./InternalAccountReference.yaml
     description: Source internal account details
   destination:
-    $ref: ./ExternalAccountReference.yaml
+    $ref: ./ExternalAccountDestinationReference.yaml
     description: Destination external account details
   amount:
     type: integer
