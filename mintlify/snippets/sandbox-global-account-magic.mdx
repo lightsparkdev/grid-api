@@ -1,4 +1,4 @@
-The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP uses the fixed sandbox code `000000`. Passkey auth can use the same browser WebAuthn ceremony as production. Wallet signatures use fixed sandbox-only values. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
+The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP uses the fixed sandbox code `000000`. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same decrypted session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
 
 Sandbox-only compatibility values are still available for some flows, but they do not exercise the production-shaped client implementation. Authentication failures return `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
 
@@ -131,7 +131,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 
 ### Wallet signature header
 
-Pass `sandbox-valid-signature` as the `Grid-Wallet-Signature` HTTP header on any signed-retry flow:
+After verifying an auth credential, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. Use the decrypted session signing key to build a Turnkey API-key stamp over the exact `payloadToSign` string returned by Grid, then pass that full stamp as the `Grid-Wallet-Signature` HTTP header on signed flows:
 
 - `POST /auth/credentials` (add-additional-credential signed retry)
 - `DELETE /auth/credentials/{id}` (revoke credential)
@@ -140,12 +140,23 @@ Pass `sandbox-valid-signature` as the `Grid-Wallet-Signature` HTTP header on any
 - `PATCH /internal-accounts/{id}` (update wallet privacy)
 - `POST /quotes/{quoteId}/execute` (when source is an embedded wallet)
 
+<Note>
+  This example uses the sample signer in the Grid API repo's [scripts directory](https://github.com/lightsparkdev/grid-api/tree/main/scripts). See the [scripts README](https://github.com/lightsparkdev/grid-api/blob/main/scripts/README.md) for setup, or replace `SIGN` with your own Turnkey API-key stamp implementation.
+</Note>
+
 ```bash
+SIGN="node $(pwd)/scripts/embedded-wallet-sign.js"
+STAMP=$($SIGN stamp "$SESSION_PRIV_HEX" "$PAYLOAD_TO_SIGN")
+
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/execute \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
-  -H "Grid-Wallet-Signature: sandbox-valid-signature"
+  -H "Grid-Wallet-Signature: $STAMP"
 ```
 
-Any other header value returns `401 UNAUTHORIZED` with `reason: "Invalid Grid-Wallet-Signature"`.
+Sandbox validates that the stamp is a P-256 Turnkey API-key stamp over the exact pending Turnkey payload and that the public key belongs to an active sandbox session for the wallet.
+
+<Note>
+  The legacy sandbox-only `Grid-Wallet-Signature: sandbox-valid-signature` value is still accepted for compatibility. Use a real session stamp when you want the client implementation to match production.
+</Note>
