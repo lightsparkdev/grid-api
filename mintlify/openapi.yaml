@@ -2143,6 +2143,7 @@ paths:
                     accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
                   destination:
                     accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    paymentRail: ACH
                   amount: 12550
       responses:
         '201':
@@ -16123,6 +16124,19 @@ components:
         mapping:
           INCOMING: '#/components/schemas/IncomingTransaction'
           OUTGOING: '#/components/schemas/OutgoingTransaction'
+    ExternalAccountDestinationReference:
+      type: object
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Reference to an external account ID
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        paymentRail:
+          description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
     TransferOutRequest:
       type: object
       required:
@@ -16133,7 +16147,7 @@ components:
           $ref: '#/components/schemas/InternalAccountReference'
           description: Source internal account details
         destination:
-          $ref: '#/components/schemas/ExternalAccountReference'
+          $ref: '#/components/schemas/ExternalAccountDestinationReference'
           description: Destination external account details
         amount:
           type: integer
