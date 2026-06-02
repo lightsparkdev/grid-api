@@ -879,7 +879,7 @@ For business accounts, include business information:
 
 ## Minimum required beneficiary fields
 
-The following table shows the minimum required fields for individual and business beneficiaries by country. All other fields are optional but recommended for faster compliance review.
+The following tables show the minimum required fields for individual and business beneficiaries. All other fields are optional but recommended for faster compliance review.
 
 ### Individual beneficiaries
 
@@ -894,6 +894,26 @@ The following table shows the minimum required fields for individual and busines
 
 <Info>
   While only the fields listed above are strictly required, providing additional information like `birthDate`, `nationality`, and `address` can reduce the likelihood of false positive compliance checks and increase transaction success rates. 
+</Info>
+
+### Business beneficiaries
+
+For business beneficiaries, the required fields vary by destination currency:
+
+| Currency | Required fields |
+| --- | --- |
+| USD | `legalName`, `address` |
+| MXN | `legalName`, `address` |
+| EUR | `legalName`, `address`, `registrationNumber` |
+| GBP, INR, BRL, DKK, PHP, HKD, IDR, MYR, SGD, THB, VND, AED | `legalName`, `address` |
+| NGN, ZAR, KES, TZS, RWF, ZMW, UGX, BWP, MWK, XOF, XAF | `legalName`, `address`, `registrationNumber`, `taxId` |
+
+<Note>
+  When sending to GBP, INR, BRL, DKK, PHP, HKD, IDR, MYR, SGD, THB, VND, or AED, business senders (originators) must also provide `registrationNumber`.
+</Note>
+
+<Info>
+  `registrationNumber` is the business's official registration or incorporation number (e.g., EIN in the US, CNPJ in Brazil, company registration number in the UK). `taxId` is the business's tax identification number where it differs from the registration number.
 </Info>
 
 ## Account status
