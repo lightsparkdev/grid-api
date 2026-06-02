@@ -12,3 +12,10 @@ allOf:
           Unique reference code that must be included with the payment to properly
           credit it
         example: UMA-Q12345-REF
+      accountHolderName:
+        type: string
+        description: The name of the account holder at the receiving bank
+        example: Jane Doe
+      bankAddress:
+        $ref: ./Address.yaml
+        description: The address of the receiving bank
