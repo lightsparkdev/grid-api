@@ -2145,6 +2145,7 @@ paths:
                     accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
                     paymentRail: ACH
                   amount: 12550
+                  remittanceInformation: '12345'
       responses:
         '201':
           description: Transfer-out request created successfully
@@ -16213,6 +16214,11 @@ components:
           format: int64
           description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
           example: 12550
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          example: '12345'
     CurrencyPreference:
       type: object
       required:

@@ -33,6 +33,7 @@ post:
                 accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
                 paymentRail: ACH
               amount: 12550
+              remittanceInformation: '12345'
   responses:
     '201':
       description: Transfer-out request created successfully
