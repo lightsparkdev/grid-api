@@ -1,11 +1,12 @@
 type: object
 required:
 - accountType
+- bankName
 description: 'Required fields depend on the selected paymentRails:
 
-  - BANK_TRANSFER: accountNumber
+  - BANK_TRANSFER: accountNumber, bankName
 
-  - MOBILE_MONEY: phoneNumber'
+  - MOBILE_MONEY: bankName, phoneNumber'
 properties:
   accountType:
     type: string
@@ -16,6 +17,11 @@ properties:
     description: The account number of the bank
     minLength: 1
     maxLength: 34
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
   phoneNumber:
     type: string
     description: The phone number in international format
@@ -26,4 +32,5 @@ properties:
 example:
   accountType: GHS_ACCOUNT
   accountNumber: '1234567890'
+  bankName: Example Bank
   phoneNumber: '+1234567890'
