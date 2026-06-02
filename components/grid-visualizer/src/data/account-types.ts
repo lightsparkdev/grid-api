@@ -299,6 +299,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     accountType: 'COP_ACCOUNT',
     fields: [
       { name: 'accountNumber', example: '1234567890', description: 'For bank transfer' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS (for bank transfer)' },
       { name: 'phoneNumber', example: '+573001234567', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
@@ -306,9 +307,8 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   EGP_ACCOUNT: {
     accountType: 'EGP_ACCOUNT',
     fields: [
-      { name: 'accountNumber', example: '1234567890123456' },
-      { name: 'iban', example: 'EG380019000500000000263180002', description: 'Optional' },
-      { name: 'swiftCode', example: 'NBEGEGCX', description: 'Optional' },
+      { name: 'iban', example: 'EG380019000500000000263180002', description: 'For bank transfer' },
+      { name: 'phoneNumber', example: '+201234567890', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
   },
@@ -361,6 +361,17 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '0123456789', description: 'BANK_TRANSFER only' },
       { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS (BANK_TRANSFER only)' },
       { name: 'phoneNumber', example: '+50312345678', description: 'MOBILE_MONEY only (Tigo Money)' },
+    ],
+    beneficiaryRequired: true,
+  },
+  SWIFT_ACCOUNT: {
+    accountType: 'SWIFT_ACCOUNT',
+    fields: [
+      { name: 'swiftCode', example: 'DEUTDEFF', description: 'SWIFT/BIC code (8-11 characters)' },
+      { name: 'bankName', example: 'Deutsche Bank' },
+      { name: 'country', example: 'NG', description: 'ISO 3166-1 alpha-2 country code' },
+      { name: 'accountNumber', example: '1234567890', description: 'For most corridors' },
+      { name: 'iban', example: 'GB29NWBK60161331926819', description: 'For IBAN-only corridors (e.g. BR, GB)' },
     ],
     beneficiaryRequired: true,
   },
