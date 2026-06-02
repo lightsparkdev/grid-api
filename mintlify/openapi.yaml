@@ -11533,15 +11533,21 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
+        - BANK_TRANSFER: accountNumber, bankName
         - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - PKR_ACCOUNT
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -11561,17 +11567,12 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
       example:
         accountType: PKR_ACCOUNT
+        bankName: Example Bank
         accountNumber: '1234567890'
         iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
-        bankName: Example Bank
     PkrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PkrAccountInfoBase'
