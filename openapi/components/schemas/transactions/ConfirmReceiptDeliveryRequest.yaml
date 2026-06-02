@@ -1,0 +1,9 @@
+type: object
+properties:
+  receiptDeliveryConfirmedAt:
+    type: string
+    format: date-time
+    description: >-
+      The time at which the platform delivered the transaction receipt to their
+      customer. If omitted, the current server time is used.
+    example: '2025-08-15T14:31:00Z'
