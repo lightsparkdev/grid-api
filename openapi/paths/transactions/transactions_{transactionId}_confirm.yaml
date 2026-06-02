@@ -1,0 +1,58 @@
+post:
+  summary: Confirm receipt delivery
+  description: >
+    Confirm that the platform delivered the transaction receipt to its
+    customer. This confirmation is only necessary when the platform is
+    contractually required to send a receipt. If `receiptDeliveryConfirmedAt` is
+    omitted, the confirmation time is set to the current server time. Calling
+    this endpoint again for the same transaction updates the stored
+    confirmation time.
+  operationId: confirmReceiptDelivery
+  tags:
+    - Transactions
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: transactionId
+      in: path
+      description: Unique identifier of the transaction to confirm receipt delivery for
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/transactions/ConfirmReceiptDeliveryRequest.yaml
+  responses:
+    '200':
+      description: Receipt delivery confirmation recorded successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

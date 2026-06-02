@@ -173,6 +173,8 @@ paths:
     $ref: paths/transactions/transactions.yaml
   /transactions/{transactionId}:
     $ref: paths/transactions/transactions_{transactionId}.yaml
+  /transactions/{transactionId}/confirm:
+    $ref: paths/transactions/transactions_{transactionId}_confirm.yaml
   /transactions/{transactionId}/approve:
     $ref: paths/transactions/transactions_{transactionId}_approve.yaml
   /transactions/{transactionId}/reject:
