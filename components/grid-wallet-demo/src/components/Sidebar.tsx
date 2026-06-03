@@ -29,12 +29,12 @@ const PERSONAS: { id: Persona; label: string; desc: string; Icon: IconCmp; soon?
   { id: 'marketplace', label: 'Marketplace', desc: 'Buyer & seller balances', Icon: IconBank, soon: true },
 ];
 
-const METHODS: { id: AuthMethod; label: string; Icon: IconCmp }[] = [
+const METHODS: { id: AuthMethod; label: string; Icon: IconCmp; soon?: boolean }[] = [
   { id: 'passkey', label: 'Passkey', Icon: IconFingerPrint1 },
   { id: 'oauth', label: 'Google', Icon: IconGoogle },
   { id: 'apple', label: 'Apple', Icon: IconApple },
   { id: 'email_otp', label: 'Email', Icon: IconMailbox },
-  { id: 'sms', label: 'Phone', Icon: IconPhone },
+  { id: 'sms', label: 'Phone', Icon: IconPhone, soon: true },
 ];
 
 const ACTION_ICON: Record<ActionId, IconCmp> = {
@@ -100,12 +100,19 @@ export default function Sidebar({
             <button
               key={m.id}
               className={clsx(styles.chip, method === m.id && styles.chipActive)}
-              onClick={() => setMethod(m.id)}
-              disabled={running || wallet.created}
-              title={wallet.created ? 'Reset to change sign-in method' : undefined}
+              onClick={() => !m.soon && setMethod(m.id)}
+              disabled={running || wallet.created || m.soon}
+              title={
+                m.soon
+                  ? 'Coming soon'
+                  : wallet.created
+                    ? 'Reset to change sign-in method'
+                    : undefined
+              }
             >
               <m.Icon size={15} />
               {m.label}
+              {m.soon && <span className={styles.soonBadge}>Soon</span>}
             </button>
           ))}
         </div>

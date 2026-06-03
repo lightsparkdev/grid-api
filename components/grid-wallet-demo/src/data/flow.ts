@@ -59,8 +59,12 @@ export function authLabel(m: AuthMethod) {
   return AUTH_LABEL[m];
 }
 
+// Brand names stay capitalized; generic methods read lowercase in the CTA.
+const BRAND_METHODS: AuthMethod[] = ['oauth', 'apple'];
+
 export function authCta(m: AuthMethod) {
-  return `Continue with ${AUTH_LABEL[m].toLowerCase()}`;
+  const label = BRAND_METHODS.includes(m) ? AUTH_LABEL[m] : AUTH_LABEL[m].toLowerCase();
+  return `Continue with ${label}`;
 }
 
 const CUSTOMER = 'Customer:019542f5-b3e7-1d02-0000-000000000001';
