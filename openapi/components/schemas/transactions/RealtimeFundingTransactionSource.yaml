@@ -1,4 +1,4 @@
-title: Real-time Funding Source
+title: External Funding Source
 allOf:
   - $ref: ./BaseTransactionSource.yaml
   - type: object
@@ -18,6 +18,49 @@ allOf:
         type: string
         description: Currency code for the funding source
         example: USDC
+      accountHolderName:
+        type: string
+        description: The name of the originator (sender) of the payment.
+        example: John Sender
+      accountIdentifier:
+        type: string
+        description: >-
+          The originator's account number or IBAN. May be masked or partial
+          depending on the rail.
+        example: '****6789'
+      bankName:
+        type: string
+        description: The name of the originating bank.
+        example: Chase Bank
+      bankIdentifier:
+        type: string
+        description: >-
+          The identifier of the originating bank, such as a routing number, BIC,
+          or SWIFT code.
+        example: '021000021'
+      paymentRail:
+        description: The payment rail the funds arrived on.
+        allOf:
+          - $ref: ../common/PaymentRail.yaml
+      remittanceInformation:
+        type: string
+        description: >-
+          Free-form information about the payment provided by the originator.
+          The source field depends on the payment rail: the Addenda record for
+          ACH, the OBI / beneficiary information for wires, and the
+          remittanceInformation field for RTP and FedNow.
+        example: '12345'
+      endToEndId:
+        type: string
+        description: The originator's own end-to-end reference for the payment.
+        example: E2E-9f2c6b6f
+      traceNumber:
+        type: string
+        description: >-
+          Rail-level tracking identifier for the payment, such as an ACH trace
+          number or a wire IMAD/OMAD, useful for reconciliation.
+        example: '021000020123456'
     description: >-
-      Transaction was funded using a real-time funding source
-      (RTP, SEPA Instant, Spark, Stables, etc.).
+      Transaction was funded using an external funding source. All originator
+      fields are optional and populated on a best-effort basis depending on what
+      the funding source provides.
