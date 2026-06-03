@@ -11210,10 +11210,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: accountNumber, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -11224,6 +11225,11 @@ components:
           description: The account number of the bank
           minLength: 1
           maxLength: 34
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         branchCode:
           type: string
           description: The branch code
@@ -11247,6 +11253,7 @@ components:
       example:
         accountType: BDT_ACCOUNT
         accountNumber: '1234567890'
+        bankName: Example Bank
         branchCode: '11111'
         swiftCode: DEUTDEFF
         phoneNumber: '+1234567890'
@@ -11317,10 +11324,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: iban
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: bankName, iban
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -11333,6 +11341,11 @@ components:
           minLength: 29
           maxLength: 29
           pattern: ^EG[0-9]{27}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -11343,6 +11356,7 @@ components:
       example:
         accountType: EGP_ACCOUNT
         iban: EG380019000500000000263180002
+        bankName: Example Bank
         phoneNumber: '+1234567890'
     EgpAccountInfo:
       allOf:
@@ -11375,10 +11389,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: accountNumber, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -11389,6 +11404,11 @@ components:
           description: The account number of the bank
           minLength: 1
           maxLength: 34
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -11399,6 +11419,7 @@ components:
       example:
         accountType: GHS_ACCOUNT
         accountNumber: '1234567890'
+        bankName: Example Bank
         phoneNumber: '+1234567890'
     GhsAccountInfo:
       allOf:
@@ -11589,15 +11610,21 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
+        - BANK_TRANSFER: accountNumber, bankName
         - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - PKR_ACCOUNT
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -11617,17 +11644,12 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
       example:
         accountType: PKR_ACCOUNT
+        bankName: Example Bank
         accountNumber: '1234567890'
         iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
-        bankName: Example Bank
     PkrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PkrAccountInfoBase'
@@ -12437,10 +12459,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber, bankAccountType
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: accountNumber, bankAccountType, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -12457,6 +12480,11 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -12468,6 +12496,7 @@ components:
         accountType: COP_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        bankName: Example Bank
         phoneNumber: '+1234567890'
     CopAccountInfo:
       allOf:
