@@ -20,7 +20,16 @@ properties:
     minLength: 9
     maxLength: 9
     pattern: ^[0-9]{9}$
+  accountHolderName:
+    type: string
+    description: The name of the account holder at the receiving bank
+    example: Jane Doe
+  bankAddress:
+    allOf:
+    - $ref: ./Address.yaml
+    description: The address of the receiving bank
 example:
   accountType: USD_ACCOUNT
   accountNumber: '1234567890'
   routingNumber: '021000021'
+  accountHolderName: Jane Doe
