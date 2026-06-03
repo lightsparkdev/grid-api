@@ -1,11 +1,12 @@
 type: object
 required:
 - accountType
+- bankName
 description: 'Required fields depend on the selected paymentRails:
 
-  - BANK_TRANSFER: accountNumber, bankAccountType
+  - BANK_TRANSFER: accountNumber, bankAccountType, bankName
 
-  - MOBILE_MONEY: phoneNumber'
+  - MOBILE_MONEY: bankName, phoneNumber'
 properties:
   accountType:
     type: string
@@ -22,6 +23,11 @@ properties:
     enum:
     - CHECKING
     - SAVINGS
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
   phoneNumber:
     type: string
     description: The phone number in international format
@@ -33,4 +39,5 @@ example:
   accountType: COP_ACCOUNT
   accountNumber: '1234567890'
   bankAccountType: CHECKING
+  bankName: Example Bank
   phoneNumber: '+1234567890'
