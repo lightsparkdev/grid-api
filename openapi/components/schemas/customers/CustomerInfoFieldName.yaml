@@ -18,6 +18,8 @@ enum:
   - IDENTIFIER
   - BUSINESS_TYPE
   - COMPANY_LEGAL_NAME
+  - ID_TYPE
+  - ID_NUMBER
 description: >-
   Name of a type of field containing info about a platform's customer or
   counterparty customer.
