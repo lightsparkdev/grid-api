@@ -288,9 +288,10 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   BDT_ACCOUNT: {
     accountType: 'BDT_ACCOUNT',
     fields: [
-      { name: 'accountNumber', example: '1234567890123' },
-      { name: 'branchCode', example: '12345', description: '5-digit branch code' },
-      { name: 'phoneNumber', example: '+8801712345678' },
+      { name: 'bankName', example: 'BRAC Bank' },
+      { name: 'accountNumber', example: '1234567890123', description: 'For bank transfer' },
+      { name: 'branchCode', example: '12345', description: '5-digit branch code (optional)' },
+      { name: 'phoneNumber', example: '+8801712345678', description: 'For mobile money' },
       { name: 'swiftCode', example: 'BABORUMMYYY', description: 'Optional' },
     ],
     beneficiaryRequired: true,
@@ -298,7 +299,9 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   COP_ACCOUNT: {
     accountType: 'COP_ACCOUNT',
     fields: [
+      { name: 'bankName', example: 'Bancolombia' },
       { name: 'accountNumber', example: '1234567890', description: 'For bank transfer' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS (for bank transfer)' },
       { name: 'phoneNumber', example: '+573001234567', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
@@ -306,17 +309,18 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   EGP_ACCOUNT: {
     accountType: 'EGP_ACCOUNT',
     fields: [
-      { name: 'accountNumber', example: '1234567890123456' },
-      { name: 'iban', example: 'EG380019000500000000263180002', description: 'Optional' },
-      { name: 'swiftCode', example: 'NBEGEGCX', description: 'Optional' },
+      { name: 'bankName', example: 'National Bank of Egypt' },
+      { name: 'iban', example: 'EG380019000500000000263180002', description: 'For bank transfer (29 chars, starts with EG)' },
+      { name: 'phoneNumber', example: '+201012345678', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
   },
   GHS_ACCOUNT: {
     accountType: 'GHS_ACCOUNT',
     fields: [
-      { name: 'accountNumber', example: '1234567890' },
-      { name: 'phoneNumber', example: '+233241234567' },
+      { name: 'bankName', example: 'GCB Bank' },
+      { name: 'accountNumber', example: '1234567890', description: 'For bank transfer' },
+      { name: 'phoneNumber', example: '+233241234567', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
   },
@@ -347,10 +351,10 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   PKR_ACCOUNT: {
     accountType: 'PKR_ACCOUNT',
     fields: [
-      { name: 'accountNumber', example: '1234567890123456' },
-      { name: 'phoneNumber', example: '+923001234567' },
-      { name: 'iban', example: 'PK36SCBL0000001123456702', description: 'Optional' },
-      { name: 'bankName', example: 'HBL', description: 'Required for Mobile Money' },
+      { name: 'bankName', example: 'HBL' },
+      { name: 'accountNumber', example: '1234567890123456', description: 'For bank transfer' },
+      { name: 'iban', example: 'PK36SCBL0000001123456702', description: 'Optional (24 chars, starts with PK)' },
+      { name: 'phoneNumber', example: '+923001234567', description: 'For mobile money' },
     ],
     beneficiaryRequired: true,
   },
