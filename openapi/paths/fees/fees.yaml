@@ -1,0 +1,111 @@
+post:
+  summary: Create a fee
+  description: >
+    Create a platform-defined fee that can later be assessed against a customer's
+    account. A fee must define a fixed fee range and/or a variable fee range.
+  operationId: createFee
+  tags:
+    - Fees
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/fees/FeeCreateRequest.yaml
+  responses:
+    '201':
+      description: Fee created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fees/Fee.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List fees
+  description: >
+    Retrieve a paginated list of platform-defined fees, with optional filtering.
+  operationId: listFees
+  tags:
+    - Fees
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: type
+      in: query
+      description: Filter by fee type
+      required: false
+      schema:
+        $ref: ../../components/schemas/fees/FeeType.yaml
+    - name: createdAfter
+      in: query
+      description: Filter fees created after this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: createdBefore
+      in: query
+      description: Filter fees created before this timestamp (inclusive)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fees/FeeListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,21 @@
+type: object
+description: >-
+  The allowed range for the variable (percentage) portion of a fee, expressed in
+  basis points (1 basis point = 0.01%). When assessing the fee, the chosen
+  variable fee rate must fall within this range (inclusive).
+required:
+  - min
+  - max
+properties:
+  min:
+    type: integer
+    minimum: 0
+    maximum: 10000
+    description: Minimum variable fee rate, in basis points (e.g. 50 = 0.50%).
+    example: 50
+  max:
+    type: integer
+    minimum: 0
+    maximum: 10000
+    description: Maximum variable fee rate, in basis points (e.g. 200 = 2.00%).
+    example: 200

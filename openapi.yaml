@@ -55,6 +55,8 @@ tags:
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
+  - name: Fees
+    description: Endpoints for platforms to define the fees they charge their customers and to assess or reverse those fees against an account.
 paths:
   /config:
     get:
@@ -6821,6 +6823,350 @@ paths:
                 $ref: '#/components/schemas/Error403'
         '404':
           description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fees:
+    post:
+      summary: Create a fee
+      description: |
+        Create a platform-defined fee that can later be assessed against a customer's account. A fee must define a fixed fee range and/or a variable fee range.
+      operationId: createFee
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeCreateRequest'
+      responses:
+        '201':
+          description: Fee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List fees
+      description: |
+        Retrieve a paginated list of platform-defined fees, with optional filtering.
+      operationId: listFees
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: Filter by fee type
+          required: false
+          schema:
+            $ref: '#/components/schemas/FeeType'
+        - name: createdAfter
+          in: query
+          description: Filter fees created after this timestamp (inclusive)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: createdBefore
+          in: query
+          description: Filter fees created before this timestamp (inclusive)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fees/{feeId}:
+    parameters:
+      - name: feeId
+        in: path
+        description: System-generated unique fee identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get fee by ID
+      description: Retrieve a fee by its system-generated ID.
+      operationId: getFeeById
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a fee
+      description: Update a fee by its system-generated ID. Only the provided fields are updated.
+      operationId: updateFee
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeUpdateRequest'
+      responses:
+        '200':
+          description: Fee updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete a fee
+      description: Delete a fee by its system-generated ID.
+      operationId: deleteFee
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Fee deleted successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fee-assessments:
+    post:
+      summary: Assess a fee
+      description: |
+        Assess a defined fee against a customer's account, charging the chosen fixed amount and/or variable fee rate (which must fall within the ranges defined on the fee). Returns the resulting transaction.
+      operationId: assessFee
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeAssessmentRequest'
+      responses:
+        '201':
+          description: Fee assessed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionOneOf'
+        '400':
+          description: Bad request - Invalid parameters or amounts outside the fee's ranges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Fee or account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /fee-reversals:
+    post:
+      summary: Reverse a fee
+      description: |
+        Reverse all or part of a previously assessed fee, identified by its transaction. Provide an amount to reverse part of the fee, or omit it to reverse the full assessed fee. Returns the resulting reversing transaction.
+      operationId: reverseFee
+      tags:
+        - Fees
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeReversalRequest'
+      responses:
+        '201':
+          description: Fee reversed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionOneOf'
+        '400':
+          description: Bad request - Invalid parameters or reversal amount exceeds the original fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Transaction not found
           content:
             application/json:
               schema:
@@ -18614,6 +18960,191 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    FeeType:
+      type: string
+      enum:
+        - TRANSFER_OUT
+        - TRANSFER_IN
+      description: The type of operation a fee applies to. TRANSFER_OUT applies to transfer-out operations; TRANSFER_IN applies to transfer-in operations.
+      example: TRANSFER_OUT
+    FixedFeeRange:
+      type: object
+      description: The allowed range for the fixed portion of a fee, in the smallest unit of the currency (e.g. cents). When assessing the fee, the chosen fixed amount must fall within this range (inclusive).
+      required:
+        - currency
+        - min
+        - max
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+          description: The currency of the fixed fee range.
+        min:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Minimum fixed fee, in the smallest unit of the currency (e.g. cents).
+          example: 100
+        max:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Maximum fixed fee, in the smallest unit of the currency (e.g. cents).
+          example: 500
+    VariableFeeRange:
+      type: object
+      description: The allowed range for the variable (percentage) portion of a fee, expressed in basis points (1 basis point = 0.01%). When assessing the fee, the chosen variable fee rate must fall within this range (inclusive).
+      required:
+        - min
+        - max
+      properties:
+        min:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Minimum variable fee rate, in basis points (e.g. 50 = 0.50%).
+          example: 50
+        max:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Maximum variable fee rate, in basis points (e.g. 200 = 2.00%).
+          example: 200
+    Fee:
+      type: object
+      description: A platform-defined fee that can be assessed against a customer's account. A fee defines an allowed fixed amount range and/or variable rate range; the specific amounts are chosen when the fee is assessed.
+      required:
+        - id
+        - type
+        - description
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the fee.
+          example: Fee:019542f5-b3e7-1d02-0000-000000000010
+        type:
+          $ref: '#/components/schemas/FeeType'
+        description:
+          type: string
+          description: Human-readable description of the fee.
+          example: Transfer-out processing fee
+        fixedFeeRange:
+          $ref: '#/components/schemas/FixedFeeRange'
+          description: The allowed range for the fixed portion of the fee. Present if the fee has a fixed component.
+        variableFeeRange:
+          $ref: '#/components/schemas/VariableFeeRange'
+          description: The allowed range for the variable portion of the fee. Present if the fee has a variable component.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the fee was created.
+          example: '2026-06-04T14:25:18Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the fee was last updated.
+          example: '2026-06-04T14:30:00Z'
+    FeeListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of fees matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/Fee'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of fees matching the criteria (excluding pagination).
+    FeeCreateRequest:
+      type: object
+      description: Request to create a platform-defined fee. At least one of fixedFeeRange or variableFeeRange must be provided.
+      required:
+        - type
+        - description
+      properties:
+        type:
+          $ref: '#/components/schemas/FeeType'
+        description:
+          type: string
+          description: Human-readable description of the fee.
+          example: Transfer-out processing fee
+        fixedFeeRange:
+          $ref: '#/components/schemas/FixedFeeRange'
+          description: The allowed range for the fixed portion of the fee. Provide if the fee has a fixed component. At least one of fixedFeeRange or variableFeeRange is required.
+        variableFeeRange:
+          $ref: '#/components/schemas/VariableFeeRange'
+          description: The allowed range for the variable portion of the fee. Provide if the fee has a variable component. At least one of fixedFeeRange or variableFeeRange is required.
+    FeeUpdateRequest:
+      type: object
+      description: Request to update a platform-defined fee. Only the provided fields are updated.
+      properties:
+        description:
+          type: string
+          description: Human-readable description of the fee.
+          example: Transfer-out processing fee
+        fixedFeeRange:
+          $ref: '#/components/schemas/FixedFeeRange'
+          description: The allowed range for the fixed portion of the fee.
+        variableFeeRange:
+          $ref: '#/components/schemas/VariableFeeRange'
+          description: The allowed range for the variable portion of the fee.
+    FeeAssessmentRequest:
+      type: object
+      description: Request to assess a defined fee against an account. The chosen fixed amount and variable fee rate must fall within the ranges defined on the fee.
+      required:
+        - feeId
+        - accountId
+      properties:
+        feeId:
+          type: string
+          description: The identifier of the fee to assess.
+          example: Fee:019542f5-b3e7-1d02-0000-000000000010
+        accountId:
+          type: string
+          description: The identifier of the account to charge the fee against.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        fixedAmount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: The fixed fee amount to assess, in the smallest unit of the currency (e.g. cents). Required if the fee defines a fixedFeeRange, and must fall within that range.
+          example: 250
+        variableFeeRate:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: The variable fee rate to assess, in basis points (e.g. 100 = 1.00%). Required if the fee defines a variableFeeRange, and must fall within that range.
+          example: 100
+    FeeReversalRequest:
+      type: object
+      description: Request to reverse all or part of a previously assessed fee.
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: string
+          description: The identifier of the fee assessment transaction to reverse.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The amount to reverse, in the smallest unit of the currency (e.g. cents). For a partial reversal, provide an amount less than the original fee. If omitted, the full assessed fee is reversed.
+          example: 100
+        reason:
+          type: string
+          description: Human-readable reason for the reversal.
+          example: Goodwill credit issued to customer
     WebhookType:
       type: string
       enum:

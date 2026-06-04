@@ -1,0 +1,42 @@
+type: object
+description: >-
+  A platform-defined fee that can be assessed against a customer's account. A fee
+  defines an allowed fixed amount range and/or variable rate range; the specific
+  amounts are chosen when the fee is assessed.
+required:
+  - id
+  - type
+  - description
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: Unique identifier for the fee.
+    example: Fee:019542f5-b3e7-1d02-0000-000000000010
+  type:
+    $ref: ./FeeType.yaml
+  description:
+    type: string
+    description: Human-readable description of the fee.
+    example: Transfer-out processing fee
+  fixedFeeRange:
+    $ref: ./FixedFeeRange.yaml
+    description: >-
+      The allowed range for the fixed portion of the fee. Present if the fee has
+      a fixed component.
+  variableFeeRange:
+    $ref: ./VariableFeeRange.yaml
+    description: >-
+      The allowed range for the variable portion of the fee. Present if the fee
+      has a variable component.
+  createdAt:
+    type: string
+    format: date-time
+    description: When the fee was created.
+    example: '2026-06-04T14:25:18Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the fee was last updated.
+    example: '2026-06-04T14:30:00Z'

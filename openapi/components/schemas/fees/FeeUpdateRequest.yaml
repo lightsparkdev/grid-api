@@ -1,0 +1,15 @@
+type: object
+description: >-
+  Request to update a platform-defined fee. Only the provided fields are
+  updated.
+properties:
+  description:
+    type: string
+    description: Human-readable description of the fee.
+    example: Transfer-out processing fee
+  fixedFeeRange:
+    $ref: ./FixedFeeRange.yaml
+    description: The allowed range for the fixed portion of the fee.
+  variableFeeRange:
+    $ref: ./VariableFeeRange.yaml
+    description: The allowed range for the variable portion of the fee.

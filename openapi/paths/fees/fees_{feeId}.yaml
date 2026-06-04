@@ -1,0 +1,120 @@
+parameters:
+  - name: feeId
+    in: path
+    description: System-generated unique fee identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get fee by ID
+  description: Retrieve a fee by its system-generated ID.
+  operationId: getFeeById
+  tags:
+    - Fees
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fees/Fee.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update a fee
+  description: Update a fee by its system-generated ID. Only the provided fields are updated.
+  operationId: updateFee
+  tags:
+    - Fees
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/fees/FeeUpdateRequest.yaml
+  responses:
+    '200':
+      description: Fee updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/fees/Fee.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete a fee
+  description: Delete a fee by its system-generated ID.
+  operationId: deleteFee
+  tags:
+    - Fees
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Fee deleted successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

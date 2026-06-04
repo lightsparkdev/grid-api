@@ -1,0 +1,27 @@
+type: object
+description: >-
+  The allowed range for the fixed portion of a fee, in the smallest unit of the
+  currency (e.g. cents). When assessing the fee, the chosen fixed amount must
+  fall within this range (inclusive).
+required:
+  - currency
+  - min
+  - max
+properties:
+  currency:
+    $ref: ../common/Currency.yaml
+    description: The currency of the fixed fee range.
+  min:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      Minimum fixed fee, in the smallest unit of the currency (e.g. cents).
+    example: 100
+  max:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      Maximum fixed fee, in the smallest unit of the currency (e.g. cents).
+    example: 500

@@ -1,0 +1,58 @@
+post:
+  summary: Assess a fee
+  description: >
+    Assess a defined fee against a customer's account, charging the chosen fixed
+    amount and/or variable fee rate (which must fall within the ranges defined on
+    the fee). Returns the resulting transaction.
+  operationId: assessFee
+  tags:
+    - Fees
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple
+        times, the server will return the same response as the first request.
+      schema:
+        type: string
+        example: 550e8400-e29b-41d4-a716-446655440000
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/fees/FeeAssessmentRequest.yaml
+  responses:
+    '201':
+      description: Fee assessed successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+    '400':
+      description: Bad request - Invalid parameters or amounts outside the fee's ranges
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Fee or account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

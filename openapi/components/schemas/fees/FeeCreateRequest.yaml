@@ -1,0 +1,26 @@
+type: object
+description: >-
+  Request to create a platform-defined fee. At least one of fixedFeeRange or
+  variableFeeRange must be provided.
+required:
+  - type
+  - description
+properties:
+  type:
+    $ref: ./FeeType.yaml
+  description:
+    type: string
+    description: Human-readable description of the fee.
+    example: Transfer-out processing fee
+  fixedFeeRange:
+    $ref: ./FixedFeeRange.yaml
+    description: >-
+      The allowed range for the fixed portion of the fee. Provide if the fee has
+      a fixed component. At least one of fixedFeeRange or variableFeeRange is
+      required.
+  variableFeeRange:
+    $ref: ./VariableFeeRange.yaml
+    description: >-
+      The allowed range for the variable portion of the fee. Provide if the fee
+      has a variable component. At least one of fixedFeeRange or variableFeeRange
+      is required.
