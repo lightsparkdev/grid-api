@@ -3,8 +3,9 @@
 /**
  * Real, client-only auth ceremonies — purely for the demo's feel. These do NOT
  * call Grid; the API panel shows the representative calls separately. Passkey
- * uses a real WebAuthn prompt (Touch ID / Face ID); Google uses the real GIS
- * popup. The results aren't persisted — only the device gesture matters here.
+ * uses a real WebAuthn prompt (Touch ID / Face ID); Google and Apple use their
+ * real hosted popups. The results aren't persisted — only the device gesture
+ * matters here.
  */
 
 let gisPromise: Promise<void> | null = null;
@@ -22,14 +23,29 @@ export function loadGis(): Promise<void> {
   return gisPromise;
 }
 
+let applePromise: Promise<void> | null = null;
+export function loadAppleAuth(): Promise<void> {
+  if (applePromise) return applePromise;
+  applePromise = new Promise((resolve, reject) => {
+    if ((window as any).AppleID?.auth) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load Sign in with Apple JS.'));
+    document.head.appendChild(s);
+  });
+  return applePromise;
+}
+
 function toArrayBuffer(u: Uint8Array): ArrayBuffer {
   const ab = new ArrayBuffer(u.byteLength);
   new Uint8Array(ab).set(u);
   return ab;
 }
 
-/** A random nonce for the Google popup (not verified — GIS just needs one set). */
-export async function googleNonce(): Promise<string> {
+/** A random nonce for OAuth popups (not verified — providers just need one set). */
+export async function oauthNonce(): Promise<string> {
   const r = crypto.getRandomValues(new Uint8Array(16));
   const hex = Array.from(r, (b) => b.toString(16).padStart(2, '0')).join('');
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hex));

@@ -16,9 +16,9 @@ like `/flow-builder`. The iPhone mock is a self-contained iOS preview (adapted f
 phone screens) and keeps its own iOS palette.
 
 A visitor picks a use case (Fintech / Neobank to start) and an auth method (Passkey / OAuth /
-Email OTP), then steps through: create customer → register credential → open account → add money →
-see balance → withdraw → issue card → tap to pay. The right panel shows the exact Grid API calls
-firing at each step.
+Apple / Email OTP), then steps through: create customer → register credential → open account → add
+money → see balance → withdraw → issue card → tap to pay. The right panel shows the exact Grid API
+calls firing at each step.
 
 ## Develop
 
@@ -29,6 +29,11 @@ npm run dev          # runs on a fixed port: http://localhost:4000
 #   http://localhost:4000/?embed=true&theme=light
 #   http://localhost:4000/?embed=true&theme=dark
 ```
+
+Google and Apple sign-in use real hosted popups for the ceremony. Apple defaults to the existing
+Services ID `com.lightspark` with return URL `https://docs.lightspark.com`; override with
+`NEXT_PUBLIC_APPLE_CLIENT_ID` and `NEXT_PUBLIC_APPLE_REDIRECT_URI` if the Apple Developer
+configuration changes.
 
 The port is pinned to **4000** so the docs page can reliably embed the local app while you preview
 the Grid docs with `make mint` (the docs page auto-targets `localhost:4000` when served locally).

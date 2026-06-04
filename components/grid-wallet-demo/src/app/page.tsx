@@ -12,7 +12,7 @@ import {
   type WalletState,
 } from '@/data/actions';
 import { addMoneyCalls, sendCalls, signInCalls, withdrawCalls } from '@/data/apiCalls';
-import { googleNonce, passkeyCeremony } from '@/lib/auth';
+import { oauthNonce, passkeyCeremony } from '@/lib/auth';
 import { useTheme } from '@/hooks/useTheme';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -51,6 +51,7 @@ export default function Page() {
   const [otpActive, setOtpActive] = useState(false);
   const [emailActive, setEmailActive] = useState(false);
   const [gNonce, setGNonce] = useState<string | null>(null);
+  const [aNonce, setANonce] = useState<string | null>(null);
   type AmountConfig = { title: string; cta: string; source: string; sub: string; defaultDollars: number };
   const [amountConfig, setAmountConfig] = useState<AmountConfig | null>(null);
 
@@ -58,6 +59,7 @@ export default function Page() {
   const otpPrompt = useRef<{ resolve: (c: string) => void; reject: (e: Error) => void } | null>(null);
   const emailPrompt = useRef<{ resolve: (e: string) => void; reject: (e: Error) => void } | null>(null);
   const googlePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
+  const applePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
   const amountPrompt = useRef<{ resolve: (d: number) => void; reject: (e: Error) => void } | null>(null);
 
   useEffect(() => {
@@ -95,6 +97,17 @@ export default function Page() {
     setGNonce(null);
     const p = googlePrompt.current;
     googlePrompt.current = null;
+    p?.resolve(token);
+  }, []);
+
+  const promptApple = useCallback((nonce: string): Promise<string> => {
+    setANonce(nonce);
+    return new Promise((resolve, reject) => (applePrompt.current = { resolve, reject }));
+  }, []);
+  const submitApple = useCallback((token: string) => {
+    setANonce(null);
+    const p = applePrompt.current;
+    applePrompt.current = null;
     p?.resolve(token);
   }, []);
 
@@ -145,14 +158,17 @@ export default function Page() {
         await passkeyCeremony();
         pushCalls(signInCalls('passkey'));
       } else if (m === 'oauth') {
-        await promptGoogle(await googleNonce());
+        await promptGoogle(await oauthNonce());
         pushCalls(signInCalls('oauth'));
+      } else if (m === 'apple') {
+        await promptApple(await oauthNonce());
+        pushCalls(signInCalls('apple'));
       } else {
         throw new Error(`Sign-in method "${m}" is not available.`);
       }
       startSession();
     },
-    [method, promptEmail, promptOtp, promptGoogle, pushCalls, startSession],
+    [method, promptEmail, promptOtp, promptGoogle, promptApple, pushCalls, startSession],
   );
 
   /** Sign in (returning user) — authenticate, then unlock the wallet. */
@@ -277,7 +293,7 @@ export default function Page() {
   );
 
   const reset = useCallback(() => {
-    for (const p of [otpPrompt, emailPrompt, googlePrompt, amountPrompt]) {
+    for (const p of [otpPrompt, emailPrompt, googlePrompt, applePrompt, amountPrompt]) {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
     }
@@ -288,6 +304,7 @@ export default function Page() {
     setOtpActive(false);
     setEmailActive(false);
     setGNonce(null);
+    setANonce(null);
     setAmountConfig(null);
     setRunning(false);
   }, []);
@@ -346,6 +363,7 @@ export default function Page() {
             otp={{ active: otpActive, onSubmit: submitOtp }}
             email={{ active: emailActive, onSubmit: submitEmail }}
             google={{ nonce: gNonce, onCredential: submitGoogle }}
+            apple={{ nonce: aNonce, onCredential: submitApple }}
             amount={{ config: amountConfig, onSubmit: submitAmount, onCancel: cancelAmount }}
           />
         </div>

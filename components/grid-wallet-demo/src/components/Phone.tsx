@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
-import { loadGis } from '@/lib/auth';
+import { loadAppleAuth, loadGis } from '@/lib/auth';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './Phone.module.scss';
 
@@ -48,6 +48,7 @@ interface PhoneProps {
   otp?: { active: boolean; onSubmit: (code: string) => void };
   email?: { active: boolean; onSubmit: (email: string) => void };
   google?: { nonce: string | null; onCredential: (idToken: string) => void };
+  apple?: { nonce: string | null; onCredential: (idToken: string) => void };
   amount?: {
     config: { title: string; cta: string; source: string; sub: string; defaultDollars: number } | null;
     onSubmit: (dollars: number) => void;
@@ -65,6 +66,7 @@ export default function Phone({
   otp,
   email,
   google,
+  apple,
   amount,
 }: PhoneProps) {
   const brand = BRAND[persona];
@@ -88,9 +90,11 @@ export default function Phone({
                       ? 'otp-entry'
                       : google?.nonce
                         ? 'google-signin'
-                        : amount?.config
-                          ? 'amount-entry'
-                          : phone.screen + phone.balance + String(phone.cardActivated)
+                        : apple?.nonce
+                          ? 'apple-signin'
+                          : amount?.config
+                            ? 'amount-entry'
+                            : phone.screen + phone.balance + String(phone.cardActivated)
                 }
                 className={styles.screenInner}
                 initial={{ opacity: 0, y: 8 }}
@@ -104,6 +108,8 @@ export default function Phone({
                   <OtpEntryScreen onSubmit={otp.onSubmit} />
                 ) : google?.nonce ? (
                   <GoogleSignInScreen nonce={google.nonce} onCredential={google.onCredential} />
+                ) : apple?.nonce ? (
+                  <AppleSignInScreen nonce={apple.nonce} onCredential={apple.onCredential} />
                 ) : amount?.config ? (
                   <AmountEntryScreen
                     config={amount.config}
@@ -400,6 +406,81 @@ function GoogleSignInScreen({
           ref={containerRef}
           style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
         />
+      </div>
+    </div>
+  );
+}
+
+const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'com.lightspark';
+const APPLE_REDIRECT_URI = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI || 'https://docs.lightspark.com';
+
+/** Launches Sign in with Apple JS and resolves with the id_token. */
+function AppleSignInScreen({
+  nonce,
+  onCredential,
+}: {
+  nonce: string;
+  onCredential: (idToken: string) => void;
+}) {
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fired = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAppleAuth()
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setError('Apple sign-in is unavailable.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const signIn = async () => {
+    if (!ready || fired.current || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const AppleID = (window as any).AppleID;
+      AppleID.auth.init({
+        clientId: APPLE_CLIENT_ID,
+        scope: 'name email',
+        redirectURI: APPLE_REDIRECT_URI,
+        state: `grid-demo-${nonce.slice(0, 16)}`,
+        nonce,
+        usePopup: true,
+      });
+      const response = await AppleID.auth.signIn();
+      const idToken = response?.authorization?.id_token;
+      if (!idToken) throw new Error('Apple did not return an identity token.');
+      fired.current = true;
+      onCredential(idToken);
+    } catch (e: any) {
+      setError(e?.error || e?.message || 'Apple sign-in was cancelled.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={styles.centerScreen}>
+      <div className={styles.bioSheet}>
+        <Apple large />
+        <div className={styles.bioTitle}>Continue with Apple</div>
+        <div className={styles.bioSub}>Use your Apple Account</div>
+        <button
+          className={clsx(styles.btnFill, styles.appleSigninButton)}
+          disabled={!ready || busy}
+          onClick={signIn}
+        >
+          <Apple />
+          {busy ? 'Waiting for Apple…' : 'Continue with Apple'}
+        </button>
+        {error && <div className={styles.authError}>{error}</div>}
       </div>
     </div>
   );
