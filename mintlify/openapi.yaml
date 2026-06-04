@@ -634,7 +634,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email updates; ignored on the initial call and on customer updates that complete synchronously.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -3868,7 +3868,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on the target internal account. Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -3981,7 +3981,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on the target internal account. Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -4058,7 +4058,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified authentication credential on the target internal account. Required on the signed retry.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -4083,7 +4083,7 @@ paths:
                 value:
                   type: OAUTH
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                  oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+                  oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
               passkey:
                 summary: Add a passkey credential
                 value:
@@ -4100,7 +4100,7 @@ paths:
                       - hybrid
       responses:
         '201':
-          description: Authentication credential created successfully. The body is the created `AuthMethod` for all three credential types. For `EMAIL_OTP`, the email is the customer email tied to the internal account. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
+          description: Authentication credential created successfully. The body is the created `AuthMethod` for all three credential types. For `EMAIL_OTP`, the email is the customer email tied to the internal account, and the response also carries `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
             application/json:
               schema:
@@ -4113,6 +4113,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
                 oauth:
@@ -4288,7 +4289,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified authentication credential on the same internal account (other than the one being revoked). Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -4333,11 +4334,14 @@ paths:
     post:
       summary: Verify an authentication credential
       description: |
-        Complete the verification step for a previously created authentication credential and issue a session signing key.
+        Complete the verification step for a previously created authentication credential and issue a session.
 
-        For `EMAIL_OTP` credentials, supply the one-time password that was emailed to the user along with a client-generated public key. For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
+        For `EMAIL_OTP` credentials, submit the `encryptedOtpBundle` produced by HPKE-encrypting `{otp_code, public_key}` under the `otpEncryptionTargetBundle` returned from the credential's registration or re-issued via `POST /auth/credentials/{id}/challenge`. The server is a pass-through and never sees the plaintext OTP code. On success the response is `202` with a `payloadToSign` carrying the `verificationToken` bound to the client's TEK public key — sign that token with the matching TEK private key, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`. The signed retry returns `200` with the issued `AuthSession`. The TEK public key becomes the session API key on successful completion.
+        In sandbox mode, the EMAIL_OTP flow runs real HPKE end-to-end against a sandbox enclave keypair — clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code (`"000000"`) the user "receives" instead of a real email delivery.
 
-        On success, the response contains an `encryptedSessionSigningKey` that is encrypted to the supplied `clientPublicKey`, along with an `expiresAt` timestamp marking when the session expires. The `clientPublicKey` is ephemeral and one-time-use per verification request.
+        For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
+
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for `EMAIL_OTP`, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for `EMAIL_OTP` the client already holds the session signing key (the TEK private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -4350,10 +4354,17 @@ paths:
           required: true
           schema:
             type: string
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Full API-key stamp built over the prior `payloadToSign` with the TEK (Target Encryption Key) keypair the client generated for this login. Required on the signed retry that completes an `EMAIL_OTP` verification. Not used by `OAUTH` or `PASSKEY` verification, which complete in a single call.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned alongside the Grid-issued `challenge` from `POST /auth/credentials/{id}/challenge`, echoed back exactly here so Grid can correlate the assertion with the pending challenge.
+          description: The `requestId` returned in a prior `202` response from this endpoint, echoed back exactly here so the server can correlate the signed retry with the issued challenge. Required on the signed retry that completes an `EMAIL_OTP` verification; must be paired with `Grid-Wallet-Signature`. For `PASSKEY` verification, the `requestId` issued from `POST /auth/credentials/{id}/challenge` is echoed here instead so the server can correlate the assertion with the pending challenge.
           schema:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
@@ -4365,16 +4376,21 @@ paths:
               $ref: '#/components/schemas/AuthCredentialVerifyRequestOneOf'
             examples:
               emailOtp:
-                summary: Verify an email OTP credential
+                summary: Verify an email OTP credential (first leg)
                 value:
                   type: EMAIL_OTP
-                  otp: '123456'
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  encryptedOtpBundle: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
+              emailOtpSignedRetry:
+                summary: Signed retry completing an email OTP verification
+                description: Same request body as the first leg, plus the `Grid-Wallet-Signature` and `Request-Id` headers carrying the stamp over the `verificationToken` and the `requestId` from the prior `202` response.
+                value:
+                  type: EMAIL_OTP
+                  encryptedOtpBundle: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
               oauth:
                 summary: Verify an OAuth credential
                 value:
                   type: OAUTH
-                  oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+                  oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
                   clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
               passkey:
                 summary: Verify a passkey credential
@@ -4392,6 +4408,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthSession'
+        '202':
+          description: Verification challenge issued. Returned only for `EMAIL_OTP` credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+              examples:
+                emailOtp:
+                  summary: Email OTP verification challenge (sign and retry)
+                  value:
+                    type: EMAIL_OTP
+                    payloadToSign: eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ.eyJzdWIiOiJUWnk2NkVPa1RGYTd2NkpXZ0VxaVgyZGFXOENXc2pMQzVDVU9aRUlGY3hzIiwiaWF0IjoxNzc5NDA3MjIxLCJleHAiOjE3Nzk0MTA4MjF9.gKX9MWYGkw8Y55bgzsgrRftvUHFruIe8yu0w9Kpjp5qnrZnXcTV71WVoltGPsr015IY_oRTOkIFLHmiGNG9zBw
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request
           content:
@@ -4399,7 +4429,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, identity, nonce, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed.
+          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, identity, nonce, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed. For `EMAIL_OTP` signed retries, returned when `Grid-Wallet-Signature` is missing, malformed, signed by a public key that does not match the one bound into the `verificationToken`, or when `Request-Id` does not match an unexpired pending verification challenge.
           content:
             application/json:
               schema:
@@ -4433,7 +4463,7 @@ paths:
       description: |
         Re-issue the challenge for an existing authentication credential.
 
-        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file. The response is a plain `AuthMethod`; there is no challenge body to surface because the OTP is delivered out-of-band via email. After the user receives the new OTP, call `POST /auth/credentials/{id}/verify` to complete verification and issue a session.
+        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file and returns a fresh `otpEncryptionTargetBundle` for the client to HPKE-encrypt the OTP attempt against. After the user receives the new OTP, build the `encryptedOtpBundle` under the new target bundle and call `POST /auth/credentials/{id}/verify` to begin the secure OTP login flow.
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
@@ -4480,6 +4510,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
                 passkey:
@@ -4604,7 +4635,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified session on the same internal account. Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -4675,7 +4706,7 @@ paths:
           description: Full API-key stamp built over the prior `payloadToSign` with the current session API keypair. Required on the signed retry; ignored on the initial call.
           schema:
             type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwLi4uIiwic2NoZW1lIjoiUDI1Nl9FQ0RTQV9TSEEyNTYifQ
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
@@ -17365,7 +17396,7 @@ components:
         oidcToken:
           type: string
           description: OIDC ID token issued by the identity provider (e.g. Google, Apple). The token's `iss`, `aud`, and `sub` claims define the OAuth identity registered to this credential. In production, the provider signature is verified against the issuer's JWKS. In sandbox, the token must still be JWT-shaped with supported `iss`, non-empty `aud` and `sub`, numeric `iat` and `exp`, and `iat` less than 60 seconds before the request timestamp, but the signature segment may be a dummy value.
-          example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+          example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
     OauthCredentialCreateRequest:
       title: OAuth Credential Create Request
       allOf:
@@ -17446,13 +17477,25 @@ components:
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
     AuthMethodResponse:
       title: Auth Method Response
-      description: 'Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` (all three credential types) and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` branch of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.'
+      description: |-
+        Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` (all three credential types) and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` branch of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.
+
+        For `EMAIL_OTP` credentials, the response also carries `otpEncryptionTargetBundle` so the client can HPKE-encrypt the OTP code in the subsequent `POST /auth/credentials/{id}/verify` call without the plaintext code ever transiting the server.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          properties:
+            otpEncryptionTargetBundle:
+              type: string
+              description: HPKE encryption target bundle for the freshly initiated OTP challenge. Returned only for `EMAIL_OTP` credentials. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
+              example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
       unevaluatedProperties: false
     AuthSignedRequestChallenge:
       title: Authentication Signed Request Challenge
-      description: 202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), and `DELETE /auth/sessions/{id}` (revoking a session). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, or that issued the session being revoked). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
+      description: |-
+        202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login flow, where the client submits an `encryptedOtpBundle` and receives a `verificationToken` to sign for the second-leg session issuance). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, that issued the session being revoked, or being authenticated). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
+
+        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For the `EMAIL_OTP` verify retry, sign with the ephemeral Target Encryption Key (TEK) the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
       allOf:
         - $ref: '#/components/schemas/SignedRequestChallenge'
         - type: object
@@ -17461,7 +17504,7 @@ components:
           properties:
             type:
               $ref: '#/components/schemas/AuthMethodType'
-              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`) or revoked (`DELETE /auth/credentials/{id}`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
+              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), revoked (`DELETE /auth/credentials/{id}`), or authenticated (`EMAIL_OTP` branch of `POST /auth/credentials/{id}/verify`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
     AuthCredentialVerifyRequest:
       type: object
       required:
@@ -17473,22 +17516,21 @@ components:
       type: object
       required:
         - type
-        - otp
-        - clientPublicKey
+        - encryptedOtpBundle
+      description: Verify an email-OTP credential via the secure two-leg flow. The client HPKE-encrypts the OTP code (together with its public key) under the `otpEncryptionTargetBundle` returned from the credential's registration or `POST /auth/credentials/{id}/challenge`, submits the result here, and receives `202` with a `payloadToSign` carrying a `verificationToken` bound to the client's public key. The client signs that token with the matching private key and retries this request with `Grid-Wallet-Signature` + `Request-Id` headers to obtain the session. Plaintext OTP codes are never sent over the wire.
       properties:
         type:
           type: string
           enum:
             - EMAIL_OTP
           description: Discriminator value identifying this as an email OTP verification.
-        otp:
+        encryptedOtpBundle:
           type: string
-          description: The one-time password received by the user via email.
-          example: '123456'
-        clientPublicKey:
-          type: string
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          description: |-
+            HPKE-sealed OTP attempt — the OTP code never reaches Grid in plaintext. The client generates a fresh ephemeral P-256 key pair (the session signing key pair it keeps once login completes), HPKE-encrypts `{otp_code, public_key}` (the code the user entered plus that key pair's public key) to the key in `otpEncryptionTargetBundle`, and submits the encrypted result here. The value is the `{encappedPublic, ciphertext}` JSON an HPKE library produces; the Global Accounts client-keys guide has a worked example.
+
+            On success the response is `202` with a `payloadToSign` carrying a `verificationToken` bound to the public key sealed in this bundle. Sign that token with the matching private key, then retry this request with the full stamp in `Grid-Wallet-Signature` and the `requestId` in `Request-Id` to complete the flow and receive the session. The client keeps that private key as the session signing key, and its public key becomes the session API key.
+          example: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
     EmailOtpCredentialVerifyRequest:
       title: Email OTP Credential Verify Request
       allOf:
@@ -17509,7 +17551,7 @@ components:
         oidcToken:
           type: string
           description: OIDC ID token issued by the identity provider. For reauthentication after a prior session expired, supply a fresh token — the token's `iat` claim must be less than 60 seconds before the request timestamp. The token identity (`iss`, `aud`, and `sub`) must match the registered OAuth credential. In production, the provider signature is verified against the issuer's JWKS. In sandbox, the token must still be JWT-shaped with supported `iss`, non-empty `aud` and `sub`, numeric `iat` and `exp`, and a `nonce` equal to `sha256(clientPublicKey)`, but the signature segment may be a dummy value.
-          example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.signature
+          example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
         clientPublicKey:
           type: string
           description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
@@ -17597,7 +17639,7 @@ components:
               description: |-
                 HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verification or refresh request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
 
-                Only returned from session-issuing responses like `POST /auth/credentials/{id}/verify` and `POST /auth/sessions/{id}/refresh`. Omitted from responses that simply surface existing sessions (e.g. `GET /auth/sessions`) — Grid does not retain the plaintext key after the client has decrypted it.
+                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` sessions omit this field — the client generates a TEK keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
               example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
             expiresAt:
               type: string
