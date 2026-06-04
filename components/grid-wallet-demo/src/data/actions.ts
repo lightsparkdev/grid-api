@@ -49,8 +49,8 @@ export interface ActionDef {
 export const ACTIONS: ActionDef[] = [
   {
     id: 'create',
-    label: 'Create account',
-    desc: 'Spin up a Global money account',
+    label: 'Sign in',
+    desc: 'Log in to your Global Account',
     icon: 'wallet',
     available: (s) => !s.created,
     done: (s) => s.created,

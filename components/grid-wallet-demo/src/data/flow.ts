@@ -42,6 +42,7 @@ export interface PhoneState {
 export interface ApiCall {
   method: 'GET' | 'POST';
   path: string;
+  headers?: Record<string, string>;
   reqBody?: Record<string, unknown>;
   status: string;
   note?: string;

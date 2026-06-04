@@ -32,7 +32,7 @@ const PERSONAS: { id: Persona; label: string; desc: string; Icon: IconCmp; soon?
 const METHODS: { id: AuthMethod; label: string; Icon: IconCmp; soon?: boolean }[] = [
   { id: 'passkey', label: 'Passkey', Icon: IconFingerPrint1 },
   { id: 'oauth', label: 'Google', Icon: IconGoogle },
-  { id: 'apple', label: 'Apple', Icon: IconApple },
+  { id: 'apple', label: 'Apple', Icon: IconApple, soon: true },
   { id: 'email_otp', label: 'Email', Icon: IconMailbox },
   { id: 'sms', label: 'Phone', Icon: IconPhone, soon: true },
 ];

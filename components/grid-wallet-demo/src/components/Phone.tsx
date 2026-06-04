@@ -1,10 +1,11 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
+import { loadGis } from '@/lib/auth';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './Phone.module.scss';
 
@@ -44,9 +45,28 @@ interface PhoneProps {
   method: AuthMethod;
   onAction: (id: ActionId) => void;
   busy: boolean;
+  otp?: { active: boolean; onSubmit: (code: string) => void };
+  email?: { active: boolean; onSubmit: (email: string) => void };
+  google?: { nonce: string | null; onCredential: (idToken: string) => void };
+  amount?: {
+    config: { title: string; cta: string; source: string; sub: string; defaultDollars: number } | null;
+    onSubmit: (dollars: number) => void;
+    onCancel: () => void;
+  };
 }
 
-export default function Phone({ phone, wallet, persona, method, onAction, busy }: PhoneProps) {
+export default function Phone({
+  phone,
+  wallet,
+  persona,
+  method,
+  onAction,
+  busy,
+  otp,
+  email,
+  google,
+  amount,
+}: PhoneProps) {
   const brand = BRAND[persona];
   const { wrapRef, scale } = useFitScale();
   const act = (id: ActionId) => {
@@ -61,14 +81,38 @@ export default function Phone({ phone, wallet, persona, method, onAction, busy }
           <div className={styles.screenBody}>
             <AnimatePresence mode="wait">
               <motion.div
-                key={phone.screen + phone.balance + String(phone.cardActivated)}
+                key={
+                  email?.active
+                    ? 'email-entry'
+                    : otp?.active
+                      ? 'otp-entry'
+                      : google?.nonce
+                        ? 'google-signin'
+                        : amount?.config
+                          ? 'amount-entry'
+                          : phone.screen + phone.balance + String(phone.cardActivated)
+                }
                 className={styles.screenInner}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
-                {render(phone, wallet, brand, method, act, busy)}
+                {email?.active ? (
+                  <EmailEntryScreen brand={brand} onSubmit={email.onSubmit} />
+                ) : otp?.active ? (
+                  <OtpEntryScreen onSubmit={otp.onSubmit} />
+                ) : google?.nonce ? (
+                  <GoogleSignInScreen nonce={google.nonce} onCredential={google.onCredential} />
+                ) : amount?.config ? (
+                  <AmountEntryScreen
+                    config={amount.config}
+                    onSubmit={amount.onSubmit}
+                    onCancel={amount.onCancel}
+                  />
+                ) : (
+                  render(phone, wallet, brand, method, act, busy)
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -162,7 +206,7 @@ function CredentialScreen({ method }: { method: AuthMethod }) {
           <>
             <FaceId />
             <div className={styles.bioTitle}>Create passkey?</div>
-            <div className={styles.bioSub}>Use Face ID to secure your account</div>
+            <div className={styles.bioSub}>Use Face ID or Touch ID to sign in</div>
           </>
         )}
         {method === 'oauth' && (
@@ -195,6 +239,167 @@ function CredentialScreen({ method }: { method: AuthMethod }) {
           </>
         )}
         <button className={clsx(styles.btnFill, styles.btnCompact)}>{isOtp ? 'Verify' : 'Confirm'}</button>
+      </div>
+    </div>
+  );
+}
+
+/** Email entry — the user types the address their OTP is "sent" to. */
+function EmailEntryScreen({
+  brand,
+  onSubmit,
+}: {
+  brand: { name: string; tag: string };
+  onSubmit: (email: string) => void;
+}) {
+  const [email, setEmail] = useState('');
+  const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
+  const submit = () => {
+    if (valid) onSubmit(email.trim());
+  };
+  return (
+    <div className={styles.centerScreen}>
+      <div className={styles.bioSheet}>
+        <div className={styles.brandMark}>{brand.name.charAt(0)}</div>
+        <div className={styles.bioTitle}>Sign in to {brand.name}</div>
+        <div className={styles.bioSub}>Enter your email to get a code</div>
+        <input
+          value={email}
+          type="email"
+          inputMode="email"
+          autoFocus
+          placeholder="you@example.com"
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+          }}
+          style={{
+            width: '210px',
+            textAlign: 'center',
+            fontSize: 16,
+            padding: '11px 12px',
+            borderRadius: 12,
+            border: '1px solid var(--p-separator)',
+            background: 'var(--p-surface-2)',
+            color: 'var(--p-text)',
+            outline: 'none',
+            caretColor: 'var(--p-accent)',
+          }}
+        />
+        <button className={clsx(styles.btnFill, styles.btnCompact)} disabled={!valid} onClick={submit}>
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Interactive OTP entry — pauses the flow until the user submits a code. */
+function OtpEntryScreen({ onSubmit }: { onSubmit: (code: string) => void }) {
+  const [code, setCode] = useState('');
+  const submitted = useRef(false);
+  const fire = (c: string) => {
+    if (c.length === 6 && !submitted.current) {
+      submitted.current = true;
+      onSubmit(c);
+    }
+  };
+  return (
+    <div className={styles.centerScreen}>
+      <div className={styles.bioSheet}>
+        <div className={styles.bioTitle}>Enter the code</div>
+        <div className={styles.bioSub}>Sent to your email</div>
+        <div className={styles.bioSub}>Sandbox code is 000000</div>
+        <input
+          value={code}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          autoFocus
+          placeholder="000000"
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+            setCode(v);
+            if (v.length === 6) setTimeout(() => fire(v), 0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') fire(code);
+          }}
+          style={{
+            width: '170px',
+            textAlign: 'center',
+            letterSpacing: '0.42em',
+            fontSize: '22px',
+            fontVariantNumeric: 'tabular-nums',
+            padding: '12px 14px',
+            borderRadius: '14px',
+            border: '1px solid var(--p-separator)',
+            background: 'var(--p-surface-2)',
+            color: 'var(--p-text)',
+            outline: 'none',
+            caretColor: 'var(--p-accent)',
+          }}
+        />
+        <button className={clsx(styles.btnFill, styles.btnCompact)} onClick={() => fire(code)}>
+          Verify
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Renders Google's official Sign-in button and resolves with the id_token. */
+function GoogleSignInScreen({
+  nonce,
+  onCredential,
+}: {
+  nonce: string;
+  onCredential: (idToken: string) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fired = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadGis()
+      .then(() => {
+        if (cancelled || !containerRef.current) return;
+        const google = (window as any).google;
+        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+        google.accounts.id.initialize({
+          client_id: clientId,
+          nonce,
+          callback: (resp: { credential?: string }) => {
+            if (resp?.credential && !fired.current) {
+              fired.current = true;
+              onCredential(resp.credential);
+            }
+          },
+        });
+        google.accounts.id.renderButton(containerRef.current, {
+          theme: 'filled_blue',
+          size: 'large',
+          type: 'standard',
+          text: 'continue_with',
+          shape: 'pill',
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [nonce, onCredential]);
+
+  return (
+    <div className={styles.centerScreen}>
+      <div className={styles.bioSheet}>
+        <GoogleG large />
+        <div className={styles.bioTitle}>Continue with Google</div>
+        <div className={styles.bioSub}>Choose your Google account</div>
+        <div
+          ref={containerRef}
+          style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+        />
       </div>
     </div>
   );
@@ -329,6 +534,74 @@ function AmountScreen({
       </div>
       <div className={styles.flexSpacer} />
       <button className={styles.btnFill}>{cta}</button>
+    </div>
+  );
+}
+
+/** Editable amount entry — the user types an amount and presses the button. */
+function AmountEntryScreen({
+  config,
+  onSubmit,
+  onCancel,
+}: {
+  config: { title: string; cta: string; source: string; sub: string; defaultDollars: number };
+  onSubmit: (dollars: number) => void;
+  onCancel: () => void;
+}) {
+  const [val, setVal] = useState(String(config.defaultDollars));
+  const dollars = Math.max(0, parseFloat(val) || 0);
+  return (
+    <div className={styles.amountScreen}>
+      <div className={styles.amountNav}>
+        <span className={styles.navClose} onClick={onCancel} style={{ cursor: 'pointer' }}>
+          ✕
+        </span>
+        <span className={styles.amountTitle}>{config.title}</span>
+        <span style={{ width: 18 }} />
+      </div>
+      <div className={styles.amountBig}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 44, fontWeight: 600 }}>$</span>
+          <input
+            value={val}
+            inputMode="decimal"
+            autoFocus
+            onChange={(e) => setVal(e.target.value.replace(/[^0-9.]/g, ''))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && dollars > 0) onSubmit(dollars);
+            }}
+            style={{
+              width: `${Math.max(2, val.length + 1)}ch`,
+              maxWidth: 190,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: 'inherit',
+              fontSize: 44,
+              fontWeight: 600,
+              caretColor: 'var(--p-accent)',
+            }}
+          />
+        </div>
+      </div>
+      <div className={styles.sourceRow}>
+        <span className={styles.srcIcon}>
+          <Bank />
+        </span>
+        <span className={styles.txDetails}>
+          <span className={styles.txName}>{config.source}</span>
+          <span className={styles.txSub}>{config.sub}</span>
+        </span>
+        <Chevron />
+      </div>
+      <div className={styles.flexSpacer} />
+      <button
+        className={styles.btnFill}
+        disabled={dollars <= 0}
+        onClick={() => dollars > 0 && onSubmit(dollars)}
+      >
+        {config.cta}
+      </button>
     </div>
   );
 }

@@ -100,6 +100,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 .homeIndicator {
   flex-shrink: 0;
@@ -269,8 +270,10 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   padding: 2px 18px 14px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .walletNav {
   display: flex;
@@ -398,21 +401,18 @@
   display: block;
   position: relative;
   cursor: pointer;
+  text-align: center;
   margin-bottom: 18px;
 }
 .cardHint {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
+  display: inline-block;
+  margin-top: 10px;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.14);
+  color: var(--p-text-2);
+  background: var(--p-surface-2);
   border-radius: 7px;
-  padding: 3px 9px;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  padding: 4px 10px;
 }
 
 /* issue card prompt */
@@ -485,8 +485,6 @@
 }
 
 .txList {
-  flex: 1;
-  overflow-y: auto;
   margin: 0 -4px;
 }
 .txItem {
@@ -584,9 +582,9 @@
 
 /* ---------- Card (Robinhood-style glass / metal) ---------- */
 .visaCard {
-  height: 188px;
-  border-radius: 18px;
-  padding: 20px 22px;
+  aspect-ratio: 1.586 / 1; /* ISO/IEC 7810 ID-1 — real card proportions */
+  border-radius: 14px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

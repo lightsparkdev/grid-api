@@ -92,7 +92,11 @@ function requestTitle(e: ApiCall) {
 /* GitHub-style highlighted curl, matching grid-visualizer's CodePanel. */
 function renderCurl(e: ApiCall): React.ReactNode {
   const lines: React.ReactNode[] = [];
-  const cont = e.reqBody ? <span className={styles.syntaxDefault}> \</span> : null;
+  const body = e.reqBody;
+  const headerEntries = Object.entries(e.headers ?? {});
+  const hasExtraHeaders = headerEntries.length > 0;
+  const hasBody = !!body;
+  const cont = hasExtraHeaders || hasBody ? <span className={styles.syntaxDefault}> \</span> : null;
   lines.push(
     <span key="cmd">
       <span className={styles.syntaxCommand}>curl</span>
@@ -106,16 +110,27 @@ function renderCurl(e: ApiCall): React.ReactNode {
     <span key="auth">
       <span className={styles.syntaxFlag}>  -H</span>{' '}
       <span className={styles.syntaxString}>&quot;Authorization: Basic $GRID_KEY&quot;</span>
-      {e.reqBody ? <span className={styles.syntaxDefault}> \</span> : null}
+      {hasExtraHeaders || hasBody ? <span className={styles.syntaxDefault}> \</span> : null}
       {'\n'}
     </span>,
   );
-  if (e.reqBody) {
+  headerEntries.forEach(([name, value], i) => {
+    const needsCont = i < headerEntries.length - 1 || hasBody;
+    lines.push(
+      <span key={`header-${name}`}>
+        <span className={styles.syntaxFlag}>  -H</span>{' '}
+        <span className={styles.syntaxString}>&quot;{name}: {value}&quot;</span>
+        {needsCont ? <span className={styles.syntaxDefault}> \</span> : null}
+        {'\n'}
+      </span>,
+    );
+  });
+  if (hasBody) {
     lines.push(
       <span key="data">
         <span className={styles.syntaxFlag}>  -d</span>{' '}
         <span className={styles.syntaxDefault}>&apos;</span>
-        {renderJson(e.reqBody, 1)}
+        {renderJson(body, 1)}
         <span className={styles.syntaxDefault}>&apos;</span>
       </span>,
     );
