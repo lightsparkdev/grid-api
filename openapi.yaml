@@ -7988,6 +7988,8 @@ components:
         - IDENTIFIER
         - BUSINESS_TYPE
         - COMPANY_LEGAL_NAME
+        - ID_TYPE
+        - ID_NUMBER
       description: Name of a type of field containing info about a platform's customer or counterparty customer.
       example: FULL_NAME
     CounterpartyFieldDefinition:
@@ -11209,10 +11211,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: accountNumber, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -11223,6 +11226,11 @@ components:
           description: The account number of the bank
           minLength: 1
           maxLength: 34
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         branchCode:
           type: string
           description: The branch code
@@ -11246,6 +11254,7 @@ components:
       example:
         accountType: BDT_ACCOUNT
         accountNumber: '1234567890'
+        bankName: Example Bank
         branchCode: '11111'
         swiftCode: DEUTDEFF
         phoneNumber: '+1234567890'
@@ -11316,10 +11325,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: iban
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: bankName, iban
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -11332,6 +11342,11 @@ components:
           minLength: 29
           maxLength: 29
           pattern: ^EG[0-9]{27}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -11342,6 +11357,7 @@ components:
       example:
         accountType: EGP_ACCOUNT
         iban: EG380019000500000000263180002
+        bankName: Example Bank
         phoneNumber: '+1234567890'
     EgpAccountInfo:
       allOf:
@@ -11374,10 +11390,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: accountNumber, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -11388,6 +11405,11 @@ components:
           description: The account number of the bank
           minLength: 1
           maxLength: 34
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -11398,6 +11420,7 @@ components:
       example:
         accountType: GHS_ACCOUNT
         accountNumber: '1234567890'
+        bankName: Example Bank
         phoneNumber: '+1234567890'
     GhsAccountInfo:
       allOf:
@@ -11588,15 +11611,21 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber
+        - BANK_TRANSFER: accountNumber, bankName
         - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
           enum:
             - PKR_ACCOUNT
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         accountNumber:
           type: string
           description: The account number of the bank
@@ -11616,17 +11645,12 @@ components:
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
       example:
         accountType: PKR_ACCOUNT
+        bankName: Example Bank
         accountNumber: '1234567890'
         iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
-        bankName: Example Bank
     PkrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PkrAccountInfoBase'
@@ -12436,10 +12460,11 @@ components:
       type: object
       required:
         - accountType
+        - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber, bankAccountType
-        - MOBILE_MONEY: phoneNumber
+        - BANK_TRANSFER: accountNumber, bankAccountType, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -12456,6 +12481,11 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -12467,6 +12497,7 @@ components:
         accountType: COP_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        bankName: Example Bank
         phoneNumber: '+1234567890'
     CopAccountInfo:
       allOf:
@@ -15870,7 +15901,7 @@ components:
               example: $sender@uma.domain.com
           description: UMA address source details
     RealtimeFundingTransactionSource:
-      title: Real-time Funding Source
+      title: External Funding Source
       allOf:
         - $ref: '#/components/schemas/BaseTransactionSource'
         - type: object
@@ -15890,7 +15921,39 @@ components:
               type: string
               description: Currency code for the funding source
               example: USDC
-          description: Transaction was funded using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
+            accountHolderName:
+              type: string
+              description: The name of the originator (sender) of the payment.
+              example: John Sender
+            accountIdentifier:
+              type: string
+              description: The originator's account number or IBAN. May be masked or partial depending on the rail.
+              example: '****6789'
+            bankName:
+              type: string
+              description: The name of the originating bank.
+              example: Chase Bank
+            bankIdentifier:
+              type: string
+              description: The identifier of the originating bank, such as a routing number, BIC, or SWIFT code.
+              example: '021000021'
+            paymentRail:
+              description: The payment rail the funds arrived on.
+              allOf:
+                - $ref: '#/components/schemas/PaymentRail'
+            remittanceInformation:
+              type: string
+              description: 'Free-form information about the payment provided by the originator. The source field depends on the payment rail: the Addenda record for ACH, the OBI / beneficiary information for wires, and the remittanceInformation field for RTP and FedNow.'
+              example: '12345'
+            endToEndId:
+              type: string
+              description: The originator's own end-to-end reference for the payment.
+              example: E2E-9f2c6b6f
+            traceNumber:
+              type: string
+              description: Rail-level tracking identifier for the payment, such as an ACH trace number or a wire IMAD/OMAD, useful for reconciliation.
+              example: '021000020123456'
+          description: Transaction was funded using an external funding source. All originator fields are optional and populated on a best-effort basis depending on what the funding source provides.
     TransactionSourceOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountTransactionSource'

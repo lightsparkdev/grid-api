@@ -1,11 +1,12 @@
 type: object
 required:
 - accountType
+- bankName
 description: 'Required fields depend on the selected paymentRails:
 
-  - BANK_TRANSFER: iban
+  - BANK_TRANSFER: bankName, iban
 
-  - MOBILE_MONEY: phoneNumber'
+  - MOBILE_MONEY: bankName, phoneNumber'
 properties:
   accountType:
     type: string
@@ -18,6 +19,11 @@ properties:
     minLength: 29
     maxLength: 29
     pattern: ^EG[0-9]{27}$
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
   phoneNumber:
     type: string
     description: The phone number in international format
@@ -28,4 +34,5 @@ properties:
 example:
   accountType: EGP_ACCOUNT
   iban: EG380019000500000000263180002
+  bankName: Example Bank
   phoneNumber: '+1234567890'
