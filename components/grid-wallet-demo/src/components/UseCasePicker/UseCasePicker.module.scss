@@ -1,0 +1,87 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+.card {
+  all: unset;
+  box-sizing: border-box;
+  corner-shape: squircle;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-width: 200px;
+  padding: var(--spacing-md);
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  &:not(:disabled):hover {
+    background: color-mix(in srgb, var(--surface-base) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: color-mix(in srgb, var(--surface-primary) 98%, white);
+    }
+  }
+}
+
+.cardSelected {
+  // Selected state shown via checkmark only (Figma).
+}
+
+.iconBox {
+  corner-shape: squircle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: var(--spacing-sm);
+  background: var(--surface-primary);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-sm);
+  overflow: clip;
+}
+
+.icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.label {
+  @include label;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.check {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--icon-success);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}

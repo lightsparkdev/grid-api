@@ -4,10 +4,25 @@
   overflow: hidden;
 }
 
+.appCol,
+.apiCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 @media (max-width: 767px) {
   .layout {
     flex-direction: column;
     height: auto;
     overflow: visible;
+  }
+
+  .appCol,
+  .apiCol {
+    flex: none;
+    width: 100%;
   }
 }

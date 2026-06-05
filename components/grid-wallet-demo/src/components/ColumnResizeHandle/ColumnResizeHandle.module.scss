@@ -1,0 +1,33 @@
+.handle {
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 6px;
+  cursor: col-resize;
+  position: relative;
+  border-left: var(--stroke-xs) solid var(--border-primary);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 32px;
+    border-radius: var(--corner-radius-2xs);
+    background: var(--border-secondary);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  &:hover::after,
+  &:active::after {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .handle {
+    display: none;
+  }
+}

@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
+import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
 import {
   ACTIONS,
   fmt,
@@ -44,7 +45,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 export function useWalletDemoLogic() {
   const [persona, setPersona] = useState<Persona>('fintech');
-  const [method, setMethod] = useState<AuthMethod>('passkey');
+  const [useCase, setUseCase] = useState<UseCaseId>('fintech');
+  const [methods, setMethods] = useState<AuthMethod[]>(['oauth']);
+  const method = useMemo(() => primaryAuthMethod(methods), [methods]);
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [transient, setTransient] = useState<Transient | null>(null);
@@ -284,9 +287,15 @@ export function useWalletDemoLogic() {
     setRunning(false);
   }, []);
 
-  const onSetMethod = useCallback(
+  const toggleMethod = useCallback(
     (m: AuthMethod) => {
-      if (!wallet.created) setMethod(m);
+      if (wallet.created) return;
+      setMethods((prev) => {
+        if (prev.includes(m)) {
+          return prev.length === 1 ? prev : prev.filter((id) => id !== m);
+        }
+        return [...prev, m];
+      });
     },
     [wallet.created],
   );
@@ -304,8 +313,11 @@ export function useWalletDemoLogic() {
   return {
     persona,
     setPersona,
+    useCase,
+    setUseCase,
+    methods,
+    toggleMethod,
     method,
-    setMethod: onSetMethod,
     wallet,
     entries,
     running,

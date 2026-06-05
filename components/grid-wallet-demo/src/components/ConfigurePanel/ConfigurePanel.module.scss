@@ -14,9 +14,59 @@
 
 .body {
   flex: 1;
-  display: flex;
   padding: var(--spacing-4xl);
   overflow-y: auto;
   overscroll-behavior: contain;
   min-height: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  width: 100%;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.resetBtn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3xs);
+  align-self: flex-start;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-book);
+  line-height: var(--font-leading-20);
+  color: var(--text-secondary);
+  border-radius: var(--corner-radius-sm);
+  cursor: pointer;
+  font-feature-settings: 'salt' 1;
+  transition: color 150ms ease, background 150ms ease;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--surface-base) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: color-mix(in srgb, var(--surface-primary) 98%, white);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
 }

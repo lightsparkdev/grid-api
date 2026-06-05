@@ -1,4 +1,4 @@
-import { GridLogoMark } from '@/components/GridWordmark';
+import Image from 'next/image';
 import styles from './PlaygroundIntro.module.scss';
 
 export function PlaygroundIntro() {
@@ -6,7 +6,13 @@ export function PlaygroundIntro() {
     <section className={styles.section}>
       <div className={styles.heading}>
         <div className={styles.titleRow}>
-          <GridLogoMark className={styles.logo} />
+          <Image
+            src="/refs/gga-logo-light.svg"
+            alt=""
+            width={24}
+            height={24}
+            className={styles.logo}
+          />
           <span className={styles.titlePrimary}>Global Accounts</span>
         </div>
         <span className={styles.titleSecondary}>Playground</span>

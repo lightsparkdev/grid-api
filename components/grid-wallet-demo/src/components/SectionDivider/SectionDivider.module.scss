@@ -1,0 +1,23 @@
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3xs);
+  padding-block: var(--spacing-xs);
+  padding-inline: var(--spacing-xs);
+}
+
+.label {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+}
+
+.line {
+  flex: 1;
+  height: 0;
+  border-top: var(--stroke-xs) solid var(--border-primary);
+}
