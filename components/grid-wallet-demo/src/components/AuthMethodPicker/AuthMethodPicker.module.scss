@@ -58,3 +58,11 @@
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
 }
+
+// Origin renders IconCheckmark2Small at 12px inside a 24 viewBox — without this,
+// the 1.5 stroke scales to ~0.75px and looks hairline-thin.
+.checkIndicator {
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
