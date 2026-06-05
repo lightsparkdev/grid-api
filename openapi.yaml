@@ -14616,6 +14616,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/CadBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CnyExternalAccountCreateInfo:
+      title: CNY Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CnyAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CnyBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CnyBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CopExternalAccountCreateInfo:
       title: COP Account
       allOf:
@@ -15263,6 +15283,7 @@ components:
         - $ref: '#/components/schemas/BrlExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BwpExternalAccountCreateInfo'
         - $ref: '#/components/schemas/CadExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/CnyExternalAccountCreateInfo'
         - $ref: '#/components/schemas/CopExternalAccountCreateInfo'
         - $ref: '#/components/schemas/DkkExternalAccountCreateInfo'
         - $ref: '#/components/schemas/EgpExternalAccountCreateInfo'
@@ -15310,6 +15331,7 @@ components:
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountCreateInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountCreateInfo'
           CAD_ACCOUNT: '#/components/schemas/CadExternalAccountCreateInfo'
+          CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountCreateInfo'
           COP_ACCOUNT: '#/components/schemas/CopExternalAccountCreateInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountCreateInfo'
           EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountCreateInfo'
