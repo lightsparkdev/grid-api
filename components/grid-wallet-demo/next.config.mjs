@@ -40,12 +40,16 @@ const nextConfig = {
       'node_modules',
     ];
 
-    // Origin only exports its main barrel — alias Checkbox for a narrow import.
+    // Origin only exports its main barrel — narrow imports for tree-shaken components.
     config.resolve.alias = {
       ...config.resolve.alias,
       '@lightsparkdev/origin/checkbox': path.resolve(
         __dirname,
         'node_modules/@lightsparkdev/origin/src/components/Checkbox/index.ts',
+      ),
+      '@lightsparkdev/origin/badge': path.resolve(
+        __dirname,
+        'node_modules/@lightsparkdev/origin/src/components/Badge/index.ts',
       ),
     };
 

@@ -6,7 +6,7 @@
    Google) are real, the calls here are representative.
    ============================================================ */
 
-import { GRID_BASE, type ApiCall, type AuthMethod } from './flow';
+import type { ApiCall, AuthMethod } from './flow';
 
 // Realistic placeholder ids (same formats the sandbox returns).
 const ACCOUNT = 'InternalAccount:019e8f48-1135-438c-0000-8b9d28990463';
@@ -23,14 +23,16 @@ export function signInCalls(method: AuthMethod, email?: string): ApiCall[] {
     return [
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials/${AUTH_METHOD}/challenge`,
+        path: `/auth/credentials/${AUTH_METHOD}/challenge`,
+        title: 'Request OTP',
         reqBody: {},
         status: '200 OK',
         note: `OTP sent to ${email || 'your email'}.`,
       },
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials/${AUTH_METHOD}/verify`,
+        path: `/auth/credentials/${AUTH_METHOD}/verify`,
+        title: 'Verify OTP',
         reqBody: { type: 'EMAIL_OTP', otp: '000000', clientPublicKey: PUBKEY },
         status: '200 OK',
         note: 'Returns the HPKE-sealed session signing key + 15-min expiry.',
@@ -41,14 +43,16 @@ export function signInCalls(method: AuthMethod, email?: string): ApiCall[] {
     return [
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials/${AUTH_METHOD}/challenge`,
+        path: `/auth/credentials/${AUTH_METHOD}/challenge`,
+        title: 'Start passkey challenge',
         reqBody: { clientPublicKey: PUBKEY },
         status: '200 OK',
         note: 'Returns a WebAuthn challenge + requestId.',
       },
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials/${AUTH_METHOD}/verify`,
+        path: `/auth/credentials/${AUTH_METHOD}/verify`,
+        title: 'Verify passkey',
         headers: { 'Request-Id': '<requestId>' },
         reqBody: { type: 'PASSKEY', assertion: '<webauthn assertion>' },
         status: '200 OK',
@@ -60,7 +64,8 @@ export function signInCalls(method: AuthMethod, email?: string): ApiCall[] {
   return [
     {
       method: 'POST',
-      path: `${GRID_BASE}/auth/credentials/${AUTH_METHOD}/verify`,
+      path: `/auth/credentials/${AUTH_METHOD}/verify`,
+      title: 'Verify OAuth token',
       reqBody: {
         type: 'OAUTH',
         oidcToken: method === 'apple' ? '<Apple id_token>' : '<Google id_token>',
@@ -77,7 +82,8 @@ export function addMoneyCalls(cents: number): ApiCall[] {
   return [
     {
       method: 'POST',
-      path: `${GRID_BASE}/quotes`,
+      path: `/quotes`,
+      title: 'Create quote',
       reqBody: {
         source: { sourceType: 'ACCOUNT', accountId: PLATFORM_USD },
         destination: { destinationType: 'ACCOUNT', accountId: ACCOUNT, currency: 'USDB' },
@@ -89,14 +95,16 @@ export function addMoneyCalls(cents: number): ApiCall[] {
     },
     {
       method: 'POST',
-      path: `${GRID_BASE}/quotes/${QUOTE}/execute`,
+      path: `/quotes/${QUOTE}/execute`,
+      title: 'Execute quote',
       reqBody: {},
       status: '200 OK',
       note: 'Incoming funds; no customer session or wallet signature required.',
     },
     {
       method: 'GET',
-      path: `${GRID_BASE}/transactions/${TXN}`,
+      path: `/transactions/${TXN}`,
+      title: 'Get transaction',
       status: '200 OK',
       note: 'Funds settle to the balance — COMPLETED.',
     },
@@ -108,7 +116,8 @@ export function sendCalls(usdbUnits: number): ApiCall[] {
   return [
     {
       method: 'POST',
-      path: `${GRID_BASE}/quotes`,
+      path: `/quotes`,
+      title: 'Create quote',
       reqBody: {
         source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
         destination: { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' },
@@ -120,7 +129,8 @@ export function sendCalls(usdbUnits: number): ApiCall[] {
     },
     {
       method: 'POST',
-      path: `${GRID_BASE}/quotes/${QUOTE}/execute`,
+      path: `/quotes/${QUOTE}/execute`,
+      title: 'Execute quote',
       headers: { 'Grid-Wallet-Signature': '<signature>' },
       reqBody: {},
       status: '200 OK',
@@ -128,7 +138,8 @@ export function sendCalls(usdbUnits: number): ApiCall[] {
     },
     {
       method: 'GET',
-      path: `${GRID_BASE}/transactions/${TXN}`,
+      path: `/transactions/${TXN}`,
+      title: 'Get transaction',
       status: '200 OK',
       note: 'Delivered — COMPLETED.',
     },
@@ -140,7 +151,8 @@ export function withdrawCalls(usdbUnits: number): ApiCall[] {
   return [
     {
       method: 'POST',
-      path: `${GRID_BASE}/quotes`,
+      path: `/quotes`,
+      title: 'Create quote',
       reqBody: {
         source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
         destination: { destinationType: 'ACCOUNT', accountId: BANK, currency: 'USD' },
@@ -152,7 +164,8 @@ export function withdrawCalls(usdbUnits: number): ApiCall[] {
     },
     {
       method: 'POST',
-      path: `${GRID_BASE}/quotes/${QUOTE}/execute`,
+      path: `/quotes/${QUOTE}/execute`,
+      title: 'Execute quote',
       headers: { 'Grid-Wallet-Signature': '<signature>' },
       reqBody: {},
       status: '200 OK',
@@ -160,7 +173,8 @@ export function withdrawCalls(usdbUnits: number): ApiCall[] {
     },
     {
       method: 'GET',
-      path: `${GRID_BASE}/transactions/${TXN}`,
+      path: `/transactions/${TXN}`,
+      title: 'Get transaction',
       status: '200 OK',
       note: 'Paid out via RTP — COMPLETED.',
     },

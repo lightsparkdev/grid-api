@@ -15,6 +15,11 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bodyEmpty {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md);

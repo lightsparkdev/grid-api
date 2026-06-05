@@ -8,7 +8,8 @@
 export type Persona = 'fintech' | 'social' | 'marketplace';
 export type AuthMethod = 'passkey' | 'oauth' | 'apple' | 'email_otp' | 'sms';
 
-export const GRID_BASE = '/grid/2025-10-13';
+/** Full API base for cURL — version lives here, not in operation paths. */
+export const GRID_API_BASE_URL = 'https://api.lightspark.com/grid/2025-10-13';
 
 export type ScreenId =
   | 'auth'
@@ -42,9 +43,12 @@ export interface PhoneState {
 export interface ApiCall {
   method: 'GET' | 'POST';
   path: string;
+  /** Short step label shown above the description. */
+  title?: string;
   headers?: Record<string, string>;
   reqBody?: Record<string, unknown>;
   status: string;
+  /** Longer explanatory copy under the title. */
   note?: string;
 }
 
@@ -76,7 +80,8 @@ export function credentialCalls(method: AuthMethod): ApiCall[] {
     return [
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials`,
+        path: `/auth/credentials`,
+        title: 'Register passkey',
         reqBody: {
           customerId: CUSTOMER,
           credentialType: 'PASSKEY',
@@ -92,7 +97,8 @@ export function credentialCalls(method: AuthMethod): ApiCall[] {
     return [
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials`,
+        path: `/auth/credentials`,
+        title: 'Register OAuth credential',
         reqBody: {
           customerId: CUSTOMER,
           credentialType: 'OAUTH',
@@ -108,14 +114,16 @@ export function credentialCalls(method: AuthMethod): ApiCall[] {
     return [
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/credentials`,
+        path: `/auth/credentials`,
+        title: 'Register SMS credential',
         reqBody: { customerId: CUSTOMER, credentialType: 'SMS_OTP', phone: '+1 415 555 0148' },
         status: '202 Accepted',
         note: 'OTP sent by SMS.',
       },
       {
         method: 'POST',
-        path: `${GRID_BASE}/auth/verify`,
+        path: `/auth/verify`,
+        title: 'Verify SMS OTP',
         reqBody: { requestId: 'AuthRequest:01954…', otp: '123456' },
         status: '200 OK',
         note: 'OTP verified; credential active.',
@@ -126,14 +134,16 @@ export function credentialCalls(method: AuthMethod): ApiCall[] {
   return [
     {
       method: 'POST',
-      path: `${GRID_BASE}/auth/credentials`,
+      path: `/auth/credentials`,
+      title: 'Register email credential',
       reqBody: { customerId: CUSTOMER, credentialType: 'EMAIL_OTP', email: 'ava@example.com' },
       status: '202 Accepted',
       note: 'OTP dispatched to the customer’s email.',
     },
     {
       method: 'POST',
-      path: `${GRID_BASE}/auth/verify`,
+      path: `/auth/verify`,
+      title: 'Verify email OTP',
       reqBody: { requestId: 'AuthRequest:01954…', otp: '123456' },
       status: '200 OK',
       note: 'OTP verified; credential active.',

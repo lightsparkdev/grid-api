@@ -3,7 +3,6 @@
 
 import {
   credentialCalls,
-  GRID_BASE,
   CUSTOMER,
   type ApiCall,
   type AuthMethod,
@@ -132,7 +131,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
         calls: [
           {
             method: 'POST',
-            path: `${GRID_BASE}/customers`,
+            path: `/customers`,
+            title: 'Create customer',
             reqBody: { fullName: 'Ava Martínez', email: 'ava@example.com', country: 'US' },
             status: '201 Created',
             note: 'Returns a customer with an embedded Global Account.',
@@ -140,7 +140,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
           ...credentialCalls(method),
           {
             method: 'GET',
-            path: `${GRID_BASE}/internal-accounts?customerId=${CUSTOMER.split(':')[1].slice(0, 8)}…&type=EMBEDDED_WALLET`,
+            path: `/internal-accounts?customerId=${CUSTOMER.split(':')[1].slice(0, 8)}…&type=EMBEDDED_WALLET`,
+            title: 'List internal accounts',
             status: '200 OK',
             note: 'The auto-provisioned Global Account, balance 0.',
           },
@@ -157,7 +158,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
         calls: [
           {
             method: 'POST',
-            path: `${GRID_BASE}/quotes`,
+            path: `/quotes`,
+            title: 'Create quote',
             reqBody: {
               source: { sourceType: 'ACCOUNT', accountType: 'US_ACCOUNT' },
               destination: { destinationType: 'ACCOUNT' },
@@ -169,7 +171,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
           },
           {
             method: 'POST',
-            path: `${GRID_BASE}/transfer-in`,
+            path: `/transfer-in`,
+            title: 'Transfer in',
             reqBody: { quoteId: 'Quote:01954…' },
             status: '202 Accepted',
             note: 'Funds settle to the balance.',
@@ -191,7 +194,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
         calls: [
           {
             method: 'POST',
-            path: `${GRID_BASE}/quotes`,
+            path: `/quotes`,
+            title: 'Create quote',
             reqBody: {
               source: { sourceType: 'ACCOUNT' },
               destination: { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' },
@@ -202,7 +206,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
           },
           {
             method: 'POST',
-            path: `${GRID_BASE}/transfer-out`,
+            path: `/transfer-out`,
+            title: 'Transfer out',
             reqBody: { quoteId: 'Quote:01955…' },
             status: '202 Accepted',
             note: 'Requires Grid-Wallet-Signature from the customer credential.',
@@ -224,7 +229,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
         calls: [
           {
             method: 'POST',
-            path: `${GRID_BASE}/quotes`,
+            path: `/quotes`,
+            title: 'Create quote',
             reqBody: {
               source: { sourceType: 'ACCOUNT' },
               destination: { destinationType: 'ACCOUNT', accountType: 'US_ACCOUNT' },
@@ -235,7 +241,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
           },
           {
             method: 'POST',
-            path: `${GRID_BASE}/transfer-out`,
+            path: `/transfer-out`,
+            title: 'Transfer out',
             reqBody: { quoteId: 'Quote:01956…' },
             status: '202 Accepted',
             note: 'Signed withdrawal to the linked bank.',
@@ -257,7 +264,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
         calls: [
           {
             method: 'POST',
-            path: `${GRID_BASE}/cards`,
+            path: `/cards`,
+            title: 'Create card',
             reqBody: { customerId: `${CUSTOMER.split(':')[1].slice(0, 8)}…`, type: 'VIRTUAL' },
             status: '201 Created',
             note: 'Card provisionable to Apple/Google Wallet.',
@@ -272,7 +280,8 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
         calls: [
           {
             method: 'GET',
-            path: `${GRID_BASE}/transactions?accountId=01954…&limit=1`,
+            path: `/transactions?accountId=01954…&limit=1`,
+            title: 'List transactions',
             status: '200 OK',
             note: 'transaction.authorized — $7.32 at Blue Bottle Coffee.',
           },

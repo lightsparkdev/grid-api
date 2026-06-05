@@ -14,7 +14,8 @@ import {
 } from '@/data/actions';
 import { addMoneyCalls, sendCalls, signInCalls, withdrawCalls } from '@/data/apiCalls';
 import { googleNonce, passkeyCeremony } from '@/lib/auth';
-import type { Entry } from '@/components/ApiSteps';
+import type { Entry } from '@/components/ApiPanel/types';
+import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
 
 interface Transient {
   screen: ScreenId;
@@ -49,7 +50,9 @@ export function useWalletDemoLogic() {
   const [methods, setMethods] = useState<AuthMethod[]>(['oauth']);
   const method = useMemo(() => primaryAuthMethod(methods), [methods]);
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [entries, setEntries] = useState<Entry[]>(() =>
+    SEED_API_PANEL ? seedApiEntries() : [],
+  );
   const [transient, setTransient] = useState<Transient | null>(null);
   const [running, setRunning] = useState(false);
 

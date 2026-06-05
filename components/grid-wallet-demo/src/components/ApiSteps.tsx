@@ -5,12 +5,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import type { ApiCall } from '@/data/flow';
 import { IconConsole } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconConsole';
+import type { Entry } from '@/components/ApiPanel/types';
+import { formatApiUrl } from '@/lib/apiCodeFormat';
 import styles from './ApiSteps.module.scss';
 
-export interface Entry extends ApiCall {
-  key: string;
-  fresh: boolean;
-}
+export type { Entry };
 
 export default function ApiSteps({ entries }: { entries: Entry[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -101,7 +100,7 @@ function renderCurl(e: ApiCall): React.ReactNode {
     <span key="cmd">
       <span className={styles.syntaxCommand}>curl</span>
       <span className={styles.syntaxFlag}> -X {e.method}</span>{' '}
-      <span className={styles.syntaxString}>&quot;{`https://api.lightspark.com${e.path}`}&quot;</span>
+      <span className={styles.syntaxString}>&quot;{formatApiUrl(e.path)}&quot;</span>
       {cont}
       {'\n'}
     </span>,
