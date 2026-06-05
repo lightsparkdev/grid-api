@@ -1,0 +1,62 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing-xs);
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-3xs);
+  width: 100%;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+.logo {
+  display: block;
+  flex-shrink: 0;
+  width: 0.73em;
+  height: auto;
+  color: var(--text-primary);
+}
+
+.titlePrimary {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--text-primary);
+  letter-spacing: var(--font-tracking-tighter);
+  font-feature-settings: 'salt' 1, 'case' 1;
+}
+
+.titleSecondary {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: 32px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  letter-spacing: var(--font-tracking-tighter);
+  font-feature-settings: 'salt' 1, 'case' 1;
+}
+
+.body {
+  @include body;
+  margin: 0;
+  padding: 0 var(--spacing-xs);
+  width: 100%;
+  color: var(--text-secondary);
+  line-height: var(--font-leading-20);
+  font-feature-settings: 'salt' 1;
+  text-wrap: balance;
+}

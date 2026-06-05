@@ -1,0 +1,22 @@
+.panel {
+  width: 475px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-primary);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  padding: var(--spacing-4xl);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}

@@ -1,3 +1,22 @@
+/** Grid symbol only (no wordmark text) — used inline with headlines. */
+export function GridLogoMark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 7.30469 23.3872 23.3872"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-hidden
+    >
+      <path
+        d="M9.64273 7.30469V14.177H13.7445V7.30469H23.3872V16.9474H16.5148V21.0491H23.3872V30.6919H13.7445V23.8195H9.64273V30.6919H0V21.0491H6.87235V16.9474H0V7.30469H9.64273ZM16.5148 27.9215H20.6168V23.8195H16.5148V27.9215ZM2.77038 27.9215H6.87235V23.8195H2.77038V27.9215ZM9.64273 21.0491H13.7445V16.9474H9.64273V21.0491ZM16.5148 14.177H20.6168V10.0751H16.5148V14.177ZM2.77038 14.177H6.87235V10.0751H2.77038V14.177Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 export function GridWordmark({ className }: { className?: string }) {
   return (
     <svg

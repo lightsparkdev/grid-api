@@ -1,0 +1,36 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+  height: 52px;
+  padding: var(--spacing-md);
+  padding-right: var(--spacing-xs);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.title {
+  @include label;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+}
