@@ -469,7 +469,9 @@ The lowest-friction credential type — works on any device with email access an
 
 ### Default Email OTP credential
 
-Grid creates the first `EMAIL_OTP` credential when the Global Account is provisioned. The credential uses the customer email on file for the internal account. To authenticate with it, send an OTP challenge and then verify the code.
+Grid creates the first `EMAIL_OTP` credential when the Global Account is provisioned. The credential uses the customer email on file for the internal account. To authenticate with it, send an OTP challenge, then verify using the secure encrypted OTP flow.
+
+The client never sends the plaintext OTP code. Instead, it HPKE-encrypts the code (together with a fresh public key) to an enclave bundle returned from the challenge. The server is a pass-through and never sees the plaintext.
 
 ```mermaid
 sequenceDiagram
@@ -481,14 +483,20 @@ sequenceDiagram
   C->>IB: POST /my-backend/otp/challenge { credentialId }
   IB->>G: POST /auth/credentials/{id}/challenge
   G->>E: deliver OTP email (to customer email on file)
-  G-->>IB: 200 AuthMethod
-  IB-->>C: ok
+  G-->>IB: 200 AuthMethod + otpEncryptionTargetBundle
+  IB-->>C: { otpEncryptionTargetBundle }
   E-->>C: OTP code
-  C->>C: generateClientKeyPair()
-  C->>IB: POST /my-backend/otp/verify { otp, clientPublicKey }
-  IB->>G: POST /auth/credentials/{id}/verify { type: EMAIL_OTP, otp, clientPublicKey }
+  C->>C: generateClientKeyPair() (TEK)
+  C->>C: HPKE-encrypt { otp_code, public_key } → encryptedOtpBundle
+  C->>IB: POST /my-backend/otp/verify { encryptedOtpBundle }
+  IB->>G: POST /auth/credentials/{id}/verify { type: EMAIL_OTP, encryptedOtpBundle }
+  G-->>IB: 202 { payloadToSign, requestId }
+  IB-->>C: { payloadToSign, requestId }
+  C->>C: sign(payloadToSign, tekPrivateKey)
+  C->>IB: POST /my-backend/otp/verify/complete { stamp, requestId }
+  IB->>G: Same POST + Grid-Wallet-Signature + Request-Id
   G-->>IB: 200 AuthSession
-  IB-->>C: { encryptedSessionSigningKey, expiresAt }
+  IB-->>C: { expiresAt }
 ```
 
 ```bash
@@ -504,12 +512,15 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EMAIL_OTP",
   "nickname": "jane@example.com",
+  "otpEncryptionTargetBundle": "{\"version\":\"v1.0.0\",\"data\":\"7b22...\",\"dataSignature\":\"3045...\",\"enclaveQuorumPublic\":\"04a1...\"}",
   "createdAt": "2026-04-19T12:00:00Z",
   "updatedAt": "2026-04-19T12:00:00Z"
 }
 ```
 
-Then verify with the OTP value:
+The client generates a fresh P-256 key pair (the TEK — Target Encryption Key), HPKE-encrypts `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and submits the encrypted payload. See <a href="client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for implementation details.
+
+Then verify with the encrypted OTP bundle:
 
 ```bash
 curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000004/verify" \
@@ -517,13 +528,53 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   -H "Content-Type: application/json" \
   -d '{
     "type": "EMAIL_OTP",
-    "otp": "123456",
-    "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+    "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
   }'
 ```
 
+**Response (202):**
+
+```json
+{
+  "type": "EMAIL_OTP",
+  "payloadToSign": "eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ...",
+  "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
+  "expiresAt": "2026-04-19T12:05:00Z"
+}
+```
+
+The client signs `payloadToSign` with the TEK private key (the same key whose public key was encrypted in the bundle), then retries with the stamp:
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000004/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9" \
+  -H "Request-Id: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "EMAIL_OTP",
+    "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
+  }'
+```
+
+**Response (200):**
+
+```json
+{
+  "id": "Session:019542f5-b3e7-1d02-0000-000000000003",
+  "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "type": "EMAIL_OTP",
+  "nickname": "jane@example.com",
+  "createdAt": "2026-04-19T12:00:01Z",
+  "updatedAt": "2026-04-19T12:00:01Z",
+  "expiresAt": "2026-04-19T12:15:01Z"
+}
+```
+
+The TEK public key becomes the session API key. Unlike `OAUTH` and `PASSKEY` flows, `EMAIL_OTP` does **not** return `encryptedSessionSigningKey` — the client already holds the session signing key (the TEK private key it generated).
+
 <Note>
-  **In sandbox, the OTP is always `000000`** regardless of what's emailed. Pass `"otp": "000000"` to skip the email round-trip when scripting tests. The `encryptedSessionSigningKey` returned in sandbox is a stub — see <a href="client-keys#3-decrypt-the-session-signing-key">Client keys</a>.
+  **In sandbox, the OTP code is always `000000`** — encrypt that value in the bundle. The sandbox runs real HPKE end-to-end; the only shortcut is skipping email delivery. See <a href="client-keys#encrypt-the-otp-code-email_otp-only">Client keys</a> for the encryption flow.
 </Note>
 
 ### Resending an OTP
@@ -541,7 +592,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 
 ### Email OTP reauthentication
 
-Same pattern as the first activation: call `/challenge` to send a new OTP, then `/verify` with the new code and a fresh `clientPublicKey`.
+Same pattern as the first activation: call `/challenge` to send a new OTP and receive a fresh `otpEncryptionTargetBundle`, generate a new TEK key pair, build the `encryptedOtpBundle`, and complete the two-step verify flow.
 
 ### Changing the email OTP address
 

@@ -161,10 +161,11 @@ The customer's embedded wallet must produce a Turnkey-stamped signature
 over a `payloadToSign` returned by the quote. Step 1.4 already registered
 the credential — we just need a fresh OTP and an ephemeral keypair.
 
-### 3.1 Generate an ephemeral keypair
+### 3.1 Generate an ephemeral keypair (TEK)
 
-The verify response is HPKE-sealed to a public key you supply. Generate a
-fresh P-256 pair per session:
+Generate a fresh P-256 pair (the TEK — Target Encryption Key) for this
+session. The public key is encrypted inside the OTP bundle; the private key
+becomes the session signing key after successful verify.
 
 ```bash
 $SIGN gen-keypair > /tmp/keys.json
@@ -172,37 +173,64 @@ PUB_HEX=$(jq -r .pubHex /tmp/keys.json)
 PRIV_HEX=$(jq -r .privHex /tmp/keys.json)
 ```
 
-### 3.2 (Re-)issue an OTP
+### 3.2 (Re-)issue an OTP and get the encryption target
 
 To get a fresh OTP (after expiry or for a new session):
 
 ```bash
-g -X POST -H 'Content-Type: application/json' -d '{}' \
-  "$GRID_BASE_URL/auth/credentials/$CRED_ID/challenge"
+CHALLENGE=$(g -X POST -H 'Content-Type: application/json' -d '{}' \
+  "$GRID_BASE_URL/auth/credentials/$CRED_ID/challenge")
+OTP_TARGET=$(echo "$CHALLENGE" | jq -r .otpEncryptionTargetBundle)
 ```
 
 Read the OTP code from the email and assign to `$OTP`.
 
-> **Sandbox tip**: in sandbox mode, no email is sent — verify with the fixed
+> **Sandbox tip**: in sandbox mode, no email is sent — use the fixed
 > OTP code `000000`.
 
-### 3.3 Verify the OTP and decrypt the session key
+### 3.3 Build the encrypted OTP bundle
+
+HPKE-encrypt `{otp_code, public_key}` to the target bundle:
 
 ```bash
-VERIFY=$(g -X POST -H 'Content-Type: application/json' \
-  -d '{"type": "EMAIL_OTP", "otp": "'$OTP'", "clientPublicKey": "'$PUB_HEX'"}' \
+ENC_BUNDLE=$($SIGN encrypt-otp "$OTP_TARGET" "$PUB_HEX" "$OTP")
+```
+
+### 3.4 Verify (two-step) and obtain the session
+
+The first verify call returns 202 with a `payloadToSign`. Sign it with the
+TEK private key and retry with headers:
+
+```bash
+# First leg — get the verification challenge
+VERIFY1=$(g -X POST -H 'Content-Type: application/json' \
+  -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
   "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
 
-BUNDLE=$(echo "$VERIFY" | jq -r .encryptedSessionSigningKey)
-SESSION_PRIV_HEX=$($SIGN decrypt-bundle "$BUNDLE" "$PRIV_HEX")
-echo "Session expires: $(echo "$VERIFY" | jq -r .expiresAt)"
+VERIFY_PAYLOAD=$(echo "$VERIFY1" | jq -r .payloadToSign)
+VERIFY_REQ_ID=$(echo "$VERIFY1" | jq -r .requestId)
+
+# Sign the verification token with the TEK private key
+VERIFY_STAMP=$($SIGN stamp "$PRIV_HEX" "$VERIFY_PAYLOAD")
+
+# Signed retry — complete login
+VERIFY2=$(g -X POST -H 'Content-Type: application/json' \
+  -H "Grid-Wallet-Signature: $VERIFY_STAMP" \
+  -H "Request-Id: $VERIFY_REQ_ID" \
+  -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
+  "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
+
+echo "Session expires: $(echo "$VERIFY2" | jq -r .expiresAt)"
+
+# The TEK private key IS the session signing key — no decryption needed
+SESSION_PRIV_HEX="$PRIV_HEX"
 ```
 
 Sessions are short-lived (~15 min). Cache `$SESSION_PRIV_HEX` and run the
 remaining steps before it expires; otherwise re-run `gen-keypair` →
-`/challenge` → `/verify` → `decrypt-bundle`.
+`/challenge` → `encrypt-otp` → `/verify`.
 
-### 3.4 Create the offramp quote
+### 3.5 Create the offramp quote
 
 ```bash
 QUOTE=$(g -X POST -H 'Content-Type: application/json' \
@@ -243,13 +271,13 @@ These are alternatives — pick one:
   detected. Used by `test_token_offramp_e2e` via
   `spark-cli fulfillsparkinvoice`.
 
-### 3.5 Stamp the payload
+### 3.6 Stamp the payload
 
 ```bash
 STAMP=$($SIGN stamp "$SESSION_PRIV_HEX" "$PAYLOAD")
 ```
 
-### 3.6 Execute
+### 3.7 Execute
 
 ```bash
 g -X POST -H 'Content-Type: application/json' \

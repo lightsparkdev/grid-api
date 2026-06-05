@@ -226,11 +226,11 @@ curl -X POST "$GRID_BASE_URL/quotes" \
 
 ### 7. Authenticate and sign
 
-The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with. The flow is keypair → OTP challenge → verify → decrypt → sign.
+The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with. With `EMAIL_OTP`, the client generates a TEK (Target Encryption Key) pair, HPKE-encrypts the OTP code, and uses the TEK private key both to complete login and to sign the quote payload.
 
 <Steps>
   <Step title="Your backend requests a fresh OTP">
-    Ask Grid to send a fresh OTP email for the default `EMAIL_OTP` credential.
+    Ask Grid to send a fresh OTP email for the default `EMAIL_OTP` credential. The response includes `otpEncryptionTargetBundle` for the secure OTP flow.
 
     ```bash
     curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/challenge" \
@@ -245,23 +245,56 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
       "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "EMAIL_OTP",
       "nickname": "jane@example.com",
+      "otpEncryptionTargetBundle": "{\"version\":\"v1.0.0\",\"data\":\"7b22...\",\"dataSignature\":\"3045...\",\"enclaveQuorumPublic\":\"04a1...\"}",
       "createdAt": "2026-04-19T12:00:01Z",
       "updatedAt": "2026-04-19T12:05:00Z"
     }
     ```
+
+    Return `otpEncryptionTargetBundle` to the client.
   </Step>
-  <Step title="Client enters the OTP and generates a key pair">
-    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 client key pair</a> and posts the public key plus the OTP value to your backend. Grid uses the public key to seal the session signing key to that device.
-  </Step>
-  <Step title="Your backend verifies the OTP with Grid to mint a session">
+  <Step title="Client encrypts the OTP and verifies">
+    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 key pair (the TEK)</a>, <a href="client-keys#encrypt-the-otp-code-email_otp-only">HPKE-encrypts</a> `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and sends the encrypted bundle to your backend. In sandbox, use OTP code `000000`.
+
+    Your backend calls verify with the encrypted bundle:
+
     ```bash
     curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/verify" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
       -d '{
         "type": "EMAIL_OTP",
-        "otp": "123456",
-        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+        "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
+      }'
+    ```
+
+    **Response (202):**
+
+    ```json
+    {
+      "type": "EMAIL_OTP",
+      "payloadToSign": "eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ...",
+      "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
+      "expiresAt": "2026-04-19T12:10:00Z"
+    }
+    ```
+
+    Return `payloadToSign` and `requestId` to the client.
+  </Step>
+  <Step title="Client signs the verification token and completes login">
+    The client <a href="client-keys#4-sign-a-payloadtosign">stamps</a> `payloadToSign` with the TEK private key and sends the stamp back to your backend.
+
+    Your backend retries the same request with the stamp:
+
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/verify" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9" \
+      -H "Request-Id: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+      -d '{
+        "type": "EMAIL_OTP",
+        "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
       }'
     ```
 
@@ -273,17 +306,16 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
       "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "EMAIL_OTP",
       "nickname": "jane@example.com",
-      "encryptedSessionSigningKey": "w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf",
       "createdAt": "2026-04-19T12:05:01Z",
       "updatedAt": "2026-04-19T12:05:01Z",
       "expiresAt": "2026-04-19T12:20:01Z"
     }
     ```
 
-    Return `encryptedSessionSigningKey` and `expiresAt` to the client.
+    The TEK public key is now the session API key. The TEK private key **is** the session signing key — the client already has it.
   </Step>
-  <Step title="Client decrypts the session signing key and stamps the payload">
-    The client <a href="client-keys#3-decrypt-the-session-signing-key">decrypts</a> `encryptedSessionSigningKey` with the matching client private key, then <a href="client-keys#4-sign-a-payloadtosign">stamps the quote's `payloadToSign`</a> with the resulting session signing key. Return the full Turnkey API-key stamp to your backend.
+  <Step title="Client stamps the quote payload">
+    The client <a href="client-keys#4-sign-a-payloadtosign">stamps the quote's `payloadToSign`</a> with the same TEK private key. Return the full Turnkey API-key stamp to your backend.
   </Step>
 </Steps>
 
