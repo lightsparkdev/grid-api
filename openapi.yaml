@@ -11871,6 +11871,59 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    CnyAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - phoneNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - CNY_ACCOUNT
+        phoneNumber:
+          type: string
+          description: The phone number in international format
+          example: '+1234567890'
+          minLength: 7
+          maxLength: 15
+          pattern: ^\+[0-9]{6,14}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+      example:
+        accountType: CNY_ACCOUNT
+        phoneNumber: '+1234567890'
+        bankName: Example Bank
+    CnyAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/CnyAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - MOBILE_MONEY
+    PaymentCnyAccountInfo:
+      title: CNY Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/CnyAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -11924,6 +11977,7 @@ components:
             - $ref: '#/components/schemas/PaymentPkrAccountInfo'
             - $ref: '#/components/schemas/PaymentSlvAccountInfo'
             - $ref: '#/components/schemas/PaymentSwiftAccountInfo'
+            - $ref: '#/components/schemas/PaymentCnyAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -11981,6 +12035,7 @@ components:
               SLV_ACCOUNT: '#/components/schemas/PaymentSlvAccountInfo'
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
               SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
+              CNY_ACCOUNT: '#/components/schemas/PaymentCnyAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -12137,6 +12192,7 @@ components:
         - SOLANA_WALLET
         - SPARK_WALLET
         - TRON_WALLET
+        - CNY_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -14252,6 +14308,57 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+    CnyBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    CnyExternalAccountInfo:
+      title: CNY Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CnyAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CnyBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CnyBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -14298,6 +14405,7 @@ components:
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/CnyExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -14346,6 +14454,7 @@ components:
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
+          CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
