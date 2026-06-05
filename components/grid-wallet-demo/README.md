@@ -31,7 +31,7 @@ npm run dev          # runs on a fixed port: http://localhost:4000
 ```
 
 Google and Apple sign-in use real hosted popups for the ceremony. Apple defaults to the existing
-Services ID `com.lightspark` with return URL `https://docs.lightspark.com`; override with
+Services ID `com.lightspark` with return URL `https://grid-wallet-demo.vercel.app/`; override with
 `NEXT_PUBLIC_APPLE_CLIENT_ID` and `NEXT_PUBLIC_APPLE_REDIRECT_URI` if the Apple Developer
 configuration changes.
 

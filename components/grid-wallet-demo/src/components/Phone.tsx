@@ -412,7 +412,8 @@ function GoogleSignInScreen({
 }
 
 const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'com.lightspark';
-const APPLE_REDIRECT_URI = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI || 'https://docs.lightspark.com';
+const APPLE_REDIRECT_URI =
+  process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI || 'https://grid-wallet-demo.vercel.app/';
 
 /** Launches Sign in with Apple JS and resolves with the id_token. */
 function AppleSignInScreen({
