@@ -415,8 +415,14 @@ function GoogleSignInScreen({
 }
 
 const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'com.lightspark';
-const APPLE_REDIRECT_URI =
-  process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI || 'https://grid-wallet-demo.vercel.app/';
+
+function appleRedirectUri() {
+  if (process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI) return process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return `${window.location.origin}/`;
+  }
+  return 'https://grid-wallet-demo.vercel.app/';
+}
 
 /** Launches Sign in with Apple JS and resolves with the id_token. */
 function AppleSignInScreen({
@@ -454,7 +460,7 @@ function AppleSignInScreen({
       AppleID.auth.init({
         clientId: APPLE_CLIENT_ID,
         scope: 'name email',
-        redirectURI: APPLE_REDIRECT_URI,
+        redirectURI: appleRedirectUri(),
         state: `grid-demo-${nonce.slice(0, 16)}`,
         nonce,
         usePopup: true,
