@@ -1,8 +1,16 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-.list {
-  display: flex;
-  flex-direction: column;
+$active-border-gradient: linear-gradient(
+  to top right,
+  color-mix(in srgb, var(--color-sky-500) 60%, transparent) 0%,
+  var(--color-sky-500) 17%,
+  var(--color-blue-500) 41%,
+  var(--color-green-600) 100%
+);
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-xs);
   width: 100%;
 }
@@ -11,18 +19,18 @@
   all: unset;
   box-sizing: border-box;
   corner-shape: squircle;
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  width: 100%;
-  min-width: 200px;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
   padding: var(--spacing-md);
   background: var(--surface-base);
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
   cursor: pointer;
-  transition: background 100ms ease, border-color 100ms ease;
+  transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
     background: var(--surface-primary);
@@ -42,46 +50,59 @@
   }
 }
 
+// Gradient ring via overlay — same box size as stroke-xs border, no layout shift.
+// (CSS box-shadow can't be a gradient; this paints like an outer border.)
 .cardSelected {
-  // Selected state shown via checkmark only (Figma).
+  z-index: 1;
+  overflow: visible;
+  border-color: transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    // Center stroke-md ring on the stroke-xs border band (padding-box edge).
+    inset: calc(var(--stroke-xs) - var(--stroke-md));
+    corner-shape: squircle;
+    border-radius: var(--corner-radius-md);
+    padding: var(--stroke-md);
+    background: $active-border-gradient;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
 }
 
-.iconBox {
-  corner-shape: squircle;
+.content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  padding: var(--spacing-sm);
-  background: var(--surface-primary);
-  border: var(--stroke-xs) solid var(--border-primary);
-  border-radius: var(--corner-radius-sm);
-  overflow: clip;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-xs);
+  width: 100%;
 }
 
 .icon {
   display: block;
-  width: 28px;
-  height: 28px;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
   object-fit: contain;
+  // shadow-lg as drop-shadow so it follows icon alpha, not the image box
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
+    drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
 }
 
 .label {
   @include label;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  text-align: center;
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
-}
-
-.check {
-  display: flex;
-  flex-shrink: 0;
-  color: var(--icon-success);
-
-  svg path {
-    vector-effect: non-scaling-stroke;
-  }
 }

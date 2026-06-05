@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import clsx from 'clsx';
-import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
 import { USE_CASES, type UseCaseId } from '@/data/configure';
 import styles from './UseCasePicker.module.scss';
 
@@ -13,7 +12,7 @@ interface UseCasePickerProps {
 
 export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
   return (
-    <div className={styles.list}>
+    <div className={styles.grid}>
       {USE_CASES.map((opt) => {
         const isSelected = selected === opt.id;
         return (
@@ -25,21 +24,16 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
             disabled={!opt.enabled}
             aria-pressed={isSelected}
           >
-            <span className={styles.iconBox}>
+            <span className={styles.content}>
               <Image
                 src={opt.iconSrc}
                 alt=""
-                width={28}
-                height={28}
+                width={48}
+                height={48}
                 className={styles.icon}
               />
+              <span className={styles.label}>{opt.label}</span>
             </span>
-            <span className={styles.label}>{opt.label}</span>
-            {isSelected && (
-              <span className={styles.check} aria-hidden>
-                <IconCheckmark2Small size={24} />
-              </span>
-            )}
           </button>
         );
       })}
