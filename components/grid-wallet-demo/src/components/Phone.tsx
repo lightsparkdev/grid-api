@@ -354,6 +354,10 @@ function OtpEntryScreen({ onSubmit }: { onSubmit: (code: string) => void }) {
   );
 }
 
+const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+  '602725491872-0fqcjutt1skianiisgs0lsb62af2mero.apps.googleusercontent.com';
+
 /** Renders Google's official Sign-in button and resolves with the id_token. */
 function GoogleSignInScreen({
   nonce,
@@ -371,9 +375,8 @@ function GoogleSignInScreen({
       .then(() => {
         if (cancelled || !containerRef.current) return;
         const google = (window as any).google;
-        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
         google.accounts.id.initialize({
-          client_id: clientId,
+          client_id: GOOGLE_CLIENT_ID,
           nonce,
           callback: (resp: { credential?: string }) => {
             if (resp?.credential && !fired.current) {

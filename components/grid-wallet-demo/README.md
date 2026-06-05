@@ -30,10 +30,11 @@ npm run dev          # runs on a fixed port: http://localhost:4000
 #   http://localhost:4000/?embed=true&theme=dark
 ```
 
-Google and Apple sign-in use real hosted popups for the ceremony. Apple defaults to the existing
+Google and Apple sign-in use real hosted popups for the ceremony. Google defaults to the checked-in
+public web client ID, so local sign-in works without an env file. Apple defaults to the existing
 Services ID `com.lightspark` with return URL `https://grid-wallet-demo.vercel.app/`; override with
-`NEXT_PUBLIC_APPLE_CLIENT_ID` and `NEXT_PUBLIC_APPLE_REDIRECT_URI` if the Apple Developer
-configuration changes.
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_APPLE_CLIENT_ID`, and `NEXT_PUBLIC_APPLE_REDIRECT_URI`
+if the provider configuration changes.
 
 The port is pinned to **4000** so the docs page can reliably embed the local app while you preview
 the Grid docs with `make mint` (the docs page auto-targets `localhost:4000` when served locally).
