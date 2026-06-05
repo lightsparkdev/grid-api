@@ -8,6 +8,10 @@ $active-border-gradient: linear-gradient(
   var(--color-green-600) 100%
 );
 
+$ring-ease: cubic-bezier(0.19, 1, 0.22, 1);
+$ring-duration: 0.22s;
+$ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -28,9 +32,11 @@ $active-border-gradient: linear-gradient(
   background: var(--surface-base);
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
-  overflow: clip;
+  overflow: visible;
   cursor: pointer;
-  transition: background 100ms ease;
+  transition:
+    background 100ms ease,
+    border-color $ring-duration $ring-ease;
 
   :global([data-theme='dark']) & {
     background: var(--surface-primary);
@@ -41,7 +47,7 @@ $active-border-gradient: linear-gradient(
     opacity: 0.55;
   }
 
-  &:not(:disabled):hover {
+  &:not(:disabled):not(.cardSelected):hover {
     background: color-mix(in srgb, var(--surface-base) 98%, black);
 
     :global([data-theme='dark']) & {
@@ -50,35 +56,37 @@ $active-border-gradient: linear-gradient(
   }
 }
 
-// Gradient ring via overlay — same box size as stroke-xs border, no layout shift.
-// (CSS box-shadow can't be a gradient; this paints like an outer border.)
 .cardSelected {
   z-index: 1;
-  overflow: visible;
   border-color: transparent;
+  background: var(--surface-base);
 
-  &::before {
-    content: '';
-    position: absolute;
-    // Center stroke-md ring on the stroke-xs border band (padding-box edge).
-    inset: calc(var(--stroke-xs) - var(--stroke-md));
-    corner-shape: squircle;
-    border-radius: var(--corner-radius-md);
-    padding: var(--stroke-md);
-    background: $active-border-gradient;
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
   }
 }
 
+.activeRing {
+  position: absolute;
+  inset: calc(var(--stroke-xs) - var(--stroke-md));
+  corner-shape: squircle;
+  border-radius: var(--corner-radius-md);
+  padding: var(--stroke-md);
+  background: $active-border-gradient;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 .content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -93,10 +101,21 @@ $active-border-gradient: linear-gradient(
   height: 40px;
   flex-shrink: 0;
   object-fit: contain;
+  transform-origin: center;
+  transition: transform 250ms $ease-out-swift;
   // shadow-lg as drop-shadow so it follows icon alpha, not the image box
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
     drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
     drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
+
+  .card:not(:disabled):hover & {
+    transform: scale(1.05);
+  }
+
+  .card:not(:disabled):active & {
+    transform: scale(1);
+    transition-duration: 120ms;
+  }
 }
 
 .label {
