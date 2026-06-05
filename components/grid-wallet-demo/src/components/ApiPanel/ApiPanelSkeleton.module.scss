@@ -1,0 +1,143 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+// Panel: gray-050 (light) / gray-950 (dark)
+$skeleton-fill-light: var(--color-gray-075);
+$skeleton-fill-dark: var(--color-gray-925);
+$skeleton-divider-light: var(--color-gray-100);
+$skeleton-divider-dark: var(--color-gray-900);
+
+.list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 680px;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.stepLabels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.bone {
+  border-radius: var(--corner-radius-xs);
+  background: $skeleton-fill-light;
+
+  :global([data-theme='dark']) & {
+    background: $skeleton-fill-dark;
+  }
+}
+
+.badge {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--corner-radius-md);
+  flex-shrink: 0;
+}
+
+.title {
+  height: 14px;
+  width: 42%;
+  max-width: 180px;
+}
+
+.description {
+  height: 14px;
+  width: 68%;
+  max-width: 280px;
+}
+
+.stepContent {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.stepLineCol {
+  width: 28px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepLine {
+  width: var(--stroke-xs);
+  height: 100%;
+  background: $skeleton-fill-light;
+  border-radius: var(--corner-radius-full);
+
+  :global([data-theme='dark']) & {
+    background: $skeleton-fill-dark;
+  }
+}
+
+.stepCodeCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-2xl);
+}
+
+.endpoint {
+  height: 48px;
+  width: 100%;
+  border-radius: var(--corner-radius-md);
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--corner-radius-md);
+  overflow: hidden;
+  background: $skeleton-fill-light;
+
+  :global([data-theme='dark']) & {
+    background: $skeleton-fill-dark;
+  }
+}
+
+.codeToolbar {
+  height: 48px;
+  width: 100%;
+  border-bottom: var(--stroke-xs) solid $skeleton-divider-light;
+
+  :global([data-theme='dark']) & {
+    border-bottom-color: $skeleton-divider-dark;
+  }
+}
+
+.codeBody {
+  min-height: 96px;
+}
+
+@media (max-width: 767px) {
+  .steps {
+    max-width: 100%;
+  }
+}
