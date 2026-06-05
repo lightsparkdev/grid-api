@@ -1,0 +1,19 @@
+title: CNY Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/CnyAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/CnyBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/CnyBeneficiary.yaml
+          BUSINESS: ../common/BusinessBeneficiary.yaml
