@@ -1,10 +1,22 @@
 .handle {
   flex-shrink: 0;
   align-self: stretch;
-  width: 6px;
+  width: 12px;
+  margin-left: -6px;
+  margin-right: -6px;
   cursor: col-resize;
   position: relative;
-  border-left: var(--stroke-xs) solid var(--border-primary);
+  z-index: 1;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: var(--stroke-xs) solid var(--border-primary);
+  }
 
   &::after {
     content: '';

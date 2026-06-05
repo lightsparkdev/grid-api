@@ -5,6 +5,16 @@ import { useCallback, useRef, useState } from 'react';
 const CONFIGURE_WIDTH = 475;
 const MIN_APP = 320;
 const MIN_API = 320;
+const EQUAL_SNAP_THRESHOLD = 28;
+
+function snapToEqualWidth(width: number, totalMiddle: number): number {
+  const equal = totalMiddle / 2;
+  const min = MIN_APP;
+  const max = totalMiddle - MIN_API;
+  if (equal < min || equal > max) return width;
+  if (Math.abs(width - equal) <= EQUAL_SNAP_THRESHOLD) return equal;
+  return width;
+}
 
 export function useColumnResize() {
   const layoutRef = useRef<HTMLElement>(null);
@@ -24,11 +34,18 @@ export function useColumnResize() {
         if (!layout) return;
         const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_WIDTH;
         const delta = ev.clientX - startX;
-        const next = Math.max(MIN_APP, Math.min(totalMiddle - MIN_API, startWidth + delta));
-        setAppWidth(next);
+        const raw = Math.max(MIN_APP, Math.min(totalMiddle - MIN_API, startWidth + delta));
+        setAppWidth(snapToEqualWidth(raw, totalMiddle));
       };
 
-      const onUp = () => {
+      const onUp = (ev: MouseEvent) => {
+        const layout = layoutRef.current;
+        if (layout) {
+          const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_WIDTH;
+          const delta = ev.clientX - startX;
+          const raw = Math.max(MIN_APP, Math.min(totalMiddle - MIN_API, startWidth + delta));
+          setAppWidth(snapToEqualWidth(raw, totalMiddle));
+        }
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
         document.removeEventListener('mousemove', onMove);
