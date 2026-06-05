@@ -4076,64 +4076,115 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
   color: var(--ls-gray-700);
 }
 
-/* Wallet demo iframe — full bleed (mirrors flow-builder) */
-#wallet-demo-container {
-  position: fixed !important;
-  top: 112px !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: calc(100dvh - 112px) !important;
-  z-index: 1;
-  aspect-ratio: unset !important;
-  padding: 0 !important;
+/* ===========================================
+   Wallet demo page (global-accounts/demo)
+   Docs sidebar stays; content column is iframe-only, edge-to-edge.
+   =========================================== */
+
+#content-container:has(#wallet-demo-container) {
+  max-width: none !important;
+  width: 100% !important;
   margin: 0 !important;
-  background: var(--ls-gray-100) !important;
+  padding: 0 !important;
+}
+
+/* Mintlify wraps content in max-w-5xl (1024px) — bust it for the demo */
+#content-container:has(#wallet-demo-container) > div.max-w-5xl,
+#content-container:has(#wallet-demo-container) > div[class*="max-w-5xl"] {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  gap: 0 !important;
+}
+
+#content-area:has(#wallet-demo-container) {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  contain: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  /* navbar (112px) + tab bar (~40px) */
+  min-height: calc(100dvh - 9.5rem) !important;
+}
+
+/* Hide everything in the content column except the embed */
+#content-area:has(#wallet-demo-container) > header#header,
+#content-area:has(#wallet-demo-container) > #pagination,
+#content-area:has(#wallet-demo-container) > footer#footer,
+#content-area:has(#wallet-demo-container) > div.sticky {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+#content-container:has(#wallet-demo-container) #content-side-layout {
+  display: none !important;
+}
+
+#content-area:has(#wallet-demo-container) > #content {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  contain: none !important;
+}
+
+#content:has(#wallet-demo-container) .prose,
+.prose:has(#wallet-demo-container) {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#wallet-demo-container {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  background: var(--ls-gray-100);
 }
 
 html.dark #wallet-demo-container {
-  background: var(--ls-gray-975) !important;
+  background: var(--ls-gray-975);
 }
 
 #wallet-demo-iframe {
   width: 100% !important;
-  height: 100% !important;
+  height: calc(100dvh - 9.5rem) !important;
+  min-height: 0 !important;
   border: none !important;
+  display: block !important;
   aspect-ratio: unset !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
 }
 
-/* Kill Mintlify's iframe aspect-ratio wrapper */
+/* Flatten Mintlify's iframe aspect-ratio wrapper */
 #wallet-demo-container > div,
 #wallet-demo-container > [style*="aspect-ratio"] {
   aspect-ratio: unset !important;
   width: 100% !important;
   height: 100% !important;
-  position: absolute !important;
-  inset: 0 !important;
-  padding: 0 !important;
-}
-
-#content-area:has(#wallet-demo-container) {
-  padding: 0 !important;
-  max-width: 100% !important;
-}
-
-#content-container:has(#wallet-demo-container) {
-  max-width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
   padding: 0 !important;
 }
 
 @media (max-width: 1023px) {
-  #wallet-demo-container {
-    top: 120px !important;
-    height: calc(100dvh - 120px) !important;
+  #content-area:has(#wallet-demo-container) {
+    min-height: calc(100dvh - 7.5rem) !important;
   }
-}
 
-html:has(#wallet-demo-container),
-html:has(#wallet-demo-container) body {
-  overflow: hidden !important;
+  #wallet-demo-iframe {
+    height: calc(100dvh - 7.5rem) !important;
+  }
 }
 
