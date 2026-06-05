@@ -28,8 +28,8 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
               <Image
                 src={opt.iconSrc}
                 alt=""
-                width={48}
-                height={48}
+                width={40}
+                height={40}
                 className={styles.icon}
               />
               <span className={styles.label}>{opt.label}</span>

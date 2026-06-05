@@ -89,8 +89,8 @@ $active-border-gradient: linear-gradient(
 
 .icon {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   object-fit: contain;
   // shadow-lg as drop-shadow so it follows icon alpha, not the image box
