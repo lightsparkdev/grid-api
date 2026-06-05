@@ -1,0 +1,60 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  max-width: 240px;
+  text-align: center;
+}
+
+.iconBox {
+  corner-shape: squircle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: var(--spacing-sm);
+  background: var(--surface-primary);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-sm);
+  color: var(--icon-secondary);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.title {
+  @include label;
+  margin: 0;
+  width: 100%;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.description {
+  @include body;
+  margin: 0;
+  width: 100%;
+  color: var(--text-tertiary);
+  line-height: var(--font-leading-20);
+  font-feature-settings: 'salt' 1;
+}

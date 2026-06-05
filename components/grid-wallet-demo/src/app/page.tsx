@@ -37,7 +37,7 @@ export default function Page() {
       </div>
       <ColumnResizeHandle onMouseDown={onResizeStart} />
       <div className={styles.apiCol}>
-        <ApiPanel />
+        <ApiPanel entries={logic.entries} />
       </div>
     </main>
   );
