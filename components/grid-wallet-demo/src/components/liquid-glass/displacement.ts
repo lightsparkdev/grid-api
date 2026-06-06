@@ -109,8 +109,15 @@ export interface DisplacementMapOptions {
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 /**
- * Fill `target` (an RGBA buffer of length width*height*4) with the
- * displacement map. Pure function of the options — no DOM required.
+ * Fill `target` (an RGBA buffer of length width*height*4) with the displacement
+ * map. Pure function of the options — no DOM required.
+ *
+ * The rounded rect is symmetric about both centre axes, so the expensive
+ * displacement/SDF/dome/splay/falloff math is computed once for the top-left
+ * quadrant and mirrored into all four (negating the X bend across the vertical
+ * axis, Y across the horizontal — Aave's "compute a quarter" trick). The
+ * specular highlight is directional, so its cheap projection is evaluated
+ * per-pixel to stay exact.
  */
 export function renderDisplacementMap(target: Uint8ClampedArray, opts: DisplacementMapOptions): void {
   const {
@@ -134,7 +141,6 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
     cornerSmoothing = 0,
   } = opts;
 
-  // Corner shape: exponent 2 = circle, higher = squircle (superellipse Lp norm).
   const cornerExp = 2 + clamp(cornerSmoothing, 0, 1) * 4;
   const useSquircle = cornerSmoothing > 0.001;
   const invExp = 1 / cornerExp;
@@ -150,7 +156,6 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
   const innerW = Math.max(0, halfW - depth);
   const innerH = Math.max(0, halfH - depth);
   const innerCorner = Math.max(0, Math.min(borderRadius, Math.min(innerW, innerH)));
-  // erf input scale: maps the inner SDF distance into the falloff ramp.
   const falloffScale = depth > 0 ? 1 / (depth * Math.SQRT2) : 1e6;
   const wantSpecular = glowStrength > 0 || edgeStrength > 0;
   const angle = (specularRotation * Math.PI) / 180;
@@ -162,102 +167,130 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
   const splayOn = splayAmount < 1;
   const splayRef = 0.5 * Math.min(halfW, halfH);
   const splayInv = splayRef > 0 ? 1 / splayRef : 0;
-  // Anti-alias the lens boundary across ~1.5 source texels (largest axis) so the
-  // rounded corner stays smooth instead of stair-stepping when the map is scaled.
   const aaWidth = 1.5 * Math.max((2 * halfW) / width, (2 * halfH) / height);
 
-  for (let row = 0; row < height; row++) {
-    for (let col = 0; col < width; col++) {
-      const idx = (row * width + col) * 4;
-      // Pixel centre → lens coordinates in [-halfW, halfW] x [-halfH, halfH].
-      const x = ((col + 0.5) / width) * (2 * halfW) - halfW;
-      const y = ((row + 0.5) / height) * (2 * halfH) - halfH;
-      const ax = Math.abs(x);
-      const ay = Math.abs(y);
+  const halfCols = Math.ceil(width / 2);
+  const halfRows = Math.ceil(height / 2);
 
-      // Signed distance to the (squircle) rounded rectangle (negative inside).
+  for (let row = 0; row < halfRows; row++) {
+    const mrow = height - 1 - row;
+    const rowBase = row * width;
+    const mrowBase = mrow * width;
+    const y = ((row + 0.5) / height) * (2 * halfH) - halfH;
+    const ay = Math.abs(y);
+
+    for (let col = 0; col < halfCols; col++) {
+      const mcol = width - 1 - col;
+      const x = ((col + 0.5) / width) * (2 * halfW) - halfW;
+      const ax = Math.abs(x);
+
+      // Four mirror indices fed by this one quadrant sample.
+      const iTL = (rowBase + col) * 4;
+      const iTR = (rowBase + mcol) * 4;
+      const iBL = (mrowBase + col) * 4;
+      const iBR = (mrowBase + mcol) * 4;
+
       const qx = ax - halfW + corner;
       const qy = ay - halfH + corner;
       const outside = lp(Math.max(qx, 0), Math.max(qy, 0));
       const sdf = outside + Math.min(Math.max(qx, qy), 0) - corner;
-
-      // Smooth coverage of the lens: 1 well inside, 0 well outside, with a
-      // soft ramp across the edge so the boundary is anti-aliased.
       const coverage = sdfBoundary ? clamp(0.5 - sdf / aaWidth, 0, 1) : 1;
 
-      if (coverage > 0) {
-        // Base gradient direction (linear plane or spherical dome).
-        let gx: number;
-        let gy: number;
-        if (dome) {
-          gx = Math.sign(x) * domeGradient(ax, dome.Rx, dome.scaleX);
-          gy = Math.sign(y) * domeGradient(ay, dome.Ry, dome.scaleY);
-        } else {
-          gx = clamp(x / halfW, -1, 1);
-          gy = clamp(y / halfH, -1, 1);
-        }
-
-        let dx = gx;
-        let dy = gy;
-
-        // Splay: flatten the displacement as it approaches the edges, then
-        // renormalise so the magnitude is preserved (keeps content readable).
-        if (splayOn) {
-          const flatY = Math.max(0, 1 - (halfH - ay) * splayInv) * (1 - splayAmount);
-          const flatX = Math.max(0, 1 - (halfW - ax) * splayInv) * (1 - splayAmount);
-          if (flatY > 0.001 || flatX > 0.001) {
-            const rx = dx;
-            const ry = dy;
-            dx = rx * (1 - flatY);
-            dy = ry * (1 - flatX);
-            const lenBefore = Math.sqrt(rx * rx + ry * ry);
-            const lenAfter = Math.sqrt(dx * dx + dy * dy);
-            if (lenAfter > 0.001) {
-              const k = lenBefore / lenAfter;
-              dx *= k;
-              dy *= k;
-            }
-          }
-        }
-
-        // Soft edge falloff via erf of the inset SDF.
-        let falloff = 1;
-        if (edgeFalloff) {
-          const ex = ax - innerW + innerCorner;
-          const ey = ay - innerH + innerCorner;
-          const innerSdf =
-            lp(Math.max(ex, 0), Math.max(ey, 0)) + Math.min(Math.max(ex, ey), 0) - innerCorner;
-          falloff = 0.5 * (1 + erf(innerSdf * falloffScale));
-        }
-
-        // `coverage` blends the displacement back toward neutral (0.5) at the
-        // very edge, anti-aliasing the rounded corner.
-        target[idx] = Math.round((0.5 - 0.5 * dx * falloff * coverage) * 255);
-        target[idx + 1] = Math.round((0.5 - 0.5 * dy * falloff * coverage) * 255);
-
-        if (wantSpecular) {
-          // Projection onto the specular axis (0 == perpendicular, 1 == aligned).
-          const proj = Math.abs(clamp(x / halfW, -1, 1) * cosA + clamp(y / halfH, -1, 1) * sinA);
-          let spec = 0;
-          if (glowStrength > 0) {
-            const g = glowBand > 0.001 ? clamp((proj - glowInner) / glowBand, 0, 1) : 0;
-            spec += glowStrength * Math.pow(g, glowExponent) * falloff;
-          }
-          if (edgeStrength > 0) {
-            const rim = sdf < 0 ? Math.max(0, 1 + sdf / edgeWidth) : 0;
-            spec += edgeStrength * rim * Math.pow(proj, edgeExponent);
-          }
-          spec = Math.min(1, spec) * coverage;
-          target[idx + 2] = Math.round(127 * spec + 128);
-        } else {
-          target[idx + 2] = 128;
-        }
-      } else {
-        target[idx] = 128;
-        target[idx + 1] = 128;
-        target[idx + 2] = 128;
+      if (coverage <= 0) {
+        target[iTL] = target[iTL + 1] = target[iTL + 2] = 128;
+        target[iTR] = target[iTR + 1] = target[iTR + 2] = 128;
+        target[iBL] = target[iBL + 1] = target[iBL + 2] = 128;
+        target[iBR] = target[iBR + 1] = target[iBR + 2] = 128;
+        target[iTL + 3] = target[iTR + 3] = target[iBL + 3] = target[iBR + 3] = 255;
+        continue;
       }
-      target[idx + 3] = 255;
+
+      // Bend magnitudes — identical in all four quadrants; only the sign flips.
+      let dxm: number;
+      let dym: number;
+      if (dome) {
+        dxm = domeGradient(ax, dome.Rx, dome.scaleX);
+        dym = domeGradient(ay, dome.Ry, dome.scaleY);
+      } else {
+        dxm = ax / halfW;
+        if (dxm > 1) dxm = 1;
+        dym = ay / halfH;
+        if (dym > 1) dym = 1;
+      }
+
+      if (splayOn) {
+        const flatY = Math.max(0, 1 - (halfH - ay) * splayInv) * (1 - splayAmount);
+        const flatX = Math.max(0, 1 - (halfW - ax) * splayInv) * (1 - splayAmount);
+        if (flatY > 0.001 || flatX > 0.001) {
+          const rx = dxm;
+          const ry = dym;
+          dxm = rx * (1 - flatY);
+          dym = ry * (1 - flatX);
+          const lenBefore = Math.sqrt(rx * rx + ry * ry);
+          const lenAfter = Math.sqrt(dxm * dxm + dym * dym);
+          if (lenAfter > 0.001) {
+            const k = lenBefore / lenAfter;
+            dxm *= k;
+            dym *= k;
+          }
+        }
+      }
+
+      let falloff = 1;
+      if (edgeFalloff) {
+        const ex = ax - innerW + innerCorner;
+        const ey = ay - innerH + innerCorner;
+        const innerSdf =
+          lp(Math.max(ex, 0), Math.max(ey, 0)) + Math.min(Math.max(ex, ey), 0) - innerCorner;
+        falloff = 0.5 * (1 + erf(innerSdf * falloffScale));
+      }
+
+      const fc = falloff * coverage;
+      const rT = 0.5 * dxm * fc;
+      const gT = 0.5 * dym * fc;
+      const rNeg = Math.round((0.5 + rT) * 255); // x < 0
+      const rPos = Math.round((0.5 - rT) * 255); // x > 0
+      const gNeg = Math.round((0.5 + gT) * 255); // y < 0
+      const gPos = Math.round((0.5 - gT) * 255); // y > 0
+
+      // Specular is directional, so only 2-fold symmetric: the (−,−)/(+,+)
+      // diagonal shares one value, (+,−)/(−,+) the other. Two evals, not four.
+      let bDiag = 128;
+      let bAnti = 128;
+      if (wantSpecular) {
+        let pxv = ax / halfW;
+        if (pxv > 1) pxv = 1;
+        pxv *= cosA;
+        let pyv = ay / halfH;
+        if (pyv > 1) pyv = 1;
+        pyv *= sinA;
+        const rim = sdf < 0 ? Math.max(0, 1 + sdf / edgeWidth) : 0;
+        const projDiag = Math.abs(pxv + pyv);
+        const projAnti = Math.abs(pxv - pyv);
+
+        let s = 0;
+        if (glowStrength > 0) {
+          const g = glowBand > 0.001 ? clamp((projDiag - glowInner) / glowBand, 0, 1) : 0;
+          s += glowStrength * Math.pow(g, glowExponent) * falloff;
+        }
+        if (edgeStrength > 0) s += edgeStrength * rim * Math.pow(projDiag, edgeExponent);
+        if (s > 1) s = 1;
+        bDiag = Math.round(127 * s * coverage + 128);
+
+        s = 0;
+        if (glowStrength > 0) {
+          const g = glowBand > 0.001 ? clamp((projAnti - glowInner) / glowBand, 0, 1) : 0;
+          s += glowStrength * Math.pow(g, glowExponent) * falloff;
+        }
+        if (edgeStrength > 0) s += edgeStrength * rim * Math.pow(projAnti, edgeExponent);
+        if (s > 1) s = 1;
+        bAnti = Math.round(127 * s * coverage + 128);
+      }
+
+      target[iTL] = rNeg; target[iTL + 1] = gNeg; target[iTL + 2] = bDiag; target[iTL + 3] = 255;
+      target[iTR] = rPos; target[iTR + 1] = gNeg; target[iTR + 2] = bAnti; target[iTR + 3] = 255;
+      target[iBL] = rNeg; target[iBL + 1] = gPos; target[iBL + 2] = bAnti; target[iBL + 3] = 255;
+      target[iBR] = rPos; target[iBR + 1] = gPos; target[iBR + 2] = bDiag; target[iBR + 3] = 255;
     }
   }
 }
