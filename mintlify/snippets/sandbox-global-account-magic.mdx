@@ -1,24 +1,44 @@
-The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP uses the fixed sandbox code `000000`. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same decrypted session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
+The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP uses the fixed sandbox code `000000` — HPKE-encrypt that code in the `encryptedOtpBundle` just like production. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
 
-Sandbox-only compatibility values are still available for some flows, but they do not exercise the production-shaped client implementation. Authentication failures return `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
+Sandbox runs real HPKE end-to-end for EMAIL_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email delivery.
+
+Authentication failures return `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
 
 ### Email OTP code
 
-Pass `000000` as the body `otp` on `POST /auth/credentials/{id}/verify` when the credential type is `EMAIL_OTP`. The sandbox skips OTP delivery and accepts this value as a valid response to the issued challenge.
+HPKE-encrypt the code `000000` (together with your TEK public key) inside `encryptedOtpBundle`. The sandbox skips email delivery but runs real HPKE decryption and signature verification.
+
+See <a href="/global-accounts/integration-guides/client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for how to build the bundle. The flow is:
+
+1. Call `POST /auth/credentials/{id}/challenge` to get `otpEncryptionTargetBundle`
+2. Generate a TEK key pair and HPKE-encrypt `{otp_code: "000000", public_key: tekPublicKeyHex}`
+3. Submit `encryptedOtpBundle` to `POST /auth/credentials/{id}/verify`
+4. Receive `202` with `payloadToSign` and `requestId`
+5. Sign `payloadToSign` with the TEK private key and retry with `Grid-Wallet-Signature` + `Request-Id` headers
 
 ```bash
+# First leg — returns 202 with payloadToSign
 curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMethod:abc123/verify \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
   -d '{
     "type": "EMAIL_OTP",
-    "otp": "000000",
-    "clientPublicKey": "04f45f2a..."
+    "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
+  }'
+
+# Signed retry — returns 200 with AuthSession
+curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMethod:abc123/verify \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4i..." \
+  -H "Request-Id: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "EMAIL_OTP",
+    "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
   }'
 ```
 
-Any other code returns `401 UNAUTHORIZED` with `reason: "Invalid OTP code"`.
+Any other code (once decrypted) returns `401 UNAUTHORIZED` with `reason: "Invalid OTP code"`.
 
 ### Passkey WebAuthn ceremony
 
@@ -131,7 +151,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 
 ### Wallet signature header
 
-After verifying an auth credential, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. Use the decrypted session signing key to build a Turnkey API-key stamp over the exact `payloadToSign` string returned by Grid, then pass that full stamp as the `Grid-Wallet-Signature` HTTP header on signed flows:
+For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Turnkey API-key stamp over the exact `payloadToSign` string returned by Grid, then pass that full stamp as the `Grid-Wallet-Signature` HTTP header on signed flows:
 
 - `POST /auth/credentials` (add-additional-credential signed retry)
 - `DELETE /auth/credentials/{id}` (revoke credential)
