@@ -265,4 +265,14 @@ export const currencies: FiatCurrency[] = [
     allRails: ['Bank Transfer', 'Mobile Money'],
     examplePerson: { fullName: 'Carlos Morales', nationality: 'SV' },
   },
+  {
+    code: 'CNY',
+    name: 'Chinese Yuan',
+    countryCode: 'cn',
+    accountType: 'CNY_ACCOUNT',
+    accountLabel: 'Chinese Bank Account',
+    instantRails: [],
+    allRails: ['Bank Transfer'],
+    examplePerson: { fullName: 'Wei Zhang', nationality: 'CN' },
+  },
 ];
