@@ -1,0 +1,32 @@
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 44px 0;
+}
+
+.scaled {
+  flex-shrink: 0;
+  transform-origin: center center;
+}
+
+.shell {
+  box-sizing: border-box;
+  width: var(--app-shell-width);
+  height: var(--app-shell-height);
+  padding: var(--app-shell-padding);
+  border-radius: var(--corner-radius-phone-shell);
+  corner-shape: squircle;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 5.662px 45.3px rgba(0, 0, 0, 0.1);
+}
+
+.screen {
+  width: var(--app-screen-width);
+  height: var(--app-screen-height);
+  border-radius: var(--corner-radius-phone-screen);
+  corner-shape: squircle;
+  overflow: hidden;
+}

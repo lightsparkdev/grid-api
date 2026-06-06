@@ -11,6 +11,17 @@
   corner-shape: squircle;
 }
 
+:root {
+  --app-shell-padding: 16px;
+  --app-screen-width: 402px;
+  --app-screen-height: 874px;
+  --app-shell-width: 434px;
+  --app-shell-height: 906px;
+  /* Figma phone-gga (2121:17475) — base radii; ×1.8 when squircle is supported */
+  --corner-radius-phone-shell: 76px;
+  --corner-radius-phone-screen: 60px;
+}
+
 @supports (corner-shape: squircle) {
   :root {
     --corner-radius-2xs: 3.6px;
@@ -22,6 +33,8 @@
     --corner-radius-2xl: 43.2px;
     --corner-radius-3xl: 57.6px;
     --corner-radius-4xl: 72px;
+    --corner-radius-phone-shell: 136.8px; /* 76 × 1.8 */
+    --corner-radius-phone-screen: 108px; /* 60 × 1.8 */
   }
 }
 
