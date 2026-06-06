@@ -368,4 +368,12 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  CNY_ACCOUNT: {
+    accountType: 'CNY_ACCOUNT',
+    fields: [
+      { name: 'phoneNumber', example: '+8613812345678' },
+      { name: 'bankName', example: 'Industrial and Commercial Bank of China' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
