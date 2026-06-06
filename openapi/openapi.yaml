@@ -131,6 +131,14 @@ paths:
     $ref: paths/customers/customers_{customerId}.yaml
   /customers/{customerId}/kyc-link:
     $ref: paths/customers/customers_{customerId}_kyc-link.yaml
+  /customers/{customerId}/verify-email:
+    $ref: paths/customers/customers_{customerId}_verify-email.yaml
+  /customers/{customerId}/verify-email/confirm:
+    $ref: paths/customers/customers_{customerId}_verify-email_confirm.yaml
+  /customers/{customerId}/verify-phone:
+    $ref: paths/customers/customers_{customerId}_verify-phone.yaml
+  /customers/{customerId}/verify-phone/confirm:
+    $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:

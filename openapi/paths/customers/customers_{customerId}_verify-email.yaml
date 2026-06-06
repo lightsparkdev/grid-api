@@ -1,0 +1,50 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID to send an email verification code to.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Send an email verification code to a customer
+  description: |
+    Send (or resend) a one-time code to the customer's email address to begin
+    email verification.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires contact verification (e.g. EU customers); the customer's
+    `contactVerification.email` status reflects progress. For customers whose
+    provider has no such requirement, this returns `409`.
+
+    Call `POST /customers/{customerId}/verify-email/confirm` with the received
+    code to complete verification. Re-POST this endpoint to resend the code.
+
+    In sandbox, no email is sent and the code is always `123456`.
+  operationId: sendCustomerEmailVerification
+  tags:
+    - Contact Verification
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Verification code sent.
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's payment provider does not require contact verification,
+        or the email is already verified.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml

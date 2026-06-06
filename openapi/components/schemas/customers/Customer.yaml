@@ -59,3 +59,10 @@ properties:
     description: Whether the customer is marked as deleted
     example: false
     readOnly: true
+  contactVerification:
+    allOf:
+      - $ref: ./ContactVerification.yaml
+    readOnly: true
+    description: >-
+      Email and phone verification state. **Only present when the customer's
+      payment provider requires it** (e.g. EU customers); omitted otherwise.

@@ -1,0 +1,11 @@
+type: object
+description: Request body for confirming an email or phone verification challenge.
+required:
+  - code
+properties:
+  code:
+    type: string
+    description: >-
+      The one-time verification code the customer received via email or SMS.
+      In sandbox, the code is always `123456`.
+    example: '123456'

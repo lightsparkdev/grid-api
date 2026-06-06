@@ -1,0 +1,59 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID whose email is being verified.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Confirm a customer's email verification code
+  description: |
+    Submit the one-time code the customer received by email to mark their email
+    as `VERIFIED`. On success, `contactVerification.email` becomes `VERIFIED`.
+
+    Both email and phone must be `VERIFIED` before the customer can begin KYC.
+
+    In sandbox, the code is always `123456`.
+  operationId: confirmCustomerEmailVerification
+  tags:
+    - Contact Verification
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/ContactVerificationConfirmRequest.yaml
+  responses:
+    '200':
+      description: Email verified.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/Customer.yaml
+    '400':
+      description: Invalid or expired code
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's payment provider does not require contact verification.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
