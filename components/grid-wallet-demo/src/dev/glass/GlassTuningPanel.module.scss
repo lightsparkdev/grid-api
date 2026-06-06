@@ -1,0 +1,128 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  max-height: 42vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupTitle {
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.controlHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+}
+
+.controlLabel {
+  color: var(--text-secondary);
+}
+
+.controlVal {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 14px;
+  background: transparent;
+  accent-color: var(--color-gray-300);
+  outline: none;
+
+  &::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: var(--corner-radius-round);
+    background: var(--surface-primary);
+  }
+
+  &::-moz-range-track {
+    height: 3px;
+    border-radius: var(--corner-radius-round);
+    background: var(--surface-primary);
+    border: none;
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: var(--surface-base);
+    border: var(--stroke-xs) solid var(--border-primary);
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--surface-base);
+    border: var(--stroke-xs) solid var(--border-primary);
+    cursor: pointer;
+  }
+}
+
+.selectRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.select {
+  padding: 4px 6px;
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-xs);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkRow input {
+  margin: 0;
+}

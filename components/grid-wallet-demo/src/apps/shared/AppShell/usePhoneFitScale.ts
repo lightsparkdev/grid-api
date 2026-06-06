@@ -9,14 +9,19 @@ export const APP_SHELL_OUTER_HEIGHT = 906;
 export function usePhoneFitScale() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  // Live stage size — consumers use it to place a backdrop copy inside the glass.
+  const [size, setSize] = useState({ w: 0, h: 0 });
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
 
     const compute = () => {
-      const availW = el.clientWidth - 32;
-      const availH = el.clientHeight - 32;
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      setSize((p) => (p.w === cw && p.h === ch ? p : { w: cw, h: ch }));
+      const availW = cw - 32;
+      const availH = ch - 32;
       const s = Math.min(
         1,
         availW / APP_SHELL_OUTER_WIDTH,
@@ -31,5 +36,5 @@ export function usePhoneFitScale() {
     return () => ro.disconnect();
   }, []);
 
-  return { wrapRef, scale };
+  return { wrapRef, scale, size };
 }

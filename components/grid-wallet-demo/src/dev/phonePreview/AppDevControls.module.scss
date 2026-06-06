@@ -7,6 +7,10 @@
   flex-direction: column;
   gap: var(--spacing-xs);
   width: min(240px, calc(100% - var(--spacing-md) * 2));
+
+  &.panelWide {
+    width: min(280px, calc(100% - var(--spacing-md) * 2));
+  }
   padding: var(--spacing-sm);
   background: var(--surface-base);
   border: var(--stroke-xs) solid var(--border-primary);

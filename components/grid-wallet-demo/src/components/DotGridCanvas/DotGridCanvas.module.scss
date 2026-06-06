@@ -1,4 +1,13 @@
+/* Dot-grid backdrop canvas — absolute so it fills the stage behind the phone.
+   The phone (.stage, position:relative) comes later in the DOM, so it paints
+   on top without needing an explicit z-index. */
+.gridLayer {
+  position: absolute;
+  inset: 0;
+}
+
 .canvas {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -14,4 +23,19 @@
     background-color: var(--color-gray-950);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23333330'/%3E%3C/svg%3E");
   }
+}
+
+/* TEMP — liquid-glass demo-img-01 for glass tuning; delete with public/dev/demo-img-01.png */
+.canvasGlassDemo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  width: 100%;
+  background-color: var(--color-gray-075);
+  background-image: url('/dev/demo-img-01.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
 }

@@ -171,16 +171,20 @@ export default function LiquidGlass(props: LiquidGlassProps) {
     // Render the map at the lens's own pixel density (capped by mapSize) so the
     // rounded corner stays crisp instead of getting upscaled and blocky.
     const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-    // Aspect-correct buffer: match the lens proportions (long side capped by
-    // mapSize) so a tall lens doesn't squash the corner onto a square grid.
+    // Aspect-correct buffer that matches the lens proportions (so a tall lens
+    // doesn't squash the corner onto a square grid). `mapSize` caps the long
+    // side in CSS px; we then render at device-pixel density so the map stays
+    // crisp on retina (a 512 cap becomes a 1024px buffer at dpr 2).
+    const longCss = Math.min(cfg.mapSize, Math.max(lw, lh));
+    const longPx = Math.max(32, Math.round(longCss * dpr));
     let mapW: number;
     let mapH: number;
     if (lw >= lh) {
-      mapW = Math.max(32, Math.min(cfg.mapSize, Math.round(lw * dpr)));
-      mapH = Math.max(16, Math.round((mapW * lh) / lw));
+      mapW = longPx;
+      mapH = Math.max(16, Math.round((longPx * lh) / lw));
     } else {
-      mapH = Math.max(32, Math.min(cfg.mapSize, Math.round(lh * dpr)));
-      mapW = Math.max(16, Math.round((mapH * lw) / lh));
+      mapH = longPx;
+      mapW = Math.max(16, Math.round((longPx * lw) / lh));
     }
     const url = displacementMapToDataURL(
       {
