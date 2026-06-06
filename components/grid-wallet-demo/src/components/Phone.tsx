@@ -38,7 +38,7 @@ function useFitScale() {
   return { wrapRef, scale };
 }
 
-interface PhoneProps {
+export interface PhoneProps {
   phone: PhoneState;
   wallet: WalletState;
   persona: Persona;

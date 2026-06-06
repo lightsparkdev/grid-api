@@ -33,7 +33,23 @@ export default function Page() {
         className={styles.appCol}
         style={appWidth != null ? { width: appWidth, flex: '0 0 auto' } : undefined}
       >
-        <AppPanel />
+        <AppPanel
+          persona={logic.persona}
+          method={logic.method}
+          wallet={logic.wallet}
+          phone={logic.phone}
+          running={logic.running}
+          handleAction={logic.handleAction}
+          otpActive={logic.otpActive}
+          submitOtp={logic.submitOtp}
+          emailActive={logic.emailActive}
+          submitEmail={logic.submitEmail}
+          gNonce={logic.gNonce}
+          submitGoogle={logic.submitGoogle}
+          amountConfig={logic.amountConfig}
+          submitAmount={logic.submitAmount}
+          cancelAmount={logic.cancelAmount}
+        />
       </div>
       <ColumnResizeHandle onMouseDown={onResizeStart} />
       <div className={styles.apiCol}>

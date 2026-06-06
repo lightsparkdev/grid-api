@@ -5,3 +5,19 @@
   flex-direction: column;
   overflow: hidden;
 }
+
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phoneStage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
