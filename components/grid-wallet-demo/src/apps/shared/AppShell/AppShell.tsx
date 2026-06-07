@@ -1,8 +1,8 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useRef, type CSSProperties } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
-import { Glass, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import { usePhoneDrag } from './usePhoneDrag';
 import {
   APP_SHELL_OUTER_HEIGHT,
@@ -48,9 +48,35 @@ export function AppShell({
   // K = 1 + smoothing*2. (smoothing 0.75 -> superellipse(2.5)/n=5 ~= iOS.)
   const cornerShape = `superellipse(${(1 + glassConfig.cornerSmoothing * 2).toFixed(3)})`;
 
-  // Simple single all-around drop shadow built from the tunable components — dial
-  // it in with the Shadow sliders (offset / blur / spread / opacity).
-  const swagShadow = `0 ${glassConfig.shadowOffsetY ?? 8}px ${glassConfig.shadowBlur ?? 24}px ${glassConfig.shadowSpread ?? 0}px rgba(0, 0, 0, ${glassConfig.shadowOpacity ?? 0.12})`;
+  // The phone shell is a hero element, so it must NOT fall back to circular corners
+  // on Safari/Firefox (which ignore the Chromium-only `corner-shape`). The WebGL
+  // lens (StageGL) always draws a superellipse, so we clip the opaque screen to the
+  // *same* superellipse: squirclePath shares the shader's exponent (2 + smoothing*4)
+  // and `clip-path: path()` works in every browser — so the screen and the refracted
+  // bezel stay squircle and lined up everywhere. (General Glass/GlassOver components
+  // keep the circular fallback via useSquircleSupport; the phone opts out of it.)
+  const SCREEN_INSET = 16; // --app-shell-padding
+  const screenClip = `path('${squirclePath(
+    APP_SHELL_OUTER_WIDTH - SCREEN_INSET * 2,
+    APP_SHELL_OUTER_HEIGHT - SCREEN_INSET * 2,
+    glassConfig.radius - SCREEN_INSET,
+    glassConfig.cornerSmoothing,
+  )}')`;
+
+  // Drop shadow as an SVG *outset* filter rather than box-shadow. box-shadow rides
+  // the Chromium-only `corner-shape`, so on Safari/Firefox it falls back to a circle
+  // while the glass stays a squircle (the faint corner ghost). The SVG filter traces
+  // the squircle `path`, blurs/offsets it, then keeps only the part *outside* the
+  // shape (`operator="out"`) — i.e. a true outset shadow that's a squircle on every
+  // browser, and leaves the bezel transparent so the lens still shows through.
+  // Tunable via the Shadow sliders (offset / blur / spread / opacity).
+  const shadowId = useRef(`phsh-${Math.random().toString(36).slice(2)}`).current;
+  const shellPath = squirclePath(
+    APP_SHELL_OUTER_WIDTH,
+    APP_SHELL_OUTER_HEIGHT,
+    glassConfig.radius,
+    glassConfig.cornerSmoothing,
+  );
 
   // The glass bends its *children*, never the real page behind it (that's the
   // Aave technique — backdrop-filter is Chromium-only). So we drop a copy of the
@@ -87,17 +113,48 @@ export function AppShell({
       >
         <div className={styles.frame}>
           {externalGlass ? (
-            <div
-              className={styles.shell}
-              style={{
-                // Driven by the Radius control; the inner screen tracks this minus
-                // the 16px inset (below) so the two stay concentric as it changes.
-                borderRadius: `${glassConfig.radius}px`,
-                cornerShape,
-                boxShadow: swagShadow,
-              }}
-              aria-hidden
-            />
+            <>
+              {/* Squircle drop shadow (cross-browser) — see shellPath/shadowId above. */}
+              <svg
+                className={styles.dropShadow}
+                viewBox={`0 0 ${APP_SHELL_OUTER_WIDTH} ${APP_SHELL_OUTER_HEIGHT}`}
+                aria-hidden
+              >
+                <defs>
+                  <filter
+                    id={shadowId}
+                    x="-50%"
+                    y="-50%"
+                    width="200%"
+                    height="200%"
+                    colorInterpolationFilters="sRGB"
+                  >
+                    <feMorphology
+                      in="SourceAlpha"
+                      operator="dilate"
+                      radius={Math.max(0, glassConfig.shadowSpread ?? 0)}
+                      result="sil"
+                    />
+                    <feGaussianBlur in="sil" stdDeviation={(glassConfig.shadowBlur ?? 24) / 2} result="blr" />
+                    <feOffset in="blr" dy={glassConfig.shadowOffsetY ?? 8} result="off" />
+                    <feComposite in="off" in2="sil" operator="out" result="outset" />
+                    <feFlood floodColor="#000" floodOpacity={glassConfig.shadowOpacity ?? 0.12} />
+                    <feComposite in2="outset" operator="in" />
+                  </filter>
+                </defs>
+                <path d={shellPath} fill="#000" filter={`url(#${shadowId})`} />
+              </svg>
+              <div
+                className={styles.shell}
+                style={{
+                  // Driven by the Radius control; the inner screen tracks this minus
+                  // the 16px inset (below) so the two stay concentric as it changes.
+                  borderRadius: `${glassConfig.radius}px`,
+                  cornerShape,
+                }}
+                aria-hidden
+              />
+            </>
           ) : (
             <Glass
               {...glassConfig}
@@ -122,8 +179,14 @@ export function AppShell({
             style={
               externalGlass
                 ? {
-                    borderRadius: `calc(${glassConfig.radius}px - var(--app-shell-padding))`,
-                    cornerShape,
+                    // border-radius MUST be 0: clipPath below is the sole corner
+                    // shaper. A non-zero radius clips the screen to a *circle* on
+                    // Safari/Firefox (no corner-shape) — tighter than the squircle
+                    // clip-path — knocking the screen out of concentricity with the
+                    // lens. clip-path path() is a squircle on every browser.
+                    borderRadius: 0,
+                    clipPath: screenClip,
+                    WebkitClipPath: screenClip,
                   }
                 : undefined
             }
