@@ -6,8 +6,6 @@ icon: "/images/icons/phone.svg"
 ---
 
 export const WalletDemoEmbed = () => {
-  const placeholderRef = React.useRef(null);
-
   React.useEffect(() => {
     const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
     const base = isLocal ? 'http://localhost:4000' : 'https://grid-wallet-demo.vercel.app';
@@ -43,7 +41,7 @@ export const WalletDemoEmbed = () => {
     let raf = 0;
     let last = { left: -1, top: -1, width: -1, height: -1 };
     const sync = () => {
-      const el = placeholderRef.current;
+      const el = document.getElementById('wallet-demo-container');
       if (el && host) {
         const r = el.getBoundingClientRect();
         if (r.left !== last.left || r.top !== last.top || r.width !== last.width || r.height !== last.height) {
@@ -108,7 +106,13 @@ export const WalletDemoEmbed = () => {
     };
   }, []);
 
-  return <div id="wallet-demo-container" ref={placeholderRef} />;
+  return null;
 };
+
+{/* Static placeholder — must be in the initial HTML so the chrome-hiding CSS
+    (#content-area:has(#wallet-demo-container) …) applies on first paint, with no
+    flash of the bare docs page on refresh. The component above only positions
+    the persistent iframe over this box. */}
+<div id="wallet-demo-container" />
 
 <WalletDemoEmbed />
