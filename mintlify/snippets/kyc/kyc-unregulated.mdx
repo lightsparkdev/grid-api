@@ -69,6 +69,21 @@ The response always includes `kycUrl` for the hosted flow. For providers that su
   Call `POST /customers` with `customerType` and any pre-fill fields you have. The returned `id` is the customer's Grid ID; their `kycStatus` is `PENDING` until verification completes.
 </Step>
 
+<Step title="Verify email and phone (only where required)">
+  Some regions (for example, the EU) require the customer's email and phone number to be verified before KYC can begin. When this applies, the customer carries a `contactVerification` object (e.g. `{ "email": "PENDING", "phone": "PENDING" }`); when it's absent, no contact verification is required and you can skip this step.
+
+  Drive each channel with a send-then-confirm pair (the provider delivers a one-time code by email/SMS):
+
+  - `POST /customers/{customerId}/verify-email`, then `POST /customers/{customerId}/verify-email/confirm` with `{ "code": "..." }`
+  - `POST /customers/{customerId}/verify-phone`, then `POST /customers/{customerId}/verify-phone/confirm` with `{ "code": "..." }`
+
+  Re-POST the send endpoint to resend a code. Each channel moves `PENDING` → `VERIFIED`.
+
+  <Note>
+  Generating the KYC link before both channels are `VERIFIED` returns `409`.
+  </Note>
+</Step>
+
 <Step title="Generate the KYC link">
   Call `POST /customers/{customerId}/kyc-link`. Each call returns a fresh single-use `kycUrl` and `expiresAt`; previously-issued links remain single-use but aren't invalidated.
 
