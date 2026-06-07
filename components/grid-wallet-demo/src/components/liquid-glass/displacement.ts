@@ -11,9 +11,12 @@
  * Outside the lens (when `sdfBoundary`) every channel sits at the neutral 128
  * so those pixels are left untouched by `feDisplacementMap`.
  *
- * The map is consumed two ways, identically:
- *   - on live DOM, it drives an SVG `feDisplacementMap`
- *   - on canvas/video, the same map feeds a WebGL shader
+ * Today this map drives the DOM path only: LiquidGlass feeds it to an SVG
+ * `feDisplacementMap` (so refracted content stays selectable/clickable). The
+ * WebGL path (glass-gl/StageGL, currently phone-specific) re-derives the same
+ * displacement math analytically in GLSL rather than sampling this map — the two
+ * share the formulas, not this artifact. A future general WebGL glass could
+ * sample this map directly to be pixel-identical to the SVG path.
  */
 
 /** erf approximation used for the soft edge falloff: tanh(sqrt(pi) * x). */

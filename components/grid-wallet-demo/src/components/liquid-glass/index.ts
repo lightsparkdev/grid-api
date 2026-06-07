@@ -2,6 +2,9 @@ export { default as LiquidGlass } from './LiquidGlass';
 /** Alias — same component, shorter name for app UI. */
 export { default as Glass } from './LiquidGlass';
 export type { GlassConfig, LiquidGlassProps, LensRect } from './LiquidGlass';
+/** Wrapper for "glass over a known backdrop" (button / tab bar / card). */
+export { GlassOver } from './GlassOver';
+export type { GlassOverProps } from './GlassOver';
 export { DEFAULT_GLASS, PHONE_SHELL_GLASS, SWITCH_GLASS, SLIDER_GLASS } from './presets';
 export {
   renderDisplacementMap,
