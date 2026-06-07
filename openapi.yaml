@@ -898,6 +898,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/{customerId}/verify-email/confirm:
     parameters:
       - name: customerId
@@ -952,11 +958,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require contact verification.
+          description: The customer's payment provider does not require contact verification, or the email is already verified.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/{customerId}/verify-phone:
     parameters:
       - name: customerId
@@ -1006,6 +1018,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/{customerId}/verify-phone/confirm:
     parameters:
       - name: customerId
@@ -1060,11 +1078,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require contact verification.
+          description: The customer's payment provider does not require contact verification, or the phone is already verified.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/internal-accounts:
     get:
       summary: List Customer internal accounts

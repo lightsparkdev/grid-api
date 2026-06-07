@@ -52,8 +52,15 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        The customer's payment provider does not require contact verification.
+        The customer's payment provider does not require contact verification,
+        or the phone is already verified.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
