@@ -7,6 +7,16 @@
 @use '@lightsparkdev/origin/src/tokens/effects';
 @use '@lightsparkdev/origin/src/tokens/reset';
 
+/* Origin sets --font-family-sans/-mono to just "Suisse Intl" with NO fallback,
+   and its @font-face uses font-display: swap. So any frame the webfont isn't
+   painted (e.g. the repaint when the docs theme toggles) falls back to the
+   browser default — which is *serif*. Add a system sans/mono fallback so that
+   moment renders a near-identical system sans, never serif. */
+:root {
+  --font-family-sans: 'Suisse Intl', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: "Suisse Int'l Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 /* App-wide corner curve, single source of truth. superellipse(1.24) = exp ~2.48,
    the iOS-matched shape dialed in on the phone (smoothing 0.12 → superellipse(1 +
    0.12*2)). Rounder/smoother than `squircle` (= superellipse(2), exp 4). Change it
