@@ -3,6 +3,7 @@
 import type { GlassConfig } from '@/components/liquid-glass';
 import { PHONE_PREVIEW_FIXTURES } from '@/dev/phonePreview/fixtures';
 import { GlassTuningPanel } from '@/dev/glass/GlassTuningPanel';
+import type { BezelRefState } from '@/dev/glass/glassTuning';
 import type { PhoneUiVariant } from '@/dev/appDev';
 import styles from './AppDevControls.module.scss';
 
@@ -15,6 +16,8 @@ interface AppDevControlsProps {
   onGlassConfigChange?: (cfg: GlassConfig) => void;
   showGlassOutline?: boolean;
   onShowGlassOutlineChange?: (value: boolean) => void;
+  bezelRef?: BezelRefState;
+  onBezelRefChange?: (next: BezelRefState) => void;
 }
 
 const GROUP_ORDER = ['Mode', 'Screens', 'Auth', 'Wallet', 'Flows', 'Overlays'];
@@ -28,6 +31,8 @@ export function AppDevControls({
   onGlassConfigChange,
   showGlassOutline = false,
   onShowGlassOutlineChange,
+  bezelRef,
+  onBezelRefChange,
 }: AppDevControlsProps) {
   const groups = GROUP_ORDER.map((group) => ({
     group,
@@ -77,6 +82,8 @@ export function AppDevControls({
           onChange={onGlassConfigChange}
           showOutline={showGlassOutline}
           onShowOutlineChange={onShowGlassOutlineChange}
+          bezelRef={bezelRef}
+          onBezelRefChange={onBezelRefChange}
         />
       ) : null}
 

@@ -60,7 +60,7 @@
 }
 
 .iconBox {
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
   display: flex;
   align-items: center;
   justify-content: center;

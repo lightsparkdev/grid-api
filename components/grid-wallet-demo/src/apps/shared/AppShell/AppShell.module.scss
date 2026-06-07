@@ -36,7 +36,7 @@
   z-index: 1;
   width: 100%;
   height: 100%;
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
 }
 
 /* Glass bends its *children*, not the canvas behind it. This is a copy of the
@@ -72,7 +72,7 @@
   width: var(--app-screen-width);
   height: var(--app-screen-height);
   border-radius: var(--corner-radius-phone-screen);
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
   background: #f9f9f9;
   overflow: hidden;
   pointer-events: none;

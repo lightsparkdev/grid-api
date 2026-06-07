@@ -1,0 +1,543 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { computeDomeConstants } from '@/components/liquid-glass/displacement';
+
+/**
+ * WebGL "stage": draws the dot-grid backdrop AND the glass lens in one pass.
+ *
+ * The dot field + ripple is rendered to an offscreen 2D canvas (reusing the
+ * grid-visualizer wave math) and uploaded as a texture. The fragment shader
+ * passes that texture straight through everywhere except inside the phone's
+ * rounded-rect, where it bends the sampled dots with an analytic displacement
+ * (squircle SDF + dome + edge falloff + specular) — so the bezel refracts the
+ * live, rippling dots at 60fps. This is the article's "sample an animated
+ * surface as a texture and refract it in a shader" approach.
+ *
+ * The lens region tracks `targetSelector` (the phone shell element), so it
+ * follows the phone as it's dragged.
+ */
+
+export interface StageGLLens {
+  radius: number; // phone-local px
+  depth: number;
+  scale: number; // refraction strength (px)
+  domeDepth: number;
+  cornerSmoothing: number; // 0..1
+  edgeStrength: number;
+  edgeWidth: number;
+  specularStrength: number;
+  specularRotation: number; // deg
+  chromaticAberration: number; // per-channel displacement split (fringe)
+  splay: number; // 1 = off; <1 flattens the bend near the edges
+  glowStrength: number;
+  glowSpread: number;
+  glowExponent: number;
+  edgeExponent: number;
+  brightness: number; // -0.5..0.5 lens-only brightness
+  blur: number; // phone-local px (gaussian radius for refracted content)
+  designWidth: number; // phone-local design width (e.g. 434)
+}
+
+const DEFAULT_LENS: StageGLLens = {
+  radius: 76,
+  depth: 18,
+  scale: 26,
+  domeDepth: 30,
+  cornerSmoothing: 0.6,
+  edgeStrength: 0.45,
+  edgeWidth: 2,
+  specularStrength: 0.9,
+  specularRotation: 45,
+  chromaticAberration: 0.15,
+  splay: 0.85,
+  glowStrength: 0.1,
+  glowSpread: 0.5,
+  glowExponent: 1.5,
+  edgeExponent: 1.5,
+  brightness: 0.08,
+  blur: 0,
+  designWidth: 434,
+};
+
+// --- dot field (same constants/wave as components/DotGrid) ---
+const DOT_SPACING = 25; // target spacing; the real step is normalised to fit
+const DOT_SIZE = 3.125;
+const DOT_PADDING = 24; // CSS px margin around the grid on every side
+// Higher-contrast than the slop grid so the refraction reads clearly under glass.
+const DOT_COLOR = '#B9B9B0';
+const WAVE_SPEED = 1400;
+const WAVELENGTH = 800;
+const AMPLITUDE = 18;
+const RAMP_DIST = 120;
+const TIME_DECAY = 0.25;
+const DOT_BASE = [185, 185, 176] as const;
+const DOT_DARK = [120, 120, 112] as const;
+const BLEND_COUNT = 16;
+const BLENDED: string[] = [];
+for (let i = 0; i <= BLEND_COUNT; i++) {
+  const t = i / BLEND_COUNT;
+  BLENDED.push(
+    `rgb(${Math.round(DOT_BASE[0] + (DOT_DARK[0] - DOT_BASE[0]) * t)},${Math.round(
+      DOT_BASE[1] + (DOT_DARK[1] - DOT_BASE[1]) * t,
+    )},${Math.round(DOT_BASE[2] + (DOT_DARK[2] - DOT_BASE[2]) * t)})`,
+  );
+}
+
+/**
+ * Even, centred grid: the outer dots sit exactly DOT_PADDING from each edge and
+ * the rest are distributed evenly. The count is picked near DOT_SPACING, then the
+ * step is normalised so padding stays equal on all sides at any canvas size.
+ */
+function dotLayout(w: number, h: number) {
+  const availW = Math.max(0, w - 2 * DOT_PADDING);
+  const availH = Math.max(0, h - 2 * DOT_PADDING);
+  const cols = Math.max(1, Math.round(availW / DOT_SPACING) + 1);
+  const rows = Math.max(1, Math.round(availH / DOT_SPACING) + 1);
+  return {
+    cols,
+    rows,
+    startX: cols > 1 ? DOT_PADDING : w / 2,
+    startY: rows > 1 ? DOT_PADDING : h / 2,
+    stepX: cols > 1 ? availW / (cols - 1) : 0,
+    stepY: rows > 1 ? availH / (rows - 1) : 0,
+  };
+}
+
+function drawDotField(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  dpr: number,
+  rp: { x: number; y: number; t0: number } | null,
+  now: number,
+  bg: string,
+) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px on the device-sized buffer
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+  const k = (2 * Math.PI) / WAVELENGTH;
+  let tSec = 0;
+  let timeFade = 0;
+  let wavefront = 0;
+  if (rp) {
+    tSec = (now - rp.t0) / 1000;
+    timeFade = Math.exp(-TIME_DECAY * tSec);
+    wavefront = WAVE_SPEED * tSec;
+  }
+  const { cols, rows, startX, startY, stepX, stepY } = dotLayout(w, h);
+  let lastFill = '';
+  ctx.fillStyle = DOT_COLOR;
+  for (let n = 0; n < cols; n++) {
+    const midX = startX + n * stepX;
+    for (let m = 0; m < rows; m++) {
+      const midY = startY + m * stepY;
+      let dx = 0;
+      let dy = 0;
+      let sz = DOT_SIZE;
+      let fill = DOT_COLOR;
+      if (rp && timeFade > 0.001) {
+        const distX = midX - rp.x;
+        const distY = midY - rp.y;
+        const d = Math.sqrt(distX * distX + distY * distY);
+        if (d > 0 && d < wavefront) {
+          const behind = wavefront - d;
+          const ramp = Math.min(1, d / RAMP_DIST);
+          const trail = Math.exp(-(behind * behind) / (WAVELENGTH * WAVELENGTH * 0.3));
+          const edge = Math.min(1, behind / RAMP_DIST);
+          const wave = Math.sin(k * d - WAVE_SPEED * k * tSec);
+          const strength = wave * ramp * edge * trail * timeFade;
+          const height = AMPLITUDE * strength;
+          dx = (distX / d) * height;
+          dy = (distY / d) * height;
+          sz = DOT_SIZE * (1 + Math.abs(strength) * 0.4);
+          fill = BLENDED[Math.round(Math.abs(strength) * 0.3 * BLEND_COUNT)];
+        }
+      }
+      if (fill !== lastFill) {
+        ctx.fillStyle = fill;
+        lastFill = fill;
+      }
+      ctx.fillRect(midX + dx - sz / 2, midY + dy - sz / 2, sz, sz);
+    }
+  }
+}
+
+const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+const FRAG = `
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uRes;            // canvas device px
+uniform vec4 uLens;          // x,y,w,h (top-down device px)
+uniform float uCornerExp;
+uniform float uRadius;       // device px
+uniform float uDepth;        // device px
+uniform float uScale;        // device px refraction
+uniform float uDomeOn;
+uniform vec2 uDomeR;         // Rx, Ry (device px)
+uniform vec2 uDomeS;         // scaleX, scaleY
+uniform float uEdgeStr;
+uniform float uEdgeW;        // device px
+uniform float uSpecStr;
+uniform vec2 uSpecDir;       // cos,sin
+uniform float uBlur;         // device px (gaussian radius for refracted content)
+uniform float uChroma;       // chromatic aberration (per-channel split)
+uniform float uSplay;        // 1 = off; <1 flattens the bend near the edges
+uniform float uGlowStr;
+uniform float uGlowInner;    // (1-spread)*sqrt2
+uniform float uGlowBand;     // spread*sqrt2
+uniform float uGlowExp;
+uniform float uEdgeExp;
+uniform float uBright;       // -0.5..0.5 lens-only brightness
+
+float lpf(float a, float b, float e){
+  a = max(a, 0.0); b = max(b, 0.0);
+  if (a <= 0.0) return b;
+  if (b <= 0.0) return a;
+  return pow(pow(a, e) + pow(b, e), 1.0 / e);
+}
+float erf_(float x){ float e = exp(2.0 * 1.7724539 * x); return (e - 1.0) / (e + 1.0); }
+float domeGrad(float d, float R, float s){ float n = min(d, 0.999 * R); return (n / sqrt(R * R - n * n)) * s; }
+// 5x5 separable gaussian collapsed to 9 bilinear taps: with LINEAR filtering each
+// off-axis fetch blends two texels, so this matches the 25-tap result at ~1/3 the
+// cost and with no per-pixel exp(). Offset/weights precomputed from exp(-0.4*i^2).
+vec3 blurTex(vec2 uv, float r){
+  vec2 o = (vec2(r) / uRes) * 0.6157;
+  vec3 c = texture2D(uTex, uv).rgb;
+  vec3 edge = texture2D(uTex, uv + vec2(o.x, 0.0)).rgb
+            + texture2D(uTex, uv + vec2(-o.x, 0.0)).rgb
+            + texture2D(uTex, uv + vec2(0.0, o.y)).rgb
+            + texture2D(uTex, uv + vec2(0.0, -o.y)).rgb;
+  vec3 corner = texture2D(uTex, uv + o).rgb
+              + texture2D(uTex, uv + vec2(-o.x, o.y)).rgb
+              + texture2D(uTex, uv + vec2(o.x, -o.y)).rgb
+              + texture2D(uTex, uv - o).rgb;
+  return (c + edge * 0.8722 + corner * 0.7608) / 7.5319;
+}
+// Sample the refracted dot field, blurring only inside the visible band.
+vec3 fetch(vec2 uv, float amt){
+  if (uBlur > 0.5 && amt > 0.01) return blurTex(uv, uBlur);
+  return texture2D(uTex, uv).rgb;
+}
+
+void main(){
+  vec2 sp = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y); // top-down device px
+  vec2 uv = sp / uRes;
+
+  vec2 lo = uLens.xy;
+  vec2 ls = uLens.zw;
+  vec2 rel = sp - lo;                 // px from lens top-left
+  if (rel.x < 0.0 || rel.y < 0.0 || rel.x > ls.x || rel.y > ls.y) {
+    gl_FragColor = texture2D(uTex, uv);
+    return;
+  }
+
+  vec2 lensHalf = ls * 0.5;
+  vec2 p = rel - lensHalf;            // from lens centre
+  float ax = abs(p.x);
+  float ay = abs(p.y);
+  float corner = min(uRadius, min(lensHalf.x, lensHalf.y));
+
+  float qx = ax - lensHalf.x + corner;
+  float qy = ay - lensHalf.y + corner;
+  float outside = lpf(max(qx, 0.0), max(qy, 0.0), uCornerExp);
+  float sdf = outside + min(max(qx, qy), 0.0) - corner;
+  float aa = 1.5;
+  float coverage = clamp(0.5 - sdf / aa, 0.0, 1.0);
+  if (coverage <= 0.0) { gl_FragColor = texture2D(uTex, uv); return; }
+
+  // bend magnitudes
+  float dxm, dym;
+  if (uDomeOn > 0.5) {
+    dxm = domeGrad(ax, uDomeR.x, uDomeS.x);
+    dym = domeGrad(ay, uDomeR.y, uDomeS.y);
+  } else {
+    dxm = min(ax / lensHalf.x, 1.0);
+    dym = min(ay / lensHalf.y, 1.0);
+  }
+  // splay: flatten the bend near the edges so content stays readable (1 = off)
+  if (uSplay < 1.0) {
+    float splayRef = 0.5 * min(lensHalf.x, lensHalf.y);
+    float splayInv = splayRef > 0.0 ? 1.0 / splayRef : 0.0;
+    float flatY = max(0.0, 1.0 - (lensHalf.y - ay) * splayInv) * (1.0 - uSplay);
+    float flatX = max(0.0, 1.0 - (lensHalf.x - ax) * splayInv) * (1.0 - uSplay);
+    if (flatY > 0.001 || flatX > 0.001) {
+      float rx = dxm;
+      float ry = dym;
+      dxm = rx * (1.0 - flatY);
+      dym = ry * (1.0 - flatX);
+      float lenBefore = sqrt(rx * rx + ry * ry);
+      float lenAfter = sqrt(dxm * dxm + dym * dym);
+      if (lenAfter > 0.001) { float kk = lenBefore / lenAfter; dxm *= kk; dym *= kk; }
+    }
+  }
+  float dx = dxm * sign(p.x);
+  float dy = dym * sign(p.y);
+
+  // edge falloff
+  float innerW = max(0.0, lensHalf.x - uDepth);
+  float innerH = max(0.0, lensHalf.y - uDepth);
+  float innerCorner = max(0.0, min(corner, min(innerW, innerH)));
+  float ex = ax - innerW + innerCorner;
+  float ey = ay - innerH + innerCorner;
+  float innerSdf = lpf(max(ex, 0.0), max(ey, 0.0), uCornerExp) + min(max(ex, ey), 0.0) - innerCorner;
+  float fscale = uDepth > 0.0 ? 1.0 / (uDepth * 1.4142136) : 1e6;
+  float falloff = 0.5 * (1.0 + erf_(innerSdf * fscale));
+
+  float amt = falloff * coverage;
+  vec2 bend = vec2(-0.5 * dx, -0.5 * dy) * amt; // pre-scale displacement vector
+  // Sample the refracted dot field. With chroma, R/G/B bend by slightly different
+  // amounts (colour fringe); fetch() blurs only inside the visible band (amt > 0,
+  // the flat centre is covered by the screen) and is free when blur = 0.
+  vec3 col;
+  if (uChroma > 0.0) {
+    vec2 sR = (sp + bend * (uScale * (1.0 + 0.2 * uChroma))) / uRes;
+    vec2 sG = (sp + bend * (uScale * (1.0 + 0.1 * uChroma))) / uRes;
+    vec2 sB = (sp + bend * uScale) / uRes;
+    col = vec3(fetch(sR, amt).r, fetch(sG, amt).g, fetch(sB, amt).b);
+  } else {
+    col = fetch((sp + bend * uScale) / uRes, amt);
+  }
+
+  // specular: broad glow + thin edge rim along the specular axis (matches the SVG
+  // map's B channel: s = glow + edge, clamped, then * specularStrength * coverage)
+  float proj = abs(clamp(p.x / lensHalf.x, -1.0, 1.0) * uSpecDir.x + clamp(p.y / lensHalf.y, -1.0, 1.0) * uSpecDir.y);
+  float rim = sdf < 0.0 ? max(0.0, 1.0 + sdf / uEdgeW) : 0.0;
+  float s = 0.0;
+  if (uGlowStr > 0.0) {
+    float gg = uGlowBand > 0.001 ? clamp((proj - uGlowInner) / uGlowBand, 0.0, 1.0) : 0.0;
+    s += uGlowStr * pow(gg, uGlowExp) * falloff;
+  }
+  s += uEdgeStr * rim * pow(proj, uEdgeExp);
+  col += uSpecStr * min(s, 1.0) * coverage;
+
+  // lens-only brightness: soft-light(white) approx when +, multiply(black) when -.
+  float bAmt = uBright * coverage;
+  if (bAmt > 0.0) col = mix(col, sqrt(col), bAmt);
+  else if (bAmt < 0.0) col *= (1.0 + bAmt);
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+function compile(gl: WebGLRenderingContext, type: number, src: string) {
+  const sh = gl.createShader(type)!;
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    console.warn('StageGL shader:', gl.getShaderInfoLog(sh));
+    return null;
+  }
+  return sh;
+}
+
+export interface StageGLProps {
+  className?: string;
+  bg?: string;
+  lens?: Partial<StageGLLens>;
+  targetSelector?: string;
+  rippleOnClick?: boolean;
+}
+
+export function StageGL({
+  className,
+  bg = '#F4F4F3',
+  lens,
+  targetSelector = '[class*="AppShell_shell"]',
+  rippleOnClick = true,
+}: StageGLProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ripple = useRef<{ x: number; y: number; t0: number } | null>(null);
+  const cfg = { ...DEFAULT_LENS, ...lens };
+  const cfgRef = useRef(cfg);
+  cfgRef.current = cfg;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const off = document.createElement('canvas');
+    const offCtx = off.getContext('2d');
+    if (!offCtx) return;
+
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let cssW = 0;
+    let cssH = 0;
+    let raf = 0;
+
+    // GL resources — rebuilt if the context is lost and later restored.
+    let gl: WebGLRenderingContext | null = null;
+    let tex: WebGLTexture | null = null;
+    let u: Record<string, WebGLUniformLocation | null> = {};
+
+    const initGL = (): boolean => {
+      const ctx = canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false });
+      if (!ctx) {
+        console.warn('StageGL: WebGL unavailable');
+        return false;
+      }
+      gl = ctx;
+      const vs = compile(gl, gl.VERTEX_SHADER, VERT);
+      const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+      if (!vs || !fs) return false;
+      const prog = gl.createProgram();
+      if (!prog) return false;
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.warn('StageGL link:', gl.getProgramInfoLog(prog));
+        return false;
+      }
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'aPos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+      const U = (n: string) => gl!.getUniformLocation(prog, n);
+      u = {
+        tex: U('uTex'), res: U('uRes'), lens: U('uLens'), cornerExp: U('uCornerExp'),
+        radius: U('uRadius'), depth: U('uDepth'), scale: U('uScale'), domeOn: U('uDomeOn'),
+        domeR: U('uDomeR'), domeS: U('uDomeS'), edgeStr: U('uEdgeStr'), edgeW: U('uEdgeW'),
+        specStr: U('uSpecStr'), specDir: U('uSpecDir'), blur: U('uBlur'),
+        chroma: U('uChroma'), splay: U('uSplay'), glowStr: U('uGlowStr'),
+        glowInner: U('uGlowInner'), glowBand: U('uGlowBand'), glowExp: U('uGlowExp'),
+        edgeExp: U('uEdgeExp'), bright: U('uBright'),
+      };
+      return true;
+    };
+
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cssW = canvas.clientWidth;
+      cssH = canvas.clientHeight;
+      const W = Math.max(1, Math.round(cssW * dpr));
+      const H = Math.max(1, Math.round(cssH * dpr));
+      canvas.width = W;
+      canvas.height = H;
+      off.width = W;
+      off.height = H;
+      if (gl) gl.viewport(0, 0, W, H);
+    };
+
+    const render = () => {
+      if (!gl || gl.isContextLost()) return;
+      const now = performance.now();
+      // refresh dot field (CSS px, DPR-scaled onto the device-sized buffer)
+      drawDotField(offCtx, cssW, cssH, dpr, ripple.current, now, bg);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
+
+      // lens rect from the target element, in this canvas's device px (top-down)
+      const c = cfgRef.current;
+      const cr = canvas.getBoundingClientRect();
+      const target = targetSelector ? document.querySelector(targetSelector) : null;
+      let lx = cr.width * 0.5 - 217 * dpr;
+      let ly = cr.height * 0.5 - 453 * dpr;
+      let lw = 434 * dpr;
+      let lh = 906 * dpr;
+      if (target) {
+        const tr = target.getBoundingClientRect();
+        lx = (tr.left - cr.left) * dpr;
+        ly = (tr.top - cr.top) * dpr;
+        lw = tr.width * dpr;
+        lh = tr.height * dpr;
+      }
+      const g = lw / c.designWidth; // device px per design px
+      // Match the shell's actual rounded corner so the refracted bezel stays
+      // concentric with the screen (the shell uses screen-radius + padding).
+      let radiusCss = c.radius;
+      if (target) {
+        const br = parseFloat(getComputedStyle(target).borderTopLeftRadius);
+        if (br > 0) radiusCss = br;
+      }
+      const exp = 2 + Math.max(0, Math.min(1, c.cornerSmoothing)) * 4;
+      const dome = c.domeDepth > 0 ? computeDomeConstants(c.domeDepth, c.designWidth / 2, (c.designWidth / 2) * (lh / lw)) : null;
+      const ang = (c.specularRotation * Math.PI) / 180;
+
+      gl.uniform1i(u.tex, 0);
+      gl.uniform2f(u.res, canvas.width, canvas.height);
+      gl.uniform4f(u.lens, lx, ly, lw, lh);
+      gl.uniform1f(u.cornerExp, exp);
+      gl.uniform1f(u.radius, radiusCss * g);
+      gl.uniform1f(u.depth, c.depth * g);
+      gl.uniform1f(u.scale, c.scale * g);
+      gl.uniform1f(u.domeOn, dome ? 1 : 0);
+      gl.uniform2f(u.domeR, dome ? dome.Rx * g : 1, dome ? dome.Ry * g : 1);
+      gl.uniform2f(u.domeS, dome ? dome.scaleX : 1, dome ? dome.scaleY : 1);
+      gl.uniform1f(u.edgeStr, c.edgeStrength);
+      gl.uniform1f(u.edgeW, c.edgeWidth * g);
+      gl.uniform1f(u.specStr, c.specularStrength);
+      gl.uniform2f(u.specDir, Math.cos(ang), Math.sin(ang));
+      gl.uniform1f(u.blur, c.blur * g);
+      gl.uniform1f(u.chroma, c.chromaticAberration);
+      gl.uniform1f(u.splay, c.splay);
+      gl.uniform1f(u.glowStr, c.glowStrength);
+      gl.uniform1f(u.glowInner, (1 - c.glowSpread) * Math.SQRT2);
+      gl.uniform1f(u.glowBand, c.glowSpread * Math.SQRT2);
+      gl.uniform1f(u.glowExp, c.glowExponent);
+      gl.uniform1f(u.edgeExp, c.edgeExponent);
+      gl.uniform1f(u.bright, c.brightness);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      raf = requestAnimationFrame(render);
+    };
+
+    // Recover gracefully from a lost GL context (GPU reset / context eviction).
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      cancelAnimationFrame(raf);
+    };
+    const onRestored = () => {
+      if (initGL()) {
+        resize();
+        render();
+      }
+    };
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
+
+    const onDown = (e: PointerEvent) => {
+      if (!rippleOnClick) return;
+      const r = canvas.getBoundingClientRect();
+      ripple.current = { x: e.clientX - r.left, y: e.clientY - r.top, t0: performance.now() }; // CSS px
+    };
+    canvas.addEventListener('pointerdown', onDown);
+
+    let ro: ResizeObserver | null = null;
+    if (initGL()) {
+      resize();
+      ro = new ResizeObserver(resize);
+      ro.observe(canvas);
+      render(); // paint an immediate first frame, then animate via rAF
+    }
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      canvas.removeEventListener('pointerdown', onDown);
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
+      // NB: don't call WEBGL_lose_context.loseContext() here — in React
+      // StrictMode the throwaway mount would permanently lose the canvas's
+      // context (getContext then returns the lost one). Let GC reclaim it.
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bg, targetSelector, rippleOnClick]);
+
+  return <canvas ref={canvasRef} className={className} style={{ display: 'block', width: '100%', height: '100%' }} />;
+}
+
+export default StageGL;

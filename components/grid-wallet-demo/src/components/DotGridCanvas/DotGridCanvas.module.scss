@@ -25,8 +25,10 @@
   }
 }
 
-/* TEMP — liquid-glass demo-img-01 for glass tuning; delete with public/dev/demo-img-01.png */
+/* Swag stage — the WebGL StageGL canvas (dots + glass lens) fills this, so the
+   container just needs a neutral base and a positioning context. */
 .canvasGlassDemo {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -34,8 +36,4 @@
   min-height: 0;
   width: 100%;
   background-color: var(--color-gray-075);
-  background-image: url('/dev/demo-img-01.png');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
 }

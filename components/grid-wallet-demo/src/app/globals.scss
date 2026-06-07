@@ -7,34 +7,41 @@
 @use '@lightsparkdev/origin/src/tokens/effects';
 @use '@lightsparkdev/origin/src/tokens/reset';
 
+/* App-wide corner curve, single source of truth. superellipse(1.24) = exp ~2.48,
+   the iOS-matched shape dialed in on the phone (smoothing 0.12 → superellipse(1 +
+   0.12*2)). Rounder/smoother than `squircle` (= superellipse(2), exp 4). Change it
+   here and every corner (components reference var(--corner-shape)) follows. */
 * {
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
 }
 
 :root {
+  --corner-shape: superellipse(1.24);
   --app-shell-padding: 16px;
   --app-screen-width: 402px;
   --app-screen-height: 874px;
   --app-shell-width: 434px;
   --app-shell-height: 906px;
-  /* Figma phone-gga (2121:17475) — base radii; ×1.8 when squircle is supported */
+  /* Figma phone-gga (2121:17475) — base radii; ×1.2 when corner-shape is supported */
   --corner-radius-phone-shell: 76px;
   --corner-radius-phone-screen: 60px;
 }
 
+/* When corner-shape is supported, bump radii so the superellipse hits the target
+   visual roundness. 1.2× (was 1.8× for squircle — a rounder shape needs less). */
 @supports (corner-shape: squircle) {
   :root {
-    --corner-radius-2xs: 3.6px;
-    --corner-radius-xs: 7.2px;
-    --corner-radius-sm: 10.8px;
-    --corner-radius-md: 14.4px;
-    --corner-radius-lg: 21.6px;
-    --corner-radius-xl: 28.8px;
-    --corner-radius-2xl: 43.2px;
-    --corner-radius-3xl: 57.6px;
-    --corner-radius-4xl: 72px;
-    --corner-radius-phone-shell: 136.8px; /* 76 × 1.8 */
-    --corner-radius-phone-screen: 108px; /* 60 × 1.8 */
+    --corner-radius-2xs: 2.4px;
+    --corner-radius-xs: 4.8px;
+    --corner-radius-sm: 7.2px;
+    --corner-radius-md: 9.6px;
+    --corner-radius-lg: 14.4px;
+    --corner-radius-xl: 19.2px;
+    --corner-radius-2xl: 28.8px;
+    --corner-radius-3xl: 38.4px;
+    --corner-radius-4xl: 48px;
+    --corner-radius-phone-shell: 91.2px; /* 76 × 1.2 */
+    --corner-radius-phone-screen: 72px; /* 60 × 1.2 */
   }
 }
 

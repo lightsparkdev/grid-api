@@ -9,7 +9,7 @@ export interface GlassCtrl {
 }
 
 export const GLASS_SHAPE_CTRLS: GlassCtrl[] = [
-  { key: 'radius', label: 'Radius', min: 20, max: 120, step: 1 },
+  { key: 'radius', label: 'Radius', min: 20, max: 200, step: 1 },
   { key: 'cornerSmoothing', label: 'Corner smoothing', min: 0, max: 1, step: 0.01 },
 ];
 
@@ -35,6 +35,24 @@ export const GLASS_TUNING_GROUPS: { title: string; ctrls: GlassCtrl[] }[] = [
       { key: 'brightness', label: 'Brightness', min: -0.5, max: 0.5, step: 0.01 },
     ],
   },
+  {
+    title: 'Shadow',
+    ctrls: [
+      { key: 'shadowOffsetY', label: 'Shadow Y', min: -20, max: 80, step: 1 },
+      { key: 'shadowBlur', label: 'Shadow blur', min: 0, max: 100, step: 1 },
+      { key: 'shadowSpread', label: 'Shadow spread', min: -80, max: 20, step: 1 },
+      { key: 'shadowOpacity', label: 'Shadow opacity', min: 0, max: 0.6, step: 0.01 },
+    ],
+  },
 ];
 
 export const GLASS_MAP_SIZES = [64, 128, 256, 512] as const;
+
+/** Dev-only reference-bezel overlay — line the swag corner up against a real iPhone. */
+export interface BezelRefState {
+  show: boolean;
+  opacity: number;
+}
+
+export const DEFAULT_BEZEL_REF: BezelRefState = { show: false, opacity: 0.6 };
+export const BEZEL_REF_SRC = '/dev/bezel-compare.png?v=3';

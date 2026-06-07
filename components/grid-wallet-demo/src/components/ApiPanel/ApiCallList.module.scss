@@ -264,7 +264,7 @@
 
 .tab {
   all: unset;
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
   box-sizing: border-box;
   @include label-sm;
   display: flex;
@@ -289,7 +289,7 @@
 
 .copyBtn {
   all: unset;
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
   box-sizing: border-box;
   display: flex;
   align-items: center;

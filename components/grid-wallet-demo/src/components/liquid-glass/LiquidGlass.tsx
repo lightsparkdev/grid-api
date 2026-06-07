@@ -71,6 +71,12 @@ export interface GlassConfig {
   edgeShadow?: string;
   /** Inner shadow that gives the glass thickness (CSS box-shadow value, no `inset`). */
   insetShadow?: string;
+  /** Swag drop-shadow components — AppShell builds these into a box-shadow so the
+   *  shadow is tunable live (offset Y / blur / spread / opacity). */
+  shadowOffsetY?: number;
+  shadowBlur?: number;
+  shadowSpread?: number;
+  shadowOpacity?: number;
   /** Resolution of the generated displacement map. */
   mapSize: number;
 }

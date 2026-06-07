@@ -56,7 +56,10 @@ export const SWITCH_GLASS: GlassConfig = {
 /** Gentle bend so values stay legible — modelled on Aave's slider / toggle handle. */
 /** Large phone bezel — Figma phone-gga @ 2121:17475 */
 export const PHONE_SHELL_GLASS: GlassConfig = {
-  radius: 76,
+  // Tuned by eye against refs/bezel-compare.png. The AppShell drives both the
+  // shell and the inner screen from this (screen = radius - 16px inset) so they
+  // stay concentric: shell corner 89, screen corner 73.
+  radius: 89,
   depth: 18,
   scale: 14,
   chromaticAberration: 0.15,
@@ -72,8 +75,18 @@ export const PHONE_SHELL_GLASS: GlassConfig = {
   edgeWidth: 2,
   edgeExponent: 1.5,
   brightness: 0.08,
-  cornerSmoothing: 0.6,
-  edgeShadow: '0 5.662px 45.3px rgba(0, 0, 0, 0.1)',
+  // Tuned by eye against refs/bezel-compare.png. Mirrored onto the DOM as
+  // corner-shape: superellipse(1 + smoothing*2) so the shell shadow, inner screen,
+  // and refracted bezel all trace the same curve.
+  cornerSmoothing: 0.12,
+  // Grounding shadow (offset down, spread ~= -blur) so it pools under the phone with
+  // no outward halo at the corners. Swag builds its box-shadow from these tunable
+  // components; edgeShadow is the slop (SVG) equivalent.
+  shadowOffsetY: 30,
+  shadowBlur: 40,
+  shadowSpread: -40,
+  shadowOpacity: 0.3,
+  edgeShadow: '0 30px 40px -40px rgba(0, 0, 0, 0.3)',
   mapSize: 512,
 };
 

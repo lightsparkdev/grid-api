@@ -13,9 +13,9 @@ import { useEffect, useRef } from 'react';
  * texture (the article's pattern for refracting animated, non-DOM content).
  */
 
-const DOT_SPACING = 25;
+const DOT_SPACING = 25; // target spacing; the real step is normalised to fit
 const DOT_SIZE = 3.125;
-const DOT_ORIGIN = 20.9375;
+const DOT_PADDING = 24; // CSS px margin around the grid on every side
 const DOT_COLOR = '#DEDED9';
 
 const WAVE_SPEED = 1400; // px/s (the original's "tab" tap speed)
@@ -35,6 +35,26 @@ for (let i = 0; i <= BLEND_COUNT; i++) {
       DOT_BASE[1] + (DOT_DARK[1] - DOT_BASE[1]) * t,
     )},${Math.round(DOT_BASE[2] + (DOT_DARK[2] - DOT_BASE[2]) * t)})`,
   );
+}
+
+/**
+ * Even, centred grid: the outer dots sit exactly DOT_PADDING from each edge and
+ * the rest are distributed evenly. The count is picked near DOT_SPACING, then the
+ * step is normalised so padding stays equal on all sides at any canvas size.
+ */
+function dotLayout(w: number, h: number) {
+  const availW = Math.max(0, w - 2 * DOT_PADDING);
+  const availH = Math.max(0, h - 2 * DOT_PADDING);
+  const cols = Math.max(1, Math.round(availW / DOT_SPACING) + 1);
+  const rows = Math.max(1, Math.round(availH / DOT_SPACING) + 1);
+  return {
+    cols,
+    rows,
+    startX: cols > 1 ? DOT_PADDING : w / 2,
+    startY: rows > 1 ? DOT_PADDING : h / 2,
+    stepX: cols > 1 ? availW / (cols - 1) : 0,
+    stepY: rows > 1 ? availH / (rows - 1) : 0,
+  };
 }
 
 export interface DotGridProps {
@@ -68,8 +88,7 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
 
-      const nMax = Math.ceil((w - DOT_ORIGIN) / DOT_SPACING) + 1;
-      const mMax = Math.ceil((h - DOT_ORIGIN) / DOT_SPACING) + 1;
+      const { cols, rows, startX, startY, stepX, stepY } = dotLayout(w, h);
 
       let tSec = 0;
       let timeFade = 0;
@@ -82,12 +101,10 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
 
       let lastFill = '';
       ctx.fillStyle = DOT_COLOR;
-      for (let n = -1; n <= nMax; n++) {
-        const baseX = DOT_ORIGIN + n * DOT_SPACING;
-        for (let m = -1; m <= mMax; m++) {
-          const baseY = DOT_ORIGIN + m * DOT_SPACING;
-          const midX = baseX + DOT_SIZE / 2;
-          const midY = baseY + DOT_SIZE / 2;
+      for (let n = 0; n < cols; n++) {
+        const midX = startX + n * stepX;
+        for (let m = 0; m < rows; m++) {
+          const midY = startY + m * stepY;
 
           let dx = 0;
           let dy = 0;

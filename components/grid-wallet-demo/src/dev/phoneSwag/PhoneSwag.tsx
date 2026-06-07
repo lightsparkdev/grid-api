@@ -9,6 +9,8 @@ interface PhoneSwagProps extends PhoneProps {
   showGlassOutline?: boolean;
   draggable?: boolean;
   glassDemoBg?: boolean;
+  externalGlass?: boolean;
+  bezelOverlay?: { src: string; opacity: number } | null;
 }
 
 /** Swag phone — empty shell until per-use-case screens land. */
@@ -17,6 +19,8 @@ export function PhoneSwag({
   showGlassOutline,
   draggable,
   glassDemoBg,
+  externalGlass,
+  bezelOverlay,
 }: PhoneSwagProps) {
   return (
     <AppShell
@@ -24,6 +28,8 @@ export function PhoneSwag({
       showGlassOutline={showGlassOutline}
       draggable={draggable}
       glassDemoBg={glassDemoBg}
+      externalGlass={externalGlass}
+      bezelOverlay={bezelOverlay}
     />
   );
 }

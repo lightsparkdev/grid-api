@@ -1,7 +1,7 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
 .group {
-  corner-shape: squircle;
+  corner-shape: var(--corner-shape);
   display: flex;
   flex-direction: column;
   width: 100%;

@@ -5,6 +5,7 @@ import {
   GLASS_MAP_SIZES,
   GLASS_SHAPE_CTRLS,
   GLASS_TUNING_GROUPS,
+  type BezelRefState,
   type GlassCtrl,
 } from './glassTuning';
 import styles from './GlassTuningPanel.module.scss';
@@ -14,6 +15,8 @@ interface GlassTuningPanelProps {
   onChange: (cfg: GlassConfig) => void;
   showOutline: boolean;
   onShowOutlineChange: (value: boolean) => void;
+  bezelRef?: BezelRefState;
+  onBezelRefChange?: (next: BezelRefState) => void;
 }
 
 function fmt(ctrl: GlassCtrl, value: number) {
@@ -54,6 +57,8 @@ export function GlassTuningPanel({
   onChange,
   showOutline,
   onShowOutlineChange,
+  bezelRef,
+  onBezelRefChange,
 }: GlassTuningPanelProps) {
   const set = (key: keyof GlassConfig, value: number) =>
     onChange({ ...cfg, [key]: value });
@@ -61,6 +66,35 @@ export function GlassTuningPanel({
   return (
     <div className={styles.wrap}>
       <p className={styles.title}>Glass shell</p>
+
+      {bezelRef && onBezelRefChange ? (
+        <div className={styles.group}>
+          <span className={styles.groupTitle}>Bezel reference</span>
+          <label className={styles.checkRow}>
+            <input
+              type="checkbox"
+              checked={bezelRef.show}
+              onChange={(e) => onBezelRefChange({ ...bezelRef, show: e.target.checked })}
+            />
+            Show overlay
+          </label>
+          <div className={styles.control}>
+            <div className={styles.controlHead}>
+              <span className={styles.controlLabel}>Ref opacity</span>
+              <span className={styles.controlVal}>{bezelRef.opacity.toFixed(2)}</span>
+            </div>
+            <input
+              className={styles.range}
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={bezelRef.opacity}
+              onChange={(e) => onBezelRefChange({ ...bezelRef, opacity: Number(e.target.value) })}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className={styles.group}>
         <span className={styles.groupTitle}>Shape</span>

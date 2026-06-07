@@ -6,6 +6,7 @@ import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import Phone from '@/components/Phone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import { BEZEL_REF_SRC, DEFAULT_BEZEL_REF } from '@/dev/glass/glassTuning';
 import { AppDevControls } from '@/dev/phonePreview/AppDevControls';
 import { resolvePhoneProps, type DemoLogicPhoneSlice } from '@/dev/phonePreview/resolvePhoneProps';
 import { useAppDevState } from '@/dev/phonePreview/useAppDevState';
@@ -18,6 +19,7 @@ export function AppPanel(props: AppPanelProps) {
   const dev = useAppDevState();
   const [glassConfig, setGlassConfig] = useState(PHONE_SHELL_GLASS);
   const [showGlassOutline, setShowGlassOutline] = useState(false);
+  const [bezelRef, setBezelRef] = useState(DEFAULT_BEZEL_REF);
   const phoneProps = resolvePhoneProps(props, dev.fixtureId, dev.previewActive);
 
   return (
@@ -28,7 +30,7 @@ export function AppPanel(props: AppPanelProps) {
       />
       <div className={styles.body}>
         <div className={styles.phoneStage}>
-          <DotGridCanvas glassDemoBg={dev.uiVariant === 'swag'}>
+          <DotGridCanvas glassDemoBg={dev.uiVariant === 'swag'} glassConfig={glassConfig}>
             {dev.uiVariant === 'swag' ? (
               <PhoneSwag
                 {...phoneProps}
@@ -36,6 +38,10 @@ export function AppPanel(props: AppPanelProps) {
                 showGlassOutline={showGlassOutline}
                 draggable={dev.enabled}
                 glassDemoBg
+                externalGlass
+                bezelOverlay={
+                  bezelRef.show ? { src: BEZEL_REF_SRC, opacity: bezelRef.opacity } : null
+                }
               />
             ) : (
               <Phone {...phoneProps} />
@@ -52,6 +58,8 @@ export function AppPanel(props: AppPanelProps) {
             onGlassConfigChange={setGlassConfig}
             showGlassOutline={showGlassOutline}
             onShowGlassOutlineChange={setShowGlassOutline}
+            bezelRef={bezelRef}
+            onBezelRefChange={setBezelRef}
           />
         ) : null}
       </div>
