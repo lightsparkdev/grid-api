@@ -50,7 +50,7 @@
 }
 
 .shellBackdropDemo {
-  background-color: var(--color-gray-075);
+  background-color: var(--dot-grid-bg);
   background-image: url('/dev/demo-img-01.png');
   background-repeat: no-repeat;
   background-size: cover;
@@ -58,10 +58,14 @@
 }
 
 .shellBackdropDots {
-  background-color: var(--color-gray-075);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23DEDED9'/%3E%3C/svg%3E");
+  background-color: var(--dot-grid-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23D9D9D9'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-position: 8px 8px;
+
+  :global([data-theme='dark']) & {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23333330'/%3E%3C/svg%3E");
+  }
 }
 
 .screen {

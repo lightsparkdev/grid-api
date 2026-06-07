@@ -6,18 +6,62 @@ icon: "/images/icons/phone.svg"
 ---
 
 export const WalletDemoEmbed = () => {
-  const [src, setSrc] = React.useState(null);
+  const placeholderRef = React.useRef(null);
 
   React.useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
     const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
     const base = isLocal ? 'http://localhost:4000' : 'https://grid-wallet-demo.vercel.app';
-    setSrc(base + '/?embed=true&theme=' + (isDark ? 'dark' : 'light'));
+    const isDark = () => document.documentElement.classList.contains('dark');
 
+    // The Mintlify theme toggle re-renders (re-mounts) the MDX page body, which
+    // would destroy and recreate an <iframe> rendered here — a full cold reload
+    // of the demo on every toggle. To avoid that, the iframe lives in a
+    // singleton host appended to <body> (outside the part Mintlify re-mounts),
+    // so it loads exactly once. Theme changes then flow through the postMessage
+    // piping below (the same path the in-app toggle uses), with zero reload.
+    let host = document.getElementById('wallet-demo-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'wallet-demo-host';
+      host.style.cssText = 'position:fixed;z-index:1;overflow:hidden;';
+      const iframe = document.createElement('iframe');
+      iframe.id = 'wallet-demo-iframe';
+      iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light');
+      iframe.title = 'Grid Global Accounts — live demo';
+      iframe.setAttribute('allow', 'publickey-credentials-create *; publickey-credentials-get *; clipboard-write');
+      iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+      host.appendChild(iframe);
+      document.body.appendChild(host);
+    }
+    // Cancel a pending hide (from a quick re-mount, e.g. theme toggle) and show.
+    if (window.__wdHideTimer) { clearTimeout(window.__wdHideTimer); window.__wdHideTimer = null; }
+    host.style.display = 'block';
+
+    // Glue the host to the placeholder's box every frame (cheap: one element,
+    // styles only written when the rect actually changes). Survives scroll,
+    // resize, and sidebar collapse without special-casing each.
+    let raf = 0;
+    let last = { left: -1, top: -1, width: -1, height: -1 };
+    const sync = () => {
+      const el = placeholderRef.current;
+      if (el && host) {
+        const r = el.getBoundingClientRect();
+        if (r.left !== last.left || r.top !== last.top || r.width !== last.width || r.height !== last.height) {
+          host.style.left = r.left + 'px';
+          host.style.top = r.top + 'px';
+          host.style.width = r.width + 'px';
+          host.style.height = r.height + 'px';
+          last = { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+      }
+      raf = requestAnimationFrame(sync);
+    };
+    raf = requestAnimationFrame(sync);
+
+    // Theme piping (unchanged): mirror the docs theme into the persistent iframe.
     let ignoreNextMutation = false;
-
     const sendTheme = () => {
-      const t = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const t = isDark() ? 'dark' : 'light';
       const iframe = document.getElementById('wallet-demo-iframe');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
@@ -30,9 +74,8 @@ export const WalletDemoEmbed = () => {
         return;
       }
       if (e.data && e.data.type === 'theme-sync') {
-        const isDark = document.documentElement.classList.contains('dark');
         const wantsDark = e.data.theme === 'dark';
-        if (isDark !== wantsDark) {
+        if (isDark() !== wantsDark) {
           ignoreNextMutation = true;
           document.documentElement.classList.toggle('dark');
         }
@@ -46,24 +89,26 @@ export const WalletDemoEmbed = () => {
     });
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
+    // Push the current theme on (re)mount — covers the toggle case, where the
+    // class change happens during the re-mount and the observer above would
+    // otherwise miss it. Re-send next frame in case the class settles a tick later.
+    sendTheme();
+    requestAnimationFrame(sendTheme);
+
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener('message', handleMessage);
       obs.disconnect();
+      // Keep the iframe alive across re-mounts; only hide if we truly left the
+      // page (no re-mount cancels this within the delay).
+      window.__wdHideTimer = setTimeout(() => {
+        const h = document.getElementById('wallet-demo-host');
+        if (h) h.style.display = 'none';
+      }, 150);
     };
   }, []);
 
-  if (!src) return null;
-
-  return (
-    <iframe
-      id="wallet-demo-iframe"
-      src={src}
-      title="Grid Global Accounts — live demo"
-      allow="publickey-credentials-create *; publickey-credentials-get *; clipboard-write"
-    />
-  );
+  return <div id="wallet-demo-container" ref={placeholderRef} />;
 };
 
-<div id="wallet-demo-container">
-  <WalletDemoEmbed />
-</div>
+<WalletDemoEmbed />

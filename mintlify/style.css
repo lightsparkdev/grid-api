@@ -4145,9 +4145,12 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
   padding: 0 !important;
 }
 
+/* Placeholder that defines the embed's box. The actual iframe lives in
+   #wallet-demo-host on <body> (so theme toggles don't reload it) and is glued
+   to this box's position by the embed script. */
 #wallet-demo-container {
   width: 100%;
-  height: 100%;
+  height: calc(100dvh - 9.5rem);
   margin: 0;
   padding: 0;
   line-height: 0;
@@ -4158,9 +4161,18 @@ html.dark #wallet-demo-container {
   background: var(--ls-gray-975);
 }
 
+/* Persistent iframe host — body-mounted, positioned over the placeholder. */
+#wallet-demo-host {
+  background: var(--ls-gray-100);
+}
+
+html.dark #wallet-demo-host {
+  background: var(--ls-gray-975);
+}
+
 #wallet-demo-iframe {
   width: 100% !important;
-  height: calc(100dvh - 9.5rem) !important;
+  height: 100% !important;
   min-height: 0 !important;
   border: none !important;
   display: block !important;
@@ -4183,8 +4195,8 @@ html.dark #wallet-demo-container {
     min-height: calc(100dvh - 7.5rem) !important;
   }
 
-  #wallet-demo-iframe {
-    height: calc(100dvh - 7.5rem) !important;
+  #wallet-demo-container {
+    height: calc(100dvh - 7.5rem);
   }
 }
 

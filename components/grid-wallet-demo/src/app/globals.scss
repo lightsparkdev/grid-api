@@ -58,6 +58,18 @@ body {
    keeps its own iOS tokens (adapted from the keynote phone screens) rather than
    Origin. These flip with Origin's [data-theme]. */
 /* iPhone palette — adapted 1:1 from the "bread" neobank app (sparkapp). */
+/* Dot-grid backdrop — single source of truth shared by the CSS fallback
+   backgrounds (DotGridCanvas / AppShell) AND the JS canvas / WebGL renderers
+   (DotGrid, StageGL). Keeping the colors in CSS — exactly like grid-visualizer,
+   whose dot grid is pure CSS — lets the canvas re-read them the instant
+   [data-theme] flips, so the whole backdrop changes in lockstep (no stagger).
+   `--dot-grid-dot` is the resting dot; `--dot-grid-dot-peak` is the ripple crest. */
+:root {
+  --dot-grid-bg: var(--color-gray-075);
+  --dot-grid-dot: #d9d9d9;
+  --dot-grid-dot-peak: #b0b0b0;
+}
+
 :root {
   --p-accent: #11a967;
   --p-accent-press: #0e8f57;
@@ -79,6 +91,9 @@ body {
 }
 
 [data-theme='dark'] {
+  --dot-grid-bg: var(--color-gray-950);
+  --dot-grid-dot: #333330;
+  --dot-grid-dot-peak: #4d4d47;
   --p-bg: #000000;
   --p-screen: #000000;
   --p-surface: #141414;

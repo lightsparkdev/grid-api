@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
+import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
 
 /**
  * WebGL "stage": draws the dot-grid backdrop AND the glass lens in one pass.
@@ -61,28 +62,15 @@ const DEFAULT_LENS: StageGLLens = {
 };
 
 // --- dot field (same constants/wave as components/DotGrid) ---
-const DOT_SPACING = 25; // target spacing; the real step is normalised to fit
-const DOT_SIZE = 3.125;
-const DOT_PADDING = 24; // CSS px margin around the grid on every side
-// Higher-contrast than the slop grid so the refraction reads clearly under glass.
-const DOT_COLOR = '#B9B9B0';
+// Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.
+const DOT_SPACING = 20;
+const DOT_SIZE = 2.5;
+const DOT_PADDING = 18; // 8px offset + 10px dot center within tile
 const WAVE_SPEED = 1400;
 const WAVELENGTH = 800;
 const AMPLITUDE = 18;
 const RAMP_DIST = 120;
 const TIME_DECAY = 0.25;
-const DOT_BASE = [185, 185, 176] as const;
-const DOT_DARK = [120, 120, 112] as const;
-const BLEND_COUNT = 16;
-const BLENDED: string[] = [];
-for (let i = 0; i <= BLEND_COUNT; i++) {
-  const t = i / BLEND_COUNT;
-  BLENDED.push(
-    `rgb(${Math.round(DOT_BASE[0] + (DOT_DARK[0] - DOT_BASE[0]) * t)},${Math.round(
-      DOT_BASE[1] + (DOT_DARK[1] - DOT_BASE[1]) * t,
-    )},${Math.round(DOT_BASE[2] + (DOT_DARK[2] - DOT_BASE[2]) * t)})`,
-  );
-}
 
 /**
  * Even, centred grid: the outer dots sit exactly DOT_PADDING from each edge and
@@ -111,12 +99,14 @@ function drawDotField(
   dpr: number,
   rp: { x: number; y: number; t0: number } | null,
   now: number,
-  bg: string,
+  palette: DotGridPalette,
+  bgColor: string,
 ) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px on the device-sized buffer
-  ctx.fillStyle = bg;
+  ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, w, h);
   const k = (2 * Math.PI) / WAVELENGTH;
+  const lastBlend = palette.blended.length - 1;
   let tSec = 0;
   let timeFade = 0;
   let wavefront = 0;
@@ -127,7 +117,7 @@ function drawDotField(
   }
   const { cols, rows, startX, startY, stepX, stepY } = dotLayout(w, h);
   let lastFill = '';
-  ctx.fillStyle = DOT_COLOR;
+  ctx.fillStyle = palette.dot;
   for (let n = 0; n < cols; n++) {
     const midX = startX + n * stepX;
     for (let m = 0; m < rows; m++) {
@@ -135,7 +125,7 @@ function drawDotField(
       let dx = 0;
       let dy = 0;
       let sz = DOT_SIZE;
-      let fill = DOT_COLOR;
+      let fill = palette.dot;
       if (rp && timeFade > 0.001) {
         const distX = midX - rp.x;
         const distY = midY - rp.y;
@@ -151,7 +141,7 @@ function drawDotField(
           dx = (distX / d) * height;
           dy = (distY / d) * height;
           sz = DOT_SIZE * (1 + Math.abs(strength) * 0.4);
-          fill = BLENDED[Math.round(Math.abs(strength) * 0.3 * BLEND_COUNT)];
+          fill = palette.blended[Math.round(Math.abs(strength) * 0.3 * lastBlend)];
         }
       }
       if (fill !== lastFill) {
@@ -334,6 +324,7 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
 
 export interface StageGLProps {
   className?: string;
+  /** Background fill override. Defaults to the themed `--dot-grid-bg` token. */
   bg?: string;
   lens?: Partial<StageGLLens>;
   targetSelector?: string;
@@ -342,7 +333,7 @@ export interface StageGLProps {
 
 export function StageGL({
   className,
-  bg = '#F4F4F3',
+  bg,
   lens,
   targetSelector = '[class*="AppShell_shell"]',
   rippleOnClick = true,
@@ -359,6 +350,10 @@ export function StageGL({
     const off = document.createElement('canvas');
     const offCtx = off.getContext('2d');
     if (!offCtx) return;
+
+    // Themed dot/bg colors; re-read on theme flip (observeTheme below). The
+    // render loop runs every frame, so it picks up the new palette immediately.
+    let palette = readDotGridPalette(offCtx);
 
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
     let cssW = 0;
@@ -436,7 +431,7 @@ export function StageGL({
       if (!gl || gl.isContextLost()) return;
       const now = performance.now();
       // refresh dot field (CSS px, DPR-scaled onto the device-sized buffer)
-      drawDotField(offCtx, cssW, cssH, dpr, ripple.current, now, bg);
+      drawDotField(offCtx, cssW, cssH, dpr, ripple.current, now, palette, bg ?? palette.bg);
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
 
@@ -516,6 +511,12 @@ export function StageGL({
     };
     canvas.addEventListener('pointerdown', onDown);
 
+    // Swap to the new theme's colors on flip; the continuous render loop repaints
+    // with them on the next frame, in lockstep with the CSS recalc.
+    const stopTheme = observeTheme(() => {
+      palette = readDotGridPalette(offCtx);
+    });
+
     let ro: ResizeObserver | null = null;
     if (initGL()) {
       resize();
@@ -527,6 +528,7 @@ export function StageGL({
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
+      stopTheme();
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);

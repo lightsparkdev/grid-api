@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { observeTheme, readDotGridPalette } from '@/lib/dotGridColors';
 
 /**
  * Animated dot grid with a ripple-out effect, ported from grid-visualizer's
@@ -13,29 +14,16 @@ import { useEffect, useRef } from 'react';
  * texture (the article's pattern for refracting animated, non-DOM content).
  */
 
-const DOT_SPACING = 25; // target spacing; the real step is normalised to fit
-const DOT_SIZE = 3.125;
-const DOT_PADDING = 24; // CSS px margin around the grid on every side
-const DOT_COLOR = '#DEDED9';
+// Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.
+const DOT_SPACING = 20;
+const DOT_SIZE = 2.5;
+const DOT_PADDING = 18; // 8px offset + 10px dot center within tile
 
 const WAVE_SPEED = 1400; // px/s (the original's "tab" tap speed)
 const WAVELENGTH = 800;
 const AMPLITUDE = 18;
 const RAMP_DIST = 120;
 const TIME_DECAY = 0.25;
-
-const DOT_BASE = [222, 222, 217] as const;
-const DOT_DARK = [160, 160, 152] as const;
-const BLEND_COUNT = 16;
-const BLENDED: string[] = [];
-for (let i = 0; i <= BLEND_COUNT; i++) {
-  const t = i / BLEND_COUNT;
-  BLENDED.push(
-    `rgb(${Math.round(DOT_BASE[0] + (DOT_DARK[0] - DOT_BASE[0]) * t)},${Math.round(
-      DOT_BASE[1] + (DOT_DARK[1] - DOT_BASE[1]) * t,
-    )},${Math.round(DOT_BASE[2] + (DOT_DARK[2] - DOT_BASE[2]) * t)})`,
-  );
-}
 
 /**
  * Even, centred grid: the outer dots sit exactly DOT_PADDING from each edge and
@@ -59,13 +47,13 @@ function dotLayout(w: number, h: number) {
 
 export interface DotGridProps {
   className?: string;
-  /** Background fill (kept in the canvas so it can be sampled as a texture). */
+  /** Background fill override. Defaults to the themed `--dot-grid-bg` token. */
   bg?: string;
   /** Fire a ripple from the pointer on press. */
   rippleOnClick?: boolean;
 }
 
-export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: DotGridProps) {
+export function DotGrid({ className, bg, rippleOnClick = true }: DotGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ripple = useRef<{ x: number; y: number; t0: number } | null>(null);
 
@@ -82,10 +70,15 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
     let raf = 0;
     let animating = false;
 
+    // Themed colors, re-read whenever the document theme flips (see observeTheme
+    // below) so the backdrop changes in the same frame as the CSS.
+    let palette = readDotGridPalette(ctx);
+    const lastBlend = palette.blended.length - 1;
+
     const drawDots = (rp: { x: number; y: number; t0: number } | null, now: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = bg;
+      ctx.fillStyle = bg ?? palette.bg;
       ctx.fillRect(0, 0, w, h);
 
       const { cols, rows, startX, startY, stepX, stepY } = dotLayout(w, h);
@@ -100,7 +93,7 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
       }
 
       let lastFill = '';
-      ctx.fillStyle = DOT_COLOR;
+      ctx.fillStyle = palette.dot;
       for (let n = 0; n < cols; n++) {
         const midX = startX + n * stepX;
         for (let m = 0; m < rows; m++) {
@@ -109,7 +102,7 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
           let dx = 0;
           let dy = 0;
           let sz = DOT_SIZE;
-          let fill = DOT_COLOR;
+          let fill = palette.dot;
 
           if (rp && timeFade > 0.001) {
             const distX = midX - rp.x;
@@ -126,7 +119,7 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
               dx = (distX / d) * height;
               dy = (distY / d) * height;
               sz = DOT_SIZE * (1 + Math.abs(strength) * 0.4);
-              fill = BLENDED[Math.round(Math.abs(strength) * 0.3 * BLEND_COUNT)];
+              fill = palette.blended[Math.round(Math.abs(strength) * 0.3 * lastBlend)];
             }
           }
 
@@ -196,10 +189,19 @@ export function DotGrid({ className, bg = '#F4F4F3', rippleOnClick = true }: Dot
     ro.observe(cvs);
     cvs.addEventListener('pointerdown', onDown);
 
+    // Re-read themed colors and repaint immediately on theme flip. A resting
+    // backdrop won't redraw on its own, so paint it here; an active ripple
+    // already redraws each frame and picks up the new palette automatically.
+    const stopTheme = observeTheme(() => {
+      palette = readDotGridPalette(ctx);
+      if (!animating) drawDots(ripple.current, performance.now());
+    });
+
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       cvs.removeEventListener('pointerdown', onDown);
+      stopTheme();
     };
   }, [bg, rippleOnClick]);
 
