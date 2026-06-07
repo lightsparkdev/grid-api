@@ -40,16 +40,25 @@
   height: 100%;
   overflow: visible;
   pointer-events: none;
+  transform-origin: center;
+  /* Grows with the shell on hover bloom (see AppShell shadowScale). */
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Match Glass radius prop (76) — not the ×1.8 CSS token (that's for non-glass elements like .screen). */
+/* Match Glass radius prop (76) — not the ×1.8 CSS token (that's for non-glass elements like .screen).
+   Size comes from `inset` (not width/height) so the hover bloom can grow it past the frame. */
 .shell {
   position: absolute;
   inset: 0;
   z-index: 1;
-  width: 100%;
-  height: 100%;
   corner-shape: var(--corner-shape);
+  /* Hover bloom — grow outward smoothly (see AppShell shellInset/shellRadius). */
+  transition:
+    top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    right 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Glass bends its *children*, not the canvas behind it. This is a copy of the

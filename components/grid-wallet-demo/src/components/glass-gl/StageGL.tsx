@@ -451,12 +451,17 @@ export function StageGL({
         lh = tr.height * dpr;
       }
       const g = lw / c.designWidth; // device px per design px
-      // Match the shell's actual rounded corner so the refracted bezel stays
-      // concentric with the screen (the shell uses screen-radius + padding).
-      let radiusCss = c.radius;
+      // Lens radius tracks the shell's ACTUAL rounded corner so the refracted bezel
+      // stays concentric with the screen — and keeps tracking when the shell grows
+      // (the hover "bloom"). Scale the DOM radius by the shell's own px ratio
+      // (lw / its CSS width), not `g` (which assumes shell width == designWidth and
+      // would over-inflate the corner as the shell grows).
+      let radiusDevicePx = c.radius * g;
       if (target) {
-        const br = parseFloat(getComputedStyle(target).borderTopLeftRadius);
-        if (br > 0) radiusCss = br;
+        const cs = getComputedStyle(target);
+        const br = parseFloat(cs.borderTopLeftRadius);
+        const pw = parseFloat(cs.width);
+        if (br > 0 && pw > 0) radiusDevicePx = br * (lw / pw);
       }
       const exp = 2 + Math.max(0, Math.min(1, c.cornerSmoothing)) * 4;
       const dome = c.domeDepth > 0 ? computeDomeConstants(c.domeDepth, c.designWidth / 2, (c.designWidth / 2) * (lh / lw)) : null;
@@ -466,7 +471,7 @@ export function StageGL({
       gl.uniform2f(u.res, canvas.width, canvas.height);
       gl.uniform4f(u.lens, lx, ly, lw, lh);
       gl.uniform1f(u.cornerExp, exp);
-      gl.uniform1f(u.radius, radiusCss * g);
+      gl.uniform1f(u.radius, radiusDevicePx);
       gl.uniform1f(u.depth, c.depth * g);
       gl.uniform1f(u.scale, c.scale * g);
       gl.uniform1f(u.domeOn, dome ? 1 : 0);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import { usePhoneDrag } from './usePhoneDrag';
@@ -41,6 +41,18 @@ export function AppShell({
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
   const { offset, dragHandlers } = usePhoneDrag(draggable);
+
+  // Hover "bloom": the glass shell grows GROW px outward (bezel 16 -> 16+GROW) while
+  // the inner screen stays put. Radius grows additively (not scaled) so the corners
+  // stay concentric; the WebGL lens reads the shell's geometry each frame, so the
+  // refraction tracks the growth for free.
+  const [hovered, setHovered] = useState(false);
+  const GROW = 4;
+  const bloom = externalGlass && hovered;
+  const shellInset = bloom ? -GROW : 0;
+  const shellRadius = glassConfig.radius + (bloom ? GROW : 0);
+  const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * GROW) / APP_SHELL_OUTER_WIDTH;
+  const shadowScaleY = (APP_SHELL_OUTER_HEIGHT + 2 * GROW) / APP_SHELL_OUTER_HEIGHT;
 
   // Match the DOM corner to the shader's superellipse so the shell shadow and the
   // inner screen trace the same curve as the refracted bezel. corner-shape
@@ -111,7 +123,11 @@ export function AppShell({
         }}
         {...dragHandlers}
       >
-        <div className={styles.frame}>
+        <div
+          className={styles.frame}
+          onPointerEnter={externalGlass ? () => setHovered(true) : undefined}
+          onPointerLeave={externalGlass ? () => setHovered(false) : undefined}
+        >
           {externalGlass ? (
             <>
               {/* Squircle drop shadow (cross-browser) — see shellPath/shadowId above. */}
@@ -119,6 +135,7 @@ export function AppShell({
                 className={styles.dropShadow}
                 viewBox={`0 0 ${APP_SHELL_OUTER_WIDTH} ${APP_SHELL_OUTER_HEIGHT}`}
                 aria-hidden
+                style={{ transform: `scale(${bloom ? shadowScaleX : 1}, ${bloom ? shadowScaleY : 1})` }}
               >
                 <defs>
                   <filter
@@ -147,9 +164,10 @@ export function AppShell({
               <div
                 className={styles.shell}
                 style={{
-                  // Driven by the Radius control; the inner screen tracks this minus
-                  // the 16px inset (below) so the two stay concentric as it changes.
-                  borderRadius: `${glassConfig.radius}px`,
+                  // Grows GROW px outward on hover (inset < 0) with radius +GROW so the
+                  // corner stays concentric with the fixed screen; the lens follows.
+                  inset: shellInset,
+                  borderRadius: `${shellRadius}px`,
                   cornerShape,
                 }}
                 aria-hidden
