@@ -1,8 +1,8 @@
 type: object
 description: >-
   Email and phone verification state for the customer. This object is **only
-  present when the customer's payment provider requires email and phone
-  verification** (e.g. EU customers). For customers whose provider has no such
+  present when the customer's regulatory jurisdiction requires email and phone
+  verification** (e.g. EU customers). For customers who have no such
   requirement, this object is omitted entirely — no action is needed.
 
 

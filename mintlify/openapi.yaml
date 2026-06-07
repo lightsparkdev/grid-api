@@ -845,6 +845,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider requires contact verification and the customer's email and phone are not both `VERIFIED` yet. Complete contact verification (see `verify-email` and `verify-phone`) before generating a KYC link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8831,7 +8837,7 @@ components:
     ContactVerification:
       type: object
       description: |-
-        Email and phone verification state for the customer. This object is **only present when the customer's payment provider requires email and phone verification** (e.g. EU customers). For customers whose provider has no such requirement, this object is omitted entirely — no action is needed.
+        Email and phone verification state for the customer. This object is **only present when the customer's regulatory jurisdiction requires email and phone verification** (e.g. EU customers). For customers who have no such requirement, this object is omitted entirely — no action is needed.
 
         When present, both channels must reach `VERIFIED` before the customer can begin KYC. Drive each channel with `POST /customers/{customerId}/verify-email` and `POST /customers/{customerId}/verify-phone` (and their `/confirm` sub-routes).
       properties:
