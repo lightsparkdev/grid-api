@@ -4,9 +4,16 @@
   overflow: hidden;
 }
 
-.appCol,
-.apiCol {
+.appCol {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.apiCol {
+  flex: 0 0 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -23,6 +30,6 @@
   .appCol,
   .apiCol {
     flex: none;
-    width: 100%;
+    width: 100% !important;
   }
 }

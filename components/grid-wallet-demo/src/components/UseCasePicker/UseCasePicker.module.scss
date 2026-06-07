@@ -12,11 +12,21 @@ $ring-ease: cubic-bezier(0.19, 1, 0.22, 1);
 $ring-duration: 0.22s;
 $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
-.grid {
+.group {
+  corner-shape: var(--corner-shape);
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--spacing-xs);
   width: 100%;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  // Ring extends past cell bounds (and morphs across cells during layout animation).
+  overflow: visible;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
 }
 
 .card {
@@ -28,18 +38,43 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   flex-direction: column;
   align-items: stretch;
   min-width: 0;
-  padding: var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-md);
   background: var(--surface-base);
-  border: var(--stroke-xs) solid var(--border-primary);
-  border-radius: var(--corner-radius-md);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: visible;
   cursor: pointer;
-  transition:
-    background 100ms ease,
-    border-color $ring-duration $ring-ease;
+  transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
     background: var(--surface-primary);
+  }
+
+  &:nth-child(odd) {
+    border-right: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  &:nth-child(even) {
+    border-right: none;
+  }
+
+  &:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+
+  &:first-child {
+    border-top-left-radius: var(--corner-radius-md);
+  }
+
+  &:nth-child(2) {
+    border-top-right-radius: var(--corner-radius-md);
+  }
+
+  &:nth-last-child(2) {
+    border-bottom-left-radius: var(--corner-radius-md);
+  }
+
+  &:last-child {
+    border-bottom-right-radius: var(--corner-radius-md);
   }
 
   &:disabled {
@@ -57,18 +92,14 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }
 
 .cardSelected {
-  z-index: 1;
-  border-color: transparent;
-  background: var(--surface-base);
-
-  :global([data-theme='dark']) & {
-    background: var(--surface-primary);
-  }
+  // Elevate the selected cell so the ring paints over adjacent grid lines.
+  z-index: 2;
 }
 
 .activeRing {
   position: absolute;
   inset: calc(var(--stroke-xs) - var(--stroke-md));
+  z-index: 2;
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-md);
   padding: var(--stroke-md);
@@ -97,13 +128,12 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
 .icon {
   display: block;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   object-fit: contain;
   transform-origin: center;
   transition: transform 250ms $ease-out-swift;
-  // shadow-lg as drop-shadow so it follows icon alpha, not the image box
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
     drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
     drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));

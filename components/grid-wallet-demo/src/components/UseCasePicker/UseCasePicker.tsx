@@ -15,7 +15,7 @@ interface UseCasePickerProps {
 export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
   return (
     <LayoutGroup>
-      <div className={styles.grid}>
+      <div className={styles.group}>
         {USE_CASES.map((opt) => {
           const isSelected = selected === opt.id;
           return (
@@ -39,8 +39,8 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
                 <Image
                   src={opt.iconSrc}
                   alt=""
-                  width={40}
-                  height={40}
+                  width={48}
+                  height={48}
                   className={styles.icon}
                 />
                 <span className={styles.label}>{opt.label}</span>

@@ -5,7 +5,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -14,8 +13,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 680px;
-  padding: var(--spacing-2xl) var(--spacing-xl);
+  padding: var(--spacing-xl);
 }
 
 .step {
@@ -97,19 +95,30 @@
   min-width: 0;
   padding-top: var(--spacing-sm);
   padding-bottom: var(--spacing-2xl);
+
+  .step:last-child & {
+    padding-bottom: var(--spacing-xs);
+  }
 }
 
 .callCard {
+  corner-shape: var(--corner-shape);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  width: 100%;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+  transition: border-color 200ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
 }
 
 .callCardFresh {
-  .endpointBlock,
-  .codeBlock {
-    border-color: var(--border-secondary);
-  }
+  border-color: var(--border-secondary);
 }
 
 .endpointBlock,
@@ -127,9 +136,8 @@
   width: 100%;
   min-width: 0;
   padding: var(--endpoint-padding);
-  background: var(--surface-base);
-  border: var(--stroke-xs) solid var(--border-primary);
-  border-radius: var(--corner-radius-md);
+  background: inherit;
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: hidden;
   cursor: pointer;
   text-align: left;
@@ -137,10 +145,6 @@
 
   &:focus-visible {
     box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-secondary);
-  }
-
-  :global([data-theme='dark']) & {
-    background: var(--surface-primary);
   }
 
   &:hover,
@@ -222,15 +226,9 @@
 }
 
 .codeBlock {
-  background: var(--surface-base);
-  border: var(--stroke-xs) solid var(--border-primary);
-  border-radius: var(--corner-radius-md);
-  overflow: hidden;
-  transition: border-color 200ms ease;
-
-  :global([data-theme='dark']) & {
-    background: var(--surface-primary);
-  }
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .codeBlockToolbar {
@@ -367,8 +365,3 @@
   }
 }
 
-@media (max-width: 767px) {
-  .steps {
-    max-width: 100%;
-  }
-}

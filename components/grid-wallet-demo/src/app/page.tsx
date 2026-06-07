@@ -11,7 +11,7 @@ import styles from './page.module.scss';
 
 export default function Page() {
   const logic = useWalletDemoLogic();
-  const { layoutRef, appColRef, appWidth, onResizeStart } = useColumnResize();
+  const { layoutRef, apiColRef, apiWidth, onResizeStart } = useColumnResize();
 
   return (
     <main ref={layoutRef} className={styles.layout}>
@@ -28,11 +28,7 @@ export default function Page() {
         onAction={logic.handleAction}
         onReset={logic.reset}
       />
-      <div
-        ref={appColRef}
-        className={styles.appCol}
-        style={appWidth != null ? { width: appWidth, flex: '0 0 auto' } : undefined}
-      >
+      <div className={styles.appCol}>
         <AppPanel
           persona={logic.persona}
           method={logic.method}
@@ -52,7 +48,11 @@ export default function Page() {
         />
       </div>
       <ColumnResizeHandle onMouseDown={onResizeStart} />
-      <div className={styles.apiCol}>
+      <div
+        ref={apiColRef}
+        className={styles.apiCol}
+        style={{ width: apiWidth, flex: '0 0 auto' }}
+      >
         <ApiPanel entries={logic.entries} />
       </div>
     </main>

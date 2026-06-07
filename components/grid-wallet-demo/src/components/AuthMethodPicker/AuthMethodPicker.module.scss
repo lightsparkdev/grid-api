@@ -1,30 +1,48 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-.grid {
+.group {
+  corner-shape: var(--corner-shape);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--spacing-xs);
   width: 100%;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--surface-primary);
+  }
 }
 
 .card {
   all: unset;
   box-sizing: border-box;
-  corner-shape: var(--corner-shape);
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   min-width: 0;
   padding: var(--spacing-md);
   background: var(--surface-base);
-  border: var(--stroke-xs) solid var(--border-primary);
-  border-radius: var(--corner-radius-md);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: clip;
   cursor: pointer;
   transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
     background: var(--surface-primary);
+  }
+
+  &:nth-child(odd) {
+    border-right: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  &:nth-child(even) {
+    border-right: none;
+  }
+
+  &:last-child {
+    border-bottom: none;
   }
 
   &:disabled {

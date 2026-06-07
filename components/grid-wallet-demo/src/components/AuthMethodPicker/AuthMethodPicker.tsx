@@ -28,7 +28,7 @@ interface AuthMethodPickerProps {
 
 export function AuthMethodPicker({ methods, onToggle, disabled }: AuthMethodPickerProps) {
   return (
-    <div className={styles.grid}>
+    <div className={styles.group}>
       {AUTH_METHODS.map((opt) => {
         const Icon = METHOD_ICONS[opt.id];
         const isSelected = methods.includes(opt.id);
