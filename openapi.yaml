@@ -21,6 +21,8 @@ tags:
     description: Platform configuration endpoints for managing global settings. You can also configure these settings in the Grid dashboard.
   - name: Customers
     description: Customer management endpoints for creating and updating customer information
+  - name: Contact Verification
+    description: Endpoints for verifying a customer's email and phone via one-time codes. Required only for customers whose payment provider mandates contact verification (e.g. EU customers); other providers return 409.
   - name: KYC/KYB Verifications
     description: Endpoints for Know Your Customer (KYC) and Know Your Business (KYB) verification, including managing beneficial owners and triggering verification for customers.
   - name: Documents

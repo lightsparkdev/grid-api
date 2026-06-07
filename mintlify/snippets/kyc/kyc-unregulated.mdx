@@ -147,6 +147,10 @@ The shape of the flow depends on the customer type:
       }
     }'
   ```
+
+  <Note>
+  Where the customer's provider requires it (for example, EU customers), the customer carries a `contactVerification` object and their email and phone must be `VERIFIED` before you submit for verification. Drive each channel with the send-then-confirm pairs (`verify-email` / `verify-email/confirm` and `verify-phone` / `verify-phone/confirm`) described in the Hosted flow's "Verify email and phone" step. When `contactVerification` is absent, no contact verification is required.
+  </Note>
 </Step>
 
 <Step title="Upload supporting documents (if requested)">
