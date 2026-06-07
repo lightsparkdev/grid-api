@@ -4107,8 +4107,8 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
   flex-direction: column !important;
   padding: 0 !important;
   overflow: hidden !important;
-  /* navbar (112px) + tab bar (~40px) */
-  min-height: calc(100dvh - 9.5rem) !important;
+  /* navbar (64px bar + 48px tabs = 112px) */
+  min-height: calc(100dvh - 112px) !important;
 }
 
 /* Hide everything in the content column except the embed */
@@ -4150,7 +4150,7 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
    to this box's position by the embed script. */
 #wallet-demo-container {
   width: 100%;
-  height: calc(100dvh - 9.5rem);
+  height: calc(100dvh - 112px);
   margin: 0;
   padding: 0;
   line-height: 0;
@@ -4192,11 +4192,17 @@ html.dark #wallet-demo-host {
 
 @media (max-width: 1023px) {
   #content-area:has(#wallet-demo-container) {
-    min-height: calc(100dvh - 7.5rem) !important;
+    min-height: calc(100dvh - 120px) !important;
   }
 
   #wallet-demo-container {
-    height: calc(100dvh - 7.5rem);
+    height: calc(100dvh - 120px);
   }
+}
+
+/* Prevent outer page scroll when the wallet demo is present */
+html:has(#wallet-demo-container),
+html:has(#wallet-demo-container) body {
+  overflow: hidden !important;
 }
 
