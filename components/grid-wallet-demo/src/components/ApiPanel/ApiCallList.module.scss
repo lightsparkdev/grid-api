@@ -146,19 +146,6 @@
   &:focus-visible {
     box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-secondary);
   }
-
-  &:hover,
-  &:focus-visible,
-  &.endpointBlockCopied {
-    .endpointFade,
-    .endpointCopy {
-      opacity: 1;
-    }
-
-    .endpointScroll {
-      padding-right: 40px;
-    }
-  }
 }
 
 .endpointScroll {
@@ -166,9 +153,9 @@
   align-items: center;
   gap: var(--spacing-xs);
   min-width: 0;
+  padding-right: 40px;
   overflow-x: auto;
   scrollbar-width: none;
-  transition: padding-right 150ms ease;
 
   &::-webkit-scrollbar {
     display: none;
@@ -195,9 +182,7 @@
   right: 0;
   bottom: 0;
   width: 88px;
-  opacity: 0;
   pointer-events: none;
-  transition: opacity 150ms ease;
   background: linear-gradient(to right, transparent, var(--surface-base) 52%);
 
   :global([data-theme='dark']) & {
@@ -205,24 +190,12 @@
   }
 }
 
-.endpointCopy {
+.endpointCopyBtn {
   position: absolute;
   top: 50%;
-  right: calc(var(--endpoint-padding) - var(--spacing-xs));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  right: var(--spacing-xs);
+  z-index: 1;
   transform: translateY(-50%);
-  color: var(--icon-tertiary);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 150ms ease;
-
-  svg path {
-    vector-effect: non-scaling-stroke;
-  }
 }
 
 .codeBlock {

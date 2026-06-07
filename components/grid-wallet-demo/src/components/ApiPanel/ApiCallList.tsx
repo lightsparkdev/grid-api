@@ -105,9 +105,13 @@ function CodeTabs({
 function CopyButton({
   text,
   ariaLabel = 'Copy code',
+  className,
+  stopPropagation,
 }: {
   text: string;
   ariaLabel?: string;
+  className?: string;
+  stopPropagation?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -117,11 +121,19 @@ function CopyButton({
     setTimeout(() => setCopied(false), 1500);
   }, [text]);
 
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (stopPropagation) event.stopPropagation();
+      void handleCopy();
+    },
+    [handleCopy, stopPropagation],
+  );
+
   return (
     <button
       type="button"
-      className={styles.copyBtn}
-      onClick={handleCopy}
+      className={clsx(styles.copyBtn, className)}
+      onClick={handleClick}
       aria-label={copied ? 'Copied' : ariaLabel}
     >
       {copied ? (
@@ -152,12 +164,8 @@ function EndpointBlock({
   method: ApiCall['method'];
   path: string;
 }) {
-  const [copied, setCopied] = useState(false);
-
   const copyPath = useCallback(async () => {
     await navigator.clipboard.writeText(path);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
   }, [path]);
 
   const handleClick = useCallback(() => {
@@ -178,36 +186,25 @@ function EndpointBlock({
 
   return (
     <div
-      className={clsx(styles.endpointBlock, copied && styles.endpointBlockCopied)}
+      className={styles.endpointBlock}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="group"
-      aria-label={copied ? 'Copied endpoint' : `Copy endpoint ${path}`}
+      aria-label={`Copy endpoint ${path}`}
     >
       <div className={styles.endpointScroll}>
         <Badge variant={methodBadgeVariant(method)}>{method}</Badge>
         <span className={styles.path}>{path}</span>
       </div>
       <div className={styles.endpointFade} aria-hidden />
-      <span className={styles.endpointCopy} aria-hidden>
-        {copied ? (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          <IconSquareBehindSquare6 size={16} />
-        )}
-      </span>
+      <div className={styles.endpointCopyBtn}>
+        <CopyButton
+          text={path}
+          ariaLabel={`Copy endpoint ${path}`}
+          stopPropagation
+        />
+      </div>
     </div>
   );
 }
