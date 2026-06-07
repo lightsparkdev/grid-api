@@ -48,9 +48,9 @@ export function AppShell({
   // K = 1 + smoothing*2. (smoothing 0.75 -> superellipse(2.5)/n=5 ~= iOS.)
   const cornerShape = `superellipse(${(1 + glassConfig.cornerSmoothing * 2).toFixed(3)})`;
 
-  // Build the drop shadow from tunable components (grounding shadow: offset down +
-  // negative spread, so it pools under the phone without haloing the corners).
-  const swagShadow = `0 ${glassConfig.shadowOffsetY ?? 30}px ${glassConfig.shadowBlur ?? 40}px ${glassConfig.shadowSpread ?? -40}px rgba(0, 0, 0, ${glassConfig.shadowOpacity ?? 0.3})`;
+  // Simple single all-around drop shadow built from the tunable components — dial
+  // it in with the Shadow sliders (offset / blur / spread / opacity).
+  const swagShadow = `0 ${glassConfig.shadowOffsetY ?? 8}px ${glassConfig.shadowBlur ?? 24}px ${glassConfig.shadowSpread ?? 0}px rgba(0, 0, 0, ${glassConfig.shadowOpacity ?? 0.12})`;
 
   // The glass bends its *children*, never the real page behind it (that's the
   // Aave technique — backdrop-filter is Chromium-only). So we drop a copy of the

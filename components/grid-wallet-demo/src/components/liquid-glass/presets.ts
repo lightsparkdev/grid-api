@@ -79,14 +79,14 @@ export const PHONE_SHELL_GLASS: GlassConfig = {
   // corner-shape: superellipse(1 + smoothing*2) so the shell shadow, inner screen,
   // and refracted bezel all trace the same curve.
   cornerSmoothing: 0.12,
-  // Grounding shadow (offset down, spread ~= -blur) so it pools under the phone with
-  // no outward halo at the corners. Swag builds its box-shadow from these tunable
-  // components; edgeShadow is the slop (SVG) equivalent.
-  shadowOffsetY: 30,
-  shadowBlur: 40,
-  shadowSpread: -40,
-  shadowOpacity: 0.3,
-  edgeShadow: '0 30px 40px -40px rgba(0, 0, 0, 0.3)',
+  // Simple all-around drop shadow (not grounded). Swag builds a single box-shadow
+  // from these tunable components — dial in via the Shadow sliders; edgeShadow is
+  // the slop (SVG) equivalent.
+  shadowOffsetY: 8,
+  shadowBlur: 24,
+  shadowSpread: 0,
+  shadowOpacity: 0.12,
+  edgeShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
   mapSize: 512,
 };
 
