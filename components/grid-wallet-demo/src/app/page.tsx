@@ -36,6 +36,8 @@ export default function Page() {
           phone={logic.phone}
           running={logic.running}
           handleAction={logic.handleAction}
+          signInWithMethod={logic.signInWithMethod}
+          signInMethod={logic.signInMethod}
           otpActive={logic.otpActive}
           submitOtp={logic.submitOtp}
           emailActive={logic.emailActive}

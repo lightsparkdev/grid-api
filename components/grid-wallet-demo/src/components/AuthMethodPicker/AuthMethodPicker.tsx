@@ -1,24 +1,12 @@
 'use client';
 
 import { Checkbox } from '@lightsparkdev/origin/checkbox';
-import { IconGoogle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGoogle';
-import { IconUserKey } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconUserKey';
-import { IconApple } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconApple';
-import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
-import { IconEmail1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEmail1';
+import { AUTH_METHOD_ICONS } from '@/apps/shared/authMethodIcons';
 import type { AuthMethod } from '@/data/flow';
 import { AUTH_METHODS } from '@/data/configure';
 import styles from './AuthMethodPicker.module.scss';
 
-type IconCmp = typeof IconGoogle;
-
-const METHOD_ICONS: Record<AuthMethod, IconCmp> = {
-  oauth: IconGoogle,
-  passkey: IconUserKey,
-  apple: IconApple,
-  email_otp: IconEmail1,
-  sms: IconPhone,
-};
+const METHOD_ICONS = AUTH_METHOD_ICONS;
 
 interface AuthMethodPickerProps {
   methods: AuthMethod[];

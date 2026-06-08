@@ -9,7 +9,7 @@ import { loadGis } from '@/lib/auth';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './Phone.module.scss';
 
-const BRAND: Record<Persona, { name: string; tag: string }> = {
+export const PHONE_BRAND: Record<Persona, { name: string; tag: string }> = {
   fintech: { name: 'Aurora', tag: 'Your money, everywhere' },
   social: { name: 'Pulse', tag: 'Get paid to post' },
   marketplace: { name: 'Bazaar', tag: 'Buy and sell anywhere' },
@@ -43,7 +43,10 @@ export interface PhoneProps {
   wallet: WalletState;
   persona: Persona;
   method: AuthMethod;
+  /** Method chosen on swag auth buttons (falls back to `method`). */
+  signInMethod?: AuthMethod;
   onAction: (id: ActionId) => void;
+  onSignInWithMethod?: (method: AuthMethod) => void;
   busy: boolean;
   otp?: { active: boolean; onSubmit: (code: string) => void };
   email?: { active: boolean; onSubmit: (email: string) => void };
@@ -67,7 +70,7 @@ export default function Phone({
   google,
   amount,
 }: PhoneProps) {
-  const brand = BRAND[persona];
+  const brand = PHONE_BRAND[persona];
   const { wrapRef, scale } = useFitScale();
   const act = (id: ActionId) => {
     if (!busy) onAction(id);
@@ -187,7 +190,7 @@ function AuthScreen({
   );
 }
 
-function CreatingScreen({ brand, note }: { brand: { name: string; tag: string }; note?: string }) {
+export function CreatingScreen({ brand, note }: { brand: { name: string; tag: string }; note?: string }) {
   return (
     <div className={styles.centerScreen}>
       <div className={styles.brandMark}>{brand.name.charAt(0)}</div>
@@ -197,7 +200,7 @@ function CreatingScreen({ brand, note }: { brand: { name: string; tag: string };
   );
 }
 
-function CredentialScreen({ method }: { method: AuthMethod }) {
+export function CredentialScreen({ method }: { method: AuthMethod }) {
   const isOtp = method === 'email_otp' || method === 'sms';
   return (
     <div className={styles.centerScreen}>
@@ -245,7 +248,7 @@ function CredentialScreen({ method }: { method: AuthMethod }) {
 }
 
 /** Email entry — the user types the address their OTP is "sent" to. */
-function EmailEntryScreen({
+export function EmailEntryScreen({
   brand,
   onSubmit,
 }: {
@@ -295,7 +298,7 @@ function EmailEntryScreen({
 }
 
 /** Interactive OTP entry — pauses the flow until the user submits a code. */
-function OtpEntryScreen({ onSubmit }: { onSubmit: (code: string) => void }) {
+export function OtpEntryScreen({ onSubmit }: { onSubmit: (code: string) => void }) {
   const [code, setCode] = useState('');
   const submitted = useRef(false);
   const fire = (c: string) => {
@@ -349,7 +352,7 @@ function OtpEntryScreen({ onSubmit }: { onSubmit: (code: string) => void }) {
 }
 
 /** Renders Google's official Sign-in button and resolves with the id_token. */
-function GoogleSignInScreen({
+export function GoogleSignInScreen({
   nonce,
   onCredential,
 }: {
@@ -539,7 +542,7 @@ function AmountScreen({
 }
 
 /** Editable amount entry — the user types an amount and presses the button. */
-function AmountEntryScreen({
+export function AmountEntryScreen({
   config,
   onSubmit,
   onCancel,

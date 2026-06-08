@@ -51,7 +51,7 @@
   filter: blur(24px);
   will-change: background-position;
   background-image: var(--aurora-bg-image);
-  background-size: 280% 180%;
+  background-size: 300% 200%;
   background-position: 50% 50%;
   animation: aurora 60s linear infinite;
 
@@ -59,9 +59,10 @@
     content: '';
     position: absolute;
     inset: 0;
-    background-attachment: fixed;
     background-image: var(--aurora-bg-image);
     background-size: 200% 100%;
+    background-position: 50% 50%;
+    animation: aurora 60s linear infinite;
     mix-blend-mode: soft-light;
   }
 
@@ -79,6 +80,28 @@
   flex-direction: column;
 }
 
+.root[data-fade-bottom='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 82%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 14%,
+    color-mix(in srgb, var(--app-bg) 8%, transparent) 30%,
+    color-mix(in srgb, var(--app-bg) 28%, transparent) 44%,
+    color-mix(in srgb, var(--app-bg) 52%, transparent) 58%,
+    color-mix(in srgb, var(--app-bg) 74%, transparent) 70%,
+    color-mix(in srgb, var(--app-bg) 90%, transparent) 82%,
+    var(--app-bg) 100%
+  );
+  pointer-events: none;
+}
+
 @keyframes aurora {
   from {
     background-position: 50% 50%;
@@ -90,7 +113,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auroraLayer {
+  .auroraLayer,
+  .auroraLayer::after {
     animation: none;
   }
 }

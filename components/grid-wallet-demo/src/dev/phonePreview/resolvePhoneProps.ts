@@ -21,6 +21,8 @@ export interface DemoLogicPhoneSlice {
   phone: PhoneState;
   running: boolean;
   handleAction: (id: ActionId) => void;
+  signInWithMethod: (method: AuthMethod) => void;
+  signInMethod: AuthMethod | null;
   otpActive: boolean;
   submitOtp: (code: string) => void;
   emailActive: boolean;
@@ -52,6 +54,8 @@ export function resolvePhoneProps(
     phone,
     wallet,
     onAction: previewActive ? noop : logic.handleAction,
+    onSignInWithMethod: previewActive ? noop : logic.signInWithMethod,
+    signInMethod: logic.signInMethod ?? undefined,
     busy,
     otp: {
       active: previewActive ? overlay === 'otp' : logic.otpActive,

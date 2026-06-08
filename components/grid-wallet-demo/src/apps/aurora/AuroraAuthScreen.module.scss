@@ -1,0 +1,90 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2145:45329 — column pinned to bottom below status bar. */
+.root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--app-bg);
+}
+
+/* Figma 2145:45395 — hero + aurora fade stay below copy/actions. */
+.hero {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroBg {
+  position: absolute;
+  inset: 0;
+}
+
+.wallet {
+  position: relative;
+  z-index: 1;
+  width: 116px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Figma 2145:45344 — px 40, gap 16, Title2 + Footnote. */
+.copy {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: -64px;
+  padding: 32px 40px 0;
+  background: linear-gradient(to bottom, transparent 0, var(--app-bg) 64px);
+}
+
+/* Figma 2145:45345 — Title2/Regular 22/28, tracking -0.26. */
+.headings {
+  display: flex;
+  flex-direction: column;
+  line-height: 28px;
+}
+
+.title {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  letter-spacing: -0.26px;
+  color: var(--ios-label-primary);
+}
+
+.tagline {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  letter-spacing: -0.26px;
+  color: var(--ios-label-secondary);
+}
+
+.description {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  letter-spacing: -0.08px;
+  color: var(--ios-label-secondary);
+  text-wrap: balance;
+}
+
+/* Figma 2145:45349 — p 32, gap 12, buttons 338px (402 − 64). */
+.actions {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 32px;
+}

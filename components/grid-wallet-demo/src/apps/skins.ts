@@ -2,14 +2,15 @@ import type { Persona } from '@/data/flow';
 
 export type AppSkinId = 'aurora' | 'pulse' | 'bazaar';
 
-export type AppScreenTone = 'default' | 'light';
+export type AppStatusBarTone = 'default' | 'light';
 
 export interface AppSkin {
   id: AppSkinId;
   persona: Persona;
   label: string;
   fontFamily: string;
-  authScreenTone?: AppScreenTone;
+  /** White status bar on colored hero (auth). */
+  authStatusBarTone?: AppStatusBarTone;
 }
 
 const SF_PRO = "'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
@@ -21,7 +22,7 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     persona: 'fintech',
     label: 'Aurora',
     fontFamily: SF_PRO,
-    authScreenTone: 'light',
+    authStatusBarTone: 'light',
   },
   social: {
     id: 'pulse',

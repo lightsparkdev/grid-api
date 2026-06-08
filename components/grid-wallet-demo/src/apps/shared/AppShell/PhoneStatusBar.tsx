@@ -1,11 +1,16 @@
+import clsx from 'clsx';
 import { BatteryIcon, SignalIcon, WifiIcon } from './StatusBarIcons';
 import { StatusBarTime } from './StatusBarTime';
 import styles from './PhoneStatusBar.module.scss';
 
+interface PhoneStatusBarProps {
+  tone?: 'default' | 'light';
+}
+
 /** iOS status bar — Figma phone-gga (2143:19945). */
-export function PhoneStatusBar() {
+export function PhoneStatusBar({ tone = 'default' }: PhoneStatusBarProps) {
   return (
-    <div className={styles.statusBar}>
+    <div className={clsx(styles.statusBar, tone === 'light' && styles.statusBarLight)}>
       <div className={styles.timeSlot}>
         <StatusBarTime />
       </div>

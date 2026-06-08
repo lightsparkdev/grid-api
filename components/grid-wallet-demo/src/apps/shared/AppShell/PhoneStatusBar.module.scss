@@ -18,6 +18,11 @@
   letter-spacing: 0;
 }
 
+.statusBarLight {
+  /* Scoped to status bar only — must not flip --ios-label-primary on .screen. */
+  color: #ffffff;
+}
+
 .timeSlot {
   display: flex;
   flex: 1 0 0;

@@ -28,6 +28,8 @@ interface AppShellProps {
   children?: ReactNode;
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
+  /** Status bar only — use when hero is colored but content area stays light. */
+  statusBarTone?: 'default' | 'light';
   /** App skin — drives data-app, font family, and per-app tokens. */
   appSkin?: AppSkinId;
 }
@@ -44,6 +46,7 @@ export function AppShell({
   bezelOverlay = null,
   children,
   screenTone = 'default',
+  statusBarTone = 'default',
   appSkin = 'aurora',
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
@@ -235,7 +238,7 @@ export function AppShell({
                 : undefined
             }
           >
-            <PhoneStatusBar />
+            <PhoneStatusBar tone={statusBarTone} />
             {children ? <div className={styles.screenBody}>{children}</div> : null}
           </div>
         </div>
