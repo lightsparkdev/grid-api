@@ -16649,7 +16649,7 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier for this challenge, supplied back when authorizing.
+          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
           example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
         expiresAt:
           type: string
