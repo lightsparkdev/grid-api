@@ -1,0 +1,21 @@
+type: object
+description: >-
+  Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for
+  `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`).
+properties:
+  code:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The one-time code the customer received by SMS, or read from their
+      authenticator app. In sandbox, the code is always `123456`.
+    example: '123456'
+  passkeyAssertion:
+    type:
+      - object
+      - 'null'
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn assertion produced by the device from the challenge's
+      `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.

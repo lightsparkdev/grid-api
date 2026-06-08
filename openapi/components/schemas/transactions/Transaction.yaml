@@ -61,3 +61,11 @@ properties:
     example: 'Payment for invoice #1234'
   counterpartyInformation:
     $ref: ./CounterpartyInformation.yaml
+  scaChallenge:
+    $ref: ../sca/ScaChallenge.yaml
+    readOnly: true
+    description: >-
+      Present only while `status` is `PENDING_AUTHORIZATION`: the Strong
+      Customer Authentication challenge to satisfy before this transaction can
+      proceed. Omitted entirely for customers whose provider does not require
+      SCA.

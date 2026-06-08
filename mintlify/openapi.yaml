@@ -23,6 +23,8 @@ tags:
     description: Customer management endpoints for creating and updating customer information
   - name: Contact Verification
     description: Endpoints for verifying a customer's email and phone via one-time codes. Required only for customers whose payment provider mandates contact verification (e.g. EU customers); other providers return 409.
+  - name: Strong Customer Authentication
+    description: Endpoints for authorizing money-movement operations that require Strong Customer Authentication. Relevant only for customers whose payment provider mandates SCA (e.g. EU customers); other providers never surface an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: Endpoints for Know Your Customer (KYC) and Know Your Business (KYB) verification, including managing beneficial owners and triggering verification for customers.
   - name: Documents
@@ -2736,6 +2738,13 @@ paths:
                 exchangeRate: 0.92
                 feesIncluded: 10
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        '202':
+          description: |
+            Quote created but awaiting Strong Customer Authentication. Returned only for customers whose provider requires SCA (e.g. EU) on a realtime-funding source: the quote has status `PENDING_AUTHORIZATION` and carries an `scaChallenge`, and `paymentInstructions` are **withheld** until the challenge is authorized via `POST /quotes/{quoteId}/authorize`. Once authorized, the quote's `paymentInstructions` are populated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -2818,11 +2827,18 @@ paths:
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteQuoteRequest'
       responses:
         '200':
           description: |
-            Quote confirmed successfully. The transfer has been initiated and
-            the quote status has been updated.
+            Quote confirmed successfully. The transfer has been initiated and the quote status has been updated.
+
+            For customers whose provider requires Strong Customer Authentication (e.g. EU), the quote may instead come back with status `PENDING_AUTHORIZATION` and an `scaChallenge` that must be authorized — inline via `scaAuthorization`, or by calling `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` — before the transfer is released.
           content:
             application/json:
               schema:
@@ -2847,6 +2863,79 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: Conflict - Quote already confirmed, expired, or in invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/authorize:
+    parameters:
+      - name: quoteId
+        in: path
+        description: The unique identifier of the quote whose SCA challenge is being authorized.
+        required: true
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000006
+    post:
+      summary: Authorize a quote's SCA challenge
+      description: |
+        Satisfy the Strong Customer Authentication challenge carried by a quote in
+        `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
+
+        This is used for realtime-funding quotes: the quote is returned with an
+        `scaChallenge` and **without** `paymentInstructions`; once authorized, the
+        quote advances and its `paymentInstructions` are populated so the customer
+        can fund the transfer.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: authorizeQuote
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaAuthorization'
+      responses:
+        '200':
+          description: Challenge authorized; the updated quote is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: Invalid or expired authorization proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA, or the quote has no pending challenge to authorize.
           content:
             application/json:
               schema:
@@ -3189,6 +3278,81 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: Conflict - Payment is not in a pending state or has already been processed or timed out.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /transactions/{transactionId}/authorize:
+    parameters:
+      - name: transactionId
+        in: path
+        description: The unique identifier of the transaction whose SCA challenge is being authorized.
+        required: true
+        schema:
+          type: string
+        example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+    post:
+      summary: Authorize a transaction's SCA challenge
+      description: |
+        Satisfy the Strong Customer Authentication challenge carried by a
+        transaction in `PENDING_AUTHORIZATION` status by submitting an
+        `ScaAuthorization` proof. On success the transaction advances to
+        `PROCESSING` (or `COMPLETED`) and the underlying transfer is released.
+
+        Transactions enter `PENDING_AUTHORIZATION` from `execute` (embedded-wallet
+        quotes) and `transfer-out` when the customer's provider requires SCA. The
+        same authorization can be supplied inline on those calls via their optional
+        `scaAuthorization` field instead of calling this endpoint.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: authorizeTransaction
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaAuthorization'
+      responses:
+        '200':
+          description: Challenge authorized; the updated transaction is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionOneOf'
+        '400':
+          description: Invalid or expired authorization proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA, or the transaction has no pending challenge to authorize.
           content:
             application/json:
               schema:
@@ -16365,6 +16529,7 @@ components:
       enum:
         - CREATED
         - PENDING
+        - PENDING_AUTHORIZATION
         - PROCESSING
         - COMPLETED
         - REJECTED
@@ -16378,6 +16543,7 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers whose provider requires SCA (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
@@ -16455,6 +16621,57 @@ components:
         FULL_NAME: John Sender
         BIRTH_DATE: '1985-06-15'
         NATIONALITY: DE
+    ScaFactor:
+      type: string
+      enum:
+        - SMS_OTP
+        - TOTP
+        - PASSKEY
+      description: |
+        A Strong Customer Authentication factor.
+
+        | Factor | Description |
+        |--------|-------------|
+        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
+        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
+        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
+    ScaChallenge:
+      type: object
+      description: |-
+        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer's payment provider requires SCA** (e.g. EU customers on an e-money provider); for customers whose provider has no such requirement it is omitted entirely and no action is needed.
+
+        When present on a quote or transaction, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or `POST /transactions/{transactionId}/authorize`, or inline via the optional `scaAuthorization` field on the originating `execute` / `transfer-out` call.
+      required:
+        - id
+        - expiresAt
+        - factor
+        - availableFactors
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this challenge, supplied back when authorizing.
+          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
+        expiresAt:
+          type: string
+          format: date-time
+          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
+          example: '2025-10-03T12:05:00Z'
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
+        availableFactors:
+          type: array
+          description: The factors the customer may use to satisfy this challenge.
+          items:
+            $ref: '#/components/schemas/ScaFactor'
+          example:
+            - SMS_OTP
+        passkeyAssertionOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options, present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
     Transaction:
       type: object
       required:
@@ -16513,6 +16730,10 @@ components:
           example: 'Payment for invoice #1234'
         counterpartyInformation:
           $ref: '#/components/schemas/CounterpartyInformation'
+        scaChallenge:
+          $ref: '#/components/schemas/ScaChallenge'
+          readOnly: true
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this transaction can proceed. Omitted entirely for customers whose provider does not require SCA.'
     TransactionSourceType:
       type: string
       enum:
@@ -16928,6 +17149,22 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
+    ScaAuthorization:
+      type: object
+      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`).
+      properties:
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the challenge's `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
     TransferOutRequest:
       type: object
       required:
@@ -16945,6 +17182,9 @@ components:
           format: int64
           description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
           example: 12550
+        scaAuthorization:
+          $ref: '#/components/schemas/ScaAuthorization'
+          description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers whose provider requires SCA (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it on the first call to receive the transaction in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers whose provider does not require SCA.'
     CurrencyPreference:
       type: object
       required:
@@ -17204,11 +17444,12 @@ components:
           type: string
           enum:
             - PENDING
+            - PENDING_AUTHORIZATION
             - PROCESSING
             - COMPLETED
             - FAILED
             - EXPIRED
-          description: Current status of the quote
+          description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers whose provider requires Strong Customer Authentication (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
           example: PENDING
         createdAt:
           type: string
@@ -17283,6 +17524,10 @@ components:
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+        scaChallenge:
+          $ref: '#/components/schemas/ScaChallenge'
+          readOnly: true
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers whose provider does not require SCA.'
     QuoteLockSide:
       type: string
       enum:
@@ -17356,6 +17601,13 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    ExecuteQuoteRequest:
+      type: object
+      description: Optional body for executing a quote. Only needed to supply an inline Strong Customer Authentication proof; omit the body entirely for quotes that do not require SCA.
+      properties:
+        scaAuthorization:
+          $ref: '#/components/schemas/ScaAuthorization'
+          description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers whose provider requires SCA (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it to receive the quote in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers whose provider does not require SCA.'
     TransactionListResponse:
       type: object
       required:

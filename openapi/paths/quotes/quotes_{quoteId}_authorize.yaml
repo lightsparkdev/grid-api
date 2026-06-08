@@ -1,0 +1,74 @@
+parameters:
+  - name: quoteId
+    in: path
+    description: The unique identifier of the quote whose SCA challenge is being authorized.
+    required: true
+    schema:
+      type: string
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+post:
+  summary: Authorize a quote's SCA challenge
+  description: |
+    Satisfy the Strong Customer Authentication challenge carried by a quote in
+    `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
+
+    This is used for realtime-funding quotes: the quote is returned with an
+    `scaChallenge` and **without** `paymentInstructions`; once authorized, the
+    quote advances and its `paymentInstructions` are populated so the customer
+    can fund the transfer.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+
+    In sandbox, the SMS/TOTP code is always `123456`.
+  operationId: authorizeQuote
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/ScaAuthorization.yaml
+  responses:
+    '200':
+      description: Challenge authorized; the updated quote is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/quotes/Quote.yaml
+    '400':
+      description: Invalid or expired authorization proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Quote not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's payment provider does not require SCA, or the quote has
+        no pending challenge to authorize.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
