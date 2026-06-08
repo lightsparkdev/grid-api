@@ -6,6 +6,7 @@
 @use '@lightsparkdev/origin/src/tokens/typography';
 @use '@lightsparkdev/origin/src/tokens/effects';
 @use '@lightsparkdev/origin/src/tokens/reset';
+@use './fonts/sf-pro';
 
 /* Origin sets --font-family-sans/-mono to just "Suisse Intl" with NO fallback,
    and its @font-face uses font-display: swap. So any frame the webfont isn't
