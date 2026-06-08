@@ -13,16 +13,6 @@
   transform-origin: center center;
 }
 
-.scaledDraggable {
-  touch-action: none;
-  cursor: grab;
-  user-select: none;
-
-  &:active {
-    cursor: grabbing;
-  }
-}
-
 .frame {
   position: relative;
   width: var(--app-shell-width);
@@ -63,7 +53,7 @@
 
 /* Glass bends its *children*, not the canvas behind it. This is a copy of the
    stage backdrop; AppShell sets its left/top/width/height from live geometry so
-   it lines up with the real backdrop and tracks the phone while dragging. It is
+   it lines up with the real backdrop behind the phone. It is
    intentionally larger than the phone (bleeds past the silhouette) so the glass
    filter samples real pixels at the edge; the Glass component trims the output. */
 .shellBackdropDemo,

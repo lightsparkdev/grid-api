@@ -6,9 +6,9 @@ import styles from './DotGridCanvas.module.scss';
 
 interface DotGridCanvasProps {
   children?: ReactNode;
-  /** TEMP — glass refraction demo bg; remove when shell styling ships. */
+  /** Swag mode — WebGL stage with glass lens. Slop uses canvas DotGrid. */
   glassDemoBg?: boolean;
-  /** Lens tuning for the WebGL stage (swag mode). */
+  /** Lens tuning for the WebGL stage (swag only). */
   glassConfig?: GlassConfig;
 }
 
@@ -16,7 +16,7 @@ export function DotGridCanvas({ children, glassDemoBg, glassConfig }: DotGridCan
   return (
     <div className={glassDemoBg ? styles.canvasGlassDemo : styles.canvas}>
       {glassDemoBg ? (
-        <StageGL className={styles.gridLayer} lens={glassConfig} />
+        <StageGL className={styles.gridLayerSwag} lens={glassConfig} />
       ) : (
         <DotGrid className={styles.gridLayer} />
       )}

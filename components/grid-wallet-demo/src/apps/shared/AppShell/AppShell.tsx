@@ -3,7 +3,6 @@
 import { useRef, useState, type CSSProperties } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
-import { usePhoneDrag } from './usePhoneDrag';
 import {
   APP_SHELL_OUTER_HEIGHT,
   APP_SHELL_OUTER_WIDTH,
@@ -15,8 +14,6 @@ import styles from './AppShell.module.scss';
 interface AppShellProps {
   glassConfig?: GlassConfig;
   showGlassOutline?: boolean;
-  /** Dev — drag phone over canvas bg to preview glass refraction. */
-  draggable?: boolean;
   /** Mirrors DotGridCanvas — glass refracts its *children*, not the canvas behind. */
   glassDemoBg?: boolean;
   /** Refraction handled by the external WebGL stage (StageGL); render only a
@@ -35,13 +32,11 @@ interface AppShellProps {
 export function AppShell({
   glassConfig = PHONE_SHELL_GLASS,
   showGlassOutline = false,
-  draggable = false,
   glassDemoBg = false,
   externalGlass = false,
   bezelOverlay = null,
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
-  const { offset, dragHandlers } = usePhoneDrag(draggable);
 
   // Hover "bloom": the glass shell grows GROW px outward (bezel 16 -> 16+GROW) while
   // the inner screen stays put. Radius grows additively (not scaled) so the corners
@@ -94,9 +89,9 @@ export function AppShell({
   // The glass bends its *children*, never the real page behind it (that's the
   // Aave technique — backdrop-filter is Chromium-only). So we drop a copy of the
   // stage backdrop *inside* the glass, positioned to coincide with the real
-  // backdrop so the bezel refracts exactly what's behind the phone, and tracks
-  // it while dragging. Geometry is expressed in the glass's local space; the
-  // .scaled transform maps it back onto the stage 1:1.
+  // backdrop so the bezel refracts exactly what's behind the phone. Geometry is
+  // expressed in the glass's local space; the .scaled transform maps it back
+  // onto the stage 1:1.
   const s = scale || 1;
   let backdropStyle: CSSProperties = {
     left: 0,
@@ -105,8 +100,8 @@ export function AppShell({
     height: APP_SHELL_OUTER_HEIGHT,
   };
   if (size.w > 0 && size.h > 0) {
-    const glassLeft = size.w / 2 + offset.x - (APP_SHELL_OUTER_WIDTH * s) / 2;
-    const glassTop = size.h / 2 + offset.y - (APP_SHELL_OUTER_HEIGHT * s) / 2;
+    const glassLeft = size.w / 2 - (APP_SHELL_OUTER_WIDTH * s) / 2;
+    const glassTop = size.h / 2 - (APP_SHELL_OUTER_HEIGHT * s) / 2;
     backdropStyle = {
       left: -glassLeft / s,
       top: -glassTop / s,
@@ -118,11 +113,8 @@ export function AppShell({
   return (
     <div className={styles.stage} ref={wrapRef}>
       <div
-        className={`${styles.scaled} ${draggable ? styles.scaledDraggable : ''}`}
-        style={{
-          transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${scale})`,
-        }}
-        {...dragHandlers}
+        className={styles.scaled}
+        style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
       >
         <div
           className={styles.frame}

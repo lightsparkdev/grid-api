@@ -10,8 +10,8 @@ import { observeTheme, readDotGridPalette } from '@/lib/dotGridColors';
  * time — adapted for the phone backdrop (screen-space, tap to ripple; the
  * pan/zoom transform and intro-reveal from the original aren't needed here).
  *
- * Rendered on its own canvas so the glass shader can later sample it as a
- * texture (the article's pattern for refracting animated, non-DOM content).
+ * Slop-mode backdrop only — swag ships on StageGL. Keep this for screen
+ * design previews, not for new visual/interaction work.
  */
 
 // Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.

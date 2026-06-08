@@ -36,7 +36,6 @@ export function AppPanel(props: AppPanelProps) {
                 {...phoneProps}
                 glassConfig={glassConfig}
                 showGlassOutline={showGlassOutline}
-                draggable={dev.enabled}
                 glassDemoBg
                 externalGlass
                 bezelOverlay={

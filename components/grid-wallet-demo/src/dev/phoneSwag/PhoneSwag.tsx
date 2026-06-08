@@ -7,7 +7,6 @@ import { AppShell } from '@/apps/shared/AppShell';
 interface PhoneSwagProps extends PhoneProps {
   glassConfig?: GlassConfig;
   showGlassOutline?: boolean;
-  draggable?: boolean;
   glassDemoBg?: boolean;
   externalGlass?: boolean;
   bezelOverlay?: { src: string; opacity: number } | null;
@@ -17,7 +16,6 @@ interface PhoneSwagProps extends PhoneProps {
 export function PhoneSwag({
   glassConfig,
   showGlassOutline,
-  draggable,
   glassDemoBg,
   externalGlass,
   bezelOverlay,
@@ -26,7 +24,6 @@ export function PhoneSwag({
     <AppShell
       glassConfig={glassConfig}
       showGlassOutline={showGlassOutline}
-      draggable={draggable}
       glassDemoBg={glassDemoBg}
       externalGlass={externalGlass}
       bezelOverlay={bezelOverlay}
