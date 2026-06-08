@@ -1,0 +1,44 @@
+/* Suisse Intl metric overrides.
+
+   @lightsparkdev/origin (src/tokens/_fonts.scss) declares these faces with
+   ascent-override: 81% / descent-override: 19%. We re-declare the same faces
+   (identical family + weight + style + src) so the later rule wins the cascade,
+   bumping them to the Mintlify docs' 85% / 15% so glyphs sit at the same height
+   in the line box across the docs and the demo.
+
+   Must be @use'd AFTER the origin fonts import in globals.scss. Same src URLs as
+   origin, so the browser reuses the already-loaded woff2 (no extra download).
+   Mono is intentionally left untouched, matching origin and the docs. */
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/SuisseIntl-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/SuisseIntl-Book.woff2') format('woff2');
+  font-weight: 450;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/SuisseIntl-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}

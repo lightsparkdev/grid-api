@@ -3,6 +3,7 @@
 
 @use '@lightsparkdev/origin/src/tokens/variables';
 @use '@lightsparkdev/origin/src/tokens/fonts';
+@use './fonts/suisse-intl'; // overrides origin's Suisse Intl ascent/descent (81/19 → 85/15); must follow origin fonts
 @use '@lightsparkdev/origin/src/tokens/typography';
 @use '@lightsparkdev/origin/src/tokens/effects';
 @use '@lightsparkdev/origin/src/tokens/reset';
