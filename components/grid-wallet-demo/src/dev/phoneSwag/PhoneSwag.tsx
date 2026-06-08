@@ -3,6 +3,7 @@
 import type { PhoneProps } from '@/components/Phone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { AppShell } from '@/apps/shared/AppShell';
+import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 
 interface PhoneSwagProps extends PhoneProps {
   glassConfig?: GlassConfig;
@@ -12,14 +13,27 @@ interface PhoneSwagProps extends PhoneProps {
   bezelOverlay?: { src: string; opacity: number } | null;
 }
 
-/** Swag phone — empty shell until per-use-case screens land. */
+function SwagScreen(props: PhoneProps) {
+  if (props.persona === 'fintech' && props.phone.screen === 'auth') {
+    return <AuroraBackground />;
+  }
+
+  return null;
+}
+
+/** Swag phone — per-use-case screens inside the glass shell. */
 export function PhoneSwag({
   glassConfig,
   showGlassOutline,
   glassDemoBg,
   externalGlass,
   bezelOverlay,
+  ...phoneProps
 }: PhoneSwagProps) {
+  const screen = SwagScreen(phoneProps);
+  const screenTone =
+    phoneProps.persona === 'fintech' && phoneProps.phone.screen === 'auth' ? 'light' : 'default';
+
   return (
     <AppShell
       glassConfig={glassConfig}
@@ -27,6 +41,9 @@ export function PhoneSwag({
       glassDemoBg={glassDemoBg}
       externalGlass={externalGlass}
       bezelOverlay={bezelOverlay}
-    />
+      screenTone={screenTone}
+    >
+      {screen}
+    </AppShell>
   );
 }

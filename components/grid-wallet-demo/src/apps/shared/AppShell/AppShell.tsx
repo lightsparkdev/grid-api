@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import {
@@ -23,6 +23,10 @@ interface AppShellProps {
    *  corner by eye while tuning. Lives in the phone's scaled space so it tracks
    *  the fit transform. */
   bezelOverlay?: { src: string; opacity: number } | null;
+  /** Screen content below the status bar. */
+  children?: ReactNode;
+  /** Light status bar icons/time on dark or colored backgrounds. */
+  screenTone?: 'default' | 'light';
 }
 
 /**
@@ -35,6 +39,8 @@ export function AppShell({
   glassDemoBg = false,
   externalGlass = false,
   bezelOverlay = null,
+  children,
+  screenTone = 'default',
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
 
@@ -208,7 +214,7 @@ export function AppShell({
             </Glass>
           )}
           <div
-            className={styles.screen}
+            className={`${styles.screen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
             style={
               externalGlass
                 ? {
@@ -225,6 +231,7 @@ export function AppShell({
             }
           >
             <PhoneStatusBar />
+            {children ? <div className={styles.screenBody}>{children}</div> : null}
           </div>
         </div>
         {bezelOverlay && (

@@ -109,3 +109,21 @@
     --ios-screen-bg: #000000;
   }
 }
+
+.screenToneLight {
+  --ios-label-primary: #ffffff;
+  --ios-screen-bg: #0083c3;
+
+  :global([data-theme='dark']) & {
+    --ios-screen-bg: #011829;
+  }
+}
+
+.screenBody {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}

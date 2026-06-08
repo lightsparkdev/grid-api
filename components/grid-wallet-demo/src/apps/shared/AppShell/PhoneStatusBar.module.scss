@@ -2,6 +2,8 @@
    Self-contained: resets Origin/Suisse inheritance (salt, tracking, tabular nums). */
 
 .statusBar {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-shrink: 0;
   align-items: center;
