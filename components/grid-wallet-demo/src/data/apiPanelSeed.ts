@@ -2,7 +2,7 @@ import type { Entry } from '@/components/ApiPanel/types';
 import { addMoneyCalls, sendCalls, signInCalls } from './apiCalls';
 
 /** Flip false (or delete this file) when API panel styling is done. */
-export const SEED_API_PANEL = true;
+export const SEED_API_PANEL = false;
 
 export function seedApiEntries(): Entry[] {
   const calls = [

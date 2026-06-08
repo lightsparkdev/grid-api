@@ -5,3 +5,4 @@ export type PhoneUiVariant = 'slop' | 'swag';
 
 export const STORAGE_FIXTURE = 'wallet-demo.dev.fixture';
 export const STORAGE_UI_VARIANT = 'wallet-demo.dev.uiVariant';
+export const STORAGE_DEV_PANEL_EXPANDED = 'wallet-demo.dev.panelExpanded';
