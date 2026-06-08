@@ -1,0 +1,76 @@
+/* iOS status bar — Figma phone-gga (2143:19945).
+   Self-contained: resets Origin/Suisse inheritance (salt, tracking, tabular nums). */
+
+.statusBar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 154px;
+  width: 100%;
+  padding: 21px 24px 19px;
+  color: var(--ios-label-primary);
+  font-feature-settings: normal;
+  letter-spacing: 0;
+}
+
+.timeSlot {
+  display: flex;
+  flex: 1 0 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 22px;
+  padding-top: 1.5px;
+}
+
+.time {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  line-height: 22px;
+  font-synthesis: none;
+  font-kerning: normal;
+  font-feature-settings: normal;
+  font-variant-numeric: normal;
+  font-variant-ligatures: normal;
+  letter-spacing: 0;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' 17;
+  color: inherit;
+  white-space: nowrap;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.levelsSlot {
+  display: flex;
+  flex: 1 0 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  height: 22px;
+  padding-top: 1px;
+  padding-right: 1px;
+}
+
+.signalIcon {
+  flex-shrink: 0;
+  width: 19.2px;
+  height: 12.226px;
+}
+
+.wifiIcon {
+  flex-shrink: 0;
+  width: 17.142px;
+  height: 12.328px;
+}
+
+.batteryIcon {
+  flex-shrink: 0;
+  width: 27.328px;
+  height: 13px;
+}

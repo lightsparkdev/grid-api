@@ -95,11 +95,27 @@
   top: var(--app-shell-padding);
   left: var(--app-shell-padding);
   z-index: 2;
+  display: flex;
+  flex-direction: column;
   width: var(--app-screen-width);
   height: var(--app-screen-height);
   border-radius: var(--corner-radius-phone-screen);
   corner-shape: var(--corner-shape);
-  background: #f9f9f9;
+  background: var(--ios-screen-bg);
   overflow: hidden;
   pointer-events: none;
+  /* Isolate swag phone UI from demo chrome (Origin salt/tracking on :root). */
+  font-family: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: normal;
+  font-weight: 400;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --ios-label-primary: #000000;
+  --ios-screen-bg: #ffffff;
+
+  :global([data-theme='dark']) & {
+    --ios-label-primary: #ffffff;
+    --ios-screen-bg: #000000;
+  }
 }

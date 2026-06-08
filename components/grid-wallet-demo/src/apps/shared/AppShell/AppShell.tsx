@@ -9,6 +9,7 @@ import {
   APP_SHELL_OUTER_WIDTH,
   usePhoneFitScale,
 } from './usePhoneFitScale';
+import { PhoneStatusBar } from './PhoneStatusBar';
 import styles from './AppShell.module.scss';
 
 interface AppShellProps {
@@ -208,7 +209,9 @@ export function AppShell({
                   }
                 : undefined
             }
-          />
+          >
+            <PhoneStatusBar />
+          </div>
         </div>
         {bezelOverlay && (
           <img
