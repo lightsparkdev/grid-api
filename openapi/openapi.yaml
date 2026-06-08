@@ -23,6 +23,12 @@ tags:
       Endpoints for verifying a customer's email and phone via one-time codes.
       Required only for customers whose payment provider mandates contact
       verification (e.g. EU customers); other providers return 409.
+  - name: Strong Customer Authentication
+    description: >-
+      Endpoints for authorizing money-movement operations that require Strong
+      Customer Authentication. Relevant only for customers whose payment
+      provider mandates SCA (e.g. EU customers); other providers never surface
+      an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: >-
       Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)
@@ -187,6 +193,8 @@ paths:
     $ref: paths/quotes/quotes.yaml
   /quotes/{quoteId}/execute:
     $ref: paths/quotes/quotes_{quoteId}_execute.yaml
+  /quotes/{quoteId}/authorize:
+    $ref: paths/quotes/quotes_{quoteId}_authorize.yaml
   /transactions:
     $ref: paths/transactions/transactions.yaml
   /transactions/{transactionId}:
@@ -197,6 +205,8 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_approve.yaml
   /transactions/{transactionId}/reject:
     $ref: paths/transactions/transactions_{transactionId}_reject.yaml
+  /transactions/{transactionId}/authorize:
+    $ref: paths/transactions/transactions_{transactionId}_authorize.yaml
   /crypto/estimate-withdrawal-fee:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:

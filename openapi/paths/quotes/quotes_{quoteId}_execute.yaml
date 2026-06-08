@@ -50,12 +50,25 @@ post:
       schema:
         type: string
       example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/quotes/ExecuteQuoteRequest.yaml
   responses:
     '200':
       description: >
-        Quote confirmed successfully. The transfer has been initiated and
+        Quote confirmed successfully. The transfer has been initiated and the
+        quote status has been updated.
 
-        the quote status has been updated.
+
+        For customers whose provider requires Strong Customer Authentication
+        (e.g. EU), the quote may instead come back with status
+        `PENDING_AUTHORIZATION` and an `scaChallenge` that must be authorized —
+        inline via `scaAuthorization`, or by calling
+        `POST /transactions/{transactionId}/authorize` for the quote's
+        `transactionId` — before the transfer is released.
       content:
         application/json:
           schema:

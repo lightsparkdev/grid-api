@@ -26,3 +26,12 @@ properties:
       remittanceInformation field, and for wires it populates the OBI
       (Originator to Beneficiary Information) / beneficiary information.
     example: '12345'
+  scaAuthorization:
+    $ref: ../sca/ScaAuthorization.yaml
+    description: >-
+      Optional inline Strong Customer Authentication proof. Only relevant for
+      customers whose provider requires SCA (e.g. EU): supply this to satisfy
+      the challenge in the same call once the customer has the code/assertion.
+      Omit it on the first call to receive the transaction in
+      `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately.
+      Ignored for customers whose provider does not require SCA.
