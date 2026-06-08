@@ -1,0 +1,70 @@
+/* iOS HIG semantic colors — Figma UI Kit naming. @include on .screen only. */
+
+@mixin tokens {
+  /* Labels */
+  --ios-label-primary: #000000;
+  --ios-label-secondary: rgba(60, 60, 67, 0.6);
+  --ios-label-tertiary: rgba(60, 60, 67, 0.3);
+  --ios-label-quaternary: rgba(60, 60, 67, 0.18);
+
+  /* Fills */
+  --ios-fill-primary: rgba(120, 120, 128, 0.2);
+  --ios-fill-secondary: rgba(120, 120, 128, 0.16);
+  --ios-fill-tertiary: rgba(118, 118, 128, 0.12);
+  --ios-fill-quaternary: rgba(116, 116, 128, 0.08);
+
+  /* Backgrounds */
+  --ios-bg-primary: #ffffff;
+  --ios-bg-secondary: #f2f2f7;
+  --ios-bg-tertiary: #ffffff;
+  --ios-bg-grouped-primary: #f2f2f7;
+  --ios-bg-grouped-secondary: #ffffff;
+  --ios-bg-grouped-tertiary: #f2f2f7;
+
+  /* Separators */
+  --ios-separator: rgba(60, 60, 67, 0.29);
+  --ios-separator-opaque: #c6c6c8;
+
+  /* Tints / system colors */
+  --ios-tint: #007aff;
+  --ios-system-green: #34c759;
+  --ios-system-red: #ff3b30;
+  --ios-system-orange: #ff9500;
+  --ios-system-yellow: #ffcc00;
+  --ios-system-pink: #ff2d55;
+  --ios-system-purple: #af52de;
+  --ios-system-teal: #5ac8fa;
+  --ios-system-indigo: #5856d6;
+
+  :global([data-theme='dark']) & {
+    --ios-label-primary: #ffffff;
+    --ios-label-secondary: rgba(235, 235, 245, 0.6);
+    --ios-label-tertiary: rgba(235, 235, 245, 0.3);
+    --ios-label-quaternary: rgba(235, 235, 245, 0.18);
+
+    --ios-fill-primary: rgba(120, 120, 128, 0.36);
+    --ios-fill-secondary: rgba(120, 120, 128, 0.32);
+    --ios-fill-tertiary: rgba(118, 118, 128, 0.24);
+    --ios-fill-quaternary: rgba(116, 116, 128, 0.18);
+
+    --ios-bg-primary: #000000;
+    --ios-bg-secondary: #1c1c1e;
+    --ios-bg-tertiary: #2c2c2e;
+    --ios-bg-grouped-primary: #000000;
+    --ios-bg-grouped-secondary: #1c1c1e;
+    --ios-bg-grouped-tertiary: #2c2c2e;
+
+    --ios-separator: rgba(84, 84, 88, 0.65);
+    --ios-separator-opaque: #38383a;
+
+    --ios-tint: #0a84ff;
+    --ios-system-green: #30d158;
+    --ios-system-red: #ff453a;
+    --ios-system-orange: #ff9f0a;
+    --ios-system-yellow: #ffd60a;
+    --ios-system-pink: #ff375f;
+    --ios-system-purple: #bf5af2;
+    --ios-system-teal: #64d2ff;
+    --ios-system-indigo: #5e5ce6;
+  }
+}

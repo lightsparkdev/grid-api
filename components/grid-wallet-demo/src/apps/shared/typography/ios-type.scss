@@ -1,0 +1,60 @@
+/* iOS Dynamic Type — default (Large) metrics from Apple HIG.
+   Font-agnostic: set --ios-font-family on the skin / .screen.
+   Import from globals only; CSS modules should @use ios-type-mixins. */
+
+:root {
+  --ios-type-large-title-size: 34px;
+  --ios-type-large-title-line: 41px;
+  --ios-type-large-title-weight: 400;
+  --ios-type-large-title-opsz: 28;
+
+  --ios-type-title-1-size: 28px;
+  --ios-type-title-1-line: 34px;
+  --ios-type-title-1-weight: 400;
+  --ios-type-title-1-opsz: 28;
+
+  --ios-type-title-2-size: 22px;
+  --ios-type-title-2-line: 28px;
+  --ios-type-title-2-weight: 400;
+  --ios-type-title-2-opsz: 22;
+
+  --ios-type-title-3-size: 20px;
+  --ios-type-title-3-line: 25px;
+  --ios-type-title-3-weight: 400;
+  --ios-type-title-3-opsz: 20;
+
+  --ios-type-headline-size: 17px;
+  --ios-type-headline-line: 22px;
+  --ios-type-headline-weight: 600;
+  --ios-type-headline-opsz: 17;
+
+  --ios-type-body-size: 17px;
+  --ios-type-body-line: 22px;
+  --ios-type-body-weight: 400;
+  --ios-type-body-opsz: 17;
+
+  --ios-type-callout-size: 16px;
+  --ios-type-callout-line: 21px;
+  --ios-type-callout-weight: 400;
+  --ios-type-callout-opsz: 17;
+
+  --ios-type-subheadline-size: 15px;
+  --ios-type-subheadline-line: 20px;
+  --ios-type-subheadline-weight: 400;
+  --ios-type-subheadline-opsz: 17;
+
+  --ios-type-footnote-size: 13px;
+  --ios-type-footnote-line: 18px;
+  --ios-type-footnote-weight: 400;
+  --ios-type-footnote-opsz: 17;
+
+  --ios-type-caption-1-size: 12px;
+  --ios-type-caption-1-line: 16px;
+  --ios-type-caption-1-weight: 400;
+  --ios-type-caption-1-opsz: 17;
+
+  --ios-type-caption-2-size: 11px;
+  --ios-type-caption-2-line: 13px;
+  --ios-type-caption-2-weight: 400;
+  --ios-type-caption-2-opsz: 17;
+}

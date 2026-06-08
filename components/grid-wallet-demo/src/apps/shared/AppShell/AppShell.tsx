@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
+import type { AppSkinId } from '@/apps/skins';
 import {
   APP_SHELL_OUTER_HEIGHT,
   APP_SHELL_OUTER_WIDTH,
@@ -27,6 +28,8 @@ interface AppShellProps {
   children?: ReactNode;
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
+  /** App skin — drives data-app, font family, and per-app tokens. */
+  appSkin?: AppSkinId;
 }
 
 /**
@@ -41,6 +44,7 @@ export function AppShell({
   bezelOverlay = null,
   children,
   screenTone = 'default',
+  appSkin = 'aurora',
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
 
@@ -215,6 +219,7 @@ export function AppShell({
           )}
           <div
             className={`${styles.screen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
+            data-app={appSkin}
             style={
               externalGlass
                 ? {

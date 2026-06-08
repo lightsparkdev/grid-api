@@ -1,0 +1,7 @@
+/* Aurora (fintech) skin — override --app-* for brand; leave --ios-* for system UI. */
+@mixin tokens {
+  &[data-app='aurora'] {
+    --ios-font-family: var(--font-family-sf-pro);
+    --app-tint: #0083c3;
+  }
+}

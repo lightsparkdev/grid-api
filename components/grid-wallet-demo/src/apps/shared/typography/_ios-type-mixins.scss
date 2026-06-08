@@ -1,0 +1,114 @@
+/* iOS Dynamic Type mixins — safe to @use from CSS modules (no :root). */
+
+@mixin ios-type-base {
+  font-family: var(--ios-font-family);
+  font-synthesis: none;
+  font-kerning: normal;
+  font-feature-settings: normal;
+  font-variant-numeric: normal;
+  font-variant-ligatures: normal;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@mixin ios-type-variation($weight, $opsz) {
+  font-variation-settings: 'wght' $weight, 'wdth' 100, 'opsz' $opsz;
+}
+
+@mixin ios-text-large-title {
+  @include ios-type-base;
+  font-size: var(--ios-type-large-title-size);
+  line-height: var(--ios-type-large-title-line);
+  font-weight: var(--ios-type-large-title-weight);
+  @include ios-type-variation(var(--ios-type-large-title-weight), var(--ios-type-large-title-opsz));
+}
+
+@mixin ios-text-title-1 {
+  @include ios-type-base;
+  font-size: var(--ios-type-title-1-size);
+  line-height: var(--ios-type-title-1-line);
+  font-weight: var(--ios-type-title-1-weight);
+  @include ios-type-variation(var(--ios-type-title-1-weight), var(--ios-type-title-1-opsz));
+}
+
+@mixin ios-text-title-2 {
+  @include ios-type-base;
+  font-size: var(--ios-type-title-2-size);
+  line-height: var(--ios-type-title-2-line);
+  font-weight: var(--ios-type-title-2-weight);
+  @include ios-type-variation(var(--ios-type-title-2-weight), var(--ios-type-title-2-opsz));
+}
+
+@mixin ios-text-title-3 {
+  @include ios-type-base;
+  font-size: var(--ios-type-title-3-size);
+  line-height: var(--ios-type-title-3-line);
+  font-weight: var(--ios-type-title-3-weight);
+  @include ios-type-variation(var(--ios-type-title-3-weight), var(--ios-type-title-3-opsz));
+}
+
+@mixin ios-text-headline {
+  @include ios-type-base;
+  font-size: var(--ios-type-headline-size);
+  line-height: var(--ios-type-headline-line);
+  font-weight: var(--ios-type-headline-weight);
+  @include ios-type-variation(var(--ios-type-headline-weight), var(--ios-type-headline-opsz));
+}
+
+@mixin ios-text-body {
+  @include ios-type-base;
+  font-size: var(--ios-type-body-size);
+  line-height: var(--ios-type-body-line);
+  font-weight: var(--ios-type-body-weight);
+  @include ios-type-variation(var(--ios-type-body-weight), var(--ios-type-body-opsz));
+}
+
+@mixin ios-text-callout {
+  @include ios-type-base;
+  font-size: var(--ios-type-callout-size);
+  line-height: var(--ios-type-callout-line);
+  font-weight: var(--ios-type-callout-weight);
+  @include ios-type-variation(var(--ios-type-callout-weight), var(--ios-type-callout-opsz));
+}
+
+@mixin ios-text-subheadline {
+  @include ios-type-base;
+  font-size: var(--ios-type-subheadline-size);
+  line-height: var(--ios-type-subheadline-line);
+  font-weight: var(--ios-type-subheadline-weight);
+  @include ios-type-variation(var(--ios-type-subheadline-weight), var(--ios-type-subheadline-opsz));
+}
+
+@mixin ios-text-footnote {
+  @include ios-type-base;
+  font-size: var(--ios-type-footnote-size);
+  line-height: var(--ios-type-footnote-line);
+  font-weight: var(--ios-type-footnote-weight);
+  @include ios-type-variation(var(--ios-type-footnote-weight), var(--ios-type-footnote-opsz));
+}
+
+@mixin ios-text-caption-1 {
+  @include ios-type-base;
+  font-size: var(--ios-type-caption-1-size);
+  line-height: var(--ios-type-caption-1-line);
+  font-weight: var(--ios-type-caption-1-weight);
+  @include ios-type-variation(var(--ios-type-caption-1-weight), var(--ios-type-caption-1-opsz));
+}
+
+@mixin ios-text-caption-2 {
+  @include ios-type-base;
+  font-size: var(--ios-type-caption-2-size);
+  line-height: var(--ios-type-caption-2-line);
+  font-weight: var(--ios-type-caption-2-weight);
+  @include ios-type-variation(var(--ios-type-caption-2-weight), var(--ios-type-caption-2-opsz));
+}
+
+/* Status bar time — Figma semibold 590 at 17/22 (between Body and Headline). */
+@mixin ios-text-status-time {
+  @include ios-type-base;
+  font-size: var(--ios-type-headline-size);
+  line-height: var(--ios-type-headline-line);
+  font-weight: 590;
+  @include ios-type-variation(590, var(--ios-type-headline-opsz));
+}

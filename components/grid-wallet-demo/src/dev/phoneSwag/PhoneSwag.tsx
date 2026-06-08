@@ -4,6 +4,7 @@ import type { PhoneProps } from '@/components/Phone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { AppShell } from '@/apps/shared/AppShell';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
+import { getAppSkin, type AppSkin } from '@/apps/skins';
 
 interface PhoneSwagProps extends PhoneProps {
   glassConfig?: GlassConfig;
@@ -13,8 +14,8 @@ interface PhoneSwagProps extends PhoneProps {
   bezelOverlay?: { src: string; opacity: number } | null;
 }
 
-function SwagScreen(props: PhoneProps) {
-  if (props.persona === 'fintech' && props.phone.screen === 'auth') {
+function SwagScreen(props: PhoneProps, skin: AppSkin) {
+  if (skin.id === 'aurora' && props.phone.screen === 'auth') {
     return <AuroraBackground />;
   }
 
@@ -30,9 +31,12 @@ export function PhoneSwag({
   bezelOverlay,
   ...phoneProps
 }: PhoneSwagProps) {
-  const screen = SwagScreen(phoneProps);
+  const skin = getAppSkin(phoneProps.persona);
+  const screen = SwagScreen(phoneProps, skin);
   const screenTone =
-    phoneProps.persona === 'fintech' && phoneProps.phone.screen === 'auth' ? 'light' : 'default';
+    phoneProps.phone.screen === 'auth' && skin.authScreenTone
+      ? skin.authScreenTone
+      : 'default';
 
   return (
     <AppShell
@@ -42,6 +46,7 @@ export function PhoneSwag({
       externalGlass={externalGlass}
       bezelOverlay={bezelOverlay}
       screenTone={screenTone}
+      appSkin={skin.id}
     >
       {screen}
     </AppShell>

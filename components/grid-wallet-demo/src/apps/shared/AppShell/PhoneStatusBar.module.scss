@@ -1,6 +1,8 @@
 /* iOS status bar — Figma phone-gga (2143:19945).
    Self-contained: resets Origin/Suisse inheritance (salt, tracking, tabular nums). */
 
+@use '../typography/ios-type-mixins' as ios;
+
 .statusBar {
   position: relative;
   z-index: 2;
@@ -30,21 +32,10 @@
   margin: 0;
   padding: 0;
   border: 0;
-  font-family: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 17px;
-  line-height: 22px;
-  font-synthesis: none;
-  font-kerning: normal;
-  font-feature-settings: normal;
-  font-variant-numeric: normal;
-  font-variant-ligatures: normal;
-  letter-spacing: 0;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' 17;
+  @include ios.ios-text-status-time;
   color: inherit;
   white-space: nowrap;
   text-align: center;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .levelsSlot {
