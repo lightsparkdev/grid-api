@@ -79,10 +79,6 @@ export function PhoneSwag({
 }: PhoneSwagProps) {
   const skin = getAppSkin(phoneProps.persona);
   const screen = SwagScreen(phoneProps, skin);
-  const statusBarTone =
-    phoneProps.phone.screen === 'auth' && skin.authStatusBarTone
-      ? skin.authStatusBarTone
-      : 'default';
 
   return (
     <AppShell
@@ -91,7 +87,6 @@ export function PhoneSwag({
       glassDemoBg={glassDemoBg}
       externalGlass={externalGlass}
       bezelOverlay={bezelOverlay}
-      statusBarTone={statusBarTone}
       appSkin={skin.id}
     >
       {screen}

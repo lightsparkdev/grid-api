@@ -13,9 +13,12 @@
   gap: 154px;
   width: 100%;
   padding: 21px 24px 19px;
-  color: var(--ios-label-primary);
+  /* Explicit black — don't use --ios-label-primary; it flips white under [data-theme='dark']. */
+  color: #000000;
   font-feature-settings: normal;
   letter-spacing: 0;
+  pointer-events: none;
+  transition: color 0.2s ease;
 }
 
 .statusBarLight {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useAdaptiveStatusBarTone } from './useAdaptiveStatusBarTone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import type { AppSkinId } from '@/apps/skins';
@@ -28,8 +29,6 @@ interface AppShellProps {
   children?: ReactNode;
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
-  /** Status bar only — use when hero is colored but content area stays light. */
-  statusBarTone?: 'default' | 'light';
   /** App skin — drives data-app, font family, and per-app tokens. */
   appSkin?: AppSkinId;
 }
@@ -46,10 +45,12 @@ export function AppShell({
   bezelOverlay = null,
   children,
   screenTone = 'default',
-  statusBarTone = 'default',
   appSkin = 'aurora',
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
+  const screenRef = useRef<HTMLDivElement>(null);
+  const statusBarRef = useRef<HTMLElement>(null);
+  const statusBarTone = useAdaptiveStatusBarTone(screenRef, statusBarRef);
 
   // Hover "bloom": the glass shell grows GROW px outward (bezel 16 -> 16+GROW) while
   // the inner screen stays put. Radius grows additively (not scaled) so the corners
@@ -221,6 +222,7 @@ export function AppShell({
             </Glass>
           )}
           <div
+            ref={screenRef}
             className={`${styles.screen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
             data-app={appSkin}
             style={
@@ -238,7 +240,7 @@ export function AppShell({
                 : undefined
             }
           >
-            <PhoneStatusBar tone={statusBarTone} />
+            <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
             {children ? <div className={styles.screenBody}>{children}</div> : null}
           </div>
         </div>

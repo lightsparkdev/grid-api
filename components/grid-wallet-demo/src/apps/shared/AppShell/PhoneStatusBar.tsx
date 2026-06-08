@@ -1,16 +1,28 @@
+'use client';
+
+import { forwardRef } from 'react';
 import clsx from 'clsx';
 import { BatteryIcon, SignalIcon, WifiIcon } from './StatusBarIcons';
 import { StatusBarTime } from './StatusBarTime';
+import type { StatusBarTone } from './useAdaptiveStatusBarTone';
 import styles from './PhoneStatusBar.module.scss';
 
 interface PhoneStatusBarProps {
-  tone?: 'default' | 'light';
+  tone?: StatusBarTone;
 }
 
 /** iOS status bar — Figma phone-gga (2143:19945). */
-export function PhoneStatusBar({ tone = 'default' }: PhoneStatusBarProps) {
+export const PhoneStatusBar = forwardRef<HTMLElement, PhoneStatusBarProps>(function PhoneStatusBar(
+  { tone = 'default' },
+  ref,
+) {
   return (
-    <div className={clsx(styles.statusBar, tone === 'light' && styles.statusBarLight)}>
+    <header
+      ref={ref}
+      className={clsx(styles.statusBar, tone === 'light' && styles.statusBarLight)}
+      data-status-bar
+      aria-hidden
+    >
       <div className={styles.timeSlot}>
         <StatusBarTime />
       </div>
@@ -19,6 +31,6 @@ export function PhoneStatusBar({ tone = 'default' }: PhoneStatusBarProps) {
         <WifiIcon className={styles.wifiIcon} />
         <BatteryIcon className={styles.batteryIcon} />
       </div>
-    </div>
+    </header>
   );
-}
+});
