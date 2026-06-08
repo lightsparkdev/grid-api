@@ -42,13 +42,14 @@
   width: 28px;
   height: 28px;
   background: var(--surface-secondary);
-  border: var(--stroke-xs) solid var(--border-primary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
   border-radius: var(--corner-radius-md);
   flex-shrink: 0;
 
   span {
     @include label;
     color: var(--text-primary);
+    text-align: center;
   }
 }
 
@@ -88,7 +89,7 @@
 .stepLine {
   width: var(--stroke-xs);
   height: 100%;
-  background: var(--border-primary);
+  background: var(--border-tertiary);
 }
 
 .stepCodeCol {
@@ -108,13 +109,13 @@
   flex-direction: column;
   width: 100%;
   background: var(--surface-base);
-  border: var(--stroke-xs) solid var(--border-primary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
   transition: border-color 200ms ease;
 
   :global([data-theme='dark']) & {
-    background: var(--surface-primary);
+    background: var(--color-gray-925);
   }
 }
 
@@ -138,7 +139,7 @@
   min-width: 0;
   padding: var(--endpoint-padding);
   background: inherit;
-  border-bottom: var(--stroke-xs) solid var(--border-primary);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
   overflow: hidden;
   cursor: pointer;
   text-align: left;
@@ -187,7 +188,7 @@
   background: linear-gradient(to right, transparent, var(--surface-base) 52%);
 
   :global([data-theme='dark']) & {
-    background: linear-gradient(to right, transparent, var(--surface-primary) 52%);
+    background: linear-gradient(to right, transparent, var(--color-gray-925) 52%);
   }
 }
 
@@ -212,7 +213,7 @@
   justify-content: space-between;
   gap: var(--spacing-sm);
   padding: var(--spacing-xs);
-  border-bottom: var(--stroke-xs) solid var(--border-primary);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
   min-width: 0;
 }
 
@@ -274,10 +275,10 @@
   transition: background 150ms ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--surface-base) 98%, black);
+    background: var(--color-alpha-black-04);
 
     :global([data-theme='dark']) & {
-      background: color-mix(in srgb, var(--surface-primary) 98%, white);
+      background: var(--color-alpha-white-06);
     }
   }
 

@@ -25,7 +25,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   overflow: visible;
 
   :global([data-theme='dark']) & {
-    background: var(--surface-primary);
+    background: var(--color-gray-925);
   }
 }
 
@@ -46,7 +46,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
-    background: var(--surface-primary);
+    background: var(--color-gray-925);
   }
 
   &:nth-child(odd) {
@@ -86,7 +86,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
     background: color-mix(in srgb, var(--surface-base) 98%, black);
 
     :global([data-theme='dark']) & {
-      background: color-mix(in srgb, var(--surface-primary) 98%, white);
+      background: var(--color-alpha-white-04);
     }
   }
 }
@@ -137,6 +137,10 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
     drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
     drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
+
+  :global([data-theme='dark']) & {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  }
 
   .card:not(:disabled):hover & {
     transform: scale(1.05);

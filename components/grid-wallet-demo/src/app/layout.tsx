@@ -9,8 +9,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#F0F0EE" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
         {/* Preload the visible Suisse Intl weights so the first paint shows the
             real font sooner (body=Book 450, headings/buttons=Medium 500,
             code=Mono). crossOrigin is required even though the fonts are

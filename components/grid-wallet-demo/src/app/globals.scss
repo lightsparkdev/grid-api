@@ -66,6 +66,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hover fills — match grid-visualizer / flow-builder. */
+:root {
+  --surface-hover: var(--color-alpha-black-04);
+  --phone-shell-shadow-opacity: 0.12;
+}
+
+[data-theme='dark'] {
+  --surface-hover: var(--color-alpha-white-06);
+  --phone-shell-shadow-opacity: 0.28;
+}
+
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it
    keeps its own iOS tokens (adapted from the keynote phone screens) rather than
    Origin. These flip with Origin's [data-theme]. */
@@ -77,9 +88,9 @@ body {
    [data-theme] flips, so the whole backdrop changes in lockstep (no stagger).
    `--dot-grid-dot` is the resting dot; `--dot-grid-dot-peak` is the ripple crest. */
 :root {
-  --dot-grid-bg: var(--color-gray-075);
-  --dot-grid-dot: #d9d9d9;
-  --dot-grid-dot-peak: #b0b0b0;
+  --dot-grid-bg: var(--surface-sunken);
+  --dot-grid-dot: #deded9;
+  --dot-grid-dot-peak: #b8b8b3;
 }
 
 :root {
@@ -103,7 +114,7 @@ body {
 }
 
 [data-theme='dark'] {
-  --dot-grid-bg: var(--color-gray-950);
+  --dot-grid-bg: var(--color-gray-925);
   --dot-grid-dot: #333330;
   --dot-grid-dot-peak: #4d4d47;
   --p-bg: #000000;

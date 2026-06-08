@@ -19,9 +19,9 @@ export interface DotGridPalette {
 
 const BLEND_COUNT = 16;
 
-const FALLBACK_BG = '#f4f4f3';
-const FALLBACK_DOT = '#d9d9d9';
-const FALLBACK_PEAK = '#b0b0b0';
+const FALLBACK_BG = '#f0f0ee';
+const FALLBACK_DOT = '#deded9';
+const FALLBACK_PEAK = '#b8b8b3';
 
 /**
  * Normalize any CSS color string (hex, rgb(), named, or a `var()`-resolved

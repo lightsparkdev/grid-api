@@ -11,7 +11,7 @@
   overflow: clip;
 
   :global([data-theme='dark']) & {
-    background: var(--surface-primary);
+    background: var(--color-gray-925);
   }
 }
 
@@ -30,7 +30,7 @@
   transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
-    background: var(--surface-primary);
+    background: var(--color-gray-925);
   }
 
   &:nth-child(odd) {
@@ -54,7 +54,7 @@
     background: color-mix(in srgb, var(--surface-base) 98%, black);
 
     :global([data-theme='dark']) & {
-      background: color-mix(in srgb, var(--surface-primary) 98%, white);
+      background: var(--color-alpha-white-04);
     }
   }
 }

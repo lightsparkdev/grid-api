@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import {
@@ -79,6 +79,28 @@ export function AppShell({
   // browser, and leaves the bezel transparent so the lens still shows through.
   // Tunable via the Shadow sliders (offset / blur / spread / opacity).
   const shadowId = useRef(`phsh-${Math.random().toString(36).slice(2)}`).current;
+  const [shadowOpacity, setShadowOpacity] = useState(
+    glassConfig.shadowOpacity ?? 0.12,
+  );
+
+  useEffect(() => {
+    const read = () => {
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue('--phone-shell-shadow-opacity')
+        .trim();
+      const themed = raw ? Number.parseFloat(raw) : Number.NaN;
+      setShadowOpacity(
+        Number.isFinite(themed) ? themed : (glassConfig.shadowOpacity ?? 0.12),
+      );
+    };
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+    return () => obs.disconnect();
+  }, [glassConfig.shadowOpacity]);
   const shellPath = squirclePath(
     APP_SHELL_OUTER_WIDTH,
     APP_SHELL_OUTER_HEIGHT,
@@ -148,7 +170,7 @@ export function AppShell({
                     <feGaussianBlur in="sil" stdDeviation={(glassConfig.shadowBlur ?? 24) / 2} result="blr" />
                     <feOffset in="blr" dy={glassConfig.shadowOffsetY ?? 8} result="off" />
                     <feComposite in="off" in2="sil" operator="out" result="outset" />
-                    <feFlood floodColor="#000" floodOpacity={glassConfig.shadowOpacity ?? 0.12} />
+                    <feFlood floodColor="#000" floodOpacity={shadowOpacity} />
                     <feComposite in2="outset" operator="in" />
                   </filter>
                 </defs>

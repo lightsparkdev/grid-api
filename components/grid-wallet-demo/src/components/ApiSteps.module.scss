@@ -134,6 +134,10 @@
   border-radius: var(--corner-radius-md);
   overflow: hidden;
   transition: border-color 200ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
 }
 .codeBlockFresh {
   border-color: var(--border-secondary);
