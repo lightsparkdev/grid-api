@@ -66,6 +66,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Origin ships border-primary/secondary only; flow-builder SCSS uses
+   border-tertiary throughout — alias it so dividers and step connectors render. */
+:root {
+  --border-tertiary: var(--border-primary);
+}
+
 /* Hover fills — match grid-visualizer / flow-builder. */
 :root {
   --surface-hover: var(--color-alpha-black-04);

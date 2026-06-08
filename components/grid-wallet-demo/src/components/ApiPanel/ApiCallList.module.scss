@@ -42,9 +42,13 @@
   width: 28px;
   height: 28px;
   background: var(--surface-secondary);
-  border: var(--stroke-xs) solid var(--border-tertiary);
+  border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   flex-shrink: 0;
+
+  :global([data-theme='dark']) & {
+    border-color: var(--color-gray-800);
+  }
 
   span {
     @include label;
@@ -89,7 +93,12 @@
 .stepLine {
   width: var(--stroke-xs);
   height: 100%;
-  background: var(--border-tertiary);
+  background: var(--border-primary);
+  border-radius: var(--corner-radius-full);
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-800);
+  }
 }
 
 .stepCodeCol {
