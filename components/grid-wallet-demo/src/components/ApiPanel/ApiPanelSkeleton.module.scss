@@ -76,12 +76,7 @@ $skeleton-divider-dark: var(--color-gray-900);
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;
-  padding: 12px var(--row-padding);
-  border-bottom: var(--stroke-xs) solid $skeleton-divider-light;
-
-  :global([data-theme='dark']) & {
-    border-bottom-color: $skeleton-divider-dark;
-  }
+  padding: 12px var(--row-padding) 0;
 }
 
 .bone {

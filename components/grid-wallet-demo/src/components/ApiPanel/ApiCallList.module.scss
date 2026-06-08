@@ -14,7 +14,7 @@
   flex-direction: column;
   width: 100%;
   padding: 48px;
-  padding-top: 40px;
+  padding-top: calc(var(--spacing-md) + 4px);
   gap: var(--spacing-md);
 }
 
@@ -40,8 +40,7 @@
   align-items: flex-start;
   gap: 1px;
   min-width: 0;
-  padding: calc(var(--row-padding) - 2px) var(--row-padding);
-  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+  padding: calc(var(--row-padding) - 2px) var(--row-padding) 0;
   box-sizing: border-box;
 }
 
@@ -74,6 +73,20 @@
   :global([data-theme='dark']) & {
     background: var(--color-gray-925);
   }
+
+  &:hover,
+  &:focus-within {
+    .codeBlockToolbar .copyBtn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .codeBlockToolbar .copyBtn {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease, background 150ms ease;
+  }
 }
 
 .endpointBlock,
@@ -88,7 +101,7 @@
   display: block;
   width: 100%;
   min-width: 0;
-  padding: var(--row-padding);
+  padding: var(--row-padding) 0 var(--row-padding) var(--row-padding);
   background: inherit;
   border-bottom: var(--stroke-xs) solid var(--border-tertiary);
   overflow: hidden;
@@ -106,7 +119,6 @@
   align-items: center;
   gap: var(--spacing-xs);
   min-width: 0;
-  padding-right: 40px;
   overflow-x: auto;
   scrollbar-width: none;
 
@@ -136,6 +148,8 @@
   bottom: 0;
   width: 88px;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
   background: linear-gradient(to right, transparent, var(--surface-base) 52%);
 
   :global([data-theme='dark']) & {
@@ -148,7 +162,17 @@
   top: 50%;
   right: var(--spacing-xs);
   z-index: 1;
+  opacity: 0;
   transform: translateY(-50%);
+  transition: opacity 150ms ease;
+}
+
+.endpointBlock:hover,
+.endpointBlock:focus-within {
+  .endpointFade,
+  .endpointCopyBtn {
+    opacity: 1;
+  }
 }
 
 .codeBlock {
