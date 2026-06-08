@@ -2838,7 +2838,7 @@ paths:
           description: |
             Quote confirmed successfully. The transfer has been initiated and the quote status has been updated.
 
-            For customers whose provider requires Strong Customer Authentication (e.g. EU), the quote may instead come back with status `PENDING_AUTHORIZATION` and an `scaChallenge` that must be authorized — inline via `scaAuthorization`, or by calling `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` — before the transfer is released.
+            For customers whose provider requires Strong Customer Authentication (e.g. EU): supplying `scaAuthorization` **upfront on this call** satisfies the challenge in one shot and avoids the pending state. Without it, the quote comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`; from that point the **only** way to release the transfer is `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` (re-calling `execute` returns 409). The inline `scaAuthorization` field is therefore for the initial call only.
           content:
             application/json:
               schema:
