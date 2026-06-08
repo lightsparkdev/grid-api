@@ -7,8 +7,8 @@ const MIN_APP = 320;
 const MIN_API = 320;
 const SNAP_THRESHOLD = 28;
 
-/** Former list content max (680px) + horizontal padding (spacing-xl × 2). */
-export const API_DEFAULT_WIDTH = 680 + 24 * 2;
+/** Default + snap target — matches configure column width. */
+export const API_DEFAULT_WIDTH = CONFIGURE_WIDTH;
 
 function clampApiWidth(width: number, totalMiddle: number): number {
   return Math.max(MIN_API, Math.min(totalMiddle - MIN_APP, width));

@@ -1,5 +1,6 @@
 'use client';
 
+// hmr-probe
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
@@ -11,11 +12,14 @@ import {
   formatResponseString,
   highlightCurl,
   highlightJson,
-  stepDescription,
   stepTitle,
 } from '@/lib/apiCodeFormat';
+import { formatAbsoluteTime, formatRelativeTime } from '@/lib/formatRelativeTime';
+import { groupApiEntries } from '@/lib/groupApiEntries';
+import { useNowTick } from '@/hooks/useNowTick';
 import { motionTransition } from '@/lib/easing';
-import type { Entry } from './types';
+import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
+import type { Entry, EntryGroup } from './types';
 import styles from './ApiCallList.module.scss';
 
 type CodeTab = 'request' | 'response';
@@ -209,7 +213,18 @@ function EndpointBlock({
   );
 }
 
-function ApiCallBlock({ entry }: { entry: Entry }) {
+function FeedTimestamp({ timestamp, now }: { timestamp: number; now: number }) {
+  const relative = formatRelativeTime(timestamp, now);
+  const absolute = formatAbsoluteTime(timestamp);
+
+  return (
+    <time className={styles.timestamp} dateTime={new Date(timestamp).toISOString()} title={absolute}>
+      {relative}
+    </time>
+  );
+}
+
+function ApiCallBlock({ entry, now }: { entry: Entry; now: number }) {
   const [tab, setTab] = useState<CodeTab>('request');
 
   const curl = useMemo(() => formatCurlString(entry), [entry]);
@@ -222,7 +237,11 @@ function ApiCallBlock({ entry }: { entry: Entry }) {
   );
 
   return (
-    <div className={clsx(styles.callCard, entry.fresh && styles.callCardFresh)}>
+    <div className={styles.callCard}>
+      <div className={styles.entryHeader}>
+        <span className={styles.entryTitle}>{stepTitle(entry)}</span>
+        <FeedTimestamp timestamp={entry.createdAt} now={now} />
+      </div>
       <EndpointBlock method={entry.method} path={entry.path} />
       <div className={styles.codeBlock}>
         <div className={styles.codeBlockToolbar}>
@@ -243,8 +262,31 @@ interface ApiCallListProps {
   entries: Entry[];
 }
 
+function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
+  return (
+    <motion.article
+      key={group.groupId}
+      className={styles.group}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+    >
+      <SectionDivider label={group.groupLabel} showFlowIcon />
+      <div className={styles.groupEntries}>
+        {group.entries.map((entry) => (
+          <div key={entry.key} className={styles.feedEntry}>
+            <ApiCallBlock entry={entry} now={now} />
+          </div>
+        ))}
+      </div>
+    </motion.article>
+  );
+}
+
 export function ApiCallList({ entries }: ApiCallListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const now = useNowTick();
+  const groups = useMemo(() => groupApiEntries(entries), [entries]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -253,36 +295,10 @@ export function ApiCallList({ entries }: ApiCallListProps) {
 
   return (
     <div className={styles.list} ref={scrollRef}>
-      <div className={styles.steps}>
+      <div className={styles.feed}>
         <AnimatePresence initial={false}>
-          {entries.map((entry, i) => (
-            <motion.div
-              key={entry.key}
-              className={styles.step}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
-            >
-              <div className={styles.stepHeader}>
-                <span className={clsx(styles.stepBadge, entry.fresh && styles.stepBadgeFresh)}>
-                  <span>{i + 1}</span>
-                </span>
-                <div className={styles.stepLabels}>
-                  <span className={styles.stepTitle}>{stepTitle(entry)}</span>
-                  {stepDescription(entry) ? (
-                    <span className={styles.stepDescription}>{stepDescription(entry)}</span>
-                  ) : null}
-                </div>
-              </div>
-              <div className={styles.stepContent}>
-                <div className={styles.stepLineCol}>
-                  {i < entries.length - 1 && <div className={styles.stepLine} />}
-                </div>
-                <div className={styles.stepCodeCol}>
-                  <ApiCallBlock entry={entry} />
-                </div>
-              </div>
-            </motion.div>
+          {groups.map((group) => (
+            <FeedGroup key={group.groupId} group={group} now={now} />
           ))}
         </AnimatePresence>
       </div>

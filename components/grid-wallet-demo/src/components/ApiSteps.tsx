@@ -51,7 +51,7 @@ export default function ApiSteps({ entries }: { entries: Entry[] }) {
                   transition={{ duration: 0.22, ease: 'easeOut' }}
                 >
                   <div className={styles.stepHeader}>
-                    <span className={clsx(styles.stepBadge, e.fresh && styles.stepBadgeFresh)}>
+                    <span className={styles.stepBadge}>
                       <span>{i + 1}</span>
                     </span>
                     <span className={styles.stepTitle}>{e.note ?? requestTitle(e)}</span>
@@ -61,7 +61,7 @@ export default function ApiSteps({ entries }: { entries: Entry[] }) {
                       {i < entries.length - 1 && <div className={styles.stepLine} />}
                     </div>
                     <div className={styles.stepCodeCol}>
-                      <div className={clsx(styles.codeBlock, e.fresh && styles.codeBlockFresh)}>
+                      <div className={styles.codeBlock}>
                         <div className={styles.codeBlockHeader}>
                           <span className={styles.codeBlockDesc}>
                             {e.method} · {e.status}

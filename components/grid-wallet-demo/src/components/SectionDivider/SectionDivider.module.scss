@@ -6,6 +6,25 @@
   padding-inline: var(--spacing-xs);
 }
 
+.leading {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: -1px;
+  color: var(--text-tertiary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.125;
+  }
+}
+
 .label {
   font-family: var(--font-family-sans);
   font-size: var(--font-size-xs);

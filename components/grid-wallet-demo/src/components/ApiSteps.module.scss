@@ -98,13 +98,6 @@
     color: var(--text-primary);
   }
 }
-.stepBadgeFresh {
-  background: var(--surface-inverted);
-  border-color: var(--surface-inverted);
-  span {
-    color: var(--text-surface);
-  }
-}
 .stepTitle {
   @include body;
   color: var(--text-primary);
@@ -148,9 +141,6 @@
   :global([data-theme='dark']) & {
     background: var(--color-gray-925);
   }
-}
-.codeBlockFresh {
-  border-color: var(--border-secondary);
 }
 .codeBlockHeader {
   display: flex;

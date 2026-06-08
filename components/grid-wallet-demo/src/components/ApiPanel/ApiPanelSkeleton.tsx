@@ -1,50 +1,74 @@
 import clsx from 'clsx';
 import styles from './ApiPanelSkeleton.module.scss';
 
-interface SkeletonStep {
-  titleWidth?: string;
-  descriptionWidth?: string;
+interface SkeletonGroup {
+  labelWidth: string;
+  entries: { titleWidth: string }[];
 }
 
-const SKELETON_STEPS: SkeletonStep[] = [
-  { titleWidth: '38%', descriptionWidth: '72%' },
-  { titleWidth: '44%', descriptionWidth: '58%' },
-  { titleWidth: '36%', descriptionWidth: '64%' },
-  { titleWidth: '48%', descriptionWidth: '52%' },
-  { titleWidth: '40%', descriptionWidth: '66%' },
-  { titleWidth: '42%', descriptionWidth: '60%' },
+const SKELETON_GROUPS: SkeletonGroup[] = [
+  {
+    labelWidth: '22%',
+    entries: [{ titleWidth: '34%' }],
+  },
+  {
+    labelWidth: '28%',
+    entries: [
+      { titleWidth: '38%' },
+      { titleWidth: '36%' },
+      { titleWidth: '40%' },
+    ],
+  },
+  {
+    labelWidth: '32%',
+    entries: [
+      { titleWidth: '36%' },
+      { titleWidth: '38%' },
+      { titleWidth: '34%' },
+    ],
+  },
+  {
+    labelWidth: '24%',
+    entries: [
+      { titleWidth: '36%' },
+      { titleWidth: '38%' },
+      { titleWidth: '34%' },
+    ],
+  },
 ];
 
 export function ApiPanelSkeleton() {
   return (
     <div className={styles.list} aria-hidden>
-      <div className={styles.steps}>
-        {SKELETON_STEPS.map((step, i) => (
-          <div key={i} className={styles.step}>
-            <div className={styles.stepHeader}>
-              <div className={clsx(styles.bone, styles.badge)} />
-              <div className={styles.stepLabels}>
-                <div
-                  className={clsx(styles.bone, styles.title)}
-                  style={step.titleWidth ? { width: step.titleWidth } : undefined}
-                />
-                <div
-                  className={clsx(styles.bone, styles.description)}
-                  style={step.descriptionWidth ? { width: step.descriptionWidth } : undefined}
-                />
-              </div>
+      <div className={styles.feed}>
+        {SKELETON_GROUPS.map((group, groupIndex) => (
+          <div key={groupIndex} className={styles.group}>
+            <div className={styles.divider}>
+              <div
+                className={clsx(styles.bone, styles.dividerLabel)}
+                style={{ width: group.labelWidth }}
+              />
+              <div className={clsx(styles.bone, styles.dividerLine)} />
             </div>
-            <div className={styles.stepContent}>
-              <div className={styles.stepLineCol}>
-                {i < SKELETON_STEPS.length - 1 ? <div className={styles.stepLine} /> : null}
-              </div>
-              <div className={styles.stepCodeCol}>
-                <div className={clsx(styles.bone, styles.endpoint)} />
-                <div className={styles.codeBlock}>
-                  <div className={clsx(styles.bone, styles.codeToolbar)} />
-                  <div className={styles.codeBody} />
+            <div className={styles.groupEntries}>
+              {group.entries.map((entry, entryIndex) => (
+                <div key={entryIndex} className={styles.feedEntry}>
+                  <div className={styles.callCard}>
+                    <div className={styles.entryHeader}>
+                      <div
+                        className={clsx(styles.bone, styles.entryTitle)}
+                        style={{ width: entry.titleWidth }}
+                      />
+                      <div className={clsx(styles.bone, styles.timestamp)} style={{ width: '14%' }} />
+                    </div>
+                    <div className={clsx(styles.bone, styles.endpoint)} />
+                    <div className={styles.codeBlock}>
+                      <div className={clsx(styles.bone, styles.codeToolbar)} />
+                      <div className={styles.codeBody} />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         ))}

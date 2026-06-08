@@ -14,32 +14,74 @@ $skeleton-divider-dark: var(--color-gray-900);
   overflow: hidden;
 }
 
-.steps {
+.feed {
   display: flex;
   flex-direction: column;
   width: 100%;
   padding: var(--spacing-xl);
   padding-right: var(--spacing-2xl);
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.stepHeader {
-  display: flex;
-  align-items: center;
   gap: var(--spacing-md);
 }
 
-.stepLabels {
+.group {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-md);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3xs);
+  padding-block: var(--spacing-xs);
+  padding-inline: var(--spacing-xs);
+}
+
+.dividerLabel {
+  height: 12px;
+  max-width: 120px;
+}
+
+.dividerLine {
   flex: 1;
+  height: 0;
+  border-radius: 0;
+}
+
+.groupEntries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.feedEntry {
   min-width: 0;
+}
+
+.callCard {
+  display: flex;
+  flex-direction: column;
+  --row-padding: 14px;
+  border-radius: var(--corner-radius-md);
+  overflow: hidden;
+  border: 0.5px solid $skeleton-divider-light;
+
+  :global([data-theme='dark']) & {
+    border-color: $skeleton-divider-dark;
+  }
+}
+
+.entryHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 12px var(--row-padding);
+  border-bottom: var(--stroke-xs) solid $skeleton-divider-light;
+
+  :global([data-theme='dark']) & {
+    border-bottom-color: $skeleton-divider-dark;
+  }
 }
 
 .bone {
@@ -51,72 +93,26 @@ $skeleton-divider-dark: var(--color-gray-900);
   }
 }
 
-.badge {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--corner-radius-md);
-  flex-shrink: 0;
+.timestamp {
+  height: 14px;
+  max-width: 72px;
 }
 
-.title {
+.entryTitle {
   height: 14px;
-  width: 42%;
   max-width: 180px;
-}
-
-.description {
-  height: 14px;
-  width: 68%;
-  max-width: 280px;
-}
-
-.stepContent {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-.stepLineCol {
-  width: 28px;
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stepLine {
-  width: var(--stroke-xs);
-  height: 100%;
-  background: var(--border-primary);
-  border-radius: var(--corner-radius-full);
-
-  :global([data-theme='dark']) & {
-    background: var(--color-gray-800);
-  }
-}
-
-.stepCodeCol {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  padding-top: var(--spacing-sm);
-  padding-bottom: var(--spacing-2xl);
-
-  .step:last-child & {
-    padding-bottom: var(--spacing-xs);
-  }
 }
 
 .endpoint {
   height: 48px;
   width: 100%;
-  border-radius: var(--corner-radius-md);
+  border-radius: 0;
 }
 
 .codeBlock {
   display: flex;
   flex-direction: column;
-  border-radius: var(--corner-radius-md);
+  border-radius: 0;
   overflow: hidden;
   background: $skeleton-fill-light;
 
@@ -138,4 +134,3 @@ $skeleton-divider-dark: var(--color-gray-900);
 .codeBody {
   min-height: 96px;
 }
-

@@ -56,6 +56,7 @@ export function useWalletDemoLogic() {
   const [transient, setTransient] = useState<Transient | null>(null);
   const [running, setRunning] = useState(false);
 
+  const [signInMethod, setSignInMethod] = useState<AuthMethod | null>(null);
   const [otpActive, setOtpActive] = useState(false);
   const [emailActive, setEmailActive] = useState(false);
   const [gNonce, setGNonce] = useState<string | null>(null);
@@ -117,11 +118,19 @@ export function useWalletDemoLogic() {
     p?.reject(new Error('cancelled'));
   }, []);
 
-  const pushCalls = useCallback((calls: ApiCall[]) => {
+  const pushCalls = useCallback((calls: ApiCall[], groupLabel: string) => {
     if (!calls?.length) return;
+    const groupId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const baseTime = Date.now();
     setEntries((prev) => [
-      ...prev.map((e) => ({ ...e, fresh: false })),
-      ...calls.map((c, i) => ({ ...c, key: `${Date.now()}-${i}-${Math.random()}`, fresh: true })),
+      ...prev,
+      ...calls.map((c, i) => ({
+        ...c,
+        key: `${baseTime}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+        createdAt: baseTime + i,
+        groupId,
+        groupLabel,
+      })),
     ]);
   }, []);
 
@@ -140,14 +149,23 @@ export function useWalletDemoLogic() {
         setTransient({ screen: 'creating', note: 'Sending you a code…' });
         await sleep(600);
         await promptOtp();
-        pushCalls(signInCalls('email_otp', session.current.email));
+        pushCalls(signInCalls('email_otp', session.current.email), 'Sign in');
       } else if (m === 'passkey') {
         setTransient({ screen: 'credential' });
         await passkeyCeremony();
-        pushCalls(signInCalls('passkey'));
+        pushCalls(signInCalls('passkey'), 'Sign in');
       } else if (m === 'oauth') {
         await promptGoogle(await googleNonce());
-        pushCalls(signInCalls('oauth'));
+        pushCalls(signInCalls('oauth'), 'Sign in');
+      } else if (m === 'apple') {
+        setTransient({ screen: 'credential' });
+        await sleep(900);
+        pushCalls(signInCalls('apple'), 'Sign in');
+      } else if (m === 'sms') {
+        setTransient({ screen: 'creating', note: 'Sending you a code…' });
+        await sleep(600);
+        await promptOtp();
+        pushCalls(signInCalls('email_otp', '+1 ••• ••• 1234'), 'Sign in');
       } else {
         throw new Error(`Sign-in method "${m}" is not available.`);
       }
@@ -158,10 +176,31 @@ export function useWalletDemoLogic() {
 
   const runSignIn = useCallback(async () => {
     session.current = { method };
+    setSignInMethod(method);
     await authenticate(true);
     setWallet((w) => ({ ...w, created: true, balanceCents: 0 }));
     setTransient(null);
   }, [method, authenticate]);
+
+  const signInWithMethod = useCallback(
+    async (m: AuthMethod) => {
+      if (running) return;
+      setRunning(true);
+      try {
+        session.current = { method: m };
+        setSignInMethod(m);
+        await authenticate(true);
+        setWallet((w) => ({ ...w, created: true, balanceCents: 0 }));
+        setTransient(null);
+      } catch (e: unknown) {
+        if ((e as Error)?.message !== 'cancelled') console.error('[grid-demo]', e);
+        setTransient(null);
+      } finally {
+        setRunning(false);
+      }
+    },
+    [running, authenticate],
+  );
 
   const ensureSession = useCallback(async () => {
     if (hasValidSession()) return;
@@ -178,7 +217,7 @@ export function useWalletDemoLogic() {
     });
     const cents = Math.round(dollars * 100);
     setTransient({ screen: 'creating', note: `Adding ${fmt(cents)}` });
-    pushCalls(addMoneyCalls(cents));
+    pushCalls(addMoneyCalls(cents), 'Add money');
     await sleep(1100);
     setWallet((w) => ({
       ...w,
@@ -202,7 +241,7 @@ export function useWalletDemoLogic() {
     await ensureSession();
     const cents = Math.round(dollars * 100);
     setTransient({ screen: 'creating', note: `Sending ${fmt(cents)}` });
-    pushCalls(sendCalls(Math.round(dollars * 1e6)));
+    pushCalls(sendCalls(Math.round(dollars * 1e6)), 'Send payment');
     await sleep(1100);
     setWallet((w) => ({
       ...w,
@@ -226,7 +265,7 @@ export function useWalletDemoLogic() {
     await ensureSession();
     const cents = Math.round(dollars * 100);
     setTransient({ screen: 'creating', note: `Withdrawing ${fmt(cents)}` });
-    pushCalls(withdrawCalls(Math.round(dollars * 1e6)));
+    pushCalls(withdrawCalls(Math.round(dollars * 1e6)), 'Withdraw');
     await sleep(1100);
     setWallet((w) => ({
       ...w,
@@ -241,15 +280,19 @@ export function useWalletDemoLogic() {
 
   const runSimulated = useCallback(
     async (id: ActionId) => {
+      const action = ACTIONS.find((a) => a.id === id);
       const res = runAction(id, wallet, method);
       for (const f of res.frames) {
         setTransient({ screen: f.screen, note: f.note, activated: f.activated });
         await sleep(f.ms);
       }
+      if (res.calls.length) {
+        pushCalls(res.calls, action?.label ?? id);
+      }
       setWallet(res.next);
       setTransient(null);
     },
-    [wallet, method],
+    [wallet, method, pushCalls],
   );
 
   const handleAction = useCallback(
@@ -283,6 +326,7 @@ export function useWalletDemoLogic() {
     setWallet(initialWallet);
     setEntries([]);
     setTransient(null);
+    setSignInMethod(null);
     setOtpActive(false);
     setEmailActive(false);
     setGNonce(null);
@@ -325,6 +369,8 @@ export function useWalletDemoLogic() {
     entries,
     running,
     handleAction,
+    signInWithMethod,
+    signInMethod,
     reset,
     phone,
     otpActive,
