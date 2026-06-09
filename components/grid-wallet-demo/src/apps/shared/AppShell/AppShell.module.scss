@@ -139,15 +139,18 @@
   pointer-events: auto;
 }
 
-/* Hairline edge contrast tracing the screen's superellipse (see AppShell). The
-   screen's clip-path trims this 1px stroke to its inner ~0.5px so it follows the
-   curve exactly. */
+/* Hairline edge contrast just OUTSIDE the screen's superellipse (see AppShell).
+   Sits at the screen's rect but BELOW it (z-index < screen): the opaque screen
+   hides the 1px stroke's inner half, leaving ~0.5px in the bezel that follows the
+   curve exactly. overflow:visible lets the outer half spill past the rect. */
 .screenBorder {
   position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
+  top: var(--app-shell-padding);
+  left: var(--app-shell-padding);
+  z-index: 1;
+  width: var(--app-screen-width);
+  height: var(--app-screen-height);
+  overflow: visible;
   pointer-events: none;
 
   path {

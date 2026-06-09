@@ -205,6 +205,17 @@ export function AppShell({
                 }}
                 aria-hidden
               />
+              {/* Hairline edge contrast OUTSIDE the screen: stroke the screen's exact
+                  path and sit below the opaque screen, which hides the stroke's inner
+                  half — leaving ~0.5px in the bezel, hugging the curve. */}
+              <svg
+                className={styles.screenBorder}
+                viewBox={`0 0 ${screenW} ${screenH}`}
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <path d={screenPathD} strokeWidth={1} />
+              </svg>
             </>
           ) : (
             <Glass
@@ -250,21 +261,6 @@ export function AppShell({
                 {children}
               </div>
             ) : null}
-            {externalGlass && (
-              // Hairline edge contrast that traces the screen's exact superellipse.
-              // Strokes the *same* path as the screen's clip-path; the screen's own
-              // clip then trims the stroke to its inner half (~0.5px) so it hugs the
-              // curve perfectly — a CSS border/inset-shadow would clip square at the
-              // corners against the clip-path.
-              <svg
-                className={styles.screenBorder}
-                viewBox={`0 0 ${screenW} ${screenH}`}
-                preserveAspectRatio="none"
-                aria-hidden
-              >
-                <path d={screenPathD} strokeWidth={1} />
-              </svg>
-            )}
           </div>
         </div>
         {bezelOverlay && (
