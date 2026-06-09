@@ -1,0 +1,39 @@
+@use './glass-button-shadow' as shadow;
+
+.root {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  @include shadow.glass-button-shadow;
+  @include shadow.glass-button-press(44px);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.glass {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  color: #000000;
+}

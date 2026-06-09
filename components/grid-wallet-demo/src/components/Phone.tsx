@@ -52,6 +52,7 @@ export interface PhoneProps {
   onAction: (id: ActionId) => void;
   onSignInWithMethod?: (method: AuthMethod) => void;
   busy: boolean;
+  passkey?: { active: boolean; onConfirm: () => void; onCancel: () => void };
   otp?: { active: boolean; onSubmit: (code: string) => void };
   email?: { active: boolean; onSubmit: (email: string) => void };
   google?: { nonce: string | null; onCredential: (idToken: string) => void };

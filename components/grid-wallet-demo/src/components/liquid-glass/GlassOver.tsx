@@ -26,7 +26,15 @@ import Glass from './LiquidGlass';
  */
 export interface GlassOverProps extends Partial<GlassConfig> {
   /** CSS `background` to refract — a color, gradient, or url(...) image. */
-  backdrop: string;
+  backdrop?: string;
+  /**
+   * Live refraction source as JSX, instead of a static `backdrop` — e.g. a
+   * positioned copy of the DOM behind the surface, so the lens bends the actual
+   * UI behind it. The caller positions/sizes it; it renders inside the lens and is
+   * what gets refracted. (For a sheet/modal over a known, static screen.) Takes
+   * precedence over `backdrop` when provided.
+   */
+  backdropNode?: ReactNode;
   /** Foreground content, rendered on top of the glass (not refracted). */
   children?: ReactNode;
   className?: string;
@@ -45,6 +53,7 @@ const BLEED = 48;
 
 export function GlassOver({
   backdrop,
+  backdropNode,
   children,
   className,
   style,
@@ -54,20 +63,22 @@ export function GlassOver({
   return (
     <div className={className} style={{ position: 'relative', ...style }}>
       <Glass {...config} style={{ position: 'absolute', inset: 0 }}>
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: -BLEED,
-            left: -BLEED,
-            right: -BLEED,
-            bottom: -BLEED,
-            background: backdrop,
-            backgroundPosition: backdropOffset
-              ? `${BLEED - backdropOffset.x}px ${BLEED - backdropOffset.y}px`
-              : undefined,
-          }}
-        />
+        {backdropNode ?? (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: -BLEED,
+              left: -BLEED,
+              right: -BLEED,
+              bottom: -BLEED,
+              background: backdrop,
+              backgroundPosition: backdropOffset
+                ? `${BLEED - backdropOffset.x}px ${BLEED - backdropOffset.y}px`
+                : undefined,
+            }}
+          />
+        )}
       </Glass>
       <div style={{ position: 'relative' }}>{children}</div>
     </div>

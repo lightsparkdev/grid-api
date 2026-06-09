@@ -28,7 +28,10 @@ bend a background you put a *copy* of it inside the glass. So:
 
 - Glass over a **known** backdrop (color / gradient / image / pattern) → use
   `GlassOver`, which makes the copy for you.
-- Glass over **arbitrary live/scrolling DOM** → not achievable. Tell the user.
+- Glass over **live UI behind it** (a sheet/modal over a *static* screen) →
+  achievable: feed the glass a positioned **copy** of that UI. See "Refract live
+  UI behind a sheet" in the gotchas / README.
+- Glass over **arbitrary scrolling/animating DOM** → not achievable. Tell the user.
 
 Skipping this gives a flat panel that doesn't lens (the classic failure).
 
@@ -38,6 +41,7 @@ Skipping this gives a flat panel that doesn't lens (the classic failure).
 |---|---|
 | Glass button / tab bar / card / chip over a known bg | `GlassOver` (easiest) |
 | Refract content you already render, or custom backdrop wiring | `Glass` (= `LiquidGlass`) |
+| A sheet/modal that refracts the (static) screen behind it | `GlassOver`'s `backdropNode` / `BottomSheet`'s `behind` |
 | The phone preview's WebGL stage | `glass-gl/StageGL` — **bespoke, don't reuse** |
 
 **SVG vs shader (which renderer):** **default to the SVG path** (`Glass` /
@@ -81,6 +85,11 @@ Start from a preset (`DEFAULT_GLASS`, `SWITCH_GLASS`, `SLIDER_GLASS`,
   top-left/bottom-right corners) — rotate or lower `edgeStrength` to move it.
 - **`corner-shape: squircle`** is Chromium-only (graceful circular fallback).
 - **Tiled backgrounds:** pass `GlassOver`'s `backdropOffset={{x,y}}` to align.
+- **Refract live UI behind a sheet:** pass a *copy* of the behind-UI as
+  `backdropNode` / `behind`, anchored to align (e.g. `bottom:0` for a bottom
+  sheet), and **counter-animate it** against the slide so it stays put while the
+  glass slides over it. Behind-UI must be static while open. Example:
+  `apps/shared/BottomSheet` → `aurora/PasskeySheet`.
 
 ## When tuning
 

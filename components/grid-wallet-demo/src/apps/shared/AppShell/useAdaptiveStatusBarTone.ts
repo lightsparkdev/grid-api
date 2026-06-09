@@ -47,11 +47,6 @@ function relativeLuminance(r: number, g: number, b: number): number {
   return 0.2126 * R + 0.7152 * G + 0.0722 * B;
 }
 
-function readTokenColor(style: CSSStyleDeclaration, token: string) {
-  const raw = style.getPropertyValue(token).trim();
-  return raw ? parseCssColor(raw) : null;
-}
-
 function resolveBackgroundRgb(el: Element, stopAt: Element): { r: number; g: number; b: number } | null {
   let node: Element | null = el;
 
@@ -66,11 +61,6 @@ function resolveBackgroundRgb(el: Element, stopAt: Element): { r: number; g: num
     node = node.parentElement;
   }
 
-  const screenBg = readTokenColor(getComputedStyle(stopAt), '--app-bg');
-  if (screenBg) {
-    return { r: screenBg.r, g: screenBg.g, b: screenBg.b };
-  }
-
   return null;
 }
 
@@ -78,13 +68,15 @@ function sampleLuminanceAt(
   x: number,
   y: number,
   statusBarEl: Element,
+  contentRoot: Element,
   screenEl: Element,
 ): number | null {
   for (const el of document.elementsFromPoint(x, y)) {
     if (el === statusBarEl || statusBarEl.contains(el)) continue;
-    if (!screenEl.contains(el)) continue;
+    if (el === screenEl || el === contentRoot) continue;
+    if (!contentRoot.contains(el)) continue;
 
-    const rgb = resolveBackgroundRgb(el, screenEl);
+    const rgb = resolveBackgroundRgb(el, contentRoot);
     if (rgb) return relativeLuminance(rgb.r, rgb.g, rgb.b);
   }
 
@@ -92,8 +84,9 @@ function sampleLuminanceAt(
 }
 
 function measureTone(
-  screenEl: HTMLElement,
+  contentRoot: HTMLElement,
   statusBarEl: HTMLElement,
+  screenEl: HTMLElement,
   current: StatusBarTone,
 ): StatusBarTone {
   const rect = statusBarEl.getBoundingClientRect();
@@ -104,7 +97,7 @@ function measureTone(
   const samples: number[] = [];
 
   for (const x of xs) {
-    const lum = sampleLuminanceAt(x, y, statusBarEl, screenEl);
+    const lum = sampleLuminanceAt(x, y, statusBarEl, contentRoot, screenEl);
     if (lum != null) samples.push(lum);
   }
 
@@ -117,9 +110,10 @@ function measureTone(
   return avg < DARK_GLYPH_THRESHOLD ? 'light' : 'default';
 }
 
-/** Pick white vs dark status bar glyphs from what's painted behind the bar. */
+/** Pick white vs dark status bar glyphs from screen content behind the bar. */
 export function useAdaptiveStatusBarTone(
   screenRef: RefObject<HTMLElement | null>,
+  screenBodyRef: RefObject<HTMLElement | null>,
   statusBarRef: RefObject<HTMLElement | null>,
 ): StatusBarTone {
   const [tone, setTone] = useState<StatusBarTone>('default');
@@ -127,13 +121,14 @@ export function useAdaptiveStatusBarTone(
 
   useEffect(() => {
     const screenEl = screenRef.current;
+    const contentRoot = screenBodyRef.current;
     const statusBarEl = statusBarRef.current;
-    if (!screenEl || !statusBarEl) return;
+    if (!screenEl || !contentRoot || !statusBarEl) return;
 
     let frame = 0;
 
     const update = () => {
-      const measured = measureTone(screenEl, statusBarEl, toneRef.current);
+      const measured = measureTone(contentRoot, statusBarEl, screenEl, toneRef.current);
       if (measured !== toneRef.current) {
         toneRef.current = measured;
         setTone(measured);
@@ -144,10 +139,11 @@ export function useAdaptiveStatusBarTone(
 
     const resizeObserver = new ResizeObserver(update);
     resizeObserver.observe(screenEl);
+    resizeObserver.observe(contentRoot);
     resizeObserver.observe(statusBarEl);
 
     const mutationObserver = new MutationObserver(update);
-    mutationObserver.observe(screenEl, {
+    mutationObserver.observe(contentRoot, {
       subtree: true,
       childList: true,
       attributes: true,
@@ -166,7 +162,7 @@ export function useAdaptiveStatusBarTone(
       mutationObserver.disconnect();
       cancelAnimationFrame(rafId);
     };
-  }, [screenRef, statusBarRef]);
+  }, [screenRef, screenBodyRef, statusBarRef]);
 
   return tone;
 }

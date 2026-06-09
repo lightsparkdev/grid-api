@@ -1,0 +1,48 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 36px;
+}
+
+.faceIcon {
+  color: #0088ff;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #000000;
+}
+
+.title {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  font-weight: 700;
+  letter-spacing: -0.26px;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+}
+
+.description {
+  margin: 0;
+  @include ios.ios-text-body;
+  letter-spacing: -0.43px;
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 32px 32px 46px;
+}

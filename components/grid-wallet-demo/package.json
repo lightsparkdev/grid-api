@@ -7,7 +7,8 @@
     "dev": "next dev -p 4000",
     "build": "next build",
     "start": "next start -p 4000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths"
   },
   "dependencies": {
     "@central-icons-react/round-outlined-radius-3-stroke-1.5": "^1.1.135",

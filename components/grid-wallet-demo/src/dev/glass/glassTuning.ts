@@ -46,6 +46,17 @@ export const GLASS_TUNING_GROUPS: { title: string; ctrls: GlassCtrl[] }[] = [
   },
 ];
 
+export type OverlayGlassTarget = 'sheet' | 'symbol' | 'text';
+
+export type GlassTuningTarget = 'shell' | OverlayGlassTarget;
+
+export const GLASS_TUNING_TARGETS: { id: GlassTuningTarget; label: string }[] = [
+  { id: 'shell', label: 'Phone shell' },
+  { id: 'sheet', label: 'Sheet' },
+  { id: 'symbol', label: 'Symbol btn' },
+  { id: 'text', label: 'Text btn' },
+];
+
 export const GLASS_MAP_SIZES = [64, 128, 256, 512] as const;
 
 /** Dev-only reference-bezel overlay — line the swag corner up against a real iPhone. */

@@ -39,6 +39,9 @@ export default function Page() {
             handleAction={logic.handleAction}
             signInWithMethod={logic.signInWithMethod}
             signInMethod={logic.signInMethod}
+            passkeyActive={logic.passkeyActive}
+            confirmPasskey={logic.confirmPasskey}
+            cancelPasskey={logic.cancelPasskey}
             otpActive={logic.otpActive}
             submitOtp={logic.submitOtp}
             emailActive={logic.emailActive}

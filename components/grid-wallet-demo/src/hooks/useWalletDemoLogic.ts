@@ -57,12 +57,14 @@ export function useWalletDemoLogic() {
   const [running, setRunning] = useState(false);
 
   const [signInMethod, setSignInMethod] = useState<AuthMethod | null>(null);
+  const [passkeyActive, setPasskeyActive] = useState(false);
   const [otpActive, setOtpActive] = useState(false);
   const [emailActive, setEmailActive] = useState(false);
   const [gNonce, setGNonce] = useState<string | null>(null);
   const [amountConfig, setAmountConfig] = useState<AmountConfig | null>(null);
 
   const session = useRef<Session>({});
+  const passkeyPrompt = useRef<{ resolve: () => void; reject: (e: Error) => void } | null>(null);
   const otpPrompt = useRef<{ resolve: (c: string) => void; reject: (e: Error) => void } | null>(null);
   const emailPrompt = useRef<{ resolve: (e: string) => void; reject: (e: Error) => void } | null>(null);
   const googlePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
@@ -77,6 +79,23 @@ export function useWalletDemoLogic() {
     const p = emailPrompt.current;
     emailPrompt.current = null;
     p?.resolve(email);
+  }, []);
+
+  const promptPasskey = useCallback((): Promise<void> => {
+    setPasskeyActive(true);
+    return new Promise((resolve, reject) => (passkeyPrompt.current = { resolve, reject }));
+  }, []);
+  const confirmPasskey = useCallback(() => {
+    setPasskeyActive(false);
+    const p = passkeyPrompt.current;
+    passkeyPrompt.current = null;
+    p?.resolve();
+  }, []);
+  const cancelPasskey = useCallback(() => {
+    setPasskeyActive(false);
+    const p = passkeyPrompt.current;
+    passkeyPrompt.current = null;
+    p?.reject(new Error('cancelled'));
   }, []);
 
   const promptOtp = useCallback((): Promise<string> => {
@@ -151,7 +170,7 @@ export function useWalletDemoLogic() {
         await promptOtp();
         pushCalls(signInCalls('email_otp', session.current.email), 'Sign in');
       } else if (m === 'passkey') {
-        setTransient({ screen: 'credential' });
+        await promptPasskey();
         await passkeyCeremony();
         pushCalls(signInCalls('passkey'), 'Sign in');
       } else if (m === 'oauth') {
@@ -171,7 +190,7 @@ export function useWalletDemoLogic() {
       }
       startSession();
     },
-    [method, promptEmail, promptOtp, promptGoogle, pushCalls, startSession],
+    [method, promptEmail, promptOtp, promptGoogle, promptPasskey, pushCalls, startSession],
   );
 
   const runSignIn = useCallback(async () => {
@@ -318,7 +337,7 @@ export function useWalletDemoLogic() {
   );
 
   const reset = useCallback(() => {
-    for (const p of [otpPrompt, emailPrompt, googlePrompt, amountPrompt]) {
+    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, googlePrompt, amountPrompt]) {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
     }
@@ -327,6 +346,7 @@ export function useWalletDemoLogic() {
     setEntries([]);
     setTransient(null);
     setSignInMethod(null);
+    setPasskeyActive(false);
     setOtpActive(false);
     setEmailActive(false);
     setGNonce(null);
@@ -373,6 +393,9 @@ export function useWalletDemoLogic() {
     signInMethod,
     reset,
     phone,
+    passkeyActive,
+    confirmPasskey,
+    cancelPasskey,
     otpActive,
     submitOtp,
     emailActive,

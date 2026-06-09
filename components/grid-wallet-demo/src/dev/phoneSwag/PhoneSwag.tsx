@@ -12,11 +12,14 @@ import {
 } from '@/components/Phone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { AuroraAuthScreen } from '@/apps/aurora';
+import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
 import { AppShell } from '@/apps/shared/AppShell';
+import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { getAppSkin, type AppSkin } from '@/apps/skins';
 
 interface PhoneSwagProps extends PhoneProps {
   glassConfig?: GlassConfig;
+  overlayGlass?: OverlayGlassPresets;
   showGlassOutline?: boolean;
   glassDemoBg?: boolean;
   externalGlass?: boolean;
@@ -26,6 +29,18 @@ interface PhoneSwagProps extends PhoneProps {
 function SwagScreen(props: PhoneProps, skin: AppSkin) {
   const brand = PHONE_BRAND[props.persona];
   const authMethod = props.signInMethod ?? props.method;
+  const passkeySheet =
+    skin.id === 'aurora' && props.phone.screen === 'auth' ? (
+      <PasskeySheet
+        open={Boolean(props.passkey?.active)}
+        onConfirm={props.passkey?.onConfirm ?? (() => {})}
+        onCancel={props.passkey?.onCancel ?? (() => {})}
+        // Decorative copy of the screen behind the sheet, so the glass refracts the
+        // actual auth UI instead of a static gradient (pointer-events disabled in
+        // BottomSheet, so the no-op handler never fires).
+        behind={<AuroraAuthScreen busy={props.busy} onSignIn={() => {}} />}
+      />
+    ) : null;
 
   if (props.email?.active) {
     return <EmailEntryScreen brand={brand} onSubmit={props.email.onSubmit} />;
@@ -52,13 +67,16 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
     case 'auth':
       if (skin.id === 'aurora') {
         return (
-          <AuroraAuthScreen
-            busy={props.busy}
-            onSignIn={props.onSignInWithMethod ?? (() => {})}
-          />
+          <>
+            <AuroraAuthScreen
+              busy={props.busy}
+              onSignIn={props.onSignInWithMethod ?? (() => {})}
+            />
+            {passkeySheet}
+          </>
         );
       }
-      return null;
+      return passkeySheet;
     case 'creating':
       return <CreatingScreen brand={brand} note={props.phone.note} />;
     case 'credential':
@@ -71,6 +89,7 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
 /** Swag phone — per-use-case screens inside the glass shell. */
 export function PhoneSwag({
   glassConfig,
+  overlayGlass,
   showGlassOutline,
   glassDemoBg,
   externalGlass,
@@ -81,15 +100,17 @@ export function PhoneSwag({
   const screen = SwagScreen(phoneProps, skin);
 
   return (
-    <AppShell
-      glassConfig={glassConfig}
-      showGlassOutline={showGlassOutline}
-      glassDemoBg={glassDemoBg}
-      externalGlass={externalGlass}
-      bezelOverlay={bezelOverlay}
-      appSkin={skin.id}
-    >
-      {screen}
-    </AppShell>
+    <OverlayGlassProvider value={overlayGlass ?? DEFAULT_OVERLAY_GLASS}>
+      <AppShell
+        glassConfig={glassConfig}
+        showGlassOutline={showGlassOutline}
+        glassDemoBg={glassDemoBg}
+        externalGlass={externalGlass}
+        bezelOverlay={bezelOverlay}
+        appSkin={skin.id}
+      >
+        {screen}
+      </AppShell>
+    </OverlayGlassProvider>
   );
 }

@@ -1,0 +1,43 @@
+/** Figma drop shadow — X 0, Y 8, blur 40, spread 0, #000 12%. */
+$glass-button-drop-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+
+/** Outward bloom on press — same +4px/side idea as AppShell hover. */
+$glass-button-bloom: 4px;
+$glass-button-press-ease: cubic-bezier(0.22, 1, 0.36, 1);
+$glass-button-press-duration: 0.28s;
+$glass-button-press-brightness: 1.12;
+
+@mixin glass-button-shadow {
+  box-shadow: $glass-button-drop-shadow;
+}
+
+@mixin glass-button-press-base {
+  transform: scale(1);
+  transform-origin: center center;
+  filter: brightness(1);
+  transition:
+    transform $glass-button-press-duration $glass-button-press-ease,
+    filter $glass-button-press-duration $glass-button-press-ease;
+
+  &:active:not(:disabled) {
+    filter: brightness($glass-button-press-brightness);
+  }
+}
+
+@mixin glass-button-press($size) {
+  $scale: ($size + $glass-button-bloom * 2) / $size;
+
+  @include glass-button-press-base;
+
+  &:active:not(:disabled) {
+    transform: scale($scale);
+  }
+}
+
+@mixin glass-button-press-scale($scale) {
+  @include glass-button-press-base;
+
+  &:active:not(:disabled) {
+    transform: scale($scale);
+  }
+}

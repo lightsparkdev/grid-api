@@ -49,8 +49,9 @@ export function AppShell({
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
   const screenRef = useRef<HTMLDivElement>(null);
+  const screenBodyRef = useRef<HTMLDivElement>(null);
   const statusBarRef = useRef<HTMLElement>(null);
-  const statusBarTone = useAdaptiveStatusBarTone(screenRef, statusBarRef);
+  const statusBarTone = useAdaptiveStatusBarTone(screenRef, screenBodyRef, statusBarRef);
 
   // Hover "bloom": the glass shell grows GROW px outward (bezel 16 -> 16+GROW) while
   // the inner screen stays put. Radius grows additively (not scaled) so the corners
@@ -241,7 +242,11 @@ export function AppShell({
             }
           >
             <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
-            {children ? <div className={styles.screenBody}>{children}</div> : null}
+            {children ? (
+              <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
+                {children}
+              </div>
+            ) : null}
           </div>
         </div>
         {bezelOverlay && (

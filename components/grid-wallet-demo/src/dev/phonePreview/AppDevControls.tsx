@@ -3,10 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IconChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronBottom';
 import type { GlassConfig } from '@/components/liquid-glass';
+import type { OverlayGlassPresets } from '@/apps/shared/glass';
 import { STORAGE_DEV_PANEL_EXPANDED, type PhoneUiVariant } from '@/dev/appDev';
 import { PHONE_PREVIEW_FIXTURES } from '@/dev/phonePreview/fixtures';
 import { GlassTuningPanel } from '@/dev/glass/GlassTuningPanel';
-import type { BezelRefState } from '@/dev/glass/glassTuning';
+import {
+  GLASS_TUNING_TARGETS,
+  type BezelRefState,
+  type GlassTuningTarget,
+} from '@/dev/glass/glassTuning';
 import styles from './AppDevControls.module.scss';
 
 interface AppDevControlsProps {
@@ -16,6 +21,8 @@ interface AppDevControlsProps {
   onUiVariantChange: (variant: PhoneUiVariant) => void;
   glassConfig?: GlassConfig;
   onGlassConfigChange?: (cfg: GlassConfig) => void;
+  overlayGlass?: OverlayGlassPresets;
+  onOverlayGlassChange?: (next: OverlayGlassPresets) => void;
   showGlassOutline?: boolean;
   onShowGlassOutlineChange?: (value: boolean) => void;
   bezelRef?: BezelRefState;
@@ -50,12 +57,15 @@ export function AppDevControls({
   onUiVariantChange,
   glassConfig,
   onGlassConfigChange,
+  overlayGlass,
+  onOverlayGlassChange,
   showGlassOutline = false,
   onShowGlassOutlineChange,
   bezelRef,
   onBezelRefChange,
 }: AppDevControlsProps) {
   const [expanded, setExpanded] = useState(false);
+  const [glassTarget, setGlassTarget] = useState<GlassTuningTarget>('shell');
 
   useEffect(() => {
     setExpanded(readExpanded());
@@ -75,7 +85,15 @@ export function AppDevControls({
   })).filter((g) => g.items.length > 0);
 
   const showGlassTuning =
-    uiVariant === 'swag' && glassConfig && onGlassConfigChange && onShowGlassOutlineChange;
+    uiVariant === 'swag' &&
+    glassConfig &&
+    onGlassConfigChange &&
+    onShowGlassOutlineChange &&
+    overlayGlass &&
+    onOverlayGlassChange;
+
+  const activeGlassTarget = GLASS_TUNING_TARGETS.find((t) => t.id === glassTarget)!;
+  const isShellTarget = glassTarget === 'shell';
 
   return (
     <div
@@ -129,14 +147,41 @@ export function AppDevControls({
           </select>
 
           {showGlassTuning ? (
-            <GlassTuningPanel
-              cfg={glassConfig}
-              onChange={onGlassConfigChange}
-              showOutline={showGlassOutline}
-              onShowOutlineChange={onShowGlassOutlineChange}
-              bezelRef={bezelRef}
-              onBezelRefChange={onBezelRefChange}
-            />
+            <>
+              <div className={styles.glassTargets} role="group" aria-label="Glass tuning target">
+                {GLASS_TUNING_TARGETS.map((target) => (
+                  <button
+                    key={target.id}
+                    type="button"
+                    className={`${styles.glassTarget} ${
+                      glassTarget === target.id ? styles.glassTargetActive : ''
+                    }`}
+                    onClick={() => setGlassTarget(target.id)}
+                  >
+                    {target.label}
+                  </button>
+                ))}
+              </div>
+              <GlassTuningPanel
+                title={`Glass · ${activeGlassTarget.label.toLowerCase()}`}
+                cfg={isShellTarget ? glassConfig : overlayGlass[glassTarget]}
+                onChange={(cfg) => {
+                  if (isShellTarget) {
+                    onGlassConfigChange(cfg);
+                    return;
+                  }
+                  onOverlayGlassChange({
+                    ...overlayGlass,
+                    [glassTarget]: cfg,
+                  });
+                }}
+                showOutline={showGlassOutline}
+                onShowOutlineChange={onShowGlassOutlineChange}
+                hideShadow={!isShellTarget}
+                bezelRef={isShellTarget ? bezelRef : undefined}
+                onBezelRefChange={isShellTarget ? onBezelRefChange : undefined}
+              />
+            </>
           ) : null}
 
           <p className={styles.hint}>Dev only — delete src/dev/ when styling ships.</p>

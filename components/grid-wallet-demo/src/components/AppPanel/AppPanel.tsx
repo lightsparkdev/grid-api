@@ -6,6 +6,7 @@ import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import Phone from '@/components/Phone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import { DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { BEZEL_REF_SRC, DEFAULT_BEZEL_REF } from '@/dev/glass/glassTuning';
 import { AppDevControls } from '@/dev/phonePreview/AppDevControls';
 import { resolvePhoneProps, type DemoLogicPhoneSlice } from '@/dev/phonePreview/resolvePhoneProps';
@@ -18,6 +19,7 @@ interface AppPanelProps extends DemoLogicPhoneSlice {}
 export function AppPanel(props: AppPanelProps) {
   const dev = useAppDevState();
   const [glassConfig, setGlassConfig] = useState(PHONE_SHELL_GLASS);
+  const [overlayGlass, setOverlayGlass] = useState<OverlayGlassPresets>(DEFAULT_OVERLAY_GLASS);
   const [showGlassOutline, setShowGlassOutline] = useState(false);
   const [bezelRef, setBezelRef] = useState(DEFAULT_BEZEL_REF);
   const phoneProps = resolvePhoneProps(props, dev.fixtureId, dev.previewActive);
@@ -35,6 +37,7 @@ export function AppPanel(props: AppPanelProps) {
               <PhoneSwag
                 {...phoneProps}
                 glassConfig={glassConfig}
+                overlayGlass={overlayGlass}
                 showGlassOutline={showGlassOutline}
                 glassDemoBg
                 externalGlass
@@ -55,6 +58,8 @@ export function AppPanel(props: AppPanelProps) {
             onUiVariantChange={dev.setUiVariant}
             glassConfig={glassConfig}
             onGlassConfigChange={setGlassConfig}
+            overlayGlass={overlayGlass}
+            onOverlayGlassChange={setOverlayGlass}
             showGlassOutline={showGlassOutline}
             onShowGlassOutlineChange={setShowGlassOutline}
             bezelRef={bezelRef}

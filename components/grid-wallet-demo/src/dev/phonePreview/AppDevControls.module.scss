@@ -141,3 +141,40 @@
   line-height: 1.3;
   color: var(--text-tertiary);
 }
+
+.glassTargets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.glassTarget {
+  all: unset;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: var(--corner-radius-xs);
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  background: var(--surface-primary);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-900);
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.glassTargetActive {
+  color: var(--text-primary);
+  background: var(--surface-base);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-850);
+  }
+}

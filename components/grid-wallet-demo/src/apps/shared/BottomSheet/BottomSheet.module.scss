@@ -1,0 +1,36 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.sheetMotion {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.sheet {
+  width: 100%;
+  border-radius: 22px 22px 0 0;
+  overflow: hidden;
+}
+
+.sheetInner {
+  display: flex;
+  flex-direction: column;
+}

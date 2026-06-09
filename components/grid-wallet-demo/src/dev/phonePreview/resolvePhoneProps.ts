@@ -23,6 +23,9 @@ export interface DemoLogicPhoneSlice {
   handleAction: (id: ActionId) => void;
   signInWithMethod: (method: AuthMethod) => void;
   signInMethod: AuthMethod | null;
+  passkeyActive: boolean;
+  confirmPasskey: () => void;
+  cancelPasskey: () => void;
   otpActive: boolean;
   submitOtp: (code: string) => void;
   emailActive: boolean;
@@ -57,6 +60,11 @@ export function resolvePhoneProps(
     onSignInWithMethod: previewActive ? noop : logic.signInWithMethod,
     signInMethod: logic.signInMethod ?? undefined,
     busy,
+    passkey: {
+      active: previewActive ? overlay === 'passkey' : logic.passkeyActive,
+      onConfirm: previewActive ? noop : logic.confirmPasskey,
+      onCancel: previewActive ? noop : logic.cancelPasskey,
+    },
     otp: {
       active: previewActive ? overlay === 'otp' : logic.otpActive,
       onSubmit: previewActive ? noop : logic.submitOtp,

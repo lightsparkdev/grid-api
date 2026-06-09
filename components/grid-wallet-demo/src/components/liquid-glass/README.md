@@ -15,7 +15,11 @@ background inside the glass**. Two consequences:
 
 - Glass over a **known** backdrop (color, gradient, image, a pattern) → works.
   Use [`<GlassOver>`](#glassover-the-easy-path) — it does the copy for you.
-- Glass over **arbitrary live/scrolling DOM** → not possible with this technique.
+- Glass over **live UI behind it** (a sheet/modal over a screen) → works *if that
+  UI is static while the surface is up* — feed the glass a positioned **copy** of
+  it. See [Glass over live UI](#glass-over-live-ui-sheets--overlays).
+- Glass over **arbitrary scrolling/animating DOM** → not possible (a copy can't
+  stay in sync).
 
 If you skip this, you'll get a flat panel that doesn't lens (the classic trap).
 
@@ -41,6 +45,10 @@ const BG = 'linear-gradient(135deg, #5b9dff, #b07cff)';
 
 - `backdrop` — the **same** CSS background the surface sits on (color / gradient /
   `url(...)`). This is what gets refracted.
+- `backdropNode` — a **live JSX** refraction source instead of a string `backdrop`
+  (e.g. a positioned copy of the DOM behind the surface). You position it; it
+  renders inside the lens and is what gets bent; it takes precedence over
+  `backdrop`. See [Glass over live UI](#glass-over-live-ui-sheets--overlays).
 - `children` — rendered **on top**, un-refracted (your label/content).
 - everything else — any [`GlassConfig`](#glassconfig) field (`radius`, `depth`, …).
 - `backdropOffset={{ x, y }}` — only needed so a **tiled/positioned** background
@@ -97,6 +105,29 @@ width/height/radius (those regenerate the displacement map every frame = jank):
 ```tsx
 <GlassOver backdrop={BG} radius={10} depth={6} scale={10} chromaticAberration={0.3} />
 ```
+
+---
+
+## Glass over live UI (sheets / overlays)
+
+Want a sheet/modal whose glass refracts the **actual screen behind it** (not a
+flat gradient)? The lens still only bends its own children, so feed it a **copy of
+the behind-UI**, positioned to line up with the real one. Working example:
+`apps/shared/BottomSheet` (`behind` prop) → `aurora/PasskeySheet`.
+
+1. **Render a copy, aligned.** Pass the behind-UI as `GlassOver`'s `backdropNode`
+   (or `BottomSheet`'s `behind`). Anchor it to a shared edge so it registers with
+   the real UI — for a bottom sheet that's `bottom: 0` (= screen bottom) + the full
+   screen height. (`BottomSheet` measures the screen off its overlay.)
+2. **Counter-animate it against any slide.** If the surface slides, the copy lives
+   inside it and would ride along. Wrap the copy in an element that translates the
+   *opposite* way, and make that wrapper fill the lens so its `-100%` exactly
+   cancels the sheet's `+100%` (no measuring needed). The glass then slides *over*
+   a fixed copy instead of dragging it up.
+3. **Behind-UI must be static while open.** The copy is a second render — it can't
+   track scrolling/animating content. A sheet over a settled screen is fine.
+4. **Keep the copy decorative.** `aria-hidden`, `pointer-events: none`, no-op
+   handlers; the real UI behind stays the interactive/accessible one.
 
 ---
 
@@ -164,4 +195,6 @@ sampling the shared map. If you actually need canvas/video glass, generalize
 - **`glass-gl/StageGL`** is bespoke for the phone preview (WebGL, samples the
   animated dot-grid canvas, tracks the shell element). It is **not** a reusable
   glass component — use `Glass` / `GlassOver` instead.
-- It cannot refract arbitrary live DOM behind it (see [the one thing](#the-one-thing-to-understand-first)).
+- It cannot refract arbitrary **scrolling/animating** DOM behind it. For **static**
+  behind-UI (a sheet over a settled screen) you *can* — via a positioned copy; see
+  [Glass over live UI](#glass-over-live-ui-sheets--overlays).

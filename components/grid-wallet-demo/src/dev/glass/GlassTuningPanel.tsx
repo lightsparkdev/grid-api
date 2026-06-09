@@ -15,8 +15,12 @@ interface GlassTuningPanelProps {
   onChange: (cfg: GlassConfig) => void;
   showOutline: boolean;
   onShowOutlineChange: (value: boolean) => void;
+  title?: string;
+  /** Shell-only — bezel reference overlay. */
   bezelRef?: BezelRefState;
   onBezelRefChange?: (next: BezelRefState) => void;
+  /** Hide shadow sliders (overlay glass presets). */
+  hideShadow?: boolean;
 }
 
 function fmt(ctrl: GlassCtrl, value: number) {
@@ -57,15 +61,17 @@ export function GlassTuningPanel({
   onChange,
   showOutline,
   onShowOutlineChange,
+  title = 'Glass shell',
   bezelRef,
   onBezelRefChange,
+  hideShadow = false,
 }: GlassTuningPanelProps) {
   const set = (key: keyof GlassConfig, value: number) =>
     onChange({ ...cfg, [key]: value });
 
   return (
     <div className={styles.wrap}>
-      <p className={styles.title}>Glass shell</p>
+      <p className={styles.title}>{title}</p>
 
       {bezelRef && onBezelRefChange ? (
         <div className={styles.group}>
@@ -108,7 +114,7 @@ export function GlassTuningPanel({
         ))}
       </div>
 
-      {GLASS_TUNING_GROUPS.map((group) => (
+      {GLASS_TUNING_GROUPS.filter((group) => hideShadow ? group.title !== 'Shadow' : true).map((group) => (
         <div className={styles.group} key={group.title}>
           <span className={styles.groupTitle}>{group.title}</span>
           {group.ctrls.map((ctrl) => (
