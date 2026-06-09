@@ -380,6 +380,7 @@
               "api-reference/terminology",
               "api-reference/authentication",
               "api-reference/webhooks",
+              "api-reference/async-operations",
               "api-reference/sandbox-testing",
               "api-reference/sdks"
             ]

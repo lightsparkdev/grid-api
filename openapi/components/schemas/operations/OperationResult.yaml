@@ -1,0 +1,22 @@
+type: object
+description: >
+  Result of a completed data-returning operation. Tagged by `type` so the
+  result shape can grow per operation type without a breaking change. Present
+  only when `status` is `COMPLETED` and the operation is data-returning
+  (`wallet.export`); `null` otherwise.
+required:
+  - type
+properties:
+  type:
+    type: string
+    description: The operation type this result belongs to.
+    enum:
+      - wallet.export
+    example: wallet.export
+  encryptedWalletCredentials:
+    type: string
+    description: >
+      For `wallet.export`: the HPKE-encrypted wallet credentials bundle,
+      encrypted to the `targetPublicKey` the client committed to when the
+      export was requested. Re-fetched on demand; never stored by Grid.
+    example: '{"version":"v1.0.0","data":"..."}'

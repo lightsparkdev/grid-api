@@ -77,6 +77,12 @@ tags:
       Card management endpoints. Issue debit cards against an internal
       account, freeze / unfreeze, close, manage card funding sources, and
       list card transactions.
+  - name: Operations
+    description: >-
+      Endpoints for polling the status and result of asynchronous
+      embedded-wallet operations (e.g. `wallet.export`,
+      `auth_credential.delete`, `session.revoke`) by the `operationId` returned
+      in a prior `202` response.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -278,6 +284,8 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /operations/{operationId}:
+    $ref: paths/operations/operations_{operationId}.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
@@ -301,6 +309,8 @@ webhooks:
     $ref: webhooks/card-state-change.yaml
   card-funding-source-change:
     $ref: webhooks/card-funding-source-change.yaml
+  wallet-operation:
+    $ref: webhooks/wallet-operation.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []
