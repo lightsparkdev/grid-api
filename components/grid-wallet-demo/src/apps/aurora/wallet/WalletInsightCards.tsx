@@ -4,7 +4,7 @@ import styles from './WalletInsightCards.module.scss';
 
 const WEEKLY_BAR_COUNT = 14;
 
-const DEFAULT_WEEKLY_BARS = Array.from({ length: WEEKLY_BAR_COUNT }, (_, i) => (i === 0 ? 1 : 0));
+const DEFAULT_WEEKLY_BARS = Array.from({ length: WEEKLY_BAR_COUNT }, () => 0);
 
 function fmtUsd(cents: number): string {
   return `$${(cents / 100).toLocaleString('en-US', {
@@ -48,7 +48,7 @@ function MetricLine({ children }: { children: ReactNode }) {
 export interface WalletInsightCardsProps {
   /** Weekly earned total in USD cents. */
   weeklyEarnedCents?: number;
-  /** Bar fill ratios 0–1, one per day (defaults to first bar only). */
+  /** Bar fill ratios 0–1, one per day (defaults to all empty). */
   weeklyBars?: number[];
   /** BTC balance. */
   btcAmount?: number;
