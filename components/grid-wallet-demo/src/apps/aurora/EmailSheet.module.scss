@@ -1,0 +1,72 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2191:48065 — Title block: pt 32, pb 24, px 32, gap 8, centered. */
+.title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 32px 24px;
+  text-align: center;
+}
+
+/* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45. */
+.heading {
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  letter-spacing: -0.45px;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* Footnote / Regular — 13/18, tracking -0.08. */
+.sub {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  letter-spacing: -0.08px;
+  color: var(--ios-label-secondary);
+  text-wrap: balance;
+}
+
+.cardContainer {
+  padding: 0 32px;
+}
+
+/* White input card — 48px pill, soft shadow (Figma "Card"). */
+.card {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border-radius: 1000px;
+  /* globals.scss sets corner-shape on * — a full pill needs round. */
+  corner-shape: round;
+  background: var(--ios-bg-primary);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+/* Body / Regular — 17/22, tracking -0.43; placeholder is labels/tertiary. */
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 24px;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-body;
+  letter-spacing: -0.43px;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary);
+  }
+}
+
+/* Button block: pt 16, pb 32, px 32. */
+.actions {
+  padding: 16px 32px 32px;
+}

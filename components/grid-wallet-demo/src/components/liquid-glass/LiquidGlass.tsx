@@ -272,7 +272,16 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   const clipStyle: GlassCSS = clipPath
     ? { clipPath, WebkitClipPath: clipPath }
     : { cornerShape: 'round' };
-  const shadowCornerStyle: GlassCSS = { cornerShape: squircleActive ? 'squircle' : 'round' };
+  // The drop shadow can't be clip-path'd (that erases it), so it leans on
+  // `corner-shape`. Trace the SAME superellipse the map/clip use (exponent
+  // 2 + smoothing*4 ⇒ CSS superellipse(1 + smoothing*2)) rather than a hardcoded
+  // `squircle` (exponent 4): at large per-corner radii (e.g. a sheet's bottom
+  // corners) a mismatched exponent makes the shadow corner poke past the body.
+  const shadowCornerStyle: GlassCSS = {
+    cornerShape: squircleActive
+      ? `superellipse(${(1 + cfg.cornerSmoothing * 2).toFixed(3)})`
+      : 'round',
+  };
 
   // Safari caches SVG filter output by filter id and ignores attribute changes
   // (including the lens x/y), so it freezes the glass mid-drag while the plain

@@ -29,12 +29,20 @@ interface BottomSheetProps {
    */
   behind?: ReactNode;
   /**
-   * Inset (px) from the screen edges, for a floating sheet. Drives the concentric
-   * bottom-corner radius: bottomRadius = screenCornerRadius − inset, so the sheet's
-   * bottom corners stay concentric with the phone screen they sit in. Default 0
-   * (full-bleed, flush to the screen edge).
+   * Inset (px) from the screen edges, for a floating sheet. Two effects:
+   *  - floats the sheet that many px off the left/right/bottom screen edges, and
+   *  - drives the concentric bottom-corner radius (bottomRadius = screenCornerRadius
+   *    − inset) so the bottom corners stay concentric with the phone screen.
+   * The refraction copy is offset by the same inset so it still lines up with the
+   * real screen. Default 0 (full-bleed, flush to the screen edge).
    */
   inset?: number;
+  /**
+   * Top corner radius (px). Defaults to the glass preset's `radius`. The bottom
+   * corners always hug the screen (screenCornerRadius − inset); this only sets the
+   * top — e.g. a floating sheet with rounder top corners.
+   */
+  topRadius?: number;
 }
 
 /** iOS-style glass bottom sheet — composable content slot. */
@@ -46,6 +54,7 @@ export function BottomSheet({
   backdrop = AUTH_GLASS_BACKDROP,
   behind,
   inset = 0,
+  topRadius,
 }: BottomSheetProps) {
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
@@ -84,7 +93,7 @@ export function BottomSheet({
   const cornerRadii: [number, number, number, number] | undefined =
     screenCornerRadius != null
       ? (() => {
-          const top = sheetGlass.radius;
+          const top = topRadius ?? sheetGlass.radius;
           const bottom = Math.max(0, screenCornerRadius - inset);
           return [top, top, bottom, bottom];
         })()
@@ -109,14 +118,15 @@ export function BottomSheet({
       >
         {/* Bleed the app background past the lens on the sides/bottom so the blur
             and displacement sample opaque pixels at the edges (sampling past the
-            copy would read transparent → a dark fringe). The copy stays inset to
-            its true screen rect so it still lines up with the real screen. */}
+            copy would read transparent → a dark fringe). When the sheet floats
+            (`inset`), shift the copy out by that inset too so it still maps onto the
+            real (full-bleed) screen rect rather than the sheet's smaller rect. */}
         <div
           style={{
             position: 'absolute',
-            left: -screenBleed,
-            right: -screenBleed,
-            bottom: -screenBleed,
+            left: -(screenBleed + inset),
+            right: -(screenBleed + inset),
+            bottom: -(screenBleed + inset),
             height: screenH + screenBleed,
             background: 'var(--app-bg)',
           }}
@@ -145,6 +155,10 @@ export function BottomSheet({
           key="bottom-sheet"
           ref={overlayRef}
           className={styles.overlay}
+          // Float the sheet `inset` px off the screen's left/right/bottom edges (the
+          // scrim is absolute inset:0, so it still covers the full screen). At 0 this
+          // is a no-op full-bleed sheet.
+          style={{ paddingLeft: inset, paddingRight: inset, paddingBottom: inset }}
           role="presentation"
           initial={false}
           exit={{ opacity: 1, transition: { ...SHEET_TRANSITION, when: 'afterChildren' } }}

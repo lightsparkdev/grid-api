@@ -21,6 +21,7 @@
 .sheetMotion {
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
   width: 100%;
 }
 
@@ -28,6 +29,7 @@
    squircle (top = sheet radius, bottom = screen radius), so the bright edge rim
    traces the bottom corners instead of being squared off by a container clip. */
 .sheet {
+  box-sizing: border-box;
   width: 100%;
 }
 
