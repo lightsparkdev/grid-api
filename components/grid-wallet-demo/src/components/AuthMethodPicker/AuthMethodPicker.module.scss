@@ -1,4 +1,5 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '../../styles/breakpoints' as *;
 
 .group {
   corner-shape: var(--corner-shape);
@@ -75,6 +76,20 @@
   min-width: 0;
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
+}
+
+.labelCompact {
+  display: none;
+}
+
+@include layout-laptop {
+  .labelFull {
+    display: none;
+  }
+
+  .labelCompact {
+    display: inline;
+  }
 }
 
 // Origin renders IconCheckmark2Small at 12px inside a 24 viewBox — without this,

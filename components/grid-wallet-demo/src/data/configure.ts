@@ -62,6 +62,8 @@ export const USE_CASES: UseCaseOption[] = [
 export interface AuthMethodOption {
   id: AuthMethod;
   label: string;
+  /** Shorter label for narrow configure column (768px–1799px). */
+  compactLabel?: string;
   enabled: boolean;
 }
 
@@ -69,7 +71,7 @@ export const AUTH_METHODS: AuthMethodOption[] = [
   { id: 'oauth', label: 'Google', enabled: true },
   { id: 'passkey', label: 'Passkey', enabled: true },
   { id: 'apple', label: 'Apple', enabled: true },
-  { id: 'sms', label: 'Phone / SMS', enabled: true },
+  { id: 'sms', label: 'Phone / SMS', compactLabel: 'Phone', enabled: true },
   { id: 'email_otp', label: 'Email', enabled: true },
 ];
 

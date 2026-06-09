@@ -34,7 +34,16 @@ export function AuthMethodPicker({ methods, onToggle, disabled }: AuthMethodPick
             <span className={styles.icon}>
               <Icon size={24} />
             </span>
-            <span className={styles.label}>{opt.label}</span>
+            <span className={styles.label}>
+              {opt.compactLabel ? (
+                <>
+                  <span className={styles.labelFull}>{opt.label}</span>
+                  <span className={styles.labelCompact}>{opt.compactLabel}</span>
+                </>
+              ) : (
+                opt.label
+              )}
+            </span>
             <Checkbox.Indicator
               checked={isSelected}
               disabled={isDisabled}
