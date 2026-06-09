@@ -1,9 +1,29 @@
+@use '../../styles/breakpoints' as *;
+
 .panel {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@media (max-width: ($breakpoint-layout-wide - 1px)) {
+  .panel {
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .body {
+    flex: 1;
+    overflow: visible;
+  }
+}
+
+@media (min-width: $breakpoint-layout-wide) {
+  .body {
+    overflow: visible;
+  }
 }
 
 .body {

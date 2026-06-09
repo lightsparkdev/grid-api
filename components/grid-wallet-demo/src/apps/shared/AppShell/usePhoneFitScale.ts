@@ -6,6 +6,10 @@ import { useLayoutEffect, useRef, useState } from 'react';
 export const APP_SHELL_OUTER_WIDTH = 434;
 export const APP_SHELL_OUTER_HEIGHT = 906;
 
+/** Minimum inset around the phone when fitting inside the dot-grid stage. */
+export const PHONE_FIT_PAD_INLINE = 16;
+export const PHONE_FIT_PAD_BLOCK = 48;
+
 export function usePhoneFitScale() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -20,8 +24,8 @@ export function usePhoneFitScale() {
       const cw = el.clientWidth;
       const ch = el.clientHeight;
       setSize((p) => (p.w === cw && p.h === ch ? p : { w: cw, h: ch }));
-      const availW = cw - 32;
-      const availH = ch - 32;
+      const availW = cw - PHONE_FIT_PAD_INLINE * 2;
+      const availH = ch - PHONE_FIT_PAD_BLOCK * 2;
       const s = Math.min(
         1,
         availW / APP_SHELL_OUTER_WIDTH,

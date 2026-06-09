@@ -18,6 +18,7 @@ export function ApiPanel({ entries }: ApiPanelProps) {
   return (
     <section className={styles.panel}>
       <PanelHeader
+        className={styles.headerStacked}
         icon={<IconCode size={20} />}
         title="API calls"
       />

@@ -7,6 +7,10 @@ import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
 import { loadGis } from '@/lib/auth';
 import type { ActionId, WalletState } from '@/data/actions';
+import {
+  PHONE_FIT_PAD_BLOCK,
+  PHONE_FIT_PAD_INLINE,
+} from '@/apps/shared/AppShell/usePhoneFitScale';
 import styles from './Phone.module.scss';
 
 export const PHONE_BRAND: Record<Persona, { name: string; tag: string }> = {
@@ -25,8 +29,8 @@ function useFitScale() {
     const el = wrapRef.current;
     if (!el) return;
     const compute = () => {
-      const availW = el.clientWidth - 32;
-      const availH = el.clientHeight - 32;
+      const availW = el.clientWidth - PHONE_FIT_PAD_INLINE * 2;
+      const availH = el.clientHeight - PHONE_FIT_PAD_BLOCK * 2;
       const s = Math.min(1, availW / DEVICE_W, availH / DEVICE_H);
       setScale(s > 0 ? s : 1);
     };

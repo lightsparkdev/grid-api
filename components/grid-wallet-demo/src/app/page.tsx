@@ -28,34 +28,36 @@ export default function Page() {
         onAction={logic.handleAction}
         onReset={logic.reset}
       />
-      <div className={styles.appCol}>
-        <AppPanel
-          persona={logic.persona}
-          method={logic.method}
-          wallet={logic.wallet}
-          phone={logic.phone}
-          running={logic.running}
-          handleAction={logic.handleAction}
-          signInWithMethod={logic.signInWithMethod}
-          signInMethod={logic.signInMethod}
-          otpActive={logic.otpActive}
-          submitOtp={logic.submitOtp}
-          emailActive={logic.emailActive}
-          submitEmail={logic.submitEmail}
-          gNonce={logic.gNonce}
-          submitGoogle={logic.submitGoogle}
-          amountConfig={logic.amountConfig}
-          submitAmount={logic.submitAmount}
-          cancelAmount={logic.cancelAmount}
-        />
-      </div>
-      <ColumnResizeHandle onMouseDown={onResizeStart} />
-      <div
-        ref={apiColRef}
-        className={styles.apiCol}
-        style={{ width: apiWidth, flex: '0 0 auto' }}
-      >
-        <ApiPanel entries={logic.entries} />
+      <div className={styles.stackCol}>
+        <div className={styles.appCol}>
+          <AppPanel
+            persona={logic.persona}
+            method={logic.method}
+            wallet={logic.wallet}
+            phone={logic.phone}
+            running={logic.running}
+            handleAction={logic.handleAction}
+            signInWithMethod={logic.signInWithMethod}
+            signInMethod={logic.signInMethod}
+            otpActive={logic.otpActive}
+            submitOtp={logic.submitOtp}
+            emailActive={logic.emailActive}
+            submitEmail={logic.submitEmail}
+            gNonce={logic.gNonce}
+            submitGoogle={logic.submitGoogle}
+            amountConfig={logic.amountConfig}
+            submitAmount={logic.submitAmount}
+            cancelAmount={logic.cancelAmount}
+          />
+        </div>
+        <ColumnResizeHandle onMouseDown={onResizeStart} />
+        <div
+          ref={apiColRef}
+          className={styles.apiCol}
+          style={{ width: apiWidth, flex: '0 0 auto' }}
+        >
+          <ApiPanel entries={logic.entries} />
+        </div>
       </div>
     </main>
   );

@@ -1,3 +1,5 @@
+@use '../../styles/breakpoints' as *;
+
 .panel {
   width: 475px;
   flex-shrink: 0;
@@ -9,6 +11,14 @@
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-950);
+  }
+}
+
+@media (max-width: $breakpoint-layout-mobile) {
+  .panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: var(--stroke-xs) solid var(--border-primary);
   }
 }
 

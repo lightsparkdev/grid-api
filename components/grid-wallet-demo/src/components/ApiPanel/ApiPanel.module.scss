@@ -1,3 +1,5 @@
+@use '../../styles/breakpoints' as *;
+
 .panel {
   flex: 1;
   min-width: 0;
@@ -21,4 +23,33 @@
 
 .bodyEmpty {
   position: relative;
+}
+
+@media (max-width: ($breakpoint-layout-wide - 1px)) {
+  .panel {
+    overflow: visible;
+  }
+
+  .body {
+    overflow: visible;
+  }
+
+  .headerStacked {
+    border-top: var(--stroke-xs) solid var(--border-primary);
+  }
+}
+
+@media (min-width: $breakpoint-layout-wide) {
+  .panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .body {
+    overflow: visible;
+  }
+
+  .headerStacked {
+    border-left: var(--stroke-xs) solid var(--border-primary);
+  }
 }
