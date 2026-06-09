@@ -31,7 +31,7 @@ SIGN="node $(pwd)/scripts/embedded-wallet-sign.js"
 g() { curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" "$@"; }
 ```
 
-`$SIGN --help` lists the three subcommands. `g` is a shorthand for
+`$SIGN --help` lists the four subcommands. `g` is a shorthand for
 authenticated curl used throughout the snippets below.
 
 ## 1. Onboarding
@@ -77,12 +77,12 @@ g "$GRID_BASE_URL/customers/internal-accounts?customerId=$CUSTOMER_ID" \
 
 Capture the **USDB account id** into `$USDB_ACCT`.
 
-### 1.4 Bootstrap the embedded wallet (verify the EMAIL_OTP credential)
+### 1.4 Bootstrap the embedded wallet (issue the EMAIL_OTP challenge)
 
 > **Required before the first quote.** The USDB embedded wallet's Turnkey
 > sub-org and Spark network wallet aren't fully provisioned at customer
-> creation time. Verifying the auto-created auth credential triggers that
-> bootstrap. Skipping causes the first on-ramp quote to fail with
+> creation time. Challenging and later verifying the auto-created auth
+> credential triggers that bootstrap. Skipping causes the first on-ramp quote to fail with
 > `to_network INTERNAL_FUNDED_FIAT does not support USDB`.
 
 An `EMAIL_OTP` credential is automatically created when the embedded wallet
