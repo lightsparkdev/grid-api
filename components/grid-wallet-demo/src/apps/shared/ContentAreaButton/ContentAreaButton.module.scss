@@ -1,4 +1,6 @@
 @use '../typography/ios-type-mixins' as ios;
+@use '../fill-button' as fill;
+@use '../glass/glass-button-shadow' as shadow;
 
 .button {
   display: flex;
@@ -8,17 +10,14 @@
   width: 100%;
   margin: 0;
   padding: 14px 20px;
-  /* Outlined (Figma 2183:47668): hairline separator border, no fill, theme-aware
-     label — replaces the old solid fill. */
-  border: 0.5px solid var(--ios-separator-opaque);
   border-radius: 1000px;
   /* globals.scss sets corner-shape: superellipse on * — pills need round. */
   corner-shape: round;
-  background: transparent;
   color: var(--ios-label-primary);
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  @include fill.fill-quaternary-surface;
+  @include shadow.glass-button-press-scale(1.04);
 
   @include ios.ios-text-headline;
   font-weight: 590;
@@ -28,10 +27,6 @@
   &:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-  }
-
-  &:active:not(:disabled) {
-    opacity: 0.88;
   }
 }
 

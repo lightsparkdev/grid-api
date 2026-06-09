@@ -106,13 +106,15 @@ export const WalletDemoEmbed = () => {
     };
   }, []);
 
+  // The placeholder <div id="wallet-demo-container" /> lives in the MDX body below
+  // (not returned here) so it's in the initial HTML — the chrome-hiding CSS
+  // (#content-area:has(#wallet-demo-container)) then applies on first paint with no
+  // flash of the bare docs page. This component only positions the persistent
+  // iframe over that box. (Kept as a JS comment, not a body-level {/* … */}
+  // expression, which the MDX parser rejects with "Could not parse expression".)
   return null;
 };
 
-{/* Static placeholder — must be in the initial HTML so the chrome-hiding CSS
-    (#content-area:has(#wallet-demo-container) …) applies on first paint, with no
-    flash of the bare docs page on refresh. The component above only positions
-    the persistent iframe over this box. */}
 <div id="wallet-demo-container" />
 
 <WalletDemoEmbed />

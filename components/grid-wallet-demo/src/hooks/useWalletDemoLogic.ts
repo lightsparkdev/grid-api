@@ -58,6 +58,7 @@ export function useWalletDemoLogic() {
 
   const [signInMethod, setSignInMethod] = useState<AuthMethod | null>(null);
   const [passkeyActive, setPasskeyActive] = useState(false);
+  const [faceIdActive, setFaceIdActive] = useState(false);
   const [otpActive, setOtpActive] = useState(false);
   const [emailActive, setEmailActive] = useState(false);
   const [gNonce, setGNonce] = useState<string | null>(null);
@@ -65,6 +66,9 @@ export function useWalletDemoLogic() {
 
   const session = useRef<Session>({});
   const passkeyPrompt = useRef<{ resolve: () => void; reject: (e: Error) => void } | null>(null);
+  const faceIdPrompt = useRef<{ resolve: () => void; timer: ReturnType<typeof setTimeout> } | null>(
+    null,
+  );
   const otpPrompt = useRef<{ resolve: (c: string) => void; reject: (e: Error) => void } | null>(null);
   const emailPrompt = useRef<{ resolve: (e: string) => void; reject: (e: Error) => void } | null>(null);
   const googlePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
@@ -86,7 +90,9 @@ export function useWalletDemoLogic() {
     return new Promise((resolve, reject) => (passkeyPrompt.current = { resolve, reject }));
   }, []);
   const confirmPasskey = useCallback(() => {
-    setPasskeyActive(false);
+    // Leave the sheet up — it stays through the credential ceremony (the passcode /
+    // system passkey dialog) and only dismisses once that resolves, in the passkey
+    // branch of `authenticate`.
     const p = passkeyPrompt.current;
     passkeyPrompt.current = null;
     p?.resolve();
@@ -97,6 +103,25 @@ export function useWalletDemoLogic() {
     passkeyPrompt.current = null;
     p?.reject(new Error('cancelled'));
   }, []);
+
+  const finishFaceId = useCallback(() => {
+    const p = faceIdPrompt.current;
+    faceIdPrompt.current = null;
+    if (p) clearTimeout(p.timer);
+    setFaceIdActive(false);
+    p?.resolve();
+  }, []);
+  // Plays the iOS Face ID animation in the phone and resolves once it has run its
+  // full course (the FaceIdAuth overlay calls finishFaceId on exit). A safety
+  // timeout guarantees sign-in never hangs if the overlay is interrupted before it
+  // can report done — otherwise `running` would stay true and lock every button.
+  const playFaceId = useCallback((): Promise<void> => {
+    setFaceIdActive(true);
+    return new Promise((resolve) => {
+      const timer = setTimeout(finishFaceId, 6000);
+      faceIdPrompt.current = { resolve, timer };
+    });
+  }, [finishFaceId]);
 
   const promptOtp = useCallback((): Promise<string> => {
     setOtpActive(true);
@@ -171,7 +196,14 @@ export function useWalletDemoLogic() {
         pushCalls(signInCalls('email_otp', session.current.email), 'Sign in');
       } else if (m === 'passkey') {
         await promptPasskey();
-        await passkeyCeremony();
+        try {
+          await passkeyCeremony();
+        } finally {
+          // Dismiss the sheet once the passcode / passkey ceremony is done
+          // (whether it succeeded or was cancelled).
+          setPasskeyActive(false);
+        }
+        await playFaceId();
         pushCalls(signInCalls('passkey'), 'Sign in');
       } else if (m === 'oauth') {
         await promptGoogle(await googleNonce());
@@ -190,7 +222,7 @@ export function useWalletDemoLogic() {
       }
       startSession();
     },
-    [method, promptEmail, promptOtp, promptGoogle, promptPasskey, pushCalls, startSession],
+    [method, promptEmail, promptOtp, promptGoogle, promptPasskey, playFaceId, pushCalls, startSession],
   );
 
   const runSignIn = useCallback(async () => {
@@ -341,12 +373,18 @@ export function useWalletDemoLogic() {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
     }
+    if (faceIdPrompt.current) {
+      clearTimeout(faceIdPrompt.current.timer);
+      faceIdPrompt.current.resolve();
+      faceIdPrompt.current = null;
+    }
     session.current = {};
     setWallet(initialWallet);
     setEntries([]);
     setTransient(null);
     setSignInMethod(null);
     setPasskeyActive(false);
+    setFaceIdActive(false);
     setOtpActive(false);
     setEmailActive(false);
     setGNonce(null);
@@ -396,6 +434,8 @@ export function useWalletDemoLogic() {
     passkeyActive,
     confirmPasskey,
     cancelPasskey,
+    faceIdActive,
+    finishFaceId,
     otpActive,
     submitOtp,
     emailActive,

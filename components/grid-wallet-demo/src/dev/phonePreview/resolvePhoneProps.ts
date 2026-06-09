@@ -26,6 +26,8 @@ export interface DemoLogicPhoneSlice {
   passkeyActive: boolean;
   confirmPasskey: () => void;
   cancelPasskey: () => void;
+  faceIdActive: boolean;
+  finishFaceId: () => void;
   otpActive: boolean;
   submitOtp: (code: string) => void;
   emailActive: boolean;
@@ -64,6 +66,12 @@ export function resolvePhoneProps(
       active: previewActive ? overlay === 'passkey' : logic.passkeyActive,
       onConfirm: previewActive ? noop : logic.confirmPasskey,
       onCancel: previewActive ? noop : logic.cancelPasskey,
+    },
+    faceId: {
+      active: previewActive ? overlay === 'faceid' : logic.faceIdActive,
+      onDone: previewActive ? noop : logic.finishFaceId,
+      // Preview loops so the animation can be tuned without re-triggering.
+      loop: previewActive && overlay === 'faceid',
     },
     otp: {
       active: previewActive ? overlay === 'otp' : logic.otpActive,

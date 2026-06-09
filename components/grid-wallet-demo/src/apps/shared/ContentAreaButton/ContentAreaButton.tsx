@@ -7,7 +7,7 @@ interface ContentAreaButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   children: ReactNode;
 }
 
-/** Figma "Button - Content Area" — pill fill on app screens (not glass). */
+/** Figma 2189:47826 — Button - Content Area (Fills/Quaternary). */
 export function ContentAreaButton({
   icon,
   children,

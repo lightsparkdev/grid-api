@@ -1,0 +1,8 @@
+/** Figma Button - Content Area (2189:47826) — Fills/Quaternary pill. */
+$fill-button-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
+
+@mixin fill-quaternary-surface {
+  background: var(--ios-fill-quaternary);
+  border: 0;
+  box-shadow: $fill-button-shadow;
+}

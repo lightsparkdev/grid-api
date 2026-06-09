@@ -15,6 +15,7 @@ import { AuroraAuthScreen } from '@/apps/aurora';
 import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
 import { EmailSheet } from '@/apps/aurora/EmailSheet';
 import { AppShell } from '@/apps/shared/AppShell';
+import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { getAppSkin, type AppSkin } from '@/apps/skins';
 
@@ -119,6 +120,11 @@ export function PhoneSwag({
         appSkin={skin.id}
       >
         {screen}
+        <FaceIdAuth
+          active={Boolean(phoneProps.faceId?.active)}
+          onDone={phoneProps.faceId?.onDone ?? (() => {})}
+          loop={phoneProps.faceId?.loop}
+        />
       </AppShell>
     </OverlayGlassProvider>
   );

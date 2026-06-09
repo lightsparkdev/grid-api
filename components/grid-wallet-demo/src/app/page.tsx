@@ -42,6 +42,8 @@ export default function Page() {
             passkeyActive={logic.passkeyActive}
             confirmPasskey={logic.confirmPasskey}
             cancelPasskey={logic.cancelPasskey}
+            faceIdActive={logic.faceIdActive}
+            finishFaceId={logic.finishFaceId}
             otpActive={logic.otpActive}
             submitOtp={logic.submitOtp}
             emailActive={logic.emailActive}

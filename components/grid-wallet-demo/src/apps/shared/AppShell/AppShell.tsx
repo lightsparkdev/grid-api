@@ -53,20 +53,15 @@ export function AppShell({
   const statusBarRef = useRef<HTMLElement>(null);
   const statusBarTone = useAdaptiveStatusBarTone(screenRef, screenBodyRef, statusBarRef);
 
-  // Hover "bloom": the glass shell grows GROW px outward (bezel 16 -> 16+GROW) while
-  // the inner screen stays put. Radius grows additively (not scaled) so the corners
-  // stay concentric; the WebGL lens reads the shell's geometry each frame, so the
-  // refraction tracks the growth for free.
-  // Temporarily disabled — flip BLOOM_ENABLED back to true to restore the effect.
-  const BLOOM_ENABLED: boolean = false;
+  // The swag glass shell sits REST_INSET px inset at rest and lifts back out
+  // HOVER_GROW px on hover (so the bezel is a touch thinner until you hover). The
+  // inner screen stays put; radius grows additively (not scaled) so corners stay
+  // concentric, and the WebGL lens reads the shell's geometry so the refraction
+  // tracks it. Slop keeps the base geometry (changing it would re-bake the map).
   const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
-  const GROW = 4; // hover bloom, outward
-  const PRESS = 2; // click press, inward
-  // Net outward growth (px): hover blooms OUT (+GROW), click presses IN (−PRESS).
-  const bloom = BLOOM_ENABLED && externalGlass && hovered;
-  const press = externalGlass && pressed;
-  const growOut = (bloom ? GROW : 0) - (press ? PRESS : 0);
+  const REST_INSET = 2; // inset at rest
+  const HOVER_GROW = 2; // lift back out on hover
+  const growOut = externalGlass ? (hovered ? HOVER_GROW : 0) - REST_INSET : 0;
   const shellInset = -growOut;
   const shellRadius = glassConfig.radius + growOut;
   const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * growOut) / APP_SHELL_OUTER_WIDTH;
@@ -165,18 +160,8 @@ export function AppShell({
       >
         <div
           className={styles.frame}
-          onPointerEnter={BLOOM_ENABLED && externalGlass ? () => setHovered(true) : undefined}
-          onPointerDown={externalGlass ? () => setPressed(true) : undefined}
-          onPointerUp={externalGlass ? () => setPressed(false) : undefined}
-          onPointerCancel={externalGlass ? () => setPressed(false) : undefined}
-          onPointerLeave={
-            externalGlass
-              ? () => {
-                  setHovered(false);
-                  setPressed(false);
-                }
-              : undefined
-          }
+          onPointerEnter={externalGlass ? () => setHovered(true) : undefined}
+          onPointerLeave={externalGlass ? () => setHovered(false) : undefined}
         >
           {externalGlass ? (
             <>

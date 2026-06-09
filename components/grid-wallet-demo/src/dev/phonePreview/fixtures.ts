@@ -1,7 +1,7 @@
 import { fmt, initialWallet, type WalletState } from '@/data/actions';
 import type { AuthMethod, PhoneState, Tx } from '@/data/flow';
 
-export type PhoneOverlayId = 'email' | 'otp' | 'google' | 'amount' | 'passkey' | null;
+export type PhoneOverlayId = 'email' | 'otp' | 'google' | 'amount' | 'passkey' | 'faceid' | null;
 
 export interface PhonePreviewFixture {
   id: string;
@@ -208,6 +208,15 @@ export const PHONE_PREVIEW_FIXTURES: PhonePreviewFixture[] = [
     phone: walletPhone(initialWallet, 'auth'),
     wallet: initialWallet,
     overlay: 'passkey',
+  },
+  {
+    id: 'overlay-faceid',
+    label: 'Overlay · Face ID (loop)',
+    group: 'Overlays',
+    method: 'passkey',
+    phone: walletPhone(initialWallet, 'auth'),
+    wallet: initialWallet,
+    overlay: 'faceid',
   },
   {
     id: 'overlay-amount',
