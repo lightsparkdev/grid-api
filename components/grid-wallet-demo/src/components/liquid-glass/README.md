@@ -5,6 +5,24 @@ A cross-browser "liquid glass" refraction effect (reverse-engineered from
 pixels under a rounded-rect "lens" with an SVG `feDisplacementMap` — text stays
 selectable, links stay clickable, no `backdrop-filter`.
 
+## Building a screen? Pick your tool
+
+| You need | Use |
+|---|---|
+| A glass button | `GlassTextButton` / `GlassSymbolButton` (`apps/shared/glass`) |
+| A bottom sheet / modal | `BottomSheet` (frosted) |
+| A new big surface (sheet, modal, panel) | [`FrostPanel`](#frostpanel--cheap-frosted-surface-no-refraction) — frost, cheap, animates smoothly |
+| A small surface that should *refract* the (static) screen behind it | [`GlassOver`](#glass-over-live-ui-sheets--overlays) with `backdropNode` |
+| Glass over a known background (chip, tab bar, card) | [`GlassOver`](#glassover-the-easy-path) with `backdrop` |
+| Refract your own content | `Glass` (= `LiquidGlass`) |
+
+> **Performance rule: refraction's per-frame cost scales with the filtered AREA.**
+> WebKit re-rasterizes the SVG filter each frame a filtered element moves — so
+> **small** refractive bits (buttons, switches, slider handles) animate fine
+> (that's where glass belongs), but a **large** refractive surface (sheet, modal,
+> full panel) tanks Safari while it animates. Big/animated surfaces → `FrostPanel`;
+> keep refraction for the small, tactile elements — static *or* animated.
+
 ## The one thing to understand first
 
 **The glass refracts its own CHILDREN, not the page behind it.**
@@ -135,6 +153,11 @@ import { FrostPanel } from '@/components/liquid-glass';
 </FrostPanel>
 ```
 
+Props are a **`FrostConfig`** (`radius`, `cornerSmoothing`, `tint`, `tintBlur`,
+`edge`) plus `cornerRadii` / `children` — no refraction fields, so presets like
+`SHEET_GLASS` only carry knobs that actually apply (unlike the ~25-field
+`GlassConfig`).
+
 Rule of thumb: **FrostPanel for the big surface, `Glass`/`GlassOver` for the small,
 tactile elements on top** (buttons, switches, handles) where the lens shines and
 the area is small enough to be cheap. Working example: `apps/shared/BottomSheet`
@@ -168,8 +191,9 @@ area) — use it only for **small** surfaces. For a full sheet/modal, prefer
 
 ## `GlassConfig`
 
-Presets exist (`DEFAULT_GLASS`, `SWITCH_GLASS`, `SLIDER_GLASS`, `PHONE_SHELL_GLASS`)
-— start from one and override. All numeric fields are in **px** unless noted.
+Presets exist (`DEFAULT_GLASS`, `PHONE_SHELL_GLASS`) — start from one and override.
+(Frosted surfaces use the slimmer [`FrostConfig`](#frostpanel--cheap-frosted-surface-no-refraction),
+not this.) All numeric fields are in **px** unless noted.
 
 | field | what it does |
 |---|---|

@@ -30,6 +30,27 @@ import { squirclePath } from './squircle';
  * The frost + edge sit on their own layers; children render on top, un-clipped —
  * so a button's press-bloom inside isn't sliced by the panel's rounding.
  */
+
+/**
+ * The "look" config for a frosted surface — the data half of FrostPanel, so
+ * presets (e.g. `SHEET_GLASS`) declare only the knobs that actually apply. Unlike
+ * `GlassConfig` (the refraction engine, ~25 fields), a frost has no displacement —
+ * just shape, tint, blur, and the specular edge color. Build sheets/modals from
+ * this; `FrostPanel` also accepts `cornerRadii` + `children`.
+ */
+export interface FrostConfig {
+  /** Uniform corner radius (px). */
+  radius: number;
+  /** Corner smoothing 0..1 — the squircle exponent (default 0). */
+  cornerSmoothing?: number;
+  /** Frost fill — any CSS color (e.g. a translucent themed token). */
+  tint?: string;
+  /** GPU `backdrop-filter` blur (px); 0 = none. */
+  tintBlur?: number;
+  /** Specular edge color (defaults to `--glass-sheet-edge`). */
+  edge?: string;
+}
+
 export interface FrostPanelProps {
   /** Uniform corner radius (px). Used when `cornerRadii` isn't supplied. */
   radius?: number;

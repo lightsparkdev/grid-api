@@ -1,7 +1,8 @@
 'use client';
 
-import type { GlassConfig } from '@/components/liquid-glass';
+import type { FrostConfig, GlassConfig } from '@/components/liquid-glass';
 import {
+  GLASS_FROST_CTRLS,
   GLASS_MAP_SIZES,
   GLASS_SHAPE_CTRLS,
   GLASS_TUNING_GROUPS,
@@ -11,8 +12,8 @@ import {
 import styles from './GlassTuningPanel.module.scss';
 
 interface GlassTuningPanelProps {
-  cfg: GlassConfig;
-  onChange: (cfg: GlassConfig) => void;
+  cfg: GlassConfig | FrostConfig;
+  onChange: (cfg: GlassConfig | FrostConfig) => void;
   showOutline: boolean;
   onShowOutlineChange: (value: boolean) => void;
   title?: string;
@@ -21,6 +22,8 @@ interface GlassTuningPanelProps {
   onBezelRefChange?: (next: BezelRefState) => void;
   /** Hide shadow sliders (overlay glass presets). */
   hideShadow?: boolean;
+  /** Frosted surface (the sheet): show only shape + frost blur, no refraction. */
+  frost?: boolean;
 }
 
 function fmt(ctrl: GlassCtrl, value: number) {
@@ -65,9 +68,12 @@ export function GlassTuningPanel({
   bezelRef,
   onBezelRefChange,
   hideShadow = false,
+  frost = false,
 }: GlassTuningPanelProps) {
-  const set = (key: keyof GlassConfig, value: number) =>
-    onChange({ ...cfg, [key]: value });
+  const set = (key: string, value: number) =>
+    onChange({ ...cfg, [key]: value } as GlassConfig | FrostConfig);
+  const num = (key: string) =>
+    (cfg as unknown as Record<string, number | undefined>)[key] ?? 0;
 
   return (
     <div className={styles.wrap}>
@@ -105,54 +111,55 @@ export function GlassTuningPanel({
       <div className={styles.group}>
         <span className={styles.groupTitle}>Shape</span>
         {GLASS_SHAPE_CTRLS.map((ctrl) => (
-          <Slider
-            key={ctrl.key}
-            ctrl={ctrl}
-            value={(cfg[ctrl.key] as number | undefined) ?? 0}
-            onChange={(v) => set(ctrl.key, v)}
-          />
+          <Slider key={ctrl.key} ctrl={ctrl} value={num(ctrl.key)} onChange={(v) => set(ctrl.key, v)} />
         ))}
       </div>
 
-      {GLASS_TUNING_GROUPS.filter((group) => hideShadow ? group.title !== 'Shadow' : true).map((group) => (
-        <div className={styles.group} key={group.title}>
-          <span className={styles.groupTitle}>{group.title}</span>
-          {group.ctrls.map((ctrl) => (
-            <Slider
-              key={ctrl.key}
-              ctrl={ctrl}
-              value={(cfg[ctrl.key] as number | undefined) ?? 0}
-              onChange={(v) => set(ctrl.key, v)}
-            />
+      {frost ? (
+        <div className={styles.group}>
+          <span className={styles.groupTitle}>Frost</span>
+          {GLASS_FROST_CTRLS.map((ctrl) => (
+            <Slider key={ctrl.key} ctrl={ctrl} value={num(ctrl.key)} onChange={(v) => set(ctrl.key, v)} />
           ))}
         </div>
-      ))}
+      ) : (
+        <>
+          {GLASS_TUNING_GROUPS.filter((group) => (hideShadow ? group.title !== 'Shadow' : true)).map((group) => (
+            <div className={styles.group} key={group.title}>
+              <span className={styles.groupTitle}>{group.title}</span>
+              {group.ctrls.map((ctrl) => (
+                <Slider key={ctrl.key} ctrl={ctrl} value={num(ctrl.key)} onChange={(v) => set(ctrl.key, v)} />
+              ))}
+            </div>
+          ))}
 
-      <div className={styles.group}>
-        <span className={styles.groupTitle}>Rendering</span>
-        <div className={styles.selectRow}>
-          <span>Map size</span>
-          <select
-            className={styles.select}
-            value={cfg.mapSize}
-            onChange={(e) => set('mapSize', Number(e.target.value))}
-          >
-            {GLASS_MAP_SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s}×{s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <label className={styles.checkRow}>
-          <input
-            type="checkbox"
-            checked={showOutline}
-            onChange={(e) => onShowOutlineChange(e.target.checked)}
-          />
-          Show lens outline
-        </label>
-      </div>
+          <div className={styles.group}>
+            <span className={styles.groupTitle}>Rendering</span>
+            <div className={styles.selectRow}>
+              <span>Map size</span>
+              <select
+                className={styles.select}
+                value={(cfg as GlassConfig).mapSize}
+                onChange={(e) => set('mapSize', Number(e.target.value))}
+              >
+                {GLASS_MAP_SIZES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}×{s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <label className={styles.checkRow}>
+              <input
+                type="checkbox"
+                checked={showOutline}
+                onChange={(e) => onShowOutlineChange(e.target.checked)}
+              />
+              Show lens outline
+            </label>
+          </div>
+        </>
+      )}
     </div>
   );
 }

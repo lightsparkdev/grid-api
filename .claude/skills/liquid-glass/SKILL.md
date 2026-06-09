@@ -77,8 +77,8 @@ const BG = 'linear-gradient(135deg, #5b9dff, #b07cff)';
 
 `backdrop` = the same CSS background the surface sits on (gets refracted).
 `children` = content on top (not refracted). Any `GlassConfig` field is a prop.
-Start from a preset (`DEFAULT_GLASS`, `SWITCH_GLASS`, `SLIDER_GLASS`,
-`PHONE_SHELL_GLASS`) and override.
+Start from a preset (`DEFAULT_GLASS`, `PHONE_SHELL_GLASS`) and override. Frosted
+surfaces (`FrostPanel`) use the slimmer `FrostConfig`, not `GlassConfig`.
 
 ## Must-know gotchas (details in the README)
 

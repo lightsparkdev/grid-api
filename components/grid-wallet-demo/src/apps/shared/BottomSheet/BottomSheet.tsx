@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { GlassConfig } from '@/components/liquid-glass';
+import type { FrostConfig } from '@/components/liquid-glass';
 import { FrostPanel } from '@/components/liquid-glass';
 import { useOverlayGlass } from '@/apps/shared/glass/OverlayGlassContext';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -16,8 +16,8 @@ interface BottomSheetProps {
   open: boolean;
   onDismiss: () => void;
   children: ReactNode;
-  /** Override sheet glass preset (dev tuning uses context by default). */
-  glass?: GlassConfig;
+  /** Override the sheet's frost preset (dev tuning uses context by default). */
+  glass?: FrostConfig;
   /**
    * Inset (px) from the screen edges, for a floating sheet. Two effects:
    *  - floats the sheet that many px off the left/right/bottom screen edges, and

@@ -1,44 +1,20 @@
-import type { GlassConfig } from '@/components/liquid-glass';
+import type { FrostConfig, GlassConfig } from '@/components/liquid-glass';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-
-/** Backdrop for glass chips over the auth hero / sheet area. */
-export const AUTH_GLASS_BACKDROP =
-  'linear-gradient(180deg, #b8def1 0%, #ffffff 42%, #f2f2f7 100%)';
 
 /**
  * iOS bottom sheet — Figma 2183:47617.
  *
- * The sheet renders as a non-refractive `FrostPanel` (a big displacement lens
- * re-runs its whole SVG filter every frame as the sheet slides, which tanks
- * Safari). Only the frost + shape fields below are consumed: `tint` + `tintBlur`
- * (the GPU `backdrop-filter` material), `radius`/`cornerSmoothing` (the squircle),
- * and the `--glass-sheet-edge` token (the specular rim, baked into FrostPanel).
- * The displacement fields (`scale`, `depth`, `chromaticAberration`, `glow*`,
- * `edge*`, …) are retained for type/tuning compatibility but no longer rendered.
+ * A `FrostConfig` (not `GlassConfig`): the sheet is a non-refractive `FrostPanel`,
+ * because a big displacement lens re-runs its whole SVG filter every frame as the
+ * sheet slides, which tanks Safari. The look is a milky `tint` + a GPU
+ * `backdrop-filter` `tintBlur`, the squircle shape, and the `--glass-sheet-edge`
+ * specular rim (FrostPanel's `edge` default). Refraction stays on the small buttons.
  */
-export const SHEET_GLASS: GlassConfig = {
+export const SHEET_GLASS: FrostConfig = {
   radius: 22,
-  depth: 10,
-  scale: 16,
-  chromaticAberration: 0.35,
-  blur: 0,
-  // Milky tint + a GPU `backdrop-filter` blur = the iOS "material" frost.
-  tintBlur: 12,
-  domeDepth: 22,
-  splay: 0.65,
-  specularRotation: 45,
-  specularStrength: 1,
-  glowStrength: 0.08,
-  glowSpread: 0.5,
-  glowExponent: 1.5,
-  edgeStrength: 0.3,
-  edgeWidth: 2,
-  edgeExponent: 1.5,
-  brightness: 0.06,
-  tint: 'var(--glass-sheet-tint)',
-  insetShadow: '0 0 0 1px var(--glass-sheet-edge)',
   cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
-  mapSize: 256,
+  tint: 'var(--glass-sheet-tint)',
+  tintBlur: 12,
 };
 
 /** Circular symbol control — Figma Button - Liquid Glass - Symbol. */

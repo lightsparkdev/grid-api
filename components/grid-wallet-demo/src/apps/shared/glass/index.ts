@@ -7,7 +7,6 @@ export {
   type OverlayGlassPresets,
 } from './OverlayGlassContext';
 export {
-  AUTH_GLASS_BACKDROP,
   SHEET_GLASS,
   SYMBOL_GLASS,
   TEXT_GLASS,

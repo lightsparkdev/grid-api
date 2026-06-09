@@ -7,8 +7,8 @@ export { GlassOver } from './GlassOver';
 export type { GlassOverProps } from './GlassOver';
 /** Cheap, non-refractive frosted surface (sheets/modals) — no SVG filter. */
 export { FrostPanel } from './FrostPanel';
-export type { FrostPanelProps } from './FrostPanel';
-export { DEFAULT_GLASS, PHONE_SHELL_GLASS, SWITCH_GLASS, SLIDER_GLASS } from './presets';
+export type { FrostPanelProps, FrostConfig } from './FrostPanel';
+export { DEFAULT_GLASS, PHONE_SHELL_GLASS } from './presets';
 export {
   renderDisplacementMap,
   displacementMapToDataURL,

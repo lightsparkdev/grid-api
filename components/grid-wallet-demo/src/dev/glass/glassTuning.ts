@@ -13,6 +13,11 @@ export const GLASS_SHAPE_CTRLS: GlassCtrl[] = [
   { key: 'cornerSmoothing', label: 'Corner smoothing', min: 0, max: 1, step: 0.01 },
 ];
 
+/** Controls for a frosted (non-refractive) surface — the sheet target. */
+export const GLASS_FROST_CTRLS: GlassCtrl[] = [
+  { key: 'tintBlur', label: 'Frost (CSS blur)', min: 0, max: 30, step: 0.5 },
+];
+
 export const GLASS_TUNING_GROUPS: { title: string; ctrls: GlassCtrl[] }[] = [
   {
     title: 'Refraction',

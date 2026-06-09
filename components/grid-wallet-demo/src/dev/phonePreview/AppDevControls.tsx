@@ -167,17 +167,18 @@ export function AppDevControls({
                 cfg={isShellTarget ? glassConfig : overlayGlass[glassTarget]}
                 onChange={(cfg) => {
                   if (isShellTarget) {
-                    onGlassConfigChange(cfg);
+                    onGlassConfigChange(cfg as GlassConfig);
                     return;
                   }
                   onOverlayGlassChange({
                     ...overlayGlass,
                     [glassTarget]: cfg,
-                  });
+                  } as OverlayGlassPresets);
                 }}
                 showOutline={showGlassOutline}
                 onShowOutlineChange={onShowGlassOutlineChange}
                 hideShadow={!isShellTarget}
+                frost={glassTarget === 'sheet'}
                 bezelRef={isShellTarget ? bezelRef : undefined}
                 onBezelRefChange={isShellTarget ? onBezelRefChange : undefined}
               />

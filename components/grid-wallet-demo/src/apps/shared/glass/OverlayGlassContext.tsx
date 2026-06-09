@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { createContext, useContext, useMemo } from 'react';
-import type { GlassConfig, GlassEngine } from '@/components/liquid-glass';
+import type { FrostConfig, GlassConfig, GlassEngine } from '@/components/liquid-glass';
 import { useGlassEngine } from '@/components/liquid-glass';
 import {
   SHEET_GLASS,
@@ -11,7 +11,8 @@ import {
 } from './presets';
 
 export interface OverlayGlassPresets {
-  sheet: GlassConfig;
+  /** The sheet is a frosted surface (FrostPanel), not a refraction lens. */
+  sheet: FrostConfig;
   symbol: GlassConfig;
   text: GlassConfig;
 }
@@ -49,16 +50,16 @@ function adaptGlassForEngine(cfg: GlassConfig, engine: GlassEngine): GlassConfig
 }
 
 /**
- * The single chokepoint: every sheet and glass button reads its preset here, so
- * the engine adaptation is applied once and nothing downstream needs an
- * `if (Safari)`.
+ * The single chokepoint: every glass button reads its preset here, so the engine
+ * adaptation is applied once and nothing downstream needs an `if (Safari)`. The
+ * sheet is a frost (no displacement), so it passes through untouched.
  */
 export function useOverlayGlass(): OverlayGlassPresets {
   const presets = useContext(OverlayGlassContext);
   const engine = useGlassEngine();
   return useMemo(
     () => ({
-      sheet: adaptGlassForEngine(presets.sheet, engine),
+      sheet: presets.sheet,
       symbol: adaptGlassForEngine(presets.symbol, engine),
       text: adaptGlassForEngine(presets.text, engine),
     }),

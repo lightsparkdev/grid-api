@@ -31,29 +31,6 @@ export const DEFAULT_GLASS: GlassConfig = {
   mapSize: 256,
 };
 
-/** Strong, tactile bend — modelled on Aave's switch thumb (depth 2, dome 6, chroma 1). */
-export const SWITCH_GLASS: GlassConfig = {
-  radius: 44,
-  depth: 12,
-  scale: 40,
-  chromaticAberration: 1,
-  blur: 0,
-  domeDepth: 30,
-  splay: 0.4,
-  specularRotation: 45,
-  specularStrength: 1,
-  glowStrength: 0,
-  glowSpread: 0.5,
-  glowExponent: 1.5,
-  edgeStrength: 0.4,
-  edgeWidth: 2,
-  edgeExponent: 1.5,
-  brightness: 0.06,
-  cornerSmoothing: 0.6,
-  mapSize: 256,
-};
-
-/** Gentle bend so values stay legible — modelled on Aave's slider / toggle handle. */
 /** Large phone bezel — Figma phone-gga @ 2121:17475 */
 export const PHONE_SHELL_GLASS: GlassConfig = {
   // Tuned by eye against refs/bezel-compare.png. The AppShell drives both the
@@ -88,25 +65,4 @@ export const PHONE_SHELL_GLASS: GlassConfig = {
   shadowOpacity: 0.12,
   edgeShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
   mapSize: 512,
-};
-
-export const SLIDER_GLASS: GlassConfig = {
-  radius: 44,
-  depth: 16,
-  scale: 14,
-  chromaticAberration: 0.65,
-  blur: 0,
-  domeDepth: 26,
-  splay: 0.5,
-  specularRotation: 45,
-  specularStrength: 1.5,
-  glowStrength: 0.4,
-  glowSpread: 0.5,
-  glowExponent: 1.5,
-  edgeStrength: 0,
-  edgeWidth: 3,
-  edgeExponent: 1.5,
-  brightness: 0.06,
-  cornerSmoothing: 0.6,
-  mapSize: 256,
 };
