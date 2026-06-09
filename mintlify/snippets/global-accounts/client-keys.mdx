@@ -118,7 +118,7 @@ func generateClientKeyPair() -> ClientKeyPair {
 
 `EMAIL_OTP` credentials never send the OTP code in plaintext. Instead, the client HPKE-encrypts the code (together with its `publicKeyHex`) to an enclave key, so the code is unreadable in transit and Grid is only a pass-through.
 
-Grid returns an `otpEncryptionTargetBundle` from `POST /auth/credentials` (registration) or `POST /auth/credentials/{id}/challenge` (re-issue). It's a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
+Grid returns an `otpEncryptionTargetBundle` whenever it initiates or reissues an OTP challenge, including `POST /auth/credentials/{id}/challenge` and add-EMAIL_OTP signed-retry responses. First-time EMAIL_OTP wallet bootstrap registration can omit it; if the registration response has no bundle, call `POST /auth/credentials/{id}/challenge` for that credential before verifying. The bundle is a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
 
 Use an HPKE library so you don't hand-roll the suite, `info`, or AAD — `@turnkey/crypto`'s `hpkeEncrypt` + `formatHpkeBuf` produce exactly the shape the enclave expects:
 
@@ -127,7 +127,7 @@ Use an HPKE library so you don't hand-roll the suite, `info`, or AAD — `@turnk
 import { hpkeEncrypt, formatHpkeBuf } from "@turnkey/crypto";
 import { hexToBytes } from "@noble/hashes/utils";
 
-// otpEncryptionTargetBundle: from POST /auth/credentials or /challenge
+// otpEncryptionTargetBundle: from the registration response when present, or /challenge
 // clientPublicKeyHex: the uncompressed public key you generated in step 1
 // otp: the code the user typed ("000000" in sandbox)
 function buildEncryptedOtpBundle(

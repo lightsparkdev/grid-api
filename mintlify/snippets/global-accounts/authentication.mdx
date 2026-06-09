@@ -715,7 +715,7 @@ Requires an active session on an *existing* credential on the same account. The 
     **Response (201):** a plain `AuthMethod`.
   </Step>
   <Step title="Activate the new credential">
-    Activate the new credential the same way you would activate the first credential of that type — `EMAIL_OTP` and `OAUTH` go straight to `POST /auth/credentials/{id}/verify` with a fresh `clientPublicKey`; `PASSKEY` first calls `POST /auth/credentials/{id}/challenge` with the `clientPublicKey` to get a Grid-issued WebAuthn challenge, then `POST /auth/credentials/{id}/verify` with the assertion and the `Request-Id` header.
+    Activate the new credential the same way you would activate the first credential of that type — `OAUTH` goes straight to `POST /auth/credentials/{id}/verify` with a fresh `clientPublicKey`; `EMAIL_OTP` uses the `otpEncryptionTargetBundle` from the signed-retry registration response when present, or first calls `POST /auth/credentials/{id}/challenge` if the bundle is absent; `PASSKEY` first calls `POST /auth/credentials/{id}/challenge` with the `clientPublicKey` to get a Grid-issued WebAuthn challenge, then `POST /auth/credentials/{id}/verify` with the assertion and the `Request-Id` header.
   </Step>
 </Steps>
 
