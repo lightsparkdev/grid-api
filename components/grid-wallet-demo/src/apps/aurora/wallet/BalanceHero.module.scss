@@ -21,15 +21,9 @@
 
 .amount {
   margin: 0;
-  font-family: var(--font-family-sf-pro-rounded);
-  font-size: 48px;
-  line-height: 56px;
-  font-weight: 700;
-  font-synthesis: none;
-  font-kerning: normal;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-variation-settings: 'wght' 700, 'GRAD' 400;
+  @include ios.ios-text-wallet-balance;
+  @include ios.ios-type-rounded;
+  @include ios.ios-type-rounded-bold(var(--ios-type-wallet-balance-opsz));
 }
 
 .whole {

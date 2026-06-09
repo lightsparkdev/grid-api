@@ -17,3 +17,11 @@ $fill-button-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
     background: var(--ios-bg-secondary);
   }
 }
+
+/** Stat / activity cards on the wallet sheet (Figma 90:13641). */
+@mixin wallet-elevated-card {
+  @include fill-bordered-surface;
+  border-radius: var(--corner-radius-wallet-card);
+  corner-shape: var(--corner-shape);
+  overflow: hidden;
+}

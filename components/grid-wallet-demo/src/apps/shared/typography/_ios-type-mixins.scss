@@ -104,6 +104,25 @@
   @include ios-type-variation(var(--ios-type-caption-2-weight), var(--ios-type-caption-2-opsz));
 }
 
+@mixin ios-text-wallet-balance {
+  @include ios-type-base;
+  font-size: var(--ios-type-wallet-balance-size);
+  line-height: var(--ios-type-wallet-balance-line);
+  font-weight: var(--ios-type-wallet-balance-weight);
+  @include ios-type-variation(var(--ios-type-wallet-balance-weight), var(--ios-type-wallet-balance-opsz));
+}
+
+/** Swap SF Pro → SF Pro Rounded after an ios-text-* mixin (size/line stay on the stack). */
+@mixin ios-type-rounded {
+  font-family: var(--font-family-sf-pro-rounded);
+}
+
+/** Bold rounded amounts — GRAD axis for SF Pro Rounded. Pass opsz token from the text style. */
+@mixin ios-type-rounded-bold($opsz) {
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'GRAD' 400, 'wdth' 100, 'opsz' $opsz;
+}
+
 /* Status bar time — Figma semibold 590 at 17/22 (between Body and Headline). */
 @mixin ios-text-status-time {
   @include ios-type-base;

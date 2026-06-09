@@ -4,10 +4,11 @@ import { GlassSymbolButton } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { BalanceHero } from './BalanceHero';
 import { WalletActions } from './WalletActions';
+import { WalletInsightCards, type WalletInsightCardsProps } from './WalletInsightCards';
 import { WalletSheet } from './WalletSheet';
 import styles from './AuroraWalletScreen.module.scss';
 
-interface AuroraWalletScreenProps {
+interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   /** Formatted balance from demo state, e.g. "$0.00". */
   balance?: string;
   onAdd?: () => void;
@@ -21,6 +22,7 @@ export function AuroraWalletScreen({
   onAdd,
   onWithdraw,
   onSend,
+  ...insights
 }: AuroraWalletScreenProps) {
   return (
     <div className={styles.root}>
@@ -40,6 +42,7 @@ export function AuroraWalletScreen({
         <WalletSheet>
           <BalanceHero balance={balance} />
           <WalletActions onAdd={onAdd} onWithdraw={onWithdraw} onSend={onSend} />
+          <WalletInsightCards {...insights} />
         </WalletSheet>
       </div>
     </div>

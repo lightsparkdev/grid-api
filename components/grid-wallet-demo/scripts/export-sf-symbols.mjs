@@ -29,6 +29,7 @@ const names = symbols.length ? symbols : ['xmark', 'faceid'];
 const WEIGHT_BY_SYMBOL = {
   xmark: 'semibold',
   faceid: 'bold',
+  'arrow.up': 'semibold',
   'arrow.up.arrow.down': 'semibold',
 };
 
