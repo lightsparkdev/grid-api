@@ -369,6 +369,7 @@ export function StageGL({
     let cssW = 0;
     let cssH = 0;
     let raf = 0;
+    let pendingResize = false;
 
     // GL resources — rebuilt if the context is lost and later restored.
     let gl: WebGLRenderingContext | null = null;
@@ -424,7 +425,7 @@ export function StageGL({
       return true;
     };
 
-    const resize = () => {
+    const applyResizeBuffers = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       cssW = canvas.clientWidth;
       cssH = canvas.clientHeight;
@@ -438,9 +439,18 @@ export function StageGL({
       pointer?.setStage(cssW, cssH);
     };
 
-    const render = () => {
+    const markResize = () => {
+      pendingResize = true;
+    };
+
+    const applyResizeIfNeeded = () => {
+      if (!pendingResize) return;
+      pendingResize = false;
+      applyResizeBuffers();
+    };
+
+    const paintFrame = (now: number) => {
       if (!gl || gl.isContextLost()) return;
-      const now = performance.now();
       const mouse = pointer?.tick() ?? INACTIVE_POINTER;
       drawDotField(offCtx, cssW, cssH, dpr, ripple.current, now, palette, bg ?? palette.bg, mouse);
       gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -503,6 +513,12 @@ export function StageGL({
       gl.uniform1f(u.bright, c.brightness);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+
+    const render = () => {
+      if (!gl || gl.isContextLost()) return;
+      applyResizeIfNeeded();
+      paintFrame(performance.now());
       raf = requestAnimationFrame(render);
     };
 
@@ -513,7 +529,8 @@ export function StageGL({
     };
     const onRestored = () => {
       if (initGL()) {
-        resize();
+        pendingResize = false;
+        applyResizeBuffers();
         render();
       }
     };
@@ -537,10 +554,11 @@ export function StageGL({
 
     let ro: ResizeObserver | null = null;
     if (initGL()) {
-      resize();
-      ro = new ResizeObserver(resize);
+      applyResizeBuffers();
+      paintFrame(performance.now());
+      ro = new ResizeObserver(markResize);
       ro.observe(canvas);
-      render(); // paint an immediate first frame, then animate via rAF
+      render();
     }
 
     return () => {

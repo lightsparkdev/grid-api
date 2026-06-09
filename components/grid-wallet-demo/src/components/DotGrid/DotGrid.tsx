@@ -68,7 +68,9 @@ export function DotGrid({ className, bg, rippleOnClick = true }: DotGridProps) {
     let w = 0;
     let h = 0;
     let raf = 0;
+    let resizeRaf = 0;
     let animating = false;
+    let pendingResize = false;
 
     // Themed colors, re-read whenever the document theme flips (see observeTheme
     // below) so the backdrop changes in the same frame as the CSS.
@@ -133,6 +135,7 @@ export function DotGrid({ className, bg, rippleOnClick = true }: DotGridProps) {
     };
 
     const frame = (now: number) => {
+      applyResizeIfNeeded(now);
       const rp = ripple.current;
       if (!rp) {
         animating = false;
@@ -168,13 +171,29 @@ export function DotGrid({ className, bg, rippleOnClick = true }: DotGridProps) {
       raf = requestAnimationFrame(frame);
     };
 
-    const resize = () => {
+    const applyResizeBuffers = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = cvs.clientWidth;
       h = cvs.clientHeight;
       cvs.width = Math.max(1, Math.round(w * dpr));
       cvs.height = Math.max(1, Math.round(h * dpr));
-      if (!animating) drawDots(ripple.current, performance.now());
+    };
+
+    const applyResizeIfNeeded = (now: number) => {
+      if (!pendingResize) return;
+      pendingResize = false;
+      applyResizeBuffers();
+      drawDots(ripple.current, now);
+    };
+
+    const markResize = () => {
+      pendingResize = true;
+      if (animating) return;
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame((now) => {
+        resizeRaf = 0;
+        applyResizeIfNeeded(now);
+      });
     };
 
     const onDown = (e: PointerEvent) => {
@@ -184,8 +203,9 @@ export function DotGrid({ className, bg, rippleOnClick = true }: DotGridProps) {
       startAnim();
     };
 
-    resize();
-    const ro = new ResizeObserver(resize);
+    applyResizeBuffers();
+    drawDots(ripple.current, performance.now());
+    const ro = new ResizeObserver(markResize);
     ro.observe(cvs);
     cvs.addEventListener('pointerdown', onDown);
 
@@ -199,6 +219,7 @@ export function DotGrid({ className, bg, rippleOnClick = true }: DotGridProps) {
 
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(resizeRaf);
       ro.disconnect();
       cvs.removeEventListener('pointerdown', onDown);
       stopTheme();
