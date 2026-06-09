@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
-import { createPointerTracker, DOT_WAKE_ENABLED, dotMouseOffset, type PointerSample } from '@/lib/dotGridMotion';
+import { createPointerTracker, DOT_WAKE_ENABLED } from '@/lib/dotGridMotion';
 
 /**
  * WebGL "stage": draws the dot-grid backdrop AND the glass lens in one pass.
@@ -66,30 +66,37 @@ const DEFAULT_LENS: StageGLLens = {
 // Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.
 const DOT_SPACING = 20;
 const DOT_SIZE = 2.5;
-const DOT_PADDING = 18; // 8px offset + 10px dot center within tile
+// Draw the dot field this far past each visible edge (CSS px) so the click ripple
+// has real dots to pull in from beyond the frame — no "dots only exist inside"
+// boundary mid-wave. At rest these extra dots sit just off-screen (the gutter is a
+// hair under the gap, so the first off-frame dot hides behind the edge). The
+// visible canvas samples the inner window via the shader's toUV.
+const DOT_BLEED = 48;
+// Wave constants — the ripple itself runs in the shader (rippleOffset, matched
+// values); these two are used here only to estimate how long a ripple stays alive.
 const WAVE_SPEED = 1400;
 const WAVELENGTH = 800;
-const AMPLITUDE = 18;
-const RAMP_DIST = 120;
-const TIME_DECAY = 0.25;
 
 /**
- * Even, centred grid: the outer dots sit exactly DOT_PADDING from each edge and
- * the rest are distributed evenly. The count is picked near DOT_SPACING, then the
- * step is normalised so padding stays equal on all sides at any canvas size.
+ * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap
+ * (by one dot size). Two reasons: (1) it reads as even padding all around, and
+ * (2) the first dot just past each edge lands fully off-screen, so when the field
+ * is extended into the bleed margin those extra dots stay hidden at rest. Returns
+ * the VISIBLE lattice (startX = gutter, step = gap); drawDotField extends it across
+ * the bleed-padded buffer.
  */
 function dotLayout(w: number, h: number) {
-  const availW = Math.max(0, w - 2 * DOT_PADDING);
-  const availH = Math.max(0, h - 2 * DOT_PADDING);
-  const cols = Math.max(1, Math.round(availW / DOT_SPACING) + 1);
-  const rows = Math.max(1, Math.round(availH / DOT_SPACING) + 1);
+  const cols = Math.max(1, Math.round((w + 2 * DOT_SIZE) / DOT_SPACING) - 1);
+  const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
+  const stepX = (w + 2 * DOT_SIZE) / (cols + 1); // the gap
+  const stepY = (h + 2 * DOT_SIZE) / (rows + 1);
   return {
     cols,
     rows,
-    startX: cols > 1 ? DOT_PADDING : w / 2,
-    startY: rows > 1 ? DOT_PADDING : h / 2,
-    stepX: cols > 1 ? availW / (cols - 1) : 0,
-    stepY: rows > 1 ? availH / (rows - 1) : 0,
+    startX: stepX - DOT_SIZE, // gutter ≈ gap − one dot, so off-frame dots hide
+    startY: stepY - DOT_SIZE,
+    stepX,
+    stepY,
   };
 }
 
@@ -97,61 +104,33 @@ function drawDotField(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
+  bleed: number,
   dpr: number,
-  rp: { x: number; y: number; t0: number } | null,
-  now: number,
   palette: DotGridPalette,
   bgColor: string,
-  pointer: PointerSample,
 ) {
+  const fullW = w + 2 * bleed;
+  const fullH = h + 2 * bleed;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px on the device-sized buffer
   ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, w, h);
-  const k = (2 * Math.PI) / WAVELENGTH;
-  const lastBlend = palette.blended.length - 1;
-  let tSec = 0;
-  let timeFade = 0;
-  let wavefront = 0;
-  if (rp) {
-    tSec = (now - rp.t0) / 1000;
-    timeFade = Math.exp(-TIME_DECAY * tSec);
-    wavefront = WAVE_SPEED * tSec;
-  }
-  const { cols, rows, startX, startY, stepX, stepY } = dotLayout(w, h);
-  let lastFill = '';
+  ctx.fillRect(0, 0, fullW, fullH);
+  const { startX, startY, stepX, stepY } = dotLayout(w, h);
+  if (stepX <= 0 || stepY <= 0) return;
+  // The visible lattice (visible x = startX + n*stepX) extended across the whole
+  // bleed-padded buffer (shifted by `bleed`), so the ripple can pull in dots from
+  // just past the frame. At rest the extra (off-frame) dots sit outside the visible
+  // window and stay hidden; the wave is now a GPU sample-displacement so this field
+  // is drawn once (static), not per frame.
+  const nMin = Math.floor((-bleed - startX) / stepX);
+  const nMax = Math.ceil((fullW - bleed - startX) / stepX);
+  const mMin = Math.floor((-bleed - startY) / stepY);
+  const mMax = Math.ceil((fullH - bleed - startY) / stepY);
   ctx.fillStyle = palette.dot;
-  for (let n = 0; n < cols; n++) {
-    const midX = startX + n * stepX;
-    for (let m = 0; m < rows; m++) {
-      const midY = startY + m * stepY;
-      const { dx: mdx, dy: mdy } = dotMouseOffset(midX, midY, pointer, w, h);
-      let dx = mdx;
-      let dy = mdy;
-      let sz = DOT_SIZE;
-      let fill = palette.dot;
-      if (rp && timeFade > 0.001) {
-        const distX = midX + mdx - rp.x;
-        const distY = midY + mdy - rp.y;
-        const d = Math.sqrt(distX * distX + distY * distY);
-        if (d > 0 && d < wavefront) {
-          const behind = wavefront - d;
-          const ramp = Math.min(1, d / RAMP_DIST);
-          const trail = Math.exp(-(behind * behind) / (WAVELENGTH * WAVELENGTH * 0.3));
-          const edge = Math.min(1, behind / RAMP_DIST);
-          const wave = Math.sin(k * d - WAVE_SPEED * k * tSec);
-          const strength = wave * ramp * edge * trail * timeFade;
-          const height = AMPLITUDE * strength;
-          dx += (distX / d) * height;
-          dy += (distY / d) * height;
-          sz = DOT_SIZE * (1 + Math.abs(strength) * 0.4);
-          fill = palette.blended[Math.round(Math.abs(strength) * 0.3 * lastBlend)];
-        }
-      }
-      if (fill !== lastFill) {
-        ctx.fillStyle = fill;
-        lastFill = fill;
-      }
-      ctx.fillRect(midX + dx - sz / 2, midY + dy - sz / 2, sz, sz);
+  for (let n = nMin; n <= nMax; n++) {
+    const midX = bleed + startX + n * stepX;
+    for (let m = mMin; m <= mMax; m++) {
+      const midY = bleed + startY + m * stepY;
+      ctx.fillRect(midX - DOT_SIZE / 2, midY - DOT_SIZE / 2, DOT_SIZE, DOT_SIZE);
     }
   }
 }
@@ -186,6 +165,13 @@ uniform float uBright;       // -0.5..0.5 lens-only brightness
 uniform vec2 uRipplePos;    // click ripple centre, device px (top-down, matches sp)
 uniform float uRippleT;     // seconds since the ripple started; < 0 = inactive
 uniform float uDpr;         // device px per CSS px (scales the CSS-px wave consts)
+uniform float uBleed;       // dot field drawn this far past each visible edge (device px)
+
+// Map a visible-canvas position (device px, top-down) into the dot texture, which
+// is larger than the canvas by uBleed on every side. The visible frame is a window
+// into a continuous lattice, so the ripple can sample dots from just past the edge
+// while at-rest dots stay whole and the off-frame ones hide outside the window.
+vec2 toUV(vec2 p){ return (p + uBleed) / (uRes + vec2(2.0 * uBleed)); }
 
 float lpf(float a, float b, float e){
   a = max(a, 0.0); b = max(b, 0.0);
@@ -199,7 +185,7 @@ float domeGrad(float d, float R, float s){ float n = min(d, 0.999 * R); return (
 // off-axis fetch blends two texels, so this matches the 25-tap result at ~1/3 the
 // cost and with no per-pixel exp(). Offset/weights precomputed from exp(-0.4*i^2).
 vec3 blurTex(vec2 uv, float r){
-  vec2 o = (vec2(r) / uRes) * 0.6157;
+  vec2 o = (vec2(r) / (uRes + vec2(2.0 * uBleed))) * 0.6157;
   vec3 c = texture2D(uTex, uv).rgb;
   vec3 edge = texture2D(uTex, uv + vec2(o.x, 0.0)).rgb
             + texture2D(uTex, uv + vec2(-o.x, 0.0)).rgb
@@ -243,7 +229,7 @@ vec2 rippleOffset(vec2 sp){
 void main(){
   vec2 sp = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y); // top-down device px
   vec2 rip = rippleOffset(sp);     // radial wave displacement (0 when idle)
-  vec2 uv = (sp - rip) / uRes;     // dots ride the wave
+  vec2 uv = toUV(sp - rip);        // dots ride the wave (into the bleed-padded texture)
 
   vec2 lo = uLens.xy;
   vec2 ls = uLens.zw;
@@ -312,12 +298,12 @@ void main(){
   // the flat centre is covered by the screen) and is free when blur = 0.
   vec3 col;
   if (uChroma > 0.0) {
-    vec2 sR = (sp + bend * (uScale * (1.0 + 0.2 * uChroma)) - rip) / uRes;
-    vec2 sG = (sp + bend * (uScale * (1.0 + 0.1 * uChroma)) - rip) / uRes;
-    vec2 sB = (sp + bend * uScale - rip) / uRes;
+    vec2 sR = toUV(sp + bend * (uScale * (1.0 + 0.2 * uChroma)) - rip);
+    vec2 sG = toUV(sp + bend * (uScale * (1.0 + 0.1 * uChroma)) - rip);
+    vec2 sB = toUV(sp + bend * uScale - rip);
     col = vec3(fetch(sR, amt).r, fetch(sG, amt).g, fetch(sB, amt).b);
   } else {
-    col = fetch((sp + bend * uScale - rip) / uRes, amt);
+    col = fetch(toUV(sp + bend * uScale - rip), amt);
   }
 
   // specular: broad glow + thin edge rim along the specular axis (matches the SVG
@@ -351,8 +337,6 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   }
   return sh;
 }
-
-const INACTIVE_POINTER: PointerSample = { x: 0, y: 0, active: false };
 
 export interface StageGLProps {
   className?: string;
@@ -395,6 +379,9 @@ export function StageGL({
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
     let cssW = 0;
     let cssH = 0;
+    // Offscreen dot-field size = visible size + DOT_BLEED on every side.
+    let texCssW = 0;
+    let texCssH = 0;
     let raf = 0;
     let pendingResize = false;
 
@@ -449,6 +436,7 @@ export function StageGL({
         glowInner: U('uGlowInner'), glowBand: U('uGlowBand'), glowExp: U('uGlowExp'),
         edgeExp: U('uEdgeExp'), bright: U('uBright'),
         ripplePos: U('uRipplePos'), rippleT: U('uRippleT'), dpr: U('uDpr'),
+        bleed: U('uBleed'),
       };
       return true;
     };
@@ -459,10 +447,14 @@ export function StageGL({
       cssH = canvas.clientHeight;
       const W = Math.max(1, Math.round(cssW * dpr));
       const H = Math.max(1, Math.round(cssH * dpr));
-      canvas.width = W;
+      canvas.width = W; // visible drawing buffer
       canvas.height = H;
-      off.width = W;
-      off.height = H;
+      // Offscreen dot field is bleed-padded; the shader's toUV maps the visible
+      // canvas to its inner window so on-screen dots stay whole.
+      texCssW = cssW + 2 * DOT_BLEED;
+      texCssH = cssH + 2 * DOT_BLEED;
+      off.width = Math.max(1, Math.round(texCssW * dpr));
+      off.height = Math.max(1, Math.round(texCssH * dpr));
       if (gl) gl.viewport(0, 0, W, H);
       pointer?.setStage(cssW, cssH);
     };
@@ -519,8 +511,7 @@ export function StageGL({
       // click ripple is no longer baked here; it's a shader displacement (below), so
       // it costs nothing on this 2D-redraw + upload path.
       if (textureDirty) {
-        const mouse = pointer?.tick() ?? INACTIVE_POINTER;
-        drawDotField(offCtx, cssW, cssH, dpr, null, now, palette, bg ?? palette.bg, mouse);
+        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg);
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
       }
@@ -585,6 +576,7 @@ export function StageGL({
       // Ripple (GPU): centre in device px (top-down, matching the shader's `sp`),
       // elapsed seconds, and dpr to scale the CSS-px wave constants. `-1` = idle.
       gl.uniform1f(u.dpr, dpr);
+      gl.uniform1f(u.bleed, DOT_BLEED * dpr);
       const r = ripple.current;
       if (r) {
         gl.uniform2f(u.ripplePos, r.x * dpr, r.y * dpr);
