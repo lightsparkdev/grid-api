@@ -57,9 +57,11 @@ export function AppShell({
   // the inner screen stays put. Radius grows additively (not scaled) so the corners
   // stay concentric; the WebGL lens reads the shell's geometry each frame, so the
   // refraction tracks the growth for free.
+  // Temporarily disabled — flip BLOOM_ENABLED back to true to restore the effect.
+  const BLOOM_ENABLED: boolean = false;
   const [hovered, setHovered] = useState(false);
   const GROW = 4;
-  const bloom = externalGlass && hovered;
+  const bloom = BLOOM_ENABLED && externalGlass && hovered;
   const shellInset = bloom ? -GROW : 0;
   const shellRadius = glassConfig.radius + (bloom ? GROW : 0);
   const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * GROW) / APP_SHELL_OUTER_WIDTH;
@@ -158,8 +160,8 @@ export function AppShell({
       >
         <div
           className={styles.frame}
-          onPointerEnter={externalGlass ? () => setHovered(true) : undefined}
-          onPointerLeave={externalGlass ? () => setHovered(false) : undefined}
+          onPointerEnter={BLOOM_ENABLED && externalGlass ? () => setHovered(true) : undefined}
+          onPointerLeave={BLOOM_ENABLED && externalGlass ? () => setHovered(false) : undefined}
         >
           {externalGlass ? (
             <>
