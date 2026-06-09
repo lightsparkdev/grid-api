@@ -14,7 +14,8 @@ Global Accounts are initialized with an `EMAIL_OTP` credential tied to the custo
 
 To produce a session:
 
-- **`EMAIL_OTP`** and **`OAUTH`** — call **`POST /auth/credentials/{id}/verify`** with the OTP value (or a fresh OIDC token) plus a `clientPublicKey`. The response carries the `encryptedSessionSigningKey`.
+- **`EMAIL_OTP`** — if you need a fresh OTP or encryption target, first call **`POST /auth/credentials/{id}/challenge`**. Generate a P-256 client key pair, HPKE-encrypt the OTP value plus the public key into `encryptedOtpBundle`, then call **`POST /auth/credentials/{id}/verify`**. Grid returns a `202` signed-retry challenge; stamp its `payloadToSign` with the same private key and retry with `Grid-Wallet-Signature` plus `Request-Id`. The signed retry returns the session; the private key you generated is the session signing key, so `EMAIL_OTP` responses do not include `encryptedSessionSigningKey`.
+- **`OAUTH`** — call **`POST /auth/credentials/{id}/verify`** with a fresh OIDC token plus `clientPublicKey`. The response carries the `encryptedSessionSigningKey`.
 - **`PASSKEY`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a Grid-issued `challenge` and `requestId`, UTF-8 encode the challenge string for `navigator.credentials.get()`, then call **`POST /auth/credentials/{id}/verify`** with the resulting assertion and the `Request-Id` header. Grid bakes the `clientPublicKey` from the `/challenge` call into the session-creation payload, so it does **not** appear on the `/verify` body.
 
 To add another credential, call **`POST /auth/credentials`** with the new credential details. Because the account already has an `EMAIL_OTP` credential, Grid returns a `202` signed-retry challenge. Stamp that `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The signed retry returns the new `AuthMethod`.
@@ -221,9 +222,14 @@ suspend fun registerPasskey(context: Context, api: MyBackendApi): EmbeddedWallet
         clientPublicKeyHex = clientKeys.publicKeyHex,
     )
 
-    // 6. Run WebAuthn assertion against Grid-issued challenge.
+    // 6. Run WebAuthn assertion against Grid-issued challenge. The returned
+    //    value is a lowercase hex string; UTF-8 encode it to bytes, then put
+    //    those bytes into the platform WebAuthn request format.
+    val webAuthnChallenge = base64UrlEncode(
+        challengeResp.challenge.toByteArray(Charsets.UTF_8),
+    )
     val getOptionsJson = buildWebAuthnGetOptionsJson(
-        challenge = challengeResp.challenge,
+        challenge = webAuthnChallenge,
         rpId = registerResp.rpId,
         credentialId = registerResp.credentialId,
     )
@@ -302,9 +308,10 @@ final class PasskeyCoordinator: NSObject, ASAuthorizationControllerDelegate {
             clientPublicKeyHex: keys.publicKeyHex,
         )
 
-        // 6. Run WebAuthn assertion against Grid-issued challenge.
+        // 6. Run WebAuthn assertion against Grid-issued challenge. The returned
+        //    value is a lowercase hex string; UTF-8 encode it as challenge bytes.
         let assertRequest = provider.createCredentialAssertionRequest(
-            challenge: challengeResp.challenge,
+            challenge: Data(challengeResp.challenge.utf8),
         )
         assertRequest.allowedCredentials = [
             ASAuthorizationPlatformPublicKeyCredentialDescriptor(
