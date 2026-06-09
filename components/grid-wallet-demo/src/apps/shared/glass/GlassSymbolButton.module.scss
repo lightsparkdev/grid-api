@@ -10,6 +10,8 @@
   border: 0;
   background: none;
   border-radius: 50%;
+  /* Pill/symbol controls stay circular — override global superellipse on *. */
+  corner-shape: round;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-shadow;
