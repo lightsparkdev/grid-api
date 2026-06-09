@@ -16,7 +16,6 @@
   color: var(--ios-label-primary);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  @include fill.fill-quaternary-surface;
   @include shadow.glass-button-press-scale(1.04);
 
   @include ios.ios-text-headline;
@@ -30,6 +29,14 @@
   }
 }
 
+.quaternary {
+  @include fill.fill-quaternary-surface;
+}
+
+.bordered {
+  @include fill.fill-bordered-surface;
+}
+
 .icon {
   display: flex;
   flex-shrink: 0;
@@ -40,4 +47,9 @@
 
 .label {
   white-space: nowrap;
+}
+
+.iconOnly {
+  /* Icon-only content-area control (e.g. transfer) — no label gap. */
+  gap: 0;
 }

@@ -1,8 +1,19 @@
-/** Figma Button - Content Area (2189:47826) — Fills/Quaternary pill. */
+/** Figma Button - Content Area — surface fills for pill variants. */
 $fill-button-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
 
 @mixin fill-quaternary-surface {
   background: var(--ios-fill-quaternary);
   border: 0;
   box-shadow: $fill-button-shadow;
+}
+
+/** Wallet sheet (Figma style=Bordered) — elevated primary bg on grouped surface. */
+@mixin fill-bordered-surface {
+  background: var(--ios-bg-primary);
+  border: 0;
+  box-shadow: $fill-button-shadow;
+
+  :global([data-theme='dark']) & {
+    background: var(--ios-bg-secondary);
+  }
 }

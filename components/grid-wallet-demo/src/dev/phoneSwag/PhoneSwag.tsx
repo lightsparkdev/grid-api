@@ -94,7 +94,14 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
       return <CredentialScreen method={authMethod} />;
     case 'wallet':
       if (isAurora) {
-        return <AuroraWalletScreen balance={props.phone.balance} />;
+        return (
+          <AuroraWalletScreen
+            balance={props.phone.balance}
+            onAdd={() => props.onAction('add')}
+            onWithdraw={() => props.onAction('withdraw')}
+            onSend={() => props.onAction('send')}
+          />
+        );
       }
       return null;
     default:
