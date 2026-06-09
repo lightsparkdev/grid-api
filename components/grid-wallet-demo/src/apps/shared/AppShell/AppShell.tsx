@@ -79,12 +79,15 @@ export function AppShell({
   // bezel stay squircle and lined up everywhere. (General Glass/GlassOver components
   // keep the circular fallback via useSquircleSupport; the phone opts out of it.)
   const SCREEN_INSET = 16; // --app-shell-padding
-  const screenClip = `path('${squirclePath(
-    APP_SHELL_OUTER_WIDTH - SCREEN_INSET * 2,
-    APP_SHELL_OUTER_HEIGHT - SCREEN_INSET * 2,
+  const screenW = APP_SHELL_OUTER_WIDTH - SCREEN_INSET * 2;
+  const screenH = APP_SHELL_OUTER_HEIGHT - SCREEN_INSET * 2;
+  const screenPathD = squirclePath(
+    screenW,
+    screenH,
     glassConfig.radius - SCREEN_INSET,
     glassConfig.cornerSmoothing,
-  )}')`;
+  );
+  const screenClip = `path('${screenPathD}')`;
 
   // Drop shadow as an SVG *outset* filter rather than box-shadow. box-shadow rides
   // the Chromium-only `corner-shape`, so on Safari/Firefox it falls back to a circle
@@ -247,6 +250,21 @@ export function AppShell({
                 {children}
               </div>
             ) : null}
+            {externalGlass && (
+              // Hairline edge contrast that traces the screen's exact superellipse.
+              // Strokes the *same* path as the screen's clip-path; the screen's own
+              // clip then trims the stroke to its inner half (~0.5px) so it hugs the
+              // curve perfectly — a CSS border/inset-shadow would clip square at the
+              // corners against the clip-path.
+              <svg
+                className={styles.screenBorder}
+                viewBox={`0 0 ${screenW} ${screenH}`}
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <path d={screenPathD} strokeWidth={1} />
+              </svg>
+            )}
           </div>
         </div>
         {bezelOverlay && (
