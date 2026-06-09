@@ -165,28 +165,50 @@ Grid encrypts the session signing key with **HPKE** (RFC 9180) using the suite:
 - KDF: HKDF-SHA256
 - AEAD: AES-256-GCM
 
-The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag).
+The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag). For HPKE itself, uncompress the encapsulated key to 65-byte SEC1 form, set `info` to UTF-8 `turnkey_hpke`, and authenticate with AAD `encappedPublicUncompressed || recipientPublicKeyUncompressed`.
 
 <Note>
-  **In sandbox, `encryptedSessionSigningKey` is a stub** — random bytes shaped like a real HPKE payload but not encrypted to your `clientPublicKey`. Decrypt attempts will fail. Skip this step entirely on sandbox and use the literal `Grid-Wallet-Signature: sandbox-valid-signature` for any signed action (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>). The decrypt path below applies only to production.
+  Sandbox supports the same decryptable `encryptedSessionSigningKey` format for production-shaped `PASSKEY` and `OAUTH` tests. The legacy `Grid-Wallet-Signature: sandbox-valid-signature` shortcut is still accepted, but using real session bundles and stamps catches client-side format bugs before production.
 </Note>
 
 ## 3. Decrypt the session signing key
 
 <CodeGroup>
 ```typescript Web (TypeScript)
-// npm i @hpke/core @hpke/dhkem-p256 bs58check
+// npm i @hpke/core @hpke/dhkem-p256 @noble/curves bs58check
 import { Aes256Gcm, CipherSuite, HkdfSha256 } from "@hpke/core";
 import { DhkemP256HkdfSha256 } from "@hpke/dhkem-p256";
+import { p256 } from "@noble/curves/nist.js";
 import bs58check from "bs58check";
+
+const TURNKEY_HPKE_INFO = new TextEncoder().encode("turnkey_hpke");
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function concatBytes(...chunks: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(chunks.reduce((len, chunk) => len + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
+}
 
 async function decryptSessionSigningKey(
   clientKeyPair: CryptoKeyPair,
   encryptedSessionSigningKey: string,
 ): Promise<Uint8Array> {
   const payload = bs58check.decode(encryptedSessionSigningKey);
-  const enc = payload.slice(0, 33); // compressed P-256 encapsulated public key
+  const compressedEnc = payload.slice(0, 33);
+  const enc = p256.Point.fromHex(bytesToHex(compressedEnc)).toBytes(false);
   const ciphertext = payload.slice(33);
+  const recipientPub = new Uint8Array(
+    await crypto.subtle.exportKey("raw", clientKeyPair.publicKey),
+  );
+  const aad = concatBytes(enc, recipientPub);
 
   const suite = new CipherSuite({
     kem: new DhkemP256HkdfSha256(),
@@ -197,8 +219,9 @@ async function decryptSessionSigningKey(
   const recipient = await suite.createRecipientContext({
     recipientKey: clientKeyPair.privateKey,
     enc,
+    info: TURNKEY_HPKE_INFO,
   });
-  const plaintext = await recipient.open(ciphertext);
+  const plaintext = await recipient.open(ciphertext, aad);
   return new Uint8Array(plaintext); // 32-byte P-256 session private key (scalar)
 }
 ```
@@ -214,12 +237,16 @@ fun decryptSessionSigningKey(
     alias: String,
     encryptedSessionSigningKey: String, // base58check
 ): ByteArray {
+    // uncompressP256 returns a 65-byte SEC1 public key. uncompressedPublicKey
+    // returns the matching 65-byte SEC1 public key for the private key.
     val payload = Base58Check.decode(encryptedSessionSigningKey)
-    val enc = payload.copyOfRange(0, 33)
+    val enc = uncompressP256(payload.copyOfRange(0, 33))
     val ciphertext = payload.copyOfRange(33, payload.size)
 
     val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
     val privateKey = keyStore.getKey(alias, null) as java.security.interfaces.ECPrivateKey
+    val recipientPub = uncompressedPublicKey(privateKey)
+    val aad = enc + recipientPub
 
     val hpke = HPKE(
         HPKE.mode_base,
@@ -227,8 +254,8 @@ fun decryptSessionSigningKey(
         HPKE.kdf_HKDF_SHA256,
         HPKE.aead_AES_GCM256,
     )
-    val recipient = hpke.setupBaseR(enc, privateKey, byteArrayOf())
-    return recipient.open(byteArrayOf(), ciphertext)
+    val recipient = hpke.setupBaseR(enc, privateKey, "turnkey_hpke".toByteArray())
+    return recipient.open(aad, ciphertext)
 }
 ```
 
@@ -242,17 +269,19 @@ func decryptSessionSigningKey(
     clientPrivateKey: P256.KeyAgreement.PrivateKey,
     encryptedSessionSigningKey: String, // base58check
 ) throws -> Data {
+    // uncompressP256 returns a 65-byte SEC1 public key.
     let payload = try Base58Check.decode(encryptedSessionSigningKey)
-    let enc = payload.prefix(33)
+    let enc = try uncompressP256(payload.prefix(33))
     let ciphertext = payload.suffix(from: 33)
+    let aad = enc + clientPrivateKey.publicKey.x963Representation
 
     var recipient = try HPKE.Recipient(
         privateKey: clientPrivateKey,
         ciphersuite: .P256_SHA256_AES_GCM_256,
-        info: Data(),
-        encapsulatedKey: Data(enc),
+        info: Data("turnkey_hpke".utf8),
+        encapsulatedKey: enc,
     )
-    return try recipient.open(Data(ciphertext), authenticating: Data())
+    return try recipient.open(Data(ciphertext), authenticating: aad)
 }
 ```
 </CodeGroup>
