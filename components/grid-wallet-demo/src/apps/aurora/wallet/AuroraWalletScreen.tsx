@@ -4,6 +4,7 @@ import { GlassSymbolButton } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { BalanceHero } from './BalanceHero';
 import { WalletActions } from './WalletActions';
+import { WalletActivitySection } from './WalletActivitySection';
 import { WalletInsightCards, type WalletInsightCardsProps } from './WalletInsightCards';
 import { WalletSheet } from './WalletSheet';
 import styles from './AuroraWalletScreen.module.scss';
@@ -43,6 +44,7 @@ export function AuroraWalletScreen({
           <BalanceHero balance={balance} />
           <WalletActions onAdd={onAdd} onWithdraw={onWithdraw} onSend={onSend} />
           <WalletInsightCards {...insights} />
+          <WalletActivitySection onAdd={onAdd} />
         </WalletSheet>
       </div>
     </div>

@@ -9,6 +9,7 @@
   padding: 8px 16px;
 }
 
+/* Squircle corners via useSquircleClip (clip-path) — not border-radius/corner-shape. */
 .cardBase {
   @include fill.wallet-elevated-card;
   display: flex;

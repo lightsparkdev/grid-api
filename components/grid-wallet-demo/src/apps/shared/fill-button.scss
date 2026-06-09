@@ -18,10 +18,12 @@ $fill-button-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   }
 }
 
-/** Stat / activity cards on the wallet sheet (Figma 90:13641). */
+/** Stat / activity cards on the wallet sheet (Figma 90:13641).
+    Corners: `useSquircleClip` applies clip-path: path(squircle) — same as bottom
+    sheets / phone shell. border-radius must stay 0 so Safari's circular
+    corner-shape fallback does not intersect the squircle clip. */
 @mixin wallet-elevated-card {
   @include fill-bordered-surface;
-  border-radius: var(--corner-radius-wallet-card);
-  corner-shape: var(--corner-shape);
+  border-radius: 0;
   overflow: hidden;
 }

@@ -31,6 +31,7 @@ const WEIGHT_BY_SYMBOL = {
   faceid: 'bold',
   'arrow.up': 'semibold',
   'arrow.up.arrow.down': 'semibold',
+  'play.fill': 'semibold',
 };
 
 const outDir = path.join(root, 'public/refs/symbols');

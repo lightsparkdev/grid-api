@@ -1,5 +1,8 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import { SfSymbol } from '@/apps/shared/icons';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import styles from './WalletInsightCards.module.scss';
 
 const WEEKLY_BAR_COUNT = 14;
@@ -68,10 +71,17 @@ export function WalletInsightCards({
 }: WalletInsightCardsProps) {
   const bars = normalizeBars(weeklyBars);
   const { whole, decimals } = splitBtcAmount(btcAmount);
+  const weeklyClip = useSquircleClip<HTMLElement>();
+  const bitcoinClip = useSquircleClip<HTMLElement>();
 
   return (
     <div className={styles.row}>
-      <article className={styles.cardWeekly} aria-label="Weekly activity">
+      <article
+        ref={weeklyClip.ref}
+        style={weeklyClip.style}
+        className={styles.cardWeekly}
+        aria-label="Weekly activity"
+      >
         <p className={styles.cardTitle}>Weekly activity</p>
         <div className={styles.chart} role="img" aria-label="Weekly earnings bar chart">
           {bars.map((fill, index) => {
@@ -94,7 +104,12 @@ export function WalletInsightCards({
         </MetricLine>
       </article>
 
-      <article className={styles.cardBitcoin} aria-label="Bitcoin balance">
+      <article
+        ref={bitcoinClip.ref}
+        style={bitcoinClip.style}
+        className={styles.cardBitcoin}
+        aria-label="Bitcoin balance"
+      >
         <p className={styles.cardTitle}>Bitcoin</p>
         <div className={styles.btcBlock}>
           <p className={styles.btcAmount}>
