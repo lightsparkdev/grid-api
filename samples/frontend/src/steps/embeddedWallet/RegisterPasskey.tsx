@@ -9,9 +9,12 @@ interface Props {
   disabled: boolean
 }
 
-// Two-phase: backend mints a WebAuthn challenge, client runs
-// navigator.credentials.create(), client posts the attestation back, backend
-// forwards to Grid as POST /auth/credentials.
+const SANDBOX_MODE = (import.meta.env.VITE_SANDBOX_PASSKEY ?? '1') !== '0'
+const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
+
+// Backend mints a WebAuthn challenge, client runs navigator.credentials.create(),
+// client posts the attestation back, and Grid may require a signed retry before
+// returning the new auth method.
 export default function RegisterPasskey({
   walletAccountId,
   customerId,
@@ -62,7 +65,7 @@ export default function RegisterPasskey({
         (att as AuthenticatorAttestationResponse & { getTransports?: () => string[] })
           .getTransports?.() ?? []
 
-      const data = await apiPost<Record<string, unknown>>('/api/auth/credentials', {
+      const createBody = {
         accountId: walletAccountId,
         challenge: reg.challenge,
         nickname: 'Grid Global Account passkey',
@@ -72,7 +75,16 @@ export default function RegisterPasskey({
           attestationObject: bytesToBase64url(new Uint8Array(att.attestationObject)),
           transports,
         },
-      })
+      }
+
+      let data = await apiPost<Record<string, unknown>>('/api/auth/credentials', createBody)
+      if (typeof data.payloadToSign === 'string' && typeof data.requestId === 'string') {
+        const signature = registrationSignature(data.payloadToSign)
+        data = await apiPost<Record<string, unknown>>('/api/auth/credentials', createBody, {
+          'Grid-Wallet-Signature': signature,
+          'Request-Id': data.requestId,
+        })
+      }
 
       setResponse(JSON.stringify(data, null, 2))
       const authMethodId = (data.id ?? data.authMethodId) as string | undefined
@@ -102,6 +114,15 @@ export default function RegisterPasskey({
       </button>
       <ResponsePanel response={response} error={error} />
     </div>
+  )
+}
+
+function registrationSignature(payloadToSign: string): string {
+  const configured = import.meta.env.VITE_REGISTRATION_GRID_WALLET_SIGNATURE
+  if (configured) return configured
+  if (SANDBOX_MODE) return SANDBOX_WALLET_SIGNATURE
+  throw new Error(
+    `Passkey registration requires a signed retry for payloadToSign: ${payloadToSign}`,
   )
 }
 

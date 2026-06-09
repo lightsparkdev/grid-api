@@ -1,5 +1,6 @@
 package com.grid.sample.routes
 
+import com.lightspark.grid.models.auth.credentials.CredentialCreateParams
 import com.lightspark.grid.models.auth.credentials.CredentialCreateParams.AuthCredentialCreateRequest.PasskeyCredentialCreateRequest
 import com.lightspark.grid.models.auth.credentials.CredentialResendChallengeParams
 import com.lightspark.grid.models.auth.credentials.CredentialVerifyParams
@@ -32,6 +33,11 @@ private object RegistrationChallengeStore {
 
     fun consume(challenge: String): Boolean {
         val expiresAt = store.remove(challenge) ?: return false
+        return System.currentTimeMillis() < expiresAt
+    }
+
+    fun isValid(challenge: String): Boolean {
+        val expiresAt = store[challenge] ?: return false
         return System.currentTimeMillis() < expiresAt
     }
 }
@@ -89,7 +95,7 @@ fun Route.authCredentialRoutes() {
 
                 val challenge = json.optText("challenge")
                     ?: throw IllegalArgumentException("challenge is required")
-                if (!RegistrationChallengeStore.consume(challenge)) {
+                if (!RegistrationChallengeStore.isValid(challenge)) {
                     return@post call.respondText(
                         """{"error": "challenge is invalid or expired"}""",
                         ContentType.Application.Json,
@@ -114,13 +120,34 @@ fun Route.authCredentialRoutes() {
                         json.optText("nickname")?.let { nickname(it) }
                     }
                     .build()
+                val gridWalletSignature = call.request.headers["Grid-Wallet-Signature"]
+                val requestId = call.request.headers["Request-Id"]
+                val params = CredentialCreateParams.builder()
+                    .authCredentialCreateRequest(request)
+                    .apply {
+                        gridWalletSignature?.let { gridWalletSignature(it) }
+                        requestId?.let { requestId(it) }
+                    }
+                    .build()
 
-                Log.gridRequest("auth.credentials.create", JsonUtils.prettyPrint(request))
-                val response = GridClientBuilder.client.auth().credentials().create(request)
-                val responseJson = JsonUtils.prettyPrint(response)
+                Log.gridRequest(
+                    "auth.credentials.create",
+                    "signedRetry=${gridWalletSignature != null} body=${JsonUtils.prettyPrint(request)}",
+                )
+                val response = GridClientBuilder.client.auth().credentials()
+                    .withRawResponse()
+                    .create(params)
+                val responseJson = response.body().bufferedReader().use { it.readText() }
                 Log.gridResponse("auth.credentials.create", responseJson)
+                if (response.statusCode() != HttpStatusCode.Accepted.value) {
+                    RegistrationChallengeStore.consume(challenge)
+                }
 
-                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
+                call.respondText(
+                    responseJson,
+                    ContentType.Application.Json,
+                    HttpStatusCode.fromValue(response.statusCode()),
+                )
             } catch (e: Exception) {
                 Log.gridError("auth.credentials.create", e)
                 call.respondText(
