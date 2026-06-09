@@ -11,9 +11,12 @@ export const SHEET_GLASS: GlassConfig = {
   depth: 10,
   scale: 16,
   chromaticAberration: 0.35,
-  // Heavy blur + a milky tint = the iOS "material" look (you barely see the
-  // refracted screen through it). Tint flips with the theme via the token.
-  blur: 12,
+  // A milky tint + a GPU `backdrop-filter` blur (`tintBlur`) = the iOS "material"
+  // look (you barely see the refracted screen through it). The frost is CSS, not an
+  // in-filter `feGaussianBlur`, so it's cheap on WebKit and keeps the filter's
+  // source graphic small. The in-filter `blur` stays off. Tint flips via the token.
+  blur: 0,
+  tintBlur: 12,
   domeDepth: 22,
   splay: 0.65,
   specularRotation: 45,

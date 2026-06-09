@@ -22,7 +22,8 @@ export const GLASS_TUNING_GROUPS: { title: string; ctrls: GlassCtrl[] }[] = [
       { key: 'domeDepth', label: 'Curvature', min: 0, max: 100, step: 1 },
       { key: 'splay', label: 'Splay', min: 0, max: 1, step: 0.01 },
       { key: 'chromaticAberration', label: 'Chroma', min: 0, max: 1, step: 0.01 },
-      { key: 'blur', label: 'Blur', min: 0, max: 20, step: 0.1 },
+      { key: 'blur', label: 'Blur (SVG)', min: 0, max: 20, step: 0.1 },
+      { key: 'tintBlur', label: 'Frost (CSS blur)', min: 0, max: 30, step: 0.5 },
     ],
   },
   {

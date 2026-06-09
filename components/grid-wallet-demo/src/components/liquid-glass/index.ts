@@ -15,3 +15,6 @@ export {
 } from './displacement';
 export type { DisplacementMapOptions } from './displacement';
 export { squirclePath } from './squircle';
+/** Engine gate — WebKit (Safari/iOS) needs a trimmed filter graph. */
+export { useGlassEngine } from './useGlassEngine';
+export type { GlassEngine } from './useGlassEngine';

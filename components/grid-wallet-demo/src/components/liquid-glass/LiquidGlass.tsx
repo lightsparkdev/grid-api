@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { displacementMapToDataURL } from './displacement';
 import { squirclePath } from './squircle';
+import { useGlassEngine } from './useGlassEngine';
 
 /** `corner-shape` isn't in React's CSSProperties typings yet. */
 type GlassCSS = React.CSSProperties & { cornerShape?: 'squircle' | 'round' | 'bevel' };
@@ -68,8 +69,16 @@ export interface GlassConfig {
   /** Corner smoothing, 0..1. 0 = circular corner, ~0.6 = iOS squircle. */
   cornerSmoothing: number;
   /** Frosted fill painted over the refraction (any CSS color — e.g. a translucent
-   *  white) for the iOS "material" look. Pair with a high `blur`. Omit = clear glass. */
+   *  white) for the iOS "material" look. Pair with `tintBlur`. Omit = clear glass. */
   tint?: string;
+  /**
+   * Frost blur (px) painted as a CSS `backdrop-filter` on the tint layer, instead
+   * of an in-filter `feGaussianBlur`. This is how Aave ships the "material" look:
+   * `backdrop-filter` is GPU-accelerated (cheap on WebKit, where SVG blur is the
+   * most expensive primitive), so it gives the heavy frost without bloating the
+   * filter's source graphic. Pair with `tint`; prefer this over `blur` for sheets.
+   */
+  tintBlur?: number;
   /** Outer drop shadow under the lens rim (CSS box-shadow value). */
   edgeShadow?: string;
   /** Inner shadow that gives the glass thickness (CSS box-shadow value, no `inset`). */
@@ -172,6 +181,11 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   // Squircle only where the platform supports it; circular fallback elsewhere.
   const squircleOK = useSquircleSupport();
   const effSmoothing = squircleOK ? cfg.cornerSmoothing : 0;
+
+  // WebKit needs a trimmed filter graph (see useGlassEngine): the specular pass
+  // reads the raw map (Aave's Safari path) to dodge a feComposite-over-flood
+  // quirk, and the fresh-id signature includes the engine so the swap repaints.
+  const { isSafari } = useGlassEngine();
 
   // Resolve the lens rectangle (defaults to the whole element).
   const lx = lens?.x ?? 0;
@@ -288,7 +302,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   // CSS shadow keeps moving. The fix (straight from Aave's writeup) is to mint a
   // FRESH id on every update — position included — which forces a clean repaint.
   const baseId = useRef(`lg-${Math.random().toString(36).slice(2)}`).current;
-  const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}`;
+  const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}|${isSafari ? 's' : 'c'}`;
   const verRef = useRef(0);
   const lastSig = useRef<string | null>(null);
   if (lastSig.current !== sig) {
@@ -366,9 +380,24 @@ export default function LiquidGlass(props: LiquidGlassProps) {
       </div>
 
       {/* Frosted fill over the refraction (the iOS "material" look) — clipped to the
-          lens shape; pair with a high `blur`. Highlights/shadow below sit on top. */}
-      {ready && cfg.tint && (
-        <div aria-hidden style={{ ...overlayBase, ...clipStyle, background: cfg.tint }} />
+          lens shape. The blur is a GPU `backdrop-filter` (Aave's approach), not an
+          in-filter feGaussianBlur, so the heavy frost costs nothing on the SVG
+          filter and stays cheap on WebKit. Highlights/shadow below sit on top. */}
+      {ready && (cfg.tint || (cfg.tintBlur ?? 0) > 0) && (
+        <div
+          aria-hidden
+          style={{
+            ...overlayBase,
+            ...clipStyle,
+            background: cfg.tint,
+            ...((cfg.tintBlur ?? 0) > 0
+              ? {
+                  backdropFilter: `blur(${cfg.tintBlur}px)`,
+                  WebkitBackdropFilter: `blur(${cfg.tintBlur}px)`,
+                }
+              : null),
+          }}
+        />
       )}
 
       {/* Soft outer drop shadow — uses native corner-shape (blurred, so the
@@ -517,7 +546,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
                         Restricted to the lens region so Safari doesn't run the
                         highlight pass over the whole filter area. */}
                     <feColorMatrix
-                      in="map"
+                      in={isSafari ? 'rawMap' : 'map'}
                       type="matrix"
                       values={`0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 1 0 ${-128 / 255}`}
                       result="specMask"

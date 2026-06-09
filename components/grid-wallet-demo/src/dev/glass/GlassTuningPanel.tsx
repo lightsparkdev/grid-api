@@ -108,7 +108,7 @@ export function GlassTuningPanel({
           <Slider
             key={ctrl.key}
             ctrl={ctrl}
-            value={cfg[ctrl.key] as number}
+            value={(cfg[ctrl.key] as number | undefined) ?? 0}
             onChange={(v) => set(ctrl.key, v)}
           />
         ))}
@@ -121,7 +121,7 @@ export function GlassTuningPanel({
             <Slider
               key={ctrl.key}
               ctrl={ctrl}
-              value={cfg[ctrl.key] as number}
+              value={(cfg[ctrl.key] as number | undefined) ?? 0}
               onChange={(v) => set(ctrl.key, v)}
             />
           ))}

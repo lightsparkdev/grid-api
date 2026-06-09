@@ -59,11 +59,13 @@ export function BottomSheet({
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
 
-  // The refracted copy bleeds this far past the lens on the sides/bottom so the
-  // blur/displacement sample opaque pixels at the edges (sampling past the copy
-  // reads transparent → a dark fringe). Scales with blur so it always exceeds the
-  // lens filter's own edge-sample margin (~blur*3 + scale + …).
-  const screenBleed = Math.ceil((sheetGlass.blur ?? 0) * 3 + 48);
+  // The refracted copy bleeds this far past the lens so the displacement samples
+  // opaque pixels at the edges (sampling past the copy reads transparent → a dark
+  // fringe). The frost is now a CSS backdrop-filter that samples the real backdrop
+  // rather than this copy, so the bleed tracks the displacement reach (~the peak
+  // `scale`) plus a margin, and no longer balloons with the heavy blur — it still
+  // exceeds the lens filter's own edge-sample margin (scale*(1+chroma) + …).
+  const screenBleed = Math.ceil((sheetGlass.scale ?? 0) + (sheetGlass.blur ?? 0) * 3 + 24);
 
   // Measure the overlay (= the screen the sheet covers) so the refracted copy can
   // span it and register with the real screen behind. offsetHeight is the layout
@@ -87,6 +89,21 @@ export function BottomSheet({
     roRef.current.observe(el);
   }, []);
 
+  // Measure the sheet itself so the refracted copy can be clamped to just the
+  // slice of screen behind it (see backdropNode below) instead of spanning the
+  // whole screen — keeps the per-frame composite (and the filter source on Safari)
+  // small. offsetHeight is the layout height, the value we need in the glass space.
+  const [sheetH, setSheetH] = useState(0);
+  const sheetRoRef = useRef<ResizeObserver | null>(null);
+  const sheetRef = useCallback((el: HTMLDivElement | null) => {
+    sheetRoRef.current?.disconnect();
+    if (!el) return;
+    const measure = () => setSheetH(el.offsetHeight);
+    measure();
+    sheetRoRef.current = new ResizeObserver(measure);
+    sheetRoRef.current.observe(el);
+  }, []);
+
   // Bottom corners hug the screen (concentric): bottomRadius = screenRadius − inset.
   // Top corners keep the sheet's own radius. Skipped (uniform glass) when there's no
   // screen radius to read — e.g. a sheet used outside the phone shell.
@@ -103,9 +120,15 @@ export function BottomSheet({
   // space while the sheet slides, so the glass slides *over* the static UI instead
   // of dragging it along. The outer wrapper counter-animates the sheet's slide:
   // it fills the glass, so its `-100%` exactly cancels the sheet's `100%` translate
-  // (no measuring needed). The inner copy is anchored to the screen bottom and
-  // spans the full screen so it registers with the real one; the sheet's
-  // overflow:hidden clips it to the sheet.
+  // (no measuring needed). The inner copy is anchored to the screen bottom so it
+  // registers with the real screen behind it.
+  //
+  // The lens only refracts the slice of screen behind the sheet, so clamp the copy
+  // to the sheet height + bleed (anchored to the screen bottom); the rest above is
+  // never sampled. Shrinks the counter-animated copy from full-screen to sheet-sized
+  // — cheaper to composite each frame and small enough to stay under WebKit's filter
+  // source ceiling. Falls back to the full screen until the sheet is measured.
+  const copyBandH = sheetH > 0 ? Math.min(screenH, sheetH + screenBleed) : screenH;
   const backdropNode =
     behind && screenH > 0 ? (
       <motion.div
@@ -127,8 +150,11 @@ export function BottomSheet({
             left: -(screenBleed + inset),
             right: -(screenBleed + inset),
             bottom: -(screenBleed + inset),
-            height: screenH + screenBleed,
+            height: copyBandH + screenBleed,
             background: 'var(--app-bg)',
+            // Clip the copy to the band; the full-screen `behind` below renders its
+            // real layout but only the bottom band (the part under the sheet) shows.
+            overflow: 'hidden',
           }}
         >
           <div
@@ -136,7 +162,9 @@ export function BottomSheet({
               position: 'absolute',
               left: screenBleed,
               right: screenBleed,
-              top: 0,
+              // Bottom-anchored so the slice under the sheet stays registered with
+              // the real screen; the top overflows past the band and is clipped.
+              bottom: screenBleed,
               height: screenH,
               display: 'flex',
               flexDirection: 'column',
@@ -174,6 +202,7 @@ export function BottomSheet({
             onClick={onDismiss}
           />
           <motion.div
+            ref={sheetRef}
             className={styles.sheetMotion}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
