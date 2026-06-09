@@ -130,6 +130,15 @@
   }
 }
 
+/* Above screenBody + status bar so overlays can frost the status bar (Face ID). */
+.screenOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  overflow: visible;
+}
+
 .screenBody {
   position: absolute;
   inset: 0;

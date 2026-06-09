@@ -10,6 +10,7 @@ import {
 } from 'motion/react';
 import { PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import { easeOutSnappy, easeOutSwift } from '@/lib/easing';
+import styles from './FaceIdAuth.module.scss';
 
 /**
  * FaceIdAuth — the iOS "authenticate from the Dynamic Island" moment.
@@ -23,12 +24,9 @@ import { easeOutSnappy, easeOutSwift } from '@/lib/easing';
  * Shape — faithful iOS superellipse on EVERY browser, using the SAME tuned curve
  * as the phone bezel and bottom sheet (`PHONE_SHELL_GLASS.cornerSmoothing`). The
  * corner is traced with `clip-path: path()` (Safari ignores `corner-shape`, so the
- * same clip-path hack the shell/sheet use — the shell mirrors it as Chromium's
- * `corner-shape: superellipse(...)`), recomputed each frame as the pill morphs into
- * the bezel. The drop shadow is `filter: drop-shadow` (not `box-shadow`, which
- * rides `border-radius` and can't follow a clip-path) so it traces the corner too.
- * The scan video has a black background, so it blends seamlessly into the black
- * bezel as it cross-fades in and out.
+ * same clip-path hack the shell/sheet use). The scan video has a black background,
+ * so it blends seamlessly into the black bezel as it cross-fades in and out.
+ * A progressive backdrop blur (2px → 0) grows behind the island during expand.
  */
 
 // iPhone 16 Pro Dynamic Island ≈ 125 × 37, 11px from the top.
@@ -36,6 +34,9 @@ const PILL_W = 125;
 const PILL_H = 37;
 const PILL_R = PILL_H / 2; // full pill — circular ends
 const ISLAND_TOP = 11;
+
+// Frosted band behind the island — status bar down through the bezel + this much.
+const BLUR_EXTEND_BELOW = 40;
 
 // Figma 2204:48169 — official Apple Face ID bezel.
 const BEZEL = 151;
@@ -94,17 +95,18 @@ function waitForVideoTime(v: HTMLVideoElement | null, t: number, capMs: number):
 interface FaceIdAuthProps {
   /** Rising edge runs the full pill → Face ID → pill sequence once. */
   active: boolean;
-  /** Fired after the exit animation completes (skipped while `loop`). */
+  /** Fired after the exit animation completes. */
   onDone: () => void;
-  /** Dev preview — repeat the sequence instead of firing `onDone`. */
-  loop?: boolean;
 }
 
-export function FaceIdAuth({ active, onDone, loop = false }: FaceIdAuthProps) {
+export function FaceIdAuth({ active, onDone }: FaceIdAuthProps) {
   // 0 = Dynamic Island pill, 1 = Face ID bezel.
   const progress = useMotionValue(0);
   const width = useTransform(progress, (v) => lerp(PILL_W, BEZEL, v));
   const height = useTransform(progress, (v) => lerp(PILL_H, BEZEL, v));
+  const blurHeight = useTransform(height, (h) => ISLAND_TOP + h + BLUR_EXTEND_BELOW);
+  // 0 → 1 with expand/collapse — scales backdrop blur from 0 to max.
+  const blurStrength = useTransform(progress, (v) => v);
   // Drives the box-shadow corner (the visible bezel is the squircle clip below).
   const radius = useTransform(progress, (v) => lerp(PILL_R, BEZEL_R, v));
   const shellOpacity = useMotionValue(0);
@@ -219,16 +221,12 @@ export function FaceIdAuth({ active, onDone, loop = false }: FaceIdAuthProps) {
 
     const run = async () => {
       try {
-        do {
-          await cycle();
-          if (cancelled) return;
-          if (loop) await delay(0.6);
-        } while (loop && !cancelled);
+        await cycle();
       } catch {
         // An interrupted animation can reject its `.finished`; fall through so
         // onDone still fires and the sign-in flow never hangs.
       }
-      if (!cancelled && !loop) onDone();
+      if (!cancelled) onDone();
     };
 
     void run();
@@ -236,88 +234,99 @@ export function FaceIdAuth({ active, onDone, loop = false }: FaceIdAuthProps) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, loop]);
+  }, [active]);
 
   if (!active) return null;
 
   return (
-    <motion.div
-      aria-hidden
-      style={{
-        position: 'absolute',
-        top: ISLAND_TOP,
-        left: '50%',
-        x: '-50%',
-        width,
-        height,
-        borderRadius: radius,
-        boxShadow: BEZEL_SHADOW,
-        opacity: shellOpacity,
-        zIndex: 50,
-        pointerEvents: 'none',
-        willChange: 'width, height, opacity',
-      }}
-    >
-      <div
-        ref={innerRef}
+    <>
+      <motion.div
+        aria-hidden
+        className={styles.progressiveBlur}
         style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          background: '#000',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          height: blurHeight,
+          ['--face-id-blur-strength' as string]: blurStrength,
+          willChange: 'height',
         }}
       >
-        <motion.div
+        <div className={`${styles.blurLayer} ${styles.blurStrong}`} />
+        <div className={`${styles.blurLayer} ${styles.blurMid}`} />
+        <div className={`${styles.blurLayer} ${styles.blurSoft}`} />
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className={styles.bezel}
+        style={{
+          top: ISLAND_TOP,
+          left: '50%',
+          x: '-50%',
+          width,
+          height,
+          borderRadius: radius,
+          boxShadow: BEZEL_SHADOW,
+          opacity: shellOpacity,
+          willChange: 'width, height, opacity',
+        }}
+      >
+        <div
+          ref={innerRef}
           style={{
             position: 'relative',
-            width: VIDEO_SIZE,
-            height: VIDEO_SIZE,
-            flexShrink: 0,
-            scale: videoScaleV,
-            opacity: markOpacity,
-            willChange: 'transform, opacity',
+            width: '100%',
+            height: '100%',
+            background: '#000',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <motion.video
-            ref={videoRef}
-            muted
-            playsInline
-            preload="auto"
+          <motion.div
             style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: videoOpacity,
-              pointerEvents: 'none',
+              position: 'relative',
+              width: VIDEO_SIZE,
+              height: VIDEO_SIZE,
+              flexShrink: 0,
+              scale: videoScaleV,
+              opacity: markOpacity,
+              willChange: 'transform, opacity',
             }}
           >
-            <source src={VIDEO_SRC} type="video/mp4" />
-          </motion.video>
-          <motion.img
-            src={VIDEO_BLUR_SRC}
-            alt=""
-            aria-hidden
-            draggable={false}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: blurOpacity,
-              pointerEvents: 'none',
-            }}
-          />
-        </motion.div>
-      </div>
-    </motion.div>
+            <motion.video
+              ref={videoRef}
+              muted
+              playsInline
+              preload="auto"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: videoOpacity,
+                pointerEvents: 'none',
+              }}
+            >
+              <source src={VIDEO_SRC} type="video/mp4" />
+            </motion.video>
+            <motion.img
+              src={VIDEO_BLUR_SRC}
+              alt=""
+              aria-hidden
+              draggable={false}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: blurOpacity,
+                pointerEvents: 'none',
+              }}
+            />
+          </motion.div>
+        </div>
+      </motion.div>
+    </>
   );
 }
-
-export default FaceIdAuth;

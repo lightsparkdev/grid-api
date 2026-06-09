@@ -27,6 +27,8 @@ interface AppShellProps {
   bezelOverlay?: { src: string; opacity: number } | null;
   /** Screen content below the status bar. */
   children?: ReactNode;
+  /** Full-screen overlay above the status bar (e.g. Face ID blur + island). */
+  screenOverlay?: ReactNode;
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
   /** App skin — drives data-app, font family, and per-app tokens. */
@@ -44,6 +46,7 @@ export function AppShell({
   externalGlass = false,
   bezelOverlay = null,
   children,
+  screenOverlay,
   screenTone = 'default',
   appSkin = 'aurora',
 }: AppShellProps) {
@@ -261,6 +264,9 @@ export function AppShell({
             }
           >
             <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
+            {screenOverlay ? (
+              <div className={styles.screenOverlay}>{screenOverlay}</div>
+            ) : null}
             {children ? (
               <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
                 {children}

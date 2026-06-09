@@ -68,10 +68,8 @@ export function resolvePhoneProps(
       onCancel: previewActive ? noop : logic.cancelPasskey,
     },
     faceId: {
-      active: previewActive ? overlay === 'faceid' : logic.faceIdActive,
+      active: previewActive ? false : logic.faceIdActive,
       onDone: previewActive ? noop : logic.finishFaceId,
-      // Preview loops so the animation can be tuned without re-triggering.
-      loop: previewActive && overlay === 'faceid',
     },
     otp: {
       active: previewActive ? overlay === 'otp' : logic.otpActive,

@@ -118,13 +118,14 @@ export function PhoneSwag({
         externalGlass={externalGlass}
         bezelOverlay={bezelOverlay}
         appSkin={skin.id}
+        screenOverlay={
+          <FaceIdAuth
+            active={Boolean(phoneProps.faceId?.active)}
+            onDone={phoneProps.faceId?.onDone ?? (() => {})}
+          />
+        }
       >
         {screen}
-        <FaceIdAuth
-          active={Boolean(phoneProps.faceId?.active)}
-          onDone={phoneProps.faceId?.onDone ?? (() => {})}
-          loop={phoneProps.faceId?.loop}
-        />
       </AppShell>
     </OverlayGlassProvider>
   );
