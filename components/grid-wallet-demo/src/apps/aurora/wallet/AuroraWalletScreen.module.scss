@@ -1,0 +1,61 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clear the iOS status bar — screenBody underlaps it (see AppShell). */
+  padding-top: 62px;
+  background: var(--wallet-bg);
+
+  /* Figma DS.screenBackground */
+  --wallet-bg: #f9f9f9;
+  /* Debit card height (232) minus visible peek (~64) when sheet is resting. */
+  --wallet-sheet-overlap: 168px;
+
+  :global([data-theme='dark']) & {
+    --wallet-bg: #000000;
+  }
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 24px;
+}
+
+/* Figma 90:13587 — Title3/Emphasized. */
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  letter-spacing: -0.45px;
+  color: var(--ios-label-primary);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.cardWrap {
+  flex-shrink: 0;
+  padding: 8px 16px 0;
+}
+
+/* Reserve debit card footprint (232pt) — empty until card is built. */
+.debitCardSlot {
+  height: 232px;
+}

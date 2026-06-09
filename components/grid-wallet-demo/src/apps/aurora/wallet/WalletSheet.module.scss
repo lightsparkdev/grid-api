@@ -1,0 +1,17 @@
+/* Figma 90:13444 — wallet surface pulled up over the debit card. */
+.sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-height: 0;
+  background: var(--wallet-bg);
+  border-radius: var(--corner-radius-wallet-sheet) var(--corner-radius-wallet-sheet) 0 0;
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.28);
+  /* ~64px of card peeks above (232px card − 168px overlap). Animate later. */
+  margin-top: calc(-1 * var(--wallet-sheet-overlap, 168px));
+}

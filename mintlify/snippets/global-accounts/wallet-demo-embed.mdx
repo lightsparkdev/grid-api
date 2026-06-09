@@ -1,0 +1,87 @@
+export const WalletDemoEmbed = () => {
+  React.useEffect(() => {
+    const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const base = isLocal ? 'http://localhost:4000' : 'https://grid-wallet-demo.vercel.app';
+    const isDark = () => document.documentElement.classList.contains('dark');
+
+    let host = document.getElementById('wallet-demo-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'wallet-demo-host';
+      host.style.cssText = 'position:fixed;z-index:1;overflow:hidden;';
+      const iframe = document.createElement('iframe');
+      iframe.id = 'wallet-demo-iframe';
+      iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light');
+      iframe.title = 'Grid Global Accounts — live demo';
+      iframe.setAttribute('allow', 'publickey-credentials-create *; publickey-credentials-get *; clipboard-write');
+      iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+      host.appendChild(iframe);
+      document.body.appendChild(host);
+    }
+    if (window.__wdHideTimer) { clearTimeout(window.__wdHideTimer); window.__wdHideTimer = null; }
+    host.style.display = 'block';
+
+    let raf = 0;
+    let last = { left: -1, top: -1, width: -1, height: -1 };
+    const sync = () => {
+      const el = document.getElementById('wallet-demo-container');
+      if (el && host) {
+        const r = el.getBoundingClientRect();
+        if (r.left !== last.left || r.top !== last.top || r.width !== last.width || r.height !== last.height) {
+          host.style.left = r.left + 'px';
+          host.style.top = r.top + 'px';
+          host.style.width = r.width + 'px';
+          host.style.height = r.height + 'px';
+          last = { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+      }
+      raf = requestAnimationFrame(sync);
+    };
+    raf = requestAnimationFrame(sync);
+
+    let ignoreNextMutation = false;
+    const sendTheme = () => {
+      const t = isDark() ? 'dark' : 'light';
+      const iframe = document.getElementById('wallet-demo-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
+      }
+    };
+
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'theme-request') {
+        sendTheme();
+        return;
+      }
+      if (e.data && e.data.type === 'theme-sync') {
+        const wantsDark = e.data.theme === 'dark';
+        if (isDark() !== wantsDark) {
+          ignoreNextMutation = true;
+          document.documentElement.classList.toggle('dark');
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    const obs = new MutationObserver(() => {
+      if (ignoreNextMutation) { ignoreNextMutation = false; return; }
+      sendTheme();
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    sendTheme();
+    requestAnimationFrame(sendTheme);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('message', handleMessage);
+      obs.disconnect();
+      window.__wdHideTimer = setTimeout(() => {
+        const h = document.getElementById('wallet-demo-host');
+        if (h) h.style.display = 'none';
+      }, 150);
+    };
+  }, []);
+
+  return null;
+};

@@ -39,3 +39,13 @@
      themed --glass-symbol-backdrop the button sits on). */
   color: var(--ios-label-primary);
 }
+
+.size40 {
+  width: 40px;
+  height: 40px;
+  @include shadow.glass-button-press(40px);
+
+  .glyph {
+    height: 40px;
+  }
+}

@@ -39,6 +39,9 @@
   /* Figma phone-gga (2121:17475) — base radii; ×1.2 when corner-shape is supported */
   --corner-radius-phone-shell: 76px;
   --corner-radius-phone-screen: 60px;
+  /* Wallet home (Figma Bitcoin 2026) — design px × 1.2 under superellipse. */
+  --corner-radius-wallet-sheet: 40px;
+  --corner-radius-wallet-card: 32px;
 }
 
 /* When corner-shape is supported, bump radii so the superellipse hits the target
@@ -56,6 +59,8 @@
     --corner-radius-4xl: 48px;
     --corner-radius-phone-shell: 91.2px; /* 76 × 1.2 */
     --corner-radius-phone-screen: 72px; /* 60 × 1.2 */
+    --corner-radius-wallet-sheet: 48px; /* 40 × 1.2 */
+    --corner-radius-wallet-card: 38.4px; /* 32 × 1.2 */
   }
 }
 

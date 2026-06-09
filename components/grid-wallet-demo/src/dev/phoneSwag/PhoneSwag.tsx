@@ -14,6 +14,7 @@ import type { GlassConfig } from '@/components/liquid-glass';
 import { AuroraAuthScreen } from '@/apps/aurora';
 import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
 import { EmailSheet } from '@/apps/aurora/EmailSheet';
+import { AuroraWalletScreen } from '@/apps/aurora/wallet';
 import { AppShell } from '@/apps/shared/AppShell';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
@@ -91,6 +92,11 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
       return <CreatingScreen brand={brand} note={props.phone.note} />;
     case 'credential':
       return <CredentialScreen method={authMethod} />;
+    case 'wallet':
+      if (isAurora) {
+        return <AuroraWalletScreen />;
+      }
+      return null;
     default:
       return null;
   }

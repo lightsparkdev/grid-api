@@ -83,7 +83,8 @@ if (syncPaths) {
       const transformLine = transform
         ? `\n    transform:\n      '${transform}',`
         : '';
-      return `  ${name}: {${transformLine}\n    d: '${d}',\n  },`;
+      const key = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) ? name : `'${name}'`;
+      return `  ${key}: {${transformLine}\n    d: '${d}',\n  },`;
     })
     .join('\n');
 
