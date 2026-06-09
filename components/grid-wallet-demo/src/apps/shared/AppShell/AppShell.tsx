@@ -60,12 +60,17 @@ export function AppShell({
   // Temporarily disabled — flip BLOOM_ENABLED back to true to restore the effect.
   const BLOOM_ENABLED: boolean = false;
   const [hovered, setHovered] = useState(false);
-  const GROW = 4;
+  const [pressed, setPressed] = useState(false);
+  const GROW = 4; // hover bloom, outward
+  const PRESS = 2; // click press, inward
+  // Net outward growth (px): hover blooms OUT (+GROW), click presses IN (−PRESS).
   const bloom = BLOOM_ENABLED && externalGlass && hovered;
-  const shellInset = bloom ? -GROW : 0;
-  const shellRadius = glassConfig.radius + (bloom ? GROW : 0);
-  const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * GROW) / APP_SHELL_OUTER_WIDTH;
-  const shadowScaleY = (APP_SHELL_OUTER_HEIGHT + 2 * GROW) / APP_SHELL_OUTER_HEIGHT;
+  const press = externalGlass && pressed;
+  const growOut = (bloom ? GROW : 0) - (press ? PRESS : 0);
+  const shellInset = -growOut;
+  const shellRadius = glassConfig.radius + growOut;
+  const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * growOut) / APP_SHELL_OUTER_WIDTH;
+  const shadowScaleY = (APP_SHELL_OUTER_HEIGHT + 2 * growOut) / APP_SHELL_OUTER_HEIGHT;
 
   // Match the DOM corner to the shader's superellipse so the shell shadow and the
   // inner screen trace the same curve as the refracted bezel. corner-shape
@@ -161,7 +166,17 @@ export function AppShell({
         <div
           className={styles.frame}
           onPointerEnter={BLOOM_ENABLED && externalGlass ? () => setHovered(true) : undefined}
-          onPointerLeave={BLOOM_ENABLED && externalGlass ? () => setHovered(false) : undefined}
+          onPointerDown={externalGlass ? () => setPressed(true) : undefined}
+          onPointerUp={externalGlass ? () => setPressed(false) : undefined}
+          onPointerCancel={externalGlass ? () => setPressed(false) : undefined}
+          onPointerLeave={
+            externalGlass
+              ? () => {
+                  setHovered(false);
+                  setPressed(false);
+                }
+              : undefined
+          }
         >
           {externalGlass ? (
             <>
@@ -170,7 +185,7 @@ export function AppShell({
                 className={styles.dropShadow}
                 viewBox={`0 0 ${APP_SHELL_OUTER_WIDTH} ${APP_SHELL_OUTER_HEIGHT}`}
                 aria-hidden
-                style={{ transform: `scale(${bloom ? shadowScaleX : 1}, ${bloom ? shadowScaleY : 1})` }}
+                style={{ transform: `scale(${shadowScaleX}, ${shadowScaleY})` }}
               >
                 <defs>
                   <filter
