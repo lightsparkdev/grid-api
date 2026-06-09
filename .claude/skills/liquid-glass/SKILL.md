@@ -28,10 +28,14 @@ bend a background you put a *copy* of it inside the glass. So:
 
 - Glass over a **known** backdrop (color / gradient / image / pattern) → use
   `GlassOver`, which makes the copy for you.
-- Glass over **live UI behind it** (a sheet/modal over a *static* screen) →
+- Glass over **live UI behind a small surface** (over a *static* screen) →
   achievable: feed the glass a positioned **copy** of that UI. See "Refract live
-  UI behind a sheet" in the gotchas / README.
+  UI behind a small surface" in the gotchas / README.
 - Glass over **arbitrary scrolling/animating DOM** → not achievable. Tell the user.
+
+Exception: a **big** frosted surface (sheet/modal) should NOT refract — the
+per-frame SVG filter tanks Safari. Use `FrostPanel` (GPU `backdrop-filter` + a
+specular edge). Refraction is for the small, tactile elements.
 
 Skipping this gives a flat panel that doesn't lens (the classic failure).
 
@@ -41,7 +45,8 @@ Skipping this gives a flat panel that doesn't lens (the classic failure).
 |---|---|
 | Glass button / tab bar / card / chip over a known bg | `GlassOver` (easiest) |
 | Refract content you already render, or custom backdrop wiring | `Glass` (= `LiquidGlass`) |
-| A sheet/modal that refracts the (static) screen behind it | `GlassOver`'s `backdropNode` / `BottomSheet`'s `behind` |
+| A big frosted sheet/modal (no refraction — fast on Safari) | `FrostPanel` (`BottomSheet` uses it) |
+| A small surface that refracts the (static) screen behind it | `GlassOver`'s `backdropNode` |
 | The phone preview's WebGL stage | `glass-gl/StageGL` — **bespoke, don't reuse** |
 
 **SVG vs shader (which renderer):** **default to the SVG path** (`Glass` /
@@ -85,11 +90,15 @@ Start from a preset (`DEFAULT_GLASS`, `SWITCH_GLASS`, `SLIDER_GLASS`,
   top-left/bottom-right corners) — rotate or lower `edgeStrength` to move it.
 - **`corner-shape: squircle`** is Chromium-only (graceful circular fallback).
 - **Tiled backgrounds:** pass `GlassOver`'s `backdropOffset={{x,y}}` to align.
-- **Refract live UI behind a sheet:** pass a *copy* of the behind-UI as
-  `backdropNode` / `behind`, anchored to align (e.g. `bottom:0` for a bottom
-  sheet), and **counter-animate it** against the slide so it stays put while the
-  glass slides over it. Behind-UI must be static while open. Example:
-  `apps/shared/BottomSheet` → `aurora/PasskeySheet`.
+- **Big sheets/modals don't refract — they frost.** A large displacement lens
+  re-runs its whole SVG filter every frame while the surface animates, which tanks
+  Safari (CPU `feDisplacementMap`). Use `FrostPanel` (GPU `backdrop-filter` + a
+  static specular edge); keep refractive `Glass`/`GlassOver` for the small buttons
+  on top. Example: `apps/shared/BottomSheet` (FrostPanel) → `aurora/PasskeySheet`.
+- **Refract live UI behind a *small* surface:** pass a *copy* of the behind-UI as
+  `GlassOver`'s `backdropNode`, anchored to align, and **counter-animate it**
+  against any slide so it stays put while the glass slides over it. Behind-UI must
+  be static while open. (Not for big sheets — see above.)
 
 ## When tuning
 

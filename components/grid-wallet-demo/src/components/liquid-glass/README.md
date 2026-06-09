@@ -15,9 +15,12 @@ background inside the glass**. Two consequences:
 
 - Glass over a **known** backdrop (color, gradient, image, a pattern) → works.
   Use [`<GlassOver>`](#glassover-the-easy-path) — it does the copy for you.
-- Glass over **live UI behind it** (a sheet/modal over a screen) → works *if that
-  UI is static while the surface is up* — feed the glass a positioned **copy** of
-  it. See [Glass over live UI](#glass-over-live-ui-sheets--overlays).
+- Glass over **live UI behind it** (a *small* surface over a screen) → works *if
+  that UI is static while the surface is up* — feed the glass a positioned **copy**
+  of it. See [Glass over live UI](#glass-over-live-ui-sheets--overlays). For a
+  *big* surface (sheet/modal), don't refract — use
+  [`FrostPanel`](#frostpanel--cheap-frosted-surface-no-refraction) instead (cheap,
+  smooth on Safari).
 - Glass over **arbitrary scrolling/animating DOM** → not possible (a copy can't
   stay in sync).
 
@@ -108,24 +111,56 @@ width/height/radius (those regenerate the displacement map every frame = jank):
 
 ---
 
+## `<FrostPanel>` — cheap frosted surface (no refraction)
+
+For **big** surfaces — a bottom sheet, a modal — refraction isn't the point and is
+actively harmful: a large lens re-runs its whole SVG filter every frame as the
+surface animates, which tanks Safari (WebKit runs `feDisplacementMap` on the CPU).
+`FrostPanel` skips the lens entirely. It frosts the **real** backdrop with a GPU
+`backdrop-filter: blur()` and traces a bright **specular edge** — the "glassy" read
+comes from the rim, not a bend. Nothing per-frame, so it stays smooth while it
+slides.
+
+```tsx
+import { FrostPanel } from '@/components/liquid-glass';
+
+<FrostPanel
+  tint="var(--glass-sheet-tint)"   // milky fill
+  tintBlur={12}                     // GPU backdrop blur
+  radius={22}
+  cornerSmoothing={0.12}
+  cornerRadii={[22, 22, 56, 56]}    // optional per-corner (e.g. hug a screen)
+>
+  <YourSheetContent />
+</FrostPanel>
+```
+
+Rule of thumb: **FrostPanel for the big surface, `Glass`/`GlassOver` for the small,
+tactile elements on top** (buttons, switches, handles) where the lens shines and
+the area is small enough to be cheap. Working example: `apps/shared/BottomSheet`
+(FrostPanel) with `apps/shared/glass` buttons (refractive) inside it.
+
+---
+
 ## Glass over live UI (sheets / overlays)
 
-Want a sheet/modal whose glass refracts the **actual screen behind it** (not a
-flat gradient)? The lens still only bends its own children, so feed it a **copy of
-the behind-UI**, positioned to line up with the real one. Working example:
-`apps/shared/BottomSheet` (`behind` prop) → `aurora/PasskeySheet`.
+Want a surface whose glass actually **refracts the screen behind it** (not just
+frosts it)? The lens only bends its own children, so feed `GlassOver` a **copy of
+the behind-UI** as `backdropNode`, positioned to line up with the real one.
 
-1. **Render a copy, aligned.** Pass the behind-UI as `GlassOver`'s `backdropNode`
-   (or `BottomSheet`'s `behind`). Anchor it to a shared edge so it registers with
-   the real UI — for a bottom sheet that's `bottom: 0` (= screen bottom) + the full
-   screen height. (`BottomSheet` measures the screen off its overlay.)
+Note: this is the expensive path (full displacement over a large, possibly moving
+area) — use it only for **small** surfaces. For a full sheet/modal, prefer
+[`FrostPanel`](#frostpanel--cheap-frosted-surface-no-refraction); that's why
+`BottomSheet` switched to it.
+
+1. **Render a copy, aligned.** Pass the behind-UI as `GlassOver`'s `backdropNode`.
+   Anchor it to a shared edge so it registers with the real UI — for a bottom-anchored
+   surface that's `bottom: 0` + the full backdrop height.
 2. **Counter-animate it against any slide.** If the surface slides, the copy lives
    inside it and would ride along. Wrap the copy in an element that translates the
-   *opposite* way, and make that wrapper fill the lens so its `-100%` exactly
-   cancels the sheet's `+100%` (no measuring needed). The glass then slides *over*
-   a fixed copy instead of dragging it up.
+   *opposite* way so it stays put while the glass slides *over* it.
 3. **Behind-UI must be static while open.** The copy is a second render — it can't
-   track scrolling/animating content. A sheet over a settled screen is fine.
+   track scrolling/animating content. A surface over a settled screen is fine.
 4. **Keep the copy decorative.** `aria-hidden`, `pointer-events: none`, no-op
    handlers; the real UI behind stays the interactive/accessible one.
 
@@ -196,5 +231,6 @@ sampling the shared map. If you actually need canvas/video glass, generalize
   animated dot-grid canvas, tracks the shell element). It is **not** a reusable
   glass component — use `Glass` / `GlassOver` instead.
 - It cannot refract arbitrary **scrolling/animating** DOM behind it. For **static**
-  behind-UI (a sheet over a settled screen) you *can* — via a positioned copy; see
-  [Glass over live UI](#glass-over-live-ui-sheets--overlays).
+  behind-UI behind a *small* surface you *can* — via a positioned copy; see
+  [Glass over live UI](#glass-over-live-ui-sheets--overlays). Big surfaces frost
+  instead ([`FrostPanel`](#frostpanel--cheap-frosted-surface-no-refraction)).

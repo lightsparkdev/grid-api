@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { GlassSymbolButton, GlassTextButton } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -10,14 +9,12 @@ interface PasskeySheetProps {
   open: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-  /** Copy of the screen behind the sheet, for the glass to refract. */
-  behind?: ReactNode;
 }
 
 /** Figma 2183:47617 — passkey registration bottom sheet. */
-export function PasskeySheet({ open, onConfirm, onCancel, behind }: PasskeySheetProps) {
+export function PasskeySheet({ open, onConfirm, onCancel }: PasskeySheetProps) {
   return (
-    <BottomSheet open={open} onDismiss={onCancel} behind={behind}>
+    <BottomSheet open={open} onDismiss={onCancel}>
       <div className={styles.toolbar}>
         <GlassSymbolButton aria-label="Close" onClick={onCancel}>
           <SfSymbol name="xmark" size={17} />
@@ -29,7 +26,7 @@ export function PasskeySheet({ open, onConfirm, onCancel, behind }: PasskeySheet
         <div className={styles.copy}>
           <h2 className={styles.title}>Save a passkey?</h2>
           <p className={styles.description}>
-            &ldquo;passkeys.io&rdquo; supports passkeys, a stronger alternative to
+            &ldquo;Aurora&rdquo; supports passkeys, a stronger alternative to
             passwords that cannot be leaked or stolen. A passkey will be saved in
             &ldquo;Passwords&rdquo;.
           </p>
@@ -40,7 +37,7 @@ export function PasskeySheet({ open, onConfirm, onCancel, behind }: PasskeySheet
         <GlassTextButton variant="primary" onClick={onConfirm}>
           Add Passkey
         </GlassTextButton>
-        <GlassTextButton variant="secondary" onClick={onCancel}>
+        <GlassTextButton variant="secondary" type="button">
           More Options
         </GlassTextButton>
       </div>

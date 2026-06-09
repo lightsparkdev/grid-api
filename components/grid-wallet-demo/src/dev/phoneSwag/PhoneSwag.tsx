@@ -33,17 +33,11 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
   const isAurora = skin.id === 'aurora';
   const onAuthScreen = isAurora && props.phone.screen === 'auth';
 
-  // Decorative copy of the screen behind a sheet, so the glass refracts the actual
-  // auth UI instead of a static gradient (BottomSheet disables pointer events, so
-  // the no-op handler never fires).
-  const authBehind = <AuroraAuthScreen busy={props.busy} onSignIn={() => {}} />;
-
   const passkeySheet = onAuthScreen ? (
     <PasskeySheet
       open={Boolean(props.passkey?.active)}
       onConfirm={props.passkey?.onConfirm ?? (() => {})}
       onCancel={props.passkey?.onCancel ?? (() => {})}
-      behind={authBehind}
     />
   ) : null;
 
@@ -53,7 +47,6 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
     <EmailSheet
       open={Boolean(props.email?.active)}
       onSubmit={props.email?.onSubmit ?? (() => {})}
-      behind={authBehind}
     />
   ) : null;
 

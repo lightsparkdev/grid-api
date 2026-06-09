@@ -3,9 +3,12 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import clsx from 'clsx';
 import { GlassOver } from '@/components/liquid-glass';
-import { AUTH_GLASS_BACKDROP } from './presets';
 import { useOverlayGlass } from './OverlayGlassContext';
 import styles from './GlassSymbolButton.module.scss';
+
+/** The button sits on the frosted sheet, so it refracts a neutral surface token
+ *  (themed) rather than the blue auth-hero gradient — see globals.scss. */
+const SHEET_SURFACE_BACKDROP = 'var(--glass-symbol-backdrop)';
 
 interface GlassSymbolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -26,7 +29,7 @@ export function GlassSymbolButton({
     <button type={type} className={clsx(styles.root, className)} {...rest}>
       <GlassOver
         className={styles.glass}
-        backdrop={AUTH_GLASS_BACKDROP}
+        backdrop={SHEET_SURFACE_BACKDROP}
         {...overlayGlass.symbol}
       >
         <span className={styles.glyph}>{children}</span>

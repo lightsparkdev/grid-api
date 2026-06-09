@@ -183,6 +183,9 @@ uniform float uGlowBand;     // spread*sqrt2
 uniform float uGlowExp;
 uniform float uEdgeExp;
 uniform float uBright;       // -0.5..0.5 lens-only brightness
+uniform vec2 uRipplePos;    // click ripple centre, device px (top-down, matches sp)
+uniform float uRippleT;     // seconds since the ripple started; < 0 = inactive
+uniform float uDpr;         // device px per CSS px (scales the CSS-px wave consts)
 
 float lpf(float a, float b, float e){
   a = max(a, 0.0); b = max(b, 0.0);
@@ -214,9 +217,33 @@ vec3 fetch(vec2 uv, float amt){
   return texture2D(uTex, uv).rgb;
 }
 
+// Click ripple as a GPU sample-displacement of the (static) dot texture — the same
+// travelling wave the 2D path used (matched consts, scaled to device px), so the
+// ripple costs one shader pass per frame instead of a full 2D redraw + re-upload.
+vec2 rippleOffset(vec2 sp){
+  if (uRippleT < 0.0) return vec2(0.0);
+  float WS = 1400.0 * uDpr;   // wave speed (px/s)
+  float WL = 800.0 * uDpr;    // wavelength
+  float AMP = 18.0 * uDpr;    // peak displacement
+  float RAMP = 120.0 * uDpr;  // edge/centre ramp distance
+  float d = distance(sp, uRipplePos);
+  float timeFade = exp(-0.25 * uRippleT);
+  float wavefront = WS * uRippleT;
+  if (timeFade <= 0.001 || d <= 0.0 || d >= wavefront) return vec2(0.0);
+  float behind = wavefront - d;
+  float ramp = min(1.0, d / RAMP);
+  float trail = exp(-(behind * behind) / (WL * WL * 0.3));
+  float edge = min(1.0, behind / RAMP);
+  float k = 6.28318530718 / WL;
+  float wave = sin(k * d - WS * k * uRippleT);
+  float strength = wave * ramp * edge * trail * timeFade;
+  return normalize(sp - uRipplePos) * (AMP * strength);
+}
+
 void main(){
   vec2 sp = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y); // top-down device px
-  vec2 uv = sp / uRes;
+  vec2 rip = rippleOffset(sp);     // radial wave displacement (0 when idle)
+  vec2 uv = (sp - rip) / uRes;     // dots ride the wave
 
   vec2 lo = uLens.xy;
   vec2 ls = uLens.zw;
@@ -285,12 +312,12 @@ void main(){
   // the flat centre is covered by the screen) and is free when blur = 0.
   vec3 col;
   if (uChroma > 0.0) {
-    vec2 sR = (sp + bend * (uScale * (1.0 + 0.2 * uChroma))) / uRes;
-    vec2 sG = (sp + bend * (uScale * (1.0 + 0.1 * uChroma))) / uRes;
-    vec2 sB = (sp + bend * uScale) / uRes;
+    vec2 sR = (sp + bend * (uScale * (1.0 + 0.2 * uChroma)) - rip) / uRes;
+    vec2 sG = (sp + bend * (uScale * (1.0 + 0.1 * uChroma)) - rip) / uRes;
+    vec2 sB = (sp + bend * uScale - rip) / uRes;
     col = vec3(fetch(sR, amt).r, fetch(sG, amt).g, fetch(sB, amt).b);
   } else {
-    col = fetch((sp + bend * uScale) / uRes, amt);
+    col = fetch((sp + bend * uScale - rip) / uRes, amt);
   }
 
   // specular: broad glow + thin edge rim along the specular axis (matches the SVG
@@ -358,8 +385,8 @@ export function StageGL({
     const stage = canvas.parentElement;
     if (!stage) return;
 
-    // Themed dot/bg colors; re-read on theme flip (observeTheme below). The
-    // render loop runs every frame, so it picks up the new palette immediately.
+    // Themed dot/bg colors; re-read on theme flip (observeTheme below, which wakes
+    // the on-demand loop to repaint the dot texture with the new palette).
     let palette = readDotGridPalette(offCtx);
     const pointer = DOT_WAKE_ENABLED
       ? createPointerTracker(stage, canvas, { flipY: true })
@@ -421,6 +448,7 @@ export function StageGL({
         chroma: U('uChroma'), splay: U('uSplay'), glowStr: U('uGlowStr'),
         glowInner: U('uGlowInner'), glowBand: U('uGlowBand'), glowExp: U('uGlowExp'),
         edgeExp: U('uEdgeExp'), bright: U('uBright'),
+        ripplePos: U('uRipplePos'), rippleT: U('uRippleT'), dpr: U('uDpr'),
       };
       return true;
     };
@@ -449,17 +477,58 @@ export function StageGL({
       applyResizeBuffers();
     };
 
-    const paintFrame = (now: number) => {
-      if (!gl || gl.isContextLost()) return;
-      const mouse = pointer?.tick() ?? INACTIVE_POINTER;
-      drawDotField(offCtx, cssW, cssH, dpr, ripple.current, now, palette, bg ?? palette.bg, mouse);
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
+    // ── On-demand rendering ───────────────────────────────────────────────────
+    // The dot field is STATIC unless something animates: a click ripple, the hover
+    // "bloom" moving the lens, a resize, or a theme flip. Redrawing every dot in 2D
+    // and re-uploading the whole stage-sized texture each frame is the expensive
+    // part on WebKit, so we only do that when the texture is "dirty" (ripple /
+    // resize / theme), only re-run the cheap shader when the lens actually moves
+    // (bloom), and stop the loop entirely once everything settles. This is the
+    // difference vs. Aave's video glass: their per-frame upload is a hardware
+    // <video> texture; ours was a full CPU 2D redraw + upload of an unchanging image.
+    let textureDirty = true; // dots need (re)draw + upload this frame
+    let pendingDirty = true; // one-shot dirty request (resize / theme / ripple start)
+    let wasRippleAlive = false;
+    let stillFrames = 0;
+    let lastLx = NaN;
+    let lastLy = NaN;
+    let lastLw = NaN;
+    let lastLh = NaN;
+    let lastRadius = NaN;
+    let targetEl: Element | null = null;
+    let shellBound: Element | null = null;
+    const SETTLE_FRAMES = 3;
+
+    // The wave is visually done once its front has crossed the canvas plus a couple
+    // of wavelengths of trailing falloff — render only that long after a click.
+    const rippleLifeMs = () =>
+      ((Math.hypot(cssW, cssH) + 2 * WAVELENGTH) / WAVE_SPEED) * 1000 + 250;
+    const rippleAlive = (now: number) =>
+      !!ripple.current && now - ripple.current.t0 < rippleLifeMs();
+
+    const getTarget = (): Element | null => {
+      if (targetEl && targetEl.isConnected) return targetEl;
+      targetEl = targetSelector ? document.querySelector(targetSelector) : null;
+      return targetEl;
+    };
+
+    const paintFrame = (now: number): boolean => {
+      if (!gl || gl.isContextLost()) return false;
+
+      // Expensive path — only when the STATIC dot field changed (resize/theme). The
+      // click ripple is no longer baked here; it's a shader displacement (below), so
+      // it costs nothing on this 2D-redraw + upload path.
+      if (textureDirty) {
+        const mouse = pointer?.tick() ?? INACTIVE_POINTER;
+        drawDotField(offCtx, cssW, cssH, dpr, null, now, palette, bg ?? palette.bg, mouse);
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
+      }
 
       // lens rect from the target element, in this canvas's device px (top-down)
       const c = cfgRef.current;
       const cr = canvas.getBoundingClientRect();
-      const target = targetSelector ? document.querySelector(targetSelector) : null;
+      const target = getTarget();
       let lx = cr.width * 0.5 - 217 * dpr;
       let ly = cr.height * 0.5 - 453 * dpr;
       let lw = 434 * dpr;
@@ -472,17 +541,18 @@ export function StageGL({
         lh = tr.height * dpr;
       }
       const g = lw / c.designWidth; // device px per design px
+
       // Lens radius tracks the shell's ACTUAL rounded corner so the refracted bezel
-      // stays concentric with the screen — and keeps tracking when the shell grows
-      // (the hover "bloom"). Scale the DOM radius by the shell's own px ratio
-      // (lw / its CSS width), not `g` (which assumes shell width == designWidth and
-      // would over-inflate the corner as the shell grows).
-      let radiusDevicePx = c.radius * g;
-      if (target) {
+      // stays concentric (and keeps tracking through the hover bloom). getComputedStyle
+      // is costly, so re-read it only when the rect changed (bloom/resize); otherwise
+      // reuse the cached value. Scale the DOM radius by the shell's own px ratio.
+      const rectChanged = lx !== lastLx || ly !== lastLy || lw !== lastLw || lh !== lastLh;
+      let radiusDevicePx = Number.isNaN(lastRadius) ? c.radius * g : lastRadius;
+      if (target && (rectChanged || Number.isNaN(lastRadius))) {
         const cs = getComputedStyle(target);
         const br = parseFloat(cs.borderTopLeftRadius);
         const pw = parseFloat(cs.width);
-        if (br > 0 && pw > 0) radiusDevicePx = br * (lw / pw);
+        radiusDevicePx = br > 0 && pw > 0 ? br * (lw / pw) : c.radius * g;
       }
       const exp = 2 + Math.max(0, Math.min(1, c.cornerSmoothing)) * 4;
       const dome = c.domeDepth > 0 ? computeDomeConstants(c.domeDepth, c.designWidth / 2, (c.designWidth / 2) * (lh / lw)) : null;
@@ -512,26 +582,96 @@ export function StageGL({
       gl.uniform1f(u.edgeExp, c.edgeExponent);
       gl.uniform1f(u.bright, c.brightness);
 
+      // Ripple (GPU): centre in device px (top-down, matching the shader's `sp`),
+      // elapsed seconds, and dpr to scale the CSS-px wave constants. `-1` = idle.
+      gl.uniform1f(u.dpr, dpr);
+      const r = ripple.current;
+      if (r) {
+        gl.uniform2f(u.ripplePos, r.x * dpr, r.y * dpr);
+        gl.uniform1f(u.rippleT, (now - r.t0) / 1000);
+      } else {
+        gl.uniform1f(u.rippleT, -1);
+      }
+
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      const moved = rectChanged || radiusDevicePx !== lastRadius;
+      lastLx = lx;
+      lastLy = ly;
+      lastLw = lw;
+      lastLh = lh;
+      lastRadius = radiusDevicePx;
+      return moved;
     };
 
-    const render = () => {
-      if (!gl || gl.isContextLost()) return;
+    const tick = (now: number) => {
+      if (!gl || gl.isContextLost()) {
+        raf = 0;
+        return;
+      }
       applyResizeIfNeeded();
-      paintFrame(performance.now());
-      raf = requestAnimationFrame(render);
+      bindShell();
+
+      const ra = rippleAlive(now);
+      // When the ripple finishes, drop it so the shader goes inactive (uRippleT -1)
+      // on the next frame. The dot texture is static throughout — the ripple never
+      // touches the 2D redraw/upload path.
+      if (!ra && wasRippleAlive) ripple.current = null;
+      wasRippleAlive = ra;
+
+      textureDirty = pendingDirty;
+      pendingDirty = false;
+
+      const moved = paintFrame(now);
+
+      // Keep going while the scene is animating; coast a few frames, then idle.
+      if (ra || moved) {
+        stillFrames = 0;
+        raf = requestAnimationFrame(tick);
+      } else if (stillFrames++ < SETTLE_FRAMES) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = 0;
+      }
+    };
+
+    // Wake the loop (events below call this). `dirty` forces a dot redraw+upload.
+    const invalidate = (dirty = false) => {
+      if (dirty) pendingDirty = true;
+      stillFrames = 0;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+
+    // Hover "bloom" moves the lens via a CSS transition on the shell; wake the loop
+    // on those transitions so the refraction tracks the growth, then it settles and
+    // stops on its own. Bound once the shell element exists (re-checked each tick).
+    const onShellTransition = () => invalidate(false);
+    const bindShell = () => {
+      const el = getTarget();
+      if (!el || el === shellBound) return;
+      if (shellBound) {
+        shellBound.removeEventListener('transitionrun', onShellTransition);
+        shellBound.removeEventListener('transitionend', onShellTransition);
+        shellBound.removeEventListener('transitioncancel', onShellTransition);
+      }
+      shellBound = el;
+      el.addEventListener('transitionrun', onShellTransition);
+      el.addEventListener('transitionend', onShellTransition);
+      el.addEventListener('transitioncancel', onShellTransition);
     };
 
     // Recover gracefully from a lost GL context (GPU reset / context eviction).
     const onLost = (e: Event) => {
       e.preventDefault();
       cancelAnimationFrame(raf);
+      raf = 0;
     };
     const onRestored = () => {
       if (initGL()) {
         pendingResize = false;
         applyResizeBuffers();
-        render();
+        lastRadius = NaN;
+        invalidate(true);
       }
     };
     canvas.addEventListener('webglcontextlost', onLost, false);
@@ -540,25 +680,29 @@ export function StageGL({
     const onDown = (e: PointerEvent) => {
       if (!rippleOnClick) return;
       const r = canvas.getBoundingClientRect();
-      let ry = e.clientY - r.top;
-      if (cssH > 0) ry = cssH - ry; // match offscreen Y (UNPACK_FLIP_Y upload)
-      ripple.current = { x: e.clientX - r.left, y: ry, t0: performance.now() };
+      // Top-down CSS px (matches the shader's `sp` space; ×dpr applied at upload).
+      ripple.current = { x: e.clientX - r.left, y: e.clientY - r.top, t0: performance.now() };
+      invalidate(false); // ripple is shader-only — no dot-texture redraw needed
     };
     stage.addEventListener('pointerdown', onDown, { capture: true });
 
-    // Swap to the new theme's colors on flip; the continuous render loop repaints
-    // with them on the next frame, in lockstep with the CSS recalc.
+    // Re-read the palette on theme flip and repaint the dot texture once.
     const stopTheme = observeTheme(() => {
       palette = readDotGridPalette(offCtx);
+      invalidate(true);
     });
 
     let ro: ResizeObserver | null = null;
     if (initGL()) {
       applyResizeBuffers();
-      paintFrame(performance.now());
-      ro = new ResizeObserver(markResize);
+      bindShell();
+      ro = new ResizeObserver(() => {
+        markResize();
+        lastRadius = NaN;
+        invalidate(true);
+      });
       ro.observe(canvas);
-      render();
+      invalidate(true);
     }
 
     return () => {
@@ -567,6 +711,11 @@ export function StageGL({
       stopTheme();
       pointer?.dispose();
       stage.removeEventListener('pointerdown', onDown, { capture: true });
+      if (shellBound) {
+        shellBound.removeEventListener('transitionrun', onShellTransition);
+        shellBound.removeEventListener('transitionend', onShellTransition);
+        shellBound.removeEventListener('transitioncancel', onShellTransition);
+      }
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
       // NB: don't call WEBGL_lose_context.loseContext() here — in React

@@ -25,7 +25,7 @@
   width: 100%;
 }
 
-/* No border-radius / overflow clip here: the glass self-clips to its per-corner
+/* No border-radius / overflow clip here: FrostPanel self-clips to its per-corner
    squircle (top = sheet radius, bottom = screen radius), so the bright edge rim
    traces the bottom corners instead of being squared off by a container clip. */
 .sheet {

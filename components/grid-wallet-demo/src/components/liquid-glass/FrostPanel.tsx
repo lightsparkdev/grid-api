@@ -1,0 +1,167 @@
+'use client';
+
+import type { CSSProperties, ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { squirclePath } from './squircle';
+
+/**
+ * FrostPanel — a cheap, non-refractive "glass" surface.
+ *
+ * Unlike `Glass`/`GlassOver` (which bend their content through an SVG
+ * `feDisplacementMap`), this just frosts the real backdrop with a GPU
+ * `backdrop-filter: blur()` and traces a bright specular rim. No SVG filter, no
+ * refracted copy, nothing per-frame — so it stays smooth while it animates (the
+ * displacement path re-runs the whole filter every frame as a surface slides,
+ * which is what tanks large sheets on WebKit).
+ *
+ * Use it for big surfaces where refraction isn't the point (a bottom sheet,
+ * a modal) and the "glassy" read comes from the frost + edge. Keep `Glass` for
+ * the small, tactile elements (buttons, switches, handles) where the lens shines.
+ *
+ * Shape & edge — true squircle on EVERY browser (so a sheet matches the phone
+ * shell on Safari too, where `corner-shape` falls back to a circle):
+ *  - the frost is clipped with `clip-path: path(squircle)` (cross-browser, same
+ *    trick the shell screen uses), with a matching `border-radius` as belt-and-
+ *    suspenders so the `backdrop-filter` is always clipped.
+ *  - the specular rim is an SVG `<path>` STROKE of that same squircle — not an
+ *    inset `box-shadow` (which follows `border-radius`, never `clip-path`, so it
+ *    can't trace a squircle and gets sliced at the corners on WebKit).
+ *
+ * The frost + edge sit on their own layers; children render on top, un-clipped —
+ * so a button's press-bloom inside isn't sliced by the panel's rounding.
+ */
+export interface FrostPanelProps {
+  /** Uniform corner radius (px). Used when `cornerRadii` isn't supplied. */
+  radius?: number;
+  /** Corner smoothing 0..1 — the squircle exponent, matching the shell's curve. */
+  cornerSmoothing?: number;
+  /** Per-corner radii `[tl, tr, br, bl]` — e.g. a sheet whose bottom corners hug
+   *  the phone screen while the top keeps the sheet radius. Overrides `radius`. */
+  cornerRadii?: [number, number, number, number];
+  /** Frost fill — any CSS color (e.g. a translucent themed token). */
+  tint?: string;
+  /** GPU `backdrop-filter` blur (px) — the cheap iOS "material" frost. 0 = none. */
+  tintBlur?: number;
+  /** Specular edge color — the bright glassy rim traced around the shape. */
+  edge?: string;
+  className?: string;
+  style?: CSSProperties;
+  children?: ReactNode;
+}
+
+const DEFAULT_RADIUS = 22;
+const DEFAULT_EDGE = 'var(--glass-sheet-edge)';
+
+/** Layout-px size (offset*, so an ancestor CSS transform — the phone fit-scale —
+ *  doesn't distort the squircle path, which lives in the element's own space). */
+function useElementSize() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      setSize((p) => (p.w === w && p.h === h ? p : { w, h }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+  return { ref, size };
+}
+
+export function FrostPanel({
+  radius = DEFAULT_RADIUS,
+  cornerSmoothing = 0,
+  cornerRadii,
+  tint,
+  tintBlur = 0,
+  edge = DEFAULT_EDGE,
+  className,
+  style,
+  children,
+}: FrostPanelProps) {
+  const { ref, size } = useElementSize();
+  const { w, h } = size;
+  const ready = w > 0 && h > 0;
+  const gradId = `fp-${useId().replace(/:/g, '')}`;
+
+  const baseRadii = cornerRadii ?? radius;
+  // Frost shape: the full squircle, via `clip-path: path()` ONLY. clip-path is a
+  // true squircle on every browser (Safari included) — matching the shell — and it
+  // clips the tint AND the backdrop-filter to that exact path. We deliberately do
+  // NOT also set `border-radius`: on Safari `corner-shape` is unsupported so the
+  // radius is circular, and the rendered fill becomes the intersection (circle) —
+  // which no longer matches the squircle edge stroke (the corner mismatch).
+  const clip = ready
+    ? `path('${squirclePath(w, h, baseRadii, cornerSmoothing)}')`
+    : undefined;
+
+  // Edge path: the same squircle inset 0.5px so the 1px stroke sits just inside the
+  // frost rather than straddling its outer edge.
+  const insetRadii: number | [number, number, number, number] = Array.isArray(baseRadii)
+    ? (baseRadii.map((r) => Math.max(0, r - 0.5)) as [number, number, number, number])
+    : Math.max(0, baseRadii - 0.5);
+  const edgePath = ready
+    ? squirclePath(w - 1, h - 1, insetRadii, cornerSmoothing, 22, 0.5, 0.5)
+    : '';
+
+  const blur = tintBlur > 0 ? `blur(${tintBlur}px)` : undefined;
+
+  return (
+    <div ref={ref} className={className} style={{ position: 'relative', ...style }}>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: tint,
+          backdropFilter: blur,
+          WebkitBackdropFilter: blur,
+          clipPath: clip,
+          WebkitClipPath: clip,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Specular rim — an SVG stroke of the squircle so it traces the corners on
+          every browser (a brighter top stop reads as light catching the top edge). */}
+      {ready && (
+        <svg
+          aria-hidden
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${w} ${h}`}
+          preserveAspectRatio="none"
+          style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}
+        >
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#ffffff" stopOpacity={0.6} />
+              <stop offset="0.14" style={{ stopColor: edge }} />
+              <stop offset="1" style={{ stopColor: edge }} />
+            </linearGradient>
+          </defs>
+          <path
+            d={edgePath}
+            fill="none"
+            stroke={`url(#${gradId})`}
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
+
+      <div style={{ position: 'relative' }}>{children}</div>
+    </div>
+  );
+}
+
+export default FrostPanel;

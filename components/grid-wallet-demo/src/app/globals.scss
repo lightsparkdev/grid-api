@@ -82,6 +82,10 @@ body {
      a hair darker so the edge reads; the edge pops against it. */
   --glass-sheet-tint: rgba(234, 234, 240, 0.64);
   --glass-sheet-edge: rgba(255, 255, 255, 0.5);
+  /* Backdrop a glass button refracts when it sits ON the frosted sheet — a neutral
+     that matches the milky surface (not the blue auth hero), themed so the small
+     lens never tints cold against a dark sheet. */
+  --glass-symbol-backdrop: linear-gradient(180deg, #f5f5f7 0%, #e6e6eb 100%);
 }
 
 [data-theme='dark'] {
@@ -90,6 +94,7 @@ body {
   --glass-sheet-tint: rgba(44, 44, 46, 0.62);
   /* Subtler in dark — white-on-dark already pops. */
   --glass-sheet-edge: rgba(255, 255, 255, 0.3);
+  --glass-symbol-backdrop: linear-gradient(180deg, #48484a 0%, #303032 100%);
 }
 
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it
