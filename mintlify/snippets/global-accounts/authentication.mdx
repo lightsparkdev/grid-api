@@ -15,7 +15,7 @@ Global Accounts are initialized with an `EMAIL_OTP` credential tied to the custo
 To produce a session:
 
 - **`EMAIL_OTP`** and **`OAUTH`** — call **`POST /auth/credentials/{id}/verify`** with the OTP value (or a fresh OIDC token) plus a `clientPublicKey`. The response carries the `encryptedSessionSigningKey`.
-- **`PASSKEY`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a Grid-issued WebAuthn `challenge` and `requestId`, run `navigator.credentials.get()` against that challenge, then call **`POST /auth/credentials/{id}/verify`** with the resulting assertion and the `Request-Id` header. Grid bakes the `clientPublicKey` from the `/challenge` call into the session-creation payload, so it does **not** appear on the `/verify` body.
+- **`PASSKEY`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a Grid-issued `challenge` and `requestId`, UTF-8 encode the challenge string for `navigator.credentials.get()`, then call **`POST /auth/credentials/{id}/verify`** with the resulting assertion and the `Request-Id` header. Grid bakes the `clientPublicKey` from the `/challenge` call into the session-creation payload, so it does **not** appear on the `/verify` body.
 
 To add another credential, call **`POST /auth/credentials`** with the new credential details. Because the account already has an `EMAIL_OTP` credential, Grid returns a `202` signed-retry challenge. Stamp that `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The signed retry returns the new `AuthMethod`.
 
@@ -142,10 +142,11 @@ const challengeRes = await fetch("/my-backend/passkey/challenge", {
 });
 const { challenge: gridChallenge, requestId: authRequestId } = await challengeRes.json();
 
-// 6. Run the WebAuthn assertion against the Grid-issued challenge.
+// 6. Run the WebAuthn assertion against the Grid-issued challenge. This
+//    challenge is a lowercase hex string; UTF-8 encode it exactly as returned.
 const assertion = (await navigator.credentials.get({
   publicKey: {
-    challenge: base64urlToBytes(gridChallenge),
+    challenge: new TextEncoder().encode(gridChallenge),
     rpId,
     userVerification: "required",
     allowCredentials: [{ type: "public-key", id: base64urlToBytes(credentialId) }],
@@ -372,7 +373,7 @@ These are the fields you need to pass through on each hop.
 
 ### Passkey reauthentication
 
-When a session expires the client re-verifies without recreating the credential. Reauthentication uses the same `/challenge` → `/verify` shape as the first authentication: generate a fresh client key pair, call `POST /auth/credentials/{id}/challenge` with the new `clientPublicKey`, run `navigator.credentials.get()` against the returned challenge, then call `/verify` with the assertion and the matching `Request-Id` header.
+When a session expires the client re-verifies without recreating the credential. Reauthentication uses the same `/challenge` → `/verify` shape as the first authentication: generate a fresh client key pair, call `POST /auth/credentials/{id}/challenge` with the new `clientPublicKey`, UTF-8 encode the returned challenge string for `navigator.credentials.get()`, then call `/verify` with the assertion and the matching `Request-Id` header.
 
 ```mermaid
 sequenceDiagram
