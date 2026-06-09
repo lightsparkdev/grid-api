@@ -27,13 +27,16 @@
 }
 
 .label {
-  display: block;
-  padding: 14px 20px;
-  text-align: center;
-  @include ios.ios-text-headline;
-  font-weight: 590;
-  letter-spacing: -0.43px;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 20px;
+  /* Callout, emphasized (16/21, semibold). */
+  @include ios.ios-text-callout;
+  font-weight: 600;
+  letter-spacing: -0.31px;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
 }
 
 .labelPrimary {
@@ -41,5 +44,8 @@
 }
 
 .labelSecondary {
-  color: #007aff;
+  color: var(--ios-tint);
+  /* Callout regular (not emphasized) for the secondary action. */
+  font-weight: 400;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
 }

@@ -15,14 +15,14 @@
 }
 
 .faceIcon {
-  color: #0088ff;
+  color: var(--ios-tint);
 }
 
 .copy {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #000000;
+  color: var(--ios-label-primary);
 }
 
 .title {
@@ -38,6 +38,7 @@
   @include ios.ios-text-body;
   letter-spacing: -0.43px;
   text-wrap: pretty;
+  color: var(--ios-label-secondary);
 }
 
 .actions {

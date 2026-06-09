@@ -8,13 +8,15 @@
   width: 100%;
   margin: 0;
   padding: 14px 20px;
-  border: 0;
+  /* Outlined (Figma 2183:47668): hairline separator border, no fill, theme-aware
+     label — replaces the old solid fill. */
+  border: 0.5px solid var(--ios-separator-opaque);
   border-radius: 1000px;
   /* globals.scss sets corner-shape: superellipse on * — pills need round. */
   corner-shape: round;
-  background: var(--content-area-button-bg, #1c1c1e);
-  color: var(--content-area-button-label, #ffffff);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.02);
+  background: transparent;
+  color: var(--ios-label-primary);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 

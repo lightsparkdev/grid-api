@@ -78,11 +78,18 @@ body {
 :root {
   --surface-hover: var(--color-alpha-black-04);
   --phone-shell-shadow-opacity: 0.12;
+  /* Frosted overlay glass (sheets): milky tint + the white specular edge. Light:
+     a hair darker so the edge reads; the edge pops against it. */
+  --glass-sheet-tint: rgba(234, 234, 240, 0.64);
+  --glass-sheet-edge: rgba(255, 255, 255, 0.5);
 }
 
 [data-theme='dark'] {
   --surface-hover: var(--color-alpha-white-06);
   --phone-shell-shadow-opacity: 0.28;
+  --glass-sheet-tint: rgba(44, 44, 46, 0.62);
+  /* Subtler in dark — white-on-dark already pops. */
+  --glass-sheet-edge: rgba(255, 255, 255, 0.3);
 }
 
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it

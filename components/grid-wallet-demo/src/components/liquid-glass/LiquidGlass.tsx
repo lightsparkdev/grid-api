@@ -67,6 +67,9 @@ export interface GlassConfig {
   brightness: number;
   /** Corner smoothing, 0..1. 0 = circular corner, ~0.6 = iOS squircle. */
   cornerSmoothing: number;
+  /** Frosted fill painted over the refraction (any CSS color — e.g. a translucent
+   *  white) for the iOS "material" look. Pair with a high `blur`. Omit = clear glass. */
+  tint?: string;
   /** Outer drop shadow under the lens rim (CSS box-shadow value). */
   edgeShadow?: string;
   /** Inner shadow that gives the glass thickness (CSS box-shadow value, no `inset`). */
@@ -326,6 +329,12 @@ export default function LiquidGlass(props: LiquidGlassProps) {
           {children}
         </div>
       </div>
+
+      {/* Frosted fill over the refraction (the iOS "material" look) — clipped to the
+          lens shape; pair with a high `blur`. Highlights/shadow below sit on top. */}
+      {ready && cfg.tint && (
+        <div aria-hidden style={{ ...overlayBase, ...clipStyle, background: cfg.tint }} />
+      )}
 
       {/* Soft outer drop shadow — uses native corner-shape (blurred, so the
           fixed squircle exponent is imperceptible) and falls back to circular. */}

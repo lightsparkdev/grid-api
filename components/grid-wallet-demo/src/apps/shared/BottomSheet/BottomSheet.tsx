@@ -42,6 +42,12 @@ export function BottomSheet({
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
 
+  // The refracted copy bleeds this far past the lens on the sides/bottom so the
+  // blur/displacement sample opaque pixels at the edges (sampling past the copy
+  // reads transparent → a dark fringe). Scales with blur so it always exceeds the
+  // lens filter's own edge-sample margin (~blur*3 + scale + …).
+  const screenBleed = Math.ceil((sheetGlass.blur ?? 0) * 3 + 48);
+
   // Measure the overlay (= the screen the sheet covers) so the refracted copy can
   // span it and register with the real screen behind. offsetHeight is the layout
   // height (pre-transform), the value we need in the glass's local space.
@@ -73,18 +79,33 @@ export function BottomSheet({
         transition={SHEET_TRANSITION}
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
+        {/* Bleed the app background past the lens on the sides/bottom so the blur
+            and displacement sample opaque pixels at the edges (sampling past the
+            copy would read transparent → a dark fringe). The copy stays inset to
+            its true screen rect so it still lines up with the real screen. */}
         <div
           style={{
             position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: screenH,
-            display: 'flex',
-            flexDirection: 'column',
+            left: -screenBleed,
+            right: -screenBleed,
+            bottom: -screenBleed,
+            height: screenH + screenBleed,
+            background: 'var(--app-bg)',
           }}
         >
-          {behind}
+          <div
+            style={{
+              position: 'absolute',
+              left: screenBleed,
+              right: screenBleed,
+              top: 0,
+              height: screenH,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {behind}
+          </div>
         </div>
       </motion.div>
     ) : undefined;
