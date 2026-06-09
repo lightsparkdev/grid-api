@@ -4,8 +4,11 @@ description: >-
   `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn
   `credentialId` needed to target the passkey, plus the Grid-issued
   `challenge`, corresponding `requestId`, and challenge `expiresAt`. The
-  client signs the challenge with the passkey to produce the assertion
-  submitted to `POST /auth/credentials/{id}/verify`.
+  `challenge` value is the lowercase hex-encoded SHA-256 digest of the
+  canonical Turnkey session-creation request body, not a base64url string.
+  The client UTF-8 encodes this string as the WebAuthn challenge and signs it
+  with the passkey to produce the assertion submitted to
+  `POST /auth/credentials/{id}/verify`.
 allOf:
   - $ref: ./AuthMethod.yaml
   - type: object
@@ -26,14 +29,14 @@ allOf:
       challenge:
         type: string
         description: >-
-          Base64url-encoded challenge issued by Grid for the pending
-          passkey authentication. The client passes it into
-          `navigator.credentials.get()` as the WebAuthn challenge; the
-          resulting assertion is submitted to
-          `POST /auth/credentials/{id}/verify`. Single-use; a new
-          challenge is issued on the next call to
+          Lowercase hex-encoded SHA-256 digest of the canonical Turnkey
+          session-creation request body for the pending passkey
+          authentication. Do not base64url-decode this field; pass UTF-8 bytes
+          of the string (for example, `new TextEncoder().encode(challenge)`) as
+          the WebAuthn challenge to `navigator.credentials.get()`. Single-use;
+          a new challenge is issued on the next call to
           `POST /auth/credentials/{id}/challenge`.
-        example: VjZ6o8KfE9V3q3LkR2nH5eZ6dM8yA1xW
+        example: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
       requestId:
         type: string
         description: >-
