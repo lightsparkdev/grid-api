@@ -79,6 +79,14 @@ export interface DisplacementMapOptions {
   lensHalfHeight: number;
   /** Corner radius of the rounded-rect lens, in lens units. */
   borderRadius: number;
+  /**
+   * Per-corner radii `[topLeft, topRight, bottomRight, bottomLeft]`, in lens
+   * units — overrides `borderRadius` when set (e.g. a bottom sheet whose bottom
+   * corners hug the phone screen while the top keeps a smaller sheet radius). The
+   * refraction bend, edge falloff and specular are computed per corner so they
+   * trace the actual shape instead of clipping flat at a uniform corner.
+   */
+  cornerRadii?: [number, number, number, number];
   /** Edge inset that controls how wide the refraction band is. */
   depth: number;
   /** Clip to the rounded-rect: pixels outside the lens stay neutral. */
@@ -115,12 +123,14 @@ const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > 
  * Fill `target` (an RGBA buffer of length width*height*4) with the displacement
  * map. Pure function of the options — no DOM required.
  *
- * The rounded rect is symmetric about both centre axes, so the expensive
- * displacement/SDF/dome/splay/falloff math is computed once for the top-left
- * quadrant and mirrored into all four (negating the X bend across the vertical
- * axis, Y across the horizontal — Aave's "compute a quarter" trick). The
- * specular highlight is directional, so its cheap projection is evaluated
- * per-pixel to stay exact.
+ * The loop always walks just a quarter of the pixels and writes the four mirror
+ * positions per iteration (Aave's "compute a quarter" trick); the bend magnitude
+ * is corner-independent, so it's computed once and mirrored (sign-flipped) into
+ * all four. The per-corner SDF/coverage/falloff + specular are grouped by distinct
+ * corner radius and evaluated once per group — automatically 1 eval for uniform
+ * glass (both axes symmetric), 2 for a single-axis shape like a sheet
+ * (`[a,a,b,b]` / `[a,b,b,a]`), up to 4 when every corner differs. The symmetry is
+ * derived from the radii, never specified by the caller.
  */
 export function renderDisplacementMap(target: Uint8ClampedArray, opts: DisplacementMapOptions): void {
   const {
@@ -142,6 +152,7 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
     domeDepth = 0,
     splayAmount = 1,
     cornerSmoothing = 0,
+    cornerRadii,
   } = opts;
 
   const cornerExp = 2 + clamp(cornerSmoothing, 0, 1) * 4;
@@ -155,10 +166,35 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
       : Math.sqrt(a * a + b * b);
   };
 
-  const corner = Math.min(borderRadius, Math.min(halfW, halfH));
   const innerW = Math.max(0, halfW - depth);
   const innerH = Math.max(0, halfH - depth);
-  const innerCorner = Math.max(0, Math.min(borderRadius, Math.min(innerW, innerH)));
+  const innerMin = Math.min(innerW, innerH);
+  const minHalf = Math.min(halfW, halfH);
+  // Per-corner radii [TL, TR, BR, BL] — uniform `borderRadius` unless overridden.
+  const radii = cornerRadii ?? [borderRadius, borderRadius, borderRadius, borderRadius];
+  // Boundary + inner-band corner radii, clamped to the lens, per corner.
+  const cornerVal = radii.map((r) => Math.min(r, minHalf));
+  const innerCornerVal = radii.map((r) => Math.max(0, Math.min(r, innerMin)));
+
+  // Auto symmetry: group the four quadrants by identical corner radius so the
+  // SDF/coverage/falloff is evaluated once per *distinct* corner — derived from the
+  // values, never specified by the caller. `shapeSrc[q]` is the first quadrant that
+  // shares q's radius (so q recomputes only if it's its own source). This collapses
+  // to 1 eval for uniform glass (both axes symmetric), 2 for a single-axis shape
+  // like a sheet ([a,a,b,b] or [a,b,b,a]), up to 4 when every corner differs.
+  // Quadrant order: 0=TL, 1=TR, 2=BR, 3=BL.
+  const shapeSrc = [0, 1, 2, 3].map((q) => {
+    for (let j = 0; j < q; j++) if (cornerVal[j] === cornerVal[q]) return j;
+    return q;
+  });
+  // Specular shares an axis per diagonal: TL/BR ride proj+, TR/BL ride proj−. Equal
+  // corners on the same axis → identical specular byte (so uniform = 2 evals).
+  const diagShare = cornerVal[0] === cornerVal[2];
+  const antiShare = cornerVal[1] === cornerVal[3];
+  // Per-quadrant scratch, reused each pixel (no per-pixel allocation).
+  const qCov = [0, 0, 0, 0];
+  const qFall = [1, 1, 1, 1];
+  const qSdf = [0, 0, 0, 0];
   const falloffScale = depth > 0 ? 1 / (depth * Math.SQRT2) : 1e6;
   const wantSpecular = glowStrength > 0 || edgeStrength > 0;
   const angle = (specularRotation * Math.PI) / 180;
@@ -171,6 +207,40 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
   const splayRef = 0.5 * Math.min(halfW, halfH);
   const splayInv = splayRef > 0 ? 1 / splayRef : 0;
   const aaWidth = 1.5 * Math.max((2 * halfW) / width, (2 * halfH) / height);
+
+  // Rounded-rect SDF + coverage + edge falloff for one corner radius at |x|,|y|.
+  // Writes scratch outputs (no per-pixel allocation). The bend magnitude is the
+  // same for every corner, so only this shape data varies per corner.
+  let shSdf = 0;
+  let shCov = 0;
+  let shFall = 1;
+  const shapeFor = (ax: number, ay: number, corner: number, innerCorner: number): void => {
+    const qx = ax - halfW + corner;
+    const qy = ay - halfH + corner;
+    shSdf = lp(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - corner;
+    shCov = sdfBoundary ? clamp(0.5 - shSdf / aaWidth, 0, 1) : 1;
+    shFall = 1;
+    if (edgeFalloff) {
+      const ex = ax - innerW + innerCorner;
+      const ey = ay - innerH + innerCorner;
+      const innerSdf =
+        lp(Math.max(ex, 0), Math.max(ey, 0)) + Math.min(Math.max(ex, ey), 0) - innerCorner;
+      shFall = 0.5 * (1 + erf(innerSdf * falloffScale));
+    }
+  };
+
+  // Specular byte for one corner, given its rim/falloff/coverage and the (shared,
+  // directional) projection along the specular axis.
+  const specByte = (proj: number, rim: number, falloff: number, coverage: number): number => {
+    let s = 0;
+    if (glowStrength > 0) {
+      const g = glowBand > 0.001 ? clamp((proj - glowInner) / glowBand, 0, 1) : 0;
+      s += glowStrength * Math.pow(g, glowExponent) * falloff;
+    }
+    if (edgeStrength > 0) s += edgeStrength * rim * Math.pow(proj, edgeExponent);
+    if (s > 1) s = 1;
+    return Math.round(127 * s * coverage + 128);
+  };
 
   const halfCols = Math.ceil(width / 2);
   const halfRows = Math.ceil(height / 2);
@@ -193,13 +263,24 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
       const iBL = (mrowBase + col) * 4;
       const iBR = (mrowBase + mcol) * 4;
 
-      const qx = ax - halfW + corner;
-      const qy = ay - halfH + corner;
-      const outside = lp(Math.max(qx, 0), Math.max(qy, 0));
-      const sdf = outside + Math.min(Math.max(qx, qy), 0) - corner;
-      const coverage = sdfBoundary ? clamp(0.5 - sdf / aaWidth, 0, 1) : 1;
+      // Shape once per distinct corner (see shapeSrc): a quadrant copies an earlier
+      // quadrant's result when they share a radius, else evaluates its own.
+      for (let q = 0; q < 4; q++) {
+        const s = shapeSrc[q];
+        if (s === q) {
+          shapeFor(ax, ay, cornerVal[q], innerCornerVal[q]);
+          qCov[q] = shCov;
+          qFall[q] = shFall;
+          qSdf[q] = shSdf;
+        } else {
+          qCov[q] = qCov[s];
+          qFall[q] = qFall[s];
+          qSdf[q] = qSdf[s];
+        }
+      }
 
-      if (coverage <= 0) {
+      // Fully outside every corner → neutral; skip the bend/specular work.
+      if (qCov[0] <= 0 && qCov[1] <= 0 && qCov[2] <= 0 && qCov[3] <= 0) {
         target[iTL] = target[iTL + 1] = target[iTL + 2] = 128;
         target[iTR] = target[iTR + 1] = target[iTR + 2] = 128;
         target[iBL] = target[iBL + 1] = target[iBL + 2] = 128;
@@ -239,27 +320,13 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
         }
       }
 
-      let falloff = 1;
-      if (edgeFalloff) {
-        const ex = ax - innerW + innerCorner;
-        const ey = ay - innerH + innerCorner;
-        const innerSdf =
-          lp(Math.max(ex, 0), Math.max(ey, 0)) + Math.min(Math.max(ex, ey), 0) - innerCorner;
-        falloff = 0.5 * (1 + erf(innerSdf * falloffScale));
-      }
+      const halfDx = 0.5 * dxm;
+      const halfDy = 0.5 * dym;
 
-      const fc = falloff * coverage;
-      const rT = 0.5 * dxm * fc;
-      const gT = 0.5 * dym * fc;
-      const rNeg = Math.round((0.5 + rT) * 255); // x < 0
-      const rPos = Math.round((0.5 - rT) * 255); // x > 0
-      const gNeg = Math.round((0.5 + gT) * 255); // y < 0
-      const gPos = Math.round((0.5 - gT) * 255); // y > 0
-
-      // Specular is directional, so only 2-fold symmetric: the (−,−)/(+,+)
-      // diagonal shares one value, (+,−)/(−,+) the other. Two evals, not four.
-      let bDiag = 128;
-      let bAnti = 128;
+      // Specular projection along the (directional) specular axis — shared. The
+      // diagonal corners (TL/BR) use proj+, the anti-diagonal (TR/BL) use proj−.
+      let projDiag = 0;
+      let projAnti = 0;
       if (wantSpecular) {
         let pxv = ax / halfW;
         if (pxv > 1) pxv = 1;
@@ -267,33 +334,46 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
         let pyv = ay / halfH;
         if (pyv > 1) pyv = 1;
         pyv *= sinA;
-        const rim = sdf < 0 ? Math.max(0, 1 + sdf / edgeWidth) : 0;
-        const projDiag = Math.abs(pxv + pyv);
-        const projAnti = Math.abs(pxv - pyv);
-
-        let s = 0;
-        if (glowStrength > 0) {
-          const g = glowBand > 0.001 ? clamp((projDiag - glowInner) / glowBand, 0, 1) : 0;
-          s += glowStrength * Math.pow(g, glowExponent) * falloff;
-        }
-        if (edgeStrength > 0) s += edgeStrength * rim * Math.pow(projDiag, edgeExponent);
-        if (s > 1) s = 1;
-        bDiag = Math.round(127 * s * coverage + 128);
-
-        s = 0;
-        if (glowStrength > 0) {
-          const g = glowBand > 0.001 ? clamp((projAnti - glowInner) / glowBand, 0, 1) : 0;
-          s += glowStrength * Math.pow(g, glowExponent) * falloff;
-        }
-        if (edgeStrength > 0) s += edgeStrength * rim * Math.pow(projAnti, edgeExponent);
-        if (s > 1) s = 1;
-        bAnti = Math.round(127 * s * coverage + 128);
+        projDiag = Math.abs(pxv + pyv);
+        projAnti = Math.abs(pxv - pyv);
       }
 
-      target[iTL] = rNeg; target[iTL + 1] = gNeg; target[iTL + 2] = bDiag; target[iTL + 3] = 255;
-      target[iTR] = rPos; target[iTR + 1] = gNeg; target[iTR + 2] = bAnti; target[iTR + 3] = 255;
-      target[iBL] = rNeg; target[iBL + 1] = gPos; target[iBL + 2] = bAnti; target[iBL + 3] = 255;
-      target[iBR] = rPos; target[iBR + 1] = gPos; target[iBR + 2] = bDiag; target[iBR + 3] = 255;
+      // Per-quadrant displacement: a quadrant outside its own corner has fc → 0,
+      // which writes the neutral 128 automatically (x<0 → +, x>0 → −; same for y).
+      const fcTL = qFall[0] * qCov[0];
+      const fcTR = qFall[1] * qCov[1];
+      const fcBR = qFall[2] * qCov[2];
+      const fcBL = qFall[3] * qCov[3];
+      target[iTL] = Math.round((0.5 + halfDx * fcTL) * 255);
+      target[iTL + 1] = Math.round((0.5 + halfDy * fcTL) * 255);
+      target[iTR] = Math.round((0.5 - halfDx * fcTR) * 255);
+      target[iTR + 1] = Math.round((0.5 + halfDy * fcTR) * 255);
+      target[iBL] = Math.round((0.5 + halfDx * fcBL) * 255);
+      target[iBL + 1] = Math.round((0.5 - halfDy * fcBL) * 255);
+      target[iBR] = Math.round((0.5 - halfDx * fcBR) * 255);
+      target[iBR + 1] = Math.round((0.5 - halfDy * fcBR) * 255);
+
+      // Specular: evaluate TL/TR, then reuse for BR/BL when they share the axis's
+      // corner (diagShare/antiShare) — so uniform glass stays at 2 evals.
+      if (wantSpecular) {
+        const rimTL = qSdf[0] < 0 ? Math.max(0, 1 + qSdf[0] / edgeWidth) : 0;
+        const bTL = specByte(projDiag, rimTL, qFall[0], qCov[0]);
+        const rimTR = qSdf[1] < 0 ? Math.max(0, 1 + qSdf[1] / edgeWidth) : 0;
+        const bTR = specByte(projAnti, rimTR, qFall[1], qCov[1]);
+        const bBR = diagShare
+          ? bTL
+          : specByte(projDiag, qSdf[2] < 0 ? Math.max(0, 1 + qSdf[2] / edgeWidth) : 0, qFall[2], qCov[2]);
+        const bBL = antiShare
+          ? bTR
+          : specByte(projAnti, qSdf[3] < 0 ? Math.max(0, 1 + qSdf[3] / edgeWidth) : 0, qFall[3], qCov[3]);
+        target[iTL + 2] = bTL;
+        target[iTR + 2] = bTR;
+        target[iBR + 2] = bBR;
+        target[iBL + 2] = bBL;
+      } else {
+        target[iTL + 2] = target[iTR + 2] = target[iBR + 2] = target[iBL + 2] = 128;
+      }
+      target[iTL + 3] = target[iTR + 3] = target[iBL + 3] = target[iBR + 3] = 255;
     }
   }
 }

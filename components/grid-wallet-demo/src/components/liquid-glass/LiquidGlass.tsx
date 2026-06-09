@@ -100,6 +100,16 @@ export interface LiquidGlassProps extends Partial<GlassConfig> {
   lens?: LensRect;
   /** Draw a faint outline around the lens (debugging / showcase). */
   showOutline?: boolean;
+  /**
+   * Per-corner clip radii `[topLeft, topRight, bottomRight, bottomLeft]`, for a
+   * surface whose corners differ (e.g. a bottom sheet whose bottom corners hug a
+   * phone screen while the top stays a smaller sheet radius). Overrides the
+   * uniform `radius` for the clip/edge/specular layers (cross-browser via
+   * clip-path), so the glass chrome — including the bright edge rim — traces these
+   * corners. The displacement map itself stays uniform (`radius`); fine in
+   * practice, and especially under blur.
+   */
+  cornerRadii?: [number, number, number, number];
 }
 
 const DEFAULTS: GlassConfig = {
@@ -153,7 +163,7 @@ function useElementSize() {
 
 export default function LiquidGlass(props: LiquidGlassProps) {
   const cfg: GlassConfig = { ...DEFAULTS, ...stripUndefined(props) };
-  const { children, className, style, lens, showOutline } = props;
+  const { children, className, style, lens, showOutline, cornerRadii } = props;
 
   const { ref: containerRef, size } = useElementSize();
   const W = size.w;
@@ -169,6 +179,9 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   const lw = lens?.width ?? W;
   const lh = lens?.height ?? H;
   const lr = lens?.radius ?? cfg.radius;
+  // Stable key so the per-corner radii (a fresh array each render) don't retrigger
+  // the map effect unless their values actually change.
+  const cornerKey = cornerRadii ? cornerRadii.join(',') : '';
 
   // Generate the displacement map whenever the lens shape/look changes (not on
   // mere position changes — those only shift the filter region, keeping FPS up).
@@ -202,6 +215,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
         lensHalfWidth: lw / 2,
         lensHalfHeight: lh / 2,
         borderRadius: lr,
+        cornerRadii,
         depth: cfg.depth,
         sdfBoundary: true,
         edgeFalloff: true,
@@ -224,6 +238,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
     lw,
     lh,
     lr,
+    cornerKey,
     cfg.depth,
     cfg.domeDepth,
     cfg.splay,
@@ -244,11 +259,16 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   // override any global `* { corner-shape: squircle }` rule. The soft drop
   // shadow can't be clip-path'd (that would erase the shadow) so it leans on the
   // native corner-shape, which is fine because it's blurred.
+  // Per-corner radii (e.g. a bottom sheet) always clip via path() — which works in
+  // every browser — so the chrome traces those corners even where `corner-shape`
+  // isn't supported. Uniform glass keeps the support-gated squircle/circle fallback.
   const squircleActive = squircleOK && cfg.cornerSmoothing > 0;
   const clipPath =
-    squircleActive && lw > 0 && lh > 0
-      ? `path('${squirclePath(lw, lh, lr, cfg.cornerSmoothing)}')`
-      : undefined;
+    cornerRadii && lw > 0 && lh > 0
+      ? `path('${squirclePath(lw, lh, cornerRadii, cfg.cornerSmoothing)}')`
+      : squircleActive && lw > 0 && lh > 0
+        ? `path('${squirclePath(lw, lh, lr, cfg.cornerSmoothing)}')`
+        : undefined;
   const clipStyle: GlassCSS = clipPath
     ? { clipPath, WebkitClipPath: clipPath }
     : { cornerShape: 'round' };
@@ -290,13 +310,19 @@ export default function LiquidGlass(props: LiquidGlassProps) {
       ? { clipPath, WebkitClipPath: clipPath }
       : { borderRadius: lr, overflow: 'hidden' };
 
+  // Inset-shadow / drop-shadow overlays follow the border-radius, so when the lens
+  // has per-corner radii give them the matching per-corner CSS (top-left, top-right,
+  // bottom-right, bottom-left) — otherwise the edge highlight rounds at the uniform
+  // radius and gets sliced by the per-corner clip instead of hugging the corners.
   const overlayBase: React.CSSProperties = {
     position: 'absolute',
     left: lx,
     top: ly,
     width: lw,
     height: lh,
-    borderRadius: lr,
+    borderRadius: cornerRadii
+      ? `${cornerRadii[0]}px ${cornerRadii[1]}px ${cornerRadii[2]}px ${cornerRadii[3]}px`
+      : lr,
     pointerEvents: 'none',
   };
 

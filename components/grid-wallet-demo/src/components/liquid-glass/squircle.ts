@@ -5,11 +5,15 @@
  *
  * `smoothing` 0..1 maps to the same exponent the map uses (2 = circular arc,
  * up to 6 = strong squircle); 0.6 ≈ exponent 4.4 ≈ CSS `corner-shape: squircle`.
+ *
+ * `radius` is either a single value (all corners) or per-corner
+ * `[topLeft, topRight, bottomRight, bottomLeft]` — e.g. a bottom sheet whose
+ * bottom corners hug a phone screen while the top stays a smaller sheet radius.
  */
 export function squirclePath(
   width: number,
   height: number,
-  radius: number,
+  radius: number | [number, number, number, number],
   smoothing = 0,
   samplesPerCorner = 22,
   offsetX = 0,
@@ -17,7 +21,10 @@ export function squirclePath(
 ): string {
   const w = Math.max(0, width);
   const h = Math.max(0, height);
-  const r = Math.max(0, Math.min(radius, Math.min(w, h) / 2));
+  const clamp = (rr: number) => Math.max(0, Math.min(rr, Math.min(w, h) / 2));
+  const [rTL, rTR, rBR, rBL] = (
+    Array.isArray(radius) ? radius : [radius, radius, radius, radius]
+  ).map(clamp);
   const exp = 2 + Math.max(0, Math.min(1, smoothing)) * 4;
   const p = 2 / exp;
   const k = Math.max(2, samplesPerCorner);
@@ -26,7 +33,7 @@ export function squirclePath(
   const sin = (t: number) => Math.pow(Math.sin(t), p);
 
   const pts: Array<[number, number]> = [];
-  const arc = (cx: number, cy: number, sx: number, sy: number, swap: boolean) => {
+  const arc = (cx: number, cy: number, sx: number, sy: number, swap: boolean, r: number) => {
     for (let i = 0; i <= k; i++) {
       const t = (i / k) * (Math.PI / 2);
       const u = swap ? sin(t) : cos(t);
@@ -36,12 +43,12 @@ export function squirclePath(
   };
 
   // Clockwise from the top edge.
-  arc(w - r, r, 1, -1, true); // top-right
-  arc(w - r, h - r, 1, 1, false); // bottom-right
-  arc(r, h - r, -1, 1, true); // bottom-left
-  arc(r, r, -1, -1, false); // top-left
+  arc(w - rTR, rTR, 1, -1, true, rTR); // top-right
+  arc(w - rBR, h - rBR, 1, 1, false, rBR); // bottom-right
+  arc(rBL, h - rBL, -1, 1, true, rBL); // bottom-left
+  arc(rTL, rTL, -1, -1, false, rTL); // top-left
 
-  let d = `M ${fmt(offsetX + r)} ${fmt(offsetY)}`;
+  let d = `M ${fmt(offsetX + rTL)} ${fmt(offsetY)}`;
   for (const [x, y] of pts) d += ` L ${fmt(x)} ${fmt(y)}`;
   return d + ' Z';
 }

@@ -45,6 +45,8 @@ export interface GlassOverProps extends Partial<GlassConfig> {
    * gradients don't need it.
    */
   backdropOffset?: { x: number; y: number };
+  /** Per-corner clip radii `[tl, tr, br, bl]` — see LiquidGlass `cornerRadii`. */
+  cornerRadii?: [number, number, number, number];
 }
 
 /** Margin the backdrop copy bleeds past the glass so edge blur/chroma samples
@@ -58,11 +60,12 @@ export function GlassOver({
   className,
   style,
   backdropOffset,
+  cornerRadii,
   ...config
 }: GlassOverProps) {
   return (
     <div className={className} style={{ position: 'relative', ...style }}>
-      <Glass {...config} style={{ position: 'absolute', inset: 0 }}>
+      <Glass {...config} cornerRadii={cornerRadii} style={{ position: 'absolute', inset: 0 }}>
         {backdropNode ?? (
           <div
             aria-hidden

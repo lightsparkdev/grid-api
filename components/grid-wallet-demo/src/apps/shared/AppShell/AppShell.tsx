@@ -251,6 +251,9 @@ export function AppShell({
                     borderRadius: 0,
                     clipPath: screenClip,
                     WebkitClipPath: screenClip,
+                    // Concentric corner radius for descendants (e.g. a bottom sheet
+                    // hugging the screen edge). Inherits via the cascade.
+                    ['--screen-corner-radius' as string]: `${glassConfig.radius - SCREEN_INSET}px`,
                   }
                 : undefined
             }
