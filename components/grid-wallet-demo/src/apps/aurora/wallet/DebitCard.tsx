@@ -5,10 +5,7 @@ import styles from './DebitCard.module.scss';
 export function DebitCard() {
   return (
     <div className={styles.card} aria-hidden>
-      <AuroraBackground
-        showRadialGradient={false}
-        className={styles.aurora}
-      />
+      <AuroraBackground showRadialGradient={false} className={styles.aurora} />
       <img
         className={styles.walletMark}
         src="/assets/financial-app/aurora-wallet.svg"
