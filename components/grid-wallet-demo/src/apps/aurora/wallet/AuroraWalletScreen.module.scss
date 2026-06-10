@@ -21,6 +21,10 @@
 }
 
 .header {
+  position: relative;
+  /* Above .body so its negative top margin (shadow room) can't intercept the
+     settings button's hit area. */
+  z-index: 1;
   flex-shrink: 0;
   padding: 8px 24px;
 }
@@ -65,6 +69,12 @@
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
+  /* The debit card's top drop shadow bleeds ~16px above its box. This scroll
+     container would otherwise clip it. Lift the clip box up and push content
+     back down by the same amount — net layout is unchanged, but the shadow now
+     has room to paint inside the clip. */
+  margin-top: -16px;
+  padding-top: 16px;
 }
 
 .bodyDetailOpen {

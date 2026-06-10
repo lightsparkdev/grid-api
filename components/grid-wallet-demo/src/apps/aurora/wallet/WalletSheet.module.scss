@@ -13,7 +13,6 @@
   corner-shape: var(--corner-shape);
   box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.28);
   transition: box-shadow 350ms cubic-bezier(0.19, 1, 0.22, 1);
-  /* ~56px of card peeks above (232px card − 176px overlap). Animate later. */
   margin-top: calc(-1 * var(--wallet-sheet-overlap, 176px));
 }
 

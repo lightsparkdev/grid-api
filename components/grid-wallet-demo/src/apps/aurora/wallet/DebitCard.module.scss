@@ -2,11 +2,18 @@
 
 $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
+/* Figma 2143:40916 — shadow on shell; filter: drop-shadow breaks sheet stacking. */
+.cardShell {
+  width: 100%;
+  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
 /* Figma 2143:36184 — 232pt card, 13px continuous corners, footnote labels. */
 .card {
   box-sizing: border-box;
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -19,7 +26,6 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   border-radius: 0;
   -webkit-appearance: none;
   appearance: none;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   overflow: hidden;
   color: #ffffff;
   text-align: left;
@@ -45,7 +51,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   .card {
     transition: none;
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: none;
     }
   }

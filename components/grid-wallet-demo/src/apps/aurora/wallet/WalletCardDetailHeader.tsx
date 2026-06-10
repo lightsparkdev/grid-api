@@ -22,7 +22,12 @@ export function WalletCardDetailHeader({ onClose }: WalletCardDetailHeaderProps)
         <SfSymbol name="xmark" size={14} />
       </GlassSymbolButton>
 
-      <GlassWindowButtonGroup symbols={['creditcard.and.numbers', 'ellipsis']} />
+      <GlassWindowButtonGroup
+        symbols={[
+          { name: 'creditcard.and.numbers', size: 24 },
+          { name: 'ellipsis', size: 20 },
+        ]}
+      />
     </div>
   );
 }

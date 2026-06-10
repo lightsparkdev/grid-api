@@ -17,15 +17,16 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
   });
 
   return (
-    <button
-      type="button"
-      ref={cardClip.ref}
-      style={cardClip.style}
-      className={clsx(styles.card, !interactive && styles.cardStatic)}
-      aria-label="View debit card"
-      disabled={!interactive}
-      onClick={onOpen}
-    >
+    <div className={styles.cardShell}>
+      <button
+        type="button"
+        ref={cardClip.ref}
+        style={cardClip.style}
+        className={clsx(styles.card, !interactive && styles.cardStatic)}
+        aria-label="View debit card"
+        disabled={!interactive}
+        onClick={onOpen}
+      >
       <AuroraBackground showRadialGradient={false} className={styles.aurora} />
       <div className={styles.top}>
         <span className={styles.primary}>Get your free debit card</span>
@@ -46,6 +47,7 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
           />
         </div>
       </div>
-    </button>
+      </button>
+    </div>
   );
 }

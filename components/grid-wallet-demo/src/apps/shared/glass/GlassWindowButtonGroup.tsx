@@ -9,20 +9,44 @@ import styles from './GlassWindowButtonGroup.module.scss';
 
 const SHEET_SURFACE_BACKDROP = 'var(--glass-symbol-backdrop)';
 
+export type GlassWindowButtonGroupSymbol =
+  | SfSymbolName
+  | { name: SfSymbolName; size?: number; label?: string };
+
 interface GlassWindowButtonGroupProps {
-  /** SF Symbol names to show left-to-right inside the capsule. */
-  symbols: SfSymbolName[];
-  /** Symbol size in px — Figma Window/Button Group XL uses 15pt semibold. */
+  /** SF Symbol entries left-to-right inside the capsule. */
+  symbols: GlassWindowButtonGroupSymbol[];
+  /** Default symbol size in px when an entry omits `size`. */
   iconSize?: number;
   /** Per-instance glass tuning — merged over the overlay symbol preset. */
   glass?: Partial<GlassConfig>;
   className?: string;
 }
 
+const DEFAULT_SYMBOL_LABELS: Partial<Record<SfSymbolName, string>> = {
+  'creditcard.and.numbers': 'Card details',
+  ellipsis: 'More options',
+};
+
+function normalizeSymbol(entry: GlassWindowButtonGroupSymbol, defaultSize: number) {
+  if (typeof entry === 'string') {
+    return {
+      name: entry,
+      size: defaultSize,
+      label: DEFAULT_SYMBOL_LABELS[entry] ?? entry,
+    };
+  }
+  return {
+    name: entry.name,
+    size: entry.size ?? defaultSize,
+    label: entry.label ?? DEFAULT_SYMBOL_LABELS[entry.name] ?? entry.name,
+  };
+}
+
 /** Figma Window/Button Group — glass capsule with one or more SF Symbol glyphs. */
 export function GlassWindowButtonGroup({
   symbols,
-  iconSize = 15,
+  iconSize = 24,
   glass,
   className,
 }: GlassWindowButtonGroupProps) {
@@ -39,12 +63,20 @@ export function GlassWindowButtonGroup({
         brightness={1}
         {...glass}
       >
-        <div className={styles.inner} aria-hidden>
-          {symbols.map((name) => (
-            <span className={styles.iconSlot} key={name}>
-              <SfSymbol name={name} size={iconSize} />
-            </span>
-          ))}
+        <div className={styles.inner}>
+          {symbols.map((entry) => {
+            const { name, size, label } = normalizeSymbol(entry, iconSize);
+            return (
+              <button
+                key={name}
+                type="button"
+                className={styles.iconButton}
+                aria-label={label}
+              >
+                <SfSymbol name={name} size={size} />
+              </button>
+            );
+          })}
         </div>
       </GlassOver>
     </div>
