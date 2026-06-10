@@ -1,5 +1,8 @@
+'use client';
+
 import clsx from 'clsx';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import styles from './DebitCard.module.scss';
 
 interface DebitCardProps {
@@ -9,9 +12,15 @@ interface DebitCardProps {
 
 /** Figma 2143:36184 — debit card behind the wallet sheet. */
 export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
+  const cardClip = useSquircleClip<HTMLButtonElement>({
+    radiusVar: '--corner-radius-debit-card-squircle',
+  });
+
   return (
     <button
       type="button"
+      ref={cardClip.ref}
+      style={cardClip.style}
       className={clsx(styles.card, !interactive && styles.cardStatic)}
       aria-label="View debit card"
       disabled={!interactive}

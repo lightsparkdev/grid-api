@@ -15,8 +15,10 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   margin: 0;
   padding: 20px 24px 24px;
   border: 0;
-  border-radius: 13px;
-  corner-shape: var(--corner-shape);
+  /* clip-path via useSquircleClip — border-radius must stay 0 (see fill-button). */
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   overflow: hidden;
   color: #ffffff;

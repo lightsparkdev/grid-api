@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
+import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { motionTransition } from '@/lib/easing';
 import styles from './WalletActivitySection.module.scss';
@@ -38,11 +39,8 @@ export function WalletActivitySection({ onAdd }: WalletActivitySectionProps) {
     const measure = () => {
       const inherited = getComputedStyle(el);
       const screenRaw = inherited.getPropertyValue('--screen-corner-radius').trim();
-      const topRaw = inherited
-        .getPropertyValue('--corner-radius-wallet-card-squircle')
-        .trim();
       const screenR = screenRaw ? Number.parseFloat(screenRaw) : Number.NaN;
-      const topR = topRaw ? Number.parseFloat(topRaw) : Number.NaN;
+      const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
       const wrap = el.querySelector<HTMLElement>(`.${styles.cardWrap}`);
       const insetRaw = wrap ? getComputedStyle(wrap).paddingLeft.trim() : '';
       const inset = insetRaw ? Number.parseFloat(insetRaw) : Number.NaN;

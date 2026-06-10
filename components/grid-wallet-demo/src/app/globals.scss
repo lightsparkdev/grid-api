@@ -31,38 +31,58 @@
 
 :root {
   --corner-shape: superellipse(1.24);
+  /* Figma radius × this scale ≈ matching superellipse roundness (Chromium
+     corner-shape + clip-path squircle on every browser). */
+  --corner-superellipse-scale: 1.2;
   --app-shell-padding: 16px;
   --app-screen-width: 402px;
   --app-screen-height: 874px;
   --app-shell-width: 434px;
   --app-shell-height: 906px;
-  /* Figma phone-gga (2121:17475) — base radii; ×1.2 when corner-shape is supported */
-  --corner-radius-phone-shell: 76px;
-  --corner-radius-phone-screen: 60px;
-  /* Wallet home (Figma Bitcoin 2026) — design px × 1.2 under superellipse. */
-  --corner-radius-wallet-sheet: 40px;
-  --corner-radius-wallet-card: 32px;
-  /* clip-path squircle target (Figma 32 × 1.2) — used on every browser via useSquircleClip. */
-  --corner-radius-wallet-card-squircle: 38.4px;
+  /* Figma phone-gga (2121:17475) — figma values; scaled in @supports below. */
+  --figma-corner-radius-phone-shell: 76px;
+  --figma-corner-radius-phone-screen: 60px;
+  --corner-radius-phone-shell: var(--figma-corner-radius-phone-shell);
+  --corner-radius-phone-screen: var(--figma-corner-radius-phone-screen);
+  /* Wallet home (Figma Bitcoin 2026). */
+  --figma-corner-radius-wallet-sheet: 40px;
+  --figma-corner-radius-wallet-card: 32px;
+  --figma-corner-radius-debit-card: 13px;
+  --corner-radius-wallet-sheet: var(--figma-corner-radius-wallet-sheet);
+  --corner-radius-wallet-card: var(--figma-corner-radius-wallet-card);
+  /* clip-path squircle — always scaled (all browsers). */
+  --corner-radius-wallet-card-squircle: calc(
+    var(--figma-corner-radius-wallet-card) * var(--corner-superellipse-scale)
+  );
+  --corner-radius-debit-card-squircle: calc(
+    var(--figma-corner-radius-debit-card) * var(--corner-superellipse-scale)
+  );
 }
 
-/* When corner-shape is supported, bump radii so the superellipse hits the target
-   visual roundness. 1.2× (was 1.8× for squircle — a rounder shape needs less). */
+/* When corner-shape is supported, bump border-radius tokens to match superellipse. */
 @supports (corner-shape: squircle) {
   :root {
-    --corner-radius-2xs: 2.4px;
-    --corner-radius-xs: 4.8px;
-    --corner-radius-sm: 7.2px;
-    --corner-radius-md: 9.6px;
-    --corner-radius-lg: 14.4px;
-    --corner-radius-xl: 19.2px;
-    --corner-radius-2xl: 28.8px;
-    --corner-radius-3xl: 38.4px;
-    --corner-radius-4xl: 48px;
-    --corner-radius-phone-shell: 91.2px; /* 76 × 1.2 */
-    --corner-radius-phone-screen: 72px; /* 60 × 1.2 */
-    --corner-radius-wallet-sheet: 48px; /* 40 × 1.2 */
-    --corner-radius-wallet-card: 38.4px; /* 32 × 1.2 */
+    --corner-radius-2xs: calc(2px * var(--corner-superellipse-scale));
+    --corner-radius-xs: calc(4px * var(--corner-superellipse-scale));
+    --corner-radius-sm: calc(6px * var(--corner-superellipse-scale));
+    --corner-radius-md: calc(8px * var(--corner-superellipse-scale));
+    --corner-radius-lg: calc(12px * var(--corner-superellipse-scale));
+    --corner-radius-xl: calc(16px * var(--corner-superellipse-scale));
+    --corner-radius-2xl: calc(24px * var(--corner-superellipse-scale));
+    --corner-radius-3xl: calc(32px * var(--corner-superellipse-scale));
+    --corner-radius-4xl: calc(40px * var(--corner-superellipse-scale));
+    --corner-radius-phone-shell: calc(
+      var(--figma-corner-radius-phone-shell) * var(--corner-superellipse-scale)
+    );
+    --corner-radius-phone-screen: calc(
+      var(--figma-corner-radius-phone-screen) * var(--corner-superellipse-scale)
+    );
+    --corner-radius-wallet-sheet: calc(
+      var(--figma-corner-radius-wallet-sheet) * var(--corner-superellipse-scale)
+    );
+    --corner-radius-wallet-card: calc(
+      var(--figma-corner-radius-wallet-card) * var(--corner-superellipse-scale)
+    );
   }
 }
 
