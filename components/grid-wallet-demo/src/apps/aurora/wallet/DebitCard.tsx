@@ -66,7 +66,7 @@ export function DebitCard({
   return (
     <motion.div
       ref={scope}
-      className={styles.cardShell}
+      className={clsx(styles.cardShell, bordered && styles.cardShellFlat)}
       initial={false}
       animate={
         opening || !interactive ? false : hovered ? { y: HOVER_LIFT } : { y: 0 }
@@ -77,11 +77,7 @@ export function DebitCard({
         type="button"
         ref={cardClip.ref}
         style={cardClip.style}
-        className={clsx(
-          styles.card,
-          !interactive && styles.cardStatic,
-          bordered && styles.cardBordered,
-        )}
+        className={clsx(styles.card, !interactive && styles.cardStatic)}
         aria-label="View debit card"
         disabled={!interactive}
         onClick={handleClick}
@@ -120,6 +116,16 @@ export function DebitCard({
             />
           </div>
         </div>
+        {bordered && cardClip.path && (
+          <svg
+            className={styles.borderRing}
+            viewBox={`0 0 ${cardClip.width} ${cardClip.height}`}
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path d={cardClip.path} fill="none" stroke="rgba(255, 255, 255, 0.95)" strokeWidth={4} />
+          </svg>
+        )}
       </button>
     </motion.div>
   );

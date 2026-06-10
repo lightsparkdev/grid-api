@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import { figmaSquircleRadii, figmaSquircleRadius, readCssVarPx } from './figmaSquircleRadius';
 
@@ -27,6 +27,14 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
   figmaRadii,
 }: UseSquircleClipOptions = {}) {
   const ref = useRef<T>(null);
+  /** The raw squircle path `d` + the measured size — so callers can stroke the
+   *  exact same shape as the clip (e.g. a border), instead of an approximate
+   *  CSS `corner-shape` that drifts from the path at the corners. */
+  const [shape, setShape] = useState<{ d: string; width: number; height: number }>({
+    d: '',
+    width: 0,
+    height: 0,
+  });
   const resolvedCornerRadii =
     cornerRadii ?? (figmaRadii !== undefined ? figmaSquircleRadii(figmaRadii) : undefined);
   const cornerKey =
@@ -51,9 +59,15 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
         radius = Number.isFinite(r) ? r : figmaSquircleRadius(32);
       }
 
-      const path = `path('${squirclePath(w, h, radius, cornerSmoothing)}')`;
+      const d = squirclePath(w, h, radius, cornerSmoothing);
+      const path = `path('${d}')`;
       el.style.clipPath = path;
       el.style.setProperty('-webkit-clip-path', path);
+      setShape((prev) =>
+        prev.d === d && prev.width === w && prev.height === h
+          ? prev
+          : { d, width: w, height: h },
+      );
     };
 
     apply();
@@ -68,5 +82,5 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
 
   const style: CSSProperties = { borderRadius: 0 };
 
-  return { ref, style };
+  return { ref, style, path: shape.d, width: shape.width, height: shape.height };
 }

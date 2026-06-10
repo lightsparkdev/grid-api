@@ -44,26 +44,51 @@
   pointer-events: none;
 }
 
+/* Two oversized gradient layers (base + soft-light overlay) that DRIFT via
+   `transform` instead of `background-position`. WebKit re-paints AND re-runs
+   `blur(24px)` over the whole element every frame that `background-position`
+   moves (the Safari killer); animating `transform` instead lets it rasterize the
+   blur ONCE and just translate the cached layer on the compositor each frame.
+   The layers are sized so the drift never exposes an edge, and the translate
+   distance + 60s duration match the old background-position drift exactly (base
+   = −6× width, overlay = −3× width), so the motion is identical — same colors,
+   blur, speed, and direction. The base/overlay parallax (different gradient
+   scales + speeds) is preserved by giving each its own cached-blur layer. */
 .auroraLayer {
   position: absolute;
   inset: -10px;
   opacity: var(--aurora-layer-opacity);
-  filter: blur(24px);
-  will-change: background-position;
-  background-image: var(--aurora-bg-image);
-  background-size: 300% 200%;
-  background-position: 50% 50%;
-  animation: aurora 60s linear infinite;
 
+  &::before,
   &::after {
     content: '';
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
     background-image: var(--aurora-bg-image);
-    background-size: 200% 100%;
     background-position: 50% 50%;
-    animation: aurora 60s linear infinite;
+    filter: blur(24px);
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* Base layer — was the .auroraLayer background (300% 200%, drift −6× width).
+     width 750% ⇒ 40% bg-size keeps the 3× tile; −80% translate = −6× width. */
+  &::before {
+    width: 750%;
+    background-size: 40% 200%;
+    animation: auroraDriftBase 60s linear infinite;
+  }
+
+  /* Overlay — was the ::after soft-light layer (200% 100%, drift −3× width).
+     width 500% ⇒ 40% bg-size keeps the 2× tile; −60% translate = −3× width. */
+  &::after {
+    width: 500%;
+    background-size: 40% 100%;
     mix-blend-mode: soft-light;
+    animation: auroraDriftOverlay 60s linear infinite;
   }
 
   &[data-radial='true'] {
@@ -102,18 +127,28 @@
   pointer-events: none;
 }
 
-@keyframes aurora {
+@keyframes auroraDriftBase {
   from {
-    background-position: 50% 50%;
+    transform: translate3d(0, 0, 0);
   }
 
   to {
-    background-position: 350% 50%;
+    transform: translate3d(-80%, 0, 0);
+  }
+}
+
+@keyframes auroraDriftOverlay {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-60%, 0, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auroraLayer,
+  .auroraLayer::before,
   .auroraLayer::after {
     animation: none;
   }

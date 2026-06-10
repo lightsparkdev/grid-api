@@ -21,6 +21,12 @@ export function cubicBezierCss(curve: CubicBezier): string {
 export function motionTransition(
   curve: CubicBezier = easeOutSnappy,
   duration = 0.15,
+  options: { delay?: number } = {},
 ) {
-  return { duration, ease: [...curve] as [number, number, number, number] };
+  const { delay } = options;
+  return {
+    duration,
+    ease: [...curve] as [number, number, number, number],
+    ...(delay != null && { delay }),
+  };
 }

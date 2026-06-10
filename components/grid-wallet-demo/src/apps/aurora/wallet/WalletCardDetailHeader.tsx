@@ -10,10 +10,18 @@ interface WalletCardDetailHeaderProps {
   /** Card-actions pill (card numbers / more). Hidden during issuance — the card
    *  doesn't exist yet, so only the close button shows. */
   showActions?: boolean;
+  /** Static CSS background (tone-matched to the issuance aurora corner) for the
+   *  close button's lens to refract while it sits over the full-screen aurora.
+   *  Omit when the button is over the flat sheet surface. */
+  closeBackdrop?: string;
 }
 
 /** Figma 2143:40972 — close + card actions while debit card detail is open. */
-export function WalletCardDetailHeader({ onClose, showActions = true }: WalletCardDetailHeaderProps) {
+export function WalletCardDetailHeader({
+  onClose,
+  showActions = true,
+  closeBackdrop,
+}: WalletCardDetailHeaderProps) {
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
 
@@ -23,7 +31,9 @@ export function WalletCardDetailHeader({ onClose, showActions = true }: WalletCa
         aria-label="Close"
         size={40}
         type="button"
+        className={closeBackdrop ? styles.closeOnAurora : undefined}
         glass={{ brightness }}
+        backdrop={closeBackdrop}
         onClick={onClose}
       >
         <SfSymbol name="xmark" size={14} />

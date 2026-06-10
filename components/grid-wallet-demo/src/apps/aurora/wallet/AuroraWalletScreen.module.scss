@@ -14,16 +14,65 @@
   --wallet-bg: #f9f9f9;
   /* Debit card height (232) minus visible peek (~56) when sheet is resting. */
   --wallet-sheet-overlap: 176px;
+  /* Resting card slot: top pad (8) + card height (232). Used to pin the sheet to
+     its closed position when it goes absolute (open) so the slide doesn't jump. */
+  --card-slot-height: 240px;
+  /* Frozen, tone-matched slice of the issuance aurora (base + stripes along the
+     same ~100deg) that the close button's lens refracts — see CLOSE_AURORA_BACKDROP.
+     Static so Safari rasterizes it once instead of carrying a 4th live aurora. */
+  --glass-aurora-backdrop: linear-gradient(100deg, #005882, #0196c9 45%, #45b8e5);
 
   :global([data-theme='dark']) & {
     /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
     --wallet-bg: #111111;
+    --glass-aurora-backdrop: linear-gradient(100deg, #010f19, #014566 45%, #0180b0);
   }
 }
 
+/* ── Full-screen issuance aurora (behind header + body) ───────────────────── */
+
+.fullAurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  /* Hit-testable (NOT pointer-events:none) so the status bar tone sampler, which
+     uses elementsFromPoint, can read the aurora and flip the glyphs to white. It
+     sits at z-index 0 behind the body, so it never intercepts real interaction. */
+}
+
+/* Bleed past the top/sides so blurred streaks clip mid-flow; bottom flush. */
+.fullAuroraBg {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  bottom: 0;
+  left: -80px;
+}
+
+/* Tall auth-style fade — aurora reads at the top, then resolves to the wallet bg
+   well above the bottom content so the copy/CTA sit on solid ground. */
+.auroraFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 82%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--wallet-bg) 12%, transparent) 18%,
+    color-mix(in srgb, var(--wallet-bg) 40%, transparent) 34%,
+    color-mix(in srgb, var(--wallet-bg) 70%, transparent) 48%,
+    color-mix(in srgb, var(--wallet-bg) 92%, transparent) 58%,
+    var(--wallet-bg) 66%
+  );
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
 .header {
   position: relative;
-  /* Above the overlay so the close button is always tappable. */
   z-index: 2;
   flex-shrink: 0;
   height: 56px;
@@ -41,14 +90,6 @@
   width: auto;
 }
 
-.sheetWrap {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  will-change: transform;
-}
-
 /* Figma 90:13587 — Title3/Emphasized. */
 .title {
   flex: 1 1 0;
@@ -61,7 +102,11 @@
   color: var(--ios-label-primary);
 }
 
+/* ── Body (above the aurora; transparent so the aurora shows through) ──────── */
+
 .body {
+  position: relative;
+  z-index: 1;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -74,64 +119,20 @@
   padding-top: 16px;
 }
 
-.cardWrap {
+.bodyOpen {
+  overflow: hidden;
+}
+
+/* Card slot — top for closed/home, centered for intro/creating/ready. The card
+   itself (.cardCarry) layout-animates between the two. */
+.cardAreaTop {
   flex-shrink: 0;
   padding: 8px 16px 0;
 }
 
-/* ── Issuance / card-detail overlay ───────────────────────────────────────── */
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--wallet-bg);
-  /* Aurora fade resolves to the wallet bg, not the app shell bg. */
-  --app-bg: var(--wallet-bg);
-}
-
-/* Full-screen aurora behind the card during intro/creating (morphs in/out). */
-.fullAurora {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  transform-origin: 50% 42%;
-  pointer-events: none;
-}
-
-/* Bleed past the top/sides so blurred streaks clip mid-flow; bottom stays flush
-   for the fade (same idea as the auth hero). */
-.fullAuroraBg {
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  bottom: 0;
-  left: -80px;
-}
-
-.overlayBody {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  /* Clear the status bar (62) + header (56) — matches Figma content top (115). */
-  padding-top: 115px;
-  box-sizing: border-box;
-}
-
-/* Card at the top (card-home) — matches the resting wallet card slot. */
-.cardAreaTop {
-  flex-shrink: 0;
-  padding: 8px 16px;
-}
-
-/* Card centered in the remaining space (intro / creating / ready). */
 .cardAreaCentered {
+  position: relative;
+  z-index: 2; /* above the sheet as it slides out from underneath */
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -147,19 +148,46 @@
   padding-bottom: 48px;
 }
 
+.cardCarry {
+  width: 100%;
+}
+
 .cardScale {
   width: 100%;
   transform-origin: center center;
 }
 
+.sheetWrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  will-change: transform;
+}
+
+/* While the card is open the sheet leaves the flex flow (pinned to its resting
+   slot) so the card area can take the full height and carry to center without the
+   sheet stealing space. It still translates straight down from the same spot. */
+.sheetWrapOpen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  flex: none;
+  padding-top: var(--card-slot-height);
+}
+
 /* Intro / ready bottom-anchored copy + CTA. */
 .bottomContent {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
   width: 100%;
 }
 
 /* Card-home body — transactions list fills, Apple Wallet button pinned below. */
 .homeContent {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex: 1 1 0;
   flex-direction: column;

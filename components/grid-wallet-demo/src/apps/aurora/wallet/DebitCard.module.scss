@@ -15,6 +15,16 @@
   }
 }
 
+/* Issuance card sits on the full-screen aurora — drop the shadow (it muddies the
+   aurora) and let the white border define the edge instead. */
+.cardShellFlat {
+  box-shadow: none;
+
+  :global([data-theme='dark']) & {
+    box-shadow: none;
+  }
+}
+
 /* Figma 2143:36184 — 232pt card, 13px continuous corners, footnote labels. */
 .card {
   box-sizing: border-box;
@@ -46,11 +56,17 @@
   pointer-events: none;
 }
 
-/* White border that hugs the squircle: inset box-shadow is clipped by the same
-   clip-path, so it follows the corners exactly (a real border would not). Reads
-   the card apart from the full-screen aurora during issuance. */
-.cardBordered {
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.92);
+/* White border drawn as a STROKE of the exact squircle clip path (from
+   useSquircleClip), so it follows the corners precisely — a CSS corner-shape
+   ring drifts from the path. Painted above the aurora; the card's clip-path trims
+   the stroke's outer half, leaving a clean inner border. */
+.borderRing {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 /* Extend past card edges on all sides so overflow:hidden clips streaks

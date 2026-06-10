@@ -21,18 +21,29 @@ import styles from './AuroraWalletScreen.module.scss';
 
 type CardView = 'closed' | 'intro' | 'creating' | 'ready' | 'home';
 
-const SHEET_DURATION = 0.35;
+const SHEET_DURATION = 0.4;
 const HEADER_DURATION = 0.2;
 const CREATING_MS = 2200;
 /** Issuance card is the home card scaled to Figma 338 / 370. */
 const CARD_ISSUANCE_SCALE = 338 / 370;
+const SHEET_OFFSCREEN = 'calc(100% + 224px)';
+/* Static, tone-matched backdrop the close button's lens refracts over the
+   issuance aurora. The button is a 40px corner element where the aurora is
+   near-uniform, so a frozen gradient reads effectively identical to the live
+   aurora while removing a whole full-screen animating blur tree from Safari's
+   frame budget. Themed value lives in AuroraWalletScreen.module.scss. */
+const CLOSE_AURORA_BACKDROP = 'var(--glass-aurora-backdrop)';
 
 const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
-const SHEET_SLIDE_OUT = motionTransition(easeOutQuick, SHEET_DURATION);
-const SHEET_SLIDE_IN = motionTransition(easeOutSnappy, SHEET_DURATION);
-const OVERLAY_TRANSITION = motionTransition(easeOutSnappy, 0.4);
-const CARD_TRANSITION = motionTransition(easeOutSnappy, 0.45);
-const CONTENT_TRANSITION = motionTransition(easeOutQuick, 0.3);
+/* The transition is staggered so it doesn't all fire at once: the card carries +
+   the sheet slides away first, the aurora fades in just behind them, and the copy
+   resolves last. */
+const SHEET_SLIDE = motionTransition(easeOutSnappy, SHEET_DURATION);
+const CARD_TRANSITION = motionTransition(easeOutSnappy, 0.5);
+const AURORA_IN = motionTransition(easeOutQuick, 0.5, { delay: 0.15 });
+const AURORA_OUT = motionTransition(easeOutQuick, 0.3);
+const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
+const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
@@ -63,6 +74,7 @@ export function AuroraWalletScreen({
   const isOpen = cardView !== 'closed';
   const isIssuance = cardView === 'intro' || cardView === 'creating' || cardView === 'ready';
   const showFullAurora = cardView === 'intro' || cardView === 'creating';
+  const cardCentered = isIssuance; // centered for intro/creating/ready; top for closed/home
 
   // Simulated card creation: auto-advance creating -> ready (and mark issued).
   useEffect(() => {
@@ -78,6 +90,24 @@ export function AuroraWalletScreen({
 
   return (
     <div className={styles.root}>
+      {/* Full-screen aurora behind everything (incl. the header) during issuance.
+          It simply fades in / out (no scale), with a tall auth-style fade so the
+          bottom content reads on the solid wallet background. */}
+      <AnimatePresence>
+        {showFullAurora && (
+          <motion.div
+            key="full-aurora"
+            className={styles.fullAurora}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, transition: AURORA_IN }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transition: AURORA_OUT }}
+          >
+            <AuroraBackground showRadialGradient={false} className={styles.fullAuroraBg} />
+            <div className={styles.auroraFade} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header className={styles.header}>
         <AnimatePresence initial={false}>
           {isOpen ? (
@@ -92,6 +122,7 @@ export function AuroraWalletScreen({
               <WalletCardDetailHeader
                 onClose={() => setCardView('closed')}
                 showActions={cardView === 'home'}
+                closeBackdrop={showFullAurora ? CLOSE_AURORA_BACKDROP : undefined}
               />
             </motion.div>
           ) : (
@@ -117,18 +148,43 @@ export function AuroraWalletScreen({
         </AnimatePresence>
       </header>
 
-      {/* Wallet home — stays mounted under the issuance overlay. */}
-      <div className={styles.body}>
-        <div className={styles.cardWrap}>
-          <DebitCard interactive={!isOpen} onOpen={openCard} />
+      <div className={clsx(styles.body, isOpen && styles.bodyOpen)}>
+        {/* The card is a single element that carries through every state — it
+            layout-animates between the top slot and the centered issuance slot. */}
+        <div
+          className={clsx(
+            styles.cardArea,
+            cardCentered ? styles.cardAreaCentered : styles.cardAreaTop,
+            cardView === 'creating' && styles.cardAreaCreating,
+          )}
+        >
+          <motion.div layout={!reduceMotion} className={styles.cardCarry} transition={CARD_TRANSITION}>
+            <motion.div
+              className={styles.cardScale}
+              initial={false}
+              animate={{ scale: isIssuance ? CARD_ISSUANCE_SCALE : 1 }}
+              transition={CARD_TRANSITION}
+            >
+              <DebitCard
+                interactive={!isOpen}
+                onOpen={openCard}
+                bordered={showFullAurora}
+                showNumber={!isIssuance}
+              />
+            </motion.div>
+          </motion.div>
+          {cardView === 'creating' && <CreatingCaption />}
         </div>
 
+        {/* Wallet sheet — always mounted; translates straight down out of the way
+            when the card opens (no fade). It drops out of the flex flow while open
+            so the card can carry to the centered slot without the sheet competing
+            for height (which made the card jump when it un-mounted). */}
         <motion.div
-          className={styles.sheetWrap}
-          animate={{ y: isOpen ? 'calc(100% + 224px)' : 0 }}
-          transition={
-            reduceMotion ? { duration: 0 } : isOpen ? SHEET_SLIDE_OUT : SHEET_SLIDE_IN
-          }
+          className={clsx(styles.sheetWrap, isOpen && styles.sheetWrapOpen)}
+          initial={false}
+          animate={{ y: isOpen ? SHEET_OFFSCREEN : 0 }}
+          transition={SHEET_SLIDE}
         >
           <WalletSheet dismissed={isOpen}>
             <BalanceHero balance={balance} />
@@ -149,104 +205,44 @@ export function AuroraWalletScreen({
             />
           </WalletSheet>
         </motion.div>
+
+        {/* Issuance / card-home content below the card. */}
+        <AnimatePresence mode="wait" initial={false}>
+          {cardView === 'intro' && (
+            <motion.div
+              key="intro"
+              className={styles.bottomContent}
+              initial={reduceMotion ? false : CONTENT_HIDDEN}
+              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
+            >
+              <IntroContent onCreate={() => setCardView('creating')} />
+            </motion.div>
+          )}
+          {cardView === 'ready' && (
+            <motion.div
+              key="ready"
+              className={styles.bottomContent}
+              initial={reduceMotion ? false : CONTENT_HIDDEN}
+              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
+            >
+              <ReadyContent onContinue={() => setCardView('home')} />
+            </motion.div>
+          )}
+          {cardView === 'home' && (
+            <motion.div
+              key="home"
+              className={styles.homeContent}
+              initial={reduceMotion ? false : CONTENT_HIDDEN}
+              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
+            >
+              <CardHomeContent />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-
-      {/* Issuance / card-detail overlay. */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            key="card-overlay"
-            className={styles.overlay}
-            initial={reduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={OVERLAY_TRANSITION}
-          >
-            <AnimatePresence>
-              {showFullAurora && (
-                <motion.div
-                  key="full-aurora"
-                  className={styles.fullAurora}
-                  initial={reduceMotion ? false : { opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
-                  transition={OVERLAY_TRANSITION}
-                >
-                  <AuroraBackground
-                    fadeBottom
-                    showRadialGradient={false}
-                    className={styles.fullAuroraBg}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className={styles.overlayBody}>
-              <motion.div
-                layout={!reduceMotion}
-                className={clsx(
-                  styles.cardArea,
-                  isIssuance ? styles.cardAreaCentered : styles.cardAreaTop,
-                  cardView === 'creating' && styles.cardAreaCreating,
-                )}
-                transition={CARD_TRANSITION}
-              >
-                <motion.div
-                  className={styles.cardScale}
-                  animate={{ scale: isIssuance ? CARD_ISSUANCE_SCALE : 1 }}
-                  transition={CARD_TRANSITION}
-                >
-                  <DebitCard
-                    interactive={false}
-                    bordered={showFullAurora}
-                    showNumber={cardView === 'home'}
-                  />
-                </motion.div>
-                {cardView === 'creating' && <CreatingCaption />}
-              </motion.div>
-
-              <AnimatePresence mode="wait" initial={false}>
-                {cardView === 'intro' && (
-                  <motion.div
-                    key="intro"
-                    className={styles.bottomContent}
-                    initial={reduceMotion ? false : CONTENT_HIDDEN}
-                    animate={CONTENT_VISIBLE}
-                    exit={reduceMotion ? { opacity: 0 } : CONTENT_HIDDEN}
-                    transition={CONTENT_TRANSITION}
-                  >
-                    <IntroContent onCreate={() => setCardView('creating')} />
-                  </motion.div>
-                )}
-                {cardView === 'ready' && (
-                  <motion.div
-                    key="ready"
-                    className={styles.bottomContent}
-                    initial={reduceMotion ? false : CONTENT_HIDDEN}
-                    animate={CONTENT_VISIBLE}
-                    exit={reduceMotion ? { opacity: 0 } : CONTENT_HIDDEN}
-                    transition={CONTENT_TRANSITION}
-                  >
-                    <ReadyContent onContinue={() => setCardView('home')} />
-                  </motion.div>
-                )}
-                {cardView === 'home' && (
-                  <motion.div
-                    key="home"
-                    className={styles.homeContent}
-                    initial={reduceMotion ? false : CONTENT_HIDDEN}
-                    animate={CONTENT_VISIBLE}
-                    exit={reduceMotion ? { opacity: 0 } : CONTENT_HIDDEN}
-                    transition={CONTENT_TRANSITION}
-                  >
-                    <CardHomeContent />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

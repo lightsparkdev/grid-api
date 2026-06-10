@@ -20,10 +20,23 @@
 }
 
 .amount {
-  margin: 0;
   @include ios.ios-text-wallet-balance;
   @include ios.ios-type-rounded;
   @include ios.ios-type-rounded-bold(var(--ios-type-wallet-balance-opsz));
+  /* NumberFlow pads the number by --number-flow-mask-height top/bottom so the
+     spinning digits fade out (no hard clip) at the line edges. That padding
+     inflates the label → amount gap, so cancel it with an equal negative margin —
+     fade preserved, gap stays at the Figma 4px. */
+  --number-flow-mask-height: 0.25em;
+  margin: -0.25em 0;
+}
+
+/* NumberFlow defaults to tabular-nums (equal-width cells), which loosens the
+   digits + leaves a gap before the cents. Figma uses proportional SF Pro Rounded
+   (tight), so force proportional figures to match. */
+.whole,
+.decimals {
+  font-variant-numeric: normal;
 }
 
 .whole {

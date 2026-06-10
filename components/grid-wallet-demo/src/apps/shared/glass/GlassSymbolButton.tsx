@@ -17,6 +17,16 @@ interface GlassSymbolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   size?: 40 | 44;
   /** Per-instance glass tuning — merged over the overlay symbol preset. */
   glass?: Partial<GlassConfig>;
+  /** CSS background the lens refracts — overrides the neutral sheet surface. A
+   *  static, pre-toned gradient is cheap on Safari (rasterized once); prefer it
+   *  over a live `backdropNode` for surfaces over a near-uniform background
+   *  (e.g. the small close button over the issuance aurora corner). */
+  backdrop?: string;
+  /** A positioned copy of the live UI behind the button to refract (overrides the
+   *  neutral backdrop) — e.g. the aurora during card issuance. Must be aligned to
+   *  the button's screen position by the caller. Takes precedence over `backdrop`;
+   *  expensive on Safari (live SVG displacement), so prefer a static `backdrop`. */
+  backdropNode?: ReactNode;
   /** Accessible name — required when children are decorative. */
   'aria-label': string;
 }
@@ -28,6 +38,8 @@ export function GlassSymbolButton({
   glass,
   size = 44,
   type = 'button',
+  backdrop = SHEET_SURFACE_BACKDROP,
+  backdropNode,
   ...rest
 }: GlassSymbolButtonProps) {
   const overlayGlass = useOverlayGlass();
@@ -40,7 +52,8 @@ export function GlassSymbolButton({
     >
       <GlassOver
         className={styles.glass}
-        backdrop={SHEET_SURFACE_BACKDROP}
+        backdrop={backdrop}
+        backdropNode={backdropNode}
         {...overlayGlass.symbol}
         {...glass}
       >
