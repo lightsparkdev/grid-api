@@ -3,14 +3,19 @@
 import clsx from 'clsx';
 import { useState } from 'react';
 import { motion, useAnimate, useReducedMotion } from 'motion/react';
+import { TextMorph } from 'torph/react';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
-import { easeOutOvershoot, easeOutSwift, motionTransition } from '@/lib/easing';
+import { cubicBezierCss, easeOutOvershoot, easeOutSwift, motionTransition } from '@/lib/easing';
 import styles from './DebitCard.module.scss';
 
-const HOVER_ROTATE = -0.8;
-/** Shared by the hover tilt and the click level-out so they match. */
-const ROTATE_DURATION = 0.28;
+/** Lift the card on hover; resolve back down on open. Negative = up. */
+const HOVER_LIFT = -4;
+/** Shared by the hover lift and the click resolve so they match. */
+const LIFT_DURATION = 0.28;
+/** Morph the primary label down to its tail ("debit card") when the card opens. */
+const LABEL_DEFAULT = 'Get your free debit card';
+const LABEL_OPEN = 'Debit card';
 
 interface DebitCardProps {
   interactive?: boolean;
@@ -41,8 +46,8 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
     try {
       await animate(
         scope.current,
-        { rotate: 0 },
-        motionTransition(easeOutOvershoot, ROTATE_DURATION),
+        { y: 0 },
+        motionTransition(easeOutOvershoot, LIFT_DURATION),
       );
     } finally {
       setOpening(false);
@@ -53,12 +58,11 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
     <motion.div
       ref={scope}
       className={styles.cardShell}
-      style={{ transformOrigin: 'center left' }}
       initial={false}
       animate={
-        opening || !interactive ? false : hovered ? { rotate: HOVER_ROTATE } : { rotate: 0 }
+        opening || !interactive ? false : hovered ? { y: HOVER_LIFT } : { y: 0 }
       }
-      transition={motionTransition(easeOutSwift, ROTATE_DURATION)}
+      transition={motionTransition(easeOutOvershoot, LIFT_DURATION)}
     >
       <button
         type="button"
@@ -73,7 +77,14 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
       >
         <AuroraBackground showRadialGradient={false} className={styles.aurora} />
         <div className={styles.top}>
-          <span className={styles.primary}>Get your free debit card</span>
+          <TextMorph
+            as="span"
+            className={styles.primary}
+            duration={LIFT_DURATION * 1000}
+            ease={cubicBezierCss(easeOutSwift)}
+          >
+            {interactive ? LABEL_DEFAULT : LABEL_OPEN}
+          </TextMorph>
           <span className={styles.secondary}>Spend locally</span>
         </div>
         <div className={styles.bottom}>
