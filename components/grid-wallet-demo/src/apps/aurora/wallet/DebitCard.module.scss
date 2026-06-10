@@ -1,0 +1,67 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2143:36184 — 232pt card, 13px continuous corners, footnote labels. */
+.card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 232px;
+  padding: 20px 24px 24px;
+  border-radius: 13px;
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
+  /* Placeholder fill — gradient lands here later. */
+  background: #8e8e93;
+  color: #ffffff;
+}
+
+.top,
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.bottom {
+  align-items: flex-end;
+}
+
+.primary,
+.secondary,
+.brand {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  letter-spacing: -0.08px;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.primary {
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.secondary {
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+}
+
+.top .secondary {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.visa {
+  display: block;
+  width: 61.856px;
+  height: 20px;
+}

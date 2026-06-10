@@ -12,8 +12,8 @@
 
   /* Figma DS.screenBackground */
   --wallet-bg: #f9f9f9;
-  /* Debit card height (232) minus visible peek (~64) when sheet is resting. */
-  --wallet-sheet-overlap: 168px;
+  /* Debit card height (232) minus visible peek (~56) when sheet is resting. */
+  --wallet-sheet-overlap: 176px;
 
   :global([data-theme='dark']) & {
     --wallet-bg: #000000;
@@ -53,9 +53,4 @@
 .cardWrap {
   flex-shrink: 0;
   padding: 8px 16px 0;
-}
-
-/* Reserve debit card footprint (232pt) — empty until card is built. */
-.debitCardSlot {
-  height: 232px;
 }

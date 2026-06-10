@@ -12,6 +12,6 @@
   border-radius: var(--corner-radius-wallet-sheet) var(--corner-radius-wallet-sheet) 0 0;
   corner-shape: var(--corner-shape);
   box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.28);
-  /* ~64px of card peeks above (232px card − 168px overlap). Animate later. */
-  margin-top: calc(-1 * var(--wallet-sheet-overlap, 168px));
+  /* ~56px of card peeks above (232px card − 176px overlap). Animate later. */
+  margin-top: calc(-1 * var(--wallet-sheet-overlap, 176px));
 }

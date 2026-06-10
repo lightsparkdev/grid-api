@@ -3,6 +3,7 @@
 import { GlassSymbolButton } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { BalanceHero } from './BalanceHero';
+import { DebitCard } from './DebitCard';
 import { WalletActions } from './WalletActions';
 import { WalletActivitySection } from './WalletActivitySection';
 import { WalletInsightCards, type WalletInsightCardsProps } from './WalletInsightCards';
@@ -41,8 +42,7 @@ export function AuroraWalletScreen({
 
       <div className={styles.body}>
         <div className={styles.cardWrap}>
-          {/* Debit card lands here — sheet slides down when it opens. */}
-          <div className={styles.debitCardSlot} aria-hidden />
+          <DebitCard />
         </div>
 
         <WalletSheet>
