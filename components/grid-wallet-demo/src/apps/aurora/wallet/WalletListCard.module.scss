@@ -7,7 +7,14 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
-  padding: 16px;
+  padding: 16px 16px 0;
+}
+
+/* Bezel-hugging cards (concentricBottom, e.g. wallet Activity) keep a uniform
+   16px bottom inset; filling cards (card-home transactions) stay flush so the
+   list reaches down toward the CTA below it. */
+.cardWrapInsetBottom {
+  padding-bottom: 16px;
 }
 
 /* Figma 84:12456 / 2143:40930 — min 232pt empty state; grows to fill remainder. */

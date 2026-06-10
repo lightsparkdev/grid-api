@@ -9,7 +9,9 @@ import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { motionTransition } from '@/lib/easing';
 import styles from './WalletListCard.module.scss';
 
-const INITIAL_DELAY_S = 0.45;
+// Hold the loading skeleton this long before the empty-state reveal (cover fades
+// the skeleton out, then the "Nothing here, yet" group animates in).
+const INITIAL_DELAY_S = 1.2;
 const REVEAL_DURATION_S = 0.55;
 const CONTENT_STAGGER_S = 0.2;
 
@@ -90,7 +92,10 @@ export function WalletListCard({
   }, [reduceMotion]);
 
   return (
-    <div ref={wrapRef} className={styles.cardWrap}>
+    <div
+      ref={wrapRef}
+      className={clsx(styles.cardWrap, concentricBottom && styles.cardWrapInsetBottom)}
+    >
       <div ref={cardClip.ref} style={cardClip.style} className={styles.card}>
         <div className={styles.cardInner}>
           <div className={styles.skeletonLayer}>

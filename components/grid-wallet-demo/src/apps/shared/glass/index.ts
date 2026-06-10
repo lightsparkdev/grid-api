@@ -1,4 +1,5 @@
 export { GlassSymbolButton } from './GlassSymbolButton';
+export { AuroraLensButton } from './AuroraLensButton';
 export {
   GlassWindowButtonGroup,
   type GlassWindowButtonGroupSymbol,

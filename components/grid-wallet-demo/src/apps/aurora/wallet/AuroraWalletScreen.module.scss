@@ -17,15 +17,10 @@
   /* Resting card slot: top pad (8) + card height (232). Used to pin the sheet to
      its closed position when it goes absolute (open) so the slide doesn't jump. */
   --card-slot-height: 240px;
-  /* Frozen, tone-matched slice of the issuance aurora (base + stripes along the
-     same ~100deg) that the close button's lens refracts — see CLOSE_AURORA_BACKDROP.
-     Static so Safari rasterizes it once instead of carrying a 4th live aurora. */
-  --glass-aurora-backdrop: linear-gradient(100deg, #005882, #0196c9 45%, #45b8e5);
 
   :global([data-theme='dark']) & {
     /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
     --wallet-bg: #111111;
-    --glass-aurora-backdrop: linear-gradient(100deg, #010f19, #014566 45%, #0180b0);
   }
 }
 
@@ -128,6 +123,11 @@
 .cardAreaTop {
   flex-shrink: 0;
   padding: 8px 16px 0;
+}
+
+/* Card-home (issued): 8px gap below the card before the transactions list. */
+.bodyOpen .cardAreaTop {
+  padding-bottom: 8px;
 }
 
 .cardAreaCentered {

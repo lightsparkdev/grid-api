@@ -1,21 +1,14 @@
 .root {
+  /* Themed aurora palette — read by the GPU renderer (auroraField.ts) via the
+     inherited custom properties, so the WebGL field flips with [data-theme] in
+     the same frame as the rest of the app. KEEP these names: auroraField reads
+     --aurora-base and --aurora-stripe-1..5. */
   --aurora-base: #006fa8;
   --aurora-stripe-1: #005882;
   --aurora-stripe-2: #0196c9;
   --aurora-stripe-3: #94c8e3;
   --aurora-stripe-4: #0196c9;
   --aurora-stripe-5: #45b8e5;
-  --aurora-bg-image: var(--aurora-gradient);
-  --aurora-layer-opacity: 0.92;
-  --aurora-gradient: repeating-linear-gradient(
-    100deg,
-    var(--aurora-stripe-1) 6%,
-    var(--aurora-stripe-2) 12%,
-    var(--aurora-stripe-3) 18%,
-    var(--aurora-stripe-4) 24%,
-    var(--aurora-stripe-5) 30%
-  );
-  --aurora-transparent: transparent;
 
   position: relative;
   flex: 1;
@@ -23,6 +16,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Solid themed base behind the GPU aurora. The WebGL canvas composites the
+     0.92 group + radial mask over this; it's also the WebGL-unavailable fallback
+     AND the tone the status-bar sampler reads: a <canvas> has no CSS
+     background-color, so elementsFromPoint walks up to this base — exactly as it
+     read the old gradient layer's base before. */
   background: var(--aurora-base);
 
   :global([data-theme='dark']) & {
@@ -32,8 +30,6 @@
     --aurora-stripe-3: #016894;
     --aurora-stripe-4: #014566;
     --aurora-stripe-5: #0180b0;
-    --aurora-bg-image: var(--aurora-gradient);
-    --aurora-layer-opacity: 0.92;
   }
 }
 
@@ -44,56 +40,11 @@
   pointer-events: none;
 }
 
-/* Two oversized gradient layers (base + soft-light overlay) that DRIFT via
-   `transform` instead of `background-position`. WebKit re-paints AND re-runs
-   `blur(24px)` over the whole element every frame that `background-position`
-   moves (the Safari killer); animating `transform` instead lets it rasterize the
-   blur ONCE and just translate the cached layer on the compositor each frame.
-   The layers are sized so the drift never exposes an edge, and the translate
-   distance + 60s duration match the old background-position drift exactly (base
-   = −6× width, overlay = −3× width), so the motion is identical — same colors,
-   blur, speed, and direction. The base/overlay parallax (different gradient
-   scales + speeds) is preserved by giving each its own cached-blur layer. */
-.auroraLayer {
+/* The GPU aurora fills the backdrop. It's opaque (renders base + 0.92 group),
+   so the .root base only shows as a pre-paint / no-WebGL fallback. */
+.canvas {
   position: absolute;
-  inset: -10px;
-  opacity: var(--aurora-layer-opacity);
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    background-image: var(--aurora-bg-image);
-    background-position: 50% 50%;
-    filter: blur(24px);
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-
-  /* Base layer — was the .auroraLayer background (300% 200%, drift −6× width).
-     width 750% ⇒ 40% bg-size keeps the 3× tile; −80% translate = −6× width. */
-  &::before {
-    width: 750%;
-    background-size: 40% 200%;
-    animation: auroraDriftBase 60s linear infinite;
-  }
-
-  /* Overlay — was the ::after soft-light layer (200% 100%, drift −3× width).
-     width 500% ⇒ 40% bg-size keeps the 2× tile; −60% translate = −3× width. */
-  &::after {
-    width: 500%;
-    background-size: 40% 100%;
-    mix-blend-mode: soft-light;
-    animation: auroraDriftOverlay 60s linear infinite;
-  }
-
-  &[data-radial='true'] {
-    mask-image: radial-gradient(ellipse at 100% 0%, black 10%, var(--aurora-transparent) 70%);
-  }
+  inset: 0;
 }
 
 .content {
@@ -125,31 +76,4 @@
     var(--app-bg) 100%
   );
   pointer-events: none;
-}
-
-@keyframes auroraDriftBase {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-80%, 0, 0);
-  }
-}
-
-@keyframes auroraDriftOverlay {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-60%, 0, 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auroraLayer::before,
-  .auroraLayer::after {
-    animation: none;
-  }
 }

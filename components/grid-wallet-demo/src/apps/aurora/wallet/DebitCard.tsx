@@ -131,7 +131,7 @@ export function DebitCard({
             preserveAspectRatio="none"
             aria-hidden
           >
-            <path d={cardClip.path} fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth={1} />
+            <path d={cardClip.path} fill="none" stroke="rgba(255, 255, 255, 1)" strokeWidth={1} />
           </svg>
         )}
       </button>

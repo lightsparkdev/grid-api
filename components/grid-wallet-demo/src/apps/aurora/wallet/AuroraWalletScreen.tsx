@@ -27,12 +27,6 @@ const CREATING_MS = 2200;
 /** Issuance card is the home card scaled to Figma 338 / 370. */
 const CARD_ISSUANCE_SCALE = 338 / 370;
 const SHEET_OFFSCREEN = 'calc(100% + 224px)';
-/* Static, tone-matched backdrop the close button's lens refracts over the
-   issuance aurora. The button is a 40px corner element where the aurora is
-   near-uniform, so a frozen gradient reads effectively identical to the live
-   aurora while removing a whole full-screen animating blur tree from Safari's
-   frame budget. Themed value lives in AuroraWalletScreen.module.scss. */
-const CLOSE_AURORA_BACKDROP = 'var(--glass-aurora-backdrop)';
 
 const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
 /* The transition is staggered so it doesn't all fire at once: the card carries +
@@ -102,7 +96,11 @@ export function AuroraWalletScreen({
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, transition: AURORA_IN }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transition: AURORA_OUT }}
           >
-            <AuroraBackground showRadialGradient={false} className={styles.fullAuroraBg} />
+            <AuroraBackground
+              showRadialGradient={false}
+              className={styles.fullAuroraBg}
+              fieldId="issuance"
+            />
             <div className={styles.auroraFade} />
           </motion.div>
         )}
@@ -122,7 +120,7 @@ export function AuroraWalletScreen({
               <WalletCardDetailHeader
                 onClose={() => setCardView('closed')}
                 showActions={cardView === 'home'}
-                closeBackdrop={showFullAurora ? CLOSE_AURORA_BACKDROP : undefined}
+                closeOnAurora={showFullAurora}
               />
             </motion.div>
           ) : (

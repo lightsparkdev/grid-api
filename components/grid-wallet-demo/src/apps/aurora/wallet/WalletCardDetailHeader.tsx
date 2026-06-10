@@ -1,6 +1,6 @@
 'use client';
 
-import { GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
+import { AuroraLensButton, GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './WalletCardDetailHeader.module.scss';
@@ -10,34 +10,45 @@ interface WalletCardDetailHeaderProps {
   /** Card-actions pill (card numbers / more). Hidden during issuance — the card
    *  doesn't exist yet, so only the close button shows. */
   showActions?: boolean;
-  /** Static CSS background (tone-matched to the issuance aurora corner) for the
-   *  close button's lens to refract while it sits over the full-screen aurora.
-   *  Omit when the button is over the flat sheet surface. */
-  closeBackdrop?: string;
+  /** The button sits over the full-screen issuance aurora — use the live WebGL
+   *  aurora lens (refracts the real drifting field) and the white glyph. Off when
+   *  it's over the flat wallet/card-home surface (plain SVG glass). */
+  closeOnAurora?: boolean;
 }
 
 /** Figma 2143:40972 — close + card actions while debit card detail is open. */
 export function WalletCardDetailHeader({
   onClose,
   showActions = true,
-  closeBackdrop,
+  closeOnAurora = false,
 }: WalletCardDetailHeaderProps) {
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
 
   return (
     <div className={styles.root}>
-      <GlassSymbolButton
-        aria-label="Close"
-        size={40}
-        type="button"
-        className={closeBackdrop ? styles.closeOnAurora : undefined}
-        glass={{ brightness }}
-        backdrop={closeBackdrop}
-        onClick={onClose}
-      >
-        <SfSymbol name="xmark" size={14} />
-      </GlassSymbolButton>
+      {closeOnAurora ? (
+        <AuroraLensButton
+          aria-label="Close"
+          size={40}
+          type="button"
+          className={styles.closeOnAurora}
+          brightness={brightness}
+          onClick={onClose}
+        >
+          <SfSymbol name="xmark" size={14} />
+        </AuroraLensButton>
+      ) : (
+        <GlassSymbolButton
+          aria-label="Close"
+          size={40}
+          type="button"
+          glass={{ brightness }}
+          onClick={onClose}
+        >
+          <SfSymbol name="xmark" size={14} />
+        </GlassSymbolButton>
+      )}
 
       {showActions ? (
         <GlassWindowButtonGroup
