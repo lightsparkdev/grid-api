@@ -105,12 +105,15 @@ export function DebitCard({
           >
             {showOffer ? LABEL_DEFAULT : LABEL_OPEN}
           </TextMorph>
-          <span className={styles.secondary}>Spend locally</span>
+          <span className={styles.secondary}>Spend anywhere</span>
         </div>
         <div className={styles.bottom}>
           <span
-            className={styles.primary}
-            style={showCardNumber ? undefined : { opacity: 0 }}
+            className={clsx(
+              styles.primary,
+              styles.cardNumber,
+              !showCardNumber && styles.cardNumberHidden,
+            )}
           >
             •••• 8972
           </span>

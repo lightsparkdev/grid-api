@@ -172,7 +172,7 @@ export function AuroraWalletScreen({
                 interactive={!isOpen}
                 onOpen={openCard}
                 bordered={showFullAurora}
-                showNumber={!isIssuance}
+                showNumber={!showFullAurora}
                 issued={issued}
               />
             </motion.div>

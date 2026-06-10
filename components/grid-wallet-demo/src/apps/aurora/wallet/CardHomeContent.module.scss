@@ -8,13 +8,12 @@
   padding: 32px;
 }
 
-/* Figma 2143:40968 — fixed-dark Apple Wallet pill (stays dark in both themes,
-   per Apple's brand button), px 20 py 14, radius 1000, gap 8. */
+/* Figma 2143:40968 — fixed-dark "Tap to pay" pill, px 20 py 14, radius 1000, gap 8. */
 .walletBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   width: 100%;
   margin: 0;
   padding: 14px 20px;
@@ -22,18 +21,22 @@
   border-radius: 1000px;
   corner-shape: round;
   background: #1c1c1e;
+  color: #ffffff;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.02);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-press-scale(1.04);
 }
 
-/* Figma 2143:40969 — 21.647 x 16 wallet glyph. */
+/* NFC "tap to pay" glyph (matches the flows panel's tap icon). */
 .walletIcon {
   display: block;
   flex-shrink: 0;
-  width: auto;
-  height: 16px;
+
+  /* central-icons bake stroke-width onto each <path>; override to a 2px weight. */
+  path {
+    stroke-width: 2;
+  }
 }
 
 /* Body/Emphasized 17/22, -0.43. */

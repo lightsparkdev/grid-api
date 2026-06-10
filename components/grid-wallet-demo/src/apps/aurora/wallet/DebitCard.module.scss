@@ -121,6 +121,22 @@
   white-space: nowrap;
 }
 
+/* The masked number blurs in once the card is issued (the "ready" reveal). */
+.cardNumber {
+  transition: opacity 0.45s ease, filter 0.45s ease;
+}
+
+.cardNumberHidden {
+  opacity: 0;
+  filter: blur(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardNumber {
+    transition: none;
+  }
+}
+
 .secondary {
   color: rgba(255, 255, 255, 0.7);
   text-align: right;

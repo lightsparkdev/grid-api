@@ -1,5 +1,6 @@
 'use client';
 
+import { IconNfc1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconNfc1';
 import { WalletListSection } from './WalletListSection';
 import styles from './CardHomeContent.module.scss';
 
@@ -20,14 +21,8 @@ export function CardHomeContent() {
       />
       <div className={styles.walletBtnWrap}>
         <button type="button" className={styles.walletBtn}>
-          <img
-            className={styles.walletIcon}
-            src="/assets/icon-apple-wallet.png"
-            alt=""
-            aria-hidden
-            draggable={false}
-          />
-          <span className={styles.walletLabel}>Add to Apple Wallet</span>
+          <IconNfc1 className={styles.walletIcon} size={20} aria-hidden />
+          <span className={styles.walletLabel}>Tap to pay</span>
         </button>
       </div>
     </>
