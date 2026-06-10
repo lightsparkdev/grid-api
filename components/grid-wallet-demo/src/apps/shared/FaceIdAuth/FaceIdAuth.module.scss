@@ -1,5 +1,5 @@
 /* Progressive frost behind Face ID. Stacked layers + staggered masks approximate
-   2px → 0px falloff; strength is driven by --face-id-blur-strength (0..1, tied to
+   1px → 0px falloff; strength is driven by --face-id-blur-strength (0..1, tied to
    expand progress). A hairline themed fill (0.01 alpha) triggers backdrop-filter
    compositing on WebKit/Chromium without a visible tint. */
 .progressiveBlur {
@@ -29,17 +29,17 @@
 }
 
 .blurStrong {
-  --face-id-blur-base: 2px;
+  --face-id-blur-base: 1px;
   --face-id-blur-mask: linear-gradient(to bottom, #000 0%, #000 35%, transparent 72%);
 }
 
 .blurMid {
-  --face-id-blur-base: 1px;
+  --face-id-blur-base: 0.5px;
   --face-id-blur-mask: linear-gradient(to bottom, transparent 18%, #000 42%, transparent 88%);
 }
 
 .blurSoft {
-  --face-id-blur-base: 0.5px;
+  --face-id-blur-base: 0.25px;
   --face-id-blur-mask: linear-gradient(to bottom, transparent 48%, #000 68%, transparent 100%);
 }
 
