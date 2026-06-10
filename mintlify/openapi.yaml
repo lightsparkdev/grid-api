@@ -12771,7 +12771,7 @@ components:
       type: object
       required:
         - beneficiaryType
-        - address
+        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
