@@ -92,7 +92,10 @@ export function DebitCard({
         onMouseEnter={() => interactive && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <AuroraBackground showRadialGradient={false} className={styles.aurora} />
+        <AuroraBackground
+          showRadialGradient={false}
+          className={clsx(styles.aurora, bordered && styles.auroraHidden)}
+        />
         <div className={styles.top}>
           <TextMorph
             as="span"

@@ -76,6 +76,21 @@
   inset: -80px;
   flex: none;
   min-height: auto;
+  /* Crossfade out over the full-screen aurora so the card reads as an outline
+     window onto that one continuous aurora, not a second mismatched one. */
+  transition: opacity 0.4s ease;
+}
+
+/* Issuance: drop the card's own aurora so the full-screen aurora shows straight
+   through the transparent card body (the white border outlines the window). */
+.auroraHidden {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora {
+    transition: none;
+  }
 }
 
 .top,
