@@ -1,6 +1,9 @@
 @use '../../shared/fill-button' as fill;
 @use '../../shared/typography/ios-type-mixins' as ios;
 
+$card-press-ease: cubic-bezier(0.22, 1, 0.36, 1);
+$card-press-duration: 0.28s;
+
 /* Figma 90:13640 — row: gap 12, px 16 py 8, items-start */
 .row {
   display: flex;
@@ -17,8 +20,21 @@
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
+  margin: 0;
   padding: 20px 24px;
   color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: scale(1);
+  transform-origin: center center;
+  transition: transform $card-press-duration $card-press-ease;
+
+  &:active {
+    transform: scale(1.02);
+  }
 }
 
 /* Figma 90:13641 — gap 12 between title / chart / metric, self-stretch */
@@ -129,4 +145,14 @@
   letter-spacing: 0.06px;
   color: var(--ios-label-tertiary);
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-caption-2-opsz);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardBase {
+    transition: none;
+
+    &:active {
+      transform: none;
+    }
+  }
 }

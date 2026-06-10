@@ -71,12 +71,13 @@ export function WalletInsightCards({
 }: WalletInsightCardsProps) {
   const bars = normalizeBars(weeklyBars);
   const { whole, decimals } = splitBtcAmount(btcAmount);
-  const weeklyClip = useSquircleClip<HTMLElement>();
-  const bitcoinClip = useSquircleClip<HTMLElement>();
+  const weeklyClip = useSquircleClip<HTMLButtonElement>();
+  const bitcoinClip = useSquircleClip<HTMLButtonElement>();
 
   return (
     <div className={styles.row}>
-      <article
+      <button
+        type="button"
         ref={weeklyClip.ref}
         style={weeklyClip.style}
         className={styles.cardWeekly}
@@ -102,9 +103,10 @@ export function WalletInsightCards({
           <SfSymbol className={styles.metricIcon} name="arrow.up" size={13} />
           <span>{` ${fmtUsd(weeklyEarnedCents)} earned`}</span>
         </MetricLine>
-      </article>
+      </button>
 
-      <article
+      <button
+        type="button"
         ref={bitcoinClip.ref}
         style={bitcoinClip.style}
         className={styles.cardBitcoin}
@@ -124,7 +126,7 @@ export function WalletInsightCards({
           <SfSymbol className={styles.metricIcon} name="arrow.up" size={13} />
           <span>{` ${fmtPercent(btcChangePercent)} today`}</span>
         </MetricLine>
-      </article>
+      </button>
     </div>
   );
 }
