@@ -68,6 +68,14 @@
   display: flex;
   flex-shrink: 0;
   color: var(--ios-label-primary);
+
+  /* Render the value-prop icons at the 2px stroke weight. central-icons bake
+     stroke-width onto each <path> (no strokeWidth prop, rest props land on the
+     <svg>), and the stroke-2 variant package needs a license key to install, so
+     override the attribute via CSS. Matches the stroke-2 variant — same paths. */
+  svg path {
+    stroke-width: 2;
+  }
 }
 
 .valuePropText {

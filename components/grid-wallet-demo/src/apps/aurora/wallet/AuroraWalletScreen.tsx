@@ -170,6 +170,7 @@ export function AuroraWalletScreen({
                 onOpen={openCard}
                 bordered={showFullAurora}
                 showNumber={!isIssuance}
+                issued={issued}
               />
             </motion.div>
           </motion.div>
@@ -206,8 +207,11 @@ export function AuroraWalletScreen({
           </WalletSheet>
         </motion.div>
 
-        {/* Issuance / card-home content below the card. */}
-        <AnimatePresence mode="wait" initial={false}>
+        {/* Issuance / card-home content below the card. popLayout (not "wait") so an
+            exiting block leaves the flex flow immediately instead of holding its
+            height for the 0.2s exit — otherwise its delayed unmount snaps the
+            centered card down (the intro → creating "jump"). */}
+        <AnimatePresence mode="popLayout" initial={false}>
           {cardView === 'intro' && (
             <motion.div
               key="intro"

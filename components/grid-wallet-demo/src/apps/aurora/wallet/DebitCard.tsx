@@ -24,6 +24,8 @@ interface DebitCardProps {
   showNumber?: boolean;
   /** White inset border so the card reads over the full-screen aurora. */
   bordered?: boolean;
+  /** A created card: morph the label to "Debit card" and reveal the number. */
+  issued?: boolean;
 }
 
 /** Figma 2143:36184 — debit card behind the wallet sheet. */
@@ -32,6 +34,7 @@ export function DebitCard({
   onOpen,
   showNumber = true,
   bordered = false,
+  issued = false,
 }: DebitCardProps) {
   const reduceMotion = useReducedMotion();
   const [hovered, setHovered] = useState(false);
@@ -63,6 +66,11 @@ export function DebitCard({
     }
   };
 
+  // The "Get your free debit card" offer only shows on the un-issued home card;
+  // once a card exists it morphs to "Debit card" and the masked number returns.
+  const showOffer = interactive && !issued;
+  const showCardNumber = showNumber && issued;
+
   return (
     <motion.div
       ref={scope}
@@ -92,14 +100,14 @@ export function DebitCard({
             duration={LIFT_DURATION * 1000}
             ease={cubicBezierCss(easeOutSwift)}
           >
-            {interactive ? LABEL_DEFAULT : LABEL_OPEN}
+            {showOffer ? LABEL_DEFAULT : LABEL_OPEN}
           </TextMorph>
           <span className={styles.secondary}>Spend locally</span>
         </div>
         <div className={styles.bottom}>
           <span
             className={styles.primary}
-            style={showNumber ? undefined : { opacity: 0 }}
+            style={showCardNumber ? undefined : { opacity: 0 }}
           >
             •••• 8972
           </span>
@@ -123,7 +131,7 @@ export function DebitCard({
             preserveAspectRatio="none"
             aria-hidden
           >
-            <path d={cardClip.path} fill="none" stroke="rgba(255, 255, 255, 0.95)" strokeWidth={4} />
+            <path d={cardClip.path} fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth={1} />
           </svg>
         )}
       </button>
