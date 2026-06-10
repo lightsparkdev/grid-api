@@ -32,6 +32,8 @@ const WEIGHT_BY_SYMBOL = {
   'arrow.up': 'semibold',
   'arrow.up.arrow.down': 'semibold',
   'play.fill': 'semibold',
+  'creditcard.and.numbers': 'semibold',
+  ellipsis: 'semibold',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');

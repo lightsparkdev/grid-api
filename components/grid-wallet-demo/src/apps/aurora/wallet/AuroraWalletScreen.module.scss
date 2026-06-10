@@ -22,11 +22,28 @@
 
 .header {
   flex-shrink: 0;
+  padding: 8px 24px;
+}
+
+.headerInner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 24px;
+  width: 100%;
+}
+
+.sheetWrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  will-change: transform;
+}
+
+.sheetWrapDismissed {
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* Figma 90:13587 — Title3/Emphasized. */
@@ -48,6 +65,10 @@
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.bodyDetailOpen {
+  overflow: hidden;
 }
 
 .cardWrap {

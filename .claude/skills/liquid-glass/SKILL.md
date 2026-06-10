@@ -89,6 +89,14 @@ surfaces (`FrostPanel`) use the slimmer `FrostConfig`, not `GlassConfig`.
 - **`specularRotation`** is directional (45° puts a bright highlight on the
   top-left/bottom-right corners) — rotate or lower `edgeStrength` to move it.
 - **`corner-shape: squircle`** is Chromium-only (graceful circular fallback).
+- **Outer drop shadow → round the wrapper.** A glass surface clips itself with
+  `overflow: hidden`, so an outer `box-shadow` has to live on a wrapper *around*
+  the glass (inside, the clip eats it). `box-shadow` traces that wrapper's *own*
+  `border-radius`/`corner-shape`, not the glass child's — so an unrounded wrapper
+  gives a **square halo around round glass**. Give the shadow wrapper the same
+  `border-radius` + `corner-shape` as the glass (see `GlassSymbolButton` /
+  `GlassWindowButtonGroup` `.root`). Same rule for any border/background painted
+  on a wrapper. Debug heuristic: a square around glass = a rounding-unaware layer.
 - **Tiled backgrounds:** pass `GlassOver`'s `backdropOffset={{x,y}}` to align.
 - **Big sheets/modals don't refract — they frost.** A large displacement lens
   re-runs its whole SVG filter every frame while the surface animates, which tanks

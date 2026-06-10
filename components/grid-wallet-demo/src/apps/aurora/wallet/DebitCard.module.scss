@@ -12,18 +12,31 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   justify-content: space-between;
   width: 100%;
   height: 232px;
+  margin: 0;
   padding: 20px 24px 24px;
+  border: 0;
   border-radius: 13px;
   corner-shape: var(--corner-shape);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   overflow: hidden;
   color: #ffffff;
+  text-align: left;
+  cursor: pointer;
   transform-origin: center left;
   transition: transform 280ms $ease-out-swift;
+  -webkit-tap-highlight-color: transparent;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: rotate(-1deg);
   }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.cardStatic {
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -36,25 +49,13 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   }
 }
 
-/* Same aurora stack as AuroraAuthScreen hero — fills the card face. */
+/* Extend past card edges on all sides so overflow:hidden clips streaks
+   mid-flow instead of blurred layer periphery. */
 .aurora {
   position: absolute;
-  inset: 0;
+  inset: -80px;
   flex: none;
   min-height: auto;
-}
-
-.walletMark {
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  top: 50%;
-  width: 116px;
-  height: auto;
-  transform: translate(-50%, -50%);
-  opacity: 0.9;
-  pointer-events: none;
-  user-select: none;
 }
 
 .top,

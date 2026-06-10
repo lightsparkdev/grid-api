@@ -1,18 +1,23 @@
+import clsx from 'clsx';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import styles from './DebitCard.module.scss';
 
+interface DebitCardProps {
+  interactive?: boolean;
+  onOpen?: () => void;
+}
+
 /** Figma 2143:36184 — debit card behind the wallet sheet. */
-export function DebitCard() {
+export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
   return (
-    <div className={styles.card} aria-hidden>
+    <button
+      type="button"
+      className={clsx(styles.card, !interactive && styles.cardStatic)}
+      aria-label="View debit card"
+      disabled={!interactive}
+      onClick={onOpen}
+    >
       <AuroraBackground showRadialGradient={false} className={styles.aurora} />
-      <img
-        className={styles.walletMark}
-        src="/assets/financial-app/aurora-wallet.svg"
-        alt=""
-        aria-hidden
-        draggable={false}
-      />
       <div className={styles.top}>
         <span className={styles.primary}>Get your free debit card</span>
         <span className={styles.secondary}>Spend locally</span>
@@ -32,6 +37,6 @@ export function DebitCard() {
           />
         </div>
       </div>
-    </div>
+    </button>
   );
 }

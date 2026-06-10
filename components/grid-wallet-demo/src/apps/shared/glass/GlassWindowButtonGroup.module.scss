@@ -1,0 +1,34 @@
+@use './glass-button-shadow' as shadow;
+
+.root {
+  position: relative;
+  flex-shrink: 0;
+  // Match the glass pill so the drop shadow is a capsule, not a square box.
+  border-radius: 1000px;
+  corner-shape: round;
+  @include shadow.glass-button-shadow;
+}
+
+.glass {
+  height: 40px;
+  border-radius: 1000px;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 4px 6px;
+  color: var(--ios-label-primary);
+}
+
+.iconSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 5px;
+}

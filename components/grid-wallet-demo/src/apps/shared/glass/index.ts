@@ -1,4 +1,5 @@
 export { GlassSymbolButton } from './GlassSymbolButton';
+export { GlassWindowButtonGroup } from './GlassWindowButtonGroup';
 export { GlassTextButton } from './GlassTextButton';
 export {
   OverlayGlassProvider,
