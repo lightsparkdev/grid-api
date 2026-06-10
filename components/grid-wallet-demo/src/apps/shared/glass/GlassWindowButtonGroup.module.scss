@@ -2,6 +2,7 @@
 
 $group-height: 40px;
 $group-press-scale: ($group-height + shadow.$glass-button-bloom * 2) / $group-height;
+$group-hover-scale: ($group-height + shadow.$glass-button-hover-bloom * 2) / $group-height;
 
 .root {
   position: relative;
@@ -12,6 +13,11 @@ $group-press-scale: ($group-height + shadow.$glass-button-bloom * 2) / $group-he
   @include shadow.glass-button-shadow;
   @include shadow.glass-button-press-base;
 
+  &:hover {
+    transform: scale($group-hover-scale);
+  }
+
+  // Higher specificity than :hover, so the press scale wins while clicking.
   &:has(.iconButton:active:not(:disabled)) {
     transform: scale($group-press-scale);
     filter: brightness(shadow.$glass-button-press-brightness);

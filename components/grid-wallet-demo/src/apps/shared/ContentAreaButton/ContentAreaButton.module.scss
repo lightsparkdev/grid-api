@@ -3,6 +3,7 @@
 @use '../glass/glass-button-shadow' as shadow;
 
 .button {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,6 +24,31 @@
   letter-spacing: -0.43px;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
 
+  /* Hover wash. Light: a hair darker than the #f9f9f9 wallet bg. Dark: white lift.
+     (filled flips it below). */
+  --content-area-hover: #f6f6f6;
+
+  :global([data-theme='dark']) & {
+    --content-area-hover: rgba(255, 255, 255, 0.04);
+  }
+
+  /* Tint overlay — fades in on hover, sits under the icon/label (z-index: 1). */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: round;
+    background: var(--content-area-hover);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled)::after {
+    opacity: 1;
+  }
+
   &:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -35,6 +61,8 @@
 
 .bordered {
   @include fill.fill-bordered-surface;
+  /* White wallet pills — hover is scale only, no fill wash. */
+  --content-area-hover: transparent;
 }
 
 .filled {
@@ -42,9 +70,17 @@
   background: var(--p-fill);
   color: var(--p-fg);
   box-shadow: none;
+  /* Filled bg is inverted vs the surface, so flip the wash to stay visible. */
+  --content-area-hover: rgba(255, 255, 255, 0.1);
+
+  :global([data-theme='dark']) & {
+    --content-area-hover: rgba(0, 0, 0, 0.08);
+  }
 }
 
 .icon {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-shrink: 0;
   width: 24px;
@@ -53,6 +89,8 @@
 }
 
 .label {
+  position: relative;
+  z-index: 1;
   white-space: nowrap;
 }
 

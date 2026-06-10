@@ -28,13 +28,50 @@ $card-press-duration: 0.28s;
   -webkit-appearance: none;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
-  transform: scale(1);
+  position: relative;
+  /* translateZ(0) at EVERY state (incl. rest) keeps a persistent GPU layer, so the
+     browser never de-promotes + re-rasterizes the text on settle — that re-raster
+     is the ~0.5px end-of-ease shift. More reliable than will-change in Safari. */
+  transform: translateZ(0) scale(1);
   transform-origin: center center;
+  will-change: transform;
+  backface-visibility: hidden;
   transition: transform $card-press-duration $card-press-ease;
 
-  &:active {
-    transform: scale(1.02);
+  /* Hover fill — dark mode only (light is scale-only, like the white pills). */
+  --card-hover: transparent;
+
+  :global([data-theme='dark']) & {
+    --card-hover: rgba(255, 255, 255, 0.04);
   }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-hover);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+
+  &:hover {
+    transform: translateZ(0) scale(1.01);
+  }
+
+  &:active {
+    transform: translateZ(0) scale(1.02);
+  }
+}
+
+/* Keep card content above the dark-mode hover wash. */
+.cardBase > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Figma 90:13641 — gap 12 between title / chart / metric, self-stretch */
@@ -151,6 +188,7 @@ $card-press-duration: 0.28s;
   .cardBase {
     transition: none;
 
+    &:hover,
     &:active {
       transform: none;
     }

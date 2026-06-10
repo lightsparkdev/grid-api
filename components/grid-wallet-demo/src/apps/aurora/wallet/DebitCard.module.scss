@@ -11,7 +11,7 @@
 
   /* Black shadow over the dark base needs more weight to read. */
   :global([data-theme='dark']) & {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 }
 
