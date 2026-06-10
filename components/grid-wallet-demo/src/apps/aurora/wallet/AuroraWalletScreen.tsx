@@ -2,8 +2,10 @@
 
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
+import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -79,6 +81,7 @@ export function AuroraWalletScreen({
 }: AuroraWalletScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
+  const overlayEl = useScreenOverlay();
   const [cardView, setCardView] = useState<CardView>('closed');
   const [issued, setIssued] = useState(false);
   const [tapPhase, setTapPhase] = useState<TapPhase>('idle');
@@ -118,6 +121,18 @@ export function AuroraWalletScreen({
   }, [tapPhase]);
 
   const openCard = () => setCardView(issued ? 'home' : 'intro');
+
+  // Face ID renders in AppShell's overlay layer (above the status bar) so its
+  // progressive blur frosts the status bar too; falls back to an in-screen layer
+  // when rendered outside an AppShell.
+  const faceIdAuth = (
+    <FaceIdAuth active={tapPhase === 'auth'} onDone={() => setTapPhase('done')} />
+  );
+  const faceIdOverlay = overlayEl ? (
+    createPortal(faceIdAuth, overlayEl)
+  ) : (
+    <div className={styles.faceIdLayer}>{faceIdAuth}</div>
+  );
 
   return (
     <div className={styles.root}>
@@ -310,10 +325,7 @@ export function AuroraWalletScreen({
         </AnimatePresence>
       </motion.div>
 
-      {/* Face ID (Dynamic Island) overlay — runs during the tap-to-pay auth beat. */}
-      <div className={styles.faceIdLayer}>
-        <FaceIdAuth active={tapPhase === 'auth'} onDone={() => setTapPhase('done')} />
-      </div>
+      {faceIdOverlay}
     </div>
   );
 }

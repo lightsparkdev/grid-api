@@ -11,6 +11,7 @@ import {
   usePhoneFitScale,
 } from './usePhoneFitScale';
 import { PhoneStatusBar } from './PhoneStatusBar';
+import { ScreenOverlayContext } from './ScreenOverlayContext';
 import styles from './AppShell.module.scss';
 
 interface AppShellProps {
@@ -55,6 +56,9 @@ export function AppShell({
   const screenBodyRef = useRef<HTMLDivElement>(null);
   const statusBarRef = useRef<HTMLElement>(null);
   const statusBarTone = useAdaptiveStatusBarTone(screenRef, screenBodyRef, statusBarRef);
+  // Overlay layer node (above the status bar) handed to descendants so they can
+  // portal status-bar-frosting overlays (e.g. Face ID) into it.
+  const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null);
 
   // The swag glass shell sits REST_INSET px inset at rest and lifts back out
   // HOVER_GROW px on hover (so the bezel is a touch thinner until you hover). The
@@ -264,13 +268,17 @@ export function AppShell({
             }
           >
             <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
-            {screenOverlay ? (
-              <div className={styles.screenOverlay}>{screenOverlay}</div>
-            ) : null}
+            {/* Always present so it can double as the portal target for overlays
+                that need to frost the status bar (it sits above it). */}
+            <div ref={setOverlayEl} className={styles.screenOverlay}>
+              {screenOverlay}
+            </div>
             {children ? (
-              <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
-                {children}
-              </div>
+              <ScreenOverlayContext.Provider value={overlayEl}>
+                <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
+                  {children}
+                </div>
+              </ScreenOverlayContext.Provider>
             ) : null}
           </div>
         </div>
