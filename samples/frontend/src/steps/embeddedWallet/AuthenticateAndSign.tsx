@@ -23,6 +23,7 @@ const SANDBOX_MODE = (import.meta.env.VITE_SANDBOX_PASSKEY ?? '1') !== '0'
 
 const SANDBOX_PASSKEY_SIGNATURE = 'sandbox-valid-passkey-signature'
 const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
+const TURNKEY_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
 
 // Step 7: Authenticate with the registered passkey and sign payloadToSign.
 //
@@ -121,6 +122,7 @@ export default function AuthenticateAndSign({
       } else {
         const sessionKey = await decryptSessionSigningKey(
           keyPair.privateKey,
+          rawPublicKey,
           verify.encryptedSessionSigningKey ?? '',
         )
         signature = signPayload(sessionKey, payloadToSign)
@@ -170,6 +172,7 @@ export default function AuthenticateAndSign({
 // key || ciphertext || 16-byte AES-256-GCM auth tag.
 async function decryptSessionSigningKey(
   recipientPrivateKey: CryptoKey,
+  recipientPublicKey: Uint8Array,
   encryptedSessionSigningKey: string,
 ): Promise<Uint8Array> {
   if (!encryptedSessionSigningKey) throw new Error('No encrypted session signing key returned')
@@ -177,8 +180,10 @@ async function decryptSessionSigningKey(
   if (payload.length < 33 + 16) {
     throw new Error(`encryptedSessionSigningKey too short: ${payload.length} bytes`)
   }
-  const enc = payload.slice(0, 33)
+  const compressedEnc = payload.slice(0, 33)
+  const enc = p256.Point.fromHex(bytesToHex(compressedEnc)).toBytes(false)
   const ciphertext = payload.slice(33)
+  const aad = concatBytes(enc, recipientPublicKey)
   const suite = new CipherSuite({
     kem: new DhkemP256HkdfSha256(),
     kdf: new HkdfSha256(),
@@ -187,8 +192,9 @@ async function decryptSessionSigningKey(
   const recipient = await suite.createRecipientContext({
     recipientKey: recipientPrivateKey,
     enc,
+    info: TURNKEY_HPKE_INFO,
   })
-  const plaintext = await recipient.open(ciphertext)
+  const plaintext = await recipient.open(ciphertext, aad)
   return new Uint8Array(plaintext)
 }
 
@@ -212,4 +218,14 @@ function bytesToBase64url(bytes: Uint8Array): string {
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+function concatBytes(...chunks: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(chunks.reduce((len, chunk) => len + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.length
+  }
+  return out
 }

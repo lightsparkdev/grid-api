@@ -62,12 +62,12 @@ sequenceDiagram
     ```json
     {
       "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-      "encryptedWalletCredentials": "5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp"
+      "encryptedWalletCredentials": "{\"version\":\"v1.0.0\",\"data\":\"7b22656e6361707065645075626c6963223a2230346634356632612e2e2e222c2263697068657274657874223a22316661313032333339302e2e2e222c226f7267616e697a6174696f6e4964223a226f72675f326d39462e2e2e227d\",\"dataSignature\":\"3045022100...\",\"enclaveQuorumPublic\":\"04a1b2c3...\"}"
     }
     ```
   </Step>
   <Step title="Decrypt on the client">
-    `encryptedWalletCredentials` uses the same base58check/HPKE format as `encryptedSessionSigningKey`. Decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests — see <a href="client-keys#3-decrypt-the-session-signing-key">decrypt the session signing key</a> for code.
+    `encryptedWalletCredentials` is a signed Turnkey export envelope, not the base58check session-bundle format used by `encryptedSessionSigningKey`. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
 
     The plaintext is a BIP-39 mnemonic (the wallet's master seed).
   </Step>
