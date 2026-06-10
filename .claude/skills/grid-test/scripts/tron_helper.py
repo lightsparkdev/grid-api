@@ -60,8 +60,24 @@ def load_priv_key(creds_path=None):
     return PrivateKey(bytes.fromhex(hex_key))
 
 
+def get_trongrid_api_key(creds_path=None):
+    if os.environ.get("TRONGRID_API_KEY"):
+        return os.environ["TRONGRID_API_KEY"]
+    creds_path = creds_path or os.path.expanduser("~/.grid-credentials")
+    try:
+        with open(creds_path) as f:
+            return json.load(f).get("trongridApiKey")
+    except (OSError, ValueError):
+        return None
+
+
 def get_client():
-    return Tron(provider=HTTPProvider(NET["endpoint"]), network=NET["network"])
+    # The public TronGrid endpoint rate-limits unauthenticated traffic; a free
+    # API key (TRONGRID_API_KEY env or trongridApiKey in ~/.grid-credentials)
+    # lifts the limit.
+    api_key = get_trongrid_api_key()
+    provider = HTTPProvider(NET["endpoint"], api_key=api_key) if api_key else HTTPProvider(NET["endpoint"])
+    return Tron(provider=provider, network=NET["network"])
 
 
 def get_address():
