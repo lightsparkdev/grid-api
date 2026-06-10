@@ -119,7 +119,8 @@
   gap: 8px;
   width: 100%;
   padding-top: 16px;
-  color: var(--ios-label-secondary);
+  /* On the full-bleed creating screen the caption + spinner sit on the aurora. */
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .creatingText {

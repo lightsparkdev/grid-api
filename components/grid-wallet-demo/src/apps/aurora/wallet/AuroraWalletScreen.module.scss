@@ -51,8 +51,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 82%;
+  height: 76%;
   pointer-events: none;
+  transition: opacity 0.4s ease;
   background: linear-gradient(
     to bottom,
     transparent 0%,
@@ -62,6 +63,17 @@
     color-mix(in srgb, var(--wallet-bg) 92%, transparent) 58%,
     var(--wallet-bg) 66%
   );
+}
+
+/* Creating screen: drop the fade so the aurora full-bleeds behind the card. */
+.auroraFadeHidden {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auroraFade {
+    transition: none;
+  }
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */

@@ -101,7 +101,12 @@ export function AuroraWalletScreen({
               className={styles.fullAuroraBg}
               fieldId="issuance"
             />
-            <div className={styles.auroraFade} />
+            <div
+              className={clsx(
+                styles.auroraFade,
+                cardView === 'creating' && styles.auroraFadeHidden,
+              )}
+            />
           </motion.div>
         )}
       </AnimatePresence>
