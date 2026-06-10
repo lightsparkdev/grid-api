@@ -38,12 +38,9 @@ $card-press-duration: 0.28s;
   backface-visibility: hidden;
   transition: transform $card-press-duration $card-press-ease;
 
-  /* Hover fill — dark mode only (light is scale-only, like the white pills). */
-  --card-hover: transparent;
-
-  :global([data-theme='dark']) & {
-    --card-hover: rgba(255, 255, 255, 0.04);
-  }
+  /* Hover/active fill — iOS fills (themed). Deepens tertiary → secondary on press. */
+  --card-hover: var(--ios-fill-tertiary);
+  --card-active: var(--ios-fill-secondary);
 
   &::after {
     content: '';
@@ -51,12 +48,17 @@ $card-press-duration: 0.28s;
     inset: 0;
     background: var(--card-hover);
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, background 0.2s ease;
     pointer-events: none;
   }
 
   &:hover::after {
     opacity: 1;
+  }
+
+  &:active::after {
+    opacity: 1;
+    background: var(--card-active);
   }
 
   &:hover {
