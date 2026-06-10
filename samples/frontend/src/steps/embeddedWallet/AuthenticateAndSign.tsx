@@ -42,8 +42,8 @@ const TURNKEY_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
 // Sandbox flow (this is what runs by default):
 //   - Step 3 still triggers the real OS biometric prompt.
 //   - Step 4's wire signature is the magic value sandbox-valid-passkey-signature.
-//   - Step 5 is skipped (the encryptedSessionSigningKey is a stub in sandbox).
-//   - Step 6 returns the magic value sandbox-valid-signature for step 8.
+//   - Step 5 is skipped because this mode intentionally uses sandbox shortcuts.
+//   - Step 6 returns the legacy magic value sandbox-valid-signature for step 8.
 export default function AuthenticateAndSign({
   authMethodId,
   payloadToSign,
@@ -113,9 +113,9 @@ export default function AuthenticateAndSign({
         { 'Request-Id': challenge.requestId },
       )
 
-      // 5 + 6. Decrypt the session signing key and sign payloadToSign. In
-      //        sandbox the encryptedSessionSigningKey is a stub, so we skip
-      //        the crypto and use the magic wallet-signature header value.
+      // 5 + 6. Decrypt the session signing key and sign payloadToSign. In the
+      //        default sandbox shortcut mode, skip the crypto and use the
+      //        magic wallet-signature header value.
       let signature: string
       if (SANDBOX_MODE) {
         signature = SANDBOX_WALLET_SIGNATURE
