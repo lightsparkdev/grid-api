@@ -37,6 +37,10 @@ $card-press-duration: 0.28s;
   will-change: transform;
   backface-visibility: hidden;
   transition: transform $card-press-duration $card-press-ease;
+  /* Browsers lazily create the GPU layer for will-change/translateZ only on the
+     first real transform (a click), so the first hover would otherwise jitter.
+     This imperceptible mount nudge (0.00001 scale) forces the layer eagerly. */
+  animation: card-layer-warm 0.25s linear;
 
   /* Hover/active fill — iOS fills (themed). Deepens tertiary → secondary on press. */
   --card-hover: var(--ios-fill-tertiary);
@@ -74,6 +78,16 @@ $card-press-duration: 0.28s;
 .cardBase > * {
   position: relative;
   z-index: 1;
+}
+
+/* Imperceptible mount nudge — forces the compositor layer eagerly (see .cardBase). */
+@keyframes card-layer-warm {
+  from {
+    transform: translateZ(0) scale(0.99999);
+  }
+  to {
+    transform: translateZ(0) scale(1);
+  }
 }
 
 /* Figma 90:13641 — gap 12 between title / chart / metric, self-stretch */
@@ -189,6 +203,7 @@ $card-press-duration: 0.28s;
 @media (prefers-reduced-motion: reduce) {
   .cardBase {
     transition: none;
+    animation: none;
 
     &:hover,
     &:active {
