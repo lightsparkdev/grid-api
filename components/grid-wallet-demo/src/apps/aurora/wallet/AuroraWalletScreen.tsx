@@ -28,7 +28,7 @@ export function AuroraWalletScreen({
   return (
     <div className={styles.root}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Wallet</h1>
+        <h1 className={styles.title}>Aurora</h1>
         <GlassSymbolButton
           aria-label="Settings"
           size={40}
