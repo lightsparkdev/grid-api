@@ -3,7 +3,14 @@
 import { useEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
-import { createPointerTracker, DOT_WAKE_ENABLED } from '@/lib/dotGridMotion';
+import {
+  createPointerTracker,
+  createPressTracker,
+  DOT_PRESS,
+  DOT_WAKE_ENABLED,
+  IDLE_SURFACE,
+  type SurfaceSample,
+} from '@/lib/dotGridMotion';
 
 /**
  * WebGL "stage": draws the dot-grid backdrop AND the glass lens in one pass.
@@ -72,10 +79,15 @@ const DOT_SIZE = 2.5;
 // hair under the gap, so the first off-frame dot hides behind the edge). The
 // visible canvas samples the inner window via the shader's toUV.
 const DOT_BLEED = 48;
-// Wave constants — the ripple itself runs in the shader (rippleOffset, matched
-// values); these two are used here only to estimate how long a ripple stays alive.
-const WAVE_SPEED = 1400;
-const WAVELENGTH = 800;
+
+// Stashed: the original behavior fired the ripple immediately on pointer-down.
+// Now the grid presses in on hold and fires the ripple on RELEASE. Flip this to
+// true to restore plain click-to-ripple (and drop the press dimple).
+const RIPPLE_ON_PRESS = false;
+
+// Presses that begin on the phone UI (this wraps the whole phone) don't touch the
+// backdrop — only presses that start on the backdrop do.
+const FOREGROUND_SELECTOR = '[class*="AppShell_scaled"]';
 
 /**
  * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap
@@ -162,10 +174,12 @@ uniform float uGlowBand;     // spread*sqrt2
 uniform float uGlowExp;
 uniform float uEdgeExp;
 uniform float uBright;       // -0.5..0.5 lens-only brightness
-uniform vec2 uRipplePos;    // click ripple centre, device px (top-down, matches sp)
-uniform float uRippleT;     // seconds since the ripple started; < 0 = inactive
+uniform float uRippleT;     // seconds since release; < 0 = inactive (centre = uPressPos)
+uniform float uRippleAmp;   // 0..1 rebound strength (= press depth at release)
 uniform float uDpr;         // device px per CSS px (scales the CSS-px wave consts)
 uniform float uBleed;       // dot field drawn this far past each visible edge (device px)
+uniform vec2 uPressPos;    // press-in dimple centre, device px (top-down, matches sp)
+uniform float uPressStr;   // 0..1 press depth; 0 = inactive
 
 // Map a visible-canvas position (device px, top-down) into the dot texture, which
 // is larger than the canvas by uBleed on every side. The visible frame is a window
@@ -203,33 +217,42 @@ vec3 fetch(vec2 uv, float amt){
   return texture2D(uTex, uv).rgb;
 }
 
-// Click ripple as a GPU sample-displacement of the (static) dot texture — the same
-// travelling wave the 2D path used (matched consts, scaled to device px), so the
-// ripple costs one shader pass per frame instead of a full 2D redraw + re-upload.
-vec2 rippleOffset(vec2 sp){
-  if (uRippleT < 0.0) return vec2(0.0);
-  float WS = 1400.0 * uDpr;   // wave speed (px/s)
-  float WL = 800.0 * uDpr;    // wavelength
-  float AMP = 18.0 * uDpr;    // peak displacement
-  float RAMP = 120.0 * uDpr;  // edge/centre ramp distance
-  float d = distance(sp, uRipplePos);
-  float timeFade = exp(-0.25 * uRippleT);
-  float wavefront = WS * uRippleT;
-  if (timeFade <= 0.001 || d <= 0.0 || d >= wavefront) return vec2(0.0);
-  float behind = wavefront - d;
-  float ramp = min(1.0, d / RAMP);
-  float trail = exp(-(behind * behind) / (WL * WL * 0.3));
-  float edge = min(1.0, behind / RAMP);
-  float k = 6.28318530718 / WL;
-  float wave = sin(k * d - WS * k * uRippleT);
-  float strength = wave * ramp * edge * trail * timeFade;
-  return normalize(sp - uRipplePos) * (AMP * strength);
+// Press + rebound as ONE continuous surface field, so release feels like a single
+// motion. While held, an inward dimple depresses the surface (dots gather toward the
+// press point). On release the SAME dimple relaxes back to flat AND throws off one
+// outward ring that's born at the press point and radiates out, fading — the ripple
+// IS the press springing back. Signed radial magnitude m (>0 outward, <0 inward) along
+// the centre axis. GPU sample-displacement of the static dot texture; dpr-scaled.
+vec2 surfaceOffset(vec2 sp){
+  float d = distance(sp, uPressPos);
+  if (d <= 0.0001) return vec2(0.0);
+  float SIGMA = 80.0 * uDpr;   // dimple half-width
+  float PULL  = 30.0 * uDpr;   // peak inward gather
+  float grad  = (d / SIGMA) * exp(-(d * d) / (2.0 * SIGMA * SIGMA)); // 0 at centre, peak ~SIGMA
+  float m = -PULL * grad * uPressStr; // held: inward dimple (uPressStr is 0 once released)
+
+  if (uRippleT >= 0.0 && uRippleAmp > 0.0) {
+    float C   = 1400.0 * uDpr; // rebound ring speed (px/s)
+    float W   = 110.0 * uDpr;  // ring half-width
+    float AMP = 24.0 * uDpr;   // peak outward rebound
+    // The pressed dimple relaxing back to flat (quick) — continuous with the held
+    // state at t=0 (this term then equals the dimple the hold left behind).
+    m += -PULL * grad * uRippleAmp * exp(-uRippleT / 0.12);
+    // A single ring born at the press point as it springs back, radiating outward and
+    // fading. birth is 0 at t=0 so the field starts exactly as the dimple (no jump).
+    float xr = (d - C * uRippleT) / W;
+    float ring = exp(-xr * xr);
+    float birth = 1.0 - exp(-uRippleT / 0.06);
+    float life = exp(-uRippleT / 0.5);
+    m += AMP * uRippleAmp * ring * birth * life;
+  }
+  return normalize(sp - uPressPos) * m;
 }
 
 void main(){
   vec2 sp = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y); // top-down device px
-  vec2 rip = rippleOffset(sp);     // radial wave displacement (0 when idle)
-  vec2 uv = toUV(sp - rip);        // dots ride the wave (into the bleed-padded texture)
+  vec2 warp = surfaceOffset(sp);        // unified press dimple + release rebound
+  vec2 uv = toUV(sp - warp);            // dots ride it (into the bleed-padded texture)
 
   vec2 lo = uLens.xy;
   vec2 ls = uLens.zw;
@@ -298,12 +321,12 @@ void main(){
   // the flat centre is covered by the screen) and is free when blur = 0.
   vec3 col;
   if (uChroma > 0.0) {
-    vec2 sR = toUV(sp + bend * (uScale * (1.0 + 0.2 * uChroma)) - rip);
-    vec2 sG = toUV(sp + bend * (uScale * (1.0 + 0.1 * uChroma)) - rip);
-    vec2 sB = toUV(sp + bend * uScale - rip);
+    vec2 sR = toUV(sp + bend * (uScale * (1.0 + 0.2 * uChroma)) - warp);
+    vec2 sG = toUV(sp + bend * (uScale * (1.0 + 0.1 * uChroma)) - warp);
+    vec2 sB = toUV(sp + bend * uScale - warp);
     col = vec3(fetch(sR, amt).r, fetch(sG, amt).g, fetch(sB, amt).b);
   } else {
-    col = fetch(toUV(sp + bend * uScale - rip), amt);
+    col = fetch(toUV(sp + bend * uScale - warp), amt);
   }
 
   // specular: broad glow + thin edge rim along the specular axis (matches the SVG
@@ -355,7 +378,8 @@ export function StageGL({
   rippleOnClick = true,
 }: StageGLProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ripple = useRef<{ x: number; y: number; t0: number } | null>(null);
+  // Stashed click path only (RIPPLE_ON_PRESS): a release-only rebound from a click.
+  const release = useRef<{ x: number; y: number; t0: number; amp: number } | null>(null);
   const cfg = { ...DEFAULT_LENS, ...lens };
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
@@ -374,6 +398,18 @@ export function StageGL({
     let palette = readDotGridPalette(offCtx);
     const pointer = DOT_WAKE_ENABLED
       ? createPointerTracker(stage, canvas, { flipY: true })
+      : null;
+
+    // Press the grid in on hold (a concave dimple following the cursor, over the phone
+    // too); release lets it spring back and radiate — one continuous surface gesture.
+    // When RIPPLE_ON_PRESS is flipped on, this is skipped and onDown fires the old
+    // click rebound instead.
+    const pressOn = DOT_PRESS.enabled && !RIPPLE_ON_PRESS && rippleOnClick;
+    const press = pressOn
+      ? createPressTracker(stage, canvas, {
+          excludeSelector: FOREGROUND_SELECTOR,
+          onChange: () => invalidate(false), // shader-only — no dot-texture redraw
+        })
       : null;
 
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -435,8 +471,9 @@ export function StageGL({
         chroma: U('uChroma'), splay: U('uSplay'), glowStr: U('uGlowStr'),
         glowInner: U('uGlowInner'), glowBand: U('uGlowBand'), glowExp: U('uGlowExp'),
         edgeExp: U('uEdgeExp'), bright: U('uBright'),
-        ripplePos: U('uRipplePos'), rippleT: U('uRippleT'), dpr: U('uDpr'),
-        bleed: U('uBleed'),
+        rippleT: U('uRippleT'), rippleAmp: U('uRippleAmp'),
+        dpr: U('uDpr'), bleed: U('uBleed'),
+        pressPos: U('uPressPos'), pressStr: U('uPressStr'),
       };
       return true;
     };
@@ -479,8 +516,7 @@ export function StageGL({
     // difference vs. Aave's video glass: their per-frame upload is a hardware
     // <video> texture; ours was a full CPU 2D redraw + upload of an unchanging image.
     let textureDirty = true; // dots need (re)draw + upload this frame
-    let pendingDirty = true; // one-shot dirty request (resize / theme / ripple start)
-    let wasRippleAlive = false;
+    let pendingDirty = true; // one-shot dirty request (resize / theme / press start)
     let stillFrames = 0;
     let lastLx = NaN;
     let lastLy = NaN;
@@ -491,20 +527,13 @@ export function StageGL({
     let shellBound: Element | null = null;
     const SETTLE_FRAMES = 3;
 
-    // The wave is visually done once its front has crossed the canvas plus a couple
-    // of wavelengths of trailing falloff — render only that long after a click.
-    const rippleLifeMs = () =>
-      ((Math.hypot(cssW, cssH) + 2 * WAVELENGTH) / WAVE_SPEED) * 1000 + 250;
-    const rippleAlive = (now: number) =>
-      !!ripple.current && now - ripple.current.t0 < rippleLifeMs();
-
     const getTarget = (): Element | null => {
       if (targetEl && targetEl.isConnected) return targetEl;
       targetEl = targetSelector ? document.querySelector(targetSelector) : null;
       return targetEl;
     };
 
-    const paintFrame = (now: number): boolean => {
+    const paintFrame = (s: SurfaceSample): boolean => {
       if (!gl || gl.isContextLost()) return false;
 
       // Expensive path — only when the STATIC dot field changed (resize/theme). The
@@ -573,17 +602,15 @@ export function StageGL({
       gl.uniform1f(u.edgeExp, c.edgeExponent);
       gl.uniform1f(u.bright, c.brightness);
 
-      // Ripple (GPU): centre in device px (top-down, matching the shader's `sp`),
-      // elapsed seconds, and dpr to scale the CSS-px wave constants. `-1` = idle.
+      // Unified surface (GPU): one centre (device px, top-down) drives both the held
+      // dimple (pressStr) and the release rebound (relT seconds, relAmp depth). dpr
+      // scales the CSS-px constants in the shader. relT < 0 = idle.
       gl.uniform1f(u.dpr, dpr);
       gl.uniform1f(u.bleed, DOT_BLEED * dpr);
-      const r = ripple.current;
-      if (r) {
-        gl.uniform2f(u.ripplePos, r.x * dpr, r.y * dpr);
-        gl.uniform1f(u.rippleT, (now - r.t0) / 1000);
-      } else {
-        gl.uniform1f(u.rippleT, -1);
-      }
+      gl.uniform2f(u.pressPos, s.x * dpr, s.y * dpr);
+      gl.uniform1f(u.pressStr, s.pressStr);
+      gl.uniform1f(u.rippleT, s.relT);
+      gl.uniform1f(u.rippleAmp, s.relAmp);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -604,20 +631,30 @@ export function StageGL({
       applyResizeIfNeeded();
       bindShell();
 
-      const ra = rippleAlive(now);
-      // When the ripple finishes, drop it so the shader goes inactive (uRippleT -1)
-      // on the next frame. The dot texture is static throughout — the ripple never
-      // touches the 2D redraw/upload path.
-      if (!ra && wasRippleAlive) ripple.current = null;
-      wasRippleAlive = ra;
+      // Advance the unified surface (shader-only — never touches the 2D redraw/upload):
+      // the press tracker drives hold + rebound; the stashed click path is a release-
+      // only rebound read from `release`. Keeps the loop alive while either animates.
+      let s: SurfaceSample;
+      let surfaceActive: boolean;
+      if (press) {
+        s = press.tick(now);
+        surfaceActive = press.isAnimating();
+      } else {
+        const rr = release.current;
+        const relT = rr ? (now - rr.t0) / 1000 : -1;
+        const within = !!rr && relT * 1000 < DOT_PRESS.releaseLifeMs;
+        if (rr && !within) release.current = null;
+        s = within ? { x: rr!.x, y: rr!.y, pressStr: 0, relT, relAmp: rr!.amp } : IDLE_SURFACE;
+        surfaceActive = within;
+      }
 
       textureDirty = pendingDirty;
       pendingDirty = false;
 
-      const moved = paintFrame(now);
+      const moved = paintFrame(s);
 
       // Keep going while the scene is animating; coast a few frames, then idle.
-      if (ra || moved) {
+      if (surfaceActive || moved) {
         stillFrames = 0;
         raf = requestAnimationFrame(tick);
       } else if (stillFrames++ < SETTLE_FRAMES) {
@@ -669,12 +706,17 @@ export function StageGL({
     canvas.addEventListener('webglcontextlost', onLost, false);
     canvas.addEventListener('webglcontextrestored', onRestored, false);
 
+    // Stashed click path. In press mode the rebound is driven by the press tracker, so
+    // this only runs when RIPPLE_ON_PRESS is flipped on (or the press effect is off):
+    // a click fires a release-only rebound (no dimple) at full strength.
     const onDown = (e: PointerEvent) => {
-      if (!rippleOnClick) return;
+      if (!rippleOnClick || pressOn) return;
+      const t = e.target as Element | null;
+      if (t?.closest?.(FOREGROUND_SELECTOR)) return; // ignore taps on the phone UI
       const r = canvas.getBoundingClientRect();
       // Top-down CSS px (matches the shader's `sp` space; ×dpr applied at upload).
-      ripple.current = { x: e.clientX - r.left, y: e.clientY - r.top, t0: performance.now() };
-      invalidate(false); // ripple is shader-only — no dot-texture redraw needed
+      release.current = { x: e.clientX - r.left, y: e.clientY - r.top, t0: performance.now(), amp: 1 };
+      invalidate(false); // shader-only — no dot-texture redraw needed
     };
     stage.addEventListener('pointerdown', onDown, { capture: true });
 
@@ -702,6 +744,7 @@ export function StageGL({
       ro?.disconnect();
       stopTheme();
       pointer?.dispose();
+      press?.dispose();
       stage.removeEventListener('pointerdown', onDown, { capture: true });
       if (shellBound) {
         shellBound.removeEventListener('transitionrun', onShellTransition);
