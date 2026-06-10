@@ -1,0 +1,46 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+@use '../../shared/glass/glass-button-shadow' as shadow;
+
+/* Figma 2143:40967 — p 32. */
+.walletBtnWrap {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 32px;
+}
+
+/* Figma 2143:40968 — fixed-dark Apple Wallet pill (stays dark in both themes,
+   per Apple's brand button), px 20 py 14, radius 1000, gap 8. */
+.walletBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: #1c1c1e;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  @include shadow.glass-button-press-scale(1.04);
+}
+
+/* Figma 2143:40969 — 21.647 x 16 wallet glyph. */
+.walletIcon {
+  display: block;
+  flex-shrink: 0;
+  width: auto;
+  height: 16px;
+}
+
+/* Body/Emphasized 17/22, -0.43. */
+.walletLabel {
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+  color: #ffffff;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}

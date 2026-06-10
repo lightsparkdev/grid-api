@@ -1,0 +1,34 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 84:12452 / 2143:40926 — fills remainder; title flush above the list card. */
+.section {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Figma 84:12453 / 2143:40927 — pt 16 px 32, Title3/Emphasized. */
+.title {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 16px 32px 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  letter-spacing: -0.45px;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}
+
+/* Figma 2143:41384 — medium filled content-area button (~109x34). */
+.cta {
+  width: auto;
+  flex-shrink: 0;
+  padding: 7px 14px;
+  pointer-events: auto;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  letter-spacing: -0.23px;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}

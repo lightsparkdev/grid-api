@@ -7,10 +7,13 @@ import styles from './WalletCardDetailHeader.module.scss';
 
 interface WalletCardDetailHeaderProps {
   onClose: () => void;
+  /** Card-actions pill (card numbers / more). Hidden during issuance — the card
+   *  doesn't exist yet, so only the close button shows. */
+  showActions?: boolean;
 }
 
 /** Figma 2143:40972 — close + card actions while debit card detail is open. */
-export function WalletCardDetailHeader({ onClose }: WalletCardDetailHeaderProps) {
+export function WalletCardDetailHeader({ onClose, showActions = true }: WalletCardDetailHeaderProps) {
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
 
@@ -26,13 +29,15 @@ export function WalletCardDetailHeader({ onClose }: WalletCardDetailHeaderProps)
         <SfSymbol name="xmark" size={14} />
       </GlassSymbolButton>
 
-      <GlassWindowButtonGroup
-        symbols={[
-          { name: 'creditcard.and.numbers', size: 24 },
-          { name: 'ellipsis', size: 20 },
-        ]}
-        glass={{ brightness }}
-      />
+      {showActions ? (
+        <GlassWindowButtonGroup
+          symbols={[
+            { name: 'creditcard.and.numbers', size: 24 },
+            { name: 'ellipsis', size: 20 },
+          ]}
+          glass={{ brightness }}
+        />
+      ) : null}
     </div>
   );
 }

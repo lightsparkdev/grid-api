@@ -16,17 +16,15 @@
   --wallet-sheet-overlap: 176px;
 
   :global([data-theme='dark']) & {
-    /* Off-black mirror of #f9f9f9 — soft dark base that stays a step below the
-       elevated #1c1c1e cards/sheet content (not harsh pure black). */
+    /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
     --wallet-bg: #111111;
   }
 }
 
 .header {
   position: relative;
-  /* Above .body so its negative top margin (shadow room) can't intercept the
-     settings button's hit area. */
-  z-index: 1;
+  /* Above the overlay so the close button is always tappable. */
+  z-index: 2;
   flex-shrink: 0;
   height: 56px;
   padding: 8px 24px;
@@ -51,11 +49,6 @@
   will-change: transform;
 }
 
-.sheetWrapDismissed {
-  overflow: hidden;
-  pointer-events: none;
-}
-
 /* Figma 90:13587 — Title3/Emphasized. */
 .title {
   flex: 1 1 0;
@@ -75,19 +68,101 @@
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  /* The debit card's top drop shadow bleeds ~16px above its box. This scroll
-     container would otherwise clip it. Lift the clip box up and push content
-     back down by the same amount — net layout is unchanged, but the shadow now
-     has room to paint inside the clip. */
+  /* The debit card's top drop shadow bleeds ~16px above its box; lift the scroll
+     clip box and pad it back so the shadow paints (net layout unchanged). */
   margin-top: -16px;
   padding-top: 16px;
-}
-
-.bodyDetailOpen {
-  overflow: hidden;
 }
 
 .cardWrap {
   flex-shrink: 0;
   padding: 8px 16px 0;
+}
+
+/* ── Issuance / card-detail overlay ───────────────────────────────────────── */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--wallet-bg);
+  /* Aurora fade resolves to the wallet bg, not the app shell bg. */
+  --app-bg: var(--wallet-bg);
+}
+
+/* Full-screen aurora behind the card during intro/creating (morphs in/out). */
+.fullAurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform-origin: 50% 42%;
+  pointer-events: none;
+}
+
+/* Bleed past the top/sides so blurred streaks clip mid-flow; bottom stays flush
+   for the fade (same idea as the auth hero). */
+.fullAuroraBg {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  bottom: 0;
+  left: -80px;
+}
+
+.overlayBody {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clear the status bar (62) + header (56) — matches Figma content top (115). */
+  padding-top: 115px;
+  box-sizing: border-box;
+}
+
+/* Card at the top (card-home) — matches the resting wallet card slot. */
+.cardAreaTop {
+  flex-shrink: 0;
+  padding: 8px 16px;
+}
+
+/* Card centered in the remaining space (intro / creating / ready). */
+.cardAreaCentered {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+}
+
+/* Figma 2219:48842 — card + "Creating..." caption, gap 12, lifted with pb 48. */
+.cardAreaCreating {
+  gap: 12px;
+  padding-bottom: 48px;
+}
+
+.cardScale {
+  width: 100%;
+  transform-origin: center center;
+}
+
+/* Intro / ready bottom-anchored copy + CTA. */
+.bottomContent {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Card-home body — transactions list fills, Apple Wallet button pinned below. */
+.homeContent {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
 }

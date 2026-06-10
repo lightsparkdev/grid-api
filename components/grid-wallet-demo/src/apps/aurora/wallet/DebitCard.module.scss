@@ -46,6 +46,13 @@
   pointer-events: none;
 }
 
+/* White border that hugs the squircle: inset box-shadow is clipped by the same
+   clip-path, so it follows the corners exactly (a real border would not). Reads
+   the card apart from the full-screen aurora during issuance. */
+.cardBordered {
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.92);
+}
+
 /* Extend past card edges on all sides so overflow:hidden clips streaks
    mid-flow instead of blurred layer periphery. */
 .aurora {

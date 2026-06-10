@@ -1,28 +1,7 @@
 @use '../../shared/fill-button' as fill;
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 84:12452 — fills sheet remainder; title flush under insight cards. */
-.section {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  width: 100%;
-  min-height: 0;
-}
-
-/* Figma 84:12453 — pt 16 px 32 */
-.title {
-  flex-shrink: 0;
-  margin: 0;
-  padding: 16px 32px 0;
-  @include ios.ios-text-title-3;
-  font-weight: 590;
-  letter-spacing: -0.45px;
-  color: var(--ios-label-primary);
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
-}
-
-/* Figma 84:12455 — 16px inset on all sides; card fills remainder. */
+/* Figma 84:12455 / 2143:40929 — 16px inset; card fills remainder. */
 .cardWrap {
   display: flex;
   flex: 1 1 0;
@@ -31,7 +10,7 @@
   padding: 16px;
 }
 
-/* Figma 84:12456 — min 232pt empty state; grows to fill sheet remainder. */
+/* Figma 84:12456 / 2143:40930 — min 232pt empty state; grows to fill remainder. */
 .card {
   @include fill.wallet-elevated-card;
   box-sizing: border-box;
@@ -39,10 +18,10 @@
   flex: 1 1 0;
   min-height: 232px;
   padding: 4px 0 0;
-  --activity-card-bg: var(--ios-bg-primary);
+  --list-card-bg: var(--ios-bg-primary);
 
   :global([data-theme='dark']) & {
-    --activity-card-bg: var(--ios-bg-secondary);
+    --list-card-bg: var(--ios-bg-secondary);
   }
 }
 
@@ -147,8 +126,8 @@
   transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--activity-card-bg) 50%, transparent) 0%,
-    var(--activity-card-bg) 64.235%
+    color-mix(in srgb, var(--list-card-bg) 50%, transparent) 0%,
+    var(--list-card-bg) 64.235%
   );
 }
 
@@ -201,16 +180,4 @@
   @include ios.ios-text-footnote;
   letter-spacing: -0.08px;
   color: var(--ios-label-secondary);
-}
-
-/* Figma 2143:41384 — medium filled content-area button (~109×34) */
-.emptyBtn {
-  width: auto;
-  flex-shrink: 0;
-  padding: 7px 14px;
-  pointer-events: auto;
-  @include ios.ios-text-subheadline;
-  font-weight: 590;
-  letter-spacing: -0.23px;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
 }

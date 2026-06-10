@@ -20,10 +20,19 @@ const LABEL_OPEN = 'Debit card';
 interface DebitCardProps {
   interactive?: boolean;
   onOpen?: () => void;
+  /** Hide the card number (kept in layout via opacity) — issuance screens. */
+  showNumber?: boolean;
+  /** White inset border so the card reads over the full-screen aurora. */
+  bordered?: boolean;
 }
 
 /** Figma 2143:36184 — debit card behind the wallet sheet. */
-export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
+export function DebitCard({
+  interactive = true,
+  onOpen,
+  showNumber = true,
+  bordered = false,
+}: DebitCardProps) {
   const reduceMotion = useReducedMotion();
   const [hovered, setHovered] = useState(false);
   const [opening, setOpening] = useState(false);
@@ -68,7 +77,11 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
         type="button"
         ref={cardClip.ref}
         style={cardClip.style}
-        className={clsx(styles.card, !interactive && styles.cardStatic)}
+        className={clsx(
+          styles.card,
+          !interactive && styles.cardStatic,
+          bordered && styles.cardBordered,
+        )}
         aria-label="View debit card"
         disabled={!interactive}
         onClick={handleClick}
@@ -88,7 +101,12 @@ export function DebitCard({ interactive = true, onOpen }: DebitCardProps) {
           <span className={styles.secondary}>Spend locally</span>
         </div>
         <div className={styles.bottom}>
-          <span className={styles.primary}>•••• 8972</span>
+          <span
+            className={styles.primary}
+            style={showNumber ? undefined : { opacity: 0 }}
+          >
+            •••• 8972
+          </span>
           <div className={styles.brand}>
             <span className={styles.secondary}>DEBIT</span>
             <img
