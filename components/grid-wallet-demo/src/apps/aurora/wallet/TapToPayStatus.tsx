@@ -1,14 +1,14 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import styles from './TapToPayStatus.module.scss';
 
 export type TapPhase = 'hold' | 'auth' | 'done';
 
-const SWAP = motionTransition(easeOutQuick, 0.3);
-// The check draws left-to-right after the ring has faded in.
-const DRAW = motionTransition(easeOutQuick, 0.5, { delay: 0.15 });
+// The check draws left-to-right once the Done ring appears (the glyph/label swap
+// itself is instant — no crossfade).
+const DRAW = motionTransition(easeOutQuick, 0.5, { delay: 0.1 });
 
 /** refs/xcassets/HoldNearReader.svg — phone-near-reader glyph. */
 function HoldNearReaderGlyph() {
@@ -53,35 +53,13 @@ function DoneCheckGlyph({ animate }: { animate: boolean }) {
 export function TapToPayStatus({ phase }: { phase: TapPhase }) {
   const reduceMotion = useReducedMotion();
   const done = phase === 'done';
-  const key = done ? 'done' : 'hold';
 
   return (
     <div className={styles.root}>
       <div className={styles.glyph}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={key}
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
-            transition={SWAP}
-          >
-            {done ? <DoneCheckGlyph animate={!reduceMotion} /> : <HoldNearReaderGlyph />}
-          </motion.div>
-        </AnimatePresence>
+        {done ? <DoneCheckGlyph animate={!reduceMotion} /> : <HoldNearReaderGlyph />}
       </div>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.p
-          key={key}
-          className={styles.label}
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={SWAP}
-        >
-          {done ? 'Done' : 'Hold Near Reader'}
-        </motion.p>
-      </AnimatePresence>
+      <p className={styles.label}>{done ? 'Done' : 'Hold Near Reader'}</p>
     </div>
   );
 }

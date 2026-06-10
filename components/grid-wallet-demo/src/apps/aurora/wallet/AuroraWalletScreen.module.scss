@@ -87,14 +87,6 @@
   box-sizing: border-box;
 }
 
-/* Tap-to-pay clears the header so the card can rise to just under the status bar
-   (the card carries up via its layout animation as the body reflows). */
-.headerCollapsed {
-  height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
 .headerInner {
   position: absolute;
   inset: 8px 24px;
@@ -136,6 +128,12 @@
 
 .bodyOpen {
   overflow: hidden;
+}
+
+/* Tap-to-pay lifts the body over the (still-present) header; raising it above the
+   header layer hides the header buttons as they fade rather than ghosting them. */
+.bodyTap {
+  z-index: 3;
 }
 
 /* Card slot — top for closed/home, centered for intro/creating/ready. The card

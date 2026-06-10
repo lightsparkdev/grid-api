@@ -34,6 +34,7 @@ const CARD_ISSUANCE_SCALE = 338 / 370;
 const SHEET_OFFSCREEN = 'calc(100% + 224px)';
 const TAP_HOLD_MS = 1200; // Hold Near Reader dwell before Face ID kicks in.
 const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home.
+const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
 
 // Figma 2143:41027 — the transaction a tap-to-pay run drops into the list.
 const TAP_TX: Omit<WalletListItemData, 'id'> = {
@@ -147,7 +148,7 @@ export function AuroraWalletScreen({
         )}
       </AnimatePresence>
 
-      <header className={clsx(styles.header, isTap && styles.headerCollapsed)}>
+      <header className={styles.header}>
         <AnimatePresence initial={false}>
           {!isOpen ? (
             <motion.div
@@ -187,7 +188,15 @@ export function AuroraWalletScreen({
         </AnimatePresence>
       </header>
 
-      <div className={clsx(styles.body, isOpen && styles.bodyOpen)}>
+      {/* The whole body lifts as one transform during tap-to-pay (card + content
+          together) so nothing desyncs — collapsing the header instead reflowed
+          everything up while only the card animated, which read as a jump. */}
+      <motion.div
+        className={clsx(styles.body, isOpen && styles.bodyOpen, isTap && styles.bodyTap)}
+        initial={false}
+        animate={{ y: isTap ? TAP_LIFT : 0 }}
+        transition={CARD_TRANSITION}
+      >
         {/* The card is a single element that carries through every state — it
             layout-animates between the top slot and the centered issuance slot. */}
         <div
@@ -299,7 +308,7 @@ export function AuroraWalletScreen({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Face ID (Dynamic Island) overlay — runs during the tap-to-pay auth beat. */}
       <div className={styles.faceIdLayer}>
