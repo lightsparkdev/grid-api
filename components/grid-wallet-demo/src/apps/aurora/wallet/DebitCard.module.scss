@@ -1,8 +1,8 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-$ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
-
-/* Figma 2143:40916 — shadow on shell; filter: drop-shadow breaks sheet stacking. */
+/* Figma 2143:40916 — shadow on shell; filter: drop-shadow breaks sheet stacking.
+   No fill/overflow here: the inner button's clip-path is the only shape, so the
+   shell can't leak a mismatched-squircle edge. Radius is kept for the shadow. */
 .cardShell {
   width: 100%;
   border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
@@ -30,13 +30,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   color: #ffffff;
   text-align: left;
   cursor: pointer;
-  transform-origin: center left;
-  transition: transform 280ms $ease-out-swift;
   -webkit-tap-highlight-color: transparent;
-
-  &:hover:not(:disabled) {
-    transform: rotate(-1deg);
-  }
 
   &:disabled {
     cursor: default;
@@ -45,16 +39,6 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
 .cardStatic {
   pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card {
-    transition: none;
-
-    &:hover:not(:disabled) {
-      transform: none;
-    }
-  }
 }
 
 /* Extend past card edges on all sides so overflow:hidden clips streaks
