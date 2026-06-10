@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { WalletListCard } from './WalletListCard';
+import type { WalletListItemData } from './WalletListItem';
 import styles from './WalletListSection.module.scss';
 
 interface WalletListSectionProps {
@@ -13,6 +14,8 @@ interface WalletListSectionProps {
   cta?: { label: string; onClick?: () => void };
   /** Hug the phone bezel with concentric bottom corners (wallet home). */
   concentricBottom?: boolean;
+  /** Real rows; when present the card renders them instead of the empty state. */
+  items?: WalletListItemData[];
 }
 
 /**
@@ -25,12 +28,14 @@ export function WalletListSection({
   emptySub,
   cta,
   concentricBottom = false,
+  items,
 }: WalletListSectionProps) {
   return (
     <section className={styles.section} aria-label={title}>
       <h2 className={styles.title}>{title}</h2>
       <WalletListCard
         concentricBottom={concentricBottom}
+        items={items}
         emptyTitle={emptyTitle}
         emptySub={emptySub}
         cta={

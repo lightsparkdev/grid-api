@@ -1,0 +1,28 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2143:20979 — glyph over the label, gap 14, centered. */
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.glyph {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+
+/* Title3/Regular 20/25, label-secondary, centered. */
+.label {
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 400;
+  color: var(--ios-label-secondary);
+  text-align: center;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}

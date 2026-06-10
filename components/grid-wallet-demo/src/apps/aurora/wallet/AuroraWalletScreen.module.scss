@@ -87,6 +87,14 @@
   box-sizing: border-box;
 }
 
+/* Tap-to-pay clears the header so the card can rise to just under the status bar
+   (the card carries up via its layout animation as the body reflows). */
+.headerCollapsed {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .headerInner {
   position: absolute;
   inset: 8px 24px;
@@ -205,4 +213,26 @@
   flex-direction: column;
   min-height: 0;
   width: 100%;
+}
+
+/* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
+   beneath it (Figma 2143:41178 section pt 50). */
+.tapStatus {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+  padding-top: 50px;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
 }

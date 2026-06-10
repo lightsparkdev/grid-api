@@ -39,6 +39,13 @@
   overflow: hidden;
 }
 
+/* Real rows stack top-down (skeleton/empty uses .cardInner instead). */
+.items {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .skeletonLayer {
   position: relative;
   width: 100%;

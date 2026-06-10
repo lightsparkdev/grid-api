@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { motionTransition } from '@/lib/easing';
+import { WalletListItem, type WalletListItemData } from './WalletListItem';
 import styles from './WalletListCard.module.scss';
 
 // Hold the loading skeleton this long before the empty-state reveal (cover fades
@@ -18,6 +19,11 @@ const CONTENT_STAGGER_S = 0.2;
 const hiddenMessage = { opacity: 0, y: 24, filter: 'blur(10px)' };
 const visibleMessage = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
+// Real rows blur/slide in (staggered) when the list populates — e.g. after a tap-to-pay.
+const ITEM_HIDDEN = { opacity: 0, y: 8, filter: 'blur(6px)' };
+const ITEM_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
+const ITEM_STAGGER_S = 0.06;
+
 interface WalletListCardProps {
   emptyTitle: string;
   emptySub: ReactNode;
@@ -25,6 +31,8 @@ interface WalletListCardProps {
   cta?: ReactNode;
   /** Hug the phone bezel with concentric bottom corners (wallet home activity). */
   concentricBottom?: boolean;
+  /** Real rows to render; falls back to the skeleton + empty state when absent. */
+  items?: WalletListItemData[];
 }
 
 /**
@@ -37,8 +45,10 @@ export function WalletListCard({
   emptySub,
   cta,
   concentricBottom = false,
+  items,
 }: WalletListCardProps) {
   const reduceMotion = useReducedMotion();
+  const hasItems = !!items && items.length > 0;
   const [coverVisible, setCoverVisible] = useState(reduceMotion === true);
   const [contentVisible, setContentVisible] = useState(reduceMotion === true);
 
@@ -76,7 +86,7 @@ export function WalletListCard({
   const cardClip = useSquircleClip({ cornerRadii });
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion || hasItems) return;
     const coverTimer = window.setTimeout(
       () => setCoverVisible(true),
       INITIAL_DELAY_S * 1000,
@@ -89,7 +99,7 @@ export function WalletListCard({
       window.clearTimeout(coverTimer);
       window.clearTimeout(contentTimer);
     };
-  }, [reduceMotion]);
+  }, [reduceMotion, hasItems]);
 
   return (
     <div
@@ -97,37 +107,58 @@ export function WalletListCard({
       className={clsx(styles.cardWrap, concentricBottom && styles.cardWrapInsetBottom)}
     >
       <div ref={cardClip.ref} style={cardClip.style} className={styles.card}>
-        <div className={styles.cardInner}>
-          <div className={styles.skeletonLayer}>
-            <div className={styles.list} aria-hidden>
-              <SkeletonRow bordered />
-              <SkeletonRow />
-              <div
-                className={clsx(
-                  styles.gradientMask,
-                  (coverVisible || reduceMotion === true) && styles.gradientMaskVisible,
-                )}
-                style={{ ['--cover-duration' as string]: `${REVEAL_DURATION_S}s` }}
-                aria-hidden
-              />
+        {hasItems ? (
+          <div className={styles.items}>
+            {(items ?? []).map((item, i) => (
+              <motion.div
+                key={item.id}
+                initial={reduceMotion ? false : ITEM_HIDDEN}
+                animate={ITEM_VISIBLE}
+                transition={motionTransition(undefined, 0.4, { delay: i * ITEM_STAGGER_S })}
+              >
+                <WalletListItem
+                  Icon={item.Icon}
+                  title={item.title}
+                  detail={item.detail}
+                  time={item.time}
+                  amount={item.amount}
+                />
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.cardInner}>
+            <div className={styles.skeletonLayer}>
+              <div className={styles.list} aria-hidden>
+                <SkeletonRow bordered />
+                <SkeletonRow />
+                <div
+                  className={clsx(
+                    styles.gradientMask,
+                    (coverVisible || reduceMotion === true) && styles.gradientMaskVisible,
+                  )}
+                  style={{ ['--cover-duration' as string]: `${REVEAL_DURATION_S}s` }}
+                  aria-hidden
+                />
+              </div>
+            </div>
+
+            <div className={styles.messageLayer}>
+              <motion.div
+                className={styles.message}
+                initial={reduceMotion ? false : hiddenMessage}
+                animate={contentVisible ? visibleMessage : hiddenMessage}
+                transition={revealTransition}
+              >
+                <div className={styles.emptyText}>
+                  <p className={styles.emptyTitle}>{emptyTitle}</p>
+                  <p className={styles.emptySub}>{emptySub}</p>
+                </div>
+                {cta}
+              </motion.div>
             </div>
           </div>
-
-          <div className={styles.messageLayer}>
-            <motion.div
-              className={styles.message}
-              initial={reduceMotion ? false : hiddenMessage}
-              animate={contentVisible ? visibleMessage : hiddenMessage}
-              transition={revealTransition}
-            >
-              <div className={styles.emptyText}>
-                <p className={styles.emptyTitle}>{emptyTitle}</p>
-                <p className={styles.emptySub}>{emptySub}</p>
-              </div>
-              {cta}
-            </motion.div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

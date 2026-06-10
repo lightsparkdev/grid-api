@@ -1,0 +1,85 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2143:41028 — h 80, pl 16, gap 16, items-center. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  height: 80px;
+  padding-left: 16px;
+}
+
+/* Figma 2143:41029 — 56px square, radius 16, tertiary fill, centered 24px glyph. */
+.graphic {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-primary);
+
+  /* central-icons bake stroke-width onto each <path>; render at 2px. */
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+/* Figma 2143:41034 — fills, pr 24, items-center. */
+.content {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  height: 80px;
+  padding-right: 24px;
+}
+
+/* Figma 2143:41035 — labels + amount, gap 16, top-aligned. */
+.container {
+  display: flex;
+  flex: 1 1 0;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.labels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Footnote/Emphasized 13/18, -0.08. */
+.title {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  letter-spacing: -0.08px;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* Footnote/Regular 13/18, -0.08. */
+.sub {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  letter-spacing: -0.08px;
+  color: var(--ios-label-secondary);
+}
+
+/* Caption1/Emphasized 12/16, Medium 510, right-aligned. */
+.amount {
+  flex-shrink: 0;
+  margin: 0;
+  @include ios.ios-text-caption-1;
+  font-weight: 510;
+  text-align: right;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+}
