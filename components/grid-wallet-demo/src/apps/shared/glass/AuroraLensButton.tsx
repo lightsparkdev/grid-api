@@ -153,6 +153,13 @@ interface AuroraLensButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
   'aria-label': string;
 }
 
+// Lens-only tuning for the issuance close button — kept separate from the shared
+// SYMBOL_GLASS (which also drives the SVG glass buttons). Stronger refraction +
+// chroma so the bent aurora reads clearly through the ~40px lens.
+const LENS_DEPTH = 4; // SYMBOL_GLASS.depth (0.5) is a thin edge rim; widen the bend.
+const LENS_SCALE = 15; // SYMBOL_GLASS.scale is 10.
+const LENS_CHROMA = 0.5; // SYMBOL_GLASS.chromaticAberration is 0.25.
+
 const MAX_DPR = 2;
 
 export function AuroraLensButton({
@@ -222,8 +229,8 @@ export function AuroraLensButton({
       gl.uniform2f(lu.uLensHalf, size / 2, size / 2);
       gl.uniform1f(lu.uCornerExp, 2 + Math.max(0, Math.min(1, SYMBOL_GLASS.cornerSmoothing)) * 4);
       gl.uniform1f(lu.uRadius, SYMBOL_GLASS.radius);
-      gl.uniform1f(lu.uDepth, SYMBOL_GLASS.depth);
-      gl.uniform1f(lu.uScale, SYMBOL_GLASS.scale);
+      gl.uniform1f(lu.uDepth, LENS_DEPTH);
+      gl.uniform1f(lu.uScale, LENS_SCALE);
       gl.uniform1f(lu.uDomeOn, SYMBOL_GLASS.domeDepth > 0 ? 1 : 0);
       gl.uniform2f(lu.uDomeR, dome.Rx, dome.Ry);
       gl.uniform2f(lu.uDomeS, dome.scaleX, dome.scaleY);
@@ -232,7 +239,7 @@ export function AuroraLensButton({
       gl.uniform1f(lu.uEdgeW, SYMBOL_GLASS.edgeWidth);
       gl.uniform1f(lu.uSpecStr, SYMBOL_GLASS.specularStrength);
       gl.uniform2f(lu.uSpecDir, Math.cos(ang), Math.sin(ang));
-      gl.uniform1f(lu.uChroma, SYMBOL_GLASS.chromaticAberration);
+      gl.uniform1f(lu.uChroma, LENS_CHROMA);
       gl.uniform1f(lu.uGlowStr, SYMBOL_GLASS.glowStrength);
       gl.uniform1f(lu.uGlowInner, (1 - SYMBOL_GLASS.glowSpread) * SQRT2);
       gl.uniform1f(lu.uGlowBand, SYMBOL_GLASS.glowSpread * SQRT2);

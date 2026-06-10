@@ -24,6 +24,10 @@ export function WalletCardDetailHeader({
 }: WalletCardDetailHeaderProps) {
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
+  // The live aurora lens already shows the refracted field, so it needs only a
+  // hint of the white lift the flat SVG glass uses — full brightness washes it
+  // out on the light surface. (Dark stays 0.)
+  const lensBrightness = brightness * 0.2;
 
   return (
     <div className={styles.root}>
@@ -33,7 +37,7 @@ export function WalletCardDetailHeader({
           size={40}
           type="button"
           className={styles.closeOnAurora}
-          brightness={brightness}
+          brightness={lensBrightness}
           onClick={onClose}
         >
           <SfSymbol name="xmark" size={14} />
