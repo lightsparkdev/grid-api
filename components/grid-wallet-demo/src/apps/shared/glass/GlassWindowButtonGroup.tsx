@@ -60,7 +60,6 @@ export function GlassWindowButtonGroup({
         // Spread the preset first so these overrides win — SYMBOL_GLASS sets radius: 22.
         {...overlayGlass.symbol}
         radius={1000}
-        brightness={1}
         {...glass}
       >
         <div className={styles.inner}>

@@ -10,13 +10,15 @@
   padding-top: 62px;
   background: var(--wallet-bg);
 
-  /* Figma DS.screenBackground */
+  /* Figma DS.screenBackground — off-white, a hair below the #fff cards. */
   --wallet-bg: #f9f9f9;
   /* Debit card height (232) minus visible peek (~56) when sheet is resting. */
   --wallet-sheet-overlap: 176px;
 
   :global([data-theme='dark']) & {
-    --wallet-bg: #000000;
+    /* Off-black mirror of #f9f9f9 — soft dark base that stays a step below the
+       elevated #1c1c1e cards/sheet content (not harsh pure black). */
+    --wallet-bg: #111111;
   }
 }
 

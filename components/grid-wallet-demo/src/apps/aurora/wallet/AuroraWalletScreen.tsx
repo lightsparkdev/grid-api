@@ -3,8 +3,9 @@
 import clsx from 'clsx';
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { GlassSymbolButton } from '@/apps/shared/glass';
+import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
+import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { BalanceHero } from './BalanceHero';
 import { DebitCard } from './DebitCard';
@@ -40,6 +41,7 @@ export function AuroraWalletScreen({
   ...insights
 }: AuroraWalletScreenProps) {
   const reduceMotion = useReducedMotion();
+  const theme = useThemeMode();
   const [cardDetailOpen, setCardDetailOpen] = useState(false);
 
   return (
@@ -71,7 +73,7 @@ export function AuroraWalletScreen({
                 aria-label="Settings"
                 size={40}
                 type="button"
-                glass={{ brightness: 1 }}
+                glass={{ brightness: headerGlassBrightness(theme) }}
               >
                 <SfSymbol name="gearshape.fill" size={17} />
               </GlassSymbolButton>

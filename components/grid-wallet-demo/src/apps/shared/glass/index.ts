@@ -16,4 +16,5 @@ export {
   TEXT_GLASS,
   TEXT_GLASS_BACKDROP,
   TEXT_GLASS_PRIMARY_BACKDROP,
+  headerGlassBrightness,
 } from './presets';

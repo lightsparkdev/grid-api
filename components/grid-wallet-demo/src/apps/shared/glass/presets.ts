@@ -1,5 +1,18 @@
 import type { FrostConfig, GlassConfig } from '@/components/liquid-glass';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import type { Theme } from '@/hooks/useTheme';
+
+/**
+ * Lens brightness for the wallet header glass buttons.
+ *
+ * `brightness: 1` paints a full white soft-light overlay — it pops on the light
+ * `#f9f9f9` surface but washes the button out on black, hiding the themed dark
+ * backdrop. On dark we drop the overlay entirely so the lens just refracts the
+ * (themed, darkened) backdrop and reads as a subtle dark chip, not a bright blob.
+ */
+export function headerGlassBrightness(theme: Theme): number {
+  return theme === 'dark' ? 0 : 1;
+}
 
 /**
  * iOS bottom sheet — Figma 2183:47617.

@@ -8,6 +8,11 @@
   border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
   corner-shape: var(--corner-shape);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  /* Black shadow over the dark base needs more weight to read. */
+  :global([data-theme='dark']) & {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  }
 }
 
 /* Figma 2143:36184 — 232pt card, 13px continuous corners, footnote labels. */
