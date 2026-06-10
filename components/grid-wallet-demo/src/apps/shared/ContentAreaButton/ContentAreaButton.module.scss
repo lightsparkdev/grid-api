@@ -37,6 +37,13 @@
   @include fill.fill-bordered-surface;
 }
 
+.filled {
+  border: 0;
+  background: var(--p-fill);
+  color: var(--p-fg);
+  box-shadow: none;
+}
+
 .icon {
   display: flex;
   flex-shrink: 0;
