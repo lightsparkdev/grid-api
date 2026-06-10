@@ -26,15 +26,19 @@
      settings button's hit area. */
   z-index: 1;
   flex-shrink: 0;
+  height: 56px;
   padding: 8px 24px;
+  box-sizing: border-box;
 }
 
 .headerInner {
+  position: absolute;
+  inset: 8px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  width: 100%;
+  width: auto;
 }
 
 .sheetWrap {

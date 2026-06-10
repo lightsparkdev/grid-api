@@ -16,11 +16,12 @@ import { WalletSheet } from './WalletSheet';
 import styles from './AuroraWalletScreen.module.scss';
 
 const SHEET_DURATION = 0.35;
-const HEADER_TRANSITION = motionTransition(easeOutSnappy, SHEET_DURATION);
+const HEADER_DURATION = 0.2;
+const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
 const SHEET_SLIDE_OUT = motionTransition(easeOutQuick, SHEET_DURATION);
 const SHEET_SLIDE_IN = motionTransition(easeOutSnappy, SHEET_DURATION);
-const HEADER_BLUR = { opacity: 0, filter: 'blur(10px)' };
-const HEADER_CLEAR = { opacity: 1, filter: 'blur(0px)' };
+const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
+const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
 
 interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   /** Formatted balance from demo state, e.g. "$0.00". */
@@ -44,14 +45,14 @@ export function AuroraWalletScreen({
   return (
     <div className={styles.root}>
       <header className={styles.header}>
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence initial={false}>
           {cardDetailOpen ? (
             <motion.div
               key="detail-header"
               className={styles.headerInner}
-              initial={reduceMotion ? false : HEADER_BLUR}
-              animate={HEADER_CLEAR}
-              exit={HEADER_BLUR}
+              initial={reduceMotion ? false : HEADER_HIDDEN}
+              animate={HEADER_VISIBLE}
+              exit={HEADER_HIDDEN}
               transition={HEADER_TRANSITION}
             >
               <WalletCardDetailHeader onClose={() => setCardDetailOpen(false)} />
@@ -60,9 +61,9 @@ export function AuroraWalletScreen({
             <motion.div
               key="home-header"
               className={styles.headerInner}
-              initial={reduceMotion ? false : HEADER_BLUR}
-              animate={HEADER_CLEAR}
-              exit={HEADER_BLUR}
+              initial={reduceMotion ? false : HEADER_HIDDEN}
+              animate={HEADER_VISIBLE}
+              exit={HEADER_HIDDEN}
               transition={HEADER_TRANSITION}
             >
               <h1 className={styles.title}>Aurora</h1>
