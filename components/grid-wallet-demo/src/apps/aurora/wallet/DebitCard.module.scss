@@ -3,6 +3,8 @@
 /* Figma 2143:36184 — 232pt card, 13px continuous corners, footnote labels. */
 .card {
   box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -12,13 +14,35 @@
   border-radius: 13px;
   corner-shape: var(--corner-shape);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
-  /* Placeholder fill — gradient lands here later. */
-  background: #8e8e93;
+  overflow: hidden;
   color: #ffffff;
+}
+
+/* Same aurora stack as AuroraAuthScreen hero — fills the card face. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  flex: none;
+  min-height: auto;
+}
+
+.walletMark {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 50%;
+  width: 116px;
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+  pointer-events: none;
+  user-select: none;
 }
 
 .top,
 .bottom {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
