@@ -28,7 +28,7 @@ export function AuroraAuthScreen({ busy, onSignIn }: AuroraAuthScreenProps) {
         <AuroraBackground fadeBottom showRadialGradient={false} className={styles.heroBg} />
         <img
           className={styles.wallet}
-          src="/refs/financial-app/aurora-wallet.svg"
+          src="/assets/financial-app/aurora-wallet.svg"
           alt=""
           aria-hidden
           draggable={false}

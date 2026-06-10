@@ -50,10 +50,10 @@ const BEZEL_SMOOTHING = PHONE_SHELL_GLASS.cornerSmoothing;
 // at 0.12 smoothing + a 37px blur the circular-vs-superellipse corner is invisible.
 const BEZEL_SHADOW = '0px 12px 37px rgba(0, 0, 0, 0.22)';
 
-const VIDEO_SRC = '/refs/face-id.mp4';
+const VIDEO_SRC = '/assets/face-id.mp4';
 // Pre-blurred last frame (checkmark). Cross-faded in on exit so the checkmark can
 // "blur out" with zero runtime filter — a CSS blur() on a <video> drops frames.
-const VIDEO_BLUR_SRC = '/refs/face-id-check-blur.png';
+const VIDEO_BLUR_SRC = '/assets/face-id-check-blur.png';
 // The clip was screen-recorded @3x (240px native), so it's meant to render at its
 // 1x size — 240 ÷ 3 = 80px — centered in the bezel, like the Figma symbol, rather
 // than stretched edge-to-edge.

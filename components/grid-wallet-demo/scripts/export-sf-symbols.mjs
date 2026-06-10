@@ -10,7 +10,7 @@
  *          node scripts/export-sf-symbols.mjs xmark faceid
  *
  * Writes:
- *   public/refs/symbols/{name}.svg
+ *   public/assets/symbols/{name}.svg
  *   src/apps/shared/icons/sfSymbolPaths.ts  (when --sync-paths is passed)
  */
 
@@ -34,7 +34,7 @@ const WEIGHT_BY_SYMBOL = {
   'play.fill': 'semibold',
 };
 
-const outDir = path.join(root, 'public/refs/symbols');
+const outDir = path.join(root, 'public/assets/symbols');
 const tmpDir = fs.mkdtempSync(path.join(root, '.tmp-sf-symbols-'));
 const iconsFile = path.join(tmpDir, 'icons.txt');
 const exportDir = path.join(tmpDir, 'out');

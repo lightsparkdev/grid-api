@@ -7,7 +7,7 @@ export function PlaygroundIntro() {
       <div className={styles.heading}>
         <div className={styles.titleRow}>
           <Image
-            src="/refs/gga-logo-light.svg"
+            src="/assets/gga-logo-light.svg"
             alt=""
             width={24}
             height={24}

@@ -33,7 +33,7 @@ export const DEFAULT_GLASS: GlassConfig = {
 
 /** Large phone bezel — Figma phone-gga @ 2121:17475 */
 export const PHONE_SHELL_GLASS: GlassConfig = {
-  // Tuned by eye against refs/bezel-compare.png. The AppShell drives both the
+  // Tuned by eye against dev/bezel-compare.png. The AppShell drives both the
   // shell and the inner screen from this (screen = radius - 16px inset) so they
   // stay concentric: shell corner 89, screen corner 73.
   radius: 89,
@@ -52,7 +52,7 @@ export const PHONE_SHELL_GLASS: GlassConfig = {
   edgeWidth: 2,
   edgeExponent: 1.5,
   brightness: 0.08,
-  // Tuned by eye against refs/bezel-compare.png. Mirrored onto the DOM as
+  // Tuned by eye against dev/bezel-compare.png. Mirrored onto the DOM as
   // corner-shape: superellipse(1 + smoothing*2) so the shell shadow, inner screen,
   // and refracted bezel all trace the same curve.
   cornerSmoothing: 0.12,

@@ -42,8 +42,9 @@ samples/frontend/dist/
 # Figma design tokens (local reference only)
 mintlify/tokens/
 
-# Development reference files
-refs/
+# Development reference files (repo-root staging only — not public/assets)
+/refs/
+components/grid-wallet-demo/refs/
 figma-*.md
 
 # Cursor IDE rules (personal config)
