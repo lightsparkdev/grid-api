@@ -120,6 +120,8 @@ export function BottomSheet({
               tint={sheetGlass.tint}
               tintBlur={sheetGlass.tintBlur}
               edge={sheetGlass.edge}
+              edgeGlint={sheetGlass.edgeGlint}
+              edgeWidth={sheetGlass.edgeWidth}
               shadow={sheetGlass.shadow}
               radius={topRadius ?? sheetGlass.radius}
               cornerSmoothing={sheetGlass.cornerSmoothing}

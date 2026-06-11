@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
@@ -20,6 +20,8 @@ type Step = 'source' | 'amount' | 'confirm';
 const USD_TO_MXN = 17.9074;
 
 const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.28);
+/** Fake quote-creation beat: Continue spins this long before the confirm step. */
+const QUOTE_MS = 750;
 // Small element swaps (CTA glyph, etc.) inside the persistent transfer layout.
 const SWAP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
 const MORPH_MS = 280;
@@ -142,6 +144,8 @@ export function AddMoneySheet({
   const [back, setBack] = useState(false); // direction of the last nav
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
   const [started, setStarted] = useState(false); // Swift's hasStartedTyping
+  const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
+  const quoteTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
   // Fresh flow every open.
@@ -151,8 +155,11 @@ export function AddMoneySheet({
       setBack(false);
       setRaw('');
       setStarted(false);
+      setQuoting(false);
+      window.clearTimeout(quoteTimer.current);
     }
   }, [open]);
+  useEffect(() => () => window.clearTimeout(quoteTimer.current), []);
 
   const go = (next: Step, isBack = false) => {
     setBack(isBack);
@@ -188,7 +195,10 @@ export function AddMoneySheet({
     setRaw((r) => {
       const frac = r.split('.')[1];
       if (frac !== undefined && frac.length >= 2) return r;
-      return `${r}${key}`;
+      const next = `${r}${key}`;
+      // Cap below $1M — 6 whole digits max.
+      if (next.split('.')[0].length > 6) return r;
+      return next;
     });
   };
 
@@ -196,11 +206,17 @@ export function AddMoneySheet({
 
   // Continue is always active (Swift parity): an invalid amount errors out with
   // a shake on the amount instead of a disabled button. Curve matches the Swift
-  // ShakeEffect (8px x sin over 0.4s linear, three half-cycles).
+  // ShakeEffect (8px x sin over 0.4s linear, three half-cycles). A valid amount
+  // "creates a quote": the CTA spins for a beat before the confirm step.
   const tryContinue = () => {
-    if (confirming) return;
+    if (confirming || quoting) return;
     if (cents > 0) {
-      go('confirm');
+      setQuoting(true);
+      window.clearTimeout(quoteTimer.current);
+      quoteTimer.current = window.setTimeout(() => {
+        setQuoting(false);
+        go('confirm');
+      }, QUOTE_MS);
       return;
     }
     if (!reduceMotion && amountScope.current) {
@@ -231,6 +247,29 @@ export function AddMoneySheet({
   const dismiss = () => {
     if (!confirming) onDismiss();
   };
+
+  // Swift's lineLimit(1).minimumScaleFactor(0.5): shrink the big amount to fit
+  // its row instead of bleeding off the card. scrollWidth ignores the transform,
+  // so the measurement is always the natural (unscaled) width. A ResizeObserver
+  // (not a keypress effect) drives it: NumericText animates each new digit's
+  // column width in, so the natural width only settles after the keypress.
+  const fitRef = useRef<HTMLSpanElement>(null);
+  const [fit, setFit] = useState(1);
+  useLayoutEffect(() => {
+    const el = fitRef.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+    const measure = () => {
+      const natural = el.scrollWidth;
+      const avail = parent.clientWidth - 32; // breathing room off the card edges
+      setFit(natural > avail ? Math.max(0.5, avail / natural) : 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    ro.observe(parent);
+    return () => ro.disconnect();
+  }, [step]);
 
   // Amount-entry decimals for NumericText: hidden until the user types the dot
   // ("1500" → "$1,500"); then typed digits solid + remaining placeholders dim
@@ -280,15 +319,18 @@ export function AddMoneySheet({
     <BottomSheet
       open={open}
       onDismiss={dismiss}
-      // Flat solid sheet per Figma (no frost, no specular rim — glass stays on
+      // Flat solid sheet per Figma (no frost, no glassy glint — glass stays on
       // the toolbar buttons only). Top radius straight from Figma (38, no 1.2x);
       // shell smoothing so the bottom corners nest concentrically in the screen
-      // squircle instead of reading as over-round circles.
+      // squircle. The uniform hairline edge (themed: transparent on light, white
+      // 10% on dark) rides FrostPanel's squircle path so corners match exactly.
       glass={{
         radius: 38,
         cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
         tint: 'var(--wallet-bg)',
-        edge: 'none',
+        edge: 'var(--sheet-flat-edge)',
+        edgeGlint: false,
+        edgeWidth: 0.5,
         shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
       }}
     >
@@ -425,13 +467,19 @@ export function AddMoneySheet({
                       </div>
                       <div className={styles.amountInput}>
                         <p ref={amountScope} className={styles.amountValue}>
-                          <NumericText
-                            value={cents / 100}
-                            format={{ style: 'currency', currency: 'USD' }}
-                            fraction={amountFraction}
-                            ghostClassName={styles.amountGhost}
-                            style={NUMERIC_PAD}
-                          />
+                          <span
+                            ref={fitRef}
+                            className={styles.amountFit}
+                            style={{ transform: `scale(${fit})` }}
+                          >
+                            <NumericText
+                              value={cents / 100}
+                              format={{ style: 'currency', currency: 'USD' }}
+                              fraction={amountFraction}
+                              ghostClassName={styles.amountGhost}
+                              style={NUMERIC_PAD}
+                            />
+                          </span>
                         </p>
                         <p className={styles.amountSub}>
                           <NumericText
@@ -532,7 +580,7 @@ export function AddMoneySheet({
                         step === 'amount' ? tryContinue() : !confirming && onConfirm(cents)
                       }
                     >
-                      {confirming ? (
+                      {confirming || quoting ? (
                         <span className={styles.spinner} aria-label="Confirming">
                           <IconLoadingCircle size={20} />
                         </span>

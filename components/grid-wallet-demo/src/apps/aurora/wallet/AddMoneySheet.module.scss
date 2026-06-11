@@ -257,13 +257,30 @@
   text-align: center;
 }
 
-/* SF Pro Rounded Bold 48/56. */
+/* SF Pro Rounded Bold 48/56. Flex centering (not text-align): a wider-than-
+   container child stays CENTERED with symmetric overflow, so the fit scale
+   shrinks it back into view around the middle. */
 .amountValue {
+  display: flex;
+  /* Stretch to the card width (a centered flex child shrink-wraps otherwise) so
+     the fit measurement has a real bound to compare the amount against. */
+  align-self: stretch;
+  justify-content: center;
   margin: 0;
   @include ios.ios-text-wallet-balance;
   @include ios.ios-type-rounded;
   @include ios.ios-type-rounded-bold(var(--ios-type-wallet-balance-opsz));
   color: var(--ios-label-primary);
+}
+
+/* Fit-to-width wrapper — Swift's minimumScaleFactor: scales toward 0.5 as the
+   amount outgrows the card. */
+.amountFit {
+  display: inline-flex;
+  flex-shrink: 0;
+  transform-origin: center;
+  transition: transform 0.25s ease;
+  will-change: transform;
 }
 
 /* Cent placeholders, dimmed (NumericText ghost columns; Swift's

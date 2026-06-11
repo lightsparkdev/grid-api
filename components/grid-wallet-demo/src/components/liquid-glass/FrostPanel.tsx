@@ -50,6 +50,11 @@ export interface FrostConfig {
   /** Specular edge color (defaults to `--glass-sheet-edge`); `'none'` skips the
    *  rim entirely — a flat (non-glassy) surface. */
   edge?: string;
+  /** Glassy top glint on the edge (default). false = a uniform hairline stroke
+   *  of `edge` — e.g. a flat sheet's subtle dark-mode outline. */
+  edgeGlint?: boolean;
+  /** Edge stroke width in px (default 1). */
+  edgeWidth?: number;
   /** Outer drop shadow (CSS box-shadow value) — e.g. a flat sheet's elevation. */
   shadow?: string;
 }
@@ -69,6 +74,10 @@ export interface FrostPanelProps {
   /** Specular edge color — the bright glassy rim traced around the shape.
    *  `'none'` skips the rim (flat surface). */
   edge?: string;
+  /** Glassy top glint on the edge (default). false = uniform hairline stroke. */
+  edgeGlint?: boolean;
+  /** Edge stroke width in px (default 1). */
+  edgeWidth?: number;
   /** Outer drop shadow (CSS box-shadow value), traced at the panel's radius. */
   shadow?: string;
   className?: string;
@@ -111,6 +120,8 @@ export function FrostPanel({
   tint,
   tintBlur = 0,
   edge = DEFAULT_EDGE,
+  edgeGlint = true,
+  edgeWidth = 1,
   shadow,
   className,
   style,
@@ -183,18 +194,20 @@ export function FrostPanel({
           preserveAspectRatio="none"
           style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}
         >
-          <defs>
-            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#ffffff" stopOpacity={0.6} />
-              <stop offset="0.14" style={{ stopColor: edge }} />
-              <stop offset="1" style={{ stopColor: edge }} />
-            </linearGradient>
-          </defs>
+          {edgeGlint && (
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#ffffff" stopOpacity={0.6} />
+                <stop offset="0.14" style={{ stopColor: edge }} />
+                <stop offset="1" style={{ stopColor: edge }} />
+              </linearGradient>
+            </defs>
+          )}
           <path
             d={edgePath}
             fill="none"
-            stroke={`url(#${gradId})`}
-            strokeWidth={1}
+            stroke={edgeGlint ? `url(#${gradId})` : edge}
+            strokeWidth={edgeWidth}
             vectorEffect="non-scaling-stroke"
           />
         </svg>
