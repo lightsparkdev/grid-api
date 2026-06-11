@@ -1,0 +1,54 @@
+title: Delegated Key
+type: object
+required:
+  - id
+  - cardId
+  - accountId
+  - publicKey
+  - nickname
+  - status
+  - createdAt
+  - updatedAt
+description: >-
+  A delegated signing key for a card backed by an Embedded Wallet internal
+  account. Returned from `POST /auth/delegated-keys` (on activation) and
+  `GET /auth/delegated-keys` (list). The keypair is generated and custodied
+  by Grid; the private key is never returned. While `ACTIVE`, Grid may use
+  the key to authorize Spark token-transaction signing for the card's
+  Embedded Wallet funding account in place of a session keypair. `publicKey`
+  is informational metadata identifying the credential.
+properties:
+  id:
+    type: string
+    description: Grid-issued `DelegatedKey:<uuid>` identifier.
+    example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+  cardId:
+    type: string
+    description: The card this key is delegated for.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  accountId:
+    type: string
+    description: >-
+      The Embedded Wallet internal account this key is delegated for,
+      derived from the card's funding sources.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  publicKey:
+    type: string
+    description: Compressed P-256 public key (hex) of the delegated API keypair.
+    example: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+  nickname:
+    type: string
+    description: Human-readable label for the delegated key.
+    example: Settlement service key
+  status:
+    $ref: ./DelegatedKeyStatus.yaml
+  createdAt:
+    type: string
+    format: date-time
+    description: When the delegated key was created.
+    example: '2026-04-08T15:30:01Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the delegated key was last updated.
+    example: '2026-04-08T15:30:42Z'
