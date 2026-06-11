@@ -29,10 +29,11 @@
   }
 }
 
-/* Image graphic (e.g. flag) — circular, same 24px footprint as the glyphs. */
+/* Image graphic (e.g. flag) — circular, 20px: glyphs carry built-in padding at
+   24, so an edge-to-edge image at 24 reads optically bigger than the icons. */
 .graphicImage {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   object-fit: cover;
 }

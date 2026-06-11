@@ -1,13 +1,14 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
+import { GlassToast, type GlassToastData } from '@/apps/shared/GlassToast';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
@@ -59,6 +60,12 @@ const SHEET_INSERT_DELAY_MS = 700;
 function parseCents(formatted: string): number {
   const n = Number.parseFloat(formatted.replace(/[^0-9.]/g, ''));
   return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
+/** Toast copy amount — whole dollars drop the ".00" ("$1,500"); cents keep it. */
+function toastUsd(cents: number): string {
+  const usd = formatUsdCents(cents);
+  return cents % 100 === 0 ? usd.slice(0, -3) : usd;
 }
 
 const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
@@ -116,6 +123,19 @@ export function AuroraWalletScreen({
     setSheetOpen(true);
   };
 
+  // Glass toast (overlay layer): transfer confirmations + the tap-to-pay balance
+  // guard. A fresh id restarts the hold when one is already up.
+  const [toast, setToast] = useState<GlassToastData | null>(null);
+  const showToast = (text: string) => setToast({ id: Date.now(), text });
+
+  // Home Activity = money movements + card transactions, newest first. Derived
+  // (not double-inserted) so each WalletListCard instance keeps its own
+  // fresh-row bookkeeping — the grow-in insert still runs per list.
+  const homeActivity = useMemo(
+    () => [...activity, ...transactions].sort((a, b) => b.timestamp - a.timestamp),
+    [activity, transactions],
+  );
+
   const isOpen = cardView !== 'closed';
   const isIssuance = cardView === 'intro' || cardView === 'creating' || cardView === 'ready';
   const showFullAurora = cardView === 'intro' || cardView === 'creating';
@@ -162,6 +182,16 @@ export function AuroraWalletScreen({
 
   const openCard = () => setCardView(issued ? 'home' : 'intro');
 
+  // Tap to pay only runs when the balance covers the (fixed demo) charge —
+  // otherwise the flow doesn't start and a toast says why.
+  const startTapToPay = () => {
+    if (availableCents < parseCents(TAP_TX.amount)) {
+      showToast('Not enough balance');
+      return;
+    }
+    setTapPhase('hold');
+  };
+
   // Add/Withdraw confirmed (Face ID done): dismiss the sheet, move the balance
   // (signed), and drop the Activity row in once the wallet has settled (visible
   // insert).
@@ -172,6 +202,7 @@ export function AuroraWalletScreen({
     setSheetConfirming(false);
     setSheetOpen(false);
     setDeltaCents((c) => c + (withdraw ? -cents : cents));
+    showToast(`${toastUsd(cents)} ${withdraw ? 'withdrawn from' : 'added to'} balance`);
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
       // Figma 90:13701 — bank as the title, MX flag as the graphic.
@@ -191,22 +222,26 @@ export function AuroraWalletScreen({
   };
   useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
 
-  // Face ID renders in AppShell's overlay layer (above the status bar) so its
-  // progressive blur frosts the status bar too; falls back to an in-screen layer
-  // when rendered outside an AppShell. Shared by tap-to-pay and the money sheet.
-  const faceIdAuth = (
-    <FaceIdAuth
-      active={tapPhase === 'auth' || sheetConfirming}
-      onDone={() => {
-        if (sheetConfirming) finishTransfer();
-        else setTapPhase('done');
-      }}
-    />
+  // Face ID + the glass toast render in AppShell's overlay layer (above the
+  // status bar) so the blur frosts the status bar and the toast can slide in
+  // over everything; falls back to an in-screen layer when rendered outside an
+  // AppShell. Face ID is shared by tap-to-pay and the money sheet.
+  const overlayContent = (
+    <>
+      <FaceIdAuth
+        active={tapPhase === 'auth' || sheetConfirming}
+        onDone={() => {
+          if (sheetConfirming) finishTransfer();
+          else setTapPhase('done');
+        }}
+      />
+      <GlassToast toast={toast} onDismiss={() => setToast(null)} />
+    </>
   );
-  const faceIdOverlay = overlayEl ? (
-    createPortal(faceIdAuth, overlayEl)
+  const screenOverlay = overlayEl ? (
+    createPortal(overlayContent, overlayEl)
   ) : (
-    <div className={styles.faceIdLayer}>{faceIdAuth}</div>
+    <div className={styles.faceIdLayer}>{overlayContent}</div>
   );
 
   return (
@@ -352,7 +387,7 @@ export function AuroraWalletScreen({
                 </>
               }
               cta={{ label: 'Add money', onClick: () => openSheet('add') }}
-              items={activity}
+              items={homeActivity}
               concentricBottom
               grow
             />
@@ -396,7 +431,7 @@ export function AuroraWalletScreen({
             >
               <CardHomeContent
                 transactions={transactions}
-                onTapToPay={() => setTapPhase('hold')}
+                onTapToPay={startTapToPay}
               />
             </motion.div>
           )}
@@ -428,7 +463,7 @@ export function AuroraWalletScreen({
         }}
       />
 
-      {faceIdOverlay}
+      {screenOverlay}
     </div>
   );
 }
