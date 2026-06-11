@@ -50,7 +50,6 @@ uniform float uScale;        // CSS px refraction
 uniform float uDomeOn;
 uniform vec2 uDomeR;         // CSS px
 uniform vec2 uDomeS;
-uniform float uSplay;
 uniform float uEdgeStr;
 uniform float uEdgeW;        // CSS px
 uniform float uSpecStr;
@@ -79,29 +78,23 @@ void main(){
 
   vec2 base = uButtonOffset + cp;    // aurora-local CSS px
 
-  float dxm, dym;
+  // Radial circle lens — matches displacement.ts's capsule path: dome the
+  // radial distance, bend along (x/r, y/r). This button is always a circle, so
+  // the SDF-normal model degenerates to pure radial (no splay — Aave's circle
+  // lenses never splay).
+  float r = length(p);
+  float g;
   if (uDomeOn > 0.5) {
-    dxm = domeGrad(ax, uDomeR.x, uDomeS.x);
-    dym = domeGrad(ay, uDomeR.y, uDomeS.y);
+    g = domeGrad(r, uDomeR.x, uDomeS.x);
   } else {
-    dxm = min(ax / lensHalf.x, 1.0);
-    dym = min(ay / lensHalf.y, 1.0);
+    g = min(r / min(lensHalf.x, lensHalf.y), 1.0);
   }
-  if (uSplay < 1.0) {
-    float splayRef = 0.5 * min(lensHalf.x, lensHalf.y);
-    float splayInv = splayRef > 0.0 ? 1.0 / splayRef : 0.0;
-    float flatY = max(0.0, 1.0 - (lensHalf.y - ay) * splayInv) * (1.0 - uSplay);
-    float flatX = max(0.0, 1.0 - (lensHalf.x - ax) * splayInv) * (1.0 - uSplay);
-    if (flatY > 0.001 || flatX > 0.001) {
-      float rx = dxm; float ry = dym;
-      dxm = rx * (1.0 - flatY); dym = ry * (1.0 - flatX);
-      float lenBefore = sqrt(rx * rx + ry * ry);
-      float lenAfter = sqrt(dxm * dxm + dym * dym);
-      if (lenAfter > 0.001) { float kk = lenBefore / lenAfter; dxm *= kk; dym *= kk; }
-    }
+  float dx = 0.0;
+  float dy = 0.0;
+  if (r > 0.001) {
+    dx = p.x / r * g;
+    dy = p.y / r * g;
   }
-  float dx = dxm * sign(p.x);
-  float dy = dym * sign(p.y);
 
   float innerW = max(0.0, lensHalf.x - uDepth);
   float innerH = max(0.0, lensHalf.y - uDepth);
@@ -219,7 +212,7 @@ export function AuroraLensButton({
       const U = (n: string) => gl!.getUniformLocation(prog!, n);
       for (const n of [
         'uResolution', 'uDpr', 'uButtonOffset', 'uLensHalf', 'uCornerExp', 'uRadius',
-        'uDepth', 'uScale', 'uDomeOn', 'uDomeR', 'uDomeS', 'uSplay', 'uEdgeStr', 'uEdgeW',
+        'uDepth', 'uScale', 'uDomeOn', 'uDomeR', 'uDomeS', 'uEdgeStr', 'uEdgeW',
         'uSpecStr', 'uSpecDir', 'uChroma', 'uGlowStr', 'uGlowInner', 'uGlowBand', 'uGlowExp',
         'uEdgeExp', 'uBright',
       ]) {
@@ -234,7 +227,6 @@ export function AuroraLensButton({
       gl.uniform1f(lu.uDomeOn, SYMBOL_GLASS.domeDepth > 0 ? 1 : 0);
       gl.uniform2f(lu.uDomeR, dome.Rx, dome.Ry);
       gl.uniform2f(lu.uDomeS, dome.scaleX, dome.scaleY);
-      gl.uniform1f(lu.uSplay, SYMBOL_GLASS.splay);
       gl.uniform1f(lu.uEdgeStr, SYMBOL_GLASS.edgeStrength);
       gl.uniform1f(lu.uEdgeW, SYMBOL_GLASS.edgeWidth);
       gl.uniform1f(lu.uSpecStr, SYMBOL_GLASS.specularStrength);
