@@ -11905,6 +11905,7 @@ components:
       example:
         accountType: CNY_ACCOUNT
         accountNumber: '1234567890'
+        phoneNumber: '+1234567890'
         bankName: China Construction Bank
     CnyAccountInfo:
       allOf:
