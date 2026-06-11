@@ -18,7 +18,7 @@ type Step = 'source' | 'amount' | 'confirm';
 /** Demo FX — matches the Figma copy (1 MXN = 0.06 USD ⇒ 1 USD ≈ 17.9074 MXN). */
 const USD_TO_MXN = 17.9074;
 
-const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
+const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.28);
 // Card heights/positions re-flow as the keypad leaves (amount ⇄ confirm).
 const LAYOUT_TRANSITION = motionTransition(easeOutSnappy, 0.4);
 // Keypad ⇄ details swap + CTA crossfade inside the persistent transfer layout.
@@ -235,19 +235,27 @@ export function AddMoneySheet({
   // AnimatePresence `custom` prop is re-resolved for exiting children instead.
   type NavDir = { back: boolean; reduceMotion: boolean };
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
+  // TRUE push: the incoming screen shares an edge with the outgoing one (full
+  // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
+  // screen arrives at full opacity — it's a push, not a crossfade.
   const stepVariants = {
     enter: ({ back: b, reduceMotion: rm }: NavDir) =>
-      rm ? { x: 0, opacity: 1 } : { x: b ? -64 : 64, opacity: 0 },
+      rm ? { x: 0, opacity: 1 } : { x: b ? '-100%' : '100%', opacity: 1 },
     center: { x: 0, opacity: 1 },
     exit: ({ back: b, reduceMotion: rm }: NavDir) =>
-      rm ? { opacity: 0 } : { x: b ? 64 : -64, opacity: 0 },
+      rm ? { opacity: 0 } : { x: b ? '100%' : '-100%', opacity: 0 },
   };
+  // The title is ANCHORED to the content push: same travel (the full screen
+  // width, matching the steps' ±100%) and the same transition clock, so title
+  // and screen move as one surface. The strip's gradient mask dissolves the
+  // text before it reaches the X/back controls.
+  const SCREEN_W = 402; // --app-screen-width
   const titleVariants = {
     enter: ({ back: b, reduceMotion: rm }: NavDir) =>
-      rm ? { x: 0, opacity: 1 } : { x: b ? -14 : 14, opacity: 0 },
+      rm ? { x: 0, opacity: 1 } : { x: b ? -SCREEN_W : SCREEN_W, opacity: 1 },
     center: { x: 0, opacity: 1 },
     exit: ({ back: b, reduceMotion: rm }: NavDir) =>
-      rm ? { opacity: 0 } : { x: b ? 14 : -14, opacity: 0 },
+      rm ? { opacity: 0 } : { x: b ? SCREEN_W : -SCREEN_W, opacity: 0 },
   };
 
   return (
@@ -300,7 +308,7 @@ export function AddMoneySheet({
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={SWAP_TRANSITION}
+                  transition={STEP_TRANSITION}
                 >
                   {STEP_TITLES[step]}
                 </motion.span>

@@ -25,9 +25,9 @@
   min-height: 40px;
 }
 
-/* Body/Emphasized 17/22, truly centered regardless of the nav button. The morph
-   span is shrink-wrapped and flex-centered: torph anchors glyphs to the element's
-   left edge, so text-align can't center it — centering the box does. */
+/* Body/Emphasized 17/22, truly centered regardless of the nav button. The
+   sliding title strip is gradient-masked at both ends so pushed text dissolves
+   before it can collide with the X/back controls. */
 .title {
   position: absolute;
   left: 56px;
@@ -35,6 +35,21 @@
   display: flex;
   justify-content: center;
   margin: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
   @include ios.ios-text-headline;
   font-weight: 590;
   color: var(--ios-label-primary);
