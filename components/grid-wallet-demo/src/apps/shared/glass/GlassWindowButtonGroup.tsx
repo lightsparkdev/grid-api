@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { GlassOver } from '@/components/liquid-glass';
 import type { GlassConfig } from '@/components/liquid-glass';
@@ -20,6 +21,9 @@ interface GlassWindowButtonGroupProps {
   iconSize?: number;
   /** Per-instance glass tuning — merged over the overlay symbol preset. */
   glass?: Partial<GlassConfig>;
+  /** Positioned copy of the live UI behind the capsule to refract (overrides the
+   *  neutral backdrop) — same contract as GlassSymbolButton's backdropNode. */
+  backdropNode?: ReactNode;
   className?: string;
 }
 
@@ -48,6 +52,7 @@ export function GlassWindowButtonGroup({
   symbols,
   iconSize = 24,
   glass,
+  backdropNode,
   className,
 }: GlassWindowButtonGroupProps) {
   const overlayGlass = useOverlayGlass();
@@ -57,6 +62,7 @@ export function GlassWindowButtonGroup({
       <GlassOver
         className={styles.glass}
         backdrop={SHEET_SURFACE_BACKDROP}
+        backdropNode={backdropNode}
         // Spread the preset first so these overrides win — SYMBOL_GLASS sets radius: 22.
         {...overlayGlass.symbol}
         radius={1000}

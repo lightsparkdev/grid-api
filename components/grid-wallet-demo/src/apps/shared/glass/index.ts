@@ -5,6 +5,7 @@ export {
   type GlassWindowButtonGroupSymbol,
 } from './GlassWindowButtonGroup';
 export { GlassTextButton } from './GlassTextButton';
+export { ScrollSyncedBackdrop } from './ScrollSyncedBackdrop';
 export {
   OverlayGlassProvider,
   useOverlayGlass,

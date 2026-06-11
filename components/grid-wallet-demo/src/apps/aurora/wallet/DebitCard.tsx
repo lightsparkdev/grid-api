@@ -26,6 +26,10 @@ interface DebitCardProps {
   bordered?: boolean;
   /** A created card: morph the label to "Debit card" and reveal the number. */
   issued?: boolean;
+  /** Live CSS-replica aurora instead of the WebGL canvas — for SVG-filtered
+   *  glass copies (Safari kills the filter chain over accelerated surfaces).
+   *  Drifts in lockstep with the real card via the shared aurora clock. */
+  cssAurora?: boolean;
 }
 
 /** Figma 2143:36184 — debit card behind the wallet sheet. */
@@ -35,6 +39,7 @@ export function DebitCard({
   showNumber = true,
   bordered = false,
   issued = false,
+  cssAurora = false,
 }: DebitCardProps) {
   const reduceMotion = useReducedMotion();
   const [hovered, setHovered] = useState(false);
@@ -96,6 +101,7 @@ export function DebitCard({
         <AuroraBackground
           showRadialGradient={false}
           className={clsx(styles.aurora, bordered && styles.auroraHidden)}
+          cssReplica={cssAurora}
         />
         <div className={styles.top}>
           <TextMorph

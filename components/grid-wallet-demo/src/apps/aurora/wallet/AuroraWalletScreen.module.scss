@@ -87,6 +87,15 @@
   box-sizing: border-box;
 }
 
+/* Card-home: the header floats over the scrolling page (content passes under it). */
+.headerOverlay {
+  position: absolute;
+  top: 62px; /* clears the status bar — matches .root padding-top */
+  left: 0;
+  right: 0;
+  z-index: 4;
+}
+
 .headerInner {
   position: absolute;
   inset: 8px 24px;
@@ -135,6 +144,23 @@
   z-index: 3;
 }
 
+/* Card-home scrolls the whole page (card + list) under the floating header.
+   Scrollbar hidden — this is a phone surface. The clip box is lifted over the
+   status bar too (62px + the base 16px shadow allowance, padded back so layout
+   is unchanged): scrolled content stays visible under the transparent status
+   bar (glyphs sit at a higher z-index) until the screen edge clips it — the
+   bezel does the clipping, not the status bar line. */
+.bodyScroll {
+  margin-top: -78px;
+  padding-top: 78px;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Card slot — top for closed/home, centered for intro/creating/ready. The card
    itself (.cardCarry) layout-animates between the two. */
 .cardAreaTop {
@@ -145,6 +171,12 @@
 /* Card-home (issued): 8px gap below the card before the transactions list. */
 .bodyOpen .cardAreaTop {
   padding-bottom: 8px;
+}
+
+/* Card-home: inset the card below the floating header (56px) so it starts in the
+   same place, but can scroll up underneath it. */
+.cardAreaUnderHeader {
+  padding-top: 64px;
 }
 
 .cardAreaCentered {
@@ -201,12 +233,12 @@
   width: 100%;
 }
 
-/* Card-home body — transactions list fills, Apple Wallet button pinned below. */
+/* Card-home body — grows with content so the whole page scrolls (vs. fill+clip). */
 .homeContent {
   position: relative;
   z-index: 2;
   display: flex;
-  flex: 1 1 0;
+  flex: 1 0 auto;
   flex-direction: column;
   min-height: 0;
   width: 100%;

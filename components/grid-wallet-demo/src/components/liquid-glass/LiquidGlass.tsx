@@ -50,6 +50,9 @@ export interface GlassConfig {
   blur: number;
   /** Spherical curvature (dome sagitta), px. 0 == flat/linear refraction. */
   domeDepth: number;
+  /** Dome the radial distance and bend along (x/r, y/r) — a true circular lens
+   *  (Aave's circle-lens model). Default per-axis suits rounded-rects. */
+  radialDome?: boolean;
   /** Flatten the bend near edges so content stays readable. 1 == off. */
   splay: number;
   /** Specular highlight direction, degrees. */
@@ -91,6 +94,13 @@ export interface GlassConfig {
   shadowOpacity?: number;
   /** Resolution of the generated displacement map. */
   mapSize: number;
+  /**
+   * Bump to mint a fresh SVG filter id (Safari caches filter OUTPUT by id, so
+   * content animating INSIDE the lens — e.g. a scroll-synced backdrop copy —
+   * ghosts/freezes until the id changes). Callers bump it per content frame on
+   * Safari only; shape/position changes already refresh automatically.
+   */
+  refreshKey?: number | string;
 }
 
 export interface LensRect {
@@ -241,6 +251,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
         edgeWidth: cfg.edgeWidth,
         edgeExponent: cfg.edgeExponent,
         domeDepth: cfg.domeDepth,
+        radialDome: cfg.radialDome,
         splayAmount: cfg.splay,
         cornerSmoothing: effSmoothing,
       },
@@ -255,6 +266,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
     cornerKey,
     cfg.depth,
     cfg.domeDepth,
+    cfg.radialDome,
     cfg.splay,
     cfg.specularRotation,
     cfg.glowStrength,
@@ -302,7 +314,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   // CSS shadow keeps moving. The fix (straight from Aave's writeup) is to mint a
   // FRESH id on every update — position included — which forces a clean repaint.
   const baseId = useRef(`lg-${Math.random().toString(36).slice(2)}`).current;
-  const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}|${isSafari ? 's' : 'c'}`;
+  const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}|${cfg.refreshKey ?? ''}|${isSafari ? 's' : 'c'}`;
   const verRef = useRef(0);
   const lastSig = useRef<string | null>(null);
   if (lastSig.current !== sig) {
@@ -361,17 +373,23 @@ export default function LiquidGlass(props: LiquidGlassProps) {
           an offset filter region. */}
       {/* Outer layer trims the refracted output back to the lens silhouette
           (clip-path is GPU-anti-aliased, so the corner stays crisp and the
-          bleed margin used for edge sampling is hidden). */}
-      <div style={{ width: '100%', height: '100%', ...outputClip }}>
+          bleed margin used for edge sampling is hidden). isolation keeps any
+          composited descendant inside this clip on WebKit. */}
+      <div style={{ width: '100%', height: '100%', isolation: 'isolate', ...outputClip }}>
         {/* Fill the glass region so the filter has a sized source to rasterize.
             A `filter` makes this a containing block whose children are absolute,
             leaving it 0-height otherwise — and Chrome then renders the filter
-            empty (the glass goes blank). */}
+            empty (the glass goes blank).
+            will-change: filter is Chromium-only ON PURPOSE: on Safari it promotes
+            this div to a composited layer, which (a) escapes the ancestor
+            overflow/border-radius clip and (b) can't run SVG reference filters on
+            the compositor — so live content inside the lens paints raw, unclipped
+            and stale (static backdrops never showed it; a scroll-synced copy did). */}
         <div
           style={{
             width: '100%',
             height: '100%',
-            willChange: 'filter',
+            willChange: isSafari ? undefined : 'filter',
             filter: ready ? `url(#${filterId})` : undefined,
           }}
         >

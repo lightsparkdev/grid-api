@@ -1,0 +1,20 @@
+/* Neutralise every compositing/filter trigger on the copy's DESCENDANTS.
+   A descendant with its own composited layer or filter group (translateZ(0) /
+   will-change / backface-visibility hacks, framer-motion's inline
+   `filter: blur(0px)`, transitions mid-flight…) inside an SVG-filtered subtree
+   makes WebKit draw that layer SEPARATELY — raw, unfiltered, escaping the lens
+   clip and painting full-size over the page. The copy is an inert refraction
+   texture: none of these effects are needed, so strip them wholesale.
+   (!important intentionally beats framer-motion's inline styles.)
+   The copy node itself (direct child) keeps its scroll-sync transform. */
+.copy > * *,
+.copy > * {
+  transform: none !important;
+  will-change: auto !important;
+  backface-visibility: visible !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: none !important;
+  animation: none !important;
+}

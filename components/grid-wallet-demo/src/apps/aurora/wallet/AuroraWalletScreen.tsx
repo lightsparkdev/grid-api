@@ -8,7 +8,8 @@ import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-st
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
-import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassSymbolButton, ScrollSyncedBackdrop, headerGlassBrightness } from '@/apps/shared/glass';
+import { useGlassEngine } from '@/components/liquid-glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -92,6 +93,40 @@ export function AuroraWalletScreen({
   const showFullAurora = cardView === 'intro' || cardView === 'creating';
   const cardCentered = isIssuance; // centered for intro/creating/ready; top for closed/home
   const isTap = tapPhase !== 'idle'; // tap-to-pay sub-flow over the card-home screen
+  const isHome = cardView === 'home' && !isTap; // card-home scrolls under the header
+  const { isSafari } = useGlassEngine();
+  // Safari caches SVG filter output by id, so content scrolling INSIDE the header
+  // lenses ghosts/freezes there. Bump a tick per scroll frame (Safari only) — it
+  // feeds the buttons' glass `refreshKey`, minting a fresh filter id per frame
+  // (Aave's documented fix). Chromium repaints filters on content change already.
+  const [scrollTick, setScrollTick] = useState(0);
+  useEffect(() => {
+    if (!isHome || !isSafari) return;
+    const scroller = document.querySelector('[data-wallet-scroll]');
+    if (!scroller) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setScrollTick((t) => t + 1);
+      });
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    // The copy's aurora drifts continuously (and images/fonts settle late), so a
+    // scroll-only refresh leaves Safari's cached-by-id filter output stale at
+    // rest. Re-mint steadily (~12fps) while the lenses are up; scroll frames
+    // above keep tracking snappy. Skipped under reduced motion (field freezes).
+    const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const interval = reduceMq.matches
+      ? 0
+      : window.setInterval(() => setScrollTick((t) => t + 1), 85);
+    return () => {
+      cancelAnimationFrame(raf);
+      scroller.removeEventListener('scroll', onScroll);
+      if (interval) window.clearInterval(interval);
+    };
+  }, [isHome, isSafari, transactions.length]);
 
   // Simulated card creation: auto-advance creating -> ready (and mark issued).
   useEffect(() => {
@@ -134,6 +169,26 @@ export function AuroraWalletScreen({
     <div className={styles.faceIdLayer}>{faceIdAuth}</div>
   );
 
+  // Live refraction source for the header buttons on card-home: a scroll-synced
+  // copy of the page content (card + tap-to-pay + transactions), so the glass
+  // bends the actual UI passing underneath as the page scrolls (Aave's
+  // refractionTarget pattern). Inert + pointer-events: none — texture only.
+  const scrollBackdrop = isHome ? (
+    <ScrollSyncedBackdrop
+      anchorSelector="[data-wallet-card-area]"
+      scrollSelector="[data-wallet-scroll]"
+    >
+      {/* Mirrors .cardAreaTop + .cardAreaUnderHeader + .bodyOpen padding. */}
+      <div style={{ padding: '64px 16px 8px' }}>
+        {/* cssAurora: the LIVE field as plain CSS — a WebGL canvas inside the
+            SVG-filtered copy kills the whole filter on Safari. Same clock as
+            the real card, so the refracted aurora drifts in sync. */}
+        <DebitCard interactive={false} issued={issued} showNumber cssAurora />
+      </div>
+      <CardHomeContent transactions={transactions} />
+    </ScrollSyncedBackdrop>
+  ) : undefined;
+
   return (
     <div className={styles.root}>
       {/* Full-screen aurora behind everything (incl. the header) during issuance.
@@ -163,7 +218,7 @@ export function AuroraWalletScreen({
         )}
       </AnimatePresence>
 
-      <header className={styles.header}>
+      <header className={clsx(styles.header, isHome && styles.headerOverlay)}>
         <AnimatePresence initial={false}>
           {!isOpen ? (
             <motion.div
@@ -197,6 +252,8 @@ export function AuroraWalletScreen({
                 onClose={() => setCardView('closed')}
                 showActions={cardView === 'home'}
                 closeOnAurora={showFullAurora}
+                scrollBackdrop={scrollBackdrop}
+                scrollRefreshKey={isSafari ? scrollTick : undefined}
               />
             </motion.div>
           )}
@@ -207,7 +264,13 @@ export function AuroraWalletScreen({
           together) so nothing desyncs — collapsing the header instead reflowed
           everything up while only the card animated, which read as a jump. */}
       <motion.div
-        className={clsx(styles.body, isOpen && styles.bodyOpen, isTap && styles.bodyTap)}
+        data-wallet-scroll
+        className={clsx(
+          styles.body,
+          isOpen && styles.bodyOpen,
+          isTap && styles.bodyTap,
+          isHome && styles.bodyScroll,
+        )}
         initial={false}
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={CARD_TRANSITION}
@@ -215,10 +278,12 @@ export function AuroraWalletScreen({
         {/* The card is a single element that carries through every state — it
             layout-animates between the top slot and the centered issuance slot. */}
         <div
+          data-wallet-card-area
           className={clsx(
             styles.cardArea,
             cardCentered ? styles.cardAreaCentered : styles.cardAreaTop,
             cardView === 'creating' && styles.cardAreaCreating,
+            isHome && styles.cardAreaUnderHeader,
           )}
         >
           <motion.div layout={!reduceMotion} className={styles.cardCarry} transition={CARD_TRANSITION}>

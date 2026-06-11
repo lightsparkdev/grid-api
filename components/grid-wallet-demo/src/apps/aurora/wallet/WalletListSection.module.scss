@@ -9,15 +9,10 @@
   min-height: 0;
 }
 
-/* Card-home transactions scroll within the remaining height when the list is long
-   (scrollbar hidden — this is a phone surface). */
+/* Card-home transactions grow with content (vs. fill + clip) so the whole page —
+   not the section alone — scrolls under the header. */
 .sectionScroll {
-  overflow-y: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  flex: 1 0 auto;
 }
 
 /* Figma 84:12453 / 2143:40927 — pt 16 px 32, Title3/Emphasized. */

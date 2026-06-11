@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { AuroraCanvas } from './AuroraCanvas';
+import { AuroraCssField } from './AuroraCssField';
 import styles from './AuroraBackground.module.scss';
 
 interface AuroraBackgroundProps {
@@ -11,6 +12,11 @@ interface AuroraBackgroundProps {
   fadeBottom?: boolean;
   /** Tag the GPU field so the close-button lens can find + refract this instance. */
   fieldId?: string;
+  /** Render the LIVE field as plain CSS (AuroraCssField) instead of the WebGL
+   *  canvas — required inside SVG-filtered glass copies (Safari won't filter
+   *  accelerated surfaces and drops the whole filter chain when one is present).
+   *  Same math, LUTs and clock as the GPU, so it drifts in lockstep. */
+  cssReplica?: boolean;
 }
 
 /**
@@ -26,15 +32,20 @@ export function AuroraBackground({
   showRadialGradient = true,
   fadeBottom = false,
   fieldId,
+  cssReplica = false,
 }: AuroraBackgroundProps) {
   return (
     <div className={clsx(styles.root, className)} data-fade-bottom={fadeBottom ? 'true' : 'false'}>
       <div className={styles.backdrop} aria-hidden>
-        <AuroraCanvas
-          className={styles.canvas}
-          showRadialGradient={showRadialGradient}
-          fieldId={fieldId}
-        />
+        {cssReplica ? (
+          <AuroraCssField className={styles.canvas} />
+        ) : (
+          <AuroraCanvas
+            className={styles.canvas}
+            showRadialGradient={showRadialGradient}
+            fieldId={fieldId}
+          />
+        )}
       </div>
       <div className={styles.content}>{children}</div>
     </div>

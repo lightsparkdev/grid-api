@@ -1,11 +1,11 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 @use '../../shared/glass/glass-button-shadow' as shadow;
 
-/* Tap to pay sits directly under the card: 16px sides/top, 8px bottom. */
+/* Tap to pay sits directly under the card: 8px top, 16px sides, 8px bottom. */
 .walletBtnWrap {
   flex-shrink: 0;
   width: 100%;
-  padding: 16px 16px 8px;
+  padding: 8px 16px;
 }
 
 /* Figma 2143:40968 — "Tap to pay" pill (inverts with theme), px 20 py 14, radius 1000. */
