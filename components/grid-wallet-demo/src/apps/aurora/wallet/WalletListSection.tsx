@@ -17,8 +17,8 @@ interface WalletListSectionProps {
   concentricBottom?: boolean;
   /** Real rows; when present the card renders them instead of the empty state. */
   items?: WalletListItemData[];
-  /** Grow with content past the available height (clipped by the screen — no
-   *  scrolling) instead of fill + clip inside the card. */
+  /** Grow with content past the available height (the page scrolls) instead of
+   *  fill + clip inside the card. */
   grow?: boolean;
 }
 

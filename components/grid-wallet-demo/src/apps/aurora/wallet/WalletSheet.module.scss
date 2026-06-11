@@ -3,11 +3,11 @@
   position: relative;
   z-index: 1;
   display: flex;
-  flex: 1;
+  /* Grow with content (page scroll) so the surface always backs the list. */
+  flex: 1 0 auto;
   flex-direction: column;
   align-items: stretch;
   width: 100%;
-  min-height: 0;
   background: var(--wallet-bg);
   border-radius: var(--corner-radius-wallet-sheet) var(--corner-radius-wallet-sheet) 0 0;
   corner-shape: var(--corner-shape);

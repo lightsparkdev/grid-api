@@ -146,6 +146,12 @@
   padding: 12px 16px;
 }
 
+/* "Use max" chip slot — labels are flex: 1, so it rides the row's right edge. */
+.useMax {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
 .tile {
   display: flex;
   flex-shrink: 0;
@@ -166,6 +172,17 @@
   /* Monochrome (black-stroke) source icons follow the label color in dark. */
   :global([data-theme='dark']) & {
     filter: invert(1);
+  }
+}
+
+/* central-icons glyph rows (e.g. IconWallet1): currentColor follows the label,
+   and the baked per-path stroke-width is overridden to match the 2px-stroke
+   asset SVGs above (same convention as the issuance value props). */
+.tileGlyph {
+  color: var(--ios-label-primary);
+
+  path {
+    stroke-width: 2;
   }
 }
 

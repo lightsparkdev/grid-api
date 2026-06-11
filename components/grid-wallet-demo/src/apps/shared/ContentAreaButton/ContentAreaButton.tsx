@@ -5,8 +5,11 @@ import styles from './ContentAreaButton.module.scss';
 interface ContentAreaButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
   children?: ReactNode;
-  /** Auth hero = quaternary; wallet sheet = bordered (Figma 90:13451); primary CTA = filled. */
-  variant?: 'quaternary' | 'bordered' | 'filled';
+  /** Auth hero = quaternary; wallet sheet = bordered (Figma 90:13451); primary
+   *  CTA = filled; inline chip on a card (Use max) = secondary. */
+  variant?: 'quaternary' | 'secondary' | 'bordered' | 'filled';
+  /** Small = the iOS Small content-area chip (Figma 109:29074) — hugs its label. */
+  size?: 'default' | 'small';
 }
 
 /** Figma Button - Content Area (Fills/Quaternary or Bordered). */
@@ -14,6 +17,7 @@ export function ContentAreaButton({
   icon,
   children,
   variant = 'quaternary',
+  size = 'default',
   className,
   type = 'button',
   ...rest
@@ -29,7 +33,10 @@ export function ContentAreaButton({
           ? styles.bordered
           : variant === 'filled'
             ? styles.filled
-            : styles.quaternary,
+            : variant === 'secondary'
+              ? styles.secondary
+              : styles.quaternary,
+        size === 'small' && styles.small,
         iconOnly && styles.iconOnly,
         className,
       )}

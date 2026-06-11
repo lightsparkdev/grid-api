@@ -17,6 +17,8 @@
   /* Resting card slot: top pad (8) + card height (232). Used to pin the sheet to
      its closed position when it goes absolute (open) so the slide doesn't jump. */
   --card-slot-height: 240px;
+  /* Header strip height — the body underlaps it by this much (scroll-under). */
+  --wallet-header-height: 56px;
 
   :global([data-theme='dark']) & {
     /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
@@ -82,7 +84,7 @@
   position: relative;
   z-index: 2;
   flex-shrink: 0;
-  height: 56px;
+  height: var(--wallet-header-height);
   padding: 8px 24px;
   box-sizing: border-box;
 }
@@ -117,12 +119,16 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* The debit card's top drop shadow bleeds ~16px above its box; lift the scroll
-     clip box and pad it back so the shadow paints (net layout unchanged). */
-  margin-top: -16px;
-  padding-top: 16px;
+  /* Long content (a growing Activity list) runs off the bottom — no scrolling
+     yet, matching card-home. Flip to `overflow-y: auto` to enable page scroll:
+     the underlap below already starts the scroll clip box at the header's top,
+     so content would scroll under the glass header buttons (z 2 > 1). */
+  overflow: hidden;
+  /* Underlap the full header strip and pad it back (net layout unchanged) — the
+     debit card's ~16px top drop-shadow bleed paints inside the padding,
+     unclipped. */
+  margin-top: calc(-1 * var(--wallet-header-height));
+  padding-top: var(--wallet-header-height);
 }
 
 .bodyOpen {
@@ -177,18 +183,23 @@
 
 .sheetWrap {
   display: flex;
-  flex: 1;
+  /* Grow with content, never shrink below it: a long Activity list extends the
+     sheet past the viewport and the body page-scrolls it (like card-home). */
+  flex: 1 0 auto;
   flex-direction: column;
-  min-height: 0;
   will-change: transform;
 }
 
 /* While the card is open the sheet leaves the flex flow (pinned to its resting
    slot) so the card area can take the full height and carry to center without the
-   sheet stealing space. It still translates straight down from the same spot. */
+   sheet stealing space. It still translates straight down from the same spot.
+   The top inset matches .body's padding-top: absolute inset is measured from the
+   body's padding BOX (lifted by the underlap margin), while the resting flow
+   position starts at the content box — inset: 0 teleported the sheet up by the
+   underlap on the render that started the slide. */
 .sheetWrapOpen {
   position: absolute;
-  inset: 0;
+  inset: var(--wallet-header-height) 0 0;
   z-index: 1;
   flex: none;
   padding-top: var(--card-slot-height);

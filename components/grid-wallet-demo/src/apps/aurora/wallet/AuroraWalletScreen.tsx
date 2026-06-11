@@ -12,7 +12,7 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import { AddMoneySheet, formatUsdCents } from './AddMoneySheet';
+import { AddMoneySheet, formatUsdCents, type MoneySheetMode } from './AddMoneySheet';
 import { BalanceHero } from './BalanceHero';
 import { CardHomeContent } from './CardHomeContent';
 import { CreatingCaption, IntroContent, ReadyContent } from './CardIssuanceContent';
@@ -50,9 +50,10 @@ const TAP_TX: Omit<WalletListItemData, 'id' | 'timestamp'> = {
   amount: '$7.32',
 };
 
-// Insert the Activity row a beat after the Add money sheet has dismissed, so the
-// slide-down insert is visible on the settled wallet (same beat as tap-to-pay).
-const ADD_INSERT_DELAY_MS = 700;
+// Insert the Activity row a beat after the Add money / Withdraw sheet has
+// dismissed, so the slide-down insert is visible on the settled wallet (same
+// beat as tap-to-pay).
+const SHEET_INSERT_DELAY_MS = 700;
 
 /** "$5,000.00" → cents. */
 function parseCents(formatted: string): number {
@@ -100,13 +101,20 @@ export function AuroraWalletScreen({
   const [tapPhase, setTapPhase] = useState<TapPhase>('idle');
   const [transactions, setTransactions] = useState<WalletListItemData[]>([]);
 
-  // Add money flow: sheet + Face ID confirm + local balance/activity bookkeeping.
-  const [addOpen, setAddOpen] = useState(false);
-  const [addConfirming, setAddConfirming] = useState(false);
-  const [addedCents, setAddedCents] = useState(0);
+  // Add money / Withdraw flow: ONE mode-switched sheet + Face ID confirm +
+  // local balance/activity bookkeeping (deltaCents = net adds − withdrawals).
+  const [sheetMode, setSheetMode] = useState<MoneySheetMode>('add');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetConfirming, setSheetConfirming] = useState(false);
+  const [deltaCents, setDeltaCents] = useState(0);
   const [activity, setActivity] = useState<WalletListItemData[]>([]);
-  const pendingAddCents = useRef(0);
-  const displayBalance = formatUsdCents(parseCents(balance) + addedCents);
+  const pendingCents = useRef(0);
+  const availableCents = parseCents(balance) + deltaCents;
+
+  const openSheet = (mode: MoneySheetMode) => {
+    setSheetMode(mode);
+    setSheetOpen(true);
+  };
 
   const isOpen = cardView !== 'closed';
   const isIssuance = cardView === 'intro' || cardView === 'creating' || cardView === 'ready';
@@ -154,40 +162,43 @@ export function AuroraWalletScreen({
 
   const openCard = () => setCardView(issued ? 'home' : 'intro');
 
-  // Add money confirmed (Face ID done): dismiss the sheet, bump the balance, and
-  // drop the Activity row in once the wallet has settled (visible insert).
-  const addInsertTimer = useRef(0);
-  const finishAdd = () => {
-    const cents = pendingAddCents.current;
-    setAddConfirming(false);
-    setAddOpen(false);
-    setAddedCents((c) => c + cents);
-    window.clearTimeout(addInsertTimer.current);
-    addInsertTimer.current = window.setTimeout(() => {
+  // Add/Withdraw confirmed (Face ID done): dismiss the sheet, move the balance
+  // (signed), and drop the Activity row in once the wallet has settled (visible
+  // insert).
+  const sheetInsertTimer = useRef(0);
+  const finishTransfer = () => {
+    const cents = pendingCents.current;
+    const withdraw = sheetMode === 'withdraw';
+    setSheetConfirming(false);
+    setSheetOpen(false);
+    setDeltaCents((c) => c + (withdraw ? -cents : cents));
+    window.clearTimeout(sheetInsertTimer.current);
+    sheetInsertTimer.current = window.setTimeout(() => {
       // Figma 90:13701 — bank as the title, MX flag as the graphic.
       setActivity((prev) => [
         {
-          id: `add-${Date.now()}`,
+          id: `${sheetMode}-${Date.now()}`,
           image: '/assets/add-money/flag-mx.svg',
           title: 'Banorte (•••• 3872)',
-          detail: 'Added to balance',
-          amount: `+${formatUsdCents(cents)}`,
+          // Outgoing money shows the plain amount — only incoming gets the "+".
+          detail: withdraw ? 'Withdrawn from balance' : 'Added to balance',
+          amount: withdraw ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
           timestamp: Date.now(),
         },
         ...prev,
       ]);
-    }, ADD_INSERT_DELAY_MS);
+    }, SHEET_INSERT_DELAY_MS);
   };
-  useEffect(() => () => window.clearTimeout(addInsertTimer.current), []);
+  useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
 
   // Face ID renders in AppShell's overlay layer (above the status bar) so its
   // progressive blur frosts the status bar too; falls back to an in-screen layer
-  // when rendered outside an AppShell. Shared by tap-to-pay and Add money.
+  // when rendered outside an AppShell. Shared by tap-to-pay and the money sheet.
   const faceIdAuth = (
     <FaceIdAuth
-      active={tapPhase === 'auth' || addConfirming}
+      active={tapPhase === 'auth' || sheetConfirming}
       onDone={() => {
-        if (addConfirming) finishAdd();
+        if (sheetConfirming) finishTransfer();
         else setTapPhase('done');
       }}
     />
@@ -323,10 +334,10 @@ export function AuroraWalletScreen({
           transition={SHEET_SLIDE}
         >
           <WalletSheet dismissed={isOpen}>
-            <BalanceHero balance={displayBalance} />
+            <BalanceHero balance={formatUsdCents(availableCents)} />
             <WalletActions
-              onAdd={() => setAddOpen(true)}
-              onWithdraw={onWithdraw}
+              onAdd={() => openSheet('add')}
+              onWithdraw={() => openSheet('withdraw')}
               onSend={onSend}
             />
             <WalletInsightCards {...insights} />
@@ -340,9 +351,10 @@ export function AuroraWalletScreen({
                   using your wallet
                 </>
               }
-              cta={{ label: 'Add money', onClick: () => setAddOpen(true) }}
+              cta={{ label: 'Add money', onClick: () => openSheet('add') }}
               items={activity}
               concentricBottom
+              grow
             />
           </WalletSheet>
         </motion.div>
@@ -402,15 +414,17 @@ export function AuroraWalletScreen({
         </AnimatePresence>
       </motion.div>
 
-      {/* Add money — three-step sheet; Confirm hands off to the Face ID overlay. */}
+      {/* Add money / Withdraw — one mode-switched three-step sheet; Confirm
+          hands off to the Face ID overlay. */}
       <AddMoneySheet
-        open={addOpen}
-        balance={displayBalance}
-        confirming={addConfirming}
-        onDismiss={() => setAddOpen(false)}
+        open={sheetOpen}
+        mode={sheetMode}
+        availableCents={availableCents}
+        confirming={sheetConfirming}
+        onDismiss={() => setSheetOpen(false)}
         onConfirm={(cents) => {
-          pendingAddCents.current = cents;
-          setAddConfirming(true);
+          pendingCents.current = cents;
+          setSheetConfirming(true);
         }}
       />
 

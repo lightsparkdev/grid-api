@@ -9,8 +9,8 @@
   min-height: 0;
 }
 
-/* Card-home transactions grow with content past the available height — the long
-   list just runs off the bottom of the screen (no scrolling for now). */
+/* Grow with content past the available height (wallet Activity, card-home
+   transactions) — a long list extends the column and the page scrolls. */
 .sectionGrow {
   flex: 1 0 auto;
 }

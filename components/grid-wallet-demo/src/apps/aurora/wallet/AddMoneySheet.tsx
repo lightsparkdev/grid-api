@@ -4,8 +4,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
+import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import NumericText from '@/components/NumericText';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -51,42 +53,88 @@ const REGION_EXIT = {
 };
 const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
 
-const STEP_TITLES: Record<Step, string> = {
-  source: 'Add money from',
-  amount: 'Enter amount',
-  confirm: 'Confirm add',
+export type MoneySheetMode = 'add' | 'withdraw';
+
+interface SourceRow {
+  id: string;
+  /** SVG asset graphic — most rows. */
+  icon?: string;
+  /** central-icons glyph (e.g. IconWallet1) — wins over `icon` when set. */
+  Icon?: typeof IconWallet1;
+  title: string;
+  sub: string;
+  speed: string;
+}
+
+const BANK_SOURCE: SourceRow = {
+  id: 'bank',
+  icon: '/assets/add-money/IconBank.svg',
+  title: 'Bank account',
+  sub: 'Local transfer in 65+ countries',
+  speed: 'Instant',
 };
 
-const SOURCES = [
+/** Per-mode copy + source rows; everything else in the flow is shared. */
+const MODES: Record<
+  MoneySheetMode,
   {
-    id: 'bank',
-    icon: '/assets/add-money/IconBank.svg',
-    title: 'Bank account',
-    sub: 'Local transfer in 65+ countries',
-    speed: 'Instant',
+    titles: Record<Step, string>;
+    sources: SourceRow[];
+    /** Confirm-step details card rows (label, value). */
+    details: Array<[string, string]>;
+  }
+> = {
+  add: {
+    titles: { source: 'Add money from', amount: 'Enter amount', confirm: 'Confirm add' },
+    sources: [
+      BANK_SOURCE,
+      {
+        id: 'crypto',
+        icon: '/assets/add-money/IconWallet2.svg',
+        title: 'Crypto wallet',
+        sub: 'Spark, Solana, Base address',
+        speed: 'Instant',
+      },
+      {
+        id: 'cashapp',
+        icon: '/assets/add-money/IconCash.svg',
+        title: 'Cash App',
+        sub: 'Use your Cash App balance',
+        speed: 'Instant',
+      },
+      {
+        id: 'applepay',
+        icon: '/assets/add-money/IconApple.svg',
+        title: 'Apple Pay',
+        sub: 'Use Apple Wallet',
+        speed: 'Instant',
+      },
+    ],
+    details: [
+      ['Fee', '$0.60'],
+      ['Conversion rate', '1 MXN = 0.06 USD'],
+      ['Arrives', 'Instantly'],
+    ],
   },
-  {
-    id: 'crypto',
-    icon: '/assets/add-money/IconWallet2.svg',
-    title: 'Crypto wallet',
-    sub: 'Spark, Solana, Base address',
-    speed: 'Instant',
+  withdraw: {
+    titles: { source: 'Withdraw to', amount: 'Enter amount', confirm: 'Confirm withdrawal' },
+    sources: [
+      BANK_SOURCE,
+      {
+        id: 'crypto',
+        Icon: IconWallet1,
+        title: 'Crypto wallet',
+        sub: 'Spark, Solana, Base address',
+        speed: 'Instant',
+      },
+    ],
+    details: [
+      ['Fee', '$0.60'],
+      ['Conversion rate', '1 USD = 17.91 MXN'],
+      ['Arrives in bank', 'Instantly'],
+    ],
   },
-  {
-    id: 'cashapp',
-    icon: '/assets/add-money/IconCash.svg',
-    title: 'Cash App',
-    sub: 'Use your Cash App balance',
-    speed: 'Instant',
-  },
-  {
-    id: 'applepay',
-    icon: '/assets/add-money/IconApple.svg',
-    title: 'Apple Pay',
-    sub: 'Use Apple Wallet',
-    speed: 'Instant',
-  },
-];
+};
 
 const KEYPAD: Array<Array<string>> = [
   ['1', '2', '3'],
@@ -116,8 +164,10 @@ export function formatUsdCents(cents: number): string {
 
 interface AddMoneySheetProps {
   open: boolean;
-  /** Formatted current cash balance, e.g. "$0.00". */
-  balance: string;
+  /** Direction of the flow — flips titles, source rows, card order, and copy. */
+  mode: MoneySheetMode;
+  /** Live cash balance (cents) — displayed, and the withdraw over-balance cap. */
+  availableCents: number;
   /** Face ID running — Confirm shows a spinner and input locks. */
   confirming: boolean;
   onDismiss: () => void;
@@ -129,10 +179,13 @@ interface AddMoneySheetProps {
  * Figma 109:29870 / 2143:39402 / 2143:38851 — the three-step "Add money" sheet:
  * source list → amount entry (custom keypad, typeable) → confirm + Face ID.
  * Solid (non-frosted) near-full-height sheet; steps push right-to-left.
+ * `mode="withdraw"` reuses the whole flow in reverse: bank-only destinations,
+ * balance card on top, and an over-balance check on Continue.
  */
 export function AddMoneySheet({
   open,
-  balance,
+  mode,
+  availableCents,
   confirming,
   onDismiss,
   onConfirm,
@@ -140,6 +193,8 @@ export function AddMoneySheet({
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
+  const { titles, sources, details } = MODES[mode];
+  const balance = formatUsdCents(availableCents);
   const [step, setStep] = useState<Step>('source');
   const [back, setBack] = useState(false); // direction of the last nav
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
@@ -148,16 +203,25 @@ export function AddMoneySheet({
   const quoteTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
-  // Fresh flow every open.
-  useEffect(() => {
+  // Fresh flow every open — reset DURING render (derive-state-on-prop-change),
+  // not in an effect: BottomSheet unmounts the content when closed but this
+  // component's state survives, so an effect reset lands a frame AFTER the
+  // reopened sheet paints with the stale step — and that deferred confirm →
+  // source change played its horizontal push while the sheet rose.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setStep('source');
       setBack(false);
       setRaw('');
       setStarted(false);
       setQuoting(false);
-      window.clearTimeout(quoteTimer.current);
     }
+  }
+  // Timer cleanup stays in effects (clearing during render isn't render-pure).
+  useEffect(() => {
+    if (open) window.clearTimeout(quoteTimer.current);
   }, [open]);
   useEffect(() => () => window.clearTimeout(quoteTimer.current), []);
 
@@ -166,14 +230,14 @@ export function AddMoneySheet({
     setStep(next);
   };
 
-  // Swift's ShakeEffect (8px x sin over 0.4s linear, three half-cycles) —
+  // Swift's ShakeEffect (8px x sin, three half-cycles), tightened to 0.28s —
   // invalid amount on Continue, or a keypress past the cap.
   const shakeAmount = () => {
     if (reduceMotion || !amountScope.current) return;
     animateAmount(
       amountScope.current,
       { x: [0, 8, -8, 8, 0] },
-      { duration: 0.4, ease: 'linear' },
+      { duration: 0.28, ease: 'linear' },
     );
   };
 
@@ -216,12 +280,21 @@ export function AddMoneySheet({
 
   const cents = typedToCents(raw);
 
+  // "Use max" (withdraw) — fill the typed amount with the exact balance. The
+  // forced ".00" renders as typed (solid) cents, same as keying them in.
+  const useMax = () => {
+    if (confirming) return;
+    setStarted(true);
+    setRaw((availableCents / 100).toFixed(2));
+  };
+
   // Continue is always active (Swift parity): an invalid amount errors out with
   // a shake on the amount instead of a disabled button. A valid amount "creates
-  // a quote": the CTA spins for a beat before the confirm step.
+  // a quote": the CTA spins for a beat before the confirm step. Withdrawals
+  // also can't exceed the cash balance — over-balance shakes (typing doesn't).
   const tryContinue = () => {
     if (confirming || quoting) return;
-    if (cents > 0) {
+    if (cents > 0 && (mode === 'add' || cents <= availableCents)) {
       setQuoting(true);
       window.clearTimeout(quoteTimer.current);
       quoteTimer.current = window.setTimeout(() => {
@@ -294,6 +367,62 @@ export function AddMoneySheet({
           typed: fracTyped,
           ghost: hasDot ? '0'.repeat(Math.max(0, 2 - fracTyped.length)) : '',
         };
+
+  // Amount-step cards: bank ⇄ cash balance. The TOP card is the money's source
+  // (bank when adding, balance when withdrawing) and carries the amount input;
+  // the bottom card is the destination — so the rows swap slots with the mode.
+  const bankRow = (
+    <div className={styles.sourceRowStatic}>
+      <span className={styles.tile} aria-hidden>
+        <img
+          className={styles.flagIcon}
+          src="/assets/add-money/flag-mx.svg"
+          alt=""
+          draggable={false}
+        />
+      </span>
+      <span className={styles.sourceLabels}>
+        <span className={styles.rowTitle}>Banorte (•••• 3872)</span>
+        <span className={styles.rowSub}>MXN bank account</span>
+      </span>
+    </div>
+  );
+  const balanceRow = (
+    <div className={styles.sourceRowStatic}>
+      <span className={styles.tile} aria-hidden>
+        <img
+          className={styles.tileIcon}
+          src="/assets/add-money/IconDollar.svg"
+          alt=""
+          draggable={false}
+        />
+      </span>
+      <span className={styles.sourceLabels}>
+        <span className={styles.rowTitle}>Cash balance</span>
+        <span className={styles.rowSub}>{balance}</span>
+      </span>
+      {/* Figma 109:29074 — small "Use max" chip on the withdraw amount step;
+          fades out (row persists) when the layout pushes to confirm. */}
+      {mode === 'withdraw' && (
+        <AnimatePresence initial={false}>
+          {step === 'amount' && (
+            <motion.span
+              key="use-max"
+              className={styles.useMax}
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={SWAP_TRANSITION}
+            >
+              <ContentAreaButton variant="secondary" size="small" onClick={useMax}>
+                Use max
+              </ContentAreaButton>
+            </motion.span>
+          )}
+        </AnimatePresence>
+      )}
+    </div>
+  );
 
   // iOS push: forward = in from the right / out to the left; back = reverse.
   // Variants + `custom` (not inline objects): an EXITING screen never re-renders,
@@ -382,14 +511,14 @@ export function AddMoneySheet({
                   transition={STEP_TRANSITION}
                 >
                   {step === 'source' ? (
-                    STEP_TITLES.source
+                    titles.source
                   ) : (
                     <TextMorph
                       as="span"
                       duration={MORPH_MS}
                       ease={cubicBezierCss(easeOutSwift)}
                     >
-                      {STEP_TITLES[step]}
+                      {titles[step]}
                     </TextMorph>
                   )}
                 </motion.span>
@@ -413,7 +542,7 @@ export function AddMoneySheet({
               >
                 <div className={styles.sourceWrap}>
                   <div className={clsx(styles.card, styles.cardFlush)}>
-                    {SOURCES.map((s, i) => (
+                    {sources.map((s, i) => (
                       <button
                         key={s.id}
                         type="button"
@@ -421,12 +550,16 @@ export function AddMoneySheet({
                         onClick={() => s.id === 'bank' && go('amount')}
                       >
                         <span className={styles.tile} aria-hidden>
-                          <img className={styles.tileIcon} src={s.icon} alt="" draggable={false} />
+                          {s.Icon ? (
+                            <s.Icon size={24} className={styles.tileGlyph} />
+                          ) : (
+                            <img className={styles.tileIcon} src={s.icon} alt="" draggable={false} />
+                          )}
                         </span>
                         <span
                           className={clsx(
                             styles.sourceContent,
-                            i < SOURCES.length - 1 && styles.sourceContentBordered,
+                            i < sources.length - 1 && styles.sourceContentBordered,
                           )}
                         >
                           <span className={styles.sourceLabels}>
@@ -460,20 +593,7 @@ export function AddMoneySheet({
                 <div className={styles.amountLayout}>
                   <div className={styles.cardStack}>
                     <div className={clsx(styles.card, styles.amountCard)}>
-                      <div className={styles.sourceRowStatic}>
-                        <span className={styles.tile} aria-hidden>
-                          <img
-                            className={styles.flagIcon}
-                            src="/assets/add-money/flag-mx.svg"
-                            alt=""
-                            draggable={false}
-                          />
-                        </span>
-                        <span className={styles.sourceLabels}>
-                          <span className={styles.rowTitle}>Banorte (•••• 3872)</span>
-                          <span className={styles.rowSub}>MXN bank account</span>
-                        </span>
-                      </div>
+                      {mode === 'add' ? bankRow : balanceRow}
                       <div className={styles.amountInput}>
                         <p ref={amountScope} className={styles.amountValue}>
                           <span
@@ -507,20 +627,7 @@ export function AddMoneySheet({
                       <SfSymbol name="chevron.down" size={14} />
                     </span>
                     <div className={styles.card}>
-                      <div className={styles.sourceRowStatic}>
-                        <span className={styles.tile} aria-hidden>
-                          <img
-                            className={styles.tileIcon}
-                            src="/assets/add-money/IconDollar.svg"
-                            alt=""
-                            draggable={false}
-                          />
-                        </span>
-                        <span className={styles.sourceLabels}>
-                          <span className={styles.rowTitle}>Cash balance</span>
-                          <span className={styles.rowSub}>{balance}</span>
-                        </span>
-                      </div>
+                      {mode === 'add' ? balanceRow : bankRow}
                     </div>
                   </div>
 
@@ -561,18 +668,18 @@ export function AddMoneySheet({
                       >
                         <div className={clsx(styles.card, styles.detailsCard)}>
                           <div className={styles.detailRows}>
-                            <div className={clsx(styles.detailRow, styles.detailRowBordered)}>
-                              <span className={styles.detailLabel}>Fee</span>
-                              <span className={styles.detailValue}>$0.60</span>
-                            </div>
-                            <div className={clsx(styles.detailRow, styles.detailRowBordered)}>
-                              <span className={styles.detailLabel}>Conversion rate</span>
-                              <span className={styles.detailValue}>1 MXN = 0.06 USD</span>
-                            </div>
-                            <div className={styles.detailRow}>
-                              <span className={styles.detailLabel}>Arrives</span>
-                              <span className={styles.detailValue}>Instantly</span>
-                            </div>
+                            {details.map(([label, value], i) => (
+                              <div
+                                key={label}
+                                className={clsx(
+                                  styles.detailRow,
+                                  i < details.length - 1 && styles.detailRowBordered,
+                                )}
+                              >
+                                <span className={styles.detailLabel}>{label}</span>
+                                <span className={styles.detailValue}>{value}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </motion.div>

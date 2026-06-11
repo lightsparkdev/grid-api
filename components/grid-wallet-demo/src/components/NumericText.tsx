@@ -235,6 +235,13 @@ export default function NumericText({
     return base;
   }, [formatter, value, hasFraction, fraction]);
 
+  // Layout-projection gate: columns only re-measure when the rendered glyphs
+  // actually change. Without it, ANY ancestor layout shift on an unrelated
+  // re-render (e.g. the wallet sheet re-pinning for the issuance flip) gets
+  // "animated" by every column's private spring, desyncing the number from the
+  // surrounding transition.
+  const layoutKey = slots.map((s) => s.key + s.char).join('\u0001');
+
   const ariaLabel = React.useMemo(() => {
     if (!fraction) return formatter.format(value);
     const dec = fraction.hasDot ? `.${fraction.typed}${fraction.ghost}` : '';
@@ -300,6 +307,7 @@ export default function NumericText({
             <motion.span
               key={slot.key}
               layout="position"
+              layoutDependency={layoutKey}
               aria-hidden
               className={slot.ghost ? ghostClassName : undefined}
               style={colStyle}
