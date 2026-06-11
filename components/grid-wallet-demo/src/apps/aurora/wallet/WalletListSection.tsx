@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import clsx from 'clsx';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { WalletListCard } from './WalletListCard';
 import type { WalletListItemData } from './WalletListItem';
@@ -16,6 +17,8 @@ interface WalletListSectionProps {
   concentricBottom?: boolean;
   /** Real rows; when present the card renders them instead of the empty state. */
   items?: WalletListItemData[];
+  /** Make the list scroll (and grow with content) within the available height. */
+  scroll?: boolean;
 }
 
 /**
@@ -29,12 +32,14 @@ export function WalletListSection({
   cta,
   concentricBottom = false,
   items,
+  scroll = false,
 }: WalletListSectionProps) {
   return (
-    <section className={styles.section} aria-label={title}>
+    <section className={clsx(styles.section, scroll && styles.sectionScroll)} aria-label={title}>
       <h2 className={styles.title}>{title}</h2>
       <WalletListCard
         concentricBottom={concentricBottom}
+        grow={scroll}
         items={items}
         emptyTitle={emptyTitle}
         emptySub={emptySub}

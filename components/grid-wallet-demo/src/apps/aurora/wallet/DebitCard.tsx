@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { motion, useAnimate, useReducedMotion } from 'motion/react';
 import { TextMorph } from 'torph/react';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
@@ -43,6 +43,7 @@ export function DebitCard({
   const cardClip = useSquircleClip<HTMLButtonElement>({
     radiusVar: '--corner-radius-debit-card-squircle',
   });
+  const borderGradientId = `debit-card-border-${useId().replace(/:/g, '')}`;
 
   const handleClick = async () => {
     if (!interactive || !onOpen || opening) return;
@@ -137,7 +138,20 @@ export function DebitCard({
             preserveAspectRatio="none"
             aria-hidden
           >
-            <path d={cardClip.path} fill="none" stroke="rgba(255, 255, 255, 1)" strokeWidth={1} />
+            <defs>
+              {/* Diagonal stroke: 100% at both ends, dipping to 30% in the middle. */}
+              <linearGradient id={borderGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fff" stopOpacity="1" />
+                <stop offset="50%" stopColor="#fff" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#fff" stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <path
+              d={cardClip.path}
+              fill="none"
+              stroke={`url(#${borderGradientId})`}
+              strokeWidth={1}
+            />
           </svg>
         )}
       </button>

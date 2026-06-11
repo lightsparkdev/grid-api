@@ -16,6 +16,12 @@ interface CardHomeContentProps {
 export function CardHomeContent({ transactions, onTapToPay }: CardHomeContentProps) {
   return (
     <>
+      <div className={styles.walletBtnWrap}>
+        <button type="button" className={styles.walletBtn} onClick={onTapToPay}>
+          <span className={styles.walletLabel}>Tap to pay</span>
+          <IconNfc1 className={styles.walletIcon} size={20} aria-hidden />
+        </button>
+      </div>
       <WalletListSection
         title="Transactions"
         emptyTitle="Nothing here, yet"
@@ -27,13 +33,9 @@ export function CardHomeContent({ transactions, onTapToPay }: CardHomeContentPro
           </>
         }
         items={transactions}
+        concentricBottom
+        scroll
       />
-      <div className={styles.walletBtnWrap}>
-        <button type="button" className={styles.walletBtn} onClick={onTapToPay}>
-          <IconNfc1 className={styles.walletIcon} size={20} aria-hidden />
-          <span className={styles.walletLabel}>Tap to pay</span>
-        </button>
-      </div>
     </>
   );
 }

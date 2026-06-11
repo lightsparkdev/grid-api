@@ -36,10 +36,16 @@
 .wallet {
   position: relative;
   z-index: 1;
-  width: 116px;
+  /* 656×512 source; 126px wide ≈ 98px tall (~8px taller than the prior 116px/90px). */
+  width: 126px;
   height: auto;
   pointer-events: none;
   user-select: none;
+
+  /* Same (light) artwork on dark, dimmed so it settles into the dark background. */
+  :global([data-theme='dark']) & {
+    opacity: 0.6;
+  }
 }
 
 /* Figma 2145:45344 — px 40, gap 16, Title2 + Footnote. */
@@ -65,21 +71,18 @@
 .title {
   margin: 0;
   @include ios.ios-text-title-2;
-  letter-spacing: -0.26px;
   color: var(--ios-label-primary);
 }
 
 .tagline {
   margin: 0;
   @include ios.ios-text-title-2;
-  letter-spacing: -0.26px;
   color: var(--ios-label-secondary);
 }
 
 .description {
   margin: 0;
   @include ios.ios-text-footnote;
-  letter-spacing: -0.08px;
   color: var(--ios-label-secondary);
   text-wrap: balance;
 }

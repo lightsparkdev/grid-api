@@ -33,6 +33,8 @@ interface WalletListCardProps {
   concentricBottom?: boolean;
   /** Real rows to render; falls back to the skeleton + empty state when absent. */
   items?: WalletListItemData[];
+  /** Grow with content (so a scrolling parent scrolls) instead of fill + clip. */
+  grow?: boolean;
 }
 
 /**
@@ -46,6 +48,7 @@ export function WalletListCard({
   cta,
   concentricBottom = false,
   items,
+  grow = false,
 }: WalletListCardProps) {
   const reduceMotion = useReducedMotion();
   const hasItems = !!items && items.length > 0;
@@ -104,9 +107,17 @@ export function WalletListCard({
   return (
     <div
       ref={wrapRef}
-      className={clsx(styles.cardWrap, concentricBottom && styles.cardWrapInsetBottom)}
+      className={clsx(
+        styles.cardWrap,
+        concentricBottom && styles.cardWrapInsetBottom,
+        grow && styles.cardWrapGrow,
+      )}
     >
-      <div ref={cardClip.ref} style={cardClip.style} className={styles.card}>
+      <div
+        ref={cardClip.ref}
+        style={cardClip.style}
+        className={clsx(styles.card, grow && styles.cardGrow)}
+      >
         {hasItems ? (
           <div className={styles.items}>
             {(items ?? []).map((item, i) => (
