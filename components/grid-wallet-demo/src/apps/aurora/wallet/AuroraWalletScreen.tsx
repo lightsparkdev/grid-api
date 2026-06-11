@@ -39,11 +39,10 @@ const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
 
 // Figma 2143:41027 — the transaction a tap-to-pay run drops into the list.
-const TAP_TX: Omit<WalletListItemData, 'id'> = {
+const TAP_TX: Omit<WalletListItemData, 'id' | 'timestamp'> = {
   Icon: IconHotDrinkCup,
   title: 'Blue Bottle Coffee',
   detail: 'Tap to Pay',
-  time: 'Just now',
   amount: '$7.32',
 };
 
@@ -114,7 +113,10 @@ export function AuroraWalletScreen({
   useEffect(() => {
     if (tapPhase !== 'done') return;
     const t = window.setTimeout(() => {
-      setTransactions((prev) => [{ ...TAP_TX, id: `tap-${Date.now()}` }, ...prev]);
+      setTransactions((prev) => [
+        { ...TAP_TX, id: `tap-${Date.now()}`, timestamp: Date.now() },
+        ...prev,
+      ]);
       setTapPhase('idle');
     }, TAP_DONE_MS);
     return () => window.clearTimeout(t);
@@ -221,7 +223,15 @@ export function AuroraWalletScreen({
             cardView === 'creating' && styles.cardAreaCreating,
           )}
         >
-          <motion.div layout={!reduceMotion} className={styles.cardCarry} transition={CARD_TRANSITION}>
+          {/* layout is OFF during tap-to-pay: the body is transform-lifted then, and
+              a re-render mid-lift (e.g. Face ID mounting at the 'auth' flip) makes
+              the layout measurement see the shifted position and "correct" it — a
+              visible card jump. The card never changes slots during tap anyway. */}
+          <motion.div
+            layout={!reduceMotion && !isTap}
+            className={styles.cardCarry}
+            transition={CARD_TRANSITION}
+          >
             <motion.div
               className={styles.cardScale}
               initial={false}

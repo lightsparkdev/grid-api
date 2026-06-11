@@ -159,10 +159,11 @@
   padding: 8px 16px;
 }
 
-/* Figma 2219:48842 — card + "Creating..." caption, gap 12, lifted with pb 48. */
+/* Figma 2219:48842 — card + "Creating..." caption, gap 12. The centered content
+   sits up by half this padding: 96px ⇒ 48px above true center. */
 .cardAreaCreating {
   gap: 12px;
-  padding-bottom: 48px;
+  padding-bottom: 96px;
 }
 
 .cardCarry {

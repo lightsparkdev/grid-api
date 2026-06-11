@@ -42,8 +42,10 @@ export function IntroContent({ onCreate }: { onCreate?: () => void }) {
         </motion.div>
         <motion.p {...reveal(1)} className={styles.agreement}>
           By tapping &ldquo;Create card&rdquo; you accept the{' '}
-          <span className={styles.agreementStrong}>Terms of Service &amp; Privacy Policy</span> and{' '}
-          <span className={styles.agreementStrong}>Card Holder Agreement &amp; Privacy Policy</span>
+          <span className={styles.agreementStrong}>Terms of Service</span> &amp;{' '}
+          <span className={styles.agreementStrong}>Privacy Policy</span> and{' '}
+          <span className={styles.agreementStrong}>Card Holder Agreement</span> &amp;{' '}
+          <span className={styles.agreementStrong}>Privacy Policy</span>
         </motion.p>
       </div>
       <motion.div {...reveal(2)} className={styles.ctaWrap}>

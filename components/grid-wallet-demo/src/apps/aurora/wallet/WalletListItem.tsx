@@ -12,13 +12,16 @@ export interface WalletListItemData {
   title: string;
   /** Merchant detail line, e.g. "Tap to Pay". */
   detail: string;
-  /** Relative time, e.g. "Just now". */
-  time: string;
+  /** Epoch ms — rendered as a live relative label ("Just now", "2m ago"…). */
+  timestamp: number;
   /** Formatted amount, e.g. "$7.32". */
   amount: string;
 }
 
-export type WalletListItemProps = Omit<WalletListItemData, 'id'>;
+export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'timestamp'> {
+  /** Pre-formatted relative time label, e.g. "Just now". */
+  time: string;
+}
 
 /**
  * Figma 2143:41027 — one activity/transaction row: a 56px tertiary-fill graphic

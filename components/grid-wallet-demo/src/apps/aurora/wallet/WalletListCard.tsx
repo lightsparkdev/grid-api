@@ -6,7 +6,9 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { useNow } from '@/hooks/useNow';
 import { motionTransition } from '@/lib/easing';
+import { relativeTime } from '@/lib/relativeTime';
 import { WalletListItem, type WalletListItemData } from './WalletListItem';
 import styles from './WalletListCard.module.scss';
 
@@ -52,6 +54,8 @@ export function WalletListCard({
 }: WalletListCardProps) {
   const reduceMotion = useReducedMotion();
   const hasItems = !!items && items.length > 0;
+  // Live "Just now" → "1m ago" → … labels; re-sampled every 30s.
+  const now = useNow();
   const [coverVisible, setCoverVisible] = useState(reduceMotion === true);
   const [contentVisible, setContentVisible] = useState(reduceMotion === true);
 
@@ -131,7 +135,7 @@ export function WalletListCard({
                   Icon={item.Icon}
                   title={item.title}
                   detail={item.detail}
-                  time={item.time}
+                  time={relativeTime(item.timestamp, now)}
                   amount={item.amount}
                 />
               </motion.div>
