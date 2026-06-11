@@ -34,7 +34,7 @@ export function CardHomeContent({ transactions, onTapToPay }: CardHomeContentPro
         }
         items={transactions}
         concentricBottom
-        scroll
+        grow
       />
     </>
   );

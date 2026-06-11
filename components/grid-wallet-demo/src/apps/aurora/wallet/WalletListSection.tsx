@@ -17,8 +17,9 @@ interface WalletListSectionProps {
   concentricBottom?: boolean;
   /** Real rows; when present the card renders them instead of the empty state. */
   items?: WalletListItemData[];
-  /** Make the list scroll (and grow with content) within the available height. */
-  scroll?: boolean;
+  /** Grow with content past the available height (clipped by the screen — no
+   *  scrolling) instead of fill + clip inside the card. */
+  grow?: boolean;
 }
 
 /**
@@ -32,14 +33,14 @@ export function WalletListSection({
   cta,
   concentricBottom = false,
   items,
-  scroll = false,
+  grow = false,
 }: WalletListSectionProps) {
   return (
-    <section className={clsx(styles.section, scroll && styles.sectionScroll)} aria-label={title}>
+    <section className={clsx(styles.section, grow && styles.sectionGrow)} aria-label={title}>
       <h2 className={styles.title}>{title}</h2>
       <WalletListCard
         concentricBottom={concentricBottom}
-        grow={scroll}
+        grow={grow}
         items={items}
         emptyTitle={emptyTitle}
         emptySub={emptySub}

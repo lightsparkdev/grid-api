@@ -9,15 +9,10 @@
   min-height: 0;
 }
 
-/* Card-home transactions scroll within the remaining height when the list is long
-   (scrollbar hidden — this is a phone surface). */
-.sectionScroll {
-  overflow-y: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+/* Card-home transactions grow with content past the available height — the long
+   list just runs off the bottom of the screen (no scrolling for now). */
+.sectionGrow {
+  flex: 1 0 auto;
 }
 
 /* Figma 84:12453 / 2143:40927 — pt 16 px 32, Title3/Emphasized. */
