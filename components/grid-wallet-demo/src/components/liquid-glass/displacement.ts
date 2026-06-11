@@ -202,7 +202,19 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
   const sinA = Math.sin(angle);
   const glowInner = (1 - glowSpread) * Math.SQRT2;
   const glowBand = glowSpread * Math.SQRT2;
+  // Shape auto-detection (the shape is fully present in the inputs, so no flag):
+  // a CAPSULE (uniform corner radius that reaches the half-size — i.e. a circle
+  // or a pill) gets Aave's circle/pill lens model below; anything else keeps the
+  // rounded-rect per-axis model. Aave makes devs declare `shape: "circle"|"rect"`
+  // per lens; we derive it from the geometry instead.
+  const capsule =
+    cornerVal[0] >= minHalf - 0.5 && cornerVal.every((c) => c === cornerVal[0]);
+  const isCircle = capsule && Math.abs(halfW - halfH) < 0.5;
   const dome = domeDepth > 0 ? computeDomeConstants(domeDepth, halfW, halfH) : null;
+  // Circle lens: one dome over the inscribed circle; bend points at the center.
+  // (Per Aave, pills stay linear — the dome applies to circles only.)
+  const domeR =
+    isCircle && domeDepth > 0 ? computeDomeConstants(domeDepth, minHalf, minHalf) : null;
   const splayOn = splayAmount < 1;
   const splayRef = 0.5 * Math.min(halfW, halfH);
   const splayInv = splayRef > 0 ? 1 / splayRef : 0;
@@ -292,7 +304,44 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
       // Bend magnitudes — identical in all four quadrants; only the sign flips.
       let dxm: number;
       let dym: number;
-      if (dome) {
+      if (capsule) {
+        // Capsule (circle/pill) lens — Aave's circle/pill model. Direction
+        // follows the rounded-rect SDF normal: radial in the corner-cap region,
+        // perpendicular to the nearest edge elsewhere. Magnitude is measured
+        // from the shape's medial axis (minHalf + sdf: 0 at the spine → minHalf
+        // at the boundary); per Aave, a CIRCLE domes that distance while pills
+        // keep it linear. On a circle this reduces exactly to (x/r, y/r).
+        const c0 = cornerVal[0];
+        const qx = ax - halfW + c0;
+        const qy = ay - halfH + c0;
+        const ux = Math.max(qx, 0);
+        const uy = Math.max(qy, 0);
+        const cd = Math.sqrt(ux * ux + uy * uy);
+        const sdf = cd + Math.min(Math.max(qx, qy), 0) - c0;
+        let nx: number;
+        let ny: number;
+        if (ux > 0 || uy > 0) {
+          const inv = 1 / Math.max(cd, 1e-6);
+          nx = ux * inv;
+          ny = uy * inv;
+        } else if (qx > qy) {
+          nx = 1;
+          ny = 0;
+        } else {
+          nx = 0;
+          ny = 1;
+        }
+        const dist = Math.max(0, minHalf + sdf);
+        let g: number;
+        if (domeR) {
+          g = domeGradient(dist, domeR.Rx, domeR.scaleX);
+        } else {
+          g = dist / minHalf;
+          if (g > 1) g = 1;
+        }
+        dxm = nx * g;
+        dym = ny * g;
+      } else if (dome) {
         dxm = domeGradient(ax, dome.Rx, dome.scaleX);
         dym = domeGradient(ay, dome.Ry, dome.scaleY);
       } else {
@@ -302,7 +351,9 @@ export function renderDisplacementMap(target: Uint8ClampedArray, opts: Displacem
         if (dym > 1) dym = 1;
       }
 
-      if (splayOn) {
+      // Splay is a rounded-rect readability aid — Aave's capsule lenses never
+      // splay, and flattening a radial bend per-axis would distort it.
+      if (splayOn && !capsule) {
         const flatY = Math.max(0, 1 - (halfH - ay) * splayInv) * (1 - splayAmount);
         const flatX = Math.max(0, 1 - (halfW - ax) * splayInv) * (1 - splayAmount);
         if (flatY > 0.001 || flatX > 0.001) {
