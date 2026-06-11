@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
@@ -36,6 +36,9 @@ const CARD_ISSUANCE_SCALE = 338 / 370;
 const SHEET_OFFSCREEN = 'calc(100% + 224px)';
 const TAP_HOLD_MS = 1200; // Hold Near Reader dwell before Face ID kicks in.
 const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home.
+// Insert the transaction AFTER card-home has re-entered (content settles ~0.7s)
+// so the new row visibly grows in and pushes the list down.
+const TAP_INSERT_DELAY_MS = 900;
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
 
 // Figma 2143:41027 — the transaction a tap-to-pay run drops into the list.
@@ -109,18 +112,26 @@ export function AuroraWalletScreen({
     return () => window.clearTimeout(t);
   }, [tapPhase]);
 
-  // Tap-to-pay: once the Done check lands, drop the transaction in + resolve.
+  // Tap-to-pay: once the Done check lands, resolve back to card-home, THEN drop
+  // the transaction in once the screen has settled — so the new row pushes the
+  // list down instead of already being there. The insert timer lives in a ref:
+  // the effect re-runs on the idle flip, and a cleanup there would kill it.
+  const insertTimer = useRef(0);
   useEffect(() => {
     if (tapPhase !== 'done') return;
     const t = window.setTimeout(() => {
-      setTransactions((prev) => [
-        { ...TAP_TX, id: `tap-${Date.now()}`, timestamp: Date.now() },
-        ...prev,
-      ]);
       setTapPhase('idle');
+      window.clearTimeout(insertTimer.current);
+      insertTimer.current = window.setTimeout(() => {
+        setTransactions((prev) => [
+          { ...TAP_TX, id: `tap-${Date.now()}`, timestamp: Date.now() },
+          ...prev,
+        ]);
+      }, TAP_INSERT_DELAY_MS);
     }, TAP_DONE_MS);
     return () => window.clearTimeout(t);
   }, [tapPhase]);
+  useEffect(() => () => window.clearTimeout(insertTimer.current), []);
 
   const openCard = () => setCardView(issued ? 'home' : 'intro');
 

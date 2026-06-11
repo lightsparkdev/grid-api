@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
-import { motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
@@ -21,10 +21,17 @@ const CONTENT_STAGGER_S = 0.2;
 const hiddenMessage = { opacity: 0, y: 24, filter: 'blur(10px)' };
 const visibleMessage = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
-// Real rows blur/slide in (staggered) when the list populates — e.g. after a tap-to-pay.
-const ITEM_HIDDEN = { opacity: 0, y: 8, filter: 'blur(6px)' };
+// Rows present at mount blur/slide in from above (staggered)…
+const ITEM_HIDDEN = { opacity: 0, y: -12, filter: 'blur(6px)' };
 const ITEM_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 const ITEM_STAGGER_S = 0.06;
+// …while rows added LATER (a finished tap-to-pay) grow from zero height — pushing
+// the list down — as the row content slides DOWN into the opening slot from
+// above (clipped by the wrapper's overflow: hidden).
+const ROW_H = 80; // Figma row height — .row in WalletListItem.module.scss
+const INSERT_HIDDEN = { height: 0, opacity: 0, filter: 'blur(8px)' };
+const INSERT_VISIBLE = { height: ROW_H, opacity: 1, filter: 'blur(0px)' };
+const INSERT_DURATION_S = 0.5;
 
 interface WalletListCardProps {
   emptyTitle: string;
@@ -56,6 +63,22 @@ export function WalletListCard({
   const hasItems = !!items && items.length > 0;
   // Live "Just now" → "1m ago" → … labels; re-sampled every 30s.
   const now = useNow();
+
+  // Track which row ids were present at mount vs added later: mount rows get the
+  // stagger reveal, later rows get the height-grow insert. Ref bookkeeping is
+  // idempotent, so doing it during render is safe.
+  const seenIds = useRef<Set<string> | null>(null);
+  const freshIds = useRef(new Set<string>());
+  if (seenIds.current === null) {
+    seenIds.current = new Set((items ?? []).map((it) => it.id));
+  } else {
+    for (const it of items ?? []) {
+      if (!seenIds.current.has(it.id)) {
+        seenIds.current.add(it.id);
+        freshIds.current.add(it.id);
+      }
+    }
+  }
   const [coverVisible, setCoverVisible] = useState(reduceMotion === true);
   const [contentVisible, setContentVisible] = useState(reduceMotion === true);
 
@@ -122,27 +145,66 @@ export function WalletListCard({
         style={cardClip.style}
         className={clsx(styles.card, grow && styles.cardGrow)}
       >
+        {/* popLayout pops the exiting empty state out of flow, so the first row
+            grows in from the top of the card while the skeleton/message dissolve
+            out underneath it instead of hard-swapping. NO initial={false} here:
+            its presence context would suppress the `initial` of every row that
+            mounts later inside this subtree — killing the insert animation on
+            the second and subsequent tap-to-pays. */}
+        <AnimatePresence mode="popLayout">
         {hasItems ? (
-          <div className={styles.items}>
-            {(items ?? []).map((item, i) => (
-              <motion.div
-                key={item.id}
-                initial={reduceMotion ? false : ITEM_HIDDEN}
-                animate={ITEM_VISIBLE}
-                transition={motionTransition(undefined, 0.4, { delay: i * ITEM_STAGGER_S })}
-              >
-                <WalletListItem
-                  Icon={item.Icon}
-                  title={item.title}
-                  detail={item.detail}
-                  time={relativeTime(item.timestamp, now)}
-                  amount={item.amount}
-                />
-              </motion.div>
-            ))}
+          <div key="items" className={styles.items}>
+            {(items ?? []).map((item, i) => {
+              const fresh = freshIds.current.has(item.id);
+              return (
+                <motion.div
+                  key={item.id}
+                  style={fresh ? { overflow: 'hidden' } : undefined}
+                  initial={reduceMotion ? false : fresh ? INSERT_HIDDEN : ITEM_HIDDEN}
+                  animate={fresh ? INSERT_VISIBLE : ITEM_VISIBLE}
+                  transition={
+                    fresh
+                      ? motionTransition(undefined, INSERT_DURATION_S)
+                      : motionTransition(undefined, 0.4, { delay: i * ITEM_STAGGER_S })
+                  }
+                >
+                  {fresh ? (
+                    // Slide the row down into the slot as it opens.
+                    <motion.div
+                      initial={reduceMotion ? false : { y: -ROW_H }}
+                      animate={{ y: 0 }}
+                      transition={motionTransition(undefined, INSERT_DURATION_S)}
+                    >
+                      <WalletListItem
+                        Icon={item.Icon}
+                        title={item.title}
+                        detail={item.detail}
+                        time={relativeTime(item.timestamp, now)}
+                        amount={item.amount}
+                      />
+                    </motion.div>
+                  ) : (
+                    <WalletListItem
+                      Icon={item.Icon}
+                      title={item.title}
+                      detail={item.detail}
+                      time={relativeTime(item.timestamp, now)}
+                      amount={item.amount}
+                    />
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
-          <div className={styles.cardInner}>
+          <motion.div
+            key="empty"
+            className={styles.cardInner}
+            exit={
+              reduceMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(8px)' }
+            }
+            transition={motionTransition(undefined, 0.35)}
+          >
             <div className={styles.skeletonLayer}>
               <div className={styles.list} aria-hidden>
                 <SkeletonRow bordered />
@@ -172,8 +234,9 @@ export function WalletListCard({
                 {cta}
               </motion.div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </div>
   );
