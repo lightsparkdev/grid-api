@@ -216,12 +216,14 @@
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
 }
 
-/* ── Step 2/3 layout ──────────────────────────────────────────────────────── */
+/* ── Step 2/3 layout ──────────────────────────────────────────────────────────
+   NO flex gap here: a gap next to the swap region would vanish in one frame
+   when the exiting region unmounts (the end-of-transition jump). All vertical
+   rhythm lives on persistent elements or INSIDE the height-animated region. */
 .amountLayout {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 16px;
   min-height: 0;
   padding: 6px 16px 16px;
 }
@@ -231,6 +233,7 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
+  margin-bottom: 16px;
 }
 
 /* Amount card fills the stack; content centers in the remaining space. */
@@ -263,9 +266,15 @@
   color: var(--ios-label-primary);
 }
 
-/* Remaining cent placeholders, dimmed (Swift AnimatedCurrencyText suffix). */
+/* Remaining cent placeholders, dimmed (Swift AnimatedCurrencyText suffix).
+   On confirm the ghost INKS IN to primary — a pure color morph, no text swap. */
 .amountGhost {
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+  transition: color 0.3s ease;
+}
+
+.amountGhostSolid {
+  color: var(--ios-label-primary);
 }
 
 .amountSub {
@@ -290,6 +299,7 @@
   width: 40px;
   height: 40px;
   margin: -12px auto;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
   corner-shape: round;
   background: var(--add-card-bg, var(--ios-bg-primary));
@@ -298,6 +308,7 @@
   --add-card-bg: var(--ios-bg-primary);
 
   :global([data-theme='dark']) & {
+    border-color: rgba(255, 255, 255, 0.1);
     --add-card-bg: var(--ios-bg-secondary);
   }
 }
@@ -305,12 +316,31 @@
 /* ── Keypad — mirrors the Swift NumericKeypad: 48px keys, 4px gaps, 4px screen
    inset (the -12px margin unwinds the layout's 16px), title2 semibold, and a
    0.96 scale press (instant down, 0.2s ease-out release — no fill). ────────── */
+/* Height-animated swap region (keypad ⇄ details): stays in flow, collapses to
+   0 / expands from 0 so the cards above grow through real layout. overflow
+   clips during the collapse; the horizontal bleed lives on the wrapper margin
+   so the keypad's 4px screen inset survives the clipping. */
+.swapRegion {
+  flex-shrink: 0;
+  margin: 0 -12px;
+  overflow: hidden;
+}
+
+/* Bottom rhythm (space to the CTA) lives INSIDE the animated region so it
+   collapses smoothly with the height instead of popping at unmount. */
 .keypad {
   display: grid;
-  flex-shrink: 0;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  margin: 4px -12px;
+  padding: 4px 0 20px;
+}
+
+/* Inside the bled-out swap region: restore the layout's 16px side inset (12px
+   wrapper bleed + 4px); 20px below = the old 16px gap + 4px breathing room.
+   width: auto — the base card's 100% would overflow once margins apply. */
+.detailsCard {
+  width: auto;
+  margin: 0 12px 20px;
 }
 
 .key {
@@ -343,10 +373,6 @@
 }
 
 /* ── Step 3: details + Confirm ────────────────────────────────────────────── */
-.detailsCard {
-  margin-bottom: 4px;
-}
-
 .detailRows {
   display: flex;
   flex-direction: column;
@@ -384,17 +410,18 @@
   font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
 }
 
-/* CTA contents — icon + morphing label inside the blue glass pill. */
+/* CTA contents — icon + morphing label inside the blue glass pill. Spacing
+   lives on the icon's animated margin (not gap), so it collapses with it. */
 .ctaInner {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
 }
 
 .ctaIcon {
   display: inline-flex;
   align-items: center;
+  overflow: hidden;
 }
 
 .spinner {

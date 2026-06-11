@@ -19,18 +19,39 @@ type Step = 'source' | 'amount' | 'confirm';
 const USD_TO_MXN = 17.9074;
 
 const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.28);
-// Card heights/positions re-flow as the keypad leaves (amount ⇄ confirm).
-const LAYOUT_TRANSITION = motionTransition(easeOutSnappy, 0.4);
-// Keypad ⇄ details swap + CTA crossfade inside the persistent transfer layout.
-const SWAP_IN = { opacity: 1, y: 0 };
-const SWAP_OUT = { opacity: 0, y: 24 };
+// Small element swaps (CTA glyph, etc.) inside the persistent transfer layout.
 const SWAP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
 const MORPH_MS = 280;
 
+// Keypad ⇄ details swap by REAL height (no transform-based layout animation):
+// the leaver collapses to 0 while the arriver expands from 0, so the cards above
+// grow through genuine per-frame layout — centered content SLIDES, nothing pops.
+const REGION_ENTER = {
+  height: 'auto' as const,
+  opacity: 1,
+  filter: 'blur(0px)',
+  transition: {
+    height: motionTransition(easeOutSnappy, 0.32),
+    opacity: motionTransition(easeOutSnappy, 0.26, { delay: 0.06 }),
+    filter: motionTransition(easeOutSnappy, 0.26, { delay: 0.06 }),
+  },
+};
+const REGION_EXIT = {
+  height: 0,
+  opacity: 0,
+  filter: 'blur(6px)',
+  transition: {
+    height: motionTransition(easeOutSnappy, 0.32),
+    opacity: motionTransition(easeOutSnappy, 0.2),
+    filter: motionTransition(easeOutSnappy, 0.2),
+  },
+};
+const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
+
 const STEP_TITLES: Record<Step, string> = {
   source: 'Add money from',
-  amount: 'Add money',
-  confirm: 'Add money',
+  amount: 'Enter amount',
+  confirm: 'Confirm add',
 };
 
 const SOURCES = [
@@ -72,18 +93,19 @@ const KEYPAD: Array<Array<string>> = [
 ];
 
 /**
- * Mirrors the Swift KeypadInputModel.amountDisplay: typed text in primary plus
- * the REMAINING cent placeholders as a dim suffix — "1500." → "$1,500." + "00",
- * "1500.5" → "$1,500.5" + "0". "$0" before typing starts.
+ * Typed text in primary plus the rest of the FULL 2-decimal amount as a dim
+ * suffix — "1500" → "$1,500" + ".00", "1500.5" → "$1,500.5" + "0" (the Swift
+ * AnimatedCurrencyText pattern). Because primary+suffix always spell the final
+ * amount, the confirm step just INKS the suffix in — no text swap, no motion.
  */
 function formatTypedParts(raw: string, started: boolean): { primary: string; suffix: string } {
   if (!started || !raw) return { primary: '$0', suffix: '' };
   const [whole, frac] = raw.split('.');
   const grouped = Number(whole || '0').toLocaleString('en-US');
-  if (frac !== undefined) {
-    return { primary: `$${grouped}.${frac}`, suffix: '0'.repeat(Math.max(0, 2 - frac.length)) };
-  }
-  return { primary: `$${grouped}`, suffix: '' };
+  const primary = frac !== undefined ? `$${grouped}.${frac}` : `$${grouped}`;
+  const full = formatUsdCents(typedToCents(raw));
+  const suffix = full.startsWith(primary) ? full.slice(primary.length) : '';
+  return { primary, suffix };
 }
 
 /** Typed amount → cents (for the parent's balance/activity bookkeeping). */
@@ -300,9 +322,11 @@ export function AddMoneySheet({
               </GlassSymbolButton>
             )}
             <h2 className={styles.title}>
+              {/* Slides only across the source ⇄ transfer boundary (shared key
+                  inside transfer); amount ⇄ confirm torph-morphs in place. */}
               <AnimatePresence mode="popLayout" initial={false} custom={navDir}>
                 <motion.span
-                  key={STEP_TITLES[step]}
+                  key={step === 'source' ? 'source' : 'transfer'}
                   custom={navDir}
                   variants={titleVariants}
                   initial="enter"
@@ -310,7 +334,17 @@ export function AddMoneySheet({
                   exit="exit"
                   transition={STEP_TRANSITION}
                 >
-                  {STEP_TITLES[step]}
+                  {step === 'source' ? (
+                    STEP_TITLES.source
+                  ) : (
+                    <TextMorph
+                      as="span"
+                      duration={MORPH_MS}
+                      ease={cubicBezierCss(easeOutSwift)}
+                    >
+                      {STEP_TITLES[step]}
+                    </TextMorph>
+                  )}
                 </motion.span>
               </AnimatePresence>
             </h2>
@@ -378,11 +412,7 @@ export function AddMoneySheet({
                     only the keypad ⇄ details region and the CTA contents swap. */}
                 <div className={styles.amountLayout}>
                   <div className={styles.cardStack}>
-                    <motion.div
-                      layout={!reduceMotion}
-                      transition={LAYOUT_TRANSITION}
-                      className={clsx(styles.card, styles.amountCard)}
-                    >
+                    <div className={clsx(styles.card, styles.amountCard)}>
                       <div className={styles.sourceRowStatic}>
                         <span className={styles.tile} aria-hidden>
                           <img
@@ -399,15 +429,18 @@ export function AddMoneySheet({
                       </div>
                       <div className={styles.amountInput}>
                         <p ref={amountScope} className={styles.amountValue}>
-                          {step === 'amount' ? (
-                            <>
-                              {typedParts.primary}
-                              {typedParts.suffix && (
-                                <span className={styles.amountGhost}>{typedParts.suffix}</span>
+                          {/* primary+suffix always spell the final amount, so the
+                              confirm step only re-colors the ghost — no swap. */}
+                          {typedParts.primary}
+                          {typedParts.suffix && (
+                            <span
+                              className={clsx(
+                                styles.amountGhost,
+                                step === 'confirm' && styles.amountGhostSolid,
                               )}
-                            </>
-                          ) : (
-                            formatUsdCents(cents)
+                            >
+                              {typedParts.suffix}
+                            </span>
                           )}
                         </p>
                         <p className={styles.amountSub}>
@@ -417,20 +450,11 @@ export function AddMoneySheet({
                           )}
                         </p>
                       </div>
-                    </motion.div>
-                    <motion.span
-                      layout={!reduceMotion}
-                      transition={LAYOUT_TRANSITION}
-                      className={styles.chevronDisc}
-                      aria-hidden
-                    >
+                    </div>
+                    <span className={styles.chevronDisc} aria-hidden>
                       <SfSymbol name="chevron.down" size={14} />
-                    </motion.span>
-                    <motion.div
-                      layout={!reduceMotion}
-                      transition={LAYOUT_TRANSITION}
-                      className={styles.card}
-                    >
+                    </span>
+                    <div className={styles.card}>
                       <div className={styles.sourceRowStatic}>
                         <span className={styles.tile} aria-hidden>
                           <img
@@ -445,72 +469,68 @@ export function AddMoneySheet({
                           <span className={styles.rowSub}>{balance}</span>
                         </span>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
 
-                  {/* Keypad ⇄ details card swap (popLayout so the leaver doesn't
-                      hold its space while the cards re-flow). */}
-                  <AnimatePresence mode="popLayout" initial={false}>
+                  {/* Keypad ⇄ details card swap — REAL height animation (see
+                      REGION_* above): both stay in flow, the leaver collapses
+                      while the arriver expands, and the cards above grow through
+                      genuine layout so their content slides instead of popping. */}
+                  <AnimatePresence initial={false}>
                     {step === 'amount' ? (
                       <motion.div
                         key="keypad"
-                        layout={!reduceMotion}
-                        className={styles.keypad}
-                        role="group"
-                        aria-label="Amount keypad"
-                        initial={reduceMotion ? false : SWAP_OUT}
-                        animate={SWAP_IN}
-                        exit={reduceMotion ? { opacity: 0 } : SWAP_OUT}
-                        transition={SWAP_TRANSITION}
+                        className={styles.swapRegion}
+                        initial={reduceMotion ? false : REGION_HIDDEN}
+                        animate={REGION_ENTER}
+                        exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
                       >
-                        {KEYPAD.flat().map((key) => (
-                          <button
-                            key={key}
-                            type="button"
-                            className={styles.key}
-                            aria-label={key === 'del' ? 'Delete' : key}
-                            onClick={() => press(key)}
-                          >
-                            {key === 'del' ? <SfSymbol name="delete.left" size={24} /> : key}
-                          </button>
-                        ))}
+                        <div className={styles.keypad} role="group" aria-label="Amount keypad">
+                          {KEYPAD.flat().map((key) => (
+                            <button
+                              key={key}
+                              type="button"
+                              className={styles.key}
+                              aria-label={key === 'del' ? 'Delete' : key}
+                              onClick={() => press(key)}
+                            >
+                              {key === 'del' ? <SfSymbol name="delete.left" size={24} /> : key}
+                            </button>
+                          ))}
+                        </div>
                       </motion.div>
                     ) : (
                       <motion.div
                         key="details"
-                        layout={!reduceMotion}
-                        className={clsx(styles.card, styles.detailsCard)}
-                        initial={reduceMotion ? false : SWAP_OUT}
-                        animate={SWAP_IN}
-                        exit={reduceMotion ? { opacity: 0 } : SWAP_OUT}
-                        transition={SWAP_TRANSITION}
+                        className={styles.swapRegion}
+                        initial={reduceMotion ? false : REGION_HIDDEN}
+                        animate={REGION_ENTER}
+                        exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
                       >
-                        <div className={styles.detailRows}>
-                          <div className={clsx(styles.detailRow, styles.detailRowBordered)}>
-                            <span className={styles.detailLabel}>Fee</span>
-                            <span className={styles.detailValue}>$0.60</span>
-                          </div>
-                          <div className={clsx(styles.detailRow, styles.detailRowBordered)}>
-                            <span className={styles.detailLabel}>Conversion rate</span>
-                            <span className={styles.detailValue}>1 MXN = 0.06 USD</span>
-                          </div>
-                          <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>Arrives</span>
-                            <span className={styles.detailValue}>Instantly</span>
+                        <div className={clsx(styles.card, styles.detailsCard)}>
+                          <div className={styles.detailRows}>
+                            <div className={clsx(styles.detailRow, styles.detailRowBordered)}>
+                              <span className={styles.detailLabel}>Fee</span>
+                              <span className={styles.detailValue}>$0.60</span>
+                            </div>
+                            <div className={clsx(styles.detailRow, styles.detailRowBordered)}>
+                              <span className={styles.detailLabel}>Conversion rate</span>
+                              <span className={styles.detailValue}>1 MXN = 0.06 USD</span>
+                            </div>
+                            <div className={styles.detailRow}>
+                              <span className={styles.detailLabel}>Arrives</span>
+                              <span className={styles.detailValue}>Instantly</span>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {/* Persistent CTA — ONE button across both steps (same dark
-                      pill style); the label morphs and the Face ID glyph fades
-                      in on confirm. */}
-                  <motion.div
-                    layout={!reduceMotion}
-                    transition={LAYOUT_TRANSITION}
-                    className={styles.ctaWrap}
-                  >
+                  {/* Persistent CTA — ONE button across both steps; the label
+                      morphs and the Face ID glyph fades in on confirm. It rides
+                      the real layout as the region above changes height. */}
+                  <div className={styles.ctaWrap}>
                     <GlassTextButton
                       variant="primary"
                       onClick={() =>
@@ -528,9 +548,16 @@ export function AddMoneySheet({
                               <motion.span
                                 key="faceid"
                                 className={styles.ctaIcon}
-                                initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.6 }}
+                                // Width + spacing animate too — otherwise the
+                                // unmount frees the icon's space in one frame
+                                // and the label snaps left on the last frame.
+                                initial={
+                                  reduceMotion
+                                    ? false
+                                    : { opacity: 0, scale: 0.6, width: 0, marginRight: 0 }
+                                }
+                                animate={{ opacity: 1, scale: 1, width: 18, marginRight: 6 }}
+                                exit={{ opacity: 0, scale: 0.6, width: 0, marginRight: 0 }}
                                 transition={SWAP_TRANSITION}
                               >
                                 <SfSymbol name="faceid" size={18} />
@@ -547,7 +574,7 @@ export function AddMoneySheet({
                         </span>
                       )}
                     </GlassTextButton>
-                  </motion.div>
+                  </div>
                 </div>
               </motion.div>
             )}
