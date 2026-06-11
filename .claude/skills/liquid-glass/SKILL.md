@@ -98,6 +98,17 @@ surfaces (`FrostPanel`) use the slimmer `FrostConfig`, not `GlassConfig`.
   `GlassWindowButtonGroup` `.root`). Same rule for any border/background painted
   on a wrapper. Debug heuristic: a square around glass = a rounding-unaware layer.
 - **Tiled backgrounds:** pass `GlassOver`'s `backdropOffset={{x,y}}` to align.
+- **Circles & pills auto-lens radially** (Aave's production circle/pill model,
+  detected from the geometry — no flag). `splay` doesn't apply to them; the dome
+  applies to circles only. Don't fight it with per-axis expectations.
+- **Live/changing content inside a lens is a Safari minefield** — stale
+  filter-output caching, composited descendants escaping the lens unfiltered
+  (`translateZ(0)`/`will-change`/motion's `filter: blur(0px)` leftovers),
+  canvas/video killing the filter, and a LAYOUT-bounds source-size ceiling. Read
+  "Safari field notes" in the README before attempting; the full experiment is
+  parked on `pat/scroll-refraction-experiment`.
+- **Verifying a bend over a soft backdrop:** displacement is invisible without
+  texture — draw a sharp debug grid through the bent coordinates to check.
 - **Big sheets/modals don't refract — they frost.** A large displacement lens
   re-runs its whole SVG filter every frame while the surface animates, which tanks
   Safari (CPU `feDisplacementMap`). Use `FrostPanel` (GPU `backdrop-filter` + a

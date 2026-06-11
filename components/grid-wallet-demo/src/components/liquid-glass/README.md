@@ -202,8 +202,8 @@ not this.) All numeric fields are in **px** unless noted.
 | `scale` | peak refraction strength |
 | `chromaticAberration` | per-channel colour split / fringe (0–1) |
 | `blur` | gaussian blur of the refracted content |
-| `domeDepth` | spherical curvature (sagitta); `0` = flat/linear bend |
-| `splay` | flatten the bend near edges so content stays legible (`1` = off) |
+| `domeDepth` | spherical curvature (sagitta); `0` = flat/linear bend. Circles dome the *radial* distance (see capsule note below) |
+| `splay` | flatten the bend near edges so content stays legible (`1` = off). **Rect-only** — capsules ignore it |
 | `specularRotation` | highlight direction in **degrees** (see gotcha) |
 | `specularStrength` | highlight intensity |
 | `glowStrength` / `glowSpread` / `glowExponent` | broad glow along the spec axis |
@@ -215,6 +215,27 @@ not this.) All numeric fields are in **px** unless noted.
 
 There's a live tuning panel in the dev tools (`src/dev/glass/`) — flip the App
 panel to **swag** mode to dial values in by eye.
+
+### Capsule lenses (circles & pills) — auto-detected
+
+The map generator detects a **capsule** (uniform corner radius that reaches the
+half-size — i.e. a circle or a pill) from the geometry and switches to Aave's
+*production* lens model (their shipped components — switch, slider, video
+controls — not the per-axis model their article playground uses):
+
+- **Direction = the rounded-rect SDF normal**: radial in the corner-cap region,
+  perpendicular to the straight edges. On a circle this is exactly `(x/r, y/r)`
+  — every bend points at the center, which is what makes a round lens read as a
+  ball of glass instead of cross-shaped per-axis warping.
+- **Magnitude**: a circle **domes** the distance from the shape's medial axis;
+  a pill keeps it **linear** (Aave never domes rects). `splay` doesn't apply.
+- No flag, no API: the shape is derived from `width/height/cornerRadius`
+  (Aave instead makes devs declare `shape: "circle" | "rect"` per lens — we can
+  derive it because our lens comes from the DOM box). Caveat: a lens that
+  *morphs* across the capsule boundary would flip math mid-animation — if that
+  ever exists, add an explicit override then.
+- The WebGL issuance lens (`apps/shared/glass/AuroraLensButton`) mirrors the
+  same radial math in GLSL.
 
 ---
 
@@ -233,6 +254,44 @@ canvas/video" component yet: the only WebGL renderer (`glass-gl/StageGL`) is
 bespoke to the phone preview and re-derives the displacement in GLSL rather than
 sampling the shared map. If you actually need canvas/video glass, generalize
 `StageGL` (or build a map-fed WebGL glass) on demand — don't assume a drop-in.
+
+## Safari field notes — live/changing content inside a lens
+
+Hard-won from the scroll-under-header refraction experiment (parked on
+`pat/scroll-refraction-experiment`; worked on Chromium, never fully on Safari).
+If you ever put **changing** content inside an SVG-filtered lens, these are the
+landmines — *static* lens content dodges all of them, which is why the shipped
+buttons never showed any of this:
+
+- **Safari caches filter OUTPUT by filter id.** Shape/position changes already
+  re-mint ids (Aave's fix), but content moving *inside* the lens doesn't — it
+  ghosts/freezes until the id changes. Live content needs per-frame id minting
+  (`GlassConfig.refreshKey` on the experiment branch).
+- **Any COMPOSITED descendant inside the filtered subtree gets painted
+  separately by WebKit — raw, unfiltered, escaping every ancestor clip.** The
+  copy inherits the page's GPU hacks: `translateZ(0)` / `will-change` /
+  `backface-visibility` jitter fixes, framer-motion's leftover inline
+  `filter: blur(0px)`, `will-change: filter` on the lens itself. Strip ALL of
+  them from copy content (the experiment used a `* { transform: none
+  !important; … }` neutralizer). Symptom: copy content painted full-size over
+  the page while the lens shows stale pixels.
+- **Accelerated surfaces (WebGL/2D canvas, video) anywhere in the filtered
+  subtree kill the whole filter chain.** A procedural backdrop can be replayed
+  as plain CSS instead: the aurora is a 1-D function along its gradient axis, so
+  a per-frame `linear-gradient(100deg, …)` from the same LUTs/clock reproduces
+  it exactly (`AuroraCssField`, experiment branch).
+- **The source-size ceiling counts LAYOUT bounds, not painted size** —
+  `overflow: hidden` clips paint but Safari still sizes the filter source from
+  the subtree's layout. Keep copies genuinely small (a lens-sized window +
+  `contain: layout paint`), per Aave: "we stay conservative with the size and
+  complexity of the DOM we refract".
+- **Bend is invisible without texture.** A soft, low-frequency backdrop (the
+  aurora) barely shows even a 10px displacement. To *verify* bending, draw a
+  sharp debug grid through the same bent coordinates — straight center, warped
+  rim = working.
+- **When the backdrop is procedural math, prefer re-computing it in WebGL at
+  bent coordinates** (`AuroraLensButton`) over filtering a copy: identical
+  result by construction, 60fps, immune to every quirk above.
 
 ## Gotchas
 
