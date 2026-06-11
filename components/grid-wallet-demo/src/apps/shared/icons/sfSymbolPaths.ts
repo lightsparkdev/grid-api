@@ -1,6 +1,6 @@
 /** SF Symbol outlines — generated from system fonts via scripts/export-sf-symbols.mjs */
 
-export type SfSymbolName = 'xmark' | 'faceid' | 'gearshape.fill' | 'arrow.up' | 'arrow.up.arrow.down' | 'play.fill' | 'creditcard.and.numbers' | 'ellipsis' | 'arrow.left' | 'chevron.right' | 'chevron.down' | 'delete.left';
+export type SfSymbolName = 'xmark' | 'faceid' | 'gearshape.fill' | 'arrow.up' | 'arrow.up.arrow.down' | 'play.fill' | 'creditcard.and.numbers' | 'ellipsis' | 'arrow.left' | 'chevron.left' | 'chevron.right' | 'chevron.down' | 'delete.left';
 
 export interface SfSymbolPath {
   d: string;
@@ -52,6 +52,11 @@ export const SF_SYMBOL_PATHS: Record<SfSymbolName, SfSymbolPath> = {
     transform:
       'matrix(0.8916753744339951, 0, 0, 0.8916753744339951, -0.6645768025078369, 19.570532915360502)',
     d: 'M12.18 0.73C13.02 0.73 13.61 0.13 13.61-0.66C13.61-1.09 13.43-1.44 13.16-1.70L10.55-4.35L7.46-7.17L10.11-7.02L23.93-7.02C24.82-7.02 25.42-7.62 25.42-8.48C25.42-9.35 24.82-9.95 23.93-9.95L10.11-9.95L7.46-9.80L10.55-12.62L13.16-15.27C13.43-15.54 13.61-15.89 13.61-16.31C13.61-17.11 13.02-17.71 12.18-17.71C11.81-17.71 11.45-17.55 11.12-17.23L3.45-9.56C3.16-9.28 2.99-8.88 2.99-8.48C2.99-8.09 3.16-7.69 3.45-7.41L11.14 0.28C11.45 0.59 11.81 0.73 12.18 0.73Z',
+  },
+  'chevron.left': {
+    transform:
+      'matrix(0.9497310332034873, 0, 0, 0.9497310332034873, 4.838063439065109, 20.030050083472453)',
+    d: 'M1.41-8.46C1.41-7.98 1.58-7.58 1.97-7.21L10.99 1.62C11.29 1.92 11.66 2.07 12.09 2.07C12.97 2.07 13.68 1.37 13.68 0.49C13.68 0.05 13.50-0.34 13.18-0.66L5.17-8.47L13.18-16.27C13.50-16.58 13.68-16.98 13.68-17.41C13.68-18.29 12.97-18.98 12.09-18.98C11.65-18.98 11.29-18.84 10.99-18.54L1.97-9.71C1.58-9.34 1.42-8.94 1.41-8.46Z',
   },
   'chevron.right': {
     transform:

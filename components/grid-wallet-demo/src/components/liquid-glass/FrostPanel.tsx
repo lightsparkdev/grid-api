@@ -47,8 +47,11 @@ export interface FrostConfig {
   tint?: string;
   /** GPU `backdrop-filter` blur (px); 0 = none. */
   tintBlur?: number;
-  /** Specular edge color (defaults to `--glass-sheet-edge`). */
+  /** Specular edge color (defaults to `--glass-sheet-edge`); `'none'` skips the
+   *  rim entirely — a flat (non-glassy) surface. */
   edge?: string;
+  /** Outer drop shadow (CSS box-shadow value) — e.g. a flat sheet's elevation. */
+  shadow?: string;
 }
 
 export interface FrostPanelProps {
@@ -63,8 +66,11 @@ export interface FrostPanelProps {
   tint?: string;
   /** GPU `backdrop-filter` blur (px) — the cheap iOS "material" frost. 0 = none. */
   tintBlur?: number;
-  /** Specular edge color — the bright glassy rim traced around the shape. */
+  /** Specular edge color — the bright glassy rim traced around the shape.
+   *  `'none'` skips the rim (flat surface). */
   edge?: string;
+  /** Outer drop shadow (CSS box-shadow value), traced at the panel's radius. */
+  shadow?: string;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
@@ -105,6 +111,7 @@ export function FrostPanel({
   tint,
   tintBlur = 0,
   edge = DEFAULT_EDGE,
+  shadow,
   className,
   style,
   children,
@@ -136,8 +143,20 @@ export function FrostPanel({
 
   const blur = tintBlur > 0 ? `blur(${tintBlur}px)` : undefined;
 
+  // box-shadow follows border-radius (not the clip-path), so give the root the
+  // panel's radius when a shadow is set — at these blur sizes the circular-vs-
+  // squircle corner difference is invisible.
+  const shadowStyle: CSSProperties = shadow
+    ? {
+        boxShadow: shadow,
+        borderRadius: Array.isArray(baseRadii)
+          ? baseRadii.map((r) => `${r}px`).join(' ')
+          : baseRadii,
+      }
+    : {};
+
   return (
-    <div ref={ref} className={className} style={{ position: 'relative', ...style }}>
+    <div ref={ref} className={className} style={{ position: 'relative', ...shadowStyle, ...style }}>
       <div
         aria-hidden
         style={{
@@ -153,8 +172,9 @@ export function FrostPanel({
       />
 
       {/* Specular rim — an SVG stroke of the squircle so it traces the corners on
-          every browser (a brighter top stop reads as light catching the top edge). */}
-      {ready && (
+          every browser (a brighter top stop reads as light catching the top edge).
+          edge="none" skips it for flat surfaces. */}
+      {ready && edge !== 'none' && (
         <svg
           aria-hidden
           width="100%"

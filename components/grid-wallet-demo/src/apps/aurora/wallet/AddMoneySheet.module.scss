@@ -13,17 +13,8 @@
 /* ── Toolbar (grabber + nav button + centered title) ─────────────────────── */
 .toolbar {
   flex-shrink: 0;
+  padding-top: 16px;
   padding-bottom: 10px;
-}
-
-.grabber {
-  display: block;
-  width: 36px;
-  height: 5px;
-  margin: 5px auto 6px;
-  border-radius: 999px;
-  corner-shape: round;
-  background: var(--ios-fill-tertiary);
 }
 
 .toolbarRow {
@@ -34,16 +25,19 @@
   min-height: 40px;
 }
 
-/* Body/Emphasized 17/22, truly centered regardless of the nav button. */
+/* Body/Emphasized 17/22, truly centered regardless of the nav button. The morph
+   span is shrink-wrapped and flex-centered: torph anchors glyphs to the element's
+   left edge, so text-align can't center it — centering the box does. */
 .title {
   position: absolute;
   left: 56px;
   right: 56px;
+  display: flex;
+  justify-content: center;
   margin: 0;
   @include ios.ios-text-headline;
   font-weight: 590;
   color: var(--ios-label-primary);
-  text-align: center;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
 }
 
@@ -63,13 +57,12 @@
   flex-direction: column;
 }
 
-/* ── Cards (Figma radius 32 — plain corners at 1.2x ⇒ 38.4px, the cross-browser
-   superellipse compensation) ─────────────────────────────────────────────── */
+/* ── Cards (Figma radius 32, straight — no 1.2x compensation) ─────────────── */
 .card {
   position: relative;
   width: 100%;
   padding: 4px 0;
-  border-radius: 38.4px;
+  border-radius: 32px;
   corner-shape: round;
   background: var(--add-card-bg);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
@@ -82,7 +75,23 @@
 
 /* ── Step 1: source list ──────────────────────────────────────────────────── */
 .sourceWrap {
-  padding: 16px 16px 48px;
+  padding: 4px 16px 48px;
+}
+
+/* Interactive list card: the 4px vertical inset lives on the first/last ROWS
+   (padding, not card padding) so the hover/press fill runs all the way to the
+   card edge — and the card clips it to its rounded corners. */
+.cardFlush {
+  padding: 0;
+  overflow: hidden;
+
+  .sourceRow:first-child {
+    padding-top: 4px;
+  }
+
+  .sourceRow:last-child {
+    padding-bottom: 4px;
+  }
 }
 
 .sourceRow {
@@ -97,9 +106,19 @@
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.08s ease-out;
+
+  /* Tertiary on hover, secondary on press — same pattern as the white
+     content-area buttons, one fill step stronger for the list rows. */
+  @media (hover: hover) {
+    &:hover {
+      background: var(--ios-fill-tertiary);
+    }
+  }
 
   &:active {
-    opacity: 0.6;
+    background: var(--ios-fill-secondary);
+    transition: none;
   }
 }
 

@@ -4,19 +4,19 @@ import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
+import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
-import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
+import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import styles from './AddMoneySheet.module.scss';
 
 type Step = 'source' | 'amount' | 'confirm';
 
 /** Demo FX — matches the Figma copy (1 MXN = 0.06 USD ⇒ 1 USD ≈ 17.9074 MXN). */
 const USD_TO_MXN = 17.9074;
-const USE_MAX_USD = '5000';
 
 const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
 
@@ -183,13 +183,20 @@ export function AddMoneySheet({
     <BottomSheet
       open={open}
       onDismiss={dismiss}
-      // Solid sheet (no frost): Figma top radius 38 x 1.2 — circular corners at
-      // 1.2x stand in for the superellipse (same trick as the inner cards).
-      glass={{ radius: 46, tint: 'var(--wallet-bg)' }}
+      // Flat solid sheet per Figma (no frost, no specular rim — glass stays on
+      // the toolbar buttons only). Top radius straight from Figma (38, no 1.2x);
+      // shell smoothing so the bottom corners nest concentrically in the screen
+      // squircle instead of reading as over-round circles.
+      glass={{
+        radius: 38,
+        cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
+        tint: 'var(--wallet-bg)',
+        edge: 'none',
+        shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
+      }}
     >
       <div className={styles.flow}>
         <div className={styles.toolbar}>
-          <span className={styles.grabber} aria-hidden />
           <div className={styles.toolbarRow}>
             {step === 'source' ? (
               <GlassSymbolButton
@@ -210,10 +217,14 @@ export function AddMoneySheet({
                 onClick={() => go(step === 'confirm' ? 'amount' : 'source', true)}
                 disabled={confirming}
               >
-                <SfSymbol name="arrow.left" size={16} />
+                <SfSymbol name="chevron.left" size={15} />
               </GlassSymbolButton>
             )}
-            <h2 className={styles.title}>{STEP_TITLES[step]}</h2>
+            <h2 className={styles.title}>
+              <TextMorph as="span" duration={280} ease={cubicBezierCss(easeOutSwift)}>
+                {STEP_TITLES[step]}
+              </TextMorph>
+            </h2>
           </div>
         </div>
 
@@ -229,7 +240,7 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={styles.sourceWrap}>
-                  <div className={styles.card}>
+                  <div className={clsx(styles.card, styles.cardFlush)}>
                     {SOURCES.map((s, i) => (
                       <button
                         key={s.id}
@@ -285,14 +296,6 @@ export function AddMoneySheet({
                           <span className={styles.rowTitle}>Banorte (•••• 3872)</span>
                           <span className={styles.rowSub}>MXN bank account</span>
                         </span>
-                        <ContentAreaButton
-                          className={styles.useMax}
-                          type="button"
-                          variant="bordered"
-                          onClick={() => setRaw(USE_MAX_USD)}
-                        >
-                          Use max
-                        </ContentAreaButton>
                       </div>
                       <div className={styles.amountInput}>
                         <p className={styles.amountValue}>{formatTyped(raw)}</p>

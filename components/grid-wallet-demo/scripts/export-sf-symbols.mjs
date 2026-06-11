@@ -35,6 +35,7 @@ const WEIGHT_BY_SYMBOL = {
   'creditcard.and.numbers': 'medium',
   ellipsis: 'medium',
   'arrow.left': 'semibold',
+  'chevron.left': 'semibold',
   'chevron.right': 'semibold',
   'chevron.down': 'semibold',
   'delete.left': 'medium',
