@@ -13,7 +13,15 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import { AddMoneySheet, formatUsdCents, type MoneySheetMode } from './AddMoneySheet';
+import {
+  AddMoneySheet,
+  formatUsdCents,
+  SEND_DEMO_ADDRESS,
+  SolanaTokenIcon,
+  truncateAddress,
+  type MoneySheetMode,
+} from './AddMoneySheet';
+import { SendReceiveSheet } from './SendReceiveSheet';
 import { BalanceHero } from './BalanceHero';
 import { CardHomeContent } from './CardHomeContent';
 import { CreatingCaption, IntroContent, ReadyContent } from './CardIssuanceContent';
@@ -123,6 +131,14 @@ export function AuroraWalletScreen({
     setSheetOpen(true);
   };
 
+  // "Send or receive" chooser (Figma 109:28513). Send swaps it for the money
+  // sheet in one beat: the mini sheet drops as the tall sheet rises.
+  const [sendReceiveOpen, setSendReceiveOpen] = useState(false);
+  const startSend = () => {
+    setSendReceiveOpen(false);
+    openSheet('send');
+  };
+
   // Glass toast (overlay layer): transfer confirmations + the tap-to-pay balance
   // guard. A fresh id restarts the hold when one is already up.
   const [toast, setToast] = useState<GlassToastData | null>(null);
@@ -198,24 +214,40 @@ export function AuroraWalletScreen({
   const sheetInsertTimer = useRef(0);
   const finishTransfer = () => {
     const cents = pendingCents.current;
-    const withdraw = sheetMode === 'withdraw';
+    const mode = sheetMode;
     setSheetConfirming(false);
     setSheetOpen(false);
-    setDeltaCents((c) => c + (withdraw ? -cents : cents));
-    showToast(`${toastUsd(cents)} ${withdraw ? 'withdrawn from' : 'added to'} balance`);
+    setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+    showToast(
+      mode === 'add'
+        ? `${toastUsd(cents)} added to balance`
+        : mode === 'withdraw'
+          ? `${toastUsd(cents)} withdrawn from balance`
+          : `${toastUsd(cents)} sent to ${truncateAddress(SEND_DEMO_ADDRESS)}`,
+    );
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
-      // Figma 90:13701 — bank as the title, MX flag as the graphic.
+      // Figma 90:13701 — bank rows show the MX flag; sends show the Solana
+      // token chip + the truncated recipient. Outgoing money shows the plain
+      // amount — only incoming gets the "+".
       setActivity((prev) => [
-        {
-          id: `${sheetMode}-${Date.now()}`,
-          image: '/assets/add-money/flag-mx.svg',
-          title: 'Banorte (•••• 3872)',
-          // Outgoing money shows the plain amount — only incoming gets the "+".
-          detail: withdraw ? 'Withdrawn from balance' : 'Added to balance',
-          amount: withdraw ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
-          timestamp: Date.now(),
-        },
+        mode === 'send'
+          ? {
+              id: `send-${Date.now()}`,
+              Icon: SolanaTokenIcon,
+              title: truncateAddress(SEND_DEMO_ADDRESS),
+              detail: 'Sent to Solana wallet',
+              amount: formatUsdCents(cents),
+              timestamp: Date.now(),
+            }
+          : {
+              id: `${mode}-${Date.now()}`,
+              image: '/assets/add-money/flag-mx.svg',
+              title: 'Banorte (•••• 3872)',
+              detail: mode === 'withdraw' ? 'Withdrawn from balance' : 'Added to balance',
+              amount: mode === 'withdraw' ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
+              timestamp: Date.now(),
+            },
         ...prev,
       ]);
     }, SHEET_INSERT_DELAY_MS);
@@ -373,7 +405,7 @@ export function AuroraWalletScreen({
             <WalletActions
               onAdd={() => openSheet('add')}
               onWithdraw={() => openSheet('withdraw')}
-              onSend={onSend}
+              onSend={() => setSendReceiveOpen(true)}
             />
             <WalletInsightCards {...insights} />
             <WalletListSection
@@ -449,8 +481,16 @@ export function AuroraWalletScreen({
         </AnimatePresence>
       </motion.div>
 
-      {/* Add money / Withdraw — one mode-switched three-step sheet; Confirm
-          hands off to the Face ID overlay. */}
+      {/* Send or receive chooser — Send chains into the money sheet below
+          (rendered first so the rising money sheet stacks over its exit). */}
+      <SendReceiveSheet
+        open={sendReceiveOpen}
+        onDismiss={() => setSendReceiveOpen(false)}
+        onSend={startSend}
+      />
+
+      {/* Add money / Withdraw / Send — one mode-switched sheet; Confirm hands
+          off to the Face ID overlay. */}
       <AddMoneySheet
         open={sheetOpen}
         mode={sheetMode}

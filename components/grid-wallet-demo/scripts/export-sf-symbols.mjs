@@ -30,7 +30,7 @@ const WEIGHT_BY_SYMBOL = {
   xmark: 'semibold',
   faceid: 'bold',
   'arrow.up': 'semibold',
-  'arrow.up.arrow.down': 'semibold',
+  'arrow.up.arrow.down': 'bold',
   'play.fill': 'semibold',
   'creditcard.and.numbers': 'medium',
   ellipsis: 'medium',
@@ -39,6 +39,7 @@ const WEIGHT_BY_SYMBOL = {
   'chevron.right': 'semibold',
   'chevron.down': 'semibold',
   'delete.left': 'semibold',
+  viewfinder: 'semibold',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');

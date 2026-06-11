@@ -8,7 +8,10 @@ import type { WalletListItemData } from './WalletListItem';
 import styles from './WalletListSection.module.scss';
 
 interface WalletListSectionProps {
+  /** Section name — the visible caption, and the aria-label either way. */
   title: string;
+  /** Drop the visible caption (send contacts) — the aria-label remains. */
+  hideTitle?: boolean;
   emptyTitle: string;
   emptySub: ReactNode;
   /** Optional empty-state CTA (wallet Activity uses "Add money"). */
@@ -28,6 +31,7 @@ interface WalletListSectionProps {
  */
 export function WalletListSection({
   title,
+  hideTitle = false,
   emptyTitle,
   emptySub,
   cta,
@@ -37,7 +41,7 @@ export function WalletListSection({
 }: WalletListSectionProps) {
   return (
     <section className={clsx(styles.section, grow && styles.sectionGrow)} aria-label={title}>
-      <h2 className={styles.title}>{title}</h2>
+      {!hideTitle && <h2 className={styles.title}>{title}</h2>}
       <WalletListCard
         concentricBottom={concentricBottom}
         grow={grow}

@@ -1,0 +1,44 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 109:28519 — centered title group: pb 16, px 32, gap 8. The group's
+   pt 8 rode under a toolbar strip; with no toolbar, 24 clears the sheet's
+   40px top curve while keeping the mini sheet compact. */
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 32px 32px 16px;
+  text-align: center;
+}
+
+/* Title3/Emphasized 20/25/-0.45 with the ⇅ symbol inline before the text. */
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}
+
+.titleSymbol {
+  flex-shrink: 0;
+}
+
+/* Footnote/Regular 13/18/-0.08 secondary, two centered lines. */
+.subtitle {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+}
+
+/* Figma 109:28526 — actions: pt 8, pb 24, px 24, gap 12; large bordered pills. */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 24px 24px;
+}

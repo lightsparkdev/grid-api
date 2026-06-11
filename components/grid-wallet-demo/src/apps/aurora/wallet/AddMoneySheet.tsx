@@ -14,9 +14,10 @@ import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/app
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
+import { WalletListSection } from './WalletListSection';
 import styles from './AddMoneySheet.module.scss';
 
-type Step = 'source' | 'amount' | 'confirm';
+type Step = 'source' | 'recipient' | 'amount' | 'confirm';
 
 /** Demo FX — matches the Figma copy (1 MXN = 0.06 USD ⇒ 1 USD ≈ 17.9074 MXN). */
 const USD_TO_MXN = 17.9074;
@@ -53,7 +54,30 @@ const REGION_EXIT = {
 };
 const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
 
-export type MoneySheetMode = 'add' | 'withdraw';
+export type MoneySheetMode = 'add' | 'withdraw' | 'send';
+
+/** Figma 109:29332 — the demo Solana address Paste drops into the send flow. */
+export const SEND_DEMO_ADDRESS = '53am6G4kK1QSKPdnmZVqkA1oeq1biAK2nEtfBosNkNV7';
+
+/** "53am6G…" → "53am…kNV7" — first/last 4 around an ellipsis (Figma 109:28992). */
+export function truncateAddress(addr: string): string {
+  return `${addr.slice(0, 4)}…${addr.slice(-4)}`;
+}
+
+/** Solana token chip (Figma 109:29428) for WalletListItem's Icon slot — rendered
+ *  as the rounded-square asset instead of the circular `image` crop. */
+export function SolanaTokenIcon({ className }: { className?: string }) {
+  return (
+    <img
+      className={className}
+      src="/assets/send/icon-token-sol.svg"
+      alt=""
+      width={20}
+      height={20}
+      draggable={false}
+    />
+  );
+}
 
 interface SourceRow {
   id: string;
@@ -74,18 +98,36 @@ const BANK_SOURCE: SourceRow = {
   speed: 'Instant',
 };
 
+/** The crypto-wallet source row — inactive in withdraw, the live path in send. */
+const CRYPTO_SOURCE: SourceRow = {
+  id: 'crypto',
+  Icon: IconWallet1,
+  title: 'Crypto wallet',
+  sub: 'Spark, Solana, Base address',
+  speed: 'Instant',
+};
+
 /** Per-mode copy + source rows; everything else in the flow is shared. */
 const MODES: Record<
   MoneySheetMode,
   {
+    /** `recipient` only renders in send mode — '' elsewhere (step unreachable). */
     titles: Record<Step, string>;
     sources: SourceRow[];
+    /** The tappable source row, and the step it pushes to. */
+    activeSource: { id: string; next: Step };
     /** Confirm-step details card rows (label, value). */
     details: Array<[string, string]>;
   }
 > = {
   add: {
-    titles: { source: 'Add money from', amount: 'Enter amount', confirm: 'Confirm add' },
+    titles: {
+      source: 'Add money from',
+      recipient: '',
+      amount: 'Enter amount',
+      confirm: 'Confirm add',
+    },
+    activeSource: { id: 'bank', next: 'amount' },
     sources: [
       BANK_SOURCE,
       {
@@ -117,21 +159,35 @@ const MODES: Record<
     ],
   },
   withdraw: {
-    titles: { source: 'Withdraw to', amount: 'Enter amount', confirm: 'Confirm withdrawal' },
-    sources: [
-      BANK_SOURCE,
-      {
-        id: 'crypto',
-        Icon: IconWallet1,
-        title: 'Crypto wallet',
-        sub: 'Spark, Solana, Base address',
-        speed: 'Instant',
-      },
-    ],
+    titles: {
+      source: 'Withdraw to',
+      recipient: '',
+      amount: 'Enter amount',
+      confirm: 'Confirm withdrawal',
+    },
+    sources: [BANK_SOURCE, CRYPTO_SOURCE],
+    activeSource: { id: 'bank', next: 'amount' },
     details: [
       ['Fee', '$0.60'],
       ['Conversion rate', '1 USD = 17.91 MXN'],
       ['Arrives in bank', 'Instantly'],
+    ],
+  },
+  send: {
+    // Source and recipient share the title — the push still slides it (iOS
+    // re-slides an unchanged nav title with the screen).
+    titles: {
+      source: 'Send to',
+      recipient: 'Send to',
+      amount: 'Enter amount',
+      confirm: 'Confirm send',
+    },
+    sources: [BANK_SOURCE, CRYPTO_SOURCE],
+    activeSource: { id: 'crypto', next: 'recipient' },
+    details: [
+      ['Fee', '$0.60'],
+      ['Conversion rate', '1 USD = 1 USDC'],
+      ['Arrives', 'Instantly'],
     ],
   },
 };
@@ -181,6 +237,8 @@ interface AddMoneySheetProps {
  * Solid (non-frosted) near-full-height sheet; steps push right-to-left.
  * `mode="withdraw"` reuses the whole flow in reverse: bank-only destinations,
  * balance card on top, and an over-balance check on Continue.
+ * `mode="send"` (Figma 109:28547) adds a recipient step between source and
+ * amount — address paste card + contacts — and runs in USDC at 1:1.
  */
 export function AddMoneySheet({
   open,
@@ -193,13 +251,14 @@ export function AddMoneySheet({
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
-  const { titles, sources, details } = MODES[mode];
+  const { titles, sources, activeSource, details } = MODES[mode];
   const balance = formatUsdCents(availableCents);
   const [step, setStep] = useState<Step>('source');
   const [back, setBack] = useState(false); // direction of the last nav
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
   const [started, setStarted] = useState(false); // Swift's hasStartedTyping
   const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
+  const [pasted, setPasted] = useState(false); // send: address card filled
   const quoteTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
@@ -217,6 +276,7 @@ export function AddMoneySheet({
       setRaw('');
       setStarted(false);
       setQuoting(false);
+      setPasted(false);
     }
   }
   // Timer cleanup stays in effects (clearing during render isn't render-pure).
@@ -228,6 +288,13 @@ export function AddMoneySheet({
   const go = (next: Step, isBack = false) => {
     setBack(isBack);
     setStep(next);
+  };
+
+  // Back walks the mode's own path: send detours through the recipient step.
+  const backFrom: Partial<Record<Step, Step>> = {
+    confirm: 'amount',
+    amount: mode === 'send' ? 'recipient' : 'source',
+    recipient: 'source',
   };
 
   // Swift's ShakeEffect (8px x sin, three half-cycles), tightened to 0.28s —
@@ -401,9 +468,9 @@ export function AddMoneySheet({
         <span className={styles.rowTitle}>Cash balance</span>
         <span className={styles.rowSub}>{balance}</span>
       </span>
-      {/* Figma 109:29074 — small "Use max" chip on the withdraw amount step;
-          fades out (row persists) when the layout pushes to confirm. */}
-      {mode === 'withdraw' && (
+      {/* Figma 109:29074 — small "Use max" chip on balance-sourced outflows
+          (withdraw/send); fades out (row persists) on the push to confirm. */}
+      {mode !== 'add' && (
         <AnimatePresence initial={false}>
           {step === 'amount' && (
             <motion.span
@@ -423,6 +490,27 @@ export function AddMoneySheet({
       )}
     </div>
   );
+
+  // Figma 109:28983 — the pasted destination on the send amount step.
+  const recipientRow = (
+    <div className={styles.sourceRowStatic}>
+      <span className={styles.tile} aria-hidden>
+        <img
+          className={styles.tokenIconSm}
+          src="/assets/send/icon-token-sol.svg"
+          alt=""
+          draggable={false}
+        />
+      </span>
+      <span className={styles.sourceLabels}>
+        <span className={styles.rowTitle}>{truncateAddress(SEND_DEMO_ADDRESS)}</span>
+        <span className={styles.rowSub}>Solana wallet</span>
+      </span>
+    </div>
+  );
+  // Send moves USDC, not MXN — the bottom card is the recipient instead of the
+  // bank, and the conversion line runs 1:1.
+  const bottomRow = mode === 'add' ? balanceRow : mode === 'withdraw' ? bankRow : recipientRow;
 
   // iOS push: forward = in from the right / out to the left; back = reverse.
   // Variants + `custom` (not inline objects): an EXITING screen never re-renders,
@@ -491,18 +579,26 @@ export function AddMoneySheet({
                 size={40}
                 type="button"
                 glass={{ brightness }}
-                onClick={() => go(step === 'confirm' ? 'amount' : 'source', true)}
+                onClick={() => go(backFrom[step] ?? 'source', true)}
                 disabled={confirming}
               >
                 <SfSymbol name="chevron.left" size={15} />
               </GlassSymbolButton>
             )}
             <h2 className={styles.title}>
-              {/* Slides only across the source ⇄ transfer boundary (shared key
-                  inside transfer); amount ⇄ confirm torph-morphs in place. */}
-              <AnimatePresence mode="popLayout" initial={false} custom={navDir}>
+              {/* Slides at every screen boundary except amount ⇄ confirm, which
+                  share the persistent transfer layout and torph-morph in place.
+                  Default (sync) presence, NOT popLayout — the spans stack in the
+                  strip's single-cell grid, and popLayout skipped the leaver's
+                  exit whenever the arriving screen set state mid-mount (the
+                  recipient step's card measurements; see the steps host). */}
+              <AnimatePresence initial={false} custom={navDir}>
                 <motion.span
-                  key={step === 'source' ? 'source' : 'transfer'}
+                  // Keyed by TEXT (not step): adjacent steps sharing a title
+                  // ("Send to" source → recipient) keep one span — no slide for
+                  // an unchanged title. amount ⇄ confirm share 'transfer' and
+                  // morph between their differing titles instead.
+                  key={step === 'amount' || step === 'confirm' ? 'transfer' : titles[step]}
                   custom={navDir}
                   variants={titleVariants}
                   initial="enter"
@@ -510,9 +606,7 @@ export function AddMoneySheet({
                   exit="exit"
                   transition={STEP_TRANSITION}
                 >
-                  {step === 'source' ? (
-                    titles.source
-                  ) : (
+                  {step === 'amount' || step === 'confirm' ? (
                     <TextMorph
                       as="span"
                       duration={MORPH_MS}
@@ -520,15 +614,45 @@ export function AddMoneySheet({
                     >
                       {titles[step]}
                     </TextMorph>
+                  ) : (
+                    titles[step]
                   )}
                 </motion.span>
               </AnimatePresence>
             </h2>
+            {/* Figma 109:28547 — glass QR scan button, recipient step only. */}
+            <AnimatePresence initial={false}>
+              {mode === 'send' && step === 'recipient' && (
+                <motion.span
+                  key="qr"
+                  className={styles.toolbarTrailing}
+                  initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={SWAP_TRANSITION}
+                >
+                  <GlassSymbolButton
+                    aria-label="Scan QR code"
+                    size={40}
+                    type="button"
+                    glass={{ brightness }}
+                  >
+                    <SfSymbol name="viewfinder" size={17} />
+                  </GlassSymbolButton>
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         <div className={styles.steps}>
-          <AnimatePresence mode="popLayout" initial={false} custom={navDir}>
+          {/* Default (sync) presence, NOT popLayout: the steps are absolutely
+              positioned (.step), so the exit needs no layout pop — and popLayout
+              skipped the outgoing screen whenever the incoming one mounted a
+              component that set state in a callback ref / layout effect during
+              the same commit (the recipient step's WalletListCard squircle +
+              corner measurements), leaving only the enter half of the push. */}
+          <AnimatePresence initial={false} custom={navDir}>
             {step === 'source' && (
               <motion.div
                 key="source"
@@ -547,7 +671,7 @@ export function AddMoneySheet({
                         key={s.id}
                         type="button"
                         className={styles.sourceRow}
-                        onClick={() => s.id === 'bank' && go('amount')}
+                        onClick={() => s.id === activeSource.id && go(activeSource.next)}
                       >
                         <span className={styles.tile} aria-hidden>
                           {s.Icon ? (
@@ -576,7 +700,108 @@ export function AddMoneySheet({
               </motion.div>
             )}
 
-            {step !== 'source' && (
+            {step === 'recipient' && (
+              <motion.div
+                key="recipient"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.recipientWrap}>
+                  <div className={styles.addressWrap}>
+                    {/* Figma 109:27766 (empty) / 109:29332 (pasted) — the address
+                        entry card. Paste fills it with the demo Solana address;
+                        the empty ⇄ filled swap runs through real height (the
+                        keypad REGION_* pattern) so the card grows, not pops. */}
+                    <div className={clsx(styles.card, styles.addressCard)}>
+                      <AnimatePresence initial={false}>
+                        {pasted ? (
+                          <motion.div
+                            key="filled"
+                            className={styles.addressRegion}
+                            initial={reduceMotion ? false : REGION_HIDDEN}
+                            animate={REGION_ENTER}
+                            exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
+                          >
+                            <div className={styles.addressBody}>
+                              <div
+                                className={clsx(styles.addressLabels, styles.addressLabelsFilled)}
+                              >
+                                <p className={styles.addressValue}>{SEND_DEMO_ADDRESS}</p>
+                                <p className={styles.addressSub}>Solana</p>
+                              </div>
+                              <span className={clsx(styles.tile, styles.addressTile)} aria-hidden>
+                                <img
+                                  className={styles.tokenIcon}
+                                  src="/assets/send/icon-token-sol.svg"
+                                  alt=""
+                                  draggable={false}
+                                />
+                              </span>
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="empty"
+                            className={styles.addressRegion}
+                            initial={reduceMotion ? false : REGION_HIDDEN}
+                            animate={REGION_ENTER}
+                            exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
+                          >
+                            <div className={styles.addressBody}>
+                              <div className={styles.addressLabels}>
+                                <p className={styles.addressPlaceholder}>Enter any address</p>
+                                <p className={styles.addressSub}>
+                                  Spark, Solana, Base, Ethereum — anything
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      {/* ONE persistent button: Paste fills, then it goes
+                          prominent and morphs into Continue (Figma 109:29338). */}
+                      <div className={styles.addressBtnWrap}>
+                        <ContentAreaButton
+                          className={styles.addressBtn}
+                          variant={pasted ? 'filled' : 'secondary'}
+                          onClick={() => (pasted ? go('amount') : setPasted(true))}
+                        >
+                          <TextMorph
+                            as="span"
+                            duration={MORPH_MS}
+                            ease={cubicBezierCss(easeOutSwift)}
+                          >
+                            {pasted ? 'Continue' : 'Paste'}
+                          </TextMorph>
+                        </ContentAreaButton>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Contacts — same skeleton + empty reveal as the other
+                      lists, captionless (the address card reads as the head). */}
+                  <WalletListSection
+                    title="Contacts"
+                    hideTitle
+                    emptyTitle="No contacts yet"
+                    emptySub={
+                      <>
+                        People you send money to
+                        <br />
+                        will show up here
+                      </>
+                    }
+                    concentricBottom
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {(step === 'amount' || step === 'confirm') && (
               <motion.div
                 key="transfer"
                 className={styles.step}
@@ -612,11 +837,11 @@ export function AddMoneySheet({
                         </p>
                         <p className={styles.amountSub}>
                           <NumericText
-                            value={(cents / 100) * USD_TO_MXN}
+                            value={(cents / 100) * (mode === 'send' ? 1 : USD_TO_MXN)}
                             format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
                             style={NUMERIC_PAD}
                           />
-                          {'\u00A0MXN'}
+                          {mode === 'send' ? '\u00A0USDC' : '\u00A0MXN'}
                           {step === 'amount' && (
                             <SfSymbol name="arrow.up.arrow.down" size={11} />
                           )}
@@ -626,9 +851,7 @@ export function AddMoneySheet({
                     <span className={styles.chevronDisc} aria-hidden>
                       <SfSymbol name="chevron.down" size={14} />
                     </span>
-                    <div className={styles.card}>
-                      {mode === 'add' ? balanceRow : bankRow}
-                    </div>
+                    <div className={styles.card}>{bottomRow}</div>
                   </div>
 
                   {/* Keypad ⇄ details card swap — REAL height animation (see
