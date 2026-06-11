@@ -166,6 +166,17 @@ export function AddMoneySheet({
     setStep(next);
   };
 
+  // Swift's ShakeEffect (8px x sin over 0.4s linear, three half-cycles) —
+  // invalid amount on Continue, or a keypress past the cap.
+  const shakeAmount = () => {
+    if (reduceMotion || !amountScope.current) return;
+    animateAmount(
+      amountScope.current,
+      { x: [0, 8, -8, 8, 0] },
+      { duration: 0.4, ease: 'linear' },
+    );
+  };
+
   // Mirrors the Swift KeypadInputModel.handleKey.
   const press = (key: string) => {
     if (confirming) return;
@@ -192,22 +203,22 @@ export function AddMoneySheet({
       setRaw(key);
       return;
     }
-    setRaw((r) => {
-      const frac = r.split('.')[1];
-      if (frac !== undefined && frac.length >= 2) return r;
-      const next = `${r}${key}`;
-      // Cap below $1M — 6 whole digits max.
-      if (next.split('.')[0].length > 6) return r;
-      return next;
-    });
+    const frac = raw.split('.')[1];
+    if (frac !== undefined && frac.length >= 2) return;
+    const next = `${raw}${key}`;
+    // Cap below $1M (6 whole digits) — reject with the error shake.
+    if (next.split('.')[0].length > 6) {
+      shakeAmount();
+      return;
+    }
+    setRaw(next);
   };
 
   const cents = typedToCents(raw);
 
   // Continue is always active (Swift parity): an invalid amount errors out with
-  // a shake on the amount instead of a disabled button. Curve matches the Swift
-  // ShakeEffect (8px x sin over 0.4s linear, three half-cycles). A valid amount
-  // "creates a quote": the CTA spins for a beat before the confirm step.
+  // a shake on the amount instead of a disabled button. A valid amount "creates
+  // a quote": the CTA spins for a beat before the confirm step.
   const tryContinue = () => {
     if (confirming || quoting) return;
     if (cents > 0) {
@@ -219,13 +230,7 @@ export function AddMoneySheet({
       }, QUOTE_MS);
       return;
     }
-    if (!reduceMotion && amountScope.current) {
-      animateAmount(
-        amountScope.current,
-        { x: [0, 8, -8, 8, 0] },
-        { duration: 0.4, ease: 'linear' },
-      );
-    }
+    shakeAmount();
   };
 
   // Hardware keyboard drives the keypad while the amount step is up.
