@@ -72,8 +72,8 @@ export const ReceiptExample = () => {
             </div>
           </div>
           <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 18px', border: hair, borderRadius: '12px' }}>
-            <span style={secLabel}>Transaction No.</span>
-            <span style={{ fontFamily: mono, fontSize: '14px' }}>000-0847-291</span>
+            <span style={secLabel}>Transaction ID</span>
+            <span style={{ fontFamily: mono, fontSize: '13px' }}>019542f5-b3e7-1d02-0000-000000000030</span>
           </div>
         </div>
 
@@ -174,7 +174,7 @@ Include these exactly as written on every receipt:
 |-------|-------------|---------------|
 | Sender | Name of the customer initiating the transaction | Always |
 | Recipient | Name of the recipient receiving funds | Always |
-| Transaction number | Unique, consecutive identifier for the transaction | Always |
+| Transaction ID | Unique ID per transaction | Always |
 | Transaction type | Cross-border send/receive, on-ramp, off-ramp, or transfer out; for virtual currency transactions, the currency type | Always |
 | Transaction date | Date the transaction was funded | Always |
 | Transaction time | Precise time including time zone | Always |
@@ -194,7 +194,7 @@ Most receipt fields come directly from the [transaction object](/api-reference/t
 
 | Receipt field | Grid source |
 |---------------|-------------|
-| Transaction number | `id` |
+| Transaction ID | `id` |
 | Transaction type | `type` (`OUTGOING` / `INCOMING`) plus the funding currency |
 | Transaction date / time | `settledAt` |
 | Sender | `customerId` / `platformCustomerId` (outgoing) or `counterpartyInformation` (incoming) |
@@ -229,7 +229,7 @@ app.post('/webhooks/grid', async (req, res) => {
       address: '8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069',
       customerServicePhone: '(855) 516-0103',
       // Transaction fields
-      transactionNumber: tx.id,
+      transactionId: tx.id,
       transactionType: tx.type,
       transactionDateTime: tx.settledAt,
       transferAmount: `${tx.sentAmount.currency.symbol}${format(tx.sentAmount)}`,
