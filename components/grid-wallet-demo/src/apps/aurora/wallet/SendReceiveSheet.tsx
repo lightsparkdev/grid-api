@@ -2,6 +2,7 @@
 
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
+import { SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import styles from './SendReceiveSheet.module.scss';
 
@@ -21,7 +22,15 @@ interface SendReceiveSheetProps {
  */
 export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetProps) {
   return (
-    <BottomSheet open={open} onDismiss={onDismiss} inset={6} topRadius={40}>
+    <BottomSheet
+      open={open}
+      onDismiss={onDismiss}
+      inset={6}
+      topRadius={40}
+      // Standard frost, but tinted toward the wallet's #f9f9f9 on light (the
+      // shared sheet tint reads cooler against this screen); dark unchanged.
+      glass={{ ...SHEET_GLASS, tint: 'var(--send-receive-sheet-tint)' }}
+    >
       <div className={styles.titleGroup}>
         <h2 className={styles.title}>
           <SfSymbol name="arrow.up.arrow.down" size={22} className={styles.titleSymbol} />

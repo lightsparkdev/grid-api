@@ -3,8 +3,10 @@
 import type { ComponentType } from 'react';
 import styles from './WalletListItem.module.scss';
 
-/** central-icons component shape (accepts `size`, spreads the rest onto the svg). */
-type ListIcon = ComponentType<{ size?: number; className?: string }>;
+/** central-icons component shape (accepts `size`, spreads the rest onto the
+ *  svg). `size` includes string to match CentralIconBaseProps exactly — a
+ *  narrower number-only signature rejects the icon components' propTypes. */
+type ListIcon = ComponentType<{ size?: number | string; className?: string }>;
 
 export interface WalletListItemData {
   id: string;

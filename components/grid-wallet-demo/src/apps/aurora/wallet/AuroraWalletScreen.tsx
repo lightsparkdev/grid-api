@@ -4,7 +4,16 @@ import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
+import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheeseburger';
+import { IconCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCup';
+import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
+import { IconFashion } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFashion';
 import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
+import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShoppingBag1';
+import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
+import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStore1';
+import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
@@ -51,13 +60,21 @@ const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home
 const TAP_INSERT_DELAY_MS = 900;
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
 
-// Figma 2143:41027 — the transaction a tap-to-pay run drops into the list.
-const TAP_TX: Omit<WalletListItemData, 'id' | 'timestamp'> = {
-  Icon: IconHotDrinkCup,
-  title: 'Blue Bottle Coffee',
-  detail: 'Tap to Pay',
-  amount: '$7.32',
-};
+// Figma 2143:41027 (row shape) — the tap-to-pay merchant pool: globally
+// recognizable chains with FIXED, plausible charges (deterministic per
+// merchant) so repeat taps read as real purchases around town.
+const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp'>> = [
+  { Icon: IconHotDrinkCup, title: 'Starbucks', detail: 'Tap to Pay', amount: '$7.45' },
+  { Icon: IconCheeseburger, title: "McDonald's", detail: 'Tap to Pay', amount: '$11.84' },
+  { Icon: IconStore1, title: '7-Eleven', detail: 'Tap to Pay', amount: '$6.27' },
+  { Icon: IconCup, title: 'Pret a Manger', detail: 'Tap to Pay', amount: '$9.15' },
+  { Icon: IconFashion, title: 'Uniqlo', detail: 'Tap to Pay', amount: '$39.90' },
+  { Icon: IconShoppingBag1, title: 'Zara', detail: 'Tap to Pay', amount: '$45.90' },
+  { Icon: IconTag, title: 'H&M', detail: 'Tap to Pay', amount: '$34.99' },
+  { Icon: IconSofa, title: 'IKEA', detail: 'Tap to Pay', amount: '$86.53' },
+  { Icon: IconDeskLamp, title: 'Muji', detail: 'Tap to Pay', amount: '$28.40' },
+  { Icon: IconBasket1, title: 'Carrefour', detail: 'Tap to Pay', amount: '$43.76' },
+];
 
 // Insert the Activity row a beat after the Add money / Withdraw sheet has
 // dismissed, so the slide-down insert is visible on the settled wallet (same
@@ -183,11 +200,14 @@ export function AuroraWalletScreen({
   useEffect(() => {
     if (tapPhase !== 'done') return;
     const t = window.setTimeout(() => {
+      const tx = pendingTapTx.current; // the merchant picked at tap start
       setTapPhase('idle');
+      // The card charge comes out of the cash balance, landing with the row.
+      setDeltaCents((c) => c - parseCents(tx.amount));
       window.clearTimeout(insertTimer.current);
       insertTimer.current = window.setTimeout(() => {
         setTransactions((prev) => [
-          { ...TAP_TX, id: `tap-${Date.now()}`, timestamp: Date.now() },
+          { ...tx, id: `tap-${Date.now()}`, timestamp: Date.now() },
           ...prev,
         ]);
       }, TAP_INSERT_DELAY_MS);
@@ -198,13 +218,31 @@ export function AuroraWalletScreen({
 
   const openCard = () => setCardView(issued ? 'home' : 'intro');
 
-  // Tap to pay only runs when the balance covers the (fixed demo) charge —
-  // otherwise the flow doesn't start and a toast says why.
+  // The merchant is picked when the tap STARTS — the balance guard, the charge,
+  // and the inserted row all see the same one. Shuffled-deck draw: every
+  // merchant appears once (random order) before any repeats; the reshuffle
+  // keeps the previous deck's last card off the top so back-to-back can't
+  // happen across deck boundaries. A blocked tap puts the card back.
+  const merchantDeck = useRef<typeof TAP_MERCHANTS>([]);
+  const pendingTapTx = useRef(TAP_MERCHANTS[0]);
   const startTapToPay = () => {
-    if (availableCents < parseCents(TAP_TX.amount)) {
+    if (merchantDeck.current.length === 0) {
+      const deck = [...TAP_MERCHANTS];
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      if (deck[0] === pendingTapTx.current) deck.push(deck.shift()!);
+      merchantDeck.current = deck;
+    }
+    const merchant = merchantDeck.current[0];
+    // Not enough for THIS merchant — the flow doesn't start, a toast says why.
+    if (availableCents < parseCents(merchant.amount)) {
       showToast('Not enough balance');
       return;
     }
+    merchantDeck.current.shift();
+    pendingTapTx.current = merchant;
     setTapPhase('hold');
   };
 
