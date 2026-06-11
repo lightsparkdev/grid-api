@@ -38,7 +38,7 @@ const WEIGHT_BY_SYMBOL = {
   'chevron.left': 'semibold',
   'chevron.right': 'semibold',
   'chevron.down': 'semibold',
-  'delete.left': 'medium',
+  'delete.left': 'semibold',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');

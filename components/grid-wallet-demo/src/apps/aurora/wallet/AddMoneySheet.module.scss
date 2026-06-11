@@ -248,6 +248,11 @@
   color: var(--ios-label-primary);
 }
 
+/* Remaining cent placeholders, dimmed (Swift AnimatedCurrencyText suffix). */
+.amountGhost {
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
 .amountSub {
   display: inline-flex;
   align-items: center;
@@ -282,36 +287,36 @@
   }
 }
 
-/* ── Keypad ───────────────────────────────────────────────────────────────── */
+/* ── Keypad — mirrors the Swift NumericKeypad: 48px keys, 4px gaps, 4px screen
+   inset (the -12px margin unwinds the layout's 16px), title2 semibold, and a
+   0.96 scale press (instant down, 0.2s ease-out release — no fill). ────────── */
 .keypad {
   display: grid;
   flex-shrink: 0;
   grid-template-columns: repeat(3, 1fr);
-  padding: 0 16px;
+  gap: 4px;
+  margin: 4px -12px;
 }
 
 .key {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 58px;
+  height: 48px;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 16px;
-  corner-shape: round;
   background: none;
-  font-family: var(--ios-font-family);
-  font-size: 24px;
-  font-weight: 510;
-  font-variation-settings: 'wght' 510, 'wdth' 100;
+  @include ios.ios-text-title-2;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
   color: var(--ios-label-primary);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.15s ease;
+  transition: transform 0.2s ease-out;
 
   &:active {
-    background: var(--ios-fill-quaternary);
+    transform: scale(0.96);
     transition: none;
   }
 }
@@ -322,12 +327,11 @@
   padding: 0 16px 16px;
 }
 
-.ctaDisabled {
-  opacity: 0.4;
-  pointer-events: none;
+/* ── Step 3: details + Confirm ────────────────────────────────────────────── */
+.detailsCard {
+  margin-bottom: 4px;
 }
 
-/* ── Step 3: details + Confirm ────────────────────────────────────────────── */
 .detailRows {
   display: flex;
   flex-direction: column;
@@ -365,40 +369,17 @@
   font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
 }
 
-.confirmWrap {
-  flex-shrink: 0;
-  padding: 0 16px 16px;
-}
-
-/* Figma 2143:38927 — dark pill (inverts with theme), faceid + label. */
-.confirmBtn {
-  display: flex;
+/* CTA contents — icon + morphing label inside the blue glass pill. */
+.ctaInner {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
-  min-height: 50px;
-  margin: 0;
-  padding: 14px 20px;
-  border: 0;
-  border-radius: 1000px;
-  corner-shape: round;
-  background: #1c1c1e;
-  color: #ffffff;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.02);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-
-  :global([data-theme='dark']) & {
-    background: #ffffff;
-    color: #1c1c1e;
-  }
 }
 
-.confirmLabel {
-  @include ios.ios-text-headline;
-  font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+.ctaIcon {
+  display: inline-flex;
+  align-items: center;
 }
 
 .spinner {
