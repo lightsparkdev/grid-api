@@ -1,0 +1,403 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* ── Sheet flow shell ─────────────────────────────────────────────────────────
+   Figma 109:29870 — solid near-full-height sheet; top sits just under the
+   status bar. Steps slide horizontally inside .steps. */
+.flow {
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--app-screen-height, 874px) - 62px);
+  min-height: 0;
+}
+
+/* ── Toolbar (grabber + nav button + centered title) ─────────────────────── */
+.toolbar {
+  flex-shrink: 0;
+  padding-bottom: 10px;
+}
+
+.grabber {
+  display: block;
+  width: 36px;
+  height: 5px;
+  margin: 5px auto 6px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--ios-fill-tertiary);
+}
+
+.toolbarRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  min-height: 40px;
+}
+
+/* Body/Emphasized 17/22, truly centered regardless of the nav button. */
+.title {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  margin: 0;
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  text-align: center;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}
+
+/* ── Step host ────────────────────────────────────────────────────────────── */
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.step {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Cards (Figma radius 32 — plain corners at 1.2x ⇒ 38.4px, the cross-browser
+   superellipse compensation) ─────────────────────────────────────────────── */
+.card {
+  position: relative;
+  width: 100%;
+  padding: 4px 0;
+  border-radius: 38.4px;
+  corner-shape: round;
+  background: var(--add-card-bg);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
+  --add-card-bg: var(--ios-bg-primary);
+
+  :global([data-theme='dark']) & {
+    --add-card-bg: var(--ios-bg-secondary);
+  }
+}
+
+/* ── Step 1: source list ──────────────────────────────────────────────────── */
+.sourceWrap {
+  padding: 16px 16px 48px;
+}
+
+.sourceRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 0 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+/* Non-interactive variant (amount/confirm screens). */
+.sourceRowStatic {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 16px;
+}
+
+.tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-tertiary);
+  overflow: hidden;
+}
+
+.tileIcon {
+  width: 24px;
+  height: 24px;
+
+  /* Monochrome (black-stroke) source icons follow the label color in dark. */
+  :global([data-theme='dark']) & {
+    filter: invert(1);
+  }
+}
+
+.flagIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.sourceContent {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  height: 80px;
+  padding-right: 24px;
+}
+
+.sourceContentBordered {
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.sourceLabels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowTitle {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.rowSub {
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+/* ── Step 2/3 layout ──────────────────────────────────────────────────────── */
+.amountLayout {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 6px 16px 16px;
+}
+
+.cardStack {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Amount card fills the stack; content centers in the remaining space. */
+.amountCard {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Figma 2143:39414 — amount centered in the card, pb 24. */
+.amountInput {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding-bottom: 24px;
+  text-align: center;
+}
+
+/* SF Pro Rounded Bold 48/56. */
+.amountValue {
+  margin: 0;
+  @include ios.ios-text-wallet-balance;
+  @include ios.ios-type-rounded;
+  @include ios.ios-type-rounded-bold(var(--ios-type-wallet-balance-opsz));
+  color: var(--ios-label-primary);
+}
+
+.amountSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-secondary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* White disc straddling the 16px gap between the cards (40px ⇒ 12px overlap each). */
+.chevronDisc {
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: -12px auto;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--add-card-bg, var(--ios-bg-primary));
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.06);
+  color: var(--ios-label-secondary);
+  --add-card-bg: var(--ios-bg-primary);
+
+  :global([data-theme='dark']) & {
+    --add-card-bg: var(--ios-bg-secondary);
+  }
+}
+
+/* ── Keypad ───────────────────────────────────────────────────────────────── */
+.keypad {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0 16px;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  corner-shape: round;
+  background: none;
+  font-family: var(--ios-font-family);
+  font-size: 24px;
+  font-weight: 510;
+  font-variation-settings: 'wght' 510, 'wdth' 100;
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease;
+
+  &:active {
+    background: var(--ios-fill-quaternary);
+    transition: none;
+  }
+}
+
+/* ── CTAs ─────────────────────────────────────────────────────────────────── */
+.ctaWrap {
+  flex-shrink: 0;
+  padding: 0 16px 16px;
+}
+
+.ctaDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Step 3: details + Confirm ────────────────────────────────────────────── */
+.detailRows {
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.detailRowBordered {
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.detailLabel {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.detailValue {
+  @include ios.ios-text-caption-1;
+  font-weight: 510;
+  color: var(--ios-label-secondary);
+  text-align: right;
+  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+}
+
+.confirmWrap {
+  flex-shrink: 0;
+  padding: 0 16px 16px;
+}
+
+/* Figma 2143:38927 — dark pill (inverts with theme), faceid + label. */
+.confirmBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: #1c1c1e;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #1c1c1e;
+  }
+}
+
+.confirmLabel {
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}
+
+.spinner {
+  display: inline-flex;
+  animation: add-money-spin 0.9s linear infinite;
+}
+
+@keyframes add-money-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

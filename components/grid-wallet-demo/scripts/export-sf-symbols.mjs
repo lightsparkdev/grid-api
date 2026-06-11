@@ -34,6 +34,10 @@ const WEIGHT_BY_SYMBOL = {
   'play.fill': 'semibold',
   'creditcard.and.numbers': 'medium',
   ellipsis: 'medium',
+  'arrow.left': 'semibold',
+  'chevron.right': 'semibold',
+  'chevron.down': 'semibold',
+  'delete.left': 'medium',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');
