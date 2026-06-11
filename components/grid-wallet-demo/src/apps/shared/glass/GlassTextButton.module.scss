@@ -35,7 +35,6 @@
   /* Callout, emphasized (16/21, semibold). */
   @include ios.ios-text-callout;
   font-weight: 600;
-  letter-spacing: -0.31px;
   font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
 }
 

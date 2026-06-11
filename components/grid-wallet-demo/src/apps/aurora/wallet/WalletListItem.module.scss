@@ -60,7 +60,6 @@
   margin: 0;
   @include ios.ios-text-footnote;
   font-weight: 590;
-  letter-spacing: -0.08px;
   color: var(--ios-label-primary);
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
 }
@@ -69,7 +68,6 @@
 .sub {
   margin: 0;
   @include ios.ios-text-footnote;
-  letter-spacing: -0.08px;
   color: var(--ios-label-secondary);
 }
 

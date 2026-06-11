@@ -29,14 +29,12 @@
   margin: 0;
   @include ios.ios-text-title-2;
   font-weight: 700;
-  letter-spacing: -0.26px;
   font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
 }
 
 .description {
   margin: 0;
   @include ios.ios-text-body;
-  letter-spacing: -0.43px;
   text-wrap: pretty;
   color: var(--ios-label-secondary);
 }

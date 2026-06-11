@@ -27,7 +27,6 @@
   width: 100%;
   @include ios.ios-text-title-3;
   font-weight: 590;
-  letter-spacing: -0.45px;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
 }
 
@@ -45,7 +44,6 @@
   width: 100%;
   padding: 16px 32px 0 40px;
   @include ios.ios-text-caption-2;
-  letter-spacing: 0.06px;
   color: var(--ios-label-secondary);
   font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-caption-2-opsz);
 }
@@ -91,7 +89,6 @@
   width: 100%;
   @include ios.ios-text-footnote;
   font-weight: 590;
-  letter-spacing: -0.08px;
   color: var(--ios-label-primary);
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
 }
@@ -101,7 +98,6 @@
   margin: 0;
   width: 100%;
   @include ios.ios-text-footnote;
-  letter-spacing: -0.08px;
   color: var(--ios-label-secondary);
 }
 
@@ -125,7 +121,6 @@
 
 .creatingText {
   @include ios.ios-text-subheadline;
-  letter-spacing: -0.23px;
   font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
 }
 

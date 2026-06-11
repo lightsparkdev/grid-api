@@ -38,6 +38,7 @@
   line-height: var(--ios-type-title-2-line);
   font-weight: var(--ios-type-title-2-weight);
   @include ios-type-variation(var(--ios-type-title-2-weight), var(--ios-type-title-2-opsz));
+  letter-spacing: -0.26px;
 }
 
 @mixin ios-text-title-3 {
@@ -46,6 +47,7 @@
   line-height: var(--ios-type-title-3-line);
   font-weight: var(--ios-type-title-3-weight);
   @include ios-type-variation(var(--ios-type-title-3-weight), var(--ios-type-title-3-opsz));
+  letter-spacing: -0.45px;
 }
 
 @mixin ios-text-headline {
@@ -54,6 +56,7 @@
   line-height: var(--ios-type-headline-line);
   font-weight: var(--ios-type-headline-weight);
   @include ios-type-variation(var(--ios-type-headline-weight), var(--ios-type-headline-opsz));
+  letter-spacing: -0.43px;
 }
 
 @mixin ios-text-body {
@@ -62,6 +65,7 @@
   line-height: var(--ios-type-body-line);
   font-weight: var(--ios-type-body-weight);
   @include ios-type-variation(var(--ios-type-body-weight), var(--ios-type-body-opsz));
+  letter-spacing: -0.43px;
 }
 
 @mixin ios-text-callout {
@@ -70,6 +74,7 @@
   line-height: var(--ios-type-callout-line);
   font-weight: var(--ios-type-callout-weight);
   @include ios-type-variation(var(--ios-type-callout-weight), var(--ios-type-callout-opsz));
+  letter-spacing: -0.31px;
 }
 
 @mixin ios-text-subheadline {
@@ -78,6 +83,7 @@
   line-height: var(--ios-type-subheadline-line);
   font-weight: var(--ios-type-subheadline-weight);
   @include ios-type-variation(var(--ios-type-subheadline-weight), var(--ios-type-subheadline-opsz));
+  letter-spacing: -0.23px;
 }
 
 @mixin ios-text-footnote {
@@ -86,6 +92,7 @@
   line-height: var(--ios-type-footnote-line);
   font-weight: var(--ios-type-footnote-weight);
   @include ios-type-variation(var(--ios-type-footnote-weight), var(--ios-type-footnote-opsz));
+  letter-spacing: -0.08px;
 }
 
 @mixin ios-text-caption-1 {
@@ -102,6 +109,7 @@
   line-height: var(--ios-type-caption-2-line);
   font-weight: var(--ios-type-caption-2-weight);
   @include ios-type-variation(var(--ios-type-caption-2-weight), var(--ios-type-caption-2-opsz));
+  letter-spacing: 0.06px;
 }
 
 @mixin ios-text-wallet-balance {
