@@ -11,12 +11,13 @@ required:
   - updatedAt
 description: >-
   A delegated signing key for a card backed by an Embedded Wallet internal
-  account. Returned from `POST /auth/delegated-keys` (on activation) and
-  `GET /auth/delegated-keys` (list). The keypair is generated and custodied
-  by Grid; the private key is never returned. While `ACTIVE`, Grid may use
-  the key to authorize Spark token-transaction signing for the card's
-  Embedded Wallet funding account in place of a session keypair. `publicKey`
-  is informational metadata identifying the credential.
+  account. Returned from `POST /auth/delegated-keys` (on activation),
+  `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`.
+  The keypair is generated and custodied by Grid; the private key is never
+  returned. While `ACTIVE`, Grid may use the key to authorize Spark
+  token-transaction signing for the card's Embedded Wallet funding account in
+  place of a session keypair. `publicKey` is informational metadata
+  identifying the credential.
 properties:
   id:
     type: string
