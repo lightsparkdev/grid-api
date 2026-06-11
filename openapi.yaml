@@ -228,6 +228,7 @@ paths:
                         exchangeRate: 82.5
                         fees:
                           fixed: 100
+                          total: 150
                         updatedAt: '2025-02-05T12:00:00Z'
                       - sourceCurrency:
                           code: USD
@@ -247,6 +248,7 @@ paths:
                         exchangeRate: 0.925
                         fees:
                           fixed: 10
+                          total: 15
                         updatedAt: '2025-02-05T12:00:00Z'
         '400':
           description: Bad request - Invalid parameters
@@ -8473,6 +8475,12 @@ components:
           type: integer
           format: int64
           description: Fixed fee in the smallest unit of the sending currency (e.g., cents for USD)
+          minimum: 0
+          example: 100
+        total:
+          type: integer
+          format: int64
+          description: Total fees in the smallest unit of the sending currency (e.g., cents for USD). This value may change depending on the sending amount used; if no sending amount is specified, it falls back to the default.
           minimum: 0
           example: 100
     ExchangeRate:
