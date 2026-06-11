@@ -13,8 +13,27 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: calc(200px / 3); /* videos render at 1/3x of the 200px source. */
+  height: calc(200px / 3);
+}
+
+/* Looping reader clip — clipped right at the contactless ring (the source has a
+   ~6px margin, so ~2px in here), erasing the square background. Only the ring +
+   its interior remain, which blend with the wallet bg. */
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  clip-path: circle(47%);
+  -webkit-clip-path: circle(47%);
+}
+
+/* Done check sized to the clipped video's ring: the video ring is 94% of its
+   frame, this glyph's ring is 100% of its viewBox — so 94% keeps them identical
+   and the swap doesn't change size. */
+.checkGlyph {
+  width: 94%;
+  height: 94%;
 }
 
 /* Title3/Regular 20/25, label-secondary, centered. */
