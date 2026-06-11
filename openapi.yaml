@@ -55,6 +55,8 @@ tags:
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
+  - name: Operations
+    description: Endpoints for polling the status and result of asynchronous embedded-wallet operations (e.g. `wallet.export`, `auth_credential.delete`, `session.revoke`) by the `operationId` returned in a prior `202` response.
 paths:
   /config:
     get:
@@ -6862,6 +6864,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /operations/{operationId}:
+    parameters:
+      - name: operationId
+        in: path
+        description: The `Operation:<uuid>` id returned in a prior `202` response.
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get operation by ID
+      description: |
+        Retrieve the status of an asynchronous operation by the `operationId` returned in a prior `202` response, and — for a completed data-returning operation (`wallet.export`) — its result.
+
+        This is the poll companion to the `WALLET_OPERATION.*` webhook: the webhook pushes the terminal outcome, this endpoint pulls it on demand.
+
+        `status` is one of `PROCESSING`, `COMPLETED`, or `FAILED`. For a completed `wallet.export`, `result.encryptedWalletCredentials` carries the HPKE-encrypted wallet credentials, re-fetched on demand and never stored by Grid. For state-changing operations (`auth_credential.delete`, `session.revoke`) `result` is always `null`. On `FAILED`, `error.code` describes the failure.
+      operationId: getOperationById
+      tags:
+        - Operations
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Operation'
+        '400':
+          description: Malformed operation id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   agent-action:
     post:
@@ -7951,6 +8005,82 @@ webhooks:
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  wallet-operation:
+    post:
+      summary: Wallet operation completed or failed
+      description: |
+        Webhook that is called when an asynchronous embedded-wallet operation reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal success and `WALLET_OPERATION.FAILED` on terminal failure.
+
+        The specific operation is carried in `data.operationType` (`auth_credential.delete`, `session.revoke`, or `wallet.export`). The webhook carries no sensitive result material — only the `operationId`, `operationType`, `status`, and (on failure) `error.code`. For a data-returning operation (`wallet.export`), retrieve the result with `GET /operations/{operationId}`; it is never delivered in the webhook.
+
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: walletOperationWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletOperationWebhook'
+            examples:
+              completed:
+                summary: Wallet export completed
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+                  type: WALLET_OPERATION.COMPLETED
+                  timestamp: '2026-06-08T14:31:00Z'
+                  data:
+                    operationId: Operation:019542f5-b3e7-1d02-0000-000000000099
+                    operationType: wallet.export
+                    status: completed
+              failed:
+                summary: Session revoke failed terminally
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: WALLET_OPERATION.FAILED
+                  timestamp: '2026-06-08T14:32:00Z'
+                  data:
+                    operationId: Operation:019542f5-b3e7-1d02-0000-00000000009a
+                    operationType: session.revoke
+                    status: failed
+                    error:
+                      code: DeleteApiKeysFailed
       responses:
         '200':
           description: |
@@ -18787,6 +18917,90 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    OperationResult:
+      type: object
+      description: |
+        Result of a completed data-returning operation. Tagged by `type` so the result shape can grow per operation type without a breaking change. Present only when `status` is `COMPLETED` and the operation is data-returning (`wallet.export`); `null` otherwise.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: The operation type this result belongs to.
+          enum:
+            - wallet.export
+          example: wallet.export
+        encryptedWalletCredentials:
+          type: string
+          description: |
+            For `wallet.export`: the HPKE-encrypted wallet credentials bundle, encrypted to the `targetPublicKey` the client committed to when the export was requested. Re-fetched on demand; never stored by Grid.
+          example: '{"version":"v1.0.0","data":"..."}'
+    OperationError:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: Machine-readable failure code for a `FAILED` operation.
+          example: DeleteApiKeysFailed
+    Operation:
+      type: object
+      description: An asynchronous embedded-wallet operation and its current status.
+      required:
+        - id
+        - operationType
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: The `Operation:<uuid>` id (equal to the `operationId` returned in the prior `202`).
+          example: Operation:019542f5-b3e7-1d02-0000-000000000099
+        operationType:
+          type: string
+          description: The kind of operation.
+          enum:
+            - auth_credential.delete
+            - session.revoke
+            - wallet.export
+          example: wallet.export
+        status:
+          type: string
+          description: Current status of the operation.
+          enum:
+            - PROCESSING
+            - COMPLETED
+            - FAILED
+          example: COMPLETED
+        createdAt:
+          type: string
+          format: date-time
+          description: When the operation was created.
+          example: '2026-06-08T14:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the operation was last updated.
+          example: '2026-06-08T14:31:00Z'
+        completedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: When the operation reached a terminal state; `null` while `PROCESSING`.
+          example: '2026-06-08T14:31:00Z'
+        result:
+          anyOf:
+            - $ref: '#/components/schemas/OperationResult'
+            - type: 'null'
+          description: Present only for a `COMPLETED` data-returning operation; `null` otherwise.
+        error:
+          anyOf:
+            - $ref: '#/components/schemas/OperationError'
+            - type: 'null'
+          description: Present only when `status` is `FAILED`; `null` otherwise.
     WebhookType:
       type: string
       enum:
@@ -18821,6 +19035,8 @@ components:
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
         - CARD.FUNDING_SOURCE_CHANGE
+        - WALLET_OPERATION.COMPLETED
+        - WALLET_OPERATION.FAILED
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -19041,6 +19257,51 @@ components:
               type: string
               enum:
                 - CARD.FUNDING_SOURCE_CHANGE
+    WalletOperationWebhookData:
+      type: object
+      required:
+        - operationId
+        - operationType
+        - status
+      properties:
+        operationId:
+          type: string
+          description: The `Operation:<uuid>` id, resolvable via `GET /operations/{operationId}`.
+          example: Operation:019542f5-b3e7-1d02-0000-000000000099
+        operationType:
+          type: string
+          description: The kind of operation that reached a terminal state.
+          enum:
+            - auth_credential.delete
+            - session.revoke
+            - wallet.export
+          example: wallet.export
+        status:
+          type: string
+          description: Terminal status of the operation.
+          enum:
+            - completed
+            - failed
+          example: completed
+        error:
+          anyOf:
+            - $ref: '#/components/schemas/OperationError'
+            - type: 'null'
+          description: Present only on `failed`; `null` otherwise.
+    WalletOperationWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/WalletOperationWebhookData'
+            type:
+              type: string
+              enum:
+                - WALLET_OPERATION.COMPLETED
+                - WALLET_OPERATION.FAILED
   requestBodies:
     DocumentUploadRequestBody:
       required: true

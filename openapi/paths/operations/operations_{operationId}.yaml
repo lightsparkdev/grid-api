@@ -1,0 +1,61 @@
+parameters:
+  - name: operationId
+    in: path
+    description: The `Operation:<uuid>` id returned in a prior `202` response.
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get operation by ID
+  description: >
+    Retrieve the status of an asynchronous operation by the `operationId`
+    returned in a prior `202` response, and — for a completed data-returning
+    operation (`wallet.export`) — its result.
+
+
+    This is the poll companion to the `WALLET_OPERATION.*` webhook: the webhook
+    pushes the terminal outcome, this endpoint pulls it on demand.
+
+
+    `status` is one of `PROCESSING`, `COMPLETED`, or `FAILED`. For a completed
+    `wallet.export`, `result.encryptedWalletCredentials` carries the
+    HPKE-encrypted wallet credentials, re-fetched on demand and never stored by
+    Grid. For state-changing operations (`auth_credential.delete`,
+    `session.revoke`) `result` is always `null`. On `FAILED`, `error.code`
+    describes the failure.
+  operationId: getOperationById
+  tags:
+    - Operations
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/operations/Operation.yaml
+    '400':
+      description: Malformed operation id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Operation not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,94 @@
+post:
+  summary: Wallet operation completed or failed
+  description: >
+    Webhook that is called when an asynchronous embedded-wallet operation
+    reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal
+    success and `WALLET_OPERATION.FAILED` on terminal failure.
+
+
+    The specific operation is carried in `data.operationType`
+    (`auth_credential.delete`, `session.revoke`, or `wallet.export`). The
+    webhook carries no sensitive result material — only the `operationId`,
+    `operationType`, `status`, and (on failure) `error.code`. For a
+    data-returning operation (`wallet.export`), retrieve the result with
+    `GET /operations/{operationId}`; it is never delivered in the webhook.
+
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+  operationId: walletOperationWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/WalletOperationWebhook.yaml
+        examples:
+          completed:
+            summary: Wallet export completed
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+              type: WALLET_OPERATION.COMPLETED
+              timestamp: '2026-06-08T14:31:00Z'
+              data:
+                operationId: Operation:019542f5-b3e7-1d02-0000-000000000099
+                operationType: wallet.export
+                status: completed
+          failed:
+            summary: Session revoke failed terminally
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+              type: WALLET_OPERATION.FAILED
+              timestamp: '2026-06-08T14:32:00Z'
+              data:
+                operationId: Operation:019542f5-b3e7-1d02-0000-00000000009a
+                operationType: session.revoke
+                status: failed
+                error:
+                  code: DeleteApiKeysFailed
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

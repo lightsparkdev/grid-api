@@ -1,0 +1,58 @@
+type: object
+description: An asynchronous embedded-wallet operation and its current status.
+required:
+  - id
+  - operationType
+  - status
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: >-
+      The `Operation:<uuid>` id (equal to the `operationId` returned in the
+      prior `202`).
+    example: Operation:019542f5-b3e7-1d02-0000-000000000099
+  operationType:
+    type: string
+    description: The kind of operation.
+    enum:
+      - auth_credential.delete
+      - session.revoke
+      - wallet.export
+    example: wallet.export
+  status:
+    type: string
+    description: Current status of the operation.
+    enum:
+      - PROCESSING
+      - COMPLETED
+      - FAILED
+    example: COMPLETED
+  createdAt:
+    type: string
+    format: date-time
+    description: When the operation was created.
+    example: '2026-06-08T14:30:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the operation was last updated.
+    example: '2026-06-08T14:31:00Z'
+  completedAt:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: When the operation reached a terminal state; `null` while `PROCESSING`.
+    example: '2026-06-08T14:31:00Z'
+  result:
+    anyOf:
+      - $ref: ./OperationResult.yaml
+      - type: 'null'
+    description: Present only for a `COMPLETED` data-returning operation; `null` otherwise.
+  error:
+    anyOf:
+      - $ref: ./OperationError.yaml
+      - type: 'null'
+    description: Present only when `status` is `FAILED`; `null` otherwise.

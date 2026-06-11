@@ -1,0 +1,131 @@
+---
+title: "Asynchronous operations"
+description: "Track long-running embedded-wallet operations with the operations endpoint and wallet_operation webhooks"
+icon: "/images/icons/arrows-repeat-circle.svg"
+"og:image": "/images/og/og-api-reference.png"
+---
+
+Some embedded-wallet operations cannot complete within a single request. When an operation is accepted but still in flight, Grid responds with `202 Accepted` and an `operationId` of the form `Operation:<uuid>`. You then learn the terminal outcome in one of two ways:
+
+- **Poll** the operation with `GET /operations/{operationId}`.
+- **Receive** a `WALLET_OPERATION.*` webhook when the operation reaches a terminal state.
+
+The two are companions: the webhook pushes the outcome, and the endpoint pulls it on demand. Both report the same terminal state, so you can rely on whichever fits your integration — or use the webhook as the primary signal and the endpoint as a reconciliation fallback.
+
+## Operation types
+
+| `operationType` | Description | Returns data |
+|-----------------|-------------|--------------|
+| `auth_credential.delete` | Remove an end-user authentication credential. | No |
+| `session.revoke` | Revoke an active embedded-wallet session. | No |
+| `wallet.export` | Export the encrypted wallet credentials bundle. | Yes |
+
+State-changing operations (`auth_credential.delete`, `session.revoke`) carry no result payload. Data-returning operations (`wallet.export`) expose their result through `GET /operations/{operationId}` only — the result is **never** delivered in the webhook.
+
+## Polling an operation
+
+Call `GET /operations/{operationId}` with the `operationId` from the original `202` response. The `status` field is one of `PROCESSING`, `COMPLETED`, or `FAILED`.
+
+```bash
+curl -X GET "$GRID_BASE_URL/operations/Operation:019542f5-b3e7-1d02-0000-000000000099" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+**While the operation is in flight (`200`):**
+
+```json
+{
+  "id": "Operation:019542f5-b3e7-1d02-0000-000000000099",
+  "operationType": "wallet.export",
+  "status": "PROCESSING",
+  "createdAt": "2026-06-08T14:30:00Z",
+  "updatedAt": "2026-06-08T14:30:00Z",
+  "completedAt": null,
+  "result": null,
+  "error": null
+}
+```
+
+**Once a data-returning operation completes (`200`):**
+
+```json
+{
+  "id": "Operation:019542f5-b3e7-1d02-0000-000000000099",
+  "operationType": "wallet.export",
+  "status": "COMPLETED",
+  "createdAt": "2026-06-08T14:30:00Z",
+  "updatedAt": "2026-06-08T14:31:00Z",
+  "completedAt": "2026-06-08T14:31:00Z",
+  "result": {
+    "type": "wallet.export",
+    "encryptedWalletCredentials": "{\"version\":\"v1.0.0\",\"data\":\"...\"}"
+  },
+  "error": null
+}
+```
+
+For `wallet.export`, `result.encryptedWalletCredentials` is the HPKE-encrypted wallet credentials bundle, encrypted to the `targetPublicKey` the client committed to when the export was requested. It is re-fetched on demand and never stored by Grid. For `auth_credential.delete` and `session.revoke`, `result` is always `null`.
+
+**If the operation fails (`200`):**
+
+```json
+{
+  "id": "Operation:019542f5-b3e7-1d02-0000-00000000009a",
+  "operationType": "session.revoke",
+  "status": "FAILED",
+  "createdAt": "2026-06-08T14:30:00Z",
+  "updatedAt": "2026-06-08T14:32:00Z",
+  "completedAt": "2026-06-08T14:32:00Z",
+  "result": null,
+  "error": {
+    "code": "DeleteApiKeysFailed"
+  }
+}
+```
+
+On failure, `error.code` is a machine-readable failure code you can branch on.
+
+## Receiving the webhook
+
+When an operation reaches a terminal state, Grid sends a `wallet_operation` webhook: `WALLET_OPERATION.COMPLETED` on success and `WALLET_OPERATION.FAILED` on failure. Route purely on `type`, then use `data.operationType` to identify the specific operation.
+
+The webhook carries no sensitive result material — only the `operationId`, `operationType`, `status`, and (on failure) `error.code`. To retrieve the result of a data-returning operation such as `wallet.export`, call `GET /operations/{operationId}`.
+
+**Completed:**
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000040",
+  "type": "WALLET_OPERATION.COMPLETED",
+  "timestamp": "2026-06-08T14:31:00Z",
+  "data": {
+    "operationId": "Operation:019542f5-b3e7-1d02-0000-000000000099",
+    "operationType": "wallet.export",
+    "status": "completed"
+  }
+}
+```
+
+**Failed:**
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000041",
+  "type": "WALLET_OPERATION.FAILED",
+  "timestamp": "2026-06-08T14:32:00Z",
+  "data": {
+    "operationId": "Operation:019542f5-b3e7-1d02-0000-00000000009a",
+    "operationType": "session.revoke",
+    "status": "failed",
+    "error": {
+      "code": "DeleteApiKeysFailed"
+    }
+  }
+}
+```
+
+`wallet_operation` webhooks are signed and retried like every other Grid webhook — verify the `X-Grid-Signature` header and dedupe on the webhook `id`. See [Webhooks](/api-reference/webhooks) for the verification process and retry policy.
+
+<Note>
+  The webhook `data.status` is lowercase (`completed` / `failed`), while the `status` returned by `GET /operations/{operationId}` is uppercase (`PROCESSING` / `COMPLETED` / `FAILED`). Branch on the webhook `type` rather than `data.status` where possible.
+</Note>
