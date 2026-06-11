@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
@@ -165,13 +164,14 @@ export function AuroraWalletScreen({
     setAddedCents((c) => c + cents);
     window.clearTimeout(addInsertTimer.current);
     addInsertTimer.current = window.setTimeout(() => {
+      // Figma 90:13701 — bank as the title, MX flag as the graphic.
       setActivity((prev) => [
         {
           id: `add-${Date.now()}`,
-          Icon: IconBank,
-          title: 'Added money',
-          detail: 'Banorte •••• 3872',
-          amount: formatUsdCents(cents),
+          image: '/assets/add-money/flag-mx.svg',
+          title: 'Banorte (•••• 3872)',
+          detail: 'Added to balance',
+          amount: `+${formatUsdCents(cents)}`,
           timestamp: Date.now(),
         },
         ...prev,

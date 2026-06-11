@@ -8,7 +8,10 @@ type ListIcon = ComponentType<{ size?: number; className?: string }>;
 
 export interface WalletListItemData {
   id: string;
-  Icon: ListIcon;
+  /** Glyph graphic (central-icons). */
+  Icon?: ListIcon;
+  /** Image graphic (e.g. a country flag) — wins over Icon when both are set. */
+  image?: string;
   title: string;
   /** Merchant detail line, e.g. "Tap to Pay". */
   detail: string;
@@ -28,11 +31,15 @@ export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'ti
  * (24px glyph), a title + two secondary lines, and a right-aligned amount.
  * Reusable across the wallet flows.
  */
-export function WalletListItem({ Icon, title, detail, time, amount }: WalletListItemProps) {
+export function WalletListItem({ Icon, image, title, detail, time, amount }: WalletListItemProps) {
   return (
     <div className={styles.row}>
       <span className={styles.graphic} aria-hidden>
-        <Icon size={24} />
+        {image ? (
+          <img className={styles.graphicImage} src={image} alt="" draggable={false} />
+        ) : (
+          Icon && <Icon size={24} />
+        )}
       </span>
       <div className={styles.content}>
         <div className={styles.container}>

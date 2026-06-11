@@ -243,6 +243,10 @@ export function AddMoneySheet({
       else if (e.key === 'Enter') tryContinue();
       else return;
       e.preventDefault();
+      // Typing consumes the key globally — drop any stale click-focus so the
+      // keystroke doesn't promote a :focus-visible ring on the last-clicked
+      // control. Real Tab navigation is untouched (Tab falls through above).
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

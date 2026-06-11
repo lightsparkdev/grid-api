@@ -29,6 +29,14 @@
   }
 }
 
+/* Image graphic (e.g. flag) — circular, same 24px footprint as the glyphs. */
+.graphicImage {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 /* Figma 2143:41034 — fills, pr 24, items-center. */
 .content {
   display: flex;
@@ -71,13 +79,13 @@
   color: var(--ios-label-secondary);
 }
 
-/* Caption1/Emphasized 12/16, Medium 510, right-aligned. */
+/* Figma 90:13701 (Amounts) — Footnote/Emphasized 13/18, -0.08, right-aligned. */
 .amount {
   flex-shrink: 0;
   margin: 0;
-  @include ios.ios-text-caption-1;
-  font-weight: 510;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
   text-align: right;
   color: var(--ios-label-primary);
-  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
 }

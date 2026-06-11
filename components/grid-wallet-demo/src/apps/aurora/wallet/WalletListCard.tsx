@@ -177,6 +177,7 @@ export function WalletListCard({
                     >
                       <WalletListItem
                         Icon={item.Icon}
+                        image={item.image}
                         title={item.title}
                         detail={item.detail}
                         time={relativeTime(item.timestamp, now)}
@@ -186,6 +187,7 @@ export function WalletListCard({
                   ) : (
                     <WalletListItem
                       Icon={item.Icon}
+                      image={item.image}
                       title={item.title}
                       detail={item.detail}
                       time={relativeTime(item.timestamp, now)}
