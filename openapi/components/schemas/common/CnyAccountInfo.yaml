@@ -10,3 +10,4 @@ allOf:
         type: string
         enum:
         - MOBILE_MONEY
+        - BANK_TRANSFER

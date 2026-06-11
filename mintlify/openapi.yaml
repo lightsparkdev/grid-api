@@ -11875,29 +11875,38 @@ components:
       type: object
       required:
         - accountType
-        - phoneNumber
         - bankName
+      description: |-
+        Required fields depend on the selected paymentRails:
+        - BANK_TRANSFER: accountNumber, bankName
+        - MOBILE_MONEY: phoneNumber, bankName
       properties:
         accountType:
           type: string
           enum:
             - CNY_ACCOUNT
+        accountNumber:
+          type: string
+          description: The destination bank account number (BANK_TRANSFER rail)
+          minLength: 1
+          maxLength: 34
         phoneNumber:
           type: string
-          description: The phone number in international format
+          description: The phone number in international format (MOBILE_MONEY rail)
           example: '+1234567890'
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank or mobile-wallet provider
           minLength: 1
           maxLength: 255
       example:
         accountType: CNY_ACCOUNT
+        accountNumber: '1234567890'
         phoneNumber: '+1234567890'
-        bankName: Example Bank
+        bankName: China Construction Bank
     CnyAccountInfo:
       allOf:
         - $ref: '#/components/schemas/CnyAccountInfoBase'
@@ -11911,6 +11920,7 @@ components:
                 type: string
                 enum:
                   - MOBILE_MONEY
+                  - BANK_TRANSFER
     PaymentCnyAccountInfo:
       title: CNY Account
       allOf:
