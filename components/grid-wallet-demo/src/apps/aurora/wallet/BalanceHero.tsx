@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NumberFlow, { NumberFlowGroup } from '@number-flow/react';
+import NumericText from '@/components/NumericText';
 import styles from './BalanceHero.module.scss';
 
 interface BalanceHeroProps {
@@ -18,10 +18,14 @@ function parseAmount(value: string): { dollars: number; cents: number } {
   };
 }
 
+/** Slim vertical pad (the iOS default inflates the line box; nothing clips here). */
+const NUMERIC_PAD = { padding: '0.08em 0' };
+
 /**
- * Figma 90:13445 — total balance hero. On mount the amount ticks up from 0 to the
- * real balance (and animates any later balance change) via NumberFlow. The integer
- * and cents are split into a synced group so the cents keep the dimmer treatment.
+ * Figma 90:13445 — total balance hero. On mount the amount ticks up from 0 to
+ * the real balance (and animates any later change) via NumericText — the
+ * iOS-numericText port — split into whole + cents instances so the cents keep
+ * the dimmer treatment.
  */
 export function BalanceHero({ balance }: BalanceHeroProps) {
   const target = parseAmount(balance);
@@ -36,22 +40,21 @@ export function BalanceHero({ balance }: BalanceHeroProps) {
     <section className={styles.hero} aria-label={`Total balance ${balance}`}>
       <p className={styles.label}>Total balance</p>
       <p className={styles.amount}>
-        <NumberFlowGroup>
-          <NumberFlow
-            className={styles.whole}
-            value={shown.dollars}
-            prefix="$"
-            format={{ useGrouping: true, maximumFractionDigits: 0 }}
-            aria-hidden
-          />
-          <NumberFlow
-            className={styles.decimals}
-            value={shown.cents}
-            prefix="."
-            format={{ minimumIntegerDigits: 2, useGrouping: false }}
-            aria-hidden
-          />
-        </NumberFlowGroup>
+        <NumericText
+          className={styles.whole}
+          value={shown.dollars}
+          format={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }}
+          style={NUMERIC_PAD}
+        />
+        <span className={styles.decimals} aria-hidden>
+          .
+        </span>
+        <NumericText
+          className={styles.decimals}
+          value={shown.cents}
+          format={{ minimumIntegerDigits: 2, useGrouping: false }}
+          style={NUMERIC_PAD}
+        />
       </p>
     </section>
   );

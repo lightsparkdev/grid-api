@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/re
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
+import NumericText from '@/components/NumericText';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -92,21 +93,9 @@ const KEYPAD: Array<Array<string>> = [
   ['.', '0', 'del'],
 ];
 
-/**
- * Typed text in primary plus the rest of the FULL 2-decimal amount as a dim
- * suffix — "1500" → "$1,500" + ".00", "1500.5" → "$1,500.5" + "0" (the Swift
- * AnimatedCurrencyText pattern). Because primary+suffix always spell the final
- * amount, the confirm step just INKS the suffix in — no text swap, no motion.
- */
-function formatTypedParts(raw: string, started: boolean): { primary: string; suffix: string } {
-  if (!started || !raw) return { primary: '$0', suffix: '' };
-  const [whole, frac] = raw.split('.');
-  const grouped = Number(whole || '0').toLocaleString('en-US');
-  const primary = frac !== undefined ? `$${grouped}.${frac}` : `$${grouped}`;
-  const full = formatUsdCents(typedToCents(raw));
-  const suffix = full.startsWith(primary) ? full.slice(primary.length) : '';
-  return { primary, suffix };
-}
+/** NumericText needs vertical blur room, but the iOS default (0.35em) inflates
+ *  the line box; the wallet doesn't clip, so a slim pad keeps layout tight. */
+const NUMERIC_PAD = { padding: '0.08em 0' };
 
 /** Typed amount → cents (for the parent's balance/activity bookkeeping). */
 export function typedToCents(raw: string): number {
@@ -122,13 +111,6 @@ export function formatUsdCents(cents: number): string {
   })}`;
 }
 
-function formatMxn(raw: string): string {
-  const usd = Number.parseFloat(raw || '0') || 0;
-  return `${(usd * USD_TO_MXN).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} MXN`;
-}
 
 interface AddMoneySheetProps {
   open: boolean;
@@ -249,7 +231,21 @@ export function AddMoneySheet({
   const dismiss = () => {
     if (!confirming) onDismiss();
   };
-  const typedParts = formatTypedParts(raw, started);
+
+  // Amount-entry decimals for NumericText: hidden until the user types the dot
+  // ("1500" → "$1,500"); then typed digits solid + remaining placeholders dim
+  // ("1500." → "$1,500." + ghost "00"). Confirm renders the full cents solid —
+  // ghosts ink in via color; a missing ".00" slides in numericText-style.
+  const hasDot = raw.includes('.');
+  const fracTyped = raw.split('.')[1] ?? '';
+  const amountFraction =
+    step === 'confirm'
+      ? { hasDot: true, typed: String(cents % 100).padStart(2, '0'), ghost: '' }
+      : {
+          hasDot,
+          typed: fracTyped,
+          ghost: hasDot ? '0'.repeat(Math.max(0, 2 - fracTyped.length)) : '',
+        };
 
   // iOS push: forward = in from the right / out to the left; back = reverse.
   // Variants + `custom` (not inline objects): an EXITING screen never re-renders,
@@ -429,22 +425,21 @@ export function AddMoneySheet({
                       </div>
                       <div className={styles.amountInput}>
                         <p ref={amountScope} className={styles.amountValue}>
-                          {/* primary+suffix always spell the final amount, so the
-                              confirm step only re-colors the ghost — no swap. */}
-                          {typedParts.primary}
-                          {typedParts.suffix && (
-                            <span
-                              className={clsx(
-                                styles.amountGhost,
-                                step === 'confirm' && styles.amountGhostSolid,
-                              )}
-                            >
-                              {typedParts.suffix}
-                            </span>
-                          )}
+                          <NumericText
+                            value={cents / 100}
+                            format={{ style: 'currency', currency: 'USD' }}
+                            fraction={amountFraction}
+                            ghostClassName={styles.amountGhost}
+                            style={NUMERIC_PAD}
+                          />
                         </p>
                         <p className={styles.amountSub}>
-                          {formatMxn(raw)}
+                          <NumericText
+                            value={(cents / 100) * USD_TO_MXN}
+                            format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+                            style={NUMERIC_PAD}
+                          />
+                          {'\u00A0MXN'}
                           {step === 'amount' && (
                             <SfSymbol name="arrow.up.arrow.down" size={11} />
                           )}

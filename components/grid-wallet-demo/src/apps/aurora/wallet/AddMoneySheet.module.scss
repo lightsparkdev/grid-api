@@ -266,15 +266,10 @@
   color: var(--ios-label-primary);
 }
 
-/* Remaining cent placeholders, dimmed (Swift AnimatedCurrencyText suffix).
-   On confirm the ghost INKS IN to primary — a pure color morph, no text swap. */
+/* Cent placeholders, dimmed (NumericText ghost columns; Swift's
+   AnimatedCurrencyText suffix). The ink-in transition lives in the component. */
 .amountGhost {
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
-  transition: color 0.3s ease;
-}
-
-.amountGhostSolid {
-  color: var(--ios-label-primary);
 }
 
 .amountSub {
