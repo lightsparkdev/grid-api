@@ -148,10 +148,13 @@ interface AuroraLensButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
 
 // Lens-only tuning for the issuance close button — kept separate from the shared
 // SYMBOL_GLASS (which also drives the SVG glass buttons). Stronger refraction +
-// chroma so the bent aurora reads clearly through the ~40px lens.
+// chroma so the bent aurora reads clearly through the ~40px lens. Values match
+// the scroll-refraction experiment's header-button optics (minus the frost).
 const LENS_DEPTH = 4; // SYMBOL_GLASS.depth (0.5) is a thin edge rim; widen the bend.
-const LENS_SCALE = 15; // SYMBOL_GLASS.scale is 10.
+const LENS_SCALE = 24; // SYMBOL_GLASS.scale is 10.
 const LENS_CHROMA = 0.5; // SYMBOL_GLASS.chromaticAberration is 0.25.
+const LENS_DOME = 20; // Hemispherical dome (SYMBOL_GLASS.domeDepth is 14).
+const LENS_GLOW = 0.1; // SYMBOL_GLASS.glowStrength is 0.06.
 
 const MAX_DPR = 2;
 
@@ -183,7 +186,7 @@ export function AuroraLensButton({
     let raf = 0;
     const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    const dome = computeDomeConstants(SYMBOL_GLASS.domeDepth, 20, 20);
+    const dome = computeDomeConstants(LENS_DOME, 20, 20);
     const ang = (SYMBOL_GLASS.specularRotation * Math.PI) / 180;
     const SQRT2 = Math.SQRT2;
 
@@ -224,7 +227,7 @@ export function AuroraLensButton({
       gl.uniform1f(lu.uRadius, SYMBOL_GLASS.radius);
       gl.uniform1f(lu.uDepth, LENS_DEPTH);
       gl.uniform1f(lu.uScale, LENS_SCALE);
-      gl.uniform1f(lu.uDomeOn, SYMBOL_GLASS.domeDepth > 0 ? 1 : 0);
+      gl.uniform1f(lu.uDomeOn, LENS_DOME > 0 ? 1 : 0);
       gl.uniform2f(lu.uDomeR, dome.Rx, dome.Ry);
       gl.uniform2f(lu.uDomeS, dome.scaleX, dome.scaleY);
       gl.uniform1f(lu.uEdgeStr, SYMBOL_GLASS.edgeStrength);
@@ -232,7 +235,7 @@ export function AuroraLensButton({
       gl.uniform1f(lu.uSpecStr, SYMBOL_GLASS.specularStrength);
       gl.uniform2f(lu.uSpecDir, Math.cos(ang), Math.sin(ang));
       gl.uniform1f(lu.uChroma, LENS_CHROMA);
-      gl.uniform1f(lu.uGlowStr, SYMBOL_GLASS.glowStrength);
+      gl.uniform1f(lu.uGlowStr, LENS_GLOW);
       gl.uniform1f(lu.uGlowInner, (1 - SYMBOL_GLASS.glowSpread) * SQRT2);
       gl.uniform1f(lu.uGlowBand, SYMBOL_GLASS.glowSpread * SQRT2);
       gl.uniform1f(lu.uGlowExp, SYMBOL_GLASS.glowExponent);
