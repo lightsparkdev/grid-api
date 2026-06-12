@@ -47,6 +47,7 @@ Skipping this gives a flat panel that doesn't lens (the classic failure).
 | Refract content you already render, or custom backdrop wiring | `Glass` (= `LiquidGlass`) |
 | A big frosted sheet/modal (no refraction — fast on Safari) | `FrostPanel` (`BottomSheet` uses it) |
 | A small surface that refracts the (static) screen behind it | `GlassOver`'s `backdropNode` |
+| A lens over the LIVE aurora that must work on Safari | WebGL: `AuroraLensButton` (circle) / `AuroraLensPanel` (rect squircle) |
 | The phone preview's WebGL stage | `glass-gl/StageGL` — **bespoke, don't reuse** |
 
 **SVG vs shader (which renderer):** **default to the SVG path** (`Glass` /
@@ -107,6 +108,12 @@ surfaces (`FrostPanel`) use the slimmer `FrostConfig`, not `GlassConfig`.
   canvas/video killing the filter, and a LAYOUT-bounds source-size ceiling. Read
   "Safari field notes" in the README before attempting; the full experiment is
   parked on `pat/scroll-refraction-experiment`.
+- **WebKit renders SVG displacement over a copied subtree as EMPTY output** at
+  notification size (confirmed June 2026 — see the README's "Confirmed dead
+  end" postmortem). Don't retry it: use the WebGL lenses for Safari refraction
+  and gate the SVG path to Chromium. Squircle-rect corner rules for Safari
+  (map smoothing with `cornerRadii`, overlay border-radius intersection,
+  one-element frost, no drop-shadow wrappers) are in the same section.
 - **Verifying a bend over a soft backdrop:** displacement is invisible without
   texture — draw a sharp debug grid through the bent coordinates to check.
 - **Big sheets/modals don't refract — they frost.** A large displacement lens

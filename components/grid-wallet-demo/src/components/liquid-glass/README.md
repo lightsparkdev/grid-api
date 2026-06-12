@@ -249,11 +249,17 @@ The **WebGL / shader path** is only needed when the thing you're refracting is
 **not** live DOM — a `<canvas>` drawing (e.g. a generated QR code) or a `<video>`
 (Safari won't apply SVG filters to those).
 
-There is **no automatic renderer selection**, and no general "glass over a
-canvas/video" component yet: the only WebGL renderer (`glass-gl/StageGL`) is
-bespoke to the phone preview and re-derives the displacement in GLSL rather than
-sampling the shared map. If you actually need canvas/video glass, generalize
-`StageGL` (or build a map-fed WebGL glass) on demand — don't assume a drop-in.
+There is **no automatic renderer selection**. The WebGL renderers that exist:
+
+- `glass-gl/StageGL` — bespoke to the phone preview; don't reuse.
+- `apps/shared/glass/AuroraLensButton` — circular lens over the live aurora
+  (the issuance close X); recomputes the field at bent coordinates.
+- `apps/shared/glass/AuroraLensPanel` — the **rectangular squircle** version
+  (born from the glass notification's Safari branch): ports `displacement.ts`'s
+  rounded-rect branch to GLSL term by term (lp-norm squircle SDF, per-axis dome,
+  splay, erf edge falloff, specular/glow/rim, in-shader tint), shares the
+  aurora's LUTs/clock, takes the same optics knobs as `GlassOver`. Reach for it
+  whenever a rect/squircle lens must work on Safari over the aurora.
 
 ## Safari field notes — live/changing content inside a lens
 
@@ -290,8 +296,42 @@ buttons never showed any of this:
   sharp debug grid through the same bent coordinates — straight center, warped
   rim = working.
 - **When the backdrop is procedural math, prefer re-computing it in WebGL at
-  bent coordinates** (`AuroraLensButton`) over filtering a copy: identical
-  result by construction, 60fps, immune to every quirk above.
+  bent coordinates** (`AuroraLensButton` for circles, `AuroraLensPanel` for
+  rect/squircle surfaces) over filtering a copy: identical result by
+  construction, 60fps, immune to every quirk above.
+
+### Confirmed dead end (glass-notification postmortem, June 2026)
+
+A 362×64 squircle lens (`GlassOver` + `backdropNode` screen copy) over the live
+CSS aurora replica produced **EMPTY filter output on WebKit** — not stale, not
+desynced: *empty*. Probed by swapping the copy for a static sharp test gradient
+(still nothing) and putting a red layer under the glass (the body rendered as
+tint-over-red ⇒ transparent output). The only thing WebKit painted was a **dark
+ring at the rim** — the specular pass composited against transparent-as-black
+(premultiplied arithmetic). Windowing the copy under the source-size ceiling,
+per-frame `refreshKey` minting, `isolation`, and stripping `will-change` did
+not change it. Conclusion: **don't ship SVG displacement over a copied subtree
+on WebKit at this size — render the lens in WebGL** (that's exactly what
+`AuroraLensPanel` is for). Probe scripts live in
+`components/grid-wallet-demo/scripts/webkit-notif-*.mjs`.
+
+Squircle-rect lens corners on Safari, the rules that DID land (all in
+`LiquidGlass` now):
+
+- With `cornerRadii`, the **displacement map keeps the real `cornerSmoothing`**
+  even where `corner-shape` is unsupported (the path() clip squircles
+  everywhere, so a circular map = mismatched arcs).
+- Clipped overlays drop `border-radius` in the `cornerRadii` case — Safari
+  renders a fill as the **intersection** of border-radius (circular there) and
+  clip-path. Uniform-radius glass keeps border-radius (inset shadows draw from
+  it).
+- A `backdrop-filter` child is **not bounded by an ancestor's clip-path** on
+  Safari — clip + tint + backdrop must live on ONE element (FrostPanel's
+  pattern).
+- Don't put `filter: drop-shadow()` on a wrapper around SVG-filtered glass —
+  Safari shades from the composited child's own bounds (wrong corner). Use a
+  squircle-clipped dark underlay, blurred on a PARENT (clip-path applies after
+  filters, so blurring the clipped element re-hardens the edge).
 
 ## Gotchas
 
@@ -301,6 +341,16 @@ buttons never showed any of this:
 - **The map regenerates when the *shape* changes** (size / `radius` / `depth` /
   etc.) — fine for static glass, but animate with `transform`, not size, or it
   re-bakes every frame. Position-only moves are cheap (drag is fine).
+- **FrostPanel tracks live SIZE animations same-frame.** Its clip + edge path
+  apply imperatively inside the ResizeObserver callback (post-layout,
+  pre-paint); the React render path alone lags a frame, which visibly detaches
+  the fill from a height-animating sheet's bottom edge. Keep that invariant if
+  you touch its measuring.
+- **Debug animated glass numerically, not by eye.** A Playwright run that
+  samples `getBoundingClientRect()` per frame (see
+  `scripts/sheet-frames.mjs`) instantly distinguishes "doesn't ease" from
+  "element unmounted" (height 0) from "fill lags clip" — three bugs that look
+  identical in screenshots.
 - **Tuned for largish rounded rects.** Tiny elements need smaller `depth`/`scale`.
 - **`specularRotation` is directional**: at 45° the highlight piles onto the
   top-left & bottom-right corners (looks like a bright "extra" arc there). Rotate

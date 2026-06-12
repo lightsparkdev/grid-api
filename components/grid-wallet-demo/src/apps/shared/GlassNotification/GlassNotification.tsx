@@ -11,7 +11,7 @@ import styles from './GlassNotification.module.scss';
 
 /** The capsule's resting slot — callers building a refraction copy offset
  *  their screen-aligned content by these (keep in sync with .layer padding). */
-export const NOTIFICATION_TOP_PX = 70;
+export const NOTIFICATION_TOP_PX = 64;
 export const NOTIFICATION_INSET_PX = 20;
 
 const IS_SAFARI =
