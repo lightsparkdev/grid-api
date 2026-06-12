@@ -91,6 +91,13 @@ export interface GlassConfig {
   shadowOpacity?: number;
   /** Resolution of the generated displacement map. */
   mapSize: number;
+  /**
+   * Bump to mint a fresh SVG filter id. Safari caches filter OUTPUT by id, so
+   * content animating INSIDE the lens (e.g. a live backdrop copy) ghosts/
+   * freezes until the id changes — callers bump this per content frame on
+   * Safari only. Shape/position changes already refresh automatically.
+   */
+  refreshKey?: number | string;
 }
 
 export interface LensRect {
@@ -179,8 +186,11 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   const H = size.h;
 
   // Squircle only where the platform supports it; circular fallback elsewhere.
+  // EXCEPT with per-corner radii: that route clips via path() — which squircles
+  // in every browser — so the MAP must keep the real smoothing too, or Safari
+  // draws a circular rim/glow inside a squircle clip (mismatched arcs).
   const squircleOK = useSquircleSupport();
-  const effSmoothing = squircleOK ? cfg.cornerSmoothing : 0;
+  const effSmoothing = squircleOK || cornerRadii ? cfg.cornerSmoothing : 0;
 
   // WebKit needs a trimmed filter graph (see useGlassEngine): the specular pass
   // reads the raw map (Aave's Safari path) to dodge a feComposite-over-flood
@@ -302,7 +312,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   // CSS shadow keeps moving. The fix (straight from Aave's writeup) is to mint a
   // FRESH id on every update — position included — which forces a clean repaint.
   const baseId = useRef(`lg-${Math.random().toString(36).slice(2)}`).current;
-  const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}|${isSafari ? 's' : 'c'}`;
+  const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}|${cfg.refreshKey ?? ''}|${isSafari ? 's' : 'c'}`;
   const verRef = useRef(0);
   const lastSig = useRef<string | null>(null);
   if (lastSig.current !== sig) {
@@ -348,6 +358,17 @@ export default function LiquidGlass(props: LiquidGlassProps) {
       : lr,
     pointerEvents: 'none',
   };
+  // Clipped overlays (tint/brightness/inset). PER-CORNER radii only: the
+  // path() clip is the single source of shape and the overlay must NOT also
+  // round itself — Safari renders a fill as the INTERSECTION of border-radius
+  // (circular there) and clip-path, leaving squircle corners unfilled inside
+  // the correctly-shaped rim. Uniform glass keeps border-radius: inset
+  // box-shadows DRAW from it (zeroing it straightens them), and on Chromium
+  // its superellipse matches the clip anyway.
+  const overlayClipped: GlassCSS =
+    cornerRadii && clipPath
+      ? { ...overlayBase, borderRadius: 0, clipPath, WebkitClipPath: clipPath }
+      : { ...overlayBase, ...clipStyle };
 
   return (
     <div
@@ -361,8 +382,11 @@ export default function LiquidGlass(props: LiquidGlassProps) {
           an offset filter region. */}
       {/* Outer layer trims the refracted output back to the lens silhouette
           (clip-path is GPU-anti-aliased, so the corner stays crisp and the
-          bleed margin used for edge sampling is hidden). */}
-      <div style={{ width: '100%', height: '100%', ...outputClip }}>
+          bleed margin used for edge sampling is hidden). `isolation` pins the
+          composited filtered child INSIDE this clip on Safari — without it the
+          will-change:filter layer escapes the path() and rounds itself (the
+          scroll-refraction experiment's critical fix). */}
+      <div style={{ width: '100%', height: '100%', isolation: 'isolate', ...outputClip }}>
         {/* Fill the glass region so the filter has a sized source to rasterize.
             A `filter` makes this a containing block whose children are absolute,
             leaving it 0-height otherwise — and Chrome then renders the filter
@@ -371,7 +395,10 @@ export default function LiquidGlass(props: LiquidGlassProps) {
           style={{
             width: '100%',
             height: '100%',
-            willChange: 'filter',
+            // Safari: a will-change-composited filter layer escapes the
+            // ancestor clip-path and rounds itself (the experiment's lesson) —
+            // keep the hint Chromium-only.
+            willChange: isSafari ? undefined : 'filter',
             filter: ready ? `url(#${filterId})` : undefined,
           }}
         >
@@ -384,11 +411,15 @@ export default function LiquidGlass(props: LiquidGlassProps) {
           in-filter feGaussianBlur, so the heavy frost costs nothing on the SVG
           filter and stays cheap on WebKit. Highlights/shadow below sit on top. */}
       {ready && (cfg.tint || (cfg.tintBlur ?? 0) > 0) && (
+        // FrostPanel's proven Safari pattern: clip-path + tint + backdrop-
+        // filter all on ONE element, and NO border-radius — Safari renders a
+        // fill as the INTERSECTION of border-radius (circular there) and
+        // clip-path, and won't bound a backdrop-filter child by an ancestor's
+        // clip-path either.
         <div
           aria-hidden
           style={{
-            ...overlayBase,
-            ...clipStyle,
+            ...overlayClipped,
             background: cfg.tint,
             ...((cfg.tintBlur ?? 0) > 0
               ? {
@@ -412,8 +443,7 @@ export default function LiquidGlass(props: LiquidGlassProps) {
         <div
           aria-hidden
           style={{
-            ...overlayBase,
-            ...clipStyle,
+            ...overlayClipped,
             background: cfg.brightness > 0 ? '#fff' : '#000',
             opacity: Math.min(1, Math.abs(cfg.brightness)),
             mixBlendMode: cfg.brightness > 0 ? 'soft-light' : 'multiply',
@@ -423,13 +453,13 @@ export default function LiquidGlass(props: LiquidGlassProps) {
 
       {/* Inner thickness / inset highlight. */}
       {ready && cfg.insetShadow && (
-        <div aria-hidden style={{ ...overlayBase, ...clipStyle, boxShadow: `inset ${cfg.insetShadow}` }} />
+        <div aria-hidden style={{ ...overlayClipped, boxShadow: `inset ${cfg.insetShadow}` }} />
       )}
 
       {showOutline && (
         <div
           aria-hidden
-          style={{ ...overlayBase, ...clipStyle, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.35)' }}
+          style={{ ...overlayClipped, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.35)' }}
         />
       )}
 

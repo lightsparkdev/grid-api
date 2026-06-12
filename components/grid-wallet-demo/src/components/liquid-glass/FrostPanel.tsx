@@ -132,6 +132,49 @@ export function FrostPanel({
   const ready = w > 0 && h > 0;
   const gradId = `fp-${useId().replace(/:/g, '')}`;
 
+  // SAME-FRAME shape tracking for ANIMATED panels: the React path (RO →
+  // setState → re-render) lags a live height tween by a frame+, so the fill's
+  // clip rides a frame behind the panel — on a bottom-anchored sheet that
+  // opens a visible gap at the bottom edge ("the fill jumps"). ResizeObserver
+  // callbacks fire after layout but BEFORE paint, so applying the clip + edge
+  // path imperatively there keeps them glued to the real size every frame.
+  // (The state-driven render below still provides the initial values; the
+  // observer re-applies after any re-render too, since it observes the same
+  // box.)
+  const frostRef = useRef<HTMLDivElement>(null);
+  const edgeSvgRef = useRef<SVGSVGElement>(null);
+  const edgePathRef = useRef<SVGPathElement>(null);
+  const radiiKey = Array.isArray(cornerRadii) ? cornerRadii.join(',') : String(radius);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => {
+      const width = el.offsetWidth;
+      const height = el.offsetHeight;
+      if (width <= 0 || height <= 0) return;
+      const base = cornerRadii ?? radius;
+      const inset: number | [number, number, number, number] = Array.isArray(base)
+        ? (base.map((r) => Math.max(0, r - 0.5)) as [number, number, number, number])
+        : Math.max(0, base - 0.5);
+      const frost = frostRef.current;
+      if (frost) {
+        const p = `path('${squirclePath(width, height, base, cornerSmoothing)}')`;
+        frost.style.clipPath = p;
+        frost.style.setProperty('-webkit-clip-path', p);
+      }
+      edgeSvgRef.current?.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      edgePathRef.current?.setAttribute(
+        'd',
+        squirclePath(width - 1, height - 1, inset, cornerSmoothing, 22, 0.5, 0.5),
+      );
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [radiiKey, cornerSmoothing]);
+
   const baseRadii = cornerRadii ?? radius;
   // Frost shape: the full squircle, via `clip-path: path()` ONLY. clip-path is a
   // true squircle on every browser (Safari included) — matching the shell — and it
@@ -169,6 +212,7 @@ export function FrostPanel({
   return (
     <div ref={ref} className={className} style={{ position: 'relative', ...shadowStyle, ...style }}>
       <div
+        ref={frostRef}
         aria-hidden
         style={{
           position: 'absolute',
@@ -187,6 +231,7 @@ export function FrostPanel({
           edge="none" skips it for flat surfaces. */}
       {ready && edge !== 'none' && (
         <svg
+          ref={edgeSvgRef}
           aria-hidden
           width="100%"
           height="100%"
@@ -204,6 +249,7 @@ export function FrostPanel({
             </defs>
           )}
           <path
+            ref={edgePathRef}
             d={edgePath}
             fill="none"
             stroke={edgeGlint ? `url(#${gradId})` : edge}

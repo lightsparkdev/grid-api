@@ -88,6 +88,10 @@ export function EmailSheet({
   // when the flow completes, codeActive flips off mid-dismiss, and without the
   // hold the sheet would swap steps and re-tween its height while sliding out
   // (a visible stall). State resets on REOPEN instead (money sheet pattern).
+  // The steps host tweens its height to the ACTIVE step's natural height (the
+  // callback ref measures it as it mounts) while the contents cross-fade.
+  const [stepHeight, setStepHeight] = useState<number | null>(null);
+
   const liveStep: 'email' | 'code' = codeActive ? 'code' : 'email';
   const [step, setStep] = useState(liveStep);
   if (open && step !== liveStep) setStep(liveStep);
@@ -97,11 +101,19 @@ export function EmailSheet({
     if (open && !codeActive) setStep('email');
   }
 
-  // The steps host tweens its height to the ACTIVE step's natural height (the
-  // callback ref measures it as it mounts) while the contents cross-fade.
-  const [stepHeight, setStepHeight] = useState<number | null>(null);
+  // Measure every step AS IT MOUNTS (sheet open AND each swap — a step-keyed
+  // effect misses the open, where the children mount but `step` never changes,
+  // leaving the host at un-tweenable 'auto' and the first swap snapping).
+  // The setState defers one frame so framer always reads it as a TARGET update
+  // (same-commit flushes get folded into its adoption pass and snap).
+  const stepRef = useRef<HTMLDivElement | null>(null);
   const measureStep = (el: HTMLDivElement | null) => {
-    if (el) setStepHeight(el.offsetHeight);
+    if (!el) return;
+    stepRef.current = el;
+    requestAnimationFrame(() => {
+      // A stale frame from an already-replaced step must not win.
+      if (stepRef.current === el) setStepHeight(el.offsetHeight);
+    });
   };
 
   // Prefilled so Continue is live on open — one tap through the demo.
@@ -199,25 +211,40 @@ export function EmailSheet({
   // this paints the same field per frame as a linear-gradient, wrapped in
   // AuroraBackground's root class for the palette tokens + base, with the
   // auth screen's same -80px bleed) and the real status bar component.
+  // WINDOWED to the lens + the glass's 48px sampling bleed: WebKit mishandles
+  // SVG filters past a source-graphic LAYOUT-size ceiling (the experiment's
+  // lesson) — feeding it the whole 402x874 screen renders an empty lens. The
+  // screen-aligned copy lives inside the clipped window at the equivalent
+  // offset, so alignment is unchanged.
+  const COPY_BLEED = 48;
   const refractionCopy = (
     <div
       aria-hidden
       style={{
         position: 'absolute',
-        top: -NOTIFICATION_TOP_PX,
-        left: -NOTIFICATION_INSET_PX,
-        width: 402,
-        height: 874,
+        inset: -COPY_BLEED,
+        overflow: 'hidden',
+        contain: 'layout paint',
         pointerEvents: 'none',
       }}
     >
       <div
-        className={auroraStyles.root}
-        style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
+        style={{
+          position: 'absolute',
+          top: COPY_BLEED - NOTIFICATION_TOP_PX,
+          left: COPY_BLEED - NOTIFICATION_INSET_PX,
+          width: 402,
+          height: 874,
+        }}
       >
-        <AuroraCssField className={styles.auroraCopyField} />
+        <div
+          className={auroraStyles.root}
+          style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
+        >
+          <AuroraCssField className={styles.auroraCopyField} />
+        </div>
+        <PhoneStatusBar tone="light" />
       </div>
-      <PhoneStatusBar tone="light" />
     </div>
   );
   const notification = (

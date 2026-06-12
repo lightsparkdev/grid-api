@@ -99,6 +99,11 @@ export function useWalletDemoLogic() {
   /** OTP step → back to the email step (authenticate's email loop re-prompts). */
   const backOtp = useCallback(() => {
     setOtpActive(false);
+    // Re-arm the email step IN THE SAME RENDER: the loop's promptEmail arrives
+    // a beat later, and without this the sheet's `open` (email || otp) blips
+    // false for a frame — the dismiss animation starts and the sheet visibly
+    // jumps as it recovers.
+    setEmailActive(true);
     const p = otpPrompt.current;
     otpPrompt.current = null;
     p?.reject(new Error('back'));

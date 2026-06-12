@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { FrostPanel, GlassOver, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { TEXT_GLASS } from '@/apps/shared/glass';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import styles from './GlassNotification.module.scss';
 
@@ -11,6 +13,10 @@ import styles from './GlassNotification.module.scss';
  *  their screen-aligned content by these (keep in sync with .layer padding). */
 export const NOTIFICATION_TOP_PX = 70;
 export const NOTIFICATION_INSET_PX = 20;
+
+const IS_SAFARI =
+  typeof navigator !== 'undefined' &&
+  /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 // Swoop-in: starts far (small), SQUISHED (flatter than wide) and blurred, and
 // arcs down out of the Z axis — the bouncy springs overshoot past 1 so it
@@ -65,6 +71,19 @@ export function GlassNotification({
   onTap,
 }: GlassNotificationProps) {
   const reduceMotion = useReducedMotion();
+  const theme = useThemeMode();
+  // The shadow underlay carries the glass's exact squircle (blur runs after
+  // the clip), so its corners agree in every browser.
+  const { ref: shadowRef, style: shadowClipStyle } = useSquircleClip<HTMLSpanElement>({
+    cornerRadii: [28.8, 28.8, 28.8, 28.8],
+  });
+
+  // WebKit can't run the displacement filter over a copied subtree at all
+  // (verified: the filter output renders EMPTY except a dark premultiplied
+  // specular ring — the parked refraction experiment's conclusion). Safari
+  // gets the TRUE frosted material instead: backdrop-filter over the real,
+  // live screen — perfectly synced by definition. Chromium keeps the lens.
+  const refract = Boolean(backdropNode) && !IS_SAFARI;
 
   const inner = (
     <span className={styles.inner}>
@@ -97,40 +116,54 @@ export function GlassNotification({
             transition={ENTER_TRANSITION}
             onClick={onTap}
           >
-            {backdropNode ? (
-              // TRUE refraction: a displacement lens over the caller-supplied
-              // screen copy. Per-corner radii make the glass clip itself with
-              // the squircle path() in EVERY browser (GPU-antialiased, and the
-              // edge rim traces the same curve) — Safari included.
+            {/* Blur on the OUTER span, clip on the INNER: clip-path applies
+                after filters, so clipping the blurred element itself would
+                re-harden the edge. */}
+            <span className={styles.shadowBlob} aria-hidden>
+              <span ref={shadowRef} className={styles.shadowShape} style={shadowClipStyle} />
+            </span>
+            {refract ? (
+              // TRUE refraction (Chromium): a displacement lens over the
+              // caller-supplied screen copy. Per-corner radii route the glass
+              // through its cross-browser squircle clip-path.
               <GlassOver
                 className={styles.glass}
                 backdropNode={backdropNode}
                 {...TEXT_GLASS}
-                radius={24}
-                cornerRadii={[24, 24, 24, 24]}
+                // 24 × 1.2 superellipse compensation.
+                radius={28.8}
+                cornerRadii={[28.8, 28.8, 28.8, 28.8]}
                 cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
                 // Pronounced lensing (the issuance X's tuning family) — the
                 // aurora is soft, so the bend needs muscle to read.
-                depth={4}
+                depth={2}
                 scale={22}
                 splay={0.7}
                 chromaticAberration={0.5}
+                // Prominent specular highlight on a hairline rim.
+                edgeStrength={1.6}
+                edgeWidth={1}
+                specularStrength={1.6}
                 // TEXT_GLASS's 128px map is built for small pills — stretched
                 // across the 362px capsule it goes blocky. Full-res map here.
                 mapSize={512}
+                // iOS-material frost over the refraction (GPU backdrop-filter,
+                // not the SVG blur). Milkier on light so the dark ink reads
+                // against the vivid field.
+                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.55)'}
+                tintBlur={1}
               >
                 {inner}
               </GlassOver>
             ) : (
-              // Frosted fallback: FrostPanel clips with the true squircle
-              // path and carries the tint + frost. The drop shadow lives on
-              // the button wrapper, outside the clip.
+              // Frost (Safari + no-backdrop callers): backdrop-filter over the
+              // REAL screen — live-synced, squircle-clipped, iOS material.
               <FrostPanel
                 className={styles.glass}
-                radius={24}
+                radius={28.8}
                 cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
-                tint="rgba(255, 255, 255, 0.14)"
-                tintBlur={28}
+                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.62)'}
+                tintBlur={24}
                 // Quiet rim body so the bright top glint reads specular, not
                 // like a uniform stroke.
                 edge="rgba(255, 255, 255, 0.16)"

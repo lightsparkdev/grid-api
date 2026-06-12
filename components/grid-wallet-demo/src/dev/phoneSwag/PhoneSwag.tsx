@@ -94,10 +94,14 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
   // post-sign-in intro can hold the auth screen across the screen flip. The
   // email flow's 'creating' stretch (sending beat + OTP entry) stays on the
   // auth screen too — the sheet bridges it.
+  // email.active is part of the bridge too: backing out of the OTP re-arms the
+  // email prompt while the screen state is still 'creating' for a beat — and
+  // without it that frame falls through to the full-screen creating view,
+  // unmounting (and instantly remounting) the whole aurora flow + sheet.
   const auroraEmailBridge =
     emailOtpFlow &&
     props.phone.screen === 'creating' &&
-    (emailSending || Boolean(props.otp?.active));
+    (emailSending || Boolean(props.otp?.active) || Boolean(props.email?.active));
   if (
     isAurora &&
     (props.phone.screen === 'auth' || props.phone.screen === 'wallet' || auroraEmailBridge)
