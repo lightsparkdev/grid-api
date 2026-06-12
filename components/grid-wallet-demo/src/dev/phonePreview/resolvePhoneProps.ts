@@ -35,6 +35,9 @@ export interface DemoLogicPhoneSlice {
   emailActive: boolean;
   submitEmail: (email: string) => void;
   cancelEmail: () => void;
+  phoneActive: boolean;
+  submitPhone: (number: string) => void;
+  cancelPhone: () => void;
   gNonce: string | null;
   submitGoogle: (idToken: string) => void;
   amountConfig: typeof PREVIEW_AMOUNT | null;
@@ -84,6 +87,11 @@ export function resolvePhoneProps(
       active: previewActive ? overlay === 'email' : logic.emailActive,
       onSubmit: previewActive ? noopAsync : logic.submitEmail,
       onCancel: previewActive ? noop : logic.cancelEmail,
+    },
+    phoneEntry: {
+      active: previewActive ? overlay === 'phone' : logic.phoneActive,
+      onSubmit: previewActive ? noopAsync : logic.submitPhone,
+      onCancel: previewActive ? noop : logic.cancelPhone,
     },
     google: {
       nonce: previewActive

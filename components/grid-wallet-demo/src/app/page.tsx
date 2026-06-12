@@ -51,6 +51,9 @@ export default function Page() {
             emailActive={logic.emailActive}
             submitEmail={logic.submitEmail}
             cancelEmail={logic.cancelEmail}
+            phoneActive={logic.phoneActive}
+            submitPhone={logic.submitPhone}
+            cancelPhone={logic.cancelPhone}
             gNonce={logic.gNonce}
             submitGoogle={logic.submitGoogle}
             amountConfig={logic.amountConfig}

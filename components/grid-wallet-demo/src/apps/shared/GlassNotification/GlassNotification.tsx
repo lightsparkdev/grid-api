@@ -39,7 +39,7 @@ const SAFARI_LENS_GLASS_DARK = {
   specularStrength: 0.9,
 };
 
-// The notification only shows over the auth screen's live aurora (EmailSheet),
+// The notification only shows over the auth screen's live aurora (AuthSheet),
 // whose AuroraBackground is tagged fieldId="signin".
 const AURORA_FIELD_SELECTOR = '[data-aurora-field="signin"]';
 
@@ -67,8 +67,17 @@ interface GlassNotificationProps {
   show: boolean;
   /** App icon image (rounded-square, rendered at 38px). */
   icon: string;
+  /**
+   * Overlaps the icon's bottom-right corner at 20px (the iOS sender-avatar
+   * badge — e.g. the Messages app icon on an SMS). A string renders as an
+   * image; a node renders as-is.
+   */
+  badge?: ReactNode | string;
   title: string;
   body: string;
+  /** Body line budget — 1 (default) keeps the nowrap ellipsis; more lines
+   *  wrap and clamp (the SMS notification's two-line body). */
+  bodyLines?: number;
   /** Trailing timestamp label, e.g. "now". */
   time?: string;
   /**
@@ -89,8 +98,10 @@ interface GlassNotificationProps {
 export function GlassNotification({
   show,
   icon,
+  badge,
   title,
   body,
+  bodyLines = 1,
   time = 'now',
   backdropNode,
   onTap,
@@ -114,15 +125,33 @@ export function GlassNotification({
   const [lensFailed, setLensFailed] = useState(false);
   const webglLens = Boolean(backdropNode) && IS_SAFARI && !lensFailed;
 
+  const multiline = bodyLines > 1;
   const inner = (
-    <span className={styles.inner}>
-      <img className={styles.icon} src={icon} alt="" draggable={false} />
+    <span className={styles.inner} data-multiline={multiline || undefined}>
+      <span className={styles.iconWrap}>
+        <img className={styles.icon} src={icon} alt="" draggable={false} />
+        {badge != null && (
+          <span className={styles.badge} aria-hidden>
+            {typeof badge === 'string' ? (
+              <img src={badge} alt="" draggable={false} />
+            ) : (
+              badge
+            )}
+          </span>
+        )}
+      </span>
       <span className={styles.texts}>
         <span className={styles.titleRow}>
           <span className={styles.title}>{title}</span>
           <span className={styles.time}>{time}</span>
         </span>
-        <span className={styles.body}>{body}</span>
+        <span
+          className={styles.body}
+          data-clamp={multiline || undefined}
+          style={multiline ? { WebkitLineClamp: bodyLines } : undefined}
+        >
+          {body}
+        </span>
       </span>
     </span>
   );

@@ -67,6 +67,21 @@
   padding: 12px 14px;
 }
 
+/* Multi-line bodies (the SMS notification) grow the capsule with the text —
+   same padding rhythm, the 64px single-line height becomes the floor. */
+.inner[data-multiline] {
+  height: auto;
+  min-height: 64px;
+}
+
+/* Icon slot — anchors the optional sender-avatar badge. */
+.iconWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+}
+
 /* App icon — iOS notification size (38px rounded square). */
 .icon {
   flex-shrink: 0;
@@ -75,6 +90,24 @@
   border-radius: 9px;
   corner-shape: var(--corner-shape);
   user-select: none;
+}
+
+/* The iOS sender-avatar badge — the sending app's icon (20px) overlapping the
+   avatar's bottom-right corner. */
+.badge {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  display: flex;
+  width: 20px;
+  height: 20px;
+
+  img,
+  svg {
+    width: 100%;
+    height: 100%;
+    user-select: none;
+  }
 }
 
 .texts {
@@ -99,10 +132,12 @@
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
 }
 
-/* Footnote 13/17, dimmed. */
+/* Footnote 13/17, dimmed. The 3px right pad optically balances the stamp
+   against the capsule's rounded edge. */
 .time {
   flex-shrink: 0;
   @include ios.ios-text-footnote;
+  padding-right: 3px;
   line-height: 17px;
   color: var(--ios-label-secondary);
 }
@@ -114,4 +149,12 @@
   line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Multi-line budget: wrap and clamp (-webkit-line-clamp arrives inline from
+   the bodyLines prop). */
+.body[data-clamp] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  white-space: normal;
 }

@@ -148,7 +148,7 @@
   padding: 0 24px 24px;
 }
 
-/* ── Steps (email → code) ─────────────────────────────────────────────────── */
+/* ── Steps (entry → code) ─────────────────────────────────────────────────── */
 
 /* Single-cell grid stack: entering/exiting steps overlap for the cross
    blur-fade while the host's height tweens to the arriving step. BOTTOM
@@ -198,7 +198,7 @@
   outline: none;
 }
 
-/* Same surface treatment as the email input card; the ACTIVE cell carries the
+/* Same surface treatment as the entry input card; the ACTIVE cell carries the
    focus ring while the hidden input has focus. */
 .codeCell {
   display: flex;
@@ -265,13 +265,27 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* CTA content stack — Continue / spinner / checkmark overlap in one cell so
+   the cross blur-free scale-fades swap in place without the button reflowing. */
+.ctaSwap {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.ctaItem {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+}
+
 /* Sending beat on Continue — the money sheet's CTA spinner. */
 .spinner {
   display: inline-flex;
-  animation: email-sheet-spin 0.9s linear infinite;
+  animation: auth-sheet-spin 0.9s linear infinite;
 }
 
-@keyframes email-sheet-spin {
+@keyframes auth-sheet-spin {
   from {
     transform: rotate(0deg);
   }

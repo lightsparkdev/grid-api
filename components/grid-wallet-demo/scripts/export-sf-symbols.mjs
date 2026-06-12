@@ -28,6 +28,7 @@ const names = symbols.length ? symbols : ['xmark', 'faceid'];
 /** Per-symbol SF Symbol weight for sf-symbols-svg export (Figma specs). */
 const WEIGHT_BY_SYMBOL = {
   xmark: 'semibold',
+  checkmark: 'semibold',
   faceid: 'bold',
   'arrow.up': 'semibold',
   'arrow.up.arrow.down': 'bold',

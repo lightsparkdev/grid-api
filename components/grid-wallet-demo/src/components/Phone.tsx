@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
 import { loadGis } from '@/lib/auth';
+import { formatUsPhone } from '@/lib/phoneFormat';
 import type { ActionId, WalletState } from '@/data/actions';
 import {
   PHONE_FIT_PAD_BLOCK,
@@ -61,6 +62,8 @@ export interface PhoneProps {
     onBack?: () => void;
   };
   email?: { active: boolean; onSubmit: (email: string) => void; onCancel?: () => void };
+  /** Phone-number entry (the SMS flow's first step) — mirrors `email`. */
+  phoneEntry?: { active: boolean; onSubmit: (number: string) => void; onCancel?: () => void };
   google?: { nonce: string | null; onCredential: (idToken: string) => void };
   amount?: {
     config: { title: string; cta: string; source: string; sub: string; defaultDollars: number } | null;
@@ -78,6 +81,7 @@ export default function Phone({
   busy,
   otp,
   email,
+  phoneEntry,
   google,
   amount,
 }: PhoneProps) {
@@ -98,13 +102,15 @@ export default function Phone({
                 key={
                   email?.active
                     ? 'email-entry'
-                    : otp?.active
-                      ? 'otp-entry'
-                      : google?.nonce
-                        ? 'google-signin'
-                        : amount?.config
-                          ? 'amount-entry'
-                          : phone.screen + phone.balance + String(phone.cardActivated)
+                    : phoneEntry?.active
+                      ? 'phone-entry'
+                      : otp?.active
+                        ? 'otp-entry'
+                        : google?.nonce
+                          ? 'google-signin'
+                          : amount?.config
+                            ? 'amount-entry'
+                            : phone.screen + phone.balance + String(phone.cardActivated)
                 }
                 className={styles.screenInner}
                 initial={{ opacity: 0, y: 8 }}
@@ -114,6 +120,8 @@ export default function Phone({
               >
                 {email?.active ? (
                   <EmailEntryScreen brand={brand} onSubmit={email.onSubmit} />
+                ) : phoneEntry?.active ? (
+                  <PhoneEntryScreen brand={brand} onSubmit={phoneEntry.onSubmit} />
                 ) : otp?.active ? (
                   <OtpEntryScreen onSubmit={otp.onSubmit} />
                 ) : google?.nonce ? (
@@ -284,6 +292,57 @@ export function EmailEntryScreen({
           autoFocus
           placeholder="you@example.com"
           onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+          }}
+          style={{
+            width: '210px',
+            textAlign: 'center',
+            fontSize: 16,
+            padding: '11px 12px',
+            borderRadius: 12,
+            border: '1px solid var(--p-separator)',
+            background: 'var(--p-surface-2)',
+            color: 'var(--p-text)',
+            outline: 'none',
+            caretColor: 'var(--p-accent)',
+          }}
+        />
+        <button className={clsx(styles.btnFill, styles.btnCompact)} disabled={!valid} onClick={submit}>
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Phone-number entry — the SMS flow's mirror of EmailEntryScreen. */
+export function PhoneEntryScreen({
+  brand,
+  onSubmit,
+}: {
+  brand: { name: string; tag: string };
+  onSubmit: (number: string) => void;
+}) {
+  const [number, setNumber] = useState('');
+  const valid = number.replace(/\D/g, '').length === 10;
+  const submit = () => {
+    if (valid) onSubmit(number);
+  };
+  return (
+    <div className={styles.centerScreen}>
+      <div className={styles.bioSheet}>
+        <div className={styles.brandMark}>{brand.name.charAt(0)}</div>
+        <div className={styles.bioTitle}>Sign in to {brand.name}</div>
+        <div className={styles.bioSub}>Enter your number to get a code</div>
+        <input
+          value={number}
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          autoFocus
+          placeholder="(555) 555-0123"
+          onChange={(e) => setNumber(formatUsPhone(e.target.value))}
           onKeyDown={(e) => {
             if (e.key === 'Enter') submit();
           }}

@@ -26,6 +26,7 @@ interface Transient {
 interface Session {
   method?: AuthMethod;
   email?: string;
+  phone?: string;
   expiresAt?: number;
 }
 
@@ -61,6 +62,7 @@ export function useWalletDemoLogic() {
   const [faceIdActive, setFaceIdActive] = useState(false);
   const [otpActive, setOtpActive] = useState(false);
   const [emailActive, setEmailActive] = useState(false);
+  const [phoneActive, setPhoneActive] = useState(false);
   const [gNonce, setGNonce] = useState<string | null>(null);
   const [amountConfig, setAmountConfig] = useState<AmountConfig | null>(null);
 
@@ -71,6 +73,7 @@ export function useWalletDemoLogic() {
   );
   const otpPrompt = useRef<{ resolve: (c: string) => void; reject: (e: Error) => void } | null>(null);
   const emailPrompt = useRef<{ resolve: (e: string) => void; reject: (e: Error) => void } | null>(null);
+  const phonePrompt = useRef<{ resolve: (n: string) => void; reject: (e: Error) => void } | null>(null);
   const googlePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
   const amountPrompt = useRef<{ resolve: (d: number) => void; reject: (e: Error) => void } | null>(null);
 
@@ -90,24 +93,41 @@ export function useWalletDemoLogic() {
     emailPrompt.current = null;
     p?.reject(new Error('cancelled'));
   }, []);
+  const promptPhone = useCallback((): Promise<string> => {
+    setPhoneActive(true);
+    return new Promise((resolve, reject) => (phonePrompt.current = { resolve, reject }));
+  }, []);
+  const submitPhone = useCallback((number: string) => {
+    setPhoneActive(false);
+    const p = phonePrompt.current;
+    phonePrompt.current = null;
+    p?.resolve(number);
+  }, []);
+  const cancelPhone = useCallback(() => {
+    setPhoneActive(false);
+    const p = phonePrompt.current;
+    phonePrompt.current = null;
+    p?.reject(new Error('cancelled'));
+  }, []);
   const cancelOtp = useCallback(() => {
     setOtpActive(false);
     const p = otpPrompt.current;
     otpPrompt.current = null;
     p?.reject(new Error('cancelled'));
   }, []);
-  /** OTP step → back to the email step (authenticate's email loop re-prompts). */
+  /** OTP step → back to the entry step (authenticate's OTP loop re-prompts). */
   const backOtp = useCallback(() => {
     setOtpActive(false);
-    // Re-arm the email step IN THE SAME RENDER: the loop's promptEmail arrives
-    // a beat later, and without this the sheet's `open` (email || otp) blips
-    // false for a frame — the dismiss animation starts and the sheet visibly
-    // jumps as it recovers.
-    setEmailActive(true);
+    // Re-arm the ACTIVE method's entry step IN THE SAME RENDER: the loop's
+    // re-prompt arrives a beat later, and without this the sheet's `open`
+    // (entry || otp) blips false for a frame — the dismiss animation starts
+    // and the sheet visibly jumps as it recovers.
+    if ((session.current.method ?? method) === 'sms') setPhoneActive(true);
+    else setEmailActive(true);
     const p = otpPrompt.current;
     otpPrompt.current = null;
     p?.reject(new Error('back'));
-  }, []);
+  }, [method]);
 
   const promptPasskey = useCallback((): Promise<void> => {
     setPasskeyActive(true);
@@ -211,13 +231,17 @@ export function useWalletDemoLogic() {
   const authenticate = useCallback(
     async (firstTime: boolean) => {
       const m = session.current.method ?? method;
-      if (m === 'email_otp') {
-        // The OTP step can come BACK to the email step (the sheet's X): the
-        // prompt rejects with 'back' and the loop re-prompts the email.
-        let needEmail = firstTime;
+      if (m === 'email_otp' || m === 'sms') {
+        // ONE loop for both OTP methods — only the entry prompt and the
+        // session field differ. The OTP step can come BACK to the entry step
+        // (the sheet's X): the prompt rejects with 'back' and the loop
+        // re-prompts the entry.
+        const field = m === 'sms' ? ('phone' as const) : ('email' as const);
+        const promptEntry = m === 'sms' ? promptPhone : promptEmail;
+        let needEntry = firstTime;
         for (;;) {
-          if (needEmail || !session.current.email) {
-            session.current.email = await promptEmail();
+          if (needEntry || !session.current[field]) {
+            session.current[field] = await promptEntry();
           }
           setTransient({ screen: 'creating', note: 'Sending you a code…' });
           await sleep(600);
@@ -227,10 +251,18 @@ export function useWalletDemoLogic() {
           } catch (e) {
             if ((e as Error)?.message !== 'back') throw e;
             setTransient(null);
-            needEmail = true;
+            needEntry = true;
           }
         }
-        pushCalls(signInCalls('email_otp', session.current.email), 'Sign in');
+        // Let the sheet's dismiss VISIBLY finish before the flow moves on:
+        // the transient clears FIRST (so the auth screen is back underneath
+        // the departing sheet — leaving it set would re-arm the sheet's
+        // sending state and hold it open), then a beat slightly longer than
+        // the BottomSheet exit (0.35s) before the wallet flip starts the
+        // post-sign-in intro.
+        setTransient(null);
+        await sleep(400);
+        pushCalls(signInCalls('email_otp', session.current[field]), 'Sign in');
       } else if (m === 'passkey') {
         await promptPasskey();
         try {
@@ -249,17 +281,12 @@ export function useWalletDemoLogic() {
         setTransient({ screen: 'credential' });
         await sleep(900);
         pushCalls(signInCalls('apple'), 'Sign in');
-      } else if (m === 'sms') {
-        setTransient({ screen: 'creating', note: 'Sending you a code…' });
-        await sleep(600);
-        await promptOtp();
-        pushCalls(signInCalls('email_otp', '+1 ••• ••• 1234'), 'Sign in');
       } else {
         throw new Error(`Sign-in method "${m}" is not available.`);
       }
       startSession();
     },
-    [method, promptEmail, promptOtp, promptGoogle, promptPasskey, playFaceId, pushCalls, startSession],
+    [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptPasskey, playFaceId, pushCalls, startSession],
   );
 
   const runSignIn = useCallback(async () => {
@@ -406,7 +433,7 @@ export function useWalletDemoLogic() {
   );
 
   const reset = useCallback(() => {
-    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, googlePrompt, amountPrompt]) {
+    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, amountPrompt]) {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
     }
@@ -424,6 +451,7 @@ export function useWalletDemoLogic() {
     setFaceIdActive(false);
     setOtpActive(false);
     setEmailActive(false);
+    setPhoneActive(false);
     setGNonce(null);
     setAmountConfig(null);
     setRunning(false);
@@ -480,6 +508,9 @@ export function useWalletDemoLogic() {
     emailActive,
     submitEmail,
     cancelEmail,
+    phoneActive,
+    submitPhone,
+    cancelPhone,
     gNonce,
     submitGoogle,
     amountConfig,
