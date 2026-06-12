@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { IconEmail1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEmail1';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import {
   GlassSymbolButton,
@@ -29,7 +30,8 @@ export function EmailSheet({ open, onSubmit, onCancel }: EmailSheetProps) {
   useEffect(() => {
     if (open) inputRef.current?.focus({ preventScroll: true });
   }, [open]);
-  const [email, setEmail] = useState('');
+  // Prefilled so Continue is live on open — one tap through the demo.
+  const [email, setEmail] = useState('playground@lightspark.com');
   const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   const submit = () => {
     if (valid) onSubmit(email.trim());
@@ -39,28 +41,31 @@ export function EmailSheet({ open, onSubmit, onCancel }: EmailSheetProps) {
     <BottomSheet
       open={open}
       onDismiss={onCancel ?? (() => {})}
-      inset={8}
+      inset={16}
       topRadius={40}
       // Same float-sheet treatment as the send/receive picker.
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
     >
-      {/* Multi-step header: left-aligned title row with a glass X — steps swap
-          the title while the control stays put. */}
-      <div className={styles.title}>
-        <div className={styles.headerRow}>
-          <h2 className={styles.heading}>Enter your email</h2>
-          <GlassSymbolButton
-            aria-label="Close"
-            size={40}
-            type="button"
-            glass={{ brightness: headerGlassBrightness(theme) }}
-            onClick={onCancel}
-          >
-            <SfSymbol name="xmark" size={14} />
-          </GlassSymbolButton>
-        </div>
-        <p className={styles.sub}>We&rsquo;ll send you a one-time code to log in</p>
+      {/* Header: the activity-row icon tile top-left (email glyph), glass X
+          top-right; title + body below. */}
+      <div className={styles.header}>
+        <span className={styles.tile} aria-hidden>
+          <IconEmail1 size={28} />
+        </span>
+        <GlassSymbolButton
+          aria-label="Close"
+          size={40}
+          type="button"
+          glass={{ brightness: headerGlassBrightness(theme) }}
+          onClick={onCancel}
+        >
+          <SfSymbol name="xmark" size={14} />
+        </GlassSymbolButton>
       </div>
+      <h2 className={styles.heading}>Continue with email</h2>
+      <p className={styles.sub}>
+        Enter your email and we&rsquo;ll send you a one-time code to log in
+      </p>
 
       <div className={styles.cardContainer}>
         <div className={styles.card}>

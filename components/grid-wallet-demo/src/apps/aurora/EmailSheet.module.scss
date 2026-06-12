@@ -1,62 +1,99 @@
 @use '../shared/typography/ios-type-mixins' as ios;
 
-/* Multi-step header block — left-aligned (was the centered Figma 2191:48065
-   title): title row + glass X, subtitle beneath. Top pad drops to 16 so the
-   40px X sits comfortably near the corner radius. */
-.title {
+/* Header row — icon tile left, glass X right (24px corner inset). */
+.header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 16px 24px 32px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 24px 0;
 }
 
-/* Title left, glass X right, one row. */
-.headerRow {
+/* The activity-row graphic treatment (WalletListItem), sized up — 64px tile,
+   radius 16, quaternary fill, centered 28px glyph at 2px stroke. */
+.tile {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  width: 100%;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-quaternary);
+  color: var(--ios-label-primary);
+
+  svg path {
+    stroke-width: 2;
+  }
 }
 
 /* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45. */
 .heading {
   margin: 0;
+  padding: 16px 32px 0;
   @include ios.ios-text-title-3;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
   color: var(--ios-label-primary);
 }
 
-/* Footnote / Regular — 13/18, tracking -0.08. */
+/* Footnote / Regular — 13/18, tracking -0.08. Own row below the title. */
 .sub {
   margin: 0;
-  /* Clear of the wider header row's right pad — match the title's 32 inset. */
-  padding-right: 16px;
+  padding: 8px 32px 20px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 .cardContainer {
-  padding: 0 16px;
+  padding: 0 24px;
 }
 
-/* White input card — 48px pill, soft shadow (Figma "Card"). */
+/* Input card — 48px pill, soft shadow (Figma "Card").
+   Focus: Origin's input-focus recipe (30%-ink hairline + soft 3px halo),
+   HARDCODED as Aurora-local values so the phone stays self-contained and
+   doesn't ride docs-side Origin tokens. Box-shadows follow the pill radius
+   and never shift layout. */
 .card {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  height: 48px;
+  /* Matches the 44px GlassTextButton CTA below. */
+  height: 44px;
   border-radius: 1000px;
   /* globals.scss sets corner-shape on * — a full pill needs round. */
   corner-shape: round;
+  /* White on light — the wallet content-area pills' bordered surface; dark
+     keeps the secondary fill. */
   background: var(--ios-bg-primary);
+
+  :global([data-theme='dark']) & {
+    background: var(--ios-fill-secondary);
+  }
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
   overflow: hidden;
+  transition: box-shadow 0.15s ease;
+
+  /* Origin light: border-secondary / input-focus halo. */
+  --input-ring: rgba(35, 35, 33, 0.3);
+  --input-halo: rgba(38, 38, 35, 0.1);
+
+  :global([data-theme='dark']) & {
+    /* Origin dark: border-secondary / state-focus. */
+    --input-ring: rgba(245, 245, 245, 0.3);
+    --input-halo: rgba(244, 244, 245, 0.1);
+  }
+
+  &:focus-within {
+    box-shadow:
+      inset 0 0 0 1px var(--input-ring),
+      0 0 0 3px var(--input-halo),
+      0 0 24px rgba(0, 0, 0, 0.04);
+  }
 }
 
-/* Body / Regular — 17/22, tracking -0.43; placeholder is labels/tertiary. */
+/* Callout / Regular — 16/21; placeholder is labels/tertiary. */
 .input {
   box-sizing: border-box;
   width: 100%;
@@ -67,14 +104,14 @@
   color: var(--ios-label-primary);
   outline: none;
   caret-color: var(--ios-tint);
-  @include ios.ios-text-body;
+  @include ios.ios-text-callout;
 
   &::placeholder {
     color: var(--ios-label-tertiary);
   }
 }
 
-/* Button block: pt 16, 16px sides/bottom. */
+/* Button block: pt 12, 24px sides + bottom. */
 .actions {
-  padding: 16px 16px 16px;
+  padding: 12px 24px 24px;
 }

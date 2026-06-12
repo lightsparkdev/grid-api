@@ -34,6 +34,8 @@
 }
 
 .sheetInner {
+  /* Positioning context for corner-pinned sheet controls (e.g. a close X). */
+  position: relative;
   display: flex;
   flex-direction: column;
 }
