@@ -1,13 +1,22 @@
 @use '../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 2191:48065 — Title block: pt 32, pb 24, px 32, gap 8, centered. */
+/* Multi-step header block — left-aligned (was the centered Figma 2191:48065
+   title): title row + glass X, subtitle beneath. Top pad drops to 16 so the
+   40px X sits comfortably near the corner radius. */
 .title {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  padding: 32px 32px 24px;
-  text-align: center;
+  padding: 16px 16px 24px 32px;
+}
+
+/* Title left, glass X right, one row. */
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
 }
 
 /* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45. */
@@ -22,13 +31,15 @@
 /* Footnote / Regular — 13/18, tracking -0.08. */
 .sub {
   margin: 0;
+  /* Clear of the wider header row's right pad — match the title's 32 inset. */
+  padding-right: 16px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
   text-wrap: balance;
 }
 
 .cardContainer {
-  padding: 0 32px;
+  padding: 0 16px;
 }
 
 /* White input card — 48px pill, soft shadow (Figma "Card"). */
@@ -63,7 +74,7 @@
   }
 }
 
-/* Button block: pt 16, pb 32, px 32. */
+/* Button block: pt 16, 16px sides/bottom. */
 .actions {
-  padding: 16px 32px 32px;
+  padding: 16px 16px 16px;
 }

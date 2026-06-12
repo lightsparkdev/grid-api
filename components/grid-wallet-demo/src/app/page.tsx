@@ -48,6 +48,7 @@ export default function Page() {
             submitOtp={logic.submitOtp}
             emailActive={logic.emailActive}
             submitEmail={logic.submitEmail}
+            cancelEmail={logic.cancelEmail}
             gNonce={logic.gNonce}
             submitGoogle={logic.submitGoogle}
             amountConfig={logic.amountConfig}

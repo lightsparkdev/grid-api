@@ -55,7 +55,7 @@ export interface PhoneProps {
   passkey?: { active: boolean; onConfirm: () => void; onCancel: () => void };
   faceId?: { active: boolean; onDone: () => void };
   otp?: { active: boolean; onSubmit: (code: string) => void };
-  email?: { active: boolean; onSubmit: (email: string) => void };
+  email?: { active: boolean; onSubmit: (email: string) => void; onCancel?: () => void };
   google?: { nonce: string | null; onCredential: (idToken: string) => void };
   amount?: {
     config: { title: string; cta: string; source: string; sub: string; defaultDollars: number } | null;

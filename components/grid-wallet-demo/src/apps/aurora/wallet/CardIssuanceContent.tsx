@@ -88,8 +88,9 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
   );
 }
 
-/** Figma 2219:48913 — "Creating your card..." status with a leading spinner. */
-export function CreatingCaption() {
+/** Figma 2219:48913 — creating status with a leading spinner (white/60% on the
+ *  full-bleed aurora). Shared by card issuance and the sign-in intro. */
+export function CreatingCaption({ label = 'Creating your card...' }: { label?: string }) {
   return (
     <motion.div
       className={styles.creating}
@@ -100,7 +101,7 @@ export function CreatingCaption() {
       <span className={styles.spinner} aria-hidden>
         <IconLoadingCircle size={16} />
       </span>
-      <span className={styles.creatingText}>Creating your card...</span>
+      <span className={styles.creatingText}>{label}</span>
     </motion.div>
   );
 }

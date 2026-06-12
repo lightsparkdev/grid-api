@@ -84,6 +84,12 @@ export function useWalletDemoLogic() {
     emailPrompt.current = null;
     p?.resolve(email);
   }, []);
+  const cancelEmail = useCallback(() => {
+    setEmailActive(false);
+    const p = emailPrompt.current;
+    emailPrompt.current = null;
+    p?.reject(new Error('cancelled'));
+  }, []);
 
   const promptPasskey = useCallback((): Promise<void> => {
     setPasskeyActive(true);
@@ -440,6 +446,7 @@ export function useWalletDemoLogic() {
     submitOtp,
     emailActive,
     submitEmail,
+    cancelEmail,
     gNonce,
     submitGoogle,
     amountConfig,

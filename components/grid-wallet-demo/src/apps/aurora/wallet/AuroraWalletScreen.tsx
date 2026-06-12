@@ -17,6 +17,7 @@ import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
+import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { GlassToast, type GlassToastData } from '@/apps/shared/GlassToast';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -112,6 +113,9 @@ const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   /** Formatted balance from demo state, e.g. "$0.00". */
   balance?: string;
+  /** One-shot mount stagger (card, balance, actions, insights) — the sign-in
+   *  intro reveal. Off = everything renders at rest, exactly as before. */
+  entrance?: boolean;
   onAdd?: () => void;
   onWithdraw?: () => void;
   onSend?: () => void;
@@ -120,6 +124,7 @@ interface AuroraWalletScreenProps extends WalletInsightCardsProps {
 /** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). */
 export function AuroraWalletScreen({
   balance = '$0.00',
+  entrance = false,
   onAdd,
   onWithdraw,
   onSend,
@@ -168,6 +173,12 @@ export function AuroraWalletScreen({
     () => [...activity, ...transactions].sort((a, b) => b.timestamp - a.timestamp),
     [activity, transactions],
   );
+
+  // Sign-in entrance: card → balance → actions → insights reveal in once on
+  // mount (the issuance stagger language); the Activity card's own skeleton
+  // reveal carries the list. `entrance` off spreads a no-op (rest pose).
+  const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
+  const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
 
   const isOpen = cardView !== 'closed';
   const isIssuance = cardView === 'intro' || cardView === 'creating' || cardView === 'ready';
@@ -416,13 +427,17 @@ export function AuroraWalletScreen({
               animate={{ scale: isIssuance ? CARD_ISSUANCE_SCALE : 1 }}
               transition={CARD_TRANSITION}
             >
-              <DebitCard
-                interactive={!isOpen}
-                onOpen={openCard}
-                bordered={showFullAurora}
-                showNumber={!showFullAurora}
-                issued={issued}
-              />
+              {/* Entrance wrapper — separate from the scale wrapper so the
+                  reveal never fights the issuance scale animation. */}
+              <motion.div {...enter(0)}>
+                <DebitCard
+                  interactive={!isOpen}
+                  onOpen={openCard}
+                  bordered={showFullAurora}
+                  showNumber={!showFullAurora}
+                  issued={issued}
+                />
+              </motion.div>
             </motion.div>
           </motion.div>
           {cardView === 'creating' && <CreatingCaption />}
@@ -439,13 +454,19 @@ export function AuroraWalletScreen({
           transition={SHEET_SLIDE}
         >
           <WalletSheet dismissed={isOpen}>
-            <BalanceHero balance={formatUsdCents(availableCents)} />
-            <WalletActions
-              onAdd={() => openSheet('add')}
-              onWithdraw={() => openSheet('withdraw')}
-              onSend={() => setSendReceiveOpen(true)}
-            />
-            <WalletInsightCards {...insights} />
+            <motion.div {...enter(1)}>
+              <BalanceHero balance={formatUsdCents(availableCents)} />
+            </motion.div>
+            <motion.div {...enter(2)}>
+              <WalletActions
+                onAdd={() => openSheet('add')}
+                onWithdraw={() => openSheet('withdraw')}
+                onSend={() => setSendReceiveOpen(true)}
+              />
+            </motion.div>
+            <motion.div {...enter(3)}>
+              <WalletInsightCards {...insights} />
+            </motion.div>
             <WalletListSection
               title="Activity"
               emptyTitle="Nothing here, yet"
