@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
-import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/apps/shared/glass';
+import {
+  GlassSymbolButton,
+  GlassTextButton,
+  headerGlassBrightness,
+  SHEET_GLASS,
+} from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './EmailSheet.module.scss';
@@ -31,7 +36,14 @@ export function EmailSheet({ open, onSubmit, onCancel }: EmailSheetProps) {
   };
 
   return (
-    <BottomSheet open={open} onDismiss={onCancel ?? (() => {})} inset={16} topRadius={40}>
+    <BottomSheet
+      open={open}
+      onDismiss={onCancel ?? (() => {})}
+      inset={6}
+      topRadius={40}
+      // Same float-sheet treatment as the send/receive picker.
+      glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
+    >
       {/* Multi-step header: left-aligned title row with a glass X — steps swap
           the title while the control stays put. */}
       <div className={styles.title}>

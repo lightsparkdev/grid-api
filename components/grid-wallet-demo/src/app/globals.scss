@@ -116,9 +116,10 @@ body {
   /* Flat (non-frosted) sheets: hairline outline only where the sheet would
      otherwise melt into the scrim — invisible on light. */
   --sheet-flat-edge: transparent;
-  /* Send/receive chooser: frosted but pulled toward the wallet's #f9f9f9
-     surface (the default sheet tint reads cooler/bluer). */
-  --send-receive-sheet-tint: rgba(249, 249, 249, 0.8);
+  /* Floating chooser/entry sheets (send-receive picker, auth email): frosted
+     but pulled toward the wallet's #f9f9f9 surface (the default sheet tint
+     reads cooler/bluer). */
+  --float-sheet-tint: rgba(249, 249, 249, 0.8);
 }
 
 [data-theme='dark'] {
@@ -130,7 +131,7 @@ body {
   --glass-symbol-backdrop: linear-gradient(180deg, #242426 0%, #1a1a1c 100%);
   --sheet-flat-edge: rgba(255, 255, 255, 0.1);
   /* Dark keeps the standard frosted sheet tint. */
-  --send-receive-sheet-tint: var(--glass-sheet-tint);
+  --float-sheet-tint: var(--glass-sheet-tint);
 }
 
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it

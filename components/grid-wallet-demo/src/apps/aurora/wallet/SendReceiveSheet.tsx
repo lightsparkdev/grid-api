@@ -29,7 +29,7 @@ export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetPr
       topRadius={40}
       // Standard frost, but tinted toward the wallet's #f9f9f9 on light (the
       // shared sheet tint reads cooler against this screen); dark unchanged.
-      glass={{ ...SHEET_GLASS, tint: 'var(--send-receive-sheet-tint)' }}
+      glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
     >
       <div className={styles.titleGroup}>
         <h2 className={styles.title}>

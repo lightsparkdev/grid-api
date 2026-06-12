@@ -620,15 +620,16 @@ export function AddMoneySheet({
                 </motion.span>
               </AnimatePresence>
             </h2>
-            {/* Figma 109:28547 — glass QR scan button, recipient step only. */}
+            {/* Figma 109:28547 — glass QR scan button, recipient step only.
+                Blur-fades between steps, the wallet home header language. */}
             <AnimatePresence initial={false}>
               {mode === 'send' && step === 'recipient' && (
                 <motion.span
                   key="qr"
                   className={styles.toolbarTrailing}
-                  initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
+                  initial={reduceMotion ? false : { opacity: 0, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(10px)' }}
                   transition={SWAP_TRANSITION}
                 >
                   <GlassSymbolButton
