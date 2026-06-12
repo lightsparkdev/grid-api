@@ -245,6 +245,12 @@
     0 0 24px rgba(0, 0, 0, 0.04);
 }
 
+/* The notification lens's aurora copy — fills its (bled) wrapper. */
+.auroraCopyField {
+  position: absolute;
+  inset: 0;
+}
+
 /* Inline "Resend" — a tinted text button flowing inside the body copy. */
 .resend {
   display: inline;

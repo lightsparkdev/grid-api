@@ -7,7 +7,14 @@ import { IconEmail1 } from '@central-icons-react/round-outlined-radius-3-stroke-
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
-import { GlassNotification } from '@/apps/shared/GlassNotification';
+import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
+import { AuroraCssField } from '@/apps/shared/AuroraBackground/AuroraCssField';
+import auroraStyles from '@/apps/shared/AuroraBackground/AuroraBackground.module.scss';
+import {
+  GlassNotification,
+  NOTIFICATION_INSET_PX,
+  NOTIFICATION_TOP_PX,
+} from '@/apps/shared/GlassNotification';
 import {
   GlassSymbolButton,
   GlassTextButton,
@@ -186,12 +193,40 @@ export function EmailSheet({
       ),
     );
   };
+  // TRUE refraction copy — what's behind the capsule, rebuilt as filterable
+  // DOM and anchored to screen coordinates (offset by the capsule's slot):
+  // the LIVE CSS aurora replica (Safari won't SVG-filter the WebGL canvas;
+  // this paints the same field per frame as a linear-gradient, wrapped in
+  // AuroraBackground's root class for the palette tokens + base, with the
+  // auth screen's same -80px bleed) and the real status bar component.
+  const refractionCopy = (
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute',
+        top: -NOTIFICATION_TOP_PX,
+        left: -NOTIFICATION_INSET_PX,
+        width: 402,
+        height: 874,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        className={auroraStyles.root}
+        style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
+      >
+        <AuroraCssField className={styles.auroraCopyField} />
+      </div>
+      <PhoneStatusBar tone="light" />
+    </div>
+  );
   const notification = (
     <GlassNotification
       show={notifOn}
       icon="/assets/auth/mail-app-icon.webp"
       title="Aurora"
       body={`Your one-time code is ${DEMO_CODE.slice(0, 3)}-${DEMO_CODE.slice(3)}`}
+      backdropNode={refractionCopy}
       onTap={autofill}
     />
   );
