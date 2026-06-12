@@ -39,7 +39,7 @@ export function EmailSheet({ open, onSubmit, onCancel }: EmailSheetProps) {
     <BottomSheet
       open={open}
       onDismiss={onCancel ?? (() => {})}
-      inset={6}
+      inset={8}
       topRadius={40}
       // Same float-sheet treatment as the send/receive picker.
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}

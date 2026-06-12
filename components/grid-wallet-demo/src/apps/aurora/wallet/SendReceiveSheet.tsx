@@ -25,7 +25,7 @@ export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetPr
     <BottomSheet
       open={open}
       onDismiss={onDismiss}
-      inset={6}
+      inset={8}
       topRadius={40}
       // Standard frost, but tinted toward the wallet's #f9f9f9 on light (the
       // shared sheet tint reads cooler against this screen); dark unchanged.
