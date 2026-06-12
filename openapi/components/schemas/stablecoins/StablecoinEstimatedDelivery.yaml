@@ -1,0 +1,18 @@
+type: object
+description: Sanitized fiat delivery estimate for a burn/redemption.
+required:
+- rail
+- amount
+- currency
+properties:
+  rail:
+    $ref: StablecoinPayoutRail.yaml
+  amount:
+    type: string
+    pattern: ^[0-9]+$
+    description: Estimated delivery amount as a base-10 integer string in the smallest unit of `currency`.
+    example: '100000000'
+  currency:
+    type: string
+    description: Currency of the estimated delivery.
+    example: USD

@@ -1,0 +1,6 @@
+type: string
+pattern: ^[1-9][0-9]*$
+description: Amount in the stablecoin's smallest unit, as a base-10 integer string (uint128 range). Strings
+  avoid JavaScript precision loss. Must convert exactly to a provider-representable fiat amount (whole
+  cents for USD).
+example: '100000000'

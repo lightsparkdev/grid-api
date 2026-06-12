@@ -1,0 +1,9 @@
+type: string
+enum:
+- ETHEREUM
+- SOLANA
+- BASE
+- POLYGON
+- SPARK
+- TRON
+description: Crypto network used by a provider token-balance funding source.

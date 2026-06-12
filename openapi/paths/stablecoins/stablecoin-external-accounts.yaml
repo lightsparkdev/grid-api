@@ -1,0 +1,124 @@
+post:
+  summary: Link a stablecoin external account
+  description: |
+    Link a Grid external account, provider/Plaid link result, or direct-entry bank account to the stablecoin provider. The returned resource stores provider address metadata used for stablecoin mints and burns.
+  operationId: linkStablecoinExternalAccount
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  parameters:
+  - name: Idempotency-Key
+    in: header
+    description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting
+      payloads are rejected.
+    required: true
+    schema:
+      type: string
+      maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinExternalAccountLinkRequest.yaml
+  responses:
+    '201':
+      description: Stablecoin external account linked
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinExternalAccount.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account or link session not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List stablecoin external accounts
+  operationId: listStablecoinExternalAccounts
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  parameters:
+  - name: provider
+    in: query
+    required: false
+    schema:
+      $ref: ../../components/schemas/stablecoins/StablecoinProvider.yaml
+  - name: status
+    in: query
+    required: false
+    schema:
+      $ref: ../../components/schemas/stablecoins/StablecoinExternalAccountStatus.yaml
+  - name: gridExternalAccountId
+    in: query
+    required: false
+    schema:
+      type: string
+  - name: limit
+    in: query
+    description: Maximum number of results to return (default 20, max 100)
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 20
+  - name: cursor
+    in: query
+    description: Cursor for pagination (returned from previous request)
+    required: false
+    schema:
+      type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinExternalAccountListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

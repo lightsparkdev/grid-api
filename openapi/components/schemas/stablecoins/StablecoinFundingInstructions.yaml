@@ -1,0 +1,9 @@
+type: object
+description: Sanitized funding instructions for the selected funding rail. Shape varies by rail; contains
+  only intentionally public deposit coordinates.
+required:
+- rail
+properties:
+  rail:
+    $ref: StablecoinTransferType.yaml
+additionalProperties: true

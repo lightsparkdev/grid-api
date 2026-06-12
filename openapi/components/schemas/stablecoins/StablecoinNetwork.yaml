@@ -1,0 +1,4 @@
+type: string
+enum:
+- SPARK_MAINNET
+description: Network namespace for the stablecoin token identifier.

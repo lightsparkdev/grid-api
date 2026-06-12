@@ -1,0 +1,16 @@
+type: object
+required:
+- type
+- sourceTokenIdentifier
+- cryptoNetwork
+properties:
+  type:
+    type: string
+    enum:
+    - PROVIDER_TOKEN_BALANCE
+  sourceTokenIdentifier:
+    type: string
+    description: Provider token/value identifier to fund the mint from.
+    example: USDC
+  cryptoNetwork:
+    $ref: StablecoinCryptoNetwork.yaml

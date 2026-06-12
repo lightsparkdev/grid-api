@@ -1,0 +1,16 @@
+type: object
+required:
+- type
+- stablecoinExternalAccountId
+- rail
+properties:
+  type:
+    type: string
+    enum:
+    - STABLECOIN_EXTERNAL_ACCOUNT
+  stablecoinExternalAccountId:
+    type: string
+    description: Linked stablecoin external account to receive the fiat redemption.
+    example: StablecoinExternalAccount:019542f5-b3e7-1d02-0000-000000000005
+  rail:
+    $ref: StablecoinPayoutRail.yaml

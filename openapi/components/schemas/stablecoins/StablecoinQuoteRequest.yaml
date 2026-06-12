@@ -1,0 +1,8 @@
+oneOf:
+- $ref: StablecoinMintQuoteRequest.yaml
+- $ref: StablecoinBurnQuoteRequest.yaml
+discriminator:
+  propertyName: operationType
+  mapping:
+    MINT: StablecoinMintQuoteRequest.yaml
+    BURN: StablecoinBurnQuoteRequest.yaml

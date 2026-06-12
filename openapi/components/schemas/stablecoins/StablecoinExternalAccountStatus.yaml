@@ -1,0 +1,8 @@
+type: string
+enum:
+- ACTIVE
+- INACTIVE
+- NEEDS_UPDATE
+- FAILED
+description: Status of a provider-linked stablecoin external account. NEEDS_UPDATE indicates the provider
+  link requires attention (for example Plaid reauthentication).

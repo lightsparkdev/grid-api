@@ -1,0 +1,7 @@
+type: string
+enum:
+- OPEN
+- EXECUTED
+- EXPIRED
+- FAILED
+description: Current status of the stablecoin quote.

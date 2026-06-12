@@ -1,0 +1,22 @@
+type: object
+required:
+- providerTokenIdentifier
+- networkTokenIdentifier
+- network
+properties:
+  providerTokenIdentifier:
+    type: string
+    description: Provider identifier for the stablecoin. For Brale this maps to `value_type`.
+    example: ACME
+  networkTokenIdentifier:
+    type: string
+    description: Token identifier in the namespace selected by `network`.
+    example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
+  network:
+    $ref: StablecoinNetwork.yaml
+  stablecoinProviderAccountId:
+    type: string
+    description: Provider account link to register against. Optional when exactly one active link exists
+      for the authenticated platform; required to resolve STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      when multiple links exist.
+    example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001

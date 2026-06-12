@@ -1,0 +1,4 @@
+type: string
+enum:
+- BRALE
+description: Stablecoin provider backing the linked account, stablecoin, or operation.

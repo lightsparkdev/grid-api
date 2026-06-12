@@ -1,0 +1,10 @@
+oneOf:
+- $ref: StablecoinExternalAccountGridLinkRequest.yaml
+- $ref: StablecoinExternalAccountProviderLinkRequest.yaml
+- $ref: StablecoinExternalAccountDirectEntryRequest.yaml
+discriminator:
+  propertyName: creationMethod
+  mapping:
+    GRID_EXTERNAL_ACCOUNT: StablecoinExternalAccountGridLinkRequest.yaml
+    PLAID: StablecoinExternalAccountProviderLinkRequest.yaml
+    DIRECT_BANK_ENTRY: StablecoinExternalAccountDirectEntryRequest.yaml

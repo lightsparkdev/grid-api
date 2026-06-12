@@ -23,6 +23,11 @@ properties:
       | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
       | REFERENCE_NOT_FOUND | Reference not found |
       | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
+      | STABLECOIN_NOT_FOUND | Stablecoin not found |
+      | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
+      | STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND | Stablecoin external account not found |
+      | STABLECOIN_QUOTE_NOT_FOUND | Stablecoin quote not found |
+      | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
     enum:
       - TRANSACTION_NOT_FOUND
       - INVITATION_NOT_FOUND
@@ -33,6 +38,11 @@ properties:
       - BULK_UPLOAD_JOB_NOT_FOUND
       - REFERENCE_NOT_FOUND
       - UMA_NOT_FOUND
+      - STABLECOIN_NOT_FOUND
+      - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
+      - STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND
+      - STABLECOIN_QUOTE_NOT_FOUND
+      - STABLECOIN_OPERATION_NOT_FOUND
   message:
     type: string
     description: Error message

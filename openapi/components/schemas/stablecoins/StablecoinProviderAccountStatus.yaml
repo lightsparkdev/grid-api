@@ -1,0 +1,6 @@
+type: string
+enum:
+- ACTIVE
+- INVALID
+- REVOKED
+description: Status of the linked stablecoin provider account credentials.

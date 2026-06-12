@@ -1,0 +1,39 @@
+parameters:
+- name: stablecoinProviderAccountId
+  in: path
+  description: System-generated stablecoin provider account link identifier
+  required: true
+  schema:
+    type: string
+get:
+  summary: Get a stablecoin provider account link
+  operationId: getStablecoinProviderAccount
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinProviderAccount.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin provider account link not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
