@@ -110,9 +110,12 @@ export function BottomSheet({
           />
           <motion.div
             className={styles.sheetMotion}
-            initial={{ y: '100%' }}
+            // 110% (not 100%): inset sheets float above the screen bottom, so
+            // a plain full-height travel leaves a sliver of the sheet's top
+            // on screen until unmount.
+            initial={{ y: '110%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            exit={{ y: '110%' }}
             transition={SHEET_TRANSITION}
           >
             <FrostPanel

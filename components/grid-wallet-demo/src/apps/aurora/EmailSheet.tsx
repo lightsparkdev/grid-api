@@ -1,10 +1,13 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconEmail1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEmail1';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
+import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
+import { GlassNotification } from '@/apps/shared/GlassNotification';
 import {
   GlassSymbolButton,
   GlassTextButton,
@@ -17,6 +20,13 @@ import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './EmailSheet.module.scss';
 
 const CODE_LENGTH = 6;
+/** The demo's one-time code — what the notification autofills. */
+const DEMO_CODE = '123456';
+/** Code step settles, then the notification swoops in. */
+const NOTIFICATION_DELAY_MS = 1000;
+/** Autofill cadence: one digit per beat, submit shortly after the last. */
+const FILL_STEP_MS = 60;
+const FILL_SUBMIT_MS = 350;
 
 // Step bodies cross blur-fade in place, BOTTOM-anchored (the sheet hangs off
 // the screen bottom, so the bottom edge is the fixed one — content stays put
@@ -66,7 +76,19 @@ export function EmailSheet({
 }: EmailSheetProps) {
   const theme = useThemeMode();
   const reduceMotion = useReducedMotion();
-  const step: 'email' | 'code' = codeActive ? 'code' : 'email';
+
+  // The DISPLAYED step only follows the live prompts while the sheet is open —
+  // when the flow completes, codeActive flips off mid-dismiss, and without the
+  // hold the sheet would swap steps and re-tween its height while sliding out
+  // (a visible stall). State resets on REOPEN instead (money sheet pattern).
+  const liveStep: 'email' | 'code' = codeActive ? 'code' : 'email';
+  const [step, setStep] = useState(liveStep);
+  if (open && step !== liveStep) setStep(liveStep);
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open && !codeActive) setStep('email');
+  }
 
   // The steps host tweens its height to the ACTIVE step's natural height (the
   // callback ref measures it as it mounts) while the contents cross-fade.
@@ -98,11 +120,16 @@ export function EmailSheet({
     if (open && step === 'email') inputRef.current?.focus({ preventScroll: true });
   }, [open, step]);
 
-  // Verification code — one hidden input drives six display cells.
+  // Verification code — one hidden input drives six display cells. The value
+  // clears on REOPEN (not on close, which would visibly empty the cells while
+  // the sheet is still sliding out).
   const [code, setCode] = useState('');
+  useEffect(() => {
+    if (open && !codeActive) setCode('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   const codeRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (!open) setCode('');
     if (open && step === 'code') codeRef.current?.focus({ preventScroll: true });
   }, [open, step]);
   const handleCode = (raw: string) => {
@@ -116,6 +143,58 @@ export function EmailSheet({
       animateCells(codeScope.current, SHAKE, SHAKE_OPTS);
     }
   };
+
+  // The "Mail" notification — swoops in a beat after the code step lands;
+  // tapping it dismisses, types the code in digit by digit, and submits.
+  const overlayEl = useScreenOverlay();
+  const [notifOn, setNotifOn] = useState(false);
+  const notifTimer = useRef(0);
+  const fillTimers = useRef<number[]>([]);
+  useEffect(() => {
+    window.clearTimeout(notifTimer.current);
+    if (open && step === 'code') {
+      notifTimer.current = window.setTimeout(
+        () => setNotifOn(true),
+        NOTIFICATION_DELAY_MS,
+      );
+    } else {
+      setNotifOn(false);
+    }
+    return () => window.clearTimeout(notifTimer.current);
+  }, [open, step]);
+  useEffect(
+    () => () => {
+      for (const t of fillTimers.current) window.clearTimeout(t);
+    },
+    [],
+  );
+  const autofill = () => {
+    setNotifOn(false);
+    if (reduceMotion) {
+      setCode(DEMO_CODE);
+      onSubmitCode?.(DEMO_CODE);
+      return;
+    }
+    for (const t of fillTimers.current) window.clearTimeout(t);
+    fillTimers.current = DEMO_CODE.split('').map((_, i) =>
+      window.setTimeout(() => setCode(DEMO_CODE.slice(0, i + 1)), i * FILL_STEP_MS),
+    );
+    fillTimers.current.push(
+      window.setTimeout(
+        () => onSubmitCode?.(DEMO_CODE),
+        (CODE_LENGTH - 1) * FILL_STEP_MS + FILL_SUBMIT_MS,
+      ),
+    );
+  };
+  const notification = (
+    <GlassNotification
+      show={notifOn}
+      icon="/assets/auth/mail-app-icon.webp"
+      title="Aurora"
+      body={`Your one-time code is ${DEMO_CODE.slice(0, 3)}-${DEMO_CODE.slice(3)}`}
+      onTap={autofill}
+    />
+  );
 
   return (
     <BottomSheet
@@ -260,6 +339,10 @@ export function EmailSheet({
           )}
         </GlassTextButton>
       </div>
+
+      {/* Above the status bar via AppShell's overlay layer (the Face ID /
+          toast slot); falls back to an in-sheet layer outside an AppShell. */}
+      {overlayEl ? createPortal(notification, overlayEl) : notification}
     </BottomSheet>
   );
 }
