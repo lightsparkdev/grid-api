@@ -162,7 +162,7 @@ export function GlassNotification({
                 className={styles.glass}
                 radius={28.8}
                 cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
-                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.62)'}
+                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.74)'}
                 tintBlur={24}
                 // Quiet rim body so the bright top glint reads specular, not
                 // like a uniform stroke.
