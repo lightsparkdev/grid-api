@@ -4,9 +4,9 @@
    sign-in intro layers (full-screen aurora, gliding logo, caption) can stack.
 
    Stacking (root context — .hero deliberately does NOT isolate):
-     0 aurora field · 1 hero fade/cover · 2 copy + actions · 4 caption · 5 logo
-   so the logo can glide OVER the (faded) copy, while the fade overlays stay
-   UNDER the live text/buttons. */
+     0 aurora field · 2 content sleeve (gradient strip + copy + actions) ·
+     4 caption · 5 logo
+   so the logo can glide OVER the departing sleeve. */
 .root {
   position: relative;
   flex: 1;
@@ -27,7 +27,7 @@
 }
 
 /* ONE full-screen aurora — rest and intro share this surface; the hero "mask"
-   is the dissolvable overlays below, so full-bleed is the SAME field, not a
+   is the sleeve's gradient strip, so full-bleed is the SAME field, not a
    second instance crossfading in. Bleeds past top/sides so blurred streaks
    clip mid-flow (the phone screen clips); bottom flush. */
 .aurora {
@@ -59,59 +59,37 @@
   pointer-events: none;
 }
 
-/* The old AuroraBackground fadeBottom profile, anchored to the hero box, now a
-   dissolvable overlay over the full-screen field. It RIDES the growing hero
-   during the collapse (layout-anchored), so the aurora is uncovered on the
-   collapse's own track; the opacity dissolve runs LATE so full-bleed lands as
-   the content finishes, never exposing the field behind visible content. */
-.heroFade {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  height: 82%;
+/* The content sleeve — copy + actions over a solid base whose TOP STRIP is
+   the gradient mask (painted into 340px of padding, underlapped by margin so
+   the rest layout matches the old hero-overlay look: the extra -64 keeps the
+   copy overlapping the hero exactly as before, with the strip's solid end
+   landing at the copy's top edge). The intro slides the whole sleeve down —
+   one GPU transform — so the mask LEAVES with the content and the aurora is
+   uncovered on the same track. Hit-transparent so the strip never blocks the
+   hero; the inner blocks re-enable pointer events. */
+.sleeve {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: -404px;
+  padding-top: 340px;
   pointer-events: none;
-  /* easeOutSnappy — matches the collapse cascade. */
-  transition: opacity 0.3s cubic-bezier(0.19, 1, 0.22, 1) 0.04s;
+  /* The band runs PAST the padding strip, going fully solid 64px into the
+     copy (the old hero-overlay landed there — solid at the copy's top edge
+     left a dead gap above "Aurora"). */
   background: linear-gradient(
     to bottom,
-    transparent 0%,
-    transparent 14%,
-    color-mix(in srgb, var(--app-bg) 8%, transparent) 30%,
-    color-mix(in srgb, var(--app-bg) 28%, transparent) 44%,
-    color-mix(in srgb, var(--app-bg) 52%, transparent) 58%,
-    color-mix(in srgb, var(--app-bg) 74%, transparent) 70%,
-    color-mix(in srgb, var(--app-bg) 90%, transparent) 82%,
-    var(--app-bg) 100%
+    transparent 0,
+    transparent 184px,
+    color-mix(in srgb, var(--app-bg) 8%, transparent) 224px,
+    color-mix(in srgb, var(--app-bg) 28%, transparent) 260px,
+    color-mix(in srgb, var(--app-bg) 52%, transparent) 294px,
+    color-mix(in srgb, var(--app-bg) 74%, transparent) 326px,
+    color-mix(in srgb, var(--app-bg) 90%, transparent) 358px,
+    var(--app-bg) 396px
   );
-}
-
-/* Solid base under the copy/actions — tracks the hero's flex bottom (anchored
-   top: 100%) so it adapts to however many auth methods render. Oversized so it
-   always reaches the screen bottom; dissolves with the fade. */
-.heroCover {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1;
-  height: 200%;
-  pointer-events: none;
-  /* easeOutSnappy — matches the collapse cascade. */
-  transition: opacity 0.3s cubic-bezier(0.19, 1, 0.22, 1) 0.04s;
-  background: var(--app-bg);
-}
-
-.fadeHidden {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .heroFade,
-  .heroCover {
-    transition: none;
-  }
 }
 
 .wallet {
@@ -133,14 +111,12 @@
    heroCover/heroFade overlays (z 1), not its own gradient backdrop. */
 .copy {
   position: relative;
-  z-index: 2;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  /* Stack spacing rides the ITEMS as margins (see contentTarget) — `gap`
-     doesn't tween in Framer (it snaps at transition end). */
-  margin-top: -64px;
+  gap: 16px;
   padding: 32px 40px 0;
+  pointer-events: auto;
 }
 
 /* Figma 2145:45345 — Title2/Regular 22/28, tracking -0.26. */
@@ -177,12 +153,12 @@
 /* Figma 2145:45349 — p 32, gap 12, buttons 338px (402 − 64). */
 .actions {
   position: relative;
-  z-index: 2;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  /* Spacing as item margins (tweenable) — see .copy note. */
+  gap: 12px;
   padding: 32px;
+  pointer-events: auto;
 }
 
 /* "Creating your account..." slot — beneath the centered logo, the issuance

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import clsx from 'clsx';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AUTH_METHODS } from '@/data/configure';
 import { authCta, type AuthMethod } from '@/data/flow';
@@ -17,39 +16,20 @@ export const AURORA_AUTH_DESCRIPTION =
   'Like a bank account with global superpowers. Fund in 65+ countries. Debit card, rewards, and BTC.';
 
 /* ── Sign-in intro beats (seconds from `dismissed`) — ONE continuous scene:
-   the resting screen's aurora is already full-screen under layout-anchored
-   fade overlays, so going full-bleed is just those overlays dissolving (no
-   second field, no crossfade), and the resting logo itself glides. The flow
-   flips `leaving` for the caption's exit, then swaps + blur-fades the screen. */
-// 1 — copy + buttons cascade out BOTTOM-UP, and the exit is a REAL layout
-//     collapse (items' heights AND the containers' gaps/paddings/margins all
-//     animate to zero). Everything downstream rides that one track for free:
-//     the hero (flex: 1) grows into the freed space, so the wallet logo is
-//     re-centered by flexbox itself — no measured glide — and the hero-anchored
-//     fade overlays slide down with the layout, uncovering the aurora exactly
-//     as the content gives the space up.
-/** Per-item staggered collapse (the version that read right — each item's
- *  fade AND height travel together, bottom-up), just a touch faster. Stack
- *  spacing lives on the ITEMS as margins (tweenable) rather than container
- *  `gap`: Framer can't interpolate `gap`, it SNAPS at the end of the
- *  transition — that was the logo's instant downward jump at resolve. */
+   the content (copy + buttons) lives in a SLEEVE whose own top edge IS the
+   gradient mask (painted into its padding strip). The intro slides the whole
+   sleeve down off the screen — one GPU transform, no per-frame layout — so
+   the aurora is uncovered exactly as the content gives up the screen (the
+   mask leaves WITH it; nothing to dissolve), and the logo glides to center
+   on the SAME curve and clock. The flow flips `leaving` for the caption's
+   exit, then swaps + blur-fades the screen. */
+const SLEEVE_OUT = motionTransition(easeOutSnappy, 1.2);
+// Items inside the sleeve keep the bottom-up content-out language (fade +
+// blur + a small travel) while the sleeve carries the actual movement.
 const contentOut = (fromBottom: number) =>
-  motionTransition(easeOutSnappy, 0.3, { delay: fromBottom * 0.02 });
-const contentTarget = (dismissed: boolean, restMarginTop = 0) =>
-  dismissed
-    ? { opacity: 0, y: 6, filter: 'blur(8px)', height: 0, marginTop: 0 }
-    : { opacity: 1, y: 0, filter: 'blur(0px)', height: 'auto', marginTop: restMarginTop };
-// Containers melt their own padding/margin across the cascade window so the
-// collapse lands at a TRUE zero height (no residual frame holding the hero
-// off full-screen).
-const frameOut = motionTransition(easeOutSnappy, 0.4);
-const COPY_FRAME_OUT = { paddingTop: 0, marginTop: 0 };
-const COPY_FRAME_REST = { paddingTop: 32, marginTop: -64 };
-const ACTIONS_FRAME_OUT = { paddingTop: 0, paddingBottom: 0 };
-const ACTIONS_FRAME_REST = { paddingTop: 32, paddingBottom: 32 };
-// 2 — the fade overlays ride the growing hero (layout-anchored), then dissolve
-//     LATE (CSS transition — see .heroFade) so the full-bleed reveal trails the
-//     collapse instead of exposing the aurora behind still-visible content.
+  motionTransition(easeOutQuick, 0.18, { delay: fromBottom * 0.025 });
+const CONTENT_OUT = { opacity: 0, y: 6, filter: 'blur(8px)' };
+const CONTENT_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 // 4 — "Creating your account..." enters only after the logo has visibly
 //     settled at center. The gate is a real timer that MOUNTS the caption
 //     (not a transition delay — a delay on an already-mounted element can be
@@ -96,10 +76,29 @@ export function AuroraAuthScreen({
     return () => window.clearTimeout(t);
   }, [dismissed]);
 
+  // Logo glide — measured once on dismiss (before any transform), the exact
+  // travel from its resting flex slot to the true screen center. Runs on the
+  // sleeve's curve and clock so logo and sleeve move as one scene.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const walletRef = useRef<HTMLImageElement>(null);
+  const [glideDy, setGlideDy] = useState(0);
+  useLayoutEffect(() => {
+    if (!dismissed) {
+      setGlideDy(0);
+      return;
+    }
+    const root = rootRef.current;
+    const img = walletRef.current;
+    if (!root || !img) return;
+    const rb = root.getBoundingClientRect();
+    const ib = img.getBoundingClientRect();
+    setGlideDy(rb.top + rb.height / 2 - (ib.top + ib.height / 2));
+  }, [dismissed]);
+
   return (
-    <div className={styles.root}>
-      {/* ONE full-screen aurora field for rest AND intro — the hero "fade" is
-          the layout-anchored overlays below, so full-bleed = same surface. */}
+    <div ref={rootRef} className={styles.root}>
+      {/* ONE full-screen aurora field for rest AND intro — the hero look is
+          the sleeve's own gradient edge, so full-bleed = same surface. */}
       <div className={styles.aurora} aria-hidden>
         <AuroraBackground
           showRadialGradient={false}
@@ -109,97 +108,86 @@ export function AuroraAuthScreen({
       </div>
 
       <div className={styles.hero}>
-        {/* The resting hero look: the fadeBottom profile over the hero box plus
-            a solid cover below it — both dissolve on dismiss so the field
-            visibly becomes full screen instead of swapping layers. */}
-        <div
-          className={clsx(styles.heroFade, dismissed && styles.fadeHidden)}
-          aria-hidden
-        />
-        <div
-          className={clsx(styles.heroCover, dismissed && styles.fadeHidden)}
-          aria-hidden
-        />
-        {/* No glide animation: the logo is a centered flex child of the hero,
-            and the hero (flex: 1) grows as the content collapses — flexbox
-            re-centers it on the collapse's own track, every frame. It swells
-            slightly (1.1x) as it takes the spotlight. */}
         <motion.img
+          ref={walletRef}
           className={styles.wallet}
           src="/assets/financial-app/aurora-wallet.webp"
           alt=""
           aria-hidden
           draggable={false}
           initial={false}
-          animate={{ scale: dismissed ? 1.1 : 1 }}
-          transition={frameOut}
+          animate={{ y: glideDy, scale: dismissed ? 1.1 : 1 }}
+          transition={SLEEVE_OUT}
         />
       </div>
 
-      {/* Cascade order counts FROM THE BOTTOM: last button = 0, first button =
-          n-1, then description, tagline, title — each collapse drops the
-          remaining stack down into the freed space. */}
+      {/* The content sleeve — its padding strip paints the gradient mask, so
+          sliding it down uncovers the aurora on the same transform track.
+          Items inside fade bottom-up (0 = bottom-most). */}
       <motion.div
-        className={styles.copy}
+        className={styles.sleeve}
         initial={false}
-        animate={dismissed ? COPY_FRAME_OUT : COPY_FRAME_REST}
-        transition={frameOut}
+        animate={{ y: dismissed ? '100%' : '0%' }}
+        transition={SLEEVE_OUT}
       >
-        <div className={styles.headings}>
-          <motion.h1
-            className={styles.title}
-            initial={false}
-            animate={contentTarget(dismissed)}
-            transition={contentOut(methods.length + 2)}
-          >
-            Aurora
-          </motion.h1>
+        {/* Blur rides the CONTENT only — blurring the sleeve itself feathers
+            its background's left/right edges at the screen bounds. */}
+        <motion.div
+          initial={false}
+          animate={{ filter: dismissed ? 'blur(12px)' : 'blur(0px)' }}
+          transition={SLEEVE_OUT}
+        >
+        <div className={styles.copy}>
+          <div className={styles.headings}>
+            <motion.h1
+              className={styles.title}
+              initial={false}
+              animate={dismissed ? CONTENT_OUT : CONTENT_REST}
+              transition={contentOut(methods.length + 2)}
+            >
+              Aurora
+            </motion.h1>
+            <motion.p
+              className={styles.tagline}
+              initial={false}
+              animate={dismissed ? CONTENT_OUT : CONTENT_REST}
+              transition={contentOut(methods.length + 1)}
+            >
+              Your money, everywhere
+            </motion.p>
+          </div>
           <motion.p
-            className={styles.tagline}
+            className={styles.description}
             initial={false}
-            animate={contentTarget(dismissed)}
-            transition={contentOut(methods.length + 1)}
+            animate={dismissed ? CONTENT_OUT : CONTENT_REST}
+            transition={contentOut(methods.length)}
           >
-            Your money, everywhere
+            {AURORA_AUTH_DESCRIPTION}
           </motion.p>
         </div>
-        {/* 16 = the old .copy gap, now an item margin so it tweens. */}
-        <motion.p
-          className={styles.description}
-          initial={false}
-          animate={contentTarget(dismissed, 16)}
-          transition={contentOut(methods.length)}
-        >
-          {AURORA_AUTH_DESCRIPTION}
-        </motion.p>
-      </motion.div>
 
-      <motion.div
-        className={styles.actions}
-        initial={false}
-        animate={dismissed ? ACTIONS_FRAME_OUT : ACTIONS_FRAME_REST}
-        transition={frameOut}
-      >
-        {methods.map((method, i) => {
-          const Icon = AUTH_METHOD_ICONS[method];
-          return (
-            <motion.div
-              key={method}
-              initial={false}
-              // 12 = the old .actions gap, as a tweenable item margin.
-              animate={contentTarget(dismissed, i === 0 ? 0 : 12)}
-              transition={contentOut(methods.length - 1 - i)}
-            >
-              <ContentAreaButton
-                icon={<Icon size={24} />}
-                disabled={busy || dismissed}
-                onClick={() => onSignIn(method)}
+        <div className={styles.actions}>
+          {methods.map((method, i) => {
+            const Icon = AUTH_METHOD_ICONS[method];
+            return (
+              <motion.div
+                key={method}
+                initial={false}
+                animate={dismissed ? CONTENT_OUT : CONTENT_REST}
+                transition={contentOut(methods.length - 1 - i)}
               >
-                {authCta(method)}
-              </ContentAreaButton>
-            </motion.div>
-          );
-        })}
+                <ContentAreaButton
+                  icon={<Icon size={24} />}
+                  disabled={busy || dismissed}
+                  onClick={() => onSignIn(method)}
+                >
+                  {authCta(method)}
+                </ContentAreaButton>
+              </motion.div>
+            );
+          })}
+        </div>
+        </motion.div>
       </motion.div>
 
       {/* "Creating your account..." — in after the glide settles; out FIRST
