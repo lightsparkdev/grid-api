@@ -116,7 +116,7 @@ export function AuroraAuthScreen({
           aria-hidden
           draggable={false}
           initial={false}
-          animate={{ y: glideDy, scale: dismissed ? 1.1 : 1 }}
+          animate={{ y: glideDy, scale: dismissed ? 0.75 : 1 }}
           transition={SLEEVE_OUT}
         />
       </div>
