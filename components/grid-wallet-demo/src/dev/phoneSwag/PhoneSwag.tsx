@@ -42,20 +42,37 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
     />
   ) : null;
 
-  // Aurora gets the email entry as a floating (inset) sheet over the auth screen;
-  // other skins keep the full-screen entry below.
-  const emailSheet = onAuthScreen ? (
+  // Aurora's email flow lives in ONE floating sheet across email entry → the
+  // sending beat → the verification code, so the contents push between steps
+  // instead of swapping screens. The demo logic flips phone.screen to
+  // 'creating' between the email and OTP prompts ("Sending you a code…") and
+  // keeps it there during OTP — aurora rides that whole stretch on the auth
+  // screen with the sheet held open (Continue spins through the gap).
+  const emailOtpFlow = isAurora && authMethod === 'email_otp';
+  const emailSending = Boolean(
+    emailOtpFlow &&
+      props.phone.screen === 'creating' &&
+      !props.email?.active &&
+      !props.otp?.active,
+  );
+  const emailSheet = isAurora ? (
     <EmailSheet
-      open={Boolean(props.email?.active)}
+      open={Boolean(props.email?.active || emailSending || props.otp?.active)}
+      sending={emailSending}
+      codeActive={Boolean(props.otp?.active)}
       onSubmit={props.email?.onSubmit ?? (() => {})}
-      onCancel={props.email?.onCancel}
+      onSubmitCode={props.otp?.onSubmit}
+      // The X is BACK past the first step (code → email re-prompt); the scrim
+      // still cancels the whole flow.
+      onBack={props.otp?.onBack}
+      onCancel={props.otp?.active ? props.otp?.onCancel : props.email?.onCancel}
     />
   ) : null;
 
   if (props.email?.active && !isAurora) {
     return <EmailEntryScreen brand={brand} onSubmit={props.email.onSubmit} />;
   }
-  if (props.otp?.active) {
+  if (props.otp?.active && !isAurora) {
     return <OtpEntryScreen onSubmit={props.otp.onSubmit} />;
   }
   if (props.google?.nonce) {
@@ -74,11 +91,20 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
   }
 
   // Aurora's auth ⇄ wallet pair renders through ONE stable component so the
-  // post-sign-in intro can hold the auth screen across the screen flip.
-  if (isAurora && (props.phone.screen === 'auth' || props.phone.screen === 'wallet')) {
+  // post-sign-in intro can hold the auth screen across the screen flip. The
+  // email flow's 'creating' stretch (sending beat + OTP entry) stays on the
+  // auth screen too — the sheet bridges it.
+  const auroraEmailBridge =
+    emailOtpFlow &&
+    props.phone.screen === 'creating' &&
+    (emailSending || Boolean(props.otp?.active));
+  if (
+    isAurora &&
+    (props.phone.screen === 'auth' || props.phone.screen === 'wallet' || auroraEmailBridge)
+  ) {
     return (
       <AuroraSignInFlow
-        screen={props.phone.screen}
+        screen={props.phone.screen === 'wallet' ? 'wallet' : 'auth'}
         busy={props.busy}
         onSignIn={props.onSignInWithMethod ?? (() => {})}
         balance={props.phone.balance}

@@ -30,6 +30,8 @@ export interface DemoLogicPhoneSlice {
   finishFaceId: () => void;
   otpActive: boolean;
   submitOtp: (code: string) => void;
+  cancelOtp: () => void;
+  backOtp: () => void;
   emailActive: boolean;
   submitEmail: (email: string) => void;
   cancelEmail: () => void;
@@ -75,6 +77,8 @@ export function resolvePhoneProps(
     otp: {
       active: previewActive ? overlay === 'otp' : logic.otpActive,
       onSubmit: previewActive ? noop : logic.submitOtp,
+      onCancel: previewActive ? noop : logic.cancelOtp,
+      onBack: previewActive ? noop : logic.backOtp,
     },
     email: {
       active: previewActive ? overlay === 'email' : logic.emailActive,

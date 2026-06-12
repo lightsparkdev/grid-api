@@ -46,6 +46,8 @@ export default function Page() {
             finishFaceId={logic.finishFaceId}
             otpActive={logic.otpActive}
             submitOtp={logic.submitOtp}
+            cancelOtp={logic.cancelOtp}
+            backOtp={logic.backOtp}
             emailActive={logic.emailActive}
             submitEmail={logic.submitEmail}
             cancelEmail={logic.cancelEmail}

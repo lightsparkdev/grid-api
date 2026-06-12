@@ -90,6 +90,19 @@ export function useWalletDemoLogic() {
     emailPrompt.current = null;
     p?.reject(new Error('cancelled'));
   }, []);
+  const cancelOtp = useCallback(() => {
+    setOtpActive(false);
+    const p = otpPrompt.current;
+    otpPrompt.current = null;
+    p?.reject(new Error('cancelled'));
+  }, []);
+  /** OTP step → back to the email step (authenticate's email loop re-prompts). */
+  const backOtp = useCallback(() => {
+    setOtpActive(false);
+    const p = otpPrompt.current;
+    otpPrompt.current = null;
+    p?.reject(new Error('back'));
+  }, []);
 
   const promptPasskey = useCallback((): Promise<void> => {
     setPasskeyActive(true);
@@ -194,11 +207,24 @@ export function useWalletDemoLogic() {
     async (firstTime: boolean) => {
       const m = session.current.method ?? method;
       if (m === 'email_otp') {
-        const email = firstTime ? await promptEmail() : session.current.email;
-        if (firstTime) session.current.email = email;
-        setTransient({ screen: 'creating', note: 'Sending you a code…' });
-        await sleep(600);
-        await promptOtp();
+        // The OTP step can come BACK to the email step (the sheet's X): the
+        // prompt rejects with 'back' and the loop re-prompts the email.
+        let needEmail = firstTime;
+        for (;;) {
+          if (needEmail || !session.current.email) {
+            session.current.email = await promptEmail();
+          }
+          setTransient({ screen: 'creating', note: 'Sending you a code…' });
+          await sleep(600);
+          try {
+            await promptOtp();
+            break;
+          } catch (e) {
+            if ((e as Error)?.message !== 'back') throw e;
+            setTransient(null);
+            needEmail = true;
+          }
+        }
         pushCalls(signInCalls('email_otp', session.current.email), 'Sign in');
       } else if (m === 'passkey') {
         await promptPasskey();
@@ -444,6 +470,8 @@ export function useWalletDemoLogic() {
     finishFaceId,
     otpActive,
     submitOtp,
+    cancelOtp,
+    backOtp,
     emailActive,
     submitEmail,
     cancelEmail,
