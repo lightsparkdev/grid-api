@@ -1,0 +1,70 @@
+---
+title: "See it live"
+description: "Create a Global Account and watch the Grid API calls fire in real time"
+icon: "/images/icons/phone.svg"
+mode: "custom"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+export const WalletDemoEmbed = () => {
+  const [src, setSrc] = React.useState(null);
+
+  React.useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const base = isLocal ? 'http://localhost:4000' : 'https://grid-wallet-demo.vercel.app';
+    setSrc(base + '/?embed=true&theme=' + (isDark ? 'dark' : 'light'));
+
+    let ignoreNextMutation = false;
+
+    const sendTheme = () => {
+      const t = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const iframe = document.getElementById('wallet-demo-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
+      }
+    };
+
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'theme-request') {
+        sendTheme();
+        return;
+      }
+      if (e.data && e.data.type === 'theme-sync') {
+        const isDark = document.documentElement.classList.contains('dark');
+        const wantsDark = e.data.theme === 'dark';
+        if (isDark !== wantsDark) {
+          ignoreNextMutation = true;
+          document.documentElement.classList.toggle('dark');
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    const obs = new MutationObserver(() => {
+      if (ignoreNextMutation) { ignoreNextMutation = false; return; }
+      sendTheme();
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      obs.disconnect();
+    };
+  }, []);
+
+  if (!src) return null;
+
+  return (
+    <iframe
+      id="wallet-demo-iframe"
+      src={src}
+      title="Grid Global Accounts — live demo"
+      allow="publickey-credentials-create *; publickey-credentials-get *; clipboard-write"
+    />
+  );
+};
+
+<div id="wallet-demo-container">
+  <WalletDemoEmbed />
+</div>

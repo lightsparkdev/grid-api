@@ -4076,3 +4076,64 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
   color: var(--ls-gray-700);
 }
 
+/* Wallet demo iframe — full bleed (mirrors flow-builder) */
+#wallet-demo-container {
+  position: fixed !important;
+  top: 112px !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: calc(100dvh - 112px) !important;
+  z-index: 1;
+  aspect-ratio: unset !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: var(--ls-gray-100) !important;
+}
+
+html.dark #wallet-demo-container {
+  background: var(--ls-gray-975) !important;
+}
+
+#wallet-demo-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  aspect-ratio: unset !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+/* Kill Mintlify's iframe aspect-ratio wrapper */
+#wallet-demo-container > div,
+#wallet-demo-container > [style*="aspect-ratio"] {
+  aspect-ratio: unset !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  inset: 0 !important;
+  padding: 0 !important;
+}
+
+#content-area:has(#wallet-demo-container) {
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+#content-container:has(#wallet-demo-container) {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 1023px) {
+  #wallet-demo-container {
+    top: 120px !important;
+    height: calc(100dvh - 120px) !important;
+  }
+}
+
+html:has(#wallet-demo-container),
+html:has(#wallet-demo-container) body {
+  overflow: hidden !important;
+}
+

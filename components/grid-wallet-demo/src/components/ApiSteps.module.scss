@@ -1,0 +1,200 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.panel {
+  background: var(--surface-primary);
+  border-top: var(--stroke-xs) solid var(--border-tertiary);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 var(--spacing-md);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+  flex-shrink: 0;
+}
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-primary);
+}
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+.headerTitle {
+  @include label;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+.headerHint {
+  @include label-sm;
+  color: var(--text-tertiary);
+  font-feature-settings: 'salt' 1;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.empty {
+  @include body;
+  color: var(--text-secondary);
+  padding: var(--spacing-4xl);
+  max-width: 520px;
+  line-height: 24px;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-2xl) var(--spacing-4xl);
+  max-width: 760px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.stepBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-secondary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  flex-shrink: 0;
+  span {
+    @include label;
+    color: var(--text-primary);
+  }
+}
+.stepBadgeFresh {
+  background: var(--surface-inverted);
+  border-color: var(--surface-inverted);
+  span {
+    color: var(--text-surface);
+  }
+}
+.stepTitle {
+  @include body;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.stepContent {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.stepLineCol {
+  width: 28px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stepLine {
+  width: var(--stroke-xs);
+  height: 100%;
+  background: var(--border-tertiary);
+}
+.stepCodeCol {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-2xl);
+}
+
+.codeBlock {
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: hidden;
+  transition: border-color 200ms ease;
+}
+.codeBlockFresh {
+  border-color: var(--border-secondary);
+}
+.codeBlockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+}
+.codeBlockDesc {
+  @include label-sm;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+.codeBlockContent {
+  padding: var(--spacing-md);
+  overflow-x: auto;
+}
+.codePre {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-primary);
+  white-space: pre;
+  tab-size: 2;
+  font-feature-settings: 'salt' 1;
+}
+
+/* Syntax highlighting — GitHub light/dark, identical to grid-visualizer */
+.syntaxDefault {
+  color: #24292e;
+  :global([data-theme='dark']) & {
+    color: #e1e4e8;
+  }
+}
+.syntaxCommand {
+  color: #6f42c1;
+  :global([data-theme='dark']) & {
+    color: #b392f0;
+  }
+}
+.syntaxFlag {
+  color: #2b5581;
+  :global([data-theme='dark']) & {
+    color: #79b8ff;
+  }
+}
+.syntaxString {
+  color: #22863a;
+  :global([data-theme='dark']) & {
+    color: #85e89d;
+  }
+}
+
+@media (max-width: 767px) {
+  .steps {
+    padding: var(--spacing-md);
+    max-width: 100%;
+  }
+}

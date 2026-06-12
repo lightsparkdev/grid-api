@@ -1,0 +1,29 @@
+{
+  "name": "grid-wallet-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive Grid Global Accounts wallet demo, embedded in the Grid docs.",
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "dev:apple": "next dev -p 4000 -H grid-wallet-demo-local.lightspark.com --experimental-https --experimental-https-key ./certs/apple-local-key.pem --experimental-https-cert ./certs/apple-local.pem",
+    "build": "next build",
+    "start": "next start -p 4000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@central-icons-react/round-outlined-radius-3-stroke-1.5": "^1.1.135",
+    "@lightsparkdev/origin": "^0.13.4",
+    "clsx": "^2.1.1",
+    "motion": "^12.33.0",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sass": "^1.97.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.9.3"
+  }
+}
