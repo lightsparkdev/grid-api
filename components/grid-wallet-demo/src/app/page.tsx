@@ -56,6 +56,9 @@ export default function Page() {
             cancelPhone={logic.cancelPhone}
             gNonce={logic.gNonce}
             submitGoogle={logic.submitGoogle}
+            aNonce={logic.aNonce}
+            submitApple={logic.submitApple}
+            popupWait={logic.popupWait}
             amountConfig={logic.amountConfig}
             submitAmount={logic.submitAmount}
             cancelAmount={logic.cancelAmount}

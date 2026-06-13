@@ -21,7 +21,7 @@ export interface DemoLogicPhoneSlice {
   phone: PhoneState;
   running: boolean;
   handleAction: (id: ActionId) => void;
-  signInWithMethod: (method: AuthMethod) => void;
+  signInWithMethod: (method: AuthMethod, popup?: Promise<string>) => void;
   signInMethod: AuthMethod | null;
   passkeyActive: boolean;
   confirmPasskey: () => void;
@@ -40,6 +40,9 @@ export interface DemoLogicPhoneSlice {
   cancelPhone: () => void;
   gNonce: string | null;
   submitGoogle: (idToken: string) => void;
+  aNonce: string | null;
+  submitApple: (idToken: string) => void;
+  popupWait: boolean;
   amountConfig: typeof PREVIEW_AMOUNT | null;
   submitAmount: (dollars: number) => void;
   cancelAmount: () => void;
@@ -68,6 +71,7 @@ export function resolvePhoneProps(
     onSignInWithMethod: previewActive ? noop : logic.signInWithMethod,
     signInMethod: logic.signInMethod ?? undefined,
     busy,
+    popupWait: previewActive ? false : logic.popupWait,
     passkey: {
       active: previewActive ? overlay === 'passkey' : logic.passkeyActive,
       onConfirm: previewActive ? noop : logic.confirmPasskey,
@@ -100,6 +104,14 @@ export function resolvePhoneProps(
           : null
         : logic.gNonce,
       onCredential: previewActive ? noop : logic.submitGoogle,
+    },
+    apple: {
+      nonce: previewActive
+        ? overlay === 'apple'
+          ? 'preview-nonce'
+          : null
+        : logic.aNonce,
+      onCredential: previewActive ? noop : logic.submitApple,
     },
     amount: {
       config: previewActive

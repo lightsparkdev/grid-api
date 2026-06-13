@@ -6,7 +6,13 @@
 // detection), and asserts the notification's per-method content (SMS: avatar
 // + Messages badge + 2-line clamped body).
 //
-//   node scripts/auth-flow-verify.mjs [email|phone] [chromium|webkit]
+// OAUTH methods (google / apple) run a different scenario: real provider
+// popups can't be automated, so the harness installs the __oauthPopupStub
+// test seam (src/lib/auth.ts) and asserts the Airbnb model — tap → phone
+// untouched while pending (no busy look), double-tap swallowed, cancel →
+// still untouched + re-tappable, resolve → sign-in calls + wallet intro.
+//
+//   node scripts/auth-flow-verify.mjs [email|phone|google|apple] [chromium|webkit]
 import { chromium, webkit } from 'playwright';
 
 const method = process.argv[2] ?? 'phone';
@@ -60,6 +66,88 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await page.goto('http://localhost:4000', { waitUntil: 'networkidle' });
 await page.getByText('swag', { exact: true }).first().click();
 await page.waitForTimeout(800);
+
+// ── OAuth popup scenario (google / apple) ──
+if (method === 'google' || method === 'apple') {
+  const cta = method === 'google' ? 'Continue with Google' : 'Continue with Apple';
+  // Google is the default-enabled method; Apple needs its checkbox on.
+  if (method === 'apple') {
+    await page.getByText('Apple', { exact: true }).first().click();
+    await page.waitForTimeout(400);
+  }
+  // Install the popup stub: each "popup" parks its resolvers for the harness.
+  await page.evaluate(() => {
+    window.__popupStubCalls = [];
+    window.__oauthPopupStub = (provider) =>
+      new Promise((resolve, reject) => {
+        window.__popupStubCalls.push({ provider, resolve, reject });
+      });
+  });
+  const stubCalls = () => page.evaluate(() => window.__popupStubCalls.length);
+  // The idle auth screen, summarized: no sheet, sleeve at rest, CTA enabled
+  // (the popup wait must NOT read as busy — that's the Airbnb model).
+  const authState = () =>
+    page.evaluate((ctaLabel) => {
+      const sleeve = document.querySelector('[class*="AuroraAuthScreen_sleeve__"]');
+      const tr = sleeve ? getComputedStyle(sleeve).transform : null;
+      const btn = [...document.querySelectorAll('button')].find(
+        (b) => b.textContent.trim() === ctaLabel,
+      );
+      return {
+        authScreen: !!document.querySelector('[class*="AuroraAuthScreen_root__"]'),
+        sheet: !!document.querySelector('[class*="BottomSheet_sheet__"]'),
+        sleeveY: !tr || tr === 'none' ? 0 : Math.round(new DOMMatrixReadOnly(tr).m42),
+        ctaDisabled: btn ? btn.disabled : null,
+      };
+    }, cta);
+  const assertIdle = async (label) => {
+    const s = await authState();
+    check(label, s.authScreen && !s.sheet && s.sleeveY === 0 && s.ctaDisabled === false,
+      JSON.stringify(s));
+  };
+
+  // The API panel seeds demo entries — compare against the baseline count.
+  const oauthCallCount = () => page.getByText('Verify OAuth token').count();
+  const baselineCalls = await oauthCallCount();
+
+  await assertIdle('idle before tap');
+
+  // Tap → popup "opens" (stub). Phone must stay exactly as it is.
+  await page.getByText(cta, { exact: true }).first().click();
+  await page.waitForTimeout(400);
+  check('popup opened once', (await stubCalls()) === 1, `${await stubCalls()} calls`);
+  await assertIdle('phone untouched while popup pending');
+
+  // Double-tap while pending — swallowed before a second window can open.
+  await page.getByText(cta, { exact: true }).first().click();
+  await page.waitForTimeout(300);
+  check('double-tap swallowed', (await stubCalls()) === 1, `${await stubCalls()} calls`);
+
+  // Cancel (user closes the popup) → nothing happens, still re-tappable.
+  await page.evaluate(() => window.__popupStubCalls[0].reject(new Error('cancelled')));
+  await page.waitForTimeout(500);
+  await assertIdle('idle again after cancel');
+  check('no sign-in calls after cancel', (await oauthCallCount()) === baselineCalls);
+
+  // Tap again → a fresh popup; resolve it → staged calls + wallet intro.
+  await page.getByText(cta, { exact: true }).first().click();
+  await page.waitForTimeout(400);
+  check('re-tap opens a new popup', (await stubCalls()) === 2, `${await stubCalls()} calls`);
+  await page.evaluate(() => window.__popupStubCalls[1].resolve('fake-oidc-token'));
+  // Post-resolve beat is 400ms, then the calls push and the intro starts.
+  await page.waitForTimeout(900);
+  check('sign-in calls pushed', (await oauthCallCount()) > baselineCalls);
+  const introY = (await authState()).sleeveY;
+  check('wallet intro playing (sleeve moving)', introY > 2, `sleeveY=${introY}`);
+  await page.locator('[class*="AuroraWalletScreen_"]').first()
+    .waitFor({ state: 'visible', timeout: 15000 });
+  check('sign-in completed (wallet visible)', true);
+
+  await browser.close();
+  console.log(fails.length ? `\n${fails.length} FAILURES: ${fails.join(', ')}` : '\nALL PASS');
+  process.exit(fails.length ? 1 : 0);
+}
+
 await page.getByText(M.checkbox, { exact: true }).first().click();
 await page.waitForTimeout(800);
 await page.getByText(M.cta, { exact: true }).first().click();

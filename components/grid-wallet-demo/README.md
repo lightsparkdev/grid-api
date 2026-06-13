@@ -30,8 +30,39 @@ npm run dev          # runs on a fixed port: http://localhost:4000
 #   http://localhost:4000/?embed=true&theme=dark
 ```
 
+Google and Apple sign-in use real hosted popups for the ceremony, fired from the demo's own
+buttons. Google defaults to the checked-in public web client ID, so local sign-in works without an
+env file. Apple defaults to the existing Services ID `com.lightspark` with return URL
+`https://grid-wallet-demo.vercel.app/`; override with `NEXT_PUBLIC_GOOGLE_CLIENT_ID`,
+`NEXT_PUBLIC_APPLE_CLIENT_ID`, and `NEXT_PUBLIC_APPLE_REDIRECT_URI` if the provider configuration
+changes.
+
 The port is pinned to **4000** so the docs page can reliably embed the local app while you preview
 the Grid docs with `make mint` (the docs page auto-targets `localhost:4000` when served locally).
+
+### Local Apple Sign In
+
+Apple does not support the hosted popup flow from `localhost`. For local Apple testing, run the
+demo from the HTTPS hostname registered in Apple Developer:
+
+```bash
+npm run dev:apple
+# https://grid-wallet-demo-local.lightspark.com:4000/?theme=dark
+```
+
+One-time machine setup:
+
+```bash
+sudo sh -c 'echo "127.0.0.1 grid-wallet-demo-local.lightspark.com" >> /etc/hosts'
+mkdir -p certs
+openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
+  -keyout certs/apple-local-key.pem \
+  -out certs/apple-local.pem \
+  -subj "/CN=grid-wallet-demo-local.lightspark.com" \
+  -addext "subjectAltName=DNS:grid-wallet-demo-local.lightspark.com"
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain certs/apple-local.pem
+```
 
 ## Deploy
 

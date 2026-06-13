@@ -144,6 +144,27 @@
   margin-top: 16px;
   height: 46px;
 }
+.appleSigninButton {
+  margin-top: 14px;
+  background: #000;
+  color: #fff;
+
+  :global([data-theme='dark']) & {
+    background: #fff;
+    color: #000;
+  }
+}
+.authError {
+  margin-top: 6px;
+  color: #c2410c;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+
+  :global([data-theme='dark']) & {
+    color: #fb923c;
+  }
+}
 
 /* ---------- Auth ---------- */
 .authScreen {

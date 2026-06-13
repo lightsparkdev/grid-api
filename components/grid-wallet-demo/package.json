@@ -5,6 +5,7 @@
   "description": "Interactive Grid Global Accounts wallet demo, embedded in the Grid docs.",
   "scripts": {
     "dev": "next dev -p 4000",
+    "dev:apple": "next dev -p 4000 -H grid-wallet-demo-local.lightspark.com --experimental-https --experimental-https-key ./certs/apple-local-key.pem --experimental-https-cert ./certs/apple-local.pem",
     "build": "next build",
     "start": "next start -p 4000",
     "lint": "next lint",

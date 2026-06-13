@@ -1,7 +1,7 @@
 import { fmt, initialWallet, type WalletState } from '@/data/actions';
 import type { AuthMethod, PhoneState, Tx } from '@/data/flow';
 
-export type PhoneOverlayId = 'email' | 'phone' | 'otp' | 'google' | 'amount' | 'passkey' | null;
+export type PhoneOverlayId = 'email' | 'phone' | 'otp' | 'google' | 'apple' | 'amount' | 'passkey' | null;
 
 export interface PhonePreviewFixture {
   id: string;

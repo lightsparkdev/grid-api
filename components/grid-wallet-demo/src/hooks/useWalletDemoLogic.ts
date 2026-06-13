@@ -13,7 +13,7 @@ import {
   type WalletState,
 } from '@/data/actions';
 import { addMoneyCalls, sendCalls, signInCalls, withdrawCalls } from '@/data/apiCalls';
-import { googleNonce, passkeyCeremony } from '@/lib/auth';
+import { oauthNonce, passkeyCeremony } from '@/lib/auth';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
 
@@ -64,6 +64,11 @@ export function useWalletDemoLogic() {
   const [emailActive, setEmailActive] = useState(false);
   const [phoneActive, setPhoneActive] = useState(false);
   const [gNonce, setGNonce] = useState<string | null>(null);
+  const [aNonce, setANonce] = useState<string | null>(null);
+  // A REAL provider popup is pending (aurora's Airbnb-model sign-in) — the
+  // auth screen must NOT show a busy state while it's open (the phone stays
+  // exactly as it is; `running` still guards re-entry underneath).
+  const [popupWait, setPopupWait] = useState(false);
   const [amountConfig, setAmountConfig] = useState<AmountConfig | null>(null);
 
   const session = useRef<Session>({});
@@ -75,6 +80,7 @@ export function useWalletDemoLogic() {
   const emailPrompt = useRef<{ resolve: (e: string) => void; reject: (e: Error) => void } | null>(null);
   const phonePrompt = useRef<{ resolve: (n: string) => void; reject: (e: Error) => void } | null>(null);
   const googlePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
+  const applePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
   const amountPrompt = useRef<{ resolve: (d: number) => void; reject: (e: Error) => void } | null>(null);
 
   const promptEmail = useCallback((): Promise<string> => {
@@ -189,6 +195,17 @@ export function useWalletDemoLogic() {
     p?.resolve(token);
   }, []);
 
+  const promptApple = useCallback((nonce: string): Promise<string> => {
+    setANonce(nonce);
+    return new Promise((resolve, reject) => (applePrompt.current = { resolve, reject }));
+  }, []);
+  const submitApple = useCallback((token: string) => {
+    setANonce(null);
+    const p = applePrompt.current;
+    applePrompt.current = null;
+    p?.resolve(token);
+  }, []);
+
   const promptAmount = useCallback((config: AmountConfig): Promise<number> => {
     setAmountConfig(config);
     return new Promise((resolve, reject) => (amountPrompt.current = { resolve, reject }));
@@ -229,7 +246,14 @@ export function useWalletDemoLogic() {
     !!session.current.expiresAt && Date.now() < session.current.expiresAt - 5000;
 
   const authenticate = useCallback(
-    async (firstTime: boolean) => {
+    /**
+     * `popup` is a REAL provider popup already opened by the CTA's tap
+     * handler (popup blockers require the window to open inside the user
+     * gesture, so the loop can't open it after an await). When absent,
+     * oauth/apple fall back to the classic full-screen prompt with the
+     * provider's own widget.
+     */
+    async (firstTime: boolean, popup?: Promise<string>) => {
       const m = session.current.method ?? method;
       if (m === 'email_otp' || m === 'sms') {
         // ONE loop for both OTP methods — only the entry prompt and the
@@ -274,19 +298,25 @@ export function useWalletDemoLogic() {
         }
         await playFaceId();
         pushCalls(signInCalls('passkey'), 'Sign in');
-      } else if (m === 'oauth') {
-        await promptGoogle(await googleNonce());
-        pushCalls(signInCalls('oauth'), 'Sign in');
-      } else if (m === 'apple') {
-        setTransient({ screen: 'credential' });
-        await sleep(900);
-        pushCalls(signInCalls('apple'), 'Sign in');
+      } else if (m === 'oauth' || m === 'apple') {
+        if (popup) {
+          // The popup is already open — the phone stays untouched until it
+          // resolves (cancel rejects 'cancelled' and nothing here ran).
+          await popup;
+        } else {
+          const prompt = m === 'apple' ? promptApple : promptGoogle;
+          await prompt(await oauthNonce());
+        }
+        // The same post-resolve beat as the OTP sheet's dismiss: a breath
+        // between the ceremony finishing and the wallet flip's intro.
+        await sleep(400);
+        pushCalls(signInCalls(m), 'Sign in');
       } else {
         throw new Error(`Sign-in method "${m}" is not available.`);
       }
       startSession();
     },
-    [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptPasskey, playFaceId, pushCalls, startSession],
+    [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptApple, promptPasskey, playFaceId, pushCalls, startSession],
   );
 
   const runSignIn = useCallback(async () => {
@@ -298,19 +328,28 @@ export function useWalletDemoLogic() {
   }, [method, authenticate]);
 
   const signInWithMethod = useCallback(
-    async (m: AuthMethod) => {
-      if (running) return;
+    async (m: AuthMethod, popup?: Promise<string>) => {
+      if (running) {
+        // A flow is already live (e.g. its popup is open) — swallow the
+        // stray popup promise so the rejection doesn't go unhandled.
+        popup?.catch(() => {});
+        return;
+      }
       setRunning(true);
+      // The popup wait must not read as busy on the auth screen — the phone
+      // stays exactly as it is while the real provider popup is up.
+      if (popup) setPopupWait(true);
       try {
         session.current = { method: m };
         setSignInMethod(m);
-        await authenticate(true);
+        await authenticate(true, popup);
         setWallet((w) => ({ ...w, created: true, balanceCents: 0 }));
         setTransient(null);
       } catch (e: unknown) {
         if ((e as Error)?.message !== 'cancelled') console.error('[grid-demo]', e);
         setTransient(null);
       } finally {
+        setPopupWait(false);
         setRunning(false);
       }
     },
@@ -433,7 +472,7 @@ export function useWalletDemoLogic() {
   );
 
   const reset = useCallback(() => {
-    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, amountPrompt]) {
+    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, applePrompt, amountPrompt]) {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
     }
@@ -453,6 +492,8 @@ export function useWalletDemoLogic() {
     setEmailActive(false);
     setPhoneActive(false);
     setGNonce(null);
+    setANonce(null);
+    setPopupWait(false);
     setAmountConfig(null);
     setRunning(false);
   }, []);
@@ -513,6 +554,9 @@ export function useWalletDemoLogic() {
     cancelPhone,
     gNonce,
     submitGoogle,
+    aNonce,
+    submitApple,
+    popupWait,
     amountConfig,
     submitAmount,
     cancelAmount,

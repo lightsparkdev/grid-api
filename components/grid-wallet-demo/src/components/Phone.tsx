@@ -5,7 +5,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
-import { loadGis } from '@/lib/auth';
+import {
+  APPLE_CLIENT_ID,
+  appleRedirectUri,
+  GOOGLE_CLIENT_ID,
+  loadAppleAuth,
+  loadGis,
+} from '@/lib/auth';
 import { formatUsPhone } from '@/lib/phoneFormat';
 import type { ActionId, WalletState } from '@/data/actions';
 import {
@@ -51,8 +57,13 @@ export interface PhoneProps {
   /** Method chosen on swag auth buttons (falls back to `method`). */
   signInMethod?: AuthMethod;
   onAction: (id: ActionId) => void;
-  onSignInWithMethod?: (method: AuthMethod) => void;
+  /** `popup` = a real provider popup already opened inside the tap gesture
+   *  (the aurora Google/Apple CTAs) — the sign-in flow awaits it. */
+  onSignInWithMethod?: (method: AuthMethod, popup?: Promise<string>) => void;
   busy: boolean;
+  /** A provider popup is pending — aurora suppresses its busy look so the
+   *  phone stays exactly as it is while the popup is open. */
+  popupWait?: boolean;
   passkey?: { active: boolean; onConfirm: () => void; onCancel: () => void };
   faceId?: { active: boolean; onDone: () => void };
   otp?: {
@@ -65,6 +76,7 @@ export interface PhoneProps {
   /** Phone-number entry (the SMS flow's first step) — mirrors `email`. */
   phoneEntry?: { active: boolean; onSubmit: (number: string) => void; onCancel?: () => void };
   google?: { nonce: string | null; onCredential: (idToken: string) => void };
+  apple?: { nonce: string | null; onCredential: (idToken: string) => void };
   amount?: {
     config: { title: string; cta: string; source: string; sub: string; defaultDollars: number } | null;
     onSubmit: (dollars: number) => void;
@@ -83,6 +95,7 @@ export default function Phone({
   email,
   phoneEntry,
   google,
+  apple,
   amount,
 }: PhoneProps) {
   const brand = PHONE_BRAND[persona];
@@ -108,9 +121,11 @@ export default function Phone({
                         ? 'otp-entry'
                         : google?.nonce
                           ? 'google-signin'
-                          : amount?.config
-                            ? 'amount-entry'
-                            : phone.screen + phone.balance + String(phone.cardActivated)
+                          : apple?.nonce
+                            ? 'apple-signin'
+                            : amount?.config
+                              ? 'amount-entry'
+                              : phone.screen + phone.balance + String(phone.cardActivated)
                 }
                 className={styles.screenInner}
                 initial={{ opacity: 0, y: 8 }}
@@ -126,6 +141,8 @@ export default function Phone({
                   <OtpEntryScreen onSubmit={otp.onSubmit} />
                 ) : google?.nonce ? (
                   <GoogleSignInScreen nonce={google.nonce} onCredential={google.onCredential} />
+                ) : apple?.nonce ? (
+                  <AppleSignInScreen nonce={apple.nonce} onCredential={apple.onCredential} />
                 ) : amount?.config ? (
                   <AmountEntryScreen
                     config={amount.config}
@@ -438,9 +455,8 @@ export function GoogleSignInScreen({
       .then(() => {
         if (cancelled || !containerRef.current) return;
         const google = (window as any).google;
-        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
         google.accounts.id.initialize({
-          client_id: clientId,
+          client_id: GOOGLE_CLIENT_ID,
           nonce,
           callback: (resp: { credential?: string }) => {
             if (resp?.credential && !fired.current) {
@@ -473,6 +489,78 @@ export function GoogleSignInScreen({
           ref={containerRef}
           style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
         />
+      </div>
+    </div>
+  );
+}
+
+/** Launches Sign in with Apple JS and resolves with the id_token. */
+export function AppleSignInScreen({
+  nonce,
+  onCredential,
+}: {
+  nonce: string;
+  onCredential: (idToken: string) => void;
+}) {
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fired = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAppleAuth()
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setError('Apple sign-in is unavailable.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const signIn = async () => {
+    if (!ready || fired.current || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const AppleID = (window as any).AppleID;
+      AppleID.auth.init({
+        clientId: APPLE_CLIENT_ID,
+        scope: 'name email',
+        redirectURI: appleRedirectUri(),
+        state: `grid-demo-${nonce.slice(0, 16)}`,
+        nonce,
+        usePopup: true,
+      });
+      const response = await AppleID.auth.signIn();
+      const idToken = response?.authorization?.id_token;
+      if (!idToken) throw new Error('Apple did not return an identity token.');
+      fired.current = true;
+      onCredential(idToken);
+    } catch (e: any) {
+      setError(e?.error || e?.message || 'Apple sign-in was cancelled.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={styles.centerScreen}>
+      <div className={styles.bioSheet}>
+        <Apple large />
+        <div className={styles.bioTitle}>Continue with Apple</div>
+        <div className={styles.bioSub}>Use your Apple Account</div>
+        <button
+          className={clsx(styles.btnFill, styles.appleSigninButton)}
+          disabled={!ready || busy}
+          onClick={signIn}
+        >
+          <Apple />
+          {busy ? 'Waiting for Apple…' : 'Continue with Apple'}
+        </button>
+        {error && <div className={styles.authError}>{error}</div>}
       </div>
     </div>
   );

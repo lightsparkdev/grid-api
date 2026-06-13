@@ -1,8 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
+import type { AuthMethod } from '@/data/flow';
 import type { PhoneProps } from '@/components/Phone';
 import {
   AmountEntryScreen,
+  AppleSignInScreen,
   CreatingScreen,
   CredentialScreen,
   EmailEntryScreen,
@@ -11,6 +14,7 @@ import {
   PhoneEntryScreen,
   PHONE_BRAND,
 } from '@/components/Phone';
+import { applePopup, googleTokenPopup, preloadOauthPopups } from '@/lib/auth';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { AuroraSignInFlow } from '@/apps/aurora';
 import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
@@ -89,6 +93,11 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
       <GoogleSignInScreen nonce={props.google.nonce} onCredential={props.google.onCredential} />
     );
   }
+  if (props.apple?.nonce) {
+    return (
+      <AppleSignInScreen nonce={props.apple.nonce} onCredential={props.apple.onCredential} />
+    );
+  }
   if (props.amount?.config) {
     return (
       <AmountEntryScreen
@@ -111,6 +120,20 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
     sheetFlow &&
     props.phone.screen === 'creating' &&
     (sheetSending || Boolean(props.otp?.active) || Boolean(entry?.active));
+  // Airbnb-model OAuth: OUR CTA opens the REAL provider popup synchronously
+  // inside the tap gesture (any await first would trip popup blockers), and
+  // hands the pending promise to the sign-in loop. While the popup is open
+  // the phone stays exactly as it is — `popupWait` suppresses the busy look
+  // below, while the RAW busy still guards double-fire (a second tap is
+  // swallowed before a second window can open).
+  const signIn = (m: AuthMethod) => {
+    if (m === 'oauth' || m === 'apple') {
+      if (props.busy) return;
+      props.onSignInWithMethod?.(m, m === 'oauth' ? googleTokenPopup() : applePopup());
+      return;
+    }
+    props.onSignInWithMethod?.(m);
+  };
   if (
     isAurora &&
     (props.phone.screen === 'auth' || props.phone.screen === 'wallet' || auroraAuthBridge)
@@ -118,8 +141,8 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
     return (
       <AuroraSignInFlow
         screen={props.phone.screen === 'wallet' ? 'wallet' : 'auth'}
-        busy={props.busy}
-        onSignIn={props.onSignInWithMethod ?? (() => {})}
+        busy={props.busy && !props.popupWait}
+        onSignIn={signIn}
         balance={props.phone.balance}
         onAction={props.onAction}
       >
@@ -153,6 +176,12 @@ export function PhoneSwag({
 }: PhoneSwagProps) {
   const skin = getAppSkin(phoneProps.persona);
   const screen = SwagScreen(phoneProps, skin);
+
+  // Warm the GIS / Apple JS scripts so a Google/Apple CTA tap can open its
+  // popup synchronously inside the gesture (popup blockers).
+  useEffect(() => {
+    preloadOauthPopups();
+  }, []);
 
   return (
     <OverlayGlassProvider value={overlayGlass ?? DEFAULT_OVERLAY_GLASS}>
