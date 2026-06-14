@@ -15,23 +15,34 @@
   width: 100%;
   padding: 48px;
   padding-top: calc(var(--spacing-md) + 4px);
-  gap: var(--spacing-md);
 }
 
 .group {
+  // Height animates 0 → auto on entrance (pushes the groups below via real
+  // reflow); clip so the reveal is crisp and the inner rise stays inside.
+  overflow: hidden;
+}
+
+.groupInner {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+}
+
+// Spacing lives on the boxes, not as flex `gap`, so a collapsed (height: 0) item
+// reserves no space — the gap grows with the height instead of popping in first.
+.groupDivider {
+  margin-bottom: var(--spacing-md);
 }
 
 .groupEntries {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
 }
 
 .feedEntry {
   min-width: 0;
+  padding-bottom: var(--spacing-md);
+  overflow: hidden;
 }
 
 .entryHeader {

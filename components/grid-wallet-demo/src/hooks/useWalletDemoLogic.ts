@@ -38,6 +38,9 @@ const newGroupId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)
 /** Silent funding applied when a jumped-to flow needs a balance and there's none. */
 const FAST_FORWARD_FUND_CENTS = 500_000;
 
+/** A transfer's transaction settles a beat after execute, so calls land 1-by-1. */
+const SETTLE_DELAY_MS = 650;
+
 interface Transient {
   screen: ScreenId;
   note?: string;
@@ -97,6 +100,9 @@ export function useWalletDemoLogic() {
   // The in-flight transfer's group id — its create-quote and execute calls
   // stream into one API-panel group.
   const transferGroup = useRef<string | null>(null);
+  // Pending "transaction settled" pushes (so execute and the GET land 1-by-1);
+  // cleared on reset so a late push can't re-add a row to a wiped panel.
+  const settleTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   const session = useRef<Session>({});
   const passkeyPrompt = useRef<{ resolve: () => void; reject: (e: Error) => void } | null>(null);
@@ -382,7 +388,17 @@ export function useWalletDemoLogic() {
     (mode: WalletTransferMode, cents: number) => {
       const gid = transferGroup.current ?? newGroupId();
       transferGroup.current = null;
-      pushCalls(transferExecuteCalls(mode), TRANSFER_LABEL[mode], gid);
+      // Calls land one at a time: execute now, the transaction settles a beat
+      // later (real interactions only — fast-forward batches its setup group).
+      const [executeCall, ...settleCalls] = transferExecuteCalls(mode);
+      pushCalls([executeCall], TRANSFER_LABEL[mode], gid);
+      if (settleCalls.length) {
+        const timer = setTimeout(() => {
+          settleTimers.current.delete(timer);
+          pushCalls(settleCalls, TRANSFER_LABEL[mode], gid);
+        }, SETTLE_DELAY_MS);
+        settleTimers.current.add(timer);
+      }
       setWallet((w) => ({
         ...w,
         balanceCents:
@@ -428,6 +444,8 @@ export function useWalletDemoLogic() {
     }
     session.current = {};
     transferGroup.current = null;
+    settleTimers.current.forEach((t) => clearTimeout(t));
+    settleTimers.current.clear();
     setWallet(initialWallet);
     setTransient(null);
     setSignInMethod(null);
@@ -502,6 +520,8 @@ export function useWalletDemoLogic() {
     }
     session.current = {};
     transferGroup.current = null;
+    settleTimers.current.forEach((t) => clearTimeout(t));
+    settleTimers.current.clear();
     setWallet(initialWallet);
     setEntries([]);
     setTransient(null);

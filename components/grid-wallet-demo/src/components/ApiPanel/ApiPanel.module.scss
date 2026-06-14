@@ -25,6 +25,14 @@
   position: relative;
 }
 
+/* Fills the body so the skeleton ⇄ live-list crossfade keeps the scroll layout. */
+.swapLayer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: ($breakpoint-layout-wide - 1px)) {
   .panel {
     overflow: visible;

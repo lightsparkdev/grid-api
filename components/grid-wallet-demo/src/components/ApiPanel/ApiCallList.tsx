@@ -1,6 +1,5 @@
 'use client';
 
-// hmr-probe
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
@@ -262,38 +261,64 @@ interface ApiCallListProps {
   entries: Entry[];
 }
 
-// New cards/groups blur-fade in and push the rest down — the app's content
-// language, on the snappy-out curve.
+// New entries/groups animate their real HEIGHT (0 → auto), so the cards below are
+// pushed down by the browser's own reflow — smooth, no FLIP snapshot, no snap. An
+// inner layer adds the 16px rise + blur-fade so the content settles up into place.
+// Spacing is folded into the box (entries carry padding-bottom; the group header a
+// margin-bottom) so a collapsed item reserves zero gap — no "pop" before it grows.
 const FEED_IN = motionTransition(easeOutSnappy, 0.42);
 const FEED_OUT = motionTransition(easeOutSnappy, 0.26);
-const FEED_HIDDEN = { opacity: 0, y: -8, filter: 'blur(8px)' };
-const FEED_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
+const RISE_HIDDEN = { opacity: 0, y: 16, filter: 'blur(8px)' };
+const RISE_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
+const EXPAND_HIDDEN = { height: 0 };
+const EXPAND_REST = { height: 'auto' as const };
+const EXPAND_EXIT = { height: 0, opacity: 0 };
+
+function FeedEntry({ entry, now }: { entry: Entry; now: number }) {
+  return (
+    <motion.div
+      className={styles.feedEntry}
+      initial={EXPAND_HIDDEN}
+      animate={EXPAND_REST}
+      exit={{ ...EXPAND_EXIT, transition: FEED_OUT }}
+      transition={FEED_IN}
+    >
+      <motion.div initial={RISE_HIDDEN} animate={RISE_REST} transition={FEED_IN}>
+        <ApiCallBlock entry={entry} now={now} />
+      </motion.div>
+    </motion.div>
+  );
+}
 
 function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
   return (
     <motion.article
-      layout
       className={styles.group}
-      initial={FEED_HIDDEN}
-      animate={FEED_REST}
-      exit={{ ...FEED_HIDDEN, transition: FEED_OUT }}
+      initial={EXPAND_HIDDEN}
+      animate={EXPAND_REST}
+      exit={{ ...EXPAND_EXIT, transition: FEED_OUT }}
       transition={FEED_IN}
     >
-      <SectionDivider label={group.groupLabel} showFlowIcon />
-      <div className={styles.groupEntries}>
-        {group.entries.map((entry) => (
-          <motion.div
-            layout
-            key={entry.key}
-            className={styles.feedEntry}
-            initial={FEED_HIDDEN}
-            animate={FEED_REST}
-            transition={FEED_IN}
-          >
-            <ApiCallBlock entry={entry} now={now} />
-          </motion.div>
-        ))}
-      </div>
+      <motion.div
+        className={styles.groupInner}
+        initial={RISE_HIDDEN}
+        animate={RISE_REST}
+        transition={FEED_IN}
+      >
+        <div className={styles.groupDivider}>
+          <SectionDivider label={group.groupLabel} showFlowIcon />
+        </div>
+        <div className={styles.groupEntries}>
+          {/* initial={false}: entries that arrive with a brand-new group don't
+              double-animate — the group's own height-expand reveals them. Calls
+              added to an existing group expand + rise in one at a time. */}
+          <AnimatePresence initial={false}>
+            {group.entries.map((entry) => (
+              <FeedEntry key={entry.key} entry={entry} now={now} />
+            ))}
+          </AnimatePresence>
+        </div>
+      </motion.div>
     </motion.article>
   );
 }
@@ -321,6 +346,9 @@ export function ApiCallList({ entries }: ApiCallListProps) {
   return (
     <div className={styles.list} ref={scrollRef}>
       <div className={styles.feed}>
+        {/* initial={false}: the first group rides ApiPanel's skeleton→list
+            blur-fade; groups added afterward expand + rise in (real-reflow push
+            on the groups below — no snap). */}
         <AnimatePresence initial={false}>
           {groups.map((group) => (
             <FeedGroup key={group.groupId} group={group} now={now} />
