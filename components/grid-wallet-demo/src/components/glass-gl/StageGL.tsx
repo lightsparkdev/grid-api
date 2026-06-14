@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
 import {
@@ -180,6 +180,7 @@ uniform float uDpr;         // device px per CSS px (scales the CSS-px wave cons
 uniform float uBleed;       // dot field drawn this far past each visible edge (device px)
 uniform vec2 uPressPos;    // press-in dimple centre, device px (top-down, matches sp)
 uniform float uPressStr;   // 0..1 press depth; 0 = inactive
+uniform float uBootMix;    // 0 = flat dots in bezel; 1 = full glass lens
 
 // Map a visible-canvas position (device px, top-down) into the dot texture, which
 // is larger than the canvas by uBleed on every side. The visible frame is a window
@@ -346,7 +347,8 @@ void main(){
   if (bAmt > 0.0) col = mix(col, sqrt(col), bAmt);
   else if (bAmt < 0.0) col *= (1.0 + bAmt);
 
-  gl_FragColor = vec4(col, 1.0);
+  vec3 flatCol = texture2D(uTex, uv).rgb;
+  gl_FragColor = vec4(mix(flatCol, col, uBootMix), 1.0);
 }
 `;
 
@@ -361,30 +363,47 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return sh;
 }
 
+export interface StageGLHandle {
+  /** Sync repaint after sibling layout (phone fit scale) has settled. */
+  bootRepaint: () => void;
+}
+
 export interface StageGLProps {
   className?: string;
   /** Background fill override. Defaults to the themed `--dot-grid-bg` token. */
   bg?: string;
   lens?: Partial<StageGLLens>;
+  bootMix?: number;
   targetSelector?: string;
   rippleOnClick?: boolean;
 }
 
-export function StageGL({
-  className,
-  bg,
-  lens,
-  targetSelector = '[class*="AppShell_shell"]',
-  rippleOnClick = true,
-}: StageGLProps) {
+export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
+  {
+    className,
+    bg,
+    lens,
+    targetSelector = '[class*="AppShell_shell"]',
+    rippleOnClick = true,
+    bootMix = 1,
+  },
+  ref,
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bootRepaintRef = useRef<(() => void) | null>(null);
+  const bootMixRef = useRef(bootMix);
+  bootMixRef.current = bootMix;
   // Stashed click path only (RIPPLE_ON_PRESS): a release-only rebound from a click.
   const release = useRef<{ x: number; y: number; t0: number; amp: number } | null>(null);
   const cfg = { ...DEFAULT_LENS, ...lens };
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
 
-  useEffect(() => {
+  useImperativeHandle(ref, () => ({
+    bootRepaint: () => bootRepaintRef.current?.(),
+  }));
+
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const off = document.createElement('canvas');
@@ -474,6 +493,7 @@ export function StageGL({
         rippleT: U('uRippleT'), rippleAmp: U('uRippleAmp'),
         dpr: U('uDpr'), bleed: U('uBleed'),
         pressPos: U('uPressPos'), pressStr: U('uPressStr'),
+        bootMix: U('uBootMix'),
       };
       return true;
     };
@@ -611,6 +631,7 @@ export function StageGL({
       gl.uniform1f(u.pressStr, s.pressStr);
       gl.uniform1f(u.rippleT, s.relT);
       gl.uniform1f(u.rippleAmp, s.relAmp);
+      gl.uniform1f(u.bootMix, bootMixRef.current);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -730,13 +751,26 @@ export function StageGL({
     if (initGL()) {
       applyResizeBuffers();
       bindShell();
+      const paintBootFrame = () => {
+        if (!gl || gl.isContextLost()) return;
+        applyResizeBuffers();
+        bindShell();
+        if (cssW <= 0 || cssH <= 0) return;
+        textureDirty = true;
+        paintFrame(IDLE_SURFACE);
+        textureDirty = false;
+      };
+      bootRepaintRef.current = paintBootFrame;
+      // Sync first frame here (StageGL's layout effect runs before the phone's fit-
+      // scale effect). Parent bootRepaint realigns the lens once scale is known; the
+      // static dot field can show immediately.
+      paintBootFrame();
       ro = new ResizeObserver(() => {
         markResize();
         lastRadius = NaN;
         invalidate(true);
       });
       ro.observe(canvas);
-      invalidate(true);
     }
 
     return () => {
@@ -767,6 +801,6 @@ export function StageGL({
       style={{ display: 'block', width: '100%', height: '100%', pointerEvents: 'none' }}
     />
   );
-}
+});
 
 export default StageGL;

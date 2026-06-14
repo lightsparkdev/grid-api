@@ -11,6 +11,14 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* Opaque until WebGL's first draw — matches the shader fill token. */
+  background-color: var(--dot-grid-bg);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out-snappy);
+
+  &.gridLayerVisible {
+    opacity: 1;
+  }
 }
 
 .canvas {

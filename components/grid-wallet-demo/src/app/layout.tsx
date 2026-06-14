@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { easingVarsStylesheet } from '@/lib/easing';
 import './globals.scss';
 
 export const metadata: Metadata = {
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }catch(e){}})();`,
           }}
         />
+        <style dangerouslySetInnerHTML={{ __html: easingVarsStylesheet() }} />
       </head>
       <body>{children}</body>
     </html>

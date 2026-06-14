@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { observeTheme } from '@/lib/dotGridColors';
 import {
   AURORA_COMMON_GLSL,
@@ -61,7 +61,7 @@ export function AuroraCanvas({ showRadialGradient, fieldId, className }: AuroraC
   const radialRef = useRef(showRadialGradient);
   radialRef.current = showRadialGradient;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -160,6 +160,11 @@ export function AuroraCanvas({ showRadialGradient, fieldId, className }: AuroraC
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
+    const markPainted = () => {
+      canvas.dataset.painted = 'true';
+      canvas.closest('[data-aurora-root]')?.setAttribute('data-aurora-painted', 'true');
+    };
+
     // Animate while visible; reduced motion / hidden tab → render once and idle.
     const loop = () => {
       draw();
@@ -214,6 +219,7 @@ export function AuroraCanvas({ showRadialGradient, fieldId, className }: AuroraC
     if (initGL()) {
       resize();
       draw(); // paint frame 0 synchronously so the canvas never composites blank
+      markPainted();
       // Re-measure after layout settles — the shell's fit scale may not be applied
       // on the very first frame, which would leave the canvas under-resolved.
       requestAnimationFrame(() => {

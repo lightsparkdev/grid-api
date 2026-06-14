@@ -17,6 +17,19 @@ export function cubicBezierCss(curve: CubicBezier): string {
   return `cubic-bezier(${curve.join(', ')})`;
 }
 
+/** Custom properties for CSS transitions — single source for SCSS `var(--*)` usage. */
+export const easingCssVars = {
+  '--ease-out-snappy': cubicBezierCss(easeOutSnappy),
+} as const;
+
+/** Inline `:root { … }` block for the document `<head>`. */
+export function easingVarsStylesheet(): string {
+  const decls = Object.entries(easingCssVars)
+    .map(([name, value]) => `${name}: ${value};`)
+    .join(' ');
+  return `:root { ${decls} }`;
+}
+
 /** Framer Motion transition preset. */
 export function motionTransition(
   curve: CubicBezier = easeOutSnappy,

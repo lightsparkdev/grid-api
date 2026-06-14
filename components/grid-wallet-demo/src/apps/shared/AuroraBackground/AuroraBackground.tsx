@@ -28,7 +28,11 @@ export function AuroraBackground({
   fieldId,
 }: AuroraBackgroundProps) {
   return (
-    <div className={clsx(styles.root, className)} data-fade-bottom={fadeBottom ? 'true' : 'false'}>
+    <div
+      className={clsx(styles.root, className)}
+      data-fade-bottom={fadeBottom ? 'true' : 'false'}
+      data-aurora-root
+    >
       <div className={styles.backdrop} aria-hidden>
         <AuroraCanvas
           className={styles.canvas}

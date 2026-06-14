@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useAdaptiveStatusBarTone } from './useAdaptiveStatusBarTone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
@@ -52,6 +53,11 @@ export function AppShell({
   appSkin = 'aurora',
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
+  const { ready: stageBootReady, bootOpacity, realignLens } = usePhoneBoot();
+  const showPhone = stageBootReady && size.w > 0 && size.h > 0;
+  const phoneVisible = showPhone && bootOpacity > 0;
+  const bootY = (1 - bootOpacity) * 128;
+  const bootScale = 0.9 + bootOpacity * 0.1;
   const screenRef = useRef<HTMLDivElement>(null);
   const screenBodyRef = useRef<HTMLDivElement>(null);
   const statusBarRef = useRef<HTMLElement>(null);
@@ -159,11 +165,33 @@ export function AppShell({
     };
   }
 
+  useEffect(() => {
+    if (!phoneVisible || bootOpacity >= 1) return;
+
+    // Keep the WebGL lens glued to the shell while boot opacity animates.
+    let raf = 0;
+    const tick = () => {
+      realignLens();
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(raf);
+  }, [phoneVisible, bootOpacity, realignLens]);
+
   return (
     <div className={styles.stage} ref={wrapRef}>
       <div
         className={styles.scaled}
-        style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
+        style={{
+          ['--fit-scale' as string]: scale,
+          ['--boot-scale' as string]: bootScale,
+          ['--boot-y' as string]: `${bootY}px`,
+          opacity: showPhone ? bootOpacity : 0,
+          filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
+          pointerEvents: bootOpacity >= 1 ? 'auto' : 'none',
+        }}
+        aria-hidden={!phoneVisible}
       >
         <div
           className={styles.frame}

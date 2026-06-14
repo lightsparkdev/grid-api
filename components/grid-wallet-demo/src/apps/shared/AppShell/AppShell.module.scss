@@ -17,6 +17,11 @@
   top: 50%;
   flex-shrink: 0;
   transform-origin: center center;
+  transform: translate(-50%, -50%) translateY(var(--boot-y, 0px))
+    scale(calc(var(--fit-scale, 1) * var(--boot-scale, 1)));
+  /* Hidden on SSR / first client frame until fit scale + aurora settle. */
+  opacity: 0;
+  pointer-events: none;
 }
 
 .frame {

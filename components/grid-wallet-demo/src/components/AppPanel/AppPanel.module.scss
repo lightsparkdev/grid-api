@@ -6,6 +6,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: var(--dot-grid-bg);
 }
 
 @media (max-width: ($breakpoint-layout-wide - 1px)) {
@@ -33,6 +34,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Match the WebGL dot-grid stage so boot never flashes a different surface
+     before the canvas paints. */
+  background-color: var(--dot-grid-bg);
 }
 
 .phoneStage {

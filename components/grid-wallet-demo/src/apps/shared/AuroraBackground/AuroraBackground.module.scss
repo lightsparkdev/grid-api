@@ -16,12 +16,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Solid themed base behind the GPU aurora. The WebGL canvas composites the
-     0.92 group + radial mask over this; it's also the WebGL-unavailable fallback
-     AND the tone the status-bar sampler reads: a <canvas> has no CSS
-     background-color, so elementsFromPoint walks up to this base — exactly as it
-     read the old gradient layer's base before. */
-  background: var(--aurora-base);
+  /* Solid themed base behind the GPU aurora — hidden until the canvas has painted
+     so boot never flashes flat `--aurora-base`. WebGL-unavailable still reads this
+     once [data-aurora-painted] is set (see AuroraCanvas). */
+  background: transparent;
+
+  &[data-aurora-painted='true'] {
+    background: var(--aurora-base);
+  }
 
   :global([data-theme='dark']) & {
     --aurora-base: #011829;
