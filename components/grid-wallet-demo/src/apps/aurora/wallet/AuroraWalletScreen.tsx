@@ -104,6 +104,9 @@ const AURORA_IN = motionTransition(easeOutQuick, 0.5, { delay: 0.15 });
 const AURORA_OUT = motionTransition(easeOutQuick, 0.3);
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
+/** A flow switch returns to home first (aurora out ≈ 0.3s) before opening the
+ *  target sheet/view — long enough that home reads as the in-between beat. */
+const ENTRY_HOME_SETTLE_MS = 350;
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
@@ -290,27 +293,68 @@ export function AuroraWalletScreen({
   useEffect(() => {
     if (!entry || entry.nonce === lastEntryNonce.current) return;
     lastEntryNonce.current = entry.nonce;
+
+    // Re-clicking the flow you're already in is a no-op — don't reset to home
+    // and replay it. ("Issue a card" only counts as "here" mid-issuance, so it
+    // can still replay from the card home.)
+    const alreadyHere =
+      (entry.open === 'add' && sheetOpen && sheetMode === 'add') ||
+      (entry.open === 'withdraw' && sheetOpen && sheetMode === 'withdraw') ||
+      (entry.open === 'send' && sheetOpen && sheetMode === 'send') ||
+      (entry.open === 'card' && isIssuance) ||
+      (entry.open === 'tap' && cardView === 'home');
+    if (alreadyHere) return;
+
     if (entry.provision?.issued) setIssued(true);
     if (typeof entry.provision?.fundCents === 'number') setDeltaCents(entry.provision.fundCents);
-    switch (entry.open) {
-      case 'add':
-        openSheet('add');
-        break;
-      case 'withdraw':
-        openSheet('withdraw');
-        break;
-      case 'send':
-        startSend();
-        break;
-      case 'card':
-        // Navigate to issuance (or the card home if already issued).
-        openCard();
-        break;
-      case 'tap':
-        // Land on the debit-card screen; the user taps "Tap to pay".
-        setCardView('home');
-        break;
+
+    const openTarget = () => {
+      switch (entry.open) {
+        case 'add':
+          openSheet('add');
+          break;
+        case 'withdraw':
+          openSheet('withdraw');
+          break;
+        case 'send':
+          startSend();
+          break;
+        case 'card':
+          // Flows are replayable demos: "Issue a card" always runs the full
+          // issuance animation again, even if a card already exists (no
+          // "unissue" — replaying is the reset; it ends back on the card home).
+          setCardView('intro');
+          break;
+        case 'tap':
+          // Land on the debit-card screen; the user taps "Tap to pay".
+          setCardView('home');
+          break;
+      }
+    };
+
+    // Already on a clean home screen (incl. a cold jump that just mounted) — open
+    // the target right away, no detour.
+    const awayFromHome =
+      cardView !== 'closed' ||
+      sheetOpen ||
+      sheetConfirming ||
+      sendReceiveOpen ||
+      tapPhase !== 'idle';
+    if (!awayFromHome) {
+      openTarget();
+      return;
     }
+
+    // Otherwise return to home FIRST, let it land, THEN open the target — so a
+    // flow switch reads as "home → sheet", never the next flow rising over the
+    // previous one's leftovers (e.g. the card-issuance aurora behind a sheet).
+    setSheetOpen(false);
+    setSheetConfirming(false);
+    setSendReceiveOpen(false);
+    setTapPhase('idle');
+    setCardView('closed');
+    const t = window.setTimeout(openTarget, ENTRY_HOME_SETTLE_MS);
+    return () => window.clearTimeout(t);
   }, [entry]);
 
   // Add/Withdraw confirmed (Face ID done): dismiss the sheet, move the balance
