@@ -17,64 +17,83 @@ const QUOTE = 'Quote:019e8f49-3c8f-5246-0000-4d75f9a6d1d1';
 const TXN = 'Transaction:019e8f49-3ca4-b78f-0000-1d3e9a411168';
 const PUBKEY = '04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783ad…';
 
-/** Sign-in (returning user) — authenticate an existing credential → session. */
-export function signInCalls(method: AuthMethod, email?: string): ApiCall[] {
-  if (method === 'email_otp') {
-    return [
-      {
-        method: 'POST',
-        path: `/auth/credentials/${AUTH_METHOD}/challenge`,
-        title: 'Request OTP',
-        reqBody: {},
-        status: '200 OK',
-        note: `OTP sent to ${email || 'your email'}.`,
-      },
-      {
-        method: 'POST',
-        path: `/auth/credentials/${AUTH_METHOD}/verify`,
-        title: 'Verify OTP',
-        reqBody: { type: 'EMAIL_OTP', otp: '000000', clientPublicKey: PUBKEY },
-        status: '200 OK',
-        note: 'Returns the HPKE-sealed session signing key + 15-min expiry.',
-      },
-    ];
-  }
-  if (method === 'passkey') {
-    return [
-      {
-        method: 'POST',
-        path: `/auth/credentials/${AUTH_METHOD}/challenge`,
-        title: 'Start passkey challenge',
-        reqBody: { clientPublicKey: PUBKEY },
-        status: '200 OK',
-        note: 'Returns a WebAuthn challenge + requestId.',
-      },
-      {
-        method: 'POST',
-        path: `/auth/credentials/${AUTH_METHOD}/verify`,
-        title: 'Verify passkey',
-        headers: { 'Request-Id': '<requestId>' },
-        reqBody: { type: 'PASSKEY', assertion: '<webauthn assertion>' },
-        status: '200 OK',
-        note: 'Assertion verified; session signing key returned.',
-      },
-    ];
-  }
-  // oauth (Google) / apple
-  return [
-    {
-      method: 'POST',
-      path: `/auth/credentials/${AUTH_METHOD}/verify`,
-      title: 'Verify OAuth token',
-      reqBody: {
-        type: 'OAUTH',
-        oidcToken: method === 'apple' ? '<Apple id_token>' : '<Google id_token>',
-        clientPublicKey: PUBKEY,
-      },
-      status: '200 OK',
-      note: 'Fresh OIDC token verified; session signing key returned.',
+/** OTP request (challenge) — fires the moment the phone/email is submitted. */
+export function otpRequestCall(method: 'email_otp' | 'sms', contact?: string): ApiCall {
+  const where =
+    method === 'sms' ? `by SMS to ${contact || 'your phone'}` : `to ${contact || 'your email'}`;
+  return {
+    method: 'POST',
+    path: `/auth/credentials/${AUTH_METHOD}/challenge`,
+    title: 'Request OTP',
+    reqBody: {},
+    status: '200 OK',
+    note: `One-time code sent ${where}.`,
+  };
+}
+
+/** OTP verify — fires when the code is submitted. */
+export function otpVerifyCall(method: 'email_otp' | 'sms'): ApiCall {
+  return {
+    method: 'POST',
+    path: `/auth/credentials/${AUTH_METHOD}/verify`,
+    title: 'Verify OTP',
+    reqBody: {
+      type: method === 'sms' ? 'SMS_OTP' : 'EMAIL_OTP',
+      otp: '000000',
+      clientPublicKey: PUBKEY,
     },
-  ];
+    status: '200 OK',
+    note: 'Returns the HPKE-sealed session signing key + 15-min expiry.',
+  };
+}
+
+/** Passkey challenge — fires when the passkey ceremony starts. */
+export function passkeyChallengeCall(): ApiCall {
+  return {
+    method: 'POST',
+    path: `/auth/credentials/${AUTH_METHOD}/challenge`,
+    title: 'Start passkey challenge',
+    reqBody: { clientPublicKey: PUBKEY },
+    status: '200 OK',
+    note: 'Returns a WebAuthn challenge + requestId.',
+  };
+}
+
+/** Passkey verify — fires after the assertion (Face ID) completes. */
+export function passkeyVerifyCall(): ApiCall {
+  return {
+    method: 'POST',
+    path: `/auth/credentials/${AUTH_METHOD}/verify`,
+    title: 'Verify passkey',
+    headers: { 'Request-Id': '<requestId>' },
+    reqBody: { type: 'PASSKEY', assertion: '<webauthn assertion>' },
+    status: '200 OK',
+    note: 'Assertion verified; session signing key returned.',
+  };
+}
+
+/** OAuth verify — fires after the provider returns an id_token. */
+export function oauthVerifyCall(method: 'oauth' | 'apple'): ApiCall {
+  return {
+    method: 'POST',
+    path: `/auth/credentials/${AUTH_METHOD}/verify`,
+    title: 'Verify OAuth token',
+    reqBody: {
+      type: 'OAUTH',
+      oidcToken: method === 'apple' ? '<Apple id_token>' : '<Google id_token>',
+      clientPublicKey: PUBKEY,
+    },
+    status: '200 OK',
+    note: 'Fresh OIDC token verified; session signing key returned.',
+  };
+}
+
+/** Full sign-in sequence for a method — used for the fast-forward setup group. */
+export function signInCalls(method: AuthMethod, contact?: string): ApiCall[] {
+  if (method === 'email_otp') return [otpRequestCall('email_otp', contact), otpVerifyCall('email_otp')];
+  if (method === 'sms') return [otpRequestCall('sms', contact), otpVerifyCall('sms')];
+  if (method === 'passkey') return [passkeyChallengeCall(), passkeyVerifyCall()];
+  return [oauthVerifyCall(method)];
 }
 
 export type TransferMode = 'add' | 'withdraw' | 'send';

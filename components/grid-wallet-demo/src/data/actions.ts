@@ -64,12 +64,14 @@ export const ACTIONS: ActionDef[] = [
     available: () => true,
     done: (s) => s.created,
   },
+  // Every flow is always reachable — clicking one fast-forwards whatever setup
+  // it needs (sign in, funds, a card), so the demo isn't a linear track.
   {
     id: 'add',
     label: 'Add money',
     desc: 'Fund from a linked bank',
     icon: 'plus',
-    available: (s) => s.created,
+    available: () => true,
     done: (s) => s.hasAdded,
   },
   {
@@ -77,7 +79,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Send payment',
     desc: 'Pay another account',
     icon: 'send',
-    available: (s) => s.created && s.balanceCents > 0,
+    available: () => true,
     done: (s) => s.hasSent,
   },
   {
@@ -85,7 +87,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Withdraw',
     desc: 'Cash out to a bank',
     icon: 'bank',
-    available: (s) => s.created && s.balanceCents > 0,
+    available: () => true,
     done: (s) => s.hasWithdrawn,
   },
   {
@@ -93,7 +95,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Issue a card',
     desc: 'Virtual card for the balance',
     icon: 'card',
-    available: (s) => s.created && !s.hasCard,
+    available: () => true,
     done: (s) => s.hasCard,
   },
   {
@@ -101,7 +103,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Tap to pay',
     desc: 'Spend at a store',
     icon: 'tap',
-    available: (s) => s.hasCard,
+    available: () => true,
     done: (s) => s.hasTapped,
   },
 ];

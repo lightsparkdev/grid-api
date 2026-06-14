@@ -150,15 +150,26 @@
   text-wrap: balance;
 }
 
-/* Figma 2145:45349 — p 32, gap 12, buttons 338px (402 − 64). */
+/* Figma 2145:45349 — p 32, gap 12, buttons 338px (402 − 64). The gap lives on
+   each .action's animated margin-bottom (so it collapses with the item on
+   add/remove); the reduced bottom padding compensates the last item's 12px. */
 .actions {
   position: relative;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 32px;
+  padding: 32px 32px 20px;
   pointer-events: auto;
+}
+
+/* CTA wrapper — animates its REAL height (+ bottom-margin gap) on add/remove so
+   the whole column reflows naturally per frame. overflow:hidden clips the
+   collapse; the negative inline margin + matching padding give the button's
+   hover/press bloom horizontal room so it isn't cut off at rest. */
+.action {
+  overflow: hidden;
+  margin: 0 -8px;
+  padding: 0 8px;
 }
 
 /* "Creating your account..." slot — beneath the centered logo, the issuance

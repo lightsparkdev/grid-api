@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { AuthMethod } from '@/data/flow';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import { AuroraAuthScreen } from './AuroraAuthScreen';
-import { AuroraWalletScreen, type AuroraWalletControl, type WalletTransferMode } from './wallet';
+import { AuroraWalletScreen, type WalletEntry, type WalletTransferMode } from './wallet';
 import styles from './AuroraSignInFlow.module.scss';
 
 // The auth screen plays the sign-in intro (content out → mask dissolve → logo
@@ -30,8 +30,10 @@ interface AuroraSignInFlowProps {
   /** Auth methods selected in the Configure panel — drives the auth CTAs. */
   methods: AuthMethod[];
   onSignIn: (method: AuthMethod) => void;
-  /** Imperative control handed to the wallet so the sidebar can open its sheets. */
-  walletControl?: Ref<AuroraWalletControl>;
+  /** Skip the sign-in intro hold (fast-forward jumps land on the wallet instantly). */
+  skipIntro?: boolean;
+  /** Jump command handed to the wallet so the sidebar can provision + open a flow. */
+  entry?: WalletEntry;
   /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
   onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
@@ -54,7 +56,8 @@ export function AuroraSignInFlow({
   busy,
   methods,
   onSignIn,
-  walletControl,
+  skipIntro,
+  entry,
   onQuoteCreate,
   onTransferExecute,
   onCardIssued,
@@ -72,7 +75,8 @@ export function AuroraSignInFlow({
   const [prevScreen, setPrevScreen] = useState(screen);
   if (screen !== prevScreen) {
     setPrevScreen(screen);
-    if (screen === 'wallet' && !reduceMotion) {
+    // skipIntro = a fast-forward jump: land on the wallet immediately, no hold.
+    if (screen === 'wallet' && !reduceMotion && !skipIntro) {
       setIntro('hold'); // hold the auth screen; the timers below sequence out
     } else {
       setShown(screen);
@@ -130,7 +134,7 @@ export function AuroraSignInFlow({
           >
             <AuroraWalletScreen
               entrance={!reduceMotion}
-              controlRef={walletControl}
+              entry={entry}
               onQuoteCreate={onQuoteCreate}
               onTransferExecute={onTransferExecute}
               onCardIssued={onCardIssued}

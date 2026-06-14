@@ -7,10 +7,9 @@ import type { PhoneProps } from '@/components/Phone';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
-import type { Ref } from 'react';
 import type { ActionId, WalletState } from '@/data/actions';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
-import type { AuroraWalletControl, WalletTransferMode } from '@/apps/aurora/wallet';
+import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import styles from './AppPanel.module.scss';
 
 export interface DemoLogicPhoneSlice {
@@ -43,7 +42,8 @@ export interface DemoLogicPhoneSlice {
   aNonce: string | null;
   submitApple: (idToken: string) => void;
   popupWait: boolean;
-  walletControl?: Ref<AuroraWalletControl>;
+  walletEntry?: WalletEntry;
+  skipIntro?: boolean;
   onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
@@ -95,7 +95,8 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
       nonce: p.aNonce,
       onCredential: p.submitApple,
     },
-    walletControl: p.walletControl,
+    walletEntry: p.walletEntry,
+    skipIntro: p.skipIntro,
     onQuoteCreate: p.onQuoteCreate,
     onTransferExecute: p.onTransferExecute,
     onCardIssued: p.onCardIssued,

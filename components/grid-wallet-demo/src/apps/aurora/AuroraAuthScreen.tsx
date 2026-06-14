@@ -32,6 +32,49 @@ const CONTENT_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 // Toggling an auth method in the Configure panel adds/removes its CTA — blur-fade
 // it in/out and let the siblings reflow, on the snappy-out curve.
 const CTA_TOGGLE = motionTransition(easeOutSnappy, 0.32);
+// Each CTA animates its REAL height (+ the 12px gap) on add/remove, so the whole
+// column above it — gradient mask, copy, logo — reflows naturally per frame
+// instead of the buttons animating while everything above snaps. overflow:hidden
+// (in .action) clips the collapse; the negative inline margin gives the press
+// bloom horizontal room so it isn't cut off at rest.
+const CTA_COLLAPSED = { height: 0, opacity: 0, marginBottom: 0, filter: 'blur(8px)' };
+const CTA_SHOWN = { height: 'auto' as const, opacity: 1, marginBottom: 12, filter: 'blur(0px)' };
+const CTA_DISMISSED = { height: 'auto' as const, opacity: 0, marginBottom: 12, filter: 'blur(8px)' };
+
+function AuthCta({
+  method,
+  index,
+  total,
+  dismissed,
+  busy,
+  onSignIn,
+}: {
+  method: AuthMethod;
+  index: number;
+  total: number;
+  dismissed: boolean;
+  busy?: boolean;
+  onSignIn: (method: AuthMethod) => void;
+}) {
+  const Icon = AUTH_METHOD_ICONS[method];
+  return (
+    <motion.div
+      className={styles.action}
+      initial={CTA_COLLAPSED}
+      animate={dismissed ? CTA_DISMISSED : CTA_SHOWN}
+      exit={CTA_COLLAPSED}
+      transition={dismissed ? contentOut(total - 1 - index) : CTA_TOGGLE}
+    >
+      <ContentAreaButton
+        icon={<Icon size={24} />}
+        disabled={busy || dismissed}
+        onClick={() => onSignIn(method)}
+      >
+        {authCta(method)}
+      </ContentAreaButton>
+    </motion.div>
+  );
+}
 // 4 — "Creating your account..." enters only after the logo has visibly
 //     settled at center. The gate is a real timer that MOUNTS the caption
 //     (not a transition delay — a delay on an already-mounted element can be
@@ -172,29 +215,21 @@ export function AuroraAuthScreen({
 
         <div className={styles.actions}>
           {/* initial={false} so the CTAs present at mount don't animate during
-              boot/intro — only user toggles (add/remove a method) animate. */}
+              boot/intro — only user toggles (add/remove a method) animate. Each
+              item collapses its real height on exit so the column reflows
+              continuously, never snapping after the button leaves. */}
           <AnimatePresence initial={false}>
-            {methods.map((method, i) => {
-              const Icon = AUTH_METHOD_ICONS[method];
-              return (
-                <motion.div
-                  key={method}
-                  layout
-                  initial={CONTENT_OUT}
-                  animate={dismissed ? CONTENT_OUT : CONTENT_REST}
-                  exit={{ ...CONTENT_OUT, transition: CTA_TOGGLE }}
-                  transition={dismissed ? contentOut(methods.length - 1 - i) : CTA_TOGGLE}
-                >
-                  <ContentAreaButton
-                    icon={<Icon size={24} />}
-                    disabled={busy || dismissed}
-                    onClick={() => onSignIn(method)}
-                  >
-                    {authCta(method)}
-                  </ContentAreaButton>
-                </motion.div>
-              );
-            })}
+            {methods.map((method, i) => (
+              <AuthCta
+                key={method}
+                method={method}
+                index={i}
+                total={methods.length}
+                dismissed={dismissed}
+                busy={busy}
+                onSignIn={onSignIn}
+              />
+            ))}
           </AnimatePresence>
         </div>
         </motion.div>

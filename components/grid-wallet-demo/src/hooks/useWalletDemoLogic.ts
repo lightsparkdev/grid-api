@@ -4,21 +4,26 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
 import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
 import {
-  ACTIONS,
   initialWallet,
   phoneFromState,
   type ActionId,
   type WalletState,
 } from '@/data/actions';
 import {
+  addMoneyCalls,
   cardCalls,
+  oauthVerifyCall,
+  otpRequestCall,
+  otpVerifyCall,
+  passkeyChallengeCall,
+  passkeyVerifyCall,
   signInCalls,
   tapCalls,
   transferExecuteCalls,
   transferQuoteCall,
 } from '@/data/apiCalls';
 import { oauthNonce, passkeyCeremony } from '@/lib/auth';
-import type { AuroraWalletControl, WalletTransferMode } from '@/apps/aurora/wallet';
+import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
 
@@ -29,6 +34,9 @@ const TRANSFER_LABEL: Record<WalletTransferMode, string> = {
 };
 
 const newGroupId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+/** Silent funding applied when a jumped-to flow needs a balance and there's none. */
+const FAST_FORWARD_FUND_CENTS = 500_000;
 
 interface Transient {
   screen: ScreenId;
@@ -75,9 +83,11 @@ export function useWalletDemoLogic() {
   // exactly as it is; `running` still guards re-entry underneath).
   const [popupWait, setPopupWait] = useState(false);
 
-  // Imperative control for the live Aurora wallet — lets the "Explore flows"
-  // sidebar open the matching on-phone sheet/view.
-  const walletControl = useRef<AuroraWalletControl | null>(null);
+  // A jump command for the live Aurora wallet (provision + open a flow out of
+  // order). Bumping its nonce makes the wallet apply it once.
+  const [walletEntry, setWalletEntry] = useState<WalletEntry | undefined>(undefined);
+  // Skip the sign-in intro hold when a fast-forward jump signs you in silently.
+  const [skipIntro, setSkipIntro] = useState(false);
   // The in-flight transfer's group id — its create-quote and execute calls
   // stream into one API-panel group.
   const transferGroup = useRef<string | null>(null);
@@ -253,11 +263,15 @@ export function useWalletDemoLogic() {
         // re-prompts the entry.
         const field = m === 'sms' ? ('phone' as const) : ('email' as const);
         const promptEntry = m === 'sms' ? promptPhone : promptEmail;
+        // Request + verify stream into ONE "Sign in" group as they actually fire.
+        const gid = newGroupId();
         let needEntry = firstTime;
         for (;;) {
           if (needEntry || !session.current[field]) {
             session.current[field] = await promptEntry();
           }
+          // Submitting the phone/email fires the OTP request right away.
+          pushCalls([otpRequestCall(m, session.current[field])], 'Sign in', gid);
           setTransient({ screen: 'creating', note: 'Sending you a code…' });
           await sleep(600);
           try {
@@ -269,17 +283,17 @@ export function useWalletDemoLogic() {
             needEntry = true;
           }
         }
-        // Let the sheet's dismiss VISIBLY finish before the flow moves on:
-        // the transient clears FIRST (so the auth screen is back underneath
-        // the departing sheet — leaving it set would re-arm the sheet's
-        // sending state and hold it open), then a beat slightly longer than
-        // the BottomSheet exit (0.35s) before the wallet flip starts the
-        // post-sign-in intro.
+        // Code accepted → verify fires; then let the sheet's dismiss VISIBLY
+        // finish (transient clears first so the auth screen is back underneath
+        // the departing sheet) before the wallet flip starts the intro.
+        pushCalls([otpVerifyCall(m)], 'Sign in', gid);
         setTransient(null);
         await sleep(400);
-        pushCalls(signInCalls('email_otp', session.current[field]), 'Sign in');
       } else if (m === 'passkey') {
+        const gid = newGroupId();
         await promptPasskey();
+        // Confirming the passkey starts the challenge.
+        pushCalls([passkeyChallengeCall()], 'Sign in', gid);
         try {
           await passkeyCeremony();
         } finally {
@@ -288,7 +302,8 @@ export function useWalletDemoLogic() {
           setPasskeyActive(false);
         }
         await playFaceId();
-        pushCalls(signInCalls('passkey'), 'Sign in');
+        // Assertion verified after the Face ID ceremony.
+        pushCalls([passkeyVerifyCall()], 'Sign in', gid);
       } else if (m === 'oauth' || m === 'apple') {
         if (popup) {
           // The popup is already open — the phone stays untouched until it
@@ -301,7 +316,7 @@ export function useWalletDemoLogic() {
         // The same post-resolve beat as the OTP sheet's dismiss: a breath
         // between the ceremony finishing and the wallet flip's intro.
         await sleep(400);
-        pushCalls(signInCalls(m), 'Sign in');
+        pushCalls([oauthVerifyCall(m)], 'Sign in');
       } else {
         throw new Error(`Sign-in method "${m}" is not available.`);
       }
@@ -319,6 +334,10 @@ export function useWalletDemoLogic() {
         return;
       }
       setRunning(true);
+      // A manual sign-in plays the full intro and starts clean — drop any stale
+      // fast-forward jump/skip from a prior session.
+      setSkipIntro(false);
+      setWalletEntry(undefined);
       // The popup wait must not read as busy on the auth screen — the phone
       // stays exactly as it is while the real provider popup is up.
       if (popup) setPopupWait(true);
@@ -414,30 +433,55 @@ export function useWalletDemoLogic() {
     setGNonce(null);
     setANonce(null);
     setPopupWait(false);
+    setWalletEntry(undefined);
+    setSkipIntro(false);
     setRunning(false);
   }, []);
 
   const handleAction = useCallback(
     (id: ActionId) => {
       if (running) return;
-      const action = ACTIONS.find((a) => a.id === id);
-      if (!action || !action.available(wallet)) return;
-      // "Sign in" sends the phone back to the auth screen (replay); every other
-      // flow opens the matching sheet/view — the wallet reports back when it
-      // settles.
+      // "Sign in" is the one flow you watch, not skip — replay the auth screen.
       if (id === 'create') {
         returnToSignIn();
         return;
       }
-      const control = walletControl.current;
-      if (!control) return;
-      if (id === 'add') control.openAdd();
-      else if (id === 'withdraw') control.openWithdraw();
-      else if (id === 'send') control.openSend();
-      else if (id === 'card') control.issueCard();
-      else if (id === 'tap') control.tapToPay();
+      // Fast-forward: satisfy whatever this flow needs (sign in, funds, a card)
+      // instantly and silently, log it as one "Account setup" group, then open
+      // the flow for the user to drive. Works from any starting point — no
+      // linear track.
+      const setupCalls: ApiCall[] = [];
+      let next = wallet;
+      const provision: { issued?: boolean; fundCents?: number } = {};
+
+      if (!next.created) {
+        setupCalls.push(...signInCalls(method));
+        next = { ...next, created: true };
+        setSignInMethod(method);
+        setSkipIntro(true); // cold jump — land on the wallet without the hold
+      }
+      const needsFunds = id === 'send' || id === 'withdraw' || id === 'tap';
+      if (needsFunds && next.balanceCents <= 0) {
+        setupCalls.push(...addMoneyCalls(FAST_FORWARD_FUND_CENTS));
+        next = { ...next, balanceCents: FAST_FORWARD_FUND_CENTS, hasAdded: true };
+        provision.fundCents = FAST_FORWARD_FUND_CENTS;
+      }
+      if (id === 'tap' && !next.hasCard) {
+        setupCalls.push(...cardCalls());
+        next = { ...next, hasCard: true };
+        provision.issued = true;
+      }
+
+      if (setupCalls.length) pushCalls(setupCalls, 'Account setup');
+      if (next !== wallet) setWallet(next);
+      setWalletEntry({
+        nonce: Date.now(),
+        provision:
+          provision.issued || provision.fundCents !== undefined ? provision : undefined,
+        open: id,
+      });
     },
-    [running, wallet, returnToSignIn],
+    [running, wallet, method, returnToSignIn, pushCalls],
   );
 
   const reset = useCallback(() => {
@@ -451,6 +495,7 @@ export function useWalletDemoLogic() {
       faceIdPrompt.current = null;
     }
     session.current = {};
+    transferGroup.current = null;
     setWallet(initialWallet);
     setEntries([]);
     setTransient(null);
@@ -463,6 +508,8 @@ export function useWalletDemoLogic() {
     setGNonce(null);
     setANonce(null);
     setPopupWait(false);
+    setWalletEntry(undefined);
+    setSkipIntro(false);
     setRunning(false);
   }, []);
 
@@ -523,7 +570,8 @@ export function useWalletDemoLogic() {
     aNonce,
     submitApple,
     popupWait,
-    walletControl,
+    walletEntry,
+    skipIntro,
     onQuoteCreate,
     onTransferExecute,
     onCardIssued,

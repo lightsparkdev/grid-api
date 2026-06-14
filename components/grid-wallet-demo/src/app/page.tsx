@@ -58,7 +58,8 @@ export default function Page() {
             aNonce={logic.aNonce}
             submitApple={logic.submitApple}
             popupWait={logic.popupWait}
-            walletControl={logic.walletControl}
+            walletEntry={logic.walletEntry}
+            skipIntro={logic.skipIntro}
             onQuoteCreate={logic.onQuoteCreate}
             onTransferExecute={logic.onTransferExecute}
             onCardIssued={logic.onCardIssued}

@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
@@ -113,13 +113,16 @@ const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 /** The money movements the wallet reports up so the demo can log API calls. */
 export type WalletTransferMode = 'add' | 'withdraw' | 'send';
 
-/** Imperative handle so the Configure sidebar can drive the on-phone sheets. */
-export interface AuroraWalletControl {
-  openAdd: () => void;
-  openWithdraw: () => void;
-  openSend: () => void;
-  issueCard: () => void;
-  tapToPay: () => void;
+/** A jump command from the Configure sidebar: provision state (so flows are
+ *  reachable out of order) then open the target screen/sheet. */
+export type WalletEntryTarget = 'add' | 'withdraw' | 'send' | 'card' | 'tap';
+export interface WalletEntry {
+  /** Bumped per command so the wallet applies it exactly once. */
+  nonce: number;
+  /** Instant, animation-free setup so a deep flow is reachable directly. */
+  provision?: { issued?: boolean; fundCents?: number };
+  /** Which sheet/view to open after provisioning. */
+  open?: WalletEntryTarget;
 }
 
 interface AuroraWalletScreenProps extends WalletInsightCardsProps {
@@ -128,8 +131,8 @@ interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   /** One-shot mount stagger (card, balance, actions, insights) — the sign-in
    *  intro reveal. Off = everything renders at rest, exactly as before. */
   entrance?: boolean;
-  /** Imperative control the sidebar uses to open the matching sheet/view. */
-  controlRef?: Ref<AuroraWalletControl>;
+  /** Jump command from the sidebar — provision + open a flow out of order. */
+  entry?: WalletEntry;
   /** Amount committed in a transfer sheet — log the create-quote call. */
   onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
   /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
@@ -144,7 +147,7 @@ interface AuroraWalletScreenProps extends WalletInsightCardsProps {
 export function AuroraWalletScreen({
   balance = '$0.00',
   entrance = false,
-  controlRef,
+  entry,
   onQuoteCreate,
   onTransferExecute,
   onCardIssued,
@@ -213,7 +216,6 @@ export function AuroraWalletScreen({
     const t = window.setTimeout(() => {
       setIssued(true);
       setCardView('ready');
-      onCardIssued?.();
     }, CREATING_MS);
     return () => window.clearTimeout(t);
   }, [cardView]);
@@ -280,19 +282,36 @@ export function AuroraWalletScreen({
     setTapPhase('hold');
   };
 
-  // Configure sidebar → the real on-phone sheets/views. Rebuilt every render so
-  // the handlers always close over the latest balance/card state (no deps array
-  // on purpose — the cost is negligible and it avoids stale captures).
-  useImperativeHandle(controlRef, () => ({
-    openAdd: () => openSheet('add'),
-    openWithdraw: () => openSheet('withdraw'),
-    openSend: () => startSend(),
-    issueCard: () => openCard(),
-    // Navigate to the debit-card screen; the user taps "Tap to pay" themselves.
-    tapToPay: () => {
-      if (issued) setCardView('home');
-    },
-  }));
+  // Apply a sidebar jump command exactly once (nonce-guarded so re-renders and
+  // StrictMode's double-invoke don't replay it). Provision any instant setup
+  // first, then open the target — works whether the wallet just mounted (cold
+  // jump from the auth screen) or is already up (warm jump).
+  const lastEntryNonce = useRef(0);
+  useEffect(() => {
+    if (!entry || entry.nonce === lastEntryNonce.current) return;
+    lastEntryNonce.current = entry.nonce;
+    if (entry.provision?.issued) setIssued(true);
+    if (typeof entry.provision?.fundCents === 'number') setDeltaCents(entry.provision.fundCents);
+    switch (entry.open) {
+      case 'add':
+        openSheet('add');
+        break;
+      case 'withdraw':
+        openSheet('withdraw');
+        break;
+      case 'send':
+        startSend();
+        break;
+      case 'card':
+        // Navigate to issuance (or the card home if already issued).
+        openCard();
+        break;
+      case 'tap':
+        // Land on the debit-card screen; the user taps "Tap to pay".
+        setCardView('home');
+        break;
+    }
+  }, [entry]);
 
   // Add/Withdraw confirmed (Face ID done): dismiss the sheet, move the balance
   // (signed), and drop the Activity row in once the wallet has settled (visible
@@ -536,7 +555,14 @@ export function AuroraWalletScreen({
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
-              <IntroContent onCreate={() => setCardView('creating')} />
+              <IntroContent
+                onCreate={() => {
+                  // POST /cards fires when you tap Create; the reveal that
+                  // follows is just provisioning.
+                  setCardView('creating');
+                  onCardIssued?.();
+                }}
+              />
             </motion.div>
           )}
           {cardView === 'ready' && (

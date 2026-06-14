@@ -1,6 +1,7 @@
 export {
   AuroraWalletScreen,
-  type AuroraWalletControl,
+  type WalletEntry,
+  type WalletEntryTarget,
   type WalletTransferMode,
 } from './AuroraWalletScreen';
 export { BalanceHero } from './BalanceHero';
