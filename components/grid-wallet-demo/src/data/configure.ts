@@ -68,11 +68,11 @@ export interface AuthMethodOption {
 }
 
 export const AUTH_METHODS: AuthMethodOption[] = [
-  { id: 'oauth', label: 'Google', enabled: true },
-  { id: 'passkey', label: 'Passkey', enabled: true },
-  { id: 'apple', label: 'Apple', enabled: true },
-  { id: 'sms', label: 'Phone / SMS', compactLabel: 'Phone', enabled: true },
   { id: 'email_otp', label: 'Email', enabled: true },
+  { id: 'sms', label: 'Phone / SMS', compactLabel: 'Phone', enabled: true },
+  { id: 'oauth', label: 'Google', enabled: true },
+  { id: 'apple', label: 'Apple', enabled: true },
+  { id: 'passkey', label: 'Passkey', enabled: true },
 ];
 
 export function useCaseIdFromPersona(persona: Persona): UseCaseId {

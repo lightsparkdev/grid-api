@@ -144,8 +144,9 @@ body {
    [data-theme] flips, so the whole backdrop changes in lockstep (no stagger).
    `--dot-grid-dot` is the resting dot; `--dot-grid-dot-peak` is the ripple crest. */
 :root {
-  /* Origin has no surface-sunken — surface-secondary is the sunken stage gray
-     (#F0F0EE light / #111111 dark) used across grid-visualizer dot panels. */
+  /* Light: surface-secondary is the sunken stage gray (#F0F0EE), like
+     grid-visualizer's dot panels. Dark overrides to gray-925 below — the WebGL
+     dots' original backdrop; surface-secondary's #111111 reads too dark. */
   --dot-grid-bg: var(--surface-secondary);
   --dot-grid-dot: #deded9;
   --dot-grid-dot-peak: #b8b8b3;
@@ -172,6 +173,7 @@ body {
 }
 
 [data-theme='dark'] {
+  --dot-grid-bg: var(--color-gray-925);
   --dot-grid-dot: #333330;
   --dot-grid-dot-peak: #4d4d47;
   --p-bg: #000000;

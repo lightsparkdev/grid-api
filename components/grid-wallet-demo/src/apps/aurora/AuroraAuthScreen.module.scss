@@ -172,6 +172,12 @@
   padding: 0 8px;
 }
 
+/* +4px trailing padding (20 base → 24) optically balances each button's leading
+   icon — nudges the centered icon+label group back toward true visual center. */
+.action button {
+  padding-right: 24px;
+}
+
 /* "Creating your account..." slot — beneath the centered logo, the issuance
    creating layout (caption under the centered artwork; CreatingCaption brings
    its own 16px top pad ≈ the issuance rhythm). 61px = half the logo's ~98px

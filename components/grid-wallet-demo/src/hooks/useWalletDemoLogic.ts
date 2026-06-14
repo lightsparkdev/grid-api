@@ -61,7 +61,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function useWalletDemoLogic() {
   const [persona, setPersona] = useState<Persona>('fintech');
   const [useCase, setUseCase] = useState<UseCaseId>('fintech');
-  const [methods, setMethods] = useState<AuthMethod[]>(['oauth']);
+  const [methods, setMethods] = useState<AuthMethod[]>([
+    'email_otp',
+    'sms',
+    'oauth',
+    'apple',
+    'passkey',
+  ]);
   const method = useMemo(() => primaryAuthMethod(methods), [methods]);
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
   const [entries, setEntries] = useState<Entry[]>(() =>

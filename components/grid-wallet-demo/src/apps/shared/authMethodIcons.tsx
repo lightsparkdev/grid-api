@@ -15,11 +15,11 @@ export const AUTH_METHOD_ICONS: Record<AuthMethod, AuthMethodIcon> = {
   sms: IconPhone,
 };
 
-/** Figma auth screen order. */
+/** On-phone auth CTA order: email, phone, Google, Apple, passkey. */
 export const AUTH_METHOD_ORDER: AuthMethod[] = [
-  'passkey',
-  'oauth',
-  'apple',
   'email_otp',
   'sms',
+  'oauth',
+  'apple',
+  'passkey',
 ];
