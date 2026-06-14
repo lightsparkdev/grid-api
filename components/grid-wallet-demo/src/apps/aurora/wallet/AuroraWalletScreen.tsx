@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
@@ -110,24 +110,42 @@ const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
 const CONTENT_HIDDEN = { opacity: 0, y: 12, filter: 'blur(8px)' };
 const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
+/** The money movements the wallet reports up so the demo can log API calls. */
+export type WalletTransferMode = 'add' | 'withdraw' | 'send';
+
+/** Imperative handle so the Configure sidebar can drive the on-phone sheets. */
+export interface AuroraWalletControl {
+  openAdd: () => void;
+  openWithdraw: () => void;
+  openSend: () => void;
+  issueCard: () => void;
+  tapToPay: () => void;
+}
+
 interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   /** Formatted balance from demo state, e.g. "$0.00". */
   balance?: string;
   /** One-shot mount stagger (card, balance, actions, insights) — the sign-in
    *  intro reveal. Off = everything renders at rest, exactly as before. */
   entrance?: boolean;
-  onAdd?: () => void;
-  onWithdraw?: () => void;
-  onSend?: () => void;
+  /** Imperative control the sidebar uses to open the matching sheet/view. */
+  controlRef?: Ref<AuroraWalletControl>;
+  /** A transfer settled on the phone — report it so the panel logs the calls. */
+  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  /** A virtual card finished issuing on the phone. */
+  onCardIssued?: () => void;
+  /** A tap-to-pay charge landed on the phone. */
+  onTapToPay?: (cents: number, merchant: string) => void;
 }
 
 /** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). */
 export function AuroraWalletScreen({
   balance = '$0.00',
   entrance = false,
-  onAdd,
-  onWithdraw,
-  onSend,
+  controlRef,
+  onTransfer,
+  onCardIssued,
+  onTapToPay,
   ...insights
 }: AuroraWalletScreenProps) {
   const reduceMotion = useReducedMotion();
@@ -192,6 +210,7 @@ export function AuroraWalletScreen({
     const t = window.setTimeout(() => {
       setIssued(true);
       setCardView('ready');
+      onCardIssued?.();
     }, CREATING_MS);
     return () => window.clearTimeout(t);
   }, [cardView]);
@@ -215,6 +234,7 @@ export function AuroraWalletScreen({
       setTapPhase('idle');
       // The card charge comes out of the cash balance, landing with the row.
       setDeltaCents((c) => c - parseCents(tx.amount));
+      onTapToPay?.(parseCents(tx.amount), tx.title);
       window.clearTimeout(insertTimer.current);
       insertTimer.current = window.setTimeout(() => {
         setTransactions((prev) => [
@@ -257,6 +277,21 @@ export function AuroraWalletScreen({
     setTapPhase('hold');
   };
 
+  // Configure sidebar → the real on-phone sheets/views. Rebuilt every render so
+  // the handlers always close over the latest balance/card state (no deps array
+  // on purpose — the cost is negligible and it avoids stale captures).
+  useImperativeHandle(controlRef, () => ({
+    openAdd: () => openSheet('add'),
+    openWithdraw: () => openSheet('withdraw'),
+    openSend: () => startSend(),
+    issueCard: () => openCard(),
+    tapToPay: () => {
+      if (!issued) return;
+      setCardView('home');
+      startTapToPay();
+    },
+  }));
+
   // Add/Withdraw confirmed (Face ID done): dismiss the sheet, move the balance
   // (signed), and drop the Activity row in once the wallet has settled (visible
   // insert).
@@ -264,6 +299,7 @@ export function AuroraWalletScreen({
   const finishTransfer = () => {
     const cents = pendingCents.current;
     const mode = sheetMode;
+    onTransfer?.(mode, cents);
     setSheetConfirming(false);
     setSheetOpen(false);
     setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));

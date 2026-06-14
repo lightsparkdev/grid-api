@@ -3,7 +3,7 @@ import type { ApiCall } from '@/data/flow';
 import { addMoneyCalls, sendCalls, signInCalls, withdrawCalls } from './apiCalls';
 
 /** Flip false (or delete this file) when API panel styling is done. */
-export const SEED_API_PANEL = true;
+export const SEED_API_PANEL = false;
 
 interface SeedGroup {
   label: string;

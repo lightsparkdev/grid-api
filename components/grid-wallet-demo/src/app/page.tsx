@@ -19,8 +19,6 @@ export default function Page() {
       <ConfigurePanel
         useCase={logic.useCase}
         setUseCase={logic.setUseCase}
-        persona={logic.persona}
-        setPersona={logic.setPersona}
         methods={logic.methods}
         onToggleMethod={logic.toggleMethod}
         wallet={logic.wallet}
@@ -33,6 +31,7 @@ export default function Page() {
           <AppPanel
             persona={logic.persona}
             method={logic.method}
+            methods={logic.methods}
             wallet={logic.wallet}
             phone={logic.phone}
             running={logic.running}
@@ -59,9 +58,10 @@ export default function Page() {
             aNonce={logic.aNonce}
             submitApple={logic.submitApple}
             popupWait={logic.popupWait}
-            amountConfig={logic.amountConfig}
-            submitAmount={logic.submitAmount}
-            cancelAmount={logic.cancelAmount}
+            walletControl={logic.walletControl}
+            onTransfer={logic.onTransfer}
+            onCardIssued={logic.onCardIssued}
+            onTapToPay={logic.onTapToPay}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />

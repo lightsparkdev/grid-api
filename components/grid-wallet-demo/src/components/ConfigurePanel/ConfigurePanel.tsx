@@ -8,16 +8,14 @@ import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { UseCasePicker } from '@/components/UseCasePicker/UseCasePicker';
 import { AuthMethodPicker } from '@/components/AuthMethodPicker/AuthMethodPicker';
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
-import type { AuthMethod, Persona } from '@/data/flow';
-import { USE_CASES, type UseCaseId } from '@/data/configure';
+import type { AuthMethod } from '@/data/flow';
+import type { UseCaseId } from '@/data/configure';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './ConfigurePanel.module.scss';
 
 export interface ConfigurePanelProps {
   useCase: UseCaseId;
   setUseCase: (id: UseCaseId) => void;
-  persona: Persona;
-  setPersona: (p: Persona) => void;
   methods: AuthMethod[];
   onToggleMethod: (m: AuthMethod) => void;
   wallet: WalletState;
@@ -29,8 +27,6 @@ export interface ConfigurePanelProps {
 export function ConfigurePanel({
   useCase,
   setUseCase,
-  persona,
-  setPersona,
   methods,
   onToggleMethod,
   wallet,
@@ -38,12 +34,9 @@ export function ConfigurePanel({
   onAction,
   onReset,
 }: ConfigurePanelProps) {
-  const onUseCaseSelect = (id: UseCaseId) => {
-    setUseCase(id);
-    const opt = USE_CASES.find((u) => u.id === id);
-    if (opt?.persona) setPersona(opt.persona);
-  };
-
+  // Only the fintech (Aurora) app is built today, so selecting a use case just
+  // highlights it — the phone stays on Aurora. A "coming soon" treatment for the
+  // others can hook in here later.
   return (
     <aside className={styles.panel}>
       <PanelHeader icon={<IconSettingsSliderHor size={20} />} title="Configure" />
@@ -53,7 +46,7 @@ export function ConfigurePanel({
 
           <section className={styles.section}>
             <SectionDivider label="Select use case" />
-            <UseCasePicker selected={useCase} onSelect={onUseCaseSelect} />
+            <UseCasePicker selected={useCase} onSelect={setUseCase} />
           </section>
 
           <section className={styles.section}>

@@ -7,21 +7,16 @@ import type { PhoneProps } from '@/components/Phone';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
+import type { Ref } from 'react';
 import type { ActionId, WalletState } from '@/data/actions';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
+import type { AuroraWalletControl, WalletTransferMode } from '@/apps/aurora/wallet';
 import styles from './AppPanel.module.scss';
-
-type AmountConfig = {
-  title: string;
-  cta: string;
-  source: string;
-  sub: string;
-  defaultDollars: number;
-};
 
 export interface DemoLogicPhoneSlice {
   persona: Persona;
   method: AuthMethod;
+  methods: AuthMethod[];
   wallet: WalletState;
   phone: PhoneState;
   running: boolean;
@@ -48,15 +43,17 @@ export interface DemoLogicPhoneSlice {
   aNonce: string | null;
   submitApple: (idToken: string) => void;
   popupWait: boolean;
-  amountConfig: AmountConfig | null;
-  submitAmount: (dollars: number) => void;
-  cancelAmount: () => void;
+  walletControl?: Ref<AuroraWalletControl>;
+  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  onCardIssued?: () => void;
+  onTapToPay?: (cents: number, merchant: string) => void;
 }
 
 function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
   return {
     persona: p.persona,
     method: p.method,
+    methods: p.methods,
     phone: p.phone,
     wallet: p.wallet,
     onAction: p.handleAction,
@@ -97,11 +94,10 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
       nonce: p.aNonce,
       onCredential: p.submitApple,
     },
-    amount: {
-      config: p.amountConfig,
-      onSubmit: p.submitAmount,
-      onCancel: p.cancelAmount,
-    },
+    walletControl: p.walletControl,
+    onTransfer: p.onTransfer,
+    onCardIssued: p.onCardIssued,
+    onTapToPay: p.onTapToPay,
   };
 }
 

@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import type { AuthMethod } from '@/data/flow';
 import type { PhoneProps } from '@/components/Phone';
 import {
-  AmountEntryScreen,
   AppleSignInScreen,
   CreatingScreen,
   CredentialScreen,
@@ -97,15 +96,6 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       <AppleSignInScreen nonce={props.apple.nonce} onCredential={props.apple.onCredential} />
     );
   }
-  if (props.amount?.config) {
-    return (
-      <AmountEntryScreen
-        config={props.amount.config}
-        onSubmit={props.amount.onSubmit}
-        onCancel={props.amount.onCancel}
-      />
-    );
-  }
 
   // Aurora's auth ⇄ wallet pair renders through ONE stable component so the
   // post-sign-in intro can hold the auth screen across the screen flip. The
@@ -135,15 +125,23 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   };
   if (
     isAurora &&
-    (props.phone.screen === 'auth' || props.phone.screen === 'wallet' || auroraAuthBridge)
+    (props.phone.screen === 'auth' ||
+      props.phone.screen === 'wallet' ||
+      props.phone.screen === 'card' ||
+      auroraAuthBridge)
   ) {
     return (
       <AuroraSignInFlow
-        screen={props.phone.screen === 'wallet' ? 'wallet' : 'auth'}
+        screen={
+          props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
+        }
         busy={props.busy && !props.popupWait}
+        methods={props.methods ?? [props.method]}
         onSignIn={signIn}
-        balance={props.phone.balance}
-        onAction={props.onAction}
+        walletControl={props.walletControl}
+        onTransfer={props.onTransfer}
+        onCardIssued={props.onCardIssued}
+        onTapToPay={props.onTapToPay}
       >
         {passkeySheet}
         {authSheet}

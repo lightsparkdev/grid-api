@@ -5,15 +5,21 @@ import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
 import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
 import {
   ACTIONS,
-  fmt,
   initialWallet,
   phoneFromState,
-  runAction,
   type ActionId,
   type WalletState,
 } from '@/data/actions';
-import { addMoneyCalls, sendCalls, signInCalls, withdrawCalls } from '@/data/apiCalls';
+import {
+  addMoneyCalls,
+  cardCalls,
+  sendCalls,
+  signInCalls,
+  tapCalls,
+  withdrawCalls,
+} from '@/data/apiCalls';
 import { oauthNonce, passkeyCeremony } from '@/lib/auth';
+import type { AuroraWalletControl, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
 
@@ -29,14 +35,6 @@ interface Session {
   phone?: string;
   expiresAt?: number;
 }
-
-type AmountConfig = {
-  title: string;
-  cta: string;
-  source: string;
-  sub: string;
-  defaultDollars: number;
-};
 
 const SESSION_MS = 15 * 60 * 1000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -69,7 +67,10 @@ export function useWalletDemoLogic() {
   // auth screen must NOT show a busy state while it's open (the phone stays
   // exactly as it is; `running` still guards re-entry underneath).
   const [popupWait, setPopupWait] = useState(false);
-  const [amountConfig, setAmountConfig] = useState<AmountConfig | null>(null);
+
+  // Imperative control for the live Aurora wallet — lets the "Explore flows"
+  // sidebar open the matching on-phone sheet/view.
+  const walletControl = useRef<AuroraWalletControl | null>(null);
 
   const session = useRef<Session>({});
   const passkeyPrompt = useRef<{ resolve: () => void; reject: (e: Error) => void } | null>(null);
@@ -81,7 +82,6 @@ export function useWalletDemoLogic() {
   const phonePrompt = useRef<{ resolve: (n: string) => void; reject: (e: Error) => void } | null>(null);
   const googlePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
   const applePrompt = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
-  const amountPrompt = useRef<{ resolve: (d: number) => void; reject: (e: Error) => void } | null>(null);
 
   const promptEmail = useCallback((): Promise<string> => {
     setEmailActive(true);
@@ -206,23 +206,6 @@ export function useWalletDemoLogic() {
     p?.resolve(token);
   }, []);
 
-  const promptAmount = useCallback((config: AmountConfig): Promise<number> => {
-    setAmountConfig(config);
-    return new Promise((resolve, reject) => (amountPrompt.current = { resolve, reject }));
-  }, []);
-  const submitAmount = useCallback((dollars: number) => {
-    setAmountConfig(null);
-    const p = amountPrompt.current;
-    amountPrompt.current = null;
-    p?.resolve(dollars);
-  }, []);
-  const cancelAmount = useCallback(() => {
-    setAmountConfig(null);
-    const p = amountPrompt.current;
-    amountPrompt.current = null;
-    p?.reject(new Error('cancelled'));
-  }, []);
-
   const pushCalls = useCallback((calls: ApiCall[], groupLabel: string) => {
     if (!calls?.length) return;
     const groupId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -242,8 +225,6 @@ export function useWalletDemoLogic() {
   const startSession = useCallback(() => {
     session.current.expiresAt = Date.now() + SESSION_MS;
   }, []);
-  const hasValidSession = () =>
-    !!session.current.expiresAt && Date.now() < session.current.expiresAt - 5000;
 
   const authenticate = useCallback(
     /**
@@ -319,14 +300,6 @@ export function useWalletDemoLogic() {
     [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptApple, promptPasskey, playFaceId, pushCalls, startSession],
   );
 
-  const runSignIn = useCallback(async () => {
-    session.current = { method };
-    setSignInMethod(method);
-    await authenticate(true);
-    setWallet((w) => ({ ...w, created: true, balanceCents: 0 }));
-    setTransient(null);
-  }, [method, authenticate]);
-
   const signInWithMethod = useCallback(
     async (m: AuthMethod, popup?: Promise<string>) => {
       if (running) {
@@ -356,123 +329,64 @@ export function useWalletDemoLogic() {
     [running, authenticate],
   );
 
-  const ensureSession = useCallback(async () => {
-    if (hasValidSession()) return;
-    await authenticate(false);
-  }, [authenticate]);
-
-  const runAdd = useCallback(async () => {
-    const dollars = await promptAmount({
-      title: 'Add money',
-      cta: 'Confirm',
-      source: 'Linked bank',
-      sub: '•••• 3872 · Instant',
-      defaultDollars: 5000,
-    });
-    const cents = Math.round(dollars * 100);
-    setTransient({ screen: 'creating', note: `Adding ${fmt(cents)}` });
-    pushCalls(addMoneyCalls(cents), 'Add money');
-    await sleep(1100);
-    setWallet((w) => ({
-      ...w,
-      balanceCents: w.balanceCents + cents,
-      activity: [
-        { kind: 'bank', name: 'Linked bank', sub: 'Added · Just now', amount: `+${fmt(cents)}`, positive: true },
-        ...w.activity,
-      ],
-    }));
-    setTransient(null);
-  }, [promptAmount, pushCalls]);
-
-  const runSend = useCallback(async () => {
-    const dollars = await promptAmount({
-      title: 'Send',
-      cta: 'Send',
-      source: '$leo@grid.app',
-      sub: 'UMA address · Instant',
-      defaultDollars: 250,
-    });
-    await ensureSession();
-    const cents = Math.round(dollars * 100);
-    setTransient({ screen: 'creating', note: `Sending ${fmt(cents)}` });
-    pushCalls(sendCalls(Math.round(dollars * 1e6)), 'Send payment');
-    await sleep(1100);
-    setWallet((w) => ({
-      ...w,
-      balanceCents: Math.max(0, w.balanceCents - cents),
-      activity: [
-        { kind: 'send', name: 'Sent to $leo@grid.app', sub: 'Payment · Just now', amount: `-${fmt(cents)}` },
-        ...w.activity,
-      ],
-    }));
-    setTransient(null);
-  }, [promptAmount, ensureSession, pushCalls]);
-
-  const runWithdraw = useCallback(async () => {
-    const dollars = await promptAmount({
-      title: 'Withdraw',
-      cta: 'Confirm',
-      source: 'Linked bank',
-      sub: '•••• 3872 · Instant',
-      defaultDollars: 200,
-    });
-    await ensureSession();
-    const cents = Math.round(dollars * 100);
-    setTransient({ screen: 'creating', note: `Withdrawing ${fmt(cents)}` });
-    pushCalls(withdrawCalls(Math.round(dollars * 1e6)), 'Withdraw');
-    await sleep(1100);
-    setWallet((w) => ({
-      ...w,
-      balanceCents: Math.max(0, w.balanceCents - cents),
-      activity: [
-        { kind: 'bank', name: 'Linked bank', sub: 'Withdrawal · Just now', amount: `-${fmt(cents)}` },
-        ...w.activity,
-      ],
-    }));
-    setTransient(null);
-  }, [promptAmount, ensureSession, pushCalls]);
-
-  const runSimulated = useCallback(
-    async (id: ActionId) => {
-      const action = ACTIONS.find((a) => a.id === id);
-      const res = runAction(id, wallet, method);
-      for (const f of res.frames) {
-        setTransient({ screen: f.screen, note: f.note, activated: f.activated });
-        await sleep(f.ms);
-      }
-      if (res.calls.length) {
-        pushCalls(res.calls, action?.label ?? id);
-      }
-      setWallet(res.next);
-      setTransient(null);
+  // The live Aurora wallet owns its own UI + displayed balance; it reports each
+  // settled action up so we log the matching Grid calls and keep a mirror of
+  // wallet state for the sidebar's availability/done gating.
+  const onTransfer = useCallback(
+    (mode: WalletTransferMode, cents: number) => {
+      if (mode === 'add') pushCalls(addMoneyCalls(cents), 'Add money');
+      else if (mode === 'withdraw') pushCalls(withdrawCalls(cents), 'Withdraw');
+      else pushCalls(sendCalls(cents), 'Send payment');
+      setWallet((w) => ({
+        ...w,
+        balanceCents:
+          mode === 'add' ? w.balanceCents + cents : Math.max(0, w.balanceCents - cents),
+      }));
     },
-    [wallet, method, pushCalls],
+    [pushCalls],
+  );
+
+  const onCardIssued = useCallback(() => {
+    pushCalls(cardCalls(), 'Issue a card');
+    setWallet((w) => ({ ...w, hasCard: true }));
+  }, [pushCalls]);
+
+  const onTapToPay = useCallback(
+    (cents: number, merchant: string) => {
+      pushCalls(tapCalls(merchant, cents), 'Tap to pay');
+      setWallet((w) => ({
+        ...w,
+        cardActivated: true,
+        balanceCents: Math.max(0, w.balanceCents - cents),
+      }));
+    },
+    [pushCalls],
   );
 
   const handleAction = useCallback(
-    async (id: ActionId) => {
+    (id: ActionId) => {
       if (running) return;
       const action = ACTIONS.find((a) => a.id === id);
       if (!action || !action.available(wallet)) return;
-      setRunning(true);
-      try {
-        if (id === 'create') await runSignIn();
-        else if (id === 'add') await runAdd();
-        else if (id === 'send') await runSend();
-        else if (id === 'withdraw') await runWithdraw();
-        else await runSimulated(id);
-      } catch (e: unknown) {
-        if ((e as Error)?.message !== 'cancelled') console.error('[grid-demo]', e);
-        setTransient(null);
-      } finally {
-        setRunning(false);
+      // Sign in runs the real ceremony; every other flow just opens the matching
+      // sheet/view on the phone — the wallet reports back when it settles.
+      if (id === 'create') {
+        void signInWithMethod(method);
+        return;
       }
+      const control = walletControl.current;
+      if (!control) return;
+      if (id === 'add') control.openAdd();
+      else if (id === 'withdraw') control.openWithdraw();
+      else if (id === 'send') control.openSend();
+      else if (id === 'card') control.issueCard();
+      else if (id === 'tap') control.tapToPay();
     },
-    [running, wallet, runSignIn, runAdd, runSend, runWithdraw, runSimulated],
+    [running, wallet, method, signInWithMethod],
   );
 
   const reset = useCallback(() => {
-    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, applePrompt, amountPrompt]) {
+    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, applePrompt]) {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
     }
@@ -494,7 +408,6 @@ export function useWalletDemoLogic() {
     setGNonce(null);
     setANonce(null);
     setPopupWait(false);
-    setAmountConfig(null);
     setRunning(false);
   }, []);
 
@@ -557,8 +470,9 @@ export function useWalletDemoLogic() {
     aNonce,
     submitApple,
     popupWait,
-    amountConfig,
-    submitAmount,
-    cancelAmount,
+    walletControl,
+    onTransfer,
+    onCardIssued,
+    onTapToPay,
   };
 }

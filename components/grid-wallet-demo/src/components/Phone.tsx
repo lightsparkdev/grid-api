@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type Ref } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
+import type { AuroraWalletControl, WalletTransferMode } from '@/apps/aurora/wallet';
 import {
   APPLE_CLIENT_ID,
   appleRedirectUri,
@@ -82,6 +83,14 @@ export interface PhoneProps {
     onSubmit: (dollars: number) => void;
     onCancel: () => void;
   };
+  /** Auth methods selected in Configure — drives which aurora auth CTAs show. */
+  methods?: AuthMethod[];
+  /** Imperative control for the aurora wallet (sidebar → on-phone sheets). */
+  walletControl?: Ref<AuroraWalletControl>;
+  /** Aurora wallet events bubbled up so the demo logs the matching Grid calls. */
+  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  onCardIssued?: () => void;
+  onTapToPay?: (cents: number, merchant: string) => void;
 }
 
 export default function Phone({

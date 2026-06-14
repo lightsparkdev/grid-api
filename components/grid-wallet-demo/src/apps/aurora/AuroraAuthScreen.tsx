@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { AUTH_METHODS } from '@/data/configure';
 import { authCta, type AuthMethod } from '@/data/flow';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -45,6 +44,8 @@ const CAPTION_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 interface AuroraAuthScreenProps {
   busy?: boolean;
+  /** Auth methods selected in the Configure panel — drives which CTAs show. */
+  methods: AuthMethod[];
   /** Sign-in succeeded — play the intro dismiss (content out, mask dissolve,
    *  logo to center, creating hold). The parent swaps screens after. */
   dismissed?: boolean;
@@ -55,14 +56,14 @@ interface AuroraAuthScreenProps {
 
 export function AuroraAuthScreen({
   busy,
+  methods: selectedMethods,
   dismissed = false,
   leaving = false,
   onSignIn,
 }: AuroraAuthScreenProps) {
-  const enabled = new Set(
-    AUTH_METHODS.filter((m) => m.enabled).map((m) => m.id),
-  );
-  const methods = AUTH_METHOD_ORDER.filter((id) => enabled.has(id));
+  // Honor the picker selection, but keep the canonical Figma order regardless
+  // of the order the user toggled them in.
+  const methods = AUTH_METHOD_ORDER.filter((id) => selectedMethods.includes(id));
 
   // Hard mount-gate for the caption: it does not EXIST until the logo has
   // settled, so it can never be seen early regardless of render timing.

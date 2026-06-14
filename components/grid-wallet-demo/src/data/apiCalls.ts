@@ -146,6 +146,33 @@ export function sendCalls(usdbUnits: number): ApiCall[] {
   ];
 }
 
+/** Issue a virtual card against the Global Account. */
+export function cardCalls(): ApiCall[] {
+  return [
+    {
+      method: 'POST',
+      path: `/cards`,
+      title: 'Create card',
+      reqBody: { accountId: ACCOUNT, type: 'VIRTUAL', currency: 'USDB' },
+      status: '201 Created',
+      note: 'Virtual card issued — provisionable to Apple/Google Wallet.',
+    },
+  ];
+}
+
+/** Tap to pay — a card authorization lands on the Global Account. */
+export function tapCalls(merchant: string, cents: number): ApiCall[] {
+  return [
+    {
+      method: 'GET',
+      path: `/transactions/${TXN}`,
+      title: 'Get transaction',
+      status: '200 OK',
+      note: `transaction.authorized — $${(cents / 100).toFixed(2)} at ${merchant}.`,
+    },
+  ];
+}
+
 /** Withdraw — cash out to a linked bank (signed). */
 export function withdrawCalls(usdbUnits: number): ApiCall[] {
   return [

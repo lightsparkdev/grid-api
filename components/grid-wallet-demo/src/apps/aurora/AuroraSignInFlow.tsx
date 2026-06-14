@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { AuthMethod } from '@/data/flow';
-import type { ActionId } from '@/data/actions';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import { AuroraAuthScreen } from './AuroraAuthScreen';
-import { AuroraWalletScreen } from './wallet';
+import { AuroraWalletScreen, type AuroraWalletControl, type WalletTransferMode } from './wallet';
 import styles from './AuroraSignInFlow.module.scss';
 
 // The auth screen plays the sign-in intro (content out → mask dissolve → logo
@@ -28,10 +27,15 @@ interface AuroraSignInFlowProps {
   /** Demo screen from the wallet logic — flips auth → wallet on sign-in. */
   screen: 'auth' | 'wallet';
   busy?: boolean;
+  /** Auth methods selected in the Configure panel — drives the auth CTAs. */
+  methods: AuthMethod[];
   onSignIn: (method: AuthMethod) => void;
-  /** Formatted balance for the wallet home. */
-  balance?: string;
-  onAction: (id: ActionId) => void;
+  /** Imperative control handed to the wallet so the sidebar can open its sheets. */
+  walletControl?: Ref<AuroraWalletControl>;
+  /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
+  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  onCardIssued?: () => void;
+  onTapToPay?: (cents: number, merchant: string) => void;
   /** Auth-side overlays (passkey / email sheets) — rendered with the auth screen. */
   children?: ReactNode;
 }
@@ -47,9 +51,12 @@ interface AuroraSignInFlowProps {
 export function AuroraSignInFlow({
   screen,
   busy,
+  methods,
   onSignIn,
-  balance,
-  onAction,
+  walletControl,
+  onTransfer,
+  onCardIssued,
+  onTapToPay,
   children,
 }: AuroraSignInFlowProps) {
   const reduceMotion = useReducedMotion();
@@ -104,6 +111,7 @@ export function AuroraSignInFlow({
           >
             <AuroraAuthScreen
               busy={busy}
+              methods={methods}
               dismissed={intro !== 'none'}
               leaving={intro === 'leaving'}
               onSignIn={onSignIn}
@@ -119,11 +127,11 @@ export function AuroraSignInFlow({
             exit={{ opacity: 0, transition: SWAP_FADE }}
           >
             <AuroraWalletScreen
-              balance={balance}
               entrance={!reduceMotion}
-              onAdd={() => onAction('add')}
-              onWithdraw={() => onAction('withdraw')}
-              onSend={() => onAction('send')}
+              controlRef={walletControl}
+              onTransfer={onTransfer}
+              onCardIssued={onCardIssued}
+              onTapToPay={onTapToPay}
             />
           </motion.div>
         )}
