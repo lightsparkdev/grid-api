@@ -12,14 +12,12 @@ import {
   type WalletState,
 } from '@/data/actions';
 import {
-  addMoneyCalls,
   cardCalls,
   oauthVerifyCall,
   otpRequestCall,
   otpVerifyCall,
   passkeyChallengeCall,
   passkeyVerifyCall,
-  signInCalls,
   tapCalls,
   transferExecuteCalls,
   transferQuoteCall,
@@ -476,40 +474,30 @@ export function useWalletDemoLogic() {
         returnToSignIn();
         return;
       }
-      // Fast-forward: satisfy whatever this flow needs (sign in, funds, a card)
-      // instantly and silently, log it as one "Account setup" group, then open
-      // the flow for the user to drive. Works from any starting point — no
-      // linear track.
-      const setupCalls: ApiCall[] = [];
+      // Fast-forward: silently satisfy whatever this flow needs (sign in, funds,
+      // a card) so it works from any starting point — no linear track. This is
+      // STATE only — no API calls are logged for the provisioning (just like the
+      // phone skips the sign-in animation), and it earns no checkmark. Each flow
+      // logs only its own calls, and is checked, when the user actually runs it.
       let next = wallet;
       const provision: { issued?: boolean; fundCents?: number } = {};
-      // Prereqs we silently ran also earn their sidebar check.
-      const doneNext: Partial<CompletedFlows> = {};
 
       if (!next.created) {
-        setupCalls.push(...signInCalls(method));
         next = { ...next, created: true };
         setSignInMethod(method);
         setSkipIntro(true); // cold jump — land on the wallet without the hold
-        doneNext.signIn = true;
       }
       const needsFunds = id === 'send' || id === 'withdraw' || id === 'tap';
       if (needsFunds && next.balanceCents <= 0) {
-        setupCalls.push(...addMoneyCalls(FAST_FORWARD_FUND_CENTS));
         next = { ...next, balanceCents: FAST_FORWARD_FUND_CENTS };
         provision.fundCents = FAST_FORWARD_FUND_CENTS;
-        doneNext.add = true;
       }
       if (id === 'tap' && !next.hasCard) {
-        setupCalls.push(...cardCalls());
         next = { ...next, hasCard: true };
         provision.issued = true;
-        doneNext.card = true;
       }
 
-      if (setupCalls.length) pushCalls(setupCalls, 'Account setup');
       if (next !== wallet) setWallet(next);
-      if (Object.keys(doneNext).length) setCompleted((c) => ({ ...c, ...doneNext }));
       setWalletEntry({
         nonce: Date.now(),
         provision:
