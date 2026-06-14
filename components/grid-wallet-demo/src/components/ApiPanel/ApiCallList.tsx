@@ -301,8 +301,15 @@ function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
 export function ApiCallList({ entries }: ApiCallListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = useNowTick();
-  // Reverse-chron: newest group on top.
-  const groups = useMemo(() => groupApiEntries(entries).reverse(), [entries]);
+  // Reverse-chron everywhere: newest group on top, and newest call on top within
+  // each group (e.g. Verify OTP above Request OTP).
+  const groups = useMemo(
+    () =>
+      groupApiEntries(entries)
+        .map((group) => ({ ...group, entries: [...group.entries].reverse() }))
+        .reverse(),
+    [entries],
+  );
 
   // New activity lands at the top — keep it in view, but don't yank the user
   // away if they've scrolled down to read an older call.
