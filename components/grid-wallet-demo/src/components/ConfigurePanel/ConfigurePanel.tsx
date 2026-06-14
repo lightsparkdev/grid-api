@@ -54,7 +54,7 @@ export function ConfigurePanel({
             <AuthMethodPicker
               methods={methods}
               onToggle={onToggleMethod}
-              disabled={running || wallet.created}
+              disabled={running}
             />
           </section>
 

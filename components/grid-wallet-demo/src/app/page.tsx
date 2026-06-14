@@ -59,7 +59,8 @@ export default function Page() {
             submitApple={logic.submitApple}
             popupWait={logic.popupWait}
             walletControl={logic.walletControl}
-            onTransfer={logic.onTransfer}
+            onQuoteCreate={logic.onQuoteCreate}
+            onTransferExecute={logic.onTransferExecute}
             onCardIssued={logic.onCardIssued}
             onTapToPay={logic.onTapToPay}
           />

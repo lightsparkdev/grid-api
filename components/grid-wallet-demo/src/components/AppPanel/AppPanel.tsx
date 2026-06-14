@@ -44,7 +44,8 @@ export interface DemoLogicPhoneSlice {
   submitApple: (idToken: string) => void;
   popupWait: boolean;
   walletControl?: Ref<AuroraWalletControl>;
-  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
 }
@@ -95,7 +96,8 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
       onCredential: p.submitApple,
     },
     walletControl: p.walletControl,
-    onTransfer: p.onTransfer,
+    onQuoteCreate: p.onQuoteCreate,
+    onTransferExecute: p.onTransferExecute,
     onCardIssued: p.onCardIssued,
     onTapToPay: p.onTapToPay,
   };

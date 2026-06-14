@@ -11,17 +11,24 @@ import {
   type WalletState,
 } from '@/data/actions';
 import {
-  addMoneyCalls,
   cardCalls,
-  sendCalls,
   signInCalls,
   tapCalls,
-  withdrawCalls,
+  transferExecuteCalls,
+  transferQuoteCall,
 } from '@/data/apiCalls';
 import { oauthNonce, passkeyCeremony } from '@/lib/auth';
 import type { AuroraWalletControl, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
+
+const TRANSFER_LABEL: Record<WalletTransferMode, string> = {
+  add: 'Add money',
+  withdraw: 'Withdraw',
+  send: 'Send payment',
+};
+
+const newGroupId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 interface Transient {
   screen: ScreenId;
@@ -71,6 +78,9 @@ export function useWalletDemoLogic() {
   // Imperative control for the live Aurora wallet — lets the "Explore flows"
   // sidebar open the matching on-phone sheet/view.
   const walletControl = useRef<AuroraWalletControl | null>(null);
+  // The in-flight transfer's group id — its create-quote and execute calls
+  // stream into one API-panel group.
+  const transferGroup = useRef<string | null>(null);
 
   const session = useRef<Session>({});
   const passkeyPrompt = useRef<{ resolve: () => void; reject: (e: Error) => void } | null>(null);
@@ -206,9 +216,9 @@ export function useWalletDemoLogic() {
     p?.resolve(token);
   }, []);
 
-  const pushCalls = useCallback((calls: ApiCall[], groupLabel: string) => {
+  const pushCalls = useCallback((calls: ApiCall[], groupLabel: string, groupId?: string) => {
     if (!calls?.length) return;
-    const groupId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const gid = groupId ?? newGroupId();
     const baseTime = Date.now();
     setEntries((prev) => [
       ...prev,
@@ -216,7 +226,7 @@ export function useWalletDemoLogic() {
         ...c,
         key: `${baseTime}-${i}-${Math.random().toString(36).slice(2, 8)}`,
         createdAt: baseTime + i,
-        groupId,
+        groupId: gid,
         groupLabel,
       })),
     ]);
@@ -330,17 +340,31 @@ export function useWalletDemoLogic() {
   );
 
   // The live Aurora wallet owns its own UI + displayed balance; it reports each
-  // settled action up so we log the matching Grid calls and keep a mirror of
-  // wallet state for the sidebar's availability/done gating.
-  const onTransfer = useCallback(
+  // step up so we log the matching Grid calls and keep a mirror of wallet state
+  // for the sidebar's availability/done gating. A transfer is two beats: the
+  // create-quote (amount committed) opens a group; the execute (Face ID) streams
+  // into that same group and moves the balance.
+  const onQuoteCreate = useCallback(
     (mode: WalletTransferMode, cents: number) => {
-      if (mode === 'add') pushCalls(addMoneyCalls(cents), 'Add money');
-      else if (mode === 'withdraw') pushCalls(withdrawCalls(cents), 'Withdraw');
-      else pushCalls(sendCalls(cents), 'Send payment');
+      const gid = newGroupId();
+      transferGroup.current = gid;
+      pushCalls([transferQuoteCall(mode, cents)], TRANSFER_LABEL[mode], gid);
+    },
+    [pushCalls],
+  );
+
+  const onTransferExecute = useCallback(
+    (mode: WalletTransferMode, cents: number) => {
+      const gid = transferGroup.current ?? newGroupId();
+      transferGroup.current = null;
+      pushCalls(transferExecuteCalls(mode), TRANSFER_LABEL[mode], gid);
       setWallet((w) => ({
         ...w,
         balanceCents:
           mode === 'add' ? w.balanceCents + cents : Math.max(0, w.balanceCents - cents),
+        hasAdded: mode === 'add' ? true : w.hasAdded,
+        hasSent: mode === 'send' ? true : w.hasSent,
+        hasWithdrawn: mode === 'withdraw' ? true : w.hasWithdrawn,
       }));
     },
     [pushCalls],
@@ -357,21 +381,52 @@ export function useWalletDemoLogic() {
       setWallet((w) => ({
         ...w,
         cardActivated: true,
+        hasTapped: true,
         balanceCents: Math.max(0, w.balanceCents - cents),
       }));
     },
     [pushCalls],
   );
 
+  // "Sign in again" — drop back to the auth screen to replay the flow. Resets
+  // the wallet to fresh but KEEPS the API log accumulating ("Start over" is the
+  // full wipe).
+  const returnToSignIn = useCallback(() => {
+    for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, applePrompt]) {
+      p.current?.reject(new Error('cancelled'));
+      p.current = null;
+    }
+    if (faceIdPrompt.current) {
+      clearTimeout(faceIdPrompt.current.timer);
+      faceIdPrompt.current.resolve();
+      faceIdPrompt.current = null;
+    }
+    session.current = {};
+    transferGroup.current = null;
+    setWallet(initialWallet);
+    setTransient(null);
+    setSignInMethod(null);
+    setPasskeyActive(false);
+    setFaceIdActive(false);
+    setOtpActive(false);
+    setEmailActive(false);
+    setPhoneActive(false);
+    setGNonce(null);
+    setANonce(null);
+    setPopupWait(false);
+    setRunning(false);
+  }, []);
+
   const handleAction = useCallback(
     (id: ActionId) => {
       if (running) return;
       const action = ACTIONS.find((a) => a.id === id);
       if (!action || !action.available(wallet)) return;
-      // Sign in runs the real ceremony; every other flow just opens the matching
-      // sheet/view on the phone — the wallet reports back when it settles.
+      // "Sign in" sends the phone back to the auth screen (replay); every other
+      // flow opens the matching sheet/view — the wallet reports back when it
+      // settles.
       if (id === 'create') {
-        void signInWithMethod(method);
+        returnToSignIn();
         return;
       }
       const control = walletControl.current;
@@ -382,7 +437,7 @@ export function useWalletDemoLogic() {
       else if (id === 'card') control.issueCard();
       else if (id === 'tap') control.tapToPay();
     },
-    [running, wallet, method, signInWithMethod],
+    [running, wallet, returnToSignIn],
   );
 
   const reset = useCallback(() => {
@@ -411,18 +466,16 @@ export function useWalletDemoLogic() {
     setRunning(false);
   }, []);
 
-  const toggleMethod = useCallback(
-    (m: AuthMethod) => {
-      if (wallet.created) return;
-      setMethods((prev) => {
-        if (prev.includes(m)) {
-          return prev.length === 1 ? prev : prev.filter((id) => id !== m);
-        }
-        return [...prev, m];
-      });
-    },
-    [wallet.created],
-  );
+  const toggleMethod = useCallback((m: AuthMethod) => {
+    // Always togglable — even signed in, so you can re-pick and sign in again.
+    // At least one method stays selected.
+    setMethods((prev) => {
+      if (prev.includes(m)) {
+        return prev.length === 1 ? prev : prev.filter((id) => id !== m);
+      }
+      return [...prev, m];
+    });
+  }, []);
 
   const base = phoneFromState(wallet);
   const phone = transient
@@ -471,7 +524,8 @@ export function useWalletDemoLogic() {
     submitApple,
     popupWait,
     walletControl,
-    onTransfer,
+    onQuoteCreate,
+    onTransferExecute,
     onCardIssued,
     onTapToPay,
   };

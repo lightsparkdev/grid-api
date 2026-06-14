@@ -17,7 +17,7 @@ import {
 import { formatAbsoluteTime, formatRelativeTime } from '@/lib/formatRelativeTime';
 import { groupApiEntries } from '@/lib/groupApiEntries';
 import { useNowTick } from '@/hooks/useNowTick';
-import { motionTransition } from '@/lib/easing';
+import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import type { Entry, EntryGroup } from './types';
 import styles from './ApiCallList.module.scss';
@@ -262,21 +262,36 @@ interface ApiCallListProps {
   entries: Entry[];
 }
 
+// New cards/groups blur-fade in and push the rest down — the app's content
+// language, on the snappy-out curve.
+const FEED_IN = motionTransition(easeOutSnappy, 0.42);
+const FEED_OUT = motionTransition(easeOutSnappy, 0.26);
+const FEED_HIDDEN = { opacity: 0, y: -8, filter: 'blur(8px)' };
+const FEED_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
+
 function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
   return (
     <motion.article
-      key={group.groupId}
+      layout
       className={styles.group}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: 'easeOut' }}
+      initial={FEED_HIDDEN}
+      animate={FEED_REST}
+      exit={{ ...FEED_HIDDEN, transition: FEED_OUT }}
+      transition={FEED_IN}
     >
       <SectionDivider label={group.groupLabel} showFlowIcon />
       <div className={styles.groupEntries}>
         {group.entries.map((entry) => (
-          <div key={entry.key} className={styles.feedEntry}>
+          <motion.div
+            layout
+            key={entry.key}
+            className={styles.feedEntry}
+            initial={FEED_HIDDEN}
+            animate={FEED_REST}
+            transition={FEED_IN}
+          >
             <ApiCallBlock entry={entry} now={now} />
-          </div>
+          </motion.div>
         ))}
       </div>
     </motion.article>
@@ -286,11 +301,14 @@ function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
 export function ApiCallList({ entries }: ApiCallListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = useNowTick();
-  const groups = useMemo(() => groupApiEntries(entries), [entries]);
+  // Reverse-chron: newest group on top.
+  const groups = useMemo(() => groupApiEntries(entries).reverse(), [entries]);
 
+  // New activity lands at the top — keep it in view, but don't yank the user
+  // away if they've scrolled down to read an older call.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    if (el && el.scrollTop < 80) el.scrollTo({ top: 0, behavior: 'smooth' });
   }, [entries.length]);
 
   return (

@@ -17,6 +17,11 @@ export interface WalletState {
   hasCard: boolean;
   cardActivated: boolean;
   activity: Tx[];
+  /** Sticky "done at least once" flags for the sidebar flow checkmarks. */
+  hasAdded: boolean;
+  hasSent: boolean;
+  hasWithdrawn: boolean;
+  hasTapped: boolean;
 }
 
 export const initialWallet: WalletState = {
@@ -25,6 +30,10 @@ export const initialWallet: WalletState = {
   hasCard: false,
   cardActivated: false,
   activity: [],
+  hasAdded: false,
+  hasSent: false,
+  hasWithdrawn: false,
+  hasTapped: false,
 };
 
 export function fmt(cents: number): string {
@@ -51,7 +60,8 @@ export const ACTIONS: ActionDef[] = [
     label: 'Sign in',
     desc: 'Log in to your Global Account',
     icon: 'wallet',
-    available: (s) => !s.created,
+    // Always available — re-running it replays the sign-in flow.
+    available: () => true,
     done: (s) => s.created,
   },
   {
@@ -60,6 +70,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Fund from a linked bank',
     icon: 'plus',
     available: (s) => s.created,
+    done: (s) => s.hasAdded,
   },
   {
     id: 'send',
@@ -67,6 +78,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Pay another account',
     icon: 'send',
     available: (s) => s.created && s.balanceCents > 0,
+    done: (s) => s.hasSent,
   },
   {
     id: 'withdraw',
@@ -74,6 +86,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Cash out to a bank',
     icon: 'bank',
     available: (s) => s.created && s.balanceCents > 0,
+    done: (s) => s.hasWithdrawn,
   },
   {
     id: 'card',
@@ -89,6 +102,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Spend at a store',
     icon: 'tap',
     available: (s) => s.hasCard,
+    done: (s) => s.hasTapped,
   },
 ];
 

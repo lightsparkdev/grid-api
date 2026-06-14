@@ -29,6 +29,9 @@ const contentOut = (fromBottom: number) =>
   motionTransition(easeOutQuick, 0.18, { delay: fromBottom * 0.025 });
 const CONTENT_OUT = { opacity: 0, y: 6, filter: 'blur(8px)' };
 const CONTENT_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
+// Toggling an auth method in the Configure panel adds/removes its CTA — blur-fade
+// it in/out and let the siblings reflow, on the snappy-out curve.
+const CTA_TOGGLE = motionTransition(easeOutSnappy, 0.32);
 // 4 — "Creating your account..." enters only after the logo has visibly
 //     settled at center. The gate is a real timer that MOUNTS the caption
 //     (not a transition delay — a delay on an already-mounted element can be
@@ -168,25 +171,31 @@ export function AuroraAuthScreen({
         </div>
 
         <div className={styles.actions}>
-          {methods.map((method, i) => {
-            const Icon = AUTH_METHOD_ICONS[method];
-            return (
-              <motion.div
-                key={method}
-                initial={false}
-                animate={dismissed ? CONTENT_OUT : CONTENT_REST}
-                transition={contentOut(methods.length - 1 - i)}
-              >
-                <ContentAreaButton
-                  icon={<Icon size={24} />}
-                  disabled={busy || dismissed}
-                  onClick={() => onSignIn(method)}
+          {/* initial={false} so the CTAs present at mount don't animate during
+              boot/intro — only user toggles (add/remove a method) animate. */}
+          <AnimatePresence initial={false}>
+            {methods.map((method, i) => {
+              const Icon = AUTH_METHOD_ICONS[method];
+              return (
+                <motion.div
+                  key={method}
+                  layout
+                  initial={CONTENT_OUT}
+                  animate={dismissed ? CONTENT_OUT : CONTENT_REST}
+                  exit={{ ...CONTENT_OUT, transition: CTA_TOGGLE }}
+                  transition={dismissed ? contentOut(methods.length - 1 - i) : CTA_TOGGLE}
                 >
-                  {authCta(method)}
-                </ContentAreaButton>
-              </motion.div>
-            );
-          })}
+                  <ContentAreaButton
+                    icon={<Icon size={24} />}
+                    disabled={busy || dismissed}
+                    onClick={() => onSignIn(method)}
+                  >
+                    {authCta(method)}
+                  </ContentAreaButton>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
         </motion.div>
       </motion.div>

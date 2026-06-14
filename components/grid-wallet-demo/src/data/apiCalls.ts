@@ -77,10 +77,12 @@ export function signInCalls(method: AuthMethod, email?: string): ApiCall[] {
   ];
 }
 
-/** Add money — platform-funded on-ramp into the USDB Global Account. */
-export function addMoneyCalls(cents: number): ApiCall[] {
-  return [
-    {
+export type TransferMode = 'add' | 'withdraw' | 'send';
+
+/** Step 1 of a transfer — POST /quotes. Fires when the amount is committed. */
+export function transferQuoteCall(mode: TransferMode, cents: number): ApiCall {
+  if (mode === 'add') {
+    return {
       method: 'POST',
       path: `/quotes`,
       title: 'Create quote',
@@ -92,58 +94,85 @@ export function addMoneyCalls(cents: number): ApiCall[] {
       },
       status: '201 Created',
       note: 'Locked platform-funded on-ramp quote (USD → USDB).',
-    },
-    {
-      method: 'POST',
-      path: `/quotes/${QUOTE}/execute`,
-      title: 'Execute quote',
-      reqBody: {},
-      status: '200 OK',
-      note: 'Incoming funds; no customer session or wallet signature required.',
-    },
-    {
-      method: 'GET',
-      path: `/transactions/${TXN}`,
-      title: 'Get transaction',
-      status: '200 OK',
-      note: 'Funds settle to the balance — COMPLETED.',
-    },
-  ];
-}
-
-/** Send — pay a UMA address from the embedded wallet (signed). */
-export function sendCalls(usdbUnits: number): ApiCall[] {
-  return [
-    {
+    };
+  }
+  if (mode === 'withdraw') {
+    return {
       method: 'POST',
       path: `/quotes`,
       title: 'Create quote',
       reqBody: {
         source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
-        destination: { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' },
+        destination: { destinationType: 'ACCOUNT', accountId: BANK, currency: 'USD' },
         lockedCurrencySide: 'SENDING',
-        lockedCurrencyAmount: usdbUnits,
+        lockedCurrencyAmount: cents,
       },
       status: '201 Created',
-      note: 'Quote returns a payloadToSign for the embedded wallet.',
+      note: 'Off-ramp quote (USDB → USD) with a payloadToSign.',
+    };
+  }
+  return {
+    method: 'POST',
+    path: `/quotes`,
+    title: 'Create quote',
+    reqBody: {
+      source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
+      destination: { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' },
+      lockedCurrencySide: 'SENDING',
+      lockedCurrencyAmount: cents,
     },
-    {
-      method: 'POST',
-      path: `/quotes/${QUOTE}/execute`,
-      title: 'Execute quote',
-      headers: { 'Grid-Wallet-Signature': '<signature>' },
-      reqBody: {},
-      status: '200 OK',
-      note: 'Grid-Wallet-Signature header — stamped by the session key.',
-    },
+    status: '201 Created',
+    note: 'Quote returns a payloadToSign for the embedded wallet.',
+  };
+}
+
+/** Step 2 of a transfer — execute + settle. Fires on Face ID confirm. */
+export function transferExecuteCalls(mode: TransferMode): ApiCall[] {
+  const execute: ApiCall =
+    mode === 'add'
+      ? {
+          method: 'POST',
+          path: `/quotes/${QUOTE}/execute`,
+          title: 'Execute quote',
+          reqBody: {},
+          status: '200 OK',
+          note: 'Incoming funds; no customer session or wallet signature required.',
+        }
+      : {
+          method: 'POST',
+          path: `/quotes/${QUOTE}/execute`,
+          title: 'Execute quote',
+          headers: { 'Grid-Wallet-Signature': '<signature>' },
+          reqBody: {},
+          status: '200 OK',
+          note: 'Grid-Wallet-Signature header — stamped by the session key.',
+        };
+  const settleNote =
+    mode === 'add'
+      ? 'Funds settle to the balance — COMPLETED.'
+      : mode === 'withdraw'
+        ? 'Paid out via RTP — COMPLETED.'
+        : 'Delivered — COMPLETED.';
+  return [
+    execute,
     {
       method: 'GET',
       path: `/transactions/${TXN}`,
       title: 'Get transaction',
       status: '200 OK',
-      note: 'Delivered — COMPLETED.',
+      note: settleNote,
     },
   ];
+}
+
+/** Add money — platform-funded on-ramp into the USDB Global Account. */
+export function addMoneyCalls(cents: number): ApiCall[] {
+  return [transferQuoteCall('add', cents), ...transferExecuteCalls('add')];
+}
+
+/** Send — pay a UMA address from the embedded wallet (signed). */
+export function sendCalls(cents: number): ApiCall[] {
+  return [transferQuoteCall('send', cents), ...transferExecuteCalls('send')];
 }
 
 /** Issue a virtual card against the Global Account. */
@@ -174,36 +203,6 @@ export function tapCalls(merchant: string, cents: number): ApiCall[] {
 }
 
 /** Withdraw — cash out to a linked bank (signed). */
-export function withdrawCalls(usdbUnits: number): ApiCall[] {
-  return [
-    {
-      method: 'POST',
-      path: `/quotes`,
-      title: 'Create quote',
-      reqBody: {
-        source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
-        destination: { destinationType: 'ACCOUNT', accountId: BANK, currency: 'USD' },
-        lockedCurrencySide: 'SENDING',
-        lockedCurrencyAmount: usdbUnits,
-      },
-      status: '201 Created',
-      note: 'Off-ramp quote (USDB → USD) with a payloadToSign.',
-    },
-    {
-      method: 'POST',
-      path: `/quotes/${QUOTE}/execute`,
-      title: 'Execute quote',
-      headers: { 'Grid-Wallet-Signature': '<signature>' },
-      reqBody: {},
-      status: '200 OK',
-      note: 'Grid-Wallet-Signature header — stamped by the session key.',
-    },
-    {
-      method: 'GET',
-      path: `/transactions/${TXN}`,
-      title: 'Get transaction',
-      status: '200 OK',
-      note: 'Paid out via RTP — COMPLETED.',
-    },
-  ];
+export function withdrawCalls(cents: number): ApiCall[] {
+  return [transferQuoteCall('withdraw', cents), ...transferExecuteCalls('withdraw')];
 }

@@ -229,6 +229,8 @@ interface AddMoneySheetProps {
   onDismiss: () => void;
   /** Confirm tapped with the typed amount (cents). Parent runs Face ID. */
   onConfirm: (cents: number) => void;
+  /** Amount committed (the quote beat) — parent logs the create-quote call. */
+  onQuote?: (cents: number) => void;
 }
 
 /**
@@ -247,6 +249,7 @@ export function AddMoneySheet({
   confirming,
   onDismiss,
   onConfirm,
+  onQuote,
 }: AddMoneySheetProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -362,6 +365,7 @@ export function AddMoneySheet({
   const tryContinue = () => {
     if (confirming || quoting) return;
     if (cents > 0 && (mode === 'add' || cents <= availableCents)) {
+      onQuote?.(cents);
       setQuoting(true);
       window.clearTimeout(quoteTimer.current);
       quoteTimer.current = window.setTimeout(() => {

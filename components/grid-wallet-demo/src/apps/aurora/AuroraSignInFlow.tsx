@@ -33,7 +33,8 @@ interface AuroraSignInFlowProps {
   /** Imperative control handed to the wallet so the sidebar can open its sheets. */
   walletControl?: Ref<AuroraWalletControl>;
   /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
-  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
   /** Auth-side overlays (passkey / email sheets) — rendered with the auth screen. */
@@ -54,7 +55,8 @@ export function AuroraSignInFlow({
   methods,
   onSignIn,
   walletControl,
-  onTransfer,
+  onQuoteCreate,
+  onTransferExecute,
   onCardIssued,
   onTapToPay,
   children,
@@ -129,7 +131,8 @@ export function AuroraSignInFlow({
             <AuroraWalletScreen
               entrance={!reduceMotion}
               controlRef={walletControl}
-              onTransfer={onTransfer}
+              onQuoteCreate={onQuoteCreate}
+              onTransferExecute={onTransferExecute}
               onCardIssued={onCardIssued}
               onTapToPay={onTapToPay}
             />

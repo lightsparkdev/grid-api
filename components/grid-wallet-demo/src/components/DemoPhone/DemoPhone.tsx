@@ -139,7 +139,8 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
         methods={props.methods ?? [props.method]}
         onSignIn={signIn}
         walletControl={props.walletControl}
-        onTransfer={props.onTransfer}
+        onQuoteCreate={props.onQuoteCreate}
+        onTransferExecute={props.onTransferExecute}
         onCardIssued={props.onCardIssued}
         onTapToPay={props.onTapToPay}
       >

@@ -88,7 +88,8 @@ export interface PhoneProps {
   /** Imperative control for the aurora wallet (sidebar → on-phone sheets). */
   walletControl?: Ref<AuroraWalletControl>;
   /** Aurora wallet events bubbled up so the demo logs the matching Grid calls. */
-  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
 }

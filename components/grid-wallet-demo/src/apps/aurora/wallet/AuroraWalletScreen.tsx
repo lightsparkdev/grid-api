@@ -130,8 +130,10 @@ interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   entrance?: boolean;
   /** Imperative control the sidebar uses to open the matching sheet/view. */
   controlRef?: Ref<AuroraWalletControl>;
-  /** A transfer settled on the phone — report it so the panel logs the calls. */
-  onTransfer?: (mode: WalletTransferMode, cents: number) => void;
+  /** Amount committed in a transfer sheet — log the create-quote call. */
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
+  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   /** A virtual card finished issuing on the phone. */
   onCardIssued?: () => void;
   /** A tap-to-pay charge landed on the phone. */
@@ -143,7 +145,8 @@ export function AuroraWalletScreen({
   balance = '$0.00',
   entrance = false,
   controlRef,
-  onTransfer,
+  onQuoteCreate,
+  onTransferExecute,
   onCardIssued,
   onTapToPay,
   ...insights
@@ -285,10 +288,9 @@ export function AuroraWalletScreen({
     openWithdraw: () => openSheet('withdraw'),
     openSend: () => startSend(),
     issueCard: () => openCard(),
+    // Navigate to the debit-card screen; the user taps "Tap to pay" themselves.
     tapToPay: () => {
-      if (!issued) return;
-      setCardView('home');
-      startTapToPay();
+      if (issued) setCardView('home');
     },
   }));
 
@@ -299,7 +301,7 @@ export function AuroraWalletScreen({
   const finishTransfer = () => {
     const cents = pendingCents.current;
     const mode = sheetMode;
-    onTransfer?.(mode, cents);
+    onTransferExecute?.(mode, cents);
     setSheetConfirming(false);
     setSheetOpen(false);
     setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
@@ -592,6 +594,7 @@ export function AuroraWalletScreen({
         availableCents={availableCents}
         confirming={sheetConfirming}
         onDismiss={() => setSheetOpen(false)}
+        onQuote={(cents) => onQuoteCreate?.(sheetMode, cents)}
         onConfirm={(cents) => {
           pendingCents.current = cents;
           setSheetConfirming(true);
