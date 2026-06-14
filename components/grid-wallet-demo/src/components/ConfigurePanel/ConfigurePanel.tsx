@@ -1,7 +1,6 @@
 'use client';
 
 import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
-import { IconRotate360Left } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Left';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
@@ -10,7 +9,7 @@ import { AuthMethodPicker } from '@/components/AuthMethodPicker/AuthMethodPicker
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
 import type { AuthMethod } from '@/data/flow';
 import type { UseCaseId } from '@/data/configure';
-import type { ActionId, WalletState } from '@/data/actions';
+import type { ActionId, CompletedFlows, WalletState } from '@/data/actions';
 import styles from './ConfigurePanel.module.scss';
 
 export interface ConfigurePanelProps {
@@ -19,9 +18,9 @@ export interface ConfigurePanelProps {
   methods: AuthMethod[];
   onToggleMethod: (m: AuthMethod) => void;
   wallet: WalletState;
+  completed: CompletedFlows;
   running: boolean;
   onAction: (id: ActionId) => void;
-  onReset: () => void;
 }
 
 export function ConfigurePanel({
@@ -30,9 +29,9 @@ export function ConfigurePanel({
   methods,
   onToggleMethod,
   wallet,
+  completed,
   running,
   onAction,
-  onReset,
 }: ConfigurePanelProps) {
   // Only the fintech (Aurora) app is built today, so selecting a use case just
   // highlights it — the phone stays on Aurora. A "coming soon" treatment for the
@@ -60,20 +59,13 @@ export function ConfigurePanel({
 
           <section className={styles.section}>
             <SectionDivider label="Explore flows" />
-            <FlowPicker wallet={wallet} running={running} onAction={onAction} />
+            <FlowPicker
+              wallet={wallet}
+              completed={completed}
+              running={running}
+              onAction={onAction}
+            />
           </section>
-
-          {wallet.created && (
-            <button
-              type="button"
-              className={styles.resetBtn}
-              onClick={onReset}
-              disabled={running}
-            >
-              <IconRotate360Left size={14} />
-              Start over
-            </button>
-          )}
         </div>
       </div>
     </aside>

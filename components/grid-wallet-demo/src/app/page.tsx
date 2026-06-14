@@ -22,13 +22,14 @@ export default function Page() {
         methods={logic.methods}
         onToggleMethod={logic.toggleMethod}
         wallet={logic.wallet}
+        completed={logic.completed}
         running={logic.running}
         onAction={logic.handleAction}
-        onReset={logic.reset}
       />
       <div className={styles.stackCol}>
         <div className={styles.appCol}>
           <AppPanel
+            onReset={logic.reset}
             persona={logic.persona}
             method={logic.method}
             methods={logic.methods}

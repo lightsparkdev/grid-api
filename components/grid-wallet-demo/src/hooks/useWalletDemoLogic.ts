@@ -4,9 +4,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
 import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
 import {
+  initialCompleted,
   initialWallet,
   phoneFromState,
   type ActionId,
+  type CompletedFlows,
   type WalletState,
 } from '@/data/actions';
 import {
@@ -73,6 +75,10 @@ export function useWalletDemoLogic() {
   ]);
   const method = useMemo(() => primaryAuthMethod(methods), [methods]);
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
+  // Sticky sidebar checkmarks — "have you ever run this flow". Separate from
+  // `wallet` so replaying "Sign in" (which resets the session wallet) keeps them;
+  // only Reset wipes them.
+  const [completed, setCompleted] = useState<CompletedFlows>(initialCompleted);
   const [entries, setEntries] = useState<Entry[]>(() =>
     SEED_API_PANEL ? seedApiEntries() : [],
   );
@@ -358,6 +364,7 @@ export function useWalletDemoLogic() {
         setSignInMethod(m);
         await authenticate(true, popup);
         setWallet((w) => ({ ...w, created: true, balanceCents: 0 }));
+        setCompleted((c) => ({ ...c, signIn: true }));
         setTransient(null);
       } catch (e: unknown) {
         if ((e as Error)?.message !== 'cancelled') console.error('[grid-demo]', e);
@@ -403,10 +410,8 @@ export function useWalletDemoLogic() {
         ...w,
         balanceCents:
           mode === 'add' ? w.balanceCents + cents : Math.max(0, w.balanceCents - cents),
-        hasAdded: mode === 'add' ? true : w.hasAdded,
-        hasSent: mode === 'send' ? true : w.hasSent,
-        hasWithdrawn: mode === 'withdraw' ? true : w.hasWithdrawn,
       }));
+      setCompleted((c) => ({ ...c, [mode]: true }));
     },
     [pushCalls],
   );
@@ -414,6 +419,7 @@ export function useWalletDemoLogic() {
   const onCardIssued = useCallback(() => {
     pushCalls(cardCalls(), 'Issue a card');
     setWallet((w) => ({ ...w, hasCard: true }));
+    setCompleted((c) => ({ ...c, card: true }));
   }, [pushCalls]);
 
   const onTapToPay = useCallback(
@@ -422,16 +428,16 @@ export function useWalletDemoLogic() {
       setWallet((w) => ({
         ...w,
         cardActivated: true,
-        hasTapped: true,
         balanceCents: Math.max(0, w.balanceCents - cents),
       }));
+      setCompleted((c) => ({ ...c, tap: true }));
     },
     [pushCalls],
   );
 
   // "Sign in again" — drop back to the auth screen to replay the flow. Resets
-  // the wallet to fresh but KEEPS the API log accumulating ("Start over" is the
-  // full wipe).
+  // the session wallet to fresh, but KEEPS the API log and the sidebar
+  // checkmarks (completed flows) — only "Reset" wipes those.
   const returnToSignIn = useCallback(() => {
     for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, applePrompt]) {
       p.current?.reject(new Error('cancelled'));
@@ -477,27 +483,33 @@ export function useWalletDemoLogic() {
       const setupCalls: ApiCall[] = [];
       let next = wallet;
       const provision: { issued?: boolean; fundCents?: number } = {};
+      // Prereqs we silently ran also earn their sidebar check.
+      const doneNext: Partial<CompletedFlows> = {};
 
       if (!next.created) {
         setupCalls.push(...signInCalls(method));
         next = { ...next, created: true };
         setSignInMethod(method);
         setSkipIntro(true); // cold jump — land on the wallet without the hold
+        doneNext.signIn = true;
       }
       const needsFunds = id === 'send' || id === 'withdraw' || id === 'tap';
       if (needsFunds && next.balanceCents <= 0) {
         setupCalls.push(...addMoneyCalls(FAST_FORWARD_FUND_CENTS));
-        next = { ...next, balanceCents: FAST_FORWARD_FUND_CENTS, hasAdded: true };
+        next = { ...next, balanceCents: FAST_FORWARD_FUND_CENTS };
         provision.fundCents = FAST_FORWARD_FUND_CENTS;
+        doneNext.add = true;
       }
       if (id === 'tap' && !next.hasCard) {
         setupCalls.push(...cardCalls());
         next = { ...next, hasCard: true };
         provision.issued = true;
+        doneNext.card = true;
       }
 
       if (setupCalls.length) pushCalls(setupCalls, 'Account setup');
       if (next !== wallet) setWallet(next);
+      if (Object.keys(doneNext).length) setCompleted((c) => ({ ...c, ...doneNext }));
       setWalletEntry({
         nonce: Date.now(),
         provision:
@@ -523,6 +535,7 @@ export function useWalletDemoLogic() {
     settleTimers.current.forEach((t) => clearTimeout(t));
     settleTimers.current.clear();
     setWallet(initialWallet);
+    setCompleted(initialCompleted);
     setEntries([]);
     setTransient(null);
     setSignInMethod(null);
@@ -569,6 +582,7 @@ export function useWalletDemoLogic() {
     toggleMethod,
     method,
     wallet,
+    completed,
     entries,
     running,
     handleAction,

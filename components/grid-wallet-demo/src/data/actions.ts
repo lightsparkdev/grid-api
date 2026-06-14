@@ -17,11 +17,6 @@ export interface WalletState {
   hasCard: boolean;
   cardActivated: boolean;
   activity: Tx[];
-  /** Sticky "done at least once" flags for the sidebar flow checkmarks. */
-  hasAdded: boolean;
-  hasSent: boolean;
-  hasWithdrawn: boolean;
-  hasTapped: boolean;
 }
 
 export const initialWallet: WalletState = {
@@ -30,10 +25,27 @@ export const initialWallet: WalletState = {
   hasCard: false,
   cardActivated: false,
   activity: [],
-  hasAdded: false,
-  hasSent: false,
-  hasWithdrawn: false,
-  hasTapped: false,
+};
+
+/** Sticky "done at least once" markers for the sidebar flow checkmarks. Kept
+ *  separate from WalletState (the live-session mirror, which resets when you
+ *  replay "Sign in") so the checks survive that replay — only Reset clears them. */
+export interface CompletedFlows {
+  signIn: boolean;
+  add: boolean;
+  send: boolean;
+  withdraw: boolean;
+  card: boolean;
+  tap: boolean;
+}
+
+export const initialCompleted: CompletedFlows = {
+  signIn: false,
+  add: false,
+  send: false,
+  withdraw: false,
+  card: false,
+  tap: false,
 };
 
 export function fmt(cents: number): string {
@@ -51,7 +63,7 @@ export interface ActionDef {
   desc: string;
   icon: string; // resolved to a central-icons component in the Sidebar
   available: (s: WalletState) => boolean;
-  done?: (s: WalletState) => boolean;
+  done?: (c: CompletedFlows) => boolean;
 }
 
 export const ACTIONS: ActionDef[] = [
@@ -62,7 +74,7 @@ export const ACTIONS: ActionDef[] = [
     icon: 'wallet',
     // Always available — re-running it replays the sign-in flow.
     available: () => true,
-    done: (s) => s.created,
+    done: (c) => c.signIn,
   },
   // Every flow is always reachable — clicking one fast-forwards whatever setup
   // it needs (sign in, funds, a card), so the demo isn't a linear track.
@@ -72,7 +84,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Fund from a linked bank',
     icon: 'plus',
     available: () => true,
-    done: (s) => s.hasAdded,
+    done: (c) => c.add,
   },
   {
     id: 'send',
@@ -80,7 +92,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Pay another account',
     icon: 'send',
     available: () => true,
-    done: (s) => s.hasSent,
+    done: (c) => c.send,
   },
   {
     id: 'withdraw',
@@ -88,7 +100,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Cash out to a bank',
     icon: 'bank',
     available: () => true,
-    done: (s) => s.hasWithdrawn,
+    done: (c) => c.withdraw,
   },
   {
     id: 'card',
@@ -96,7 +108,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Virtual card for the balance',
     icon: 'card',
     available: () => true,
-    done: (s) => s.hasCard,
+    done: (c) => c.card,
   },
   {
     id: 'tap',
@@ -104,7 +116,7 @@ export const ACTIONS: ActionDef[] = [
     desc: 'Spend at a store',
     icon: 'tap',
     available: () => true,
-    done: (s) => s.hasTapped,
+    done: (c) => c.tap,
   },
 ];
 

@@ -10,7 +10,6 @@
   flex-shrink: 0;
   height: var(--panel-header-height, 52px);
   padding: var(--spacing-md);
-  padding-right: var(--spacing-xs);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   background: var(--surface-primary);
   color: var(--text-primary);
@@ -36,4 +35,11 @@
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
   white-space: nowrap;
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }

@@ -2,23 +2,24 @@
 
 import clsx from 'clsx';
 import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
-import { ACTIONS, type WalletState } from '@/data/actions';
+import { ACTIONS, type ActionId, type CompletedFlows, type WalletState } from '@/data/actions';
 import { FLOW_ICONS, FLOW_ICON_COLORS } from '@/data/flowIcons';
 import styles from './FlowPicker.module.scss';
 
 interface FlowPickerProps {
   wallet: WalletState;
+  completed: CompletedFlows;
   running: boolean;
   onAction: (id: ActionId) => void;
 }
 
-export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
+export function FlowPicker({ wallet, completed, running, onAction }: FlowPickerProps) {
   return (
     <div className={styles.group}>
       {ACTIONS.map((action) => {
         const Icon = FLOW_ICONS[action.id];
         const enabled = action.available(wallet) && !running;
-        const done = action.done?.(wallet) ?? false;
+        const done = action.done?.(completed) ?? false;
 
         return (
           <button
