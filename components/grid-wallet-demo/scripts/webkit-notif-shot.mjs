@@ -7,9 +7,6 @@ const OUT = process.argv[2] ?? '/tmp/webkit-notif.png';
 const browser = await webkit.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await page.goto('http://localhost:4000', { waitUntil: 'networkidle' });
-
-// Swag (glass/aurora) phone + the Email auth method enabled.
-await page.getByText('swag', { exact: true }).first().click();
 await page.waitForTimeout(800);
 await page.getByText('Email', { exact: true }).first().click();
 await page.waitForTimeout(800);

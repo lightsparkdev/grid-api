@@ -60,7 +60,7 @@ export function AppShell({
   // portal status-bar-frosting overlays (e.g. Face ID) into it.
   const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null);
 
-  // The swag glass shell sits REST_INSET px inset at rest and lifts back out
+  // The glass shell sits REST_INSET px inset at rest and lifts back out
   // HOVER_GROW px on hover (so the bezel is a touch thinner until you hover). The
   // inner screen stays put; radius grows additively (not scaled) so corners stay
   // concentric, and the WebGL lens reads the shell's geometry so the refraction
@@ -294,7 +294,7 @@ export function AppShell({
               top: '50%',
               // Fixed at 450x920 (the PNG's natural aspect): the reference's
               // transparent screen cavity (804x1748 in a 900x1840 canvas) then lands
-              // exactly on the 402x874 swag screen, centered. No scaling needed.
+              // exactly on the 402x874 phone screen, centered. No scaling needed.
               width: '450px',
               height: '920px',
               // Bypass the global `img { max-width: 100% }` reset, which otherwise

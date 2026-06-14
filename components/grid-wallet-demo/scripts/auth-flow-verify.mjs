@@ -64,7 +64,6 @@ const check = (label, ok, detail = '') => {
 const browser = await engine.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await page.goto('http://localhost:4000', { waitUntil: 'networkidle' });
-await page.getByText('swag', { exact: true }).first().click();
 await page.waitForTimeout(800);
 
 // ── OAuth popup scenario (google / apple) ──

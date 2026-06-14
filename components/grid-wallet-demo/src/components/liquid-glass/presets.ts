@@ -58,7 +58,7 @@ export const PHONE_SHELL_GLASS: GlassConfig = {
   cornerSmoothing: 0.12,
   // Simple all-around drop shadow (not grounded). Swag builds a single box-shadow
   // from these tunable components — dial in via the Shadow sliders; edgeShadow is
-  // the slop (SVG) equivalent.
+  // the legacy SVG equivalent.
   shadowOffsetY: 8,
   shadowBlur: 24,
   shadowSpread: 0,

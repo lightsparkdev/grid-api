@@ -11,7 +11,6 @@ const page = await browser.newPage({
   deviceScaleFactor: 2,
 });
 await page.goto('http://localhost:4000', { waitUntil: 'networkidle' });
-await page.getByText('swag', { exact: true }).first().click();
 await page.waitForTimeout(800);
 await page.getByText('Email', { exact: true }).first().click();
 await page.waitForTimeout(800);

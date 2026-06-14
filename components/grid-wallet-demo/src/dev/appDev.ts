@@ -1,9 +1,0 @@
-/** Master switch — set false to hide dev controls. Delete src/dev/ when styling ships. */
-export const DEV_APP_TOOLS = true;
-
-/** Slop = screen design previews (Phone + canvas grid). Swag = what ships (StageGL + glass). */
-export type PhoneUiVariant = 'slop' | 'swag';
-
-export const STORAGE_FIXTURE = 'wallet-demo.dev.fixture';
-export const STORAGE_UI_VARIANT = 'wallet-demo.dev.uiVariant';
-export const STORAGE_DEV_PANEL_EXPANDED = 'wallet-demo.dev.panelExpanded';

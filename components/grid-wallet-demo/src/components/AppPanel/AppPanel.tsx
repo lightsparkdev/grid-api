@@ -1,71 +1,130 @@
 'use client';
 
-import { useState } from 'react';
 import { IconPhoneDynamicIsland } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhoneDynamicIsland';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
-import Phone from '@/components/Phone';
+import type { PhoneProps } from '@/components/Phone';
+import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
-import { BEZEL_REF_SRC, DEFAULT_BEZEL_REF } from '@/dev/glass/glassTuning';
-import { AppDevControls } from '@/dev/phonePreview/AppDevControls';
-import { resolvePhoneProps, type DemoLogicPhoneSlice } from '@/dev/phonePreview/resolvePhoneProps';
-import { useAppDevState } from '@/dev/phonePreview/useAppDevState';
-import { PhoneSwag } from '@/dev/phoneSwag/PhoneSwag';
+import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
+import type { ActionId, WalletState } from '@/data/actions';
+import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import styles from './AppPanel.module.scss';
+
+type AmountConfig = {
+  title: string;
+  cta: string;
+  source: string;
+  sub: string;
+  defaultDollars: number;
+};
+
+export interface DemoLogicPhoneSlice {
+  persona: Persona;
+  method: AuthMethod;
+  wallet: WalletState;
+  phone: PhoneState;
+  running: boolean;
+  handleAction: (id: ActionId) => void;
+  signInWithMethod: (method: AuthMethod, popup?: Promise<string>) => void;
+  signInMethod: AuthMethod | null;
+  passkeyActive: boolean;
+  confirmPasskey: () => void;
+  cancelPasskey: () => void;
+  faceIdActive: boolean;
+  finishFaceId: () => void;
+  otpActive: boolean;
+  submitOtp: (code: string) => void;
+  cancelOtp: () => void;
+  backOtp: () => void;
+  emailActive: boolean;
+  submitEmail: (email: string) => void;
+  cancelEmail: () => void;
+  phoneActive: boolean;
+  submitPhone: (number: string) => void;
+  cancelPhone: () => void;
+  gNonce: string | null;
+  submitGoogle: (idToken: string) => void;
+  aNonce: string | null;
+  submitApple: (idToken: string) => void;
+  popupWait: boolean;
+  amountConfig: AmountConfig | null;
+  submitAmount: (dollars: number) => void;
+  cancelAmount: () => void;
+}
+
+function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
+  return {
+    persona: p.persona,
+    method: p.method,
+    phone: p.phone,
+    wallet: p.wallet,
+    onAction: p.handleAction,
+    onSignInWithMethod: p.signInWithMethod,
+    signInMethod: p.signInMethod ?? undefined,
+    busy: p.running,
+    popupWait: p.popupWait,
+    passkey: {
+      active: p.passkeyActive,
+      onConfirm: p.confirmPasskey,
+      onCancel: p.cancelPasskey,
+    },
+    faceId: {
+      active: p.faceIdActive,
+      onDone: p.finishFaceId,
+    },
+    otp: {
+      active: p.otpActive,
+      onSubmit: p.submitOtp,
+      onCancel: p.cancelOtp,
+      onBack: p.backOtp,
+    },
+    email: {
+      active: p.emailActive,
+      onSubmit: p.submitEmail,
+      onCancel: p.cancelEmail,
+    },
+    phoneEntry: {
+      active: p.phoneActive,
+      onSubmit: p.submitPhone,
+      onCancel: p.cancelPhone,
+    },
+    google: {
+      nonce: p.gNonce,
+      onCredential: p.submitGoogle,
+    },
+    apple: {
+      nonce: p.aNonce,
+      onCredential: p.submitApple,
+    },
+    amount: {
+      config: p.amountConfig,
+      onSubmit: p.submitAmount,
+      onCancel: p.cancelAmount,
+    },
+  };
+}
 
 interface AppPanelProps extends DemoLogicPhoneSlice {}
 
 export function AppPanel(props: AppPanelProps) {
-  const dev = useAppDevState();
-  const [glassConfig, setGlassConfig] = useState(PHONE_SHELL_GLASS);
-  const [overlayGlass, setOverlayGlass] = useState<OverlayGlassPresets>(DEFAULT_OVERLAY_GLASS);
-  const [showGlassOutline, setShowGlassOutline] = useState(false);
-  const [bezelRef, setBezelRef] = useState(DEFAULT_BEZEL_REF);
-  const phoneProps = resolvePhoneProps(props, dev.fixtureId, dev.previewActive);
+  const phoneProps = toPhoneProps(props);
 
   return (
     <section className={styles.panel}>
-      <PanelHeader
-        icon={<IconPhoneDynamicIsland size={20} />}
-        title="App"
-      />
+      <PanelHeader icon={<IconPhoneDynamicIsland size={20} />} title="App" />
       <div className={styles.body}>
         <div className={styles.phoneStage}>
-          <DotGridCanvas glassDemoBg={dev.uiVariant === 'swag'} glassConfig={glassConfig}>
-            {dev.uiVariant === 'swag' ? (
-              <PhoneSwag
-                {...phoneProps}
-                glassConfig={glassConfig}
-                overlayGlass={overlayGlass}
-                showGlassOutline={showGlassOutline}
-                glassDemoBg
-                externalGlass
-                bezelOverlay={
-                  bezelRef.show ? { src: BEZEL_REF_SRC, opacity: bezelRef.opacity } : null
-                }
-              />
-            ) : (
-              <Phone {...phoneProps} />
-            )}
+          <DotGridCanvas glassConfig={PHONE_SHELL_GLASS}>
+            <DemoPhone
+              {...phoneProps}
+              glassConfig={PHONE_SHELL_GLASS}
+              overlayGlass={DEFAULT_OVERLAY_GLASS}
+              glassDemoBg
+              externalGlass
+            />
           </DotGridCanvas>
         </div>
-        {dev.enabled ? (
-          <AppDevControls
-            fixtureId={dev.fixtureId}
-            onFixtureChange={dev.setFixtureId}
-            uiVariant={dev.uiVariant}
-            onUiVariantChange={dev.setUiVariant}
-            glassConfig={glassConfig}
-            onGlassConfigChange={setGlassConfig}
-            overlayGlass={overlayGlass}
-            onOverlayGlassChange={setOverlayGlass}
-            showGlassOutline={showGlassOutline}
-            onShowGlassOutlineChange={setShowGlassOutline}
-            bezelRef={bezelRef}
-            onBezelRefChange={setBezelRef}
-          />
-        ) : null}
       </div>
     </section>
   );

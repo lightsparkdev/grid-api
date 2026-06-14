@@ -5,7 +5,6 @@ import { chromium } from 'playwright';
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await page.goto('http://localhost:4000', { waitUntil: 'networkidle' });
-await page.getByText('swag', { exact: true }).first().click();
 await page.waitForTimeout(800);
 await page.getByText('Email', { exact: true }).first().click();
 await page.waitForTimeout(800);

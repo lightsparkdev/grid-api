@@ -24,16 +24,15 @@ import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { getAppSkin, type AppSkin } from '@/apps/skins';
 
-interface PhoneSwagProps extends PhoneProps {
+interface DemoPhoneProps extends PhoneProps {
   glassConfig?: GlassConfig;
   overlayGlass?: OverlayGlassPresets;
   showGlassOutline?: boolean;
   glassDemoBg?: boolean;
   externalGlass?: boolean;
-  bezelOverlay?: { src: string; opacity: number } | null;
 }
 
-function SwagScreen(props: PhoneProps, skin: AppSkin) {
+function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const brand = PHONE_BRAND[props.persona];
   const authMethod = props.signInMethod ?? props.method;
   const isAurora = skin.id === 'aurora';
@@ -164,18 +163,17 @@ function SwagScreen(props: PhoneProps, skin: AppSkin) {
   }
 }
 
-/** Swag phone — per-use-case screens inside the glass shell. */
-export function PhoneSwag({
+/** Demo phone — routes persona → skin UI inside the shared glass shell. */
+export function DemoPhone({
   glassConfig,
   overlayGlass,
   showGlassOutline,
   glassDemoBg,
   externalGlass,
-  bezelOverlay,
   ...phoneProps
-}: PhoneSwagProps) {
+}: DemoPhoneProps) {
   const skin = getAppSkin(phoneProps.persona);
-  const screen = SwagScreen(phoneProps, skin);
+  const screen = DemoScreen(phoneProps, skin);
 
   // Warm the GIS / Apple JS scripts so a Google/Apple CTA tap can open its
   // popup synchronously inside the gesture (popup blockers).
@@ -190,7 +188,6 @@ export function PhoneSwag({
         showGlassOutline={showGlassOutline}
         glassDemoBg={glassDemoBg}
         externalGlass={externalGlass}
-        bezelOverlay={bezelOverlay}
         appSkin={skin.id}
         screenOverlay={
           <FaceIdAuth
