@@ -526,6 +526,9 @@ export function AddMoneySheet({
   const balance = formatUsdCents(availableCents);
   const [step, setStep] = useState<Step>(mode === 'send' ? 'banks' : 'source');
   const [back, setBack] = useState(false); // direction of the last nav
+  // Bumps on every open so the step stack remounts fresh — a flow opened from
+  // another flow appears in place, not sliding in like a forward step nav.
+  const [openKey, setOpenKey] = useState(0);
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
   const [started, setStarted] = useState(false); // Swift's hasStartedTyping
   const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
@@ -601,6 +604,7 @@ export function AddMoneySheet({
     if (open) {
       // Send opens on the recipient list (recipient-first); add/withdraw on the
       // source picker.
+      setOpenKey((k) => k + 1);
       setStep(isSend ? 'banks' : 'source');
       setBack(false);
       setRaw('');
@@ -1114,7 +1118,7 @@ export function AddMoneySheet({
                   strip's single-cell grid, and popLayout skipped the leaver's
                   exit whenever the arriving screen set state mid-mount (the
                   recipient step's card measurements; see the steps host). */}
-              <AnimatePresence initial={false} custom={navDir}>
+              <AnimatePresence key={openKey} initial={false} custom={navDir}>
                 <motion.span
                   // Keyed by TEXT (not step): adjacent steps sharing a title
                   // ("Send to" source → recipient) keep one span — no slide for
@@ -1189,7 +1193,7 @@ export function AddMoneySheet({
           </div>
         </div>
 
-        <div className={styles.steps}>
+        <div className={styles.steps} key={openKey}>
           {/* Default (sync) presence, NOT popLayout: the steps are absolutely
               positioned (.step), so the exit needs no layout pop — and popLayout
               skipped the outgoing screen whenever the incoming one mounted a
