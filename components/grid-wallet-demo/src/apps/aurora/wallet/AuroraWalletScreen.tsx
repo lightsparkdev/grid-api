@@ -27,10 +27,10 @@ import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import {
   AddMoneySheet,
   formatUsdCents,
-  SEND_DEMO_ADDRESS,
   SolanaTokenIcon,
   truncateAddress,
   type MoneySheetMode,
+  type TransferActivity,
 } from './AddMoneySheet';
 import { SendReceiveSheet } from './SendReceiveSheet';
 import { BalanceHero } from './BalanceHero';
@@ -150,6 +150,48 @@ interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   onTapToPay?: (cents: number, merchant: string) => void;
 }
 
+/** Build an Activity row from the confirmed transfer's real destination: a
+ *  crypto send shows the token chip + truncated address; a bank shows its
+ *  country flag, name, and last 4. Outgoing shows the plain amount — only
+ *  incoming (add) gets the "+". */
+function makeTransferRow(
+  mode: WalletTransferMode,
+  cents: number,
+  dest: TransferActivity | null,
+): WalletListItemData {
+  const ts = Date.now();
+  if (dest?.kind === 'crypto') {
+    return {
+      id: `send-${ts}`,
+      Icon: SolanaTokenIcon,
+      title: truncateAddress(dest.address),
+      detail: `Sent to ${dest.network} wallet`,
+      amount: formatUsdCents(cents),
+      timestamp: ts,
+    };
+  }
+  const flag = dest ? `/assets/flags/${dest.countryCode}.svg` : '/assets/add-money/flag-mx.svg';
+  const bankLabel = dest ? `${dest.bankName} (•••• ${dest.last4})` : 'Bank account';
+  if (mode === 'send') {
+    return {
+      id: `send-${ts}`,
+      image: flag,
+      title: dest?.recipientName || bankLabel,
+      detail: dest ? `Sent to ${dest.bankName}` : 'Sent from balance',
+      amount: formatUsdCents(cents),
+      timestamp: ts,
+    };
+  }
+  return {
+    id: `${mode}-${ts}`,
+    image: flag,
+    title: bankLabel,
+    detail: mode === 'withdraw' ? 'Withdrawn from balance' : 'Added to balance',
+    amount: mode === 'withdraw' ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
+    timestamp: ts,
+  };
+}
+
 /** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). */
 export function AuroraWalletScreen({
   balance = '$0.00',
@@ -178,6 +220,7 @@ export function AuroraWalletScreen({
   const [deltaCents, setDeltaCents] = useState(0);
   const [activity, setActivity] = useState<WalletListItemData[]>([]);
   const pendingCents = useRef(0);
+  const pendingActivity = useRef<TransferActivity | null>(null);
   const availableCents = parseCents(balance) + deltaCents;
 
   const openSheet = (mode: MoneySheetMode) => {
@@ -369,42 +412,27 @@ export function AuroraWalletScreen({
   const finishTransfer = () => {
     const cents = pendingCents.current;
     const mode = sheetMode;
+    const dest = pendingActivity.current;
     onTransferExecute?.(mode, cents);
     setSheetConfirming(false);
     setSheetOpen(false);
     setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+    const sentTo =
+      dest?.kind === 'crypto'
+        ? truncateAddress(dest.address)
+        : dest?.kind === 'bank'
+          ? dest.recipientName || dest.bankName
+          : 'recipient';
     showToast(
       mode === 'add'
         ? `${toastUsd(cents)} added to balance`
         : mode === 'withdraw'
           ? `${toastUsd(cents)} withdrawn from balance`
-          : `${toastUsd(cents)} sent to ${truncateAddress(SEND_DEMO_ADDRESS)}`,
+          : `${toastUsd(cents)} sent to ${sentTo}`,
     );
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
-      // Figma 90:13701 — bank rows show the MX flag; sends show the Solana
-      // token chip + the truncated recipient. Outgoing money shows the plain
-      // amount — only incoming gets the "+".
-      setActivity((prev) => [
-        mode === 'send'
-          ? {
-              id: `send-${Date.now()}`,
-              Icon: SolanaTokenIcon,
-              title: truncateAddress(SEND_DEMO_ADDRESS),
-              detail: 'Sent to Solana wallet',
-              amount: formatUsdCents(cents),
-              timestamp: Date.now(),
-            }
-          : {
-              id: `${mode}-${Date.now()}`,
-              image: '/assets/add-money/flag-mx.svg',
-              title: 'Nu México (•••• 3872)',
-              detail: mode === 'withdraw' ? 'Withdrawn from balance' : 'Added to balance',
-              amount: mode === 'withdraw' ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
-              timestamp: Date.now(),
-            },
-        ...prev,
-      ]);
+      setActivity((prev) => [makeTransferRow(mode, cents, dest), ...prev]);
     }, SHEET_INSERT_DELAY_MS);
   };
   useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
@@ -671,8 +699,9 @@ export function AuroraWalletScreen({
         onDismiss={() => setSheetOpen(false)}
         onQuote={(cents, dest) => onQuoteCreate?.(sheetMode, cents, dest)}
         onLinkExternalAccount={onLinkExternalAccount}
-        onConfirm={(cents) => {
+        onConfirm={(cents, activity) => {
           pendingCents.current = cents;
+          pendingActivity.current = activity;
           setSheetConfirming(true);
         }}
       />

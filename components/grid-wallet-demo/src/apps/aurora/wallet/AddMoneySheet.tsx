@@ -472,6 +472,12 @@ export function formatUsdCents(cents: number): string {
 }
 
 
+/** What the just-confirmed transfer is going to — lets the wallet's Activity row
+ *  and toast reflect the real bank/recipient instead of a placeholder. */
+export type TransferActivity =
+  | { kind: 'bank'; countryCode: string; bankName: string; last4: string; recipientName: string }
+  | { kind: 'crypto'; address: string; network: string };
+
 interface AddMoneySheetProps {
   open: boolean;
   /** Direction of the flow — flips titles, source rows, card order, and copy. */
@@ -481,8 +487,9 @@ interface AddMoneySheetProps {
   /** Face ID running — Confirm shows a spinner and input locks. */
   confirming: boolean;
   onDismiss: () => void;
-  /** Confirm tapped with the typed amount (cents). Parent runs Face ID. */
-  onConfirm: (cents: number) => void;
+  /** Confirm tapped with the typed amount (cents). Parent runs Face ID.
+   *  `activity` carries the real destination for the Activity row + toast. */
+  onConfirm: (cents: number, activity: TransferActivity) => void;
   /** Amount committed (the quote beat) — parent logs the create-quote call.
    *  `dest` lets a send reference the recipient's bank/crypto wallet. */
   onQuote?: (cents: number, dest?: TransferDest) => void;
@@ -688,6 +695,19 @@ export function AddMoneySheet({
     setSelectedBankId(id);
     go('amount');
   };
+
+  // The just-confirmed destination — drives the wallet's Activity row + toast so
+  // they mirror the real bank/recipient (not a placeholder).
+  const activityForConfirm = (): TransferActivity =>
+    selectedCrypto
+      ? { kind: 'crypto', address: selectedCrypto.address, network: selectedCrypto.network }
+      : {
+          kind: 'bank',
+          countryCode: selectedBank?.country.code ?? 'mx',
+          bankName: selectedBank?.bankName ?? 'Bank account',
+          last4: selectedBank ? accountLast4(selectedBank.values) : '0000',
+          recipientName: selectedBank?.beneficiary ?? '',
+        };
 
   // Back walks the mode's own path: the bank flow detours through banks/country;
   // send detours through the recipient step.
@@ -1642,7 +1662,9 @@ export function AddMoneySheet({
                     <GlassTextButton
                       variant="primary"
                       onClick={() =>
-                        step === 'amount' ? tryContinue() : !confirming && onConfirm(cents)
+                        step === 'amount'
+                          ? tryContinue()
+                          : !confirming && onConfirm(cents, activityForConfirm())
                       }
                     >
                       {confirming || quoting ? (
