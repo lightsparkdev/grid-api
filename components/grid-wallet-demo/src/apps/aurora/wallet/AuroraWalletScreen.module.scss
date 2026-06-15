@@ -189,23 +189,32 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Page scroll: the pinned card (sticky, below) stays put while the sheet
-     scrolls up over it; the underlap starts the scroll clip box at the header's
-     top, so content scrolls under the glass gear (z 2 > 1). */
+  /* Default (issuance / card-open / tap): no page scroll. Underlap JUST the
+     header strip (not the status bar) so the card's top drop-shadow bleed paints
+     unclipped while the aurora (z 0) stays the topmost layer under the status bar
+     — the tone sampler reads it through the transparent body and flips the glyphs
+     white. The plain home opts into the status-bar underlap via .bodyHome. */
+  overflow: hidden;
+  margin-top: calc(-1 * var(--wallet-header-height));
+  padding-top: var(--wallet-header-height);
+}
+
+/* Plain wallet home: the sheet page-scrolls up over the pinned card / aurora /
+   header. Underlap the status bar too so content runs to the very top edge; the
+   .topFade overlay (z 2) blurs + fades that edge. Scoped to home so the
+   issuance/open/tap states keep the aurora hit-testable under the bar (otherwise
+   the transparent body sits over it and the tone sampler reads the light wallet
+   bg → black glyphs over the aurora). */
+.bodyHome {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
+  padding-top: calc(62px + var(--wallet-header-height));
 
   &::-webkit-scrollbar {
     display: none;
   }
-
-  /* Underlap BOTH the status bar and the header strip so the scroll content runs
-     all the way to the very top edge (under the status bar); padding restores the
-     content to below the gear. The opaque sheet covers the fixed gear/title/card
-     as it scrolls up; the .topFade overlay (z 2) blurs the status-bar edge. */
-  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
-  padding-top: calc(62px + var(--wallet-header-height));
 }
 
 .bodyOpen {

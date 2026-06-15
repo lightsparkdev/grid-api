@@ -600,7 +600,12 @@ export function AuroraWalletScreen({
           together) so nothing desyncs — collapsing the header instead reflowed
           everything up while only the card animated, which read as a jump. */}
       <motion.div
-        className={clsx(styles.body, isOpen && styles.bodyOpen, isTap && styles.bodyTap)}
+        className={clsx(
+          styles.body,
+          !isOpen && styles.bodyHome,
+          isOpen && styles.bodyOpen,
+          isTap && styles.bodyTap,
+        )}
         initial={false}
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={CARD_TRANSITION}
