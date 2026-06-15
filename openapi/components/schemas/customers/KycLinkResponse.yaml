@@ -1,14 +1,29 @@
 type: object
+description: A hosted KYC link that the customer can complete to verify their identity.
+required:
+  - kycUrl
+  - expiresAt
+  - provider
 properties:
   kycUrl:
     type: string
-    description: A hosted KYC link for your customer to complete KYC
-    example: "https://example.com/redirect"
-  platformCustomerId:
+    description: >-
+      Hosted URL the customer should be sent to in order to complete verification. The URL is
+      single-use and expires at `expiresAt`. To generate a new link (for example, after the
+      previous one expires or is abandoned), call this endpoint again.
+    example: https://kyc.lightspark.com/onboard/abc123def456
+  expiresAt:
     type: string
-    description: The platform id of the customer to onboard
-    example: 019542f5-b3e7-1d02-0000-000000000001
-  customerId:
+    format: date-time
+    description: Time at which the hosted link expires and can no longer be used.
+    example: '2027-01-15T14:32:00Z'
+  provider:
+    $ref: ./KycProvider.yaml
+  token:
     type: string
-    description: The customer id of the newly created customer on the system
-    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    description: >-
+      Provider-specific token that can be used in place of the hosted URL — for example, to
+      embed the provider's SDK directly in your application. Only returned for providers that
+      support direct SDK integration. Whether to use the hosted URL or the embedded SDK is up
+      to you; both flows result in the same `kycStatus` update on the customer.
+    example: _act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...

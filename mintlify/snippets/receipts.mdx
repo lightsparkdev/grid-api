@@ -1,0 +1,262 @@
+export const ReceiptExample = () => {
+  const mono = "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace";
+  const hair = '0.5px solid rgba(38,38,35,0.1)';
+  const hairLight = '1px solid rgba(38,38,35,0.07)';
+  const secLabel = { fontFamily: mono, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#989898' };
+  const secLabelHeading = { fontFamily: mono, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#989898', paddingBottom: '8px' };
+  const secLabelMb = { fontFamily: mono, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#989898', marginBottom: '6px' };
+  const rowLabel = { fontSize: '13px', color: '#7c7c7c' };
+  const subLabelMb = { fontSize: '13px', color: '#7c7c7c', marginBottom: '5px' };
+  const monoVal = { fontFamily: mono, fontSize: '14px', color: '#1a1a1a' };
+  const amounts = [
+    ['Transfer Amount', '$500.00'],
+    ['Total to Recipient', '$500.00'],
+    ['Taxes', '$0.00'],
+    ['Total Transfer Fees', '$2.50'],
+  ];
+  return (
+    <div className="not-prose" style={{ background: '#f0f0ee', padding: '28px 16px', borderRadius: '12px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '600px', background: '#ffffff', border: hair, borderRadius: '16px', overflow: 'hidden', boxShadow: '0px 1px 2px -1px rgba(0,0,0,0.04), 0px 8px 24px rgba(0,0,0,0.05)', color: '#1a1a1a', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
+
+        <div style={{ padding: '28px 32px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', borderBottom: hair }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <svg viewBox="0 0 38.169 24" width="28" height="17.6" fill="none" aria-hidden="true">
+              <path d="M1.48818 21.4182L13.3963 13.685H-0.000427246L5.18801 10.3155H17.0957V2.58255L21.0719 0.000396729V8.70034L30.4925 2.58253L36.6789 2.58253L24.7711 10.3155H38.1685L32.9801 13.685H21.0719V21.4182L17.0957 24.0003V15.3L7.67461 21.4182H1.48818Z" fill="#1a1a1a" />
+            </svg>
+            <span style={{ fontSize: '20px', fontWeight: 500, letterSpacing: '-0.6px' }}>Lightspark</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '4px 10px 4px 9px', background: '#dbfdee', borderRadius: '999px', fontSize: '12px', fontWeight: 450, color: '#118453' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '999px', background: '#11a967' }} />
+              Completed
+            </span>
+            <span style={{ fontFamily: mono, fontSize: '11px', color: '#989898', textAlign: 'right', lineHeight: 1.5 }}>06 / 10 / 2026<br />14:32:08 PDT</span>
+          </div>
+        </div>
+
+        <div style={{ padding: '16px 32px', background: '#fafaf9', borderBottom: hair, display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '12px', color: '#7c7c7c', lineHeight: 1.5 }}>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: '#1a1a1a' }}>Lightspark Payments, LLC&nbsp;&nbsp;·&nbsp;&nbsp;NMLS ID 2429193</span>
+          <span>8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069</span>
+          <span>www.lightspark.com&nbsp;&nbsp;·&nbsp;&nbsp;(855) 516-0103</span>
+        </div>
+
+        <div style={{ padding: '28px 32px 24px', display: 'flex', alignItems: 'flex-end', gap: '24px', borderBottom: hair }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+            <span style={{ fontSize: '13px', color: '#7c7c7c' }}>Total charged</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '36px', fontWeight: 500, letterSpacing: '-0.7px', lineHeight: 1 }}>$502.50</span>
+              <span style={{ fontFamily: mono, fontSize: '13px', color: '#7c7c7c' }}>USD</span>
+            </span>
+          </div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c1c0b8" strokeWidth="1.6" style={{ marginBottom: '5px' }} aria-hidden="true">
+            <path d="M4 12h15M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+            <span style={{ fontSize: '13px', color: '#7c7c7c' }}>Total received</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '36px', fontWeight: 500, letterSpacing: '-0.7px', lineHeight: 1 }}>500.00</span>
+              <span style={{ fontFamily: mono, fontSize: '13px', color: '#7c7c7c' }}>USDC</span>
+            </span>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px 32px 8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', border: hair, borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 18px', borderRight: hair }}>
+              <div style={secLabelMb}>Sender</div>
+              <div style={{ fontSize: '15px', fontWeight: 450 }}>Marcus Chen</div>
+            </div>
+            <div style={{ padding: '16px 18px' }}>
+              <div style={secLabelMb}>Recipient</div>
+              <div style={{ fontSize: '15px', fontWeight: 450 }}>Sofía Herrera</div>
+            </div>
+          </div>
+          <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 18px', border: hair, borderRadius: '12px' }}>
+            <span style={secLabel}>Transaction ID</span>
+            <span style={{ fontFamily: mono, fontSize: '13px' }}>019542f5-b3e7-1d02-0000-000000000030</span>
+          </div>
+        </div>
+
+        <div style={{ padding: '18px 32px 4px' }}>
+          <div style={secLabelHeading}>On-chain details</div>
+          <div style={{ padding: '9px 0', borderBottom: hairLight }}>
+            <div style={subLabelMb}>Transaction Hash</div>
+            <div style={{ fontFamily: mono, fontSize: '12px', wordBreak: 'break-all', lineHeight: 1.5 }}>0x8f3a4c2e91b07d6f5a8e2c4b9d1f0a73e6c5b8d2f4a1e9c7b3d0f6a2e8c4b1d9</div>
+          </div>
+          <div style={{ padding: '9px 0' }}>
+            <div style={subLabelMb}>VC Address(es)</div>
+            <div style={{ fontFamily: mono, fontSize: '12px', wordBreak: 'break-all', lineHeight: 1.7 }}>From&nbsp;&nbsp;0x6A2e8C4b1D9f3A4c2E91b07d6F5a8E2c4B9d1F0a<br />To&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x4B9d1F0a73E6c5B8d2F4a1E9c7b3D0f6A2e8C4b1</div>
+          </div>
+        </div>
+
+        <div style={{ padding: '18px 32px 8px' }}>
+          <div style={secLabelHeading}>Amounts</div>
+          {amounts.map((row) => (
+            <div key={row[0]} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '24px', padding: '9px 0', borderBottom: hairLight }}>
+              <span style={rowLabel}>{row[0]}</span>
+              <span style={monoVal}>{row[1]}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '24px', padding: '14px 0 9px' }}>
+            <span style={{ fontSize: '15px', fontWeight: 500 }}>Total</span>
+            <span style={{ fontFamily: mono, fontSize: '18px' }}>$502.50</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '24px', padding: '8px 0 0', marginTop: '6px', borderTop: hair }}>
+            <span style={rowLabel}>Exchange Rate</span>
+            <span style={{ fontFamily: mono, fontSize: '13px', color: '#7c7c7c' }}>1 USDC = 1.00 USD</span>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '14px', padding: '24px 32px 32px', background: '#fafaf9', borderTop: hair, display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '12px', lineHeight: 1.6, color: '#656565' }}>
+          <p style={{ margin: 0 }}>To report fraud or suspected fraud in connection with the money transmission services, please call customer service toll-free at <span style={{ color: '#1a1a1a', fontWeight: 450 }}>(855) 516-0103</span>.</p>
+          <div>
+            <div style={secLabelMb}>Refund Policy</div>
+            <p style={{ margin: 0 }}>You may cancel for a full refund within 30 minutes of payment, unless the funds have already been picked up or deposited. Refund requests can be made at www.lightspark.com/refunds or by calling the number above.</p>
+          </div>
+          <p style={{ margin: 0, fontSize: '11px', color: '#989898', borderTop: '1px solid rgba(38,38,35,0.08)', paddingTop: '10px' }}>Recipient may receive less than the total to recipient due to fees charged by the recipient's bank and any foreign taxes. <em>(Foreign remittance only.)</em></p>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+If you're an **unregulated platform** moving funds using Grid's money transmitter licenses, Grid (operating as Lightspark Payments, LLC) is the licensed money transmitter on your transactions. That license requires a receipt to be delivered to the customer for every completed transaction. Because you own the customer relationship, at the end of each transaction you'll need to deliver the transaction receipt.
+
+This guide explains when to send a receipt, what it must contain, how to map Grid transaction data to each receipt field, and how to confirm delivery back to Grid.
+
+<Warning>
+Receipts are **required for regulatory compliance** — they're not an optional best practice. Send a receipt to your customer for **every** completed transaction, and confirm delivery to Grid. Your platform agreement obligates you to deliver receipts and to furnish records of delivery on request.
+</Warning>
+
+## Sample receipt layout
+
+Your receipt's visual design is up to you, but the content and field set are fixed. The layout below shows an example with sample data filled in:
+
+<ReceiptExample />
+
+## When to send a receipt
+
+Trigger receipt generation off the transaction completion event:
+
+- **`OUTGOING_PAYMENT.COMPLETED`** — a send (the customer is the sender).
+- **`INCOMING_PAYMENT.COMPLETED`** — a receive (the customer is the recipient).
+
+Send the receipt to your customer as soon as the transaction completes — by email, in-app notification, or any channel that lets the customer **retain** the receipt (for example, a downloadable PDF or an email they can save).
+
+<Info>
+Only completed transactions get a receipt. Transactions that end in `FAILED` or `EXPIRED` do not. Once you send a receipt, **freeze its contents** — if the transaction is later reversed or refunded, the original receipt stays as issued and the reversal is tracked separately on the transaction record.
+</Info>
+
+## What a receipt must contain
+
+A compliant receipt combines **Lightspark's regulatory disclosures** (fixed values and legal language) with **data-driven fields** populated from the specific transaction.
+
+### Lightspark regulatory disclosures
+
+Include these exactly as written on every receipt:
+
+| Field | Value |
+|-------|-------|
+| Money transmitter | Lightspark Payments, LLC |
+| NMLS ID | 2429193 |
+| Regulatory address | 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 |
+| Website | www.lightspark.com |
+| Customer service phone | (855) 516-0103 |
+| Fraud reporting | "To report fraud or suspected fraud in connection with the money transmission services, please call customer services toll-free at (855) 516-0103." |
+| Refund policy | Lightspark's refund policy for transmitted funds (link or full text). |
+
+### Transaction fields
+
+| Field | Description | Required when |
+|-------|-------------|---------------|
+| Sender | Name of the customer initiating the transaction | Always |
+| Recipient | Name of the recipient receiving funds | Always |
+| Transaction ID | Unique ID per transaction | Always |
+| Transaction type | Cross-border send/receive, on-ramp, off-ramp, or transfer out; for virtual currency transactions, the currency type | Always |
+| Transaction date | Date the transaction was funded | Always |
+| Transaction time | Precise time including time zone | Always |
+| Transfer amount | Amount in the currency the transmission was funded in | Always |
+| Total to recipient | Amount in the currency the recipient receives | Always |
+| Total transfer fees | All fees charged in connection with the transaction | Always |
+| Taxes | Itemized taxes | When taxes apply |
+| Total | Total cost to the sender | Always |
+| Exchange rate | FX rate applied, rounded to 2–4 decimal places | When the funding and receiving currencies differ |
+| Transaction hash | On-chain transaction hash | Crypto transactions only |
+| Virtual currency address(es) | Public on-chain addresses involved | Crypto transactions only |
+| FX shortfall disclosure | "Recipient may receive less due to fees charged by the recipient's bank and foreign taxes." | Foreign remittance transactions only |
+
+## Mapping Grid data to receipt fields
+
+Most receipt fields come directly from the [transaction object](/api-reference/transactions/get-transaction-by-id) — available on the completion webhook payload or by retrieving the transaction. All amounts are integers in the smallest unit of their currency (for example, cents), so format them using the currency's `decimals`.
+
+| Receipt field | Grid source |
+|---------------|-------------|
+| Transaction ID | `id` |
+| Transaction type | `type` (`OUTGOING` / `INCOMING`) plus the funding currency |
+| Transaction date / time | `settledAt` |
+| Sender | `customerId` / `platformCustomerId` (outgoing) or `counterpartyInformation` (incoming) |
+| Recipient | Destination external account beneficiary — resolve `destination.accountId` to the external account and use its beneficiary (from `accountInfo`) or `customerId` (outgoing); `customerId` / `platformCustomerId` (incoming) |
+| Transfer amount | `sentAmount.amount` + `sentAmount.currency` |
+| Total to recipient | `receivedAmount.amount` + `receivedAmount.currency` |
+| Total transfer fees | `fees` (smallest unit of the sending currency) |
+| Exchange rate | `exchangeRate` |
+| Transaction hash / VC address(es) | `reconciliationInstructions.transactionHash` (a dedicated transaction hash field may be exposed directly on the transaction) |
+
+## Example: send a receipt on completion
+
+Listen for the completion webhook, verify its signature, assemble the receipt fields, and send the receipt to your customer. See [Webhooks](/payouts-and-b2b/platform-tools/webhooks) for signature verification.
+
+```javascript
+// Inside your verified webhook handler
+app.post('/webhooks/grid', async (req, res) => {
+  // ... verify the X-Grid-Signature header first (see Webhooks) ...
+
+  const event = req.body;
+  if (event.type === 'OUTGOING_PAYMENT.COMPLETED' ||
+      event.type === 'INCOMING_PAYMENT.COMPLETED') {
+    const tx = event.data;
+
+    const format = (money) =>
+      (money.amount / 10 ** money.currency.decimals).toFixed(money.currency.decimals);
+
+    const receipt = {
+      // Lightspark regulatory disclosures (fixed)
+      moneyTransmitter: 'Lightspark Payments, LLC',
+      nmlsId: '2429193',
+      address: '8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069',
+      customerServicePhone: '(855) 516-0103',
+      // Transaction fields
+      transactionId: tx.id,
+      transactionType: tx.type,
+      transactionDateTime: tx.settledAt,
+      transferAmount: `${tx.sentAmount.currency.symbol}${format(tx.sentAmount)}`,
+      totalToRecipient: `${tx.receivedAmount.currency.symbol}${format(tx.receivedAmount)}`,
+      totalTransferFees: tx.fees,
+      exchangeRate: tx.exchangeRate, // include when currencies differ
+    };
+
+    await sendReceiptEmail(tx.platformCustomerId, receipt); // your delivery channel
+
+    // Tell Grid the receipt was delivered
+    await confirmReceiptDelivery(tx.id);
+  }
+
+  res.status(200).json({ received: true });
+});
+```
+
+## Confirm delivery to Grid
+
+After you deliver the receipt to your customer, confirm it with the [Confirm receipt delivery](/api-reference/transactions/confirm-receipt-delivery) endpoint. Grid stores the confirmation timestamp on the transaction's `receiptDeliveryConfirmedAt` field so it can be furnished to regulators on request.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transactions/{transactionId}/confirm' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{ "receiptDeliveryConfirmedAt": "2025-10-03T15:31:00Z" }'
+```
+
+<Note>
+`receiptDeliveryConfirmedAt` is optional — if you omit it, Grid records the current server time. Calling the endpoint again for the same transaction updates the stored confirmation time.
+</Note>

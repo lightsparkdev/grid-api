@@ -32,6 +32,12 @@ properties:
       the KYC link flow. This can only be set by Lightspark during platform
       creation.
     example: false
+  embeddedWalletConfig:
+    $ref: ./EmbeddedWalletConfig.yaml
+    description: |
+      Embedded-wallet branding and OTP settings for this platform. Present
+      only when the platform has configured embedded-wallet support;
+      omitted otherwise.
   createdAt:
     type: string
     format: date-time

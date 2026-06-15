@@ -30,12 +30,12 @@ The client **never** talks to Grid directly. Every request flows client → inte
 
 ## Auth credentials, client keys, and session signing keys
 
-Three distinct pieces of crypto collaborate to authorize actions on the Global Account (withdrawals, credential changes, session revocations, and wallet exports):
+Three distinct pieces of crypto collaborate to authorize actions on the Global Account (withdrawals, credential changes, session revocations, wallet exports, and wallet privacy updates):
 
 | Piece | Where it lives | How long it lives | What it proves |
 |---|---|---|---|
 | **Auth credential** — passkey, OIDC token, or email OTP | Registered on the account; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this account."* Used to authenticate the user at the start of each session. |
-| **Client key pair** (P-256) | Generated on the client device for each verification request; private key stays in device-local secure storage | One verification request | Binds a given session signing key delivery to the exact device that asked for it — Grid encrypts the session to this public key, so only this device can decrypt. |
-| **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific account action was approved on an authenticated device."* Signs the `payloadToSign` Grid returns on quotes, credential changes, session revocations, and wallet exports. |
+| **Client key pair** (P-256) | Generated on the client device for each session-issuing or export request; private key stays in device-local secure storage | One authentication, session refresh, or wallet export | Binds a given session signing key or wallet export delivery to the exact device that asked for it — Grid encrypts the response to this public key, so only this device can decrypt. |
+| **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific account action was approved on an authenticated device."* Builds Turnkey API-key stamps over the `payloadToSign` Grid returns on quotes, credential changes, session refresh/revocation, wallet exports, customer email updates, and wallet privacy updates. |
 
-The flow is always the same: verify an auth credential → receive a short-lived session signing key → sign `payloadToSign` bytes on the client → pass the signature as the `Grid-Wallet-Signature` header on the request that actually moves funds or changes account state. This applies to withdrawals, adding or removing credentials, revoking sessions, and exporting the wallet seed.
+The flow is always the same: verify an auth credential → receive a short-lived session signing key → build a Turnkey API-key stamp over the `payloadToSign` bytes on the client → pass that stamp as the `Grid-Wallet-Signature` header on the request that actually moves funds or changes account state. This applies to withdrawals, adding or removing credentials, refreshing or revoking sessions, exporting the wallet seed, updating customer email for tied email OTP credentials, and updating wallet privacy.

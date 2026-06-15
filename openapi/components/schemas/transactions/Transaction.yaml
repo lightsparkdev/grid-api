@@ -42,6 +42,13 @@ properties:
     format: date-time
     description: When the transaction was last updated
     example: '2025-08-15T14:30:00Z'
+  receiptDeliveryConfirmedAt:
+    type: string
+    format: date-time
+    description: >-
+      The time at which the platform confirmed delivery of the receipt to their
+      customer.
+    example: '2025-08-15T14:31:00Z'
   agentId:
     type: string
     description: >-

@@ -1,0 +1,136 @@
+post:
+  summary: Refresh an authentication session
+  description: >
+    Refresh an active Embedded Wallet auth session and create a new session
+    signing key. Session refresh is a two-step signed-retry flow:
+
+
+    1. Call `POST /auth/sessions/{id}/refresh` with the request body
+    `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a
+    Turnkey create-read-write-session payload, binds the supplied
+    `clientPublicKey` into that payload, persists it as a pending request, and
+    returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+
+
+    2. Sign `payloadToSign` with the current session signing key, then retry the
+    same request with the full API-key stamp as `Grid-Wallet-Signature`, the
+    `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in
+    the request body. On success, Grid returns a new `AuthSession` with an
+    `encryptedSessionSigningKey` sealed to that client public key.
+
+
+    The original session must still be active on both steps so it can authorize
+    the refresh. If the session has already expired, use the credential
+    reauthentication flow instead.
+  operationId: refreshAuthSession
+  tags:
+    - Embedded Wallet Auth
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      description: The id of the active session to refresh.
+      required: true
+      schema:
+        type: string
+      example: Session:019542f5-b3e7-1d02-0000-000000000003
+    - name: Grid-Wallet-Signature
+      in: header
+      required: false
+      description: >-
+        Full API-key stamp built over the prior `payloadToSign` with the current
+        session API keypair. Required on the signed retry; ignored on the
+        initial call.
+      schema:
+        type: string
+      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+    - name: Request-Id
+      in: header
+      required: false
+      description: >-
+        The `requestId` returned in the prior `202` response, echoed back on the
+        signed retry so the server can correlate it with the issued challenge.
+        Required on the signed retry; must be paired with
+        `Grid-Wallet-Signature`.
+      schema:
+        type: string
+      example: Request:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/auth/AuthSessionRefreshRequest.yaml
+        examples:
+          refresh:
+            summary: Refresh an active session
+            value:
+              clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+  responses:
+    '201':
+      description: New authentication session created successfully.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/auth/AuthSession.yaml
+          examples:
+            session:
+              summary: Refreshed authentication session
+              value:
+                id: Session:019542f5-b3e7-1d02-0000-000000000011
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                type: EMAIL_OTP
+                encryptedSessionSigningKey: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
+                nickname: example@lightspark.com
+                createdAt: '2026-04-08T15:30:01Z'
+                updatedAt: '2026-04-08T15:35:00Z'
+                expiresAt: '2026-04-08T15:50:00Z'
+    '202':
+      description: >-
+        Challenge issued. The response contains `payloadToSign` plus a
+        `requestId`. Build an API-key stamp over `payloadToSign` with the
+        current session API keypair, then echo `requestId` on the signed retry.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/common/SignedRequestChallenge.yaml
+          examples:
+            challenge:
+              summary: Session refresh challenge
+              value:
+                payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
+                requestId: Request:019542f5-b3e7-1d02-0000-000000000010
+                expiresAt: '2026-04-08T15:35:00Z'
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: >-
+        Unauthorized. Returned when the `BasicAuth` credentials are missing or
+        invalid, when the target session is no longer active and cannot be used
+        for refresh, when the signed retry omits `Grid-Wallet-Signature`, when
+        the provided signature is malformed or does not match the pending
+        refresh challenge, when the `Request-Id` does not match an unexpired
+        pending challenge, or when the retry's `clientPublicKey` does not match
+        the one bound into
+        `payloadToSign` on the initial call.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Session not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

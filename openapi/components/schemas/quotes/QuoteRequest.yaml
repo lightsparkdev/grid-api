@@ -48,7 +48,8 @@ properties:
       over the `payloadToSign` returned in the quote response, which is not
       available in a combined create-and-execute call. Create the quote
       first with `immediatelyExecute: false` and then call
-      `POST /quotes/{quoteId}/execute` with the signature header.
+      `POST /quotes/{quoteId}/execute` with the `Grid-Wallet-Signature` stamp
+      header.
     example: false
   description:
     type: string

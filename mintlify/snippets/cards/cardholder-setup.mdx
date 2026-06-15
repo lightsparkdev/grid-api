@@ -1,0 +1,60 @@
+Before you can issue a card, the cardholder must be a Grid `Customer`
+in good standing with at least one funded internal account. This page
+covers the requirements and the order they must be satisfied in.
+
+## KYC must be APPROVED
+
+`POST /cards` is rejected with `400 CARDHOLDER_KYC_NOT_APPROVED` if the
+cardholder's `kycStatus` is anything other than `APPROVED`. There is no
+"issue and verify later" path.
+
+If you're a regulated platform that creates customers directly with
+KYC data, the customer reaches `APPROVED` as soon as the verification
+returns approved. If you're using the hosted KYC link flow, gate
+issuance on the `CUSTOMER.KYC_APPROVED` webhook.
+
+```bash
+# Check KYC status before issuing
+curl -X GET "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## The cardholder needs a funding source
+
+Every card must be bound to at least one `InternalAccount` at issue
+time. The account must:
+
+- Belong to the cardholder (no cross-customer funding in v1).
+- Be denominated in a card-eligible currency. In v1 this is USDB; the
+  request is rejected with `400 FUNDING_SOURCE_INELIGIBLE` otherwise.
+
+If the cardholder doesn't have an internal account yet, internal
+accounts are created automatically when the customer is created based
+on your platform configuration. You can list them with:
+
+```bash
+curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USDB" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Pre-fund before authorizations arrive
+
+Cards decline at auth time if the bound funding source can't cover the
+transaction. The decline code surfaces as `INSUFFICIENT_FUNDS` and is
+visible on the resulting `CardTransaction`. Fund the source the same
+way you would for any other internal account — via the funding
+payment instructions or, in Sandbox, with
+`/sandbox/internal-accounts/{id}/fund`.
+
+<Note>
+Just-in-time funding works the same as for other Grid flows: receive a
+deposit into the funding source, let it confirm, then expect the
+cardholder to transact. There is no separate JIT path for cards in v1.
+</Note>
+
+## Ready to issue
+
+Once the cardholder is `APPROVED` and a funded internal account exists,
+issue the card with `POST /cards`. See
+[Issuing cards](/cards/card-management/issuing-cards) for the request
+shape and lifecycle states.

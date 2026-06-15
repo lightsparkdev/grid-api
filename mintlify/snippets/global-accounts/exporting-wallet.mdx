@@ -13,8 +13,8 @@ sequenceDiagram
   IB->>G: POST /internal-accounts/{id}/export { clientPublicKey }
   G-->>IB: 202 { payloadToSign, requestId, expiresAt }
   IB-->>C: { payloadToSign, requestId }
-  C->>C: sign(payloadToSign, sessionPrivateKey)
-  C->>IB: { signature }
+  C->>C: stamp(payloadToSign, sessionPrivateKey)
+  C->>IB: { stamp }
   IB->>G: POST /internal-accounts/{id}/export { same clientPublicKey }<br/>Grid-Wallet-Signature<br/>Request-Id
   G-->>IB: 200 { id, encryptedWalletCredentials }
   IB-->>C: { encryptedWalletCredentials }
@@ -25,7 +25,7 @@ sequenceDiagram
   <Step title="First call — receive the challenge">
     ```bash
     curl -X POST "$GRID_BASE_URL/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/export" \
-      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
       -d '{
         "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
@@ -36,22 +36,22 @@ sequenceDiagram
 
     ```json
     {
-      "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
-      "requestId": "c3f8a614-47e2-4a19-9f5d-2b0a91d47e08",
+      "payloadToSign": "{\"organizationId\":\"org_2m9F...\",\"parameters\":{\"targetPublicKey\":\"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2\",\"walletId\":\"wallet_2m9F...\"},\"timestampMs\":\"1775681700000\",\"type\":\"ACTIVITY_TYPE_EXPORT_WALLET\"}",
+      "requestId": "Request:c3f8a614-47e2-4a19-9f5d-2b0a91d47e08",
       "expiresAt": "2026-04-19T12:10:00Z"
     }
     ```
   </Step>
-  <Step title="Client signs the payload">
-    Sign `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
+  <Step title="Client stamps the payload">
+    Build a Turnkey API-key stamp over `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
   </Step>
   <Step title="Signed retry — receive the encrypted seed">
     ```bash
     curl -X POST "$GRID_BASE_URL/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/export" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       -H "Content-Type: application/json" \
-      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
-      -H "Request-Id: c3f8a614-47e2-4a19-9f5d-2b0a91d47e08" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9" \
+      -H "Request-Id: Request:c3f8a614-47e2-4a19-9f5d-2b0a91d47e08" \
       -d '{
         "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
       }'
@@ -62,12 +62,12 @@ sequenceDiagram
     ```json
     {
       "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-      "encryptedWalletCredentials": "5KqM8nT3wJz2F9b6H1vRgLpXcA7eD4YuN0sBaE8kPyW5iVfG2xQoZ3MnK9LhU6jT1dS4rCyPbH7oVwX2AgE5uYsNq8fLzR3D7JeM1bVkWcHa9Tp"
+      "encryptedWalletCredentials": "{\"version\":\"v1.0.0\",\"data\":\"7b22656e6361707065645075626c6963223a2230346634356632612e2e2e222c2263697068657274657874223a22316661313032333339302e2e2e222c226f7267616e697a6174696f6e4964223a226f72675f326d39462e2e2e227d\",\"dataSignature\":\"3045022100...\",\"enclaveQuorumPublic\":\"04a1b2c3...\"}"
     }
     ```
   </Step>
   <Step title="Decrypt on the client">
-    `encryptedWalletCredentials` uses the same base58check/HPKE format as `encryptedSessionSigningKey`. Decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests — see <a href="client-keys#3-decrypt-the-session-signing-key">decrypt the session signing key</a> for code.
+    `encryptedWalletCredentials` is a signed Turnkey export envelope, not the base58check session-bundle format used by `encryptedSessionSigningKey`. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
 
     The plaintext is a BIP-39 mnemonic (the wallet's master seed).
   </Step>

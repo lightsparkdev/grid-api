@@ -44,9 +44,7 @@ The on-ramp process consists of the following steps:
 
 ## Step 1: Customer Onboarding
 
-If your platform is a regulated financial institution that already has a KYC/KYB process in place,
-you can create a customer directly via the API. However, if your platform is not regulated, you must use the hosted KYC/KYB
-link flow to onboard your customers.
+If your platform is a regulated financial institution that already has a KYC/KYB process in place, you can create a customer directly via the API. Unregulated platforms can onboard customers either through the hosted KYC/KYB link flow or by submitting customer data directly through the API — for `INDIVIDUAL` customers (KYC), personal information goes through `POST /customers`; for `BUSINESS` customers (KYB), you also register beneficial owners via `POST /beneficial-owners`.
 
 <Tabs>
   <Tab title="Regulated Platforms">
@@ -104,10 +102,11 @@ Create a quote to convert USD to Bitcoin and deliver it to the Spark wallet. The
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
+      "sourceType": "REALTIME_FUNDING",
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USD"
     },
@@ -130,12 +129,13 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
+    "sourceType": "REALTIME_FUNDING",
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "USD"
   },
   "destination": {
-    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456",
-    "currency": "BTC"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -203,12 +203,11 @@ In Sandbox, you can simulate funding using the `/sandbox/send` endpoint:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "reference": "RAMP-ABC123",
-    "currencyCode": "USD",
-    "currencyAmount": 10000
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "currencyCode": "USD"
   }'
 ```
 
@@ -219,6 +218,18 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
   "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
   "status": "PROCESSING",
   "type": "OUTGOING",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "platformCustomerId": "customer_12345",
+  "source": {
+    "sourceType": "REALTIME_FUNDING",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001"
+  },
+  "destination": {
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
+  },
+  "sentAmount": { "amount": 10000, "currency": { "code": "USD", "decimals": 2 } },
+  "receivedAmount": { "amount": 83333, "currency": { "code": "BTC", "decimals": 8 } },
   "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
 }
 ```
@@ -243,7 +254,10 @@ Once Grid receives your payment and completes the USD-to-BTC conversion and deli
 
 ```json
 {
-  "transaction": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000030",
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T15:03:00Z",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
     "status": "COMPLETED",
     "type": "OUTGOING",
@@ -279,14 +293,11 @@ Once Grid receives your payment and completes the USD-to-BTC conversion and deli
           "accountNumber": "1234567890",
           "routingNumber": "021000021",
           "bankName": "Chase Bank",
-          "referenceCode": "REF123456"
+          "reference": "REF123456"
         }
       }
     ]
-  },
-  "timestamp": "2025-10-03T15:03:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000030",
-  "type": "OUTGOING_PAYMENT"
+  }
 }
 ```
 

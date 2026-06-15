@@ -1,0 +1,118 @@
+name: OpenAPI Breaking Changes
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'openapi.yaml'
+      - 'openapi/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  detect:
+    name: Detect breaking changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base spec
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Checkout head spec
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+
+      - name: Install oasdiff
+        env:
+          OASDIFF_VERSION: 1.16.0
+          OASDIFF_SHA256: 2f424431c441a85e2d73ff884609f55c98c283ca2ce3d88537a7a029379dd521
+        run: |
+          curl -fsSL \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz" \
+            -o /tmp/oasdiff.tgz
+          echo "${OASDIFF_SHA256}  /tmp/oasdiff.tgz" | sha256sum -c -
+          tar -xzf /tmp/oasdiff.tgz -C /tmp oasdiff
+          sudo mv /tmp/oasdiff /usr/local/bin/oasdiff
+          oasdiff --version
+
+      - name: Run oasdiff breaking
+        id: oasdiff
+        run: |
+          set +e
+          oasdiff breaking \
+            base/openapi.yaml head/openapi.yaml \
+            --format markdown \
+            --fail-on ERR > breaking.md
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -ne 0 ] && [ -s breaking.md ]; then
+            echo "has_breaking=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_breaking=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build comment body
+        id: body
+        if: steps.oasdiff.outputs.has_breaking == 'true'
+        run: |
+          {
+            echo 'body<<COMMENT_EOF'
+            echo '## :warning: Breaking OpenAPI changes detected'
+            echo ''
+            echo 'This PR introduces breaking changes to `openapi.yaml`:'
+            echo ''
+            cat breaking.md
+            echo ''
+            echo '---'
+            echo '_Detected by [oasdiff](https://github.com/oasdiff/oasdiff). This PR will need approval from an API reviewer before merge._'
+            echo 'COMMENT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Ensure breaking-change label exists
+        if: steps.oasdiff.outputs.has_breaking == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create "breaking-change" \
+            --color B60205 \
+            --description "Introduces a breaking change to the OpenAPI spec" \
+            2>/dev/null || true
+
+      - name: Add breaking-change label
+        if: steps.oasdiff.outputs.has_breaking == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --add-label "breaking-change"
+
+      - name: Remove breaking-change label if previously set
+        if: steps.oasdiff.outputs.has_breaking == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --remove-label "breaking-change" || true
+
+      - name: Upsert PR comment (breaking)
+        if: steps.oasdiff.outputs.has_breaking == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: oasdiff-breaking-changes
+          message: ${{ steps.body.outputs.body }}
+
+      - name: Clear PR comment (no breaking)
+        if: steps.oasdiff.outputs.has_breaking == 'false'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: oasdiff-breaking-changes
+          delete: true

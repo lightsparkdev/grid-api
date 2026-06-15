@@ -27,17 +27,20 @@ Sample webhook payload:
 
 ```json
 {
-  "transaction": {
-    "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
+  "id": "Webhook:019542f5-b3e7-1d02-0000-0000000000ab",
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T15:30:01Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
     "status": "COMPLETED",
     "type": "OUTGOING",
     "source": {
-      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-      "currency": "USD"
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
     },
     "destination": {
-      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-      "currency": "EUR"
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
     },
     "sentAmount": {
       "amount": 10000,
@@ -52,16 +55,13 @@ Sample webhook payload:
     "createdAt": "2025-10-03T15:00:00Z",
     "settledAt": "2025-10-03T15:30:00Z",
     "description": "Payment for services - Invoice #1234"
-  },
-  "timestamp": "2025-10-03T15:30:01Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-0000000000ab",
-  "type": "OUTGOING_PAYMENT"
+  }
 }
 ```
 </Step>
 
 <Step title="Process events idempotently">
-Use the `webhookId`, `transaction.id`, and `timestamp` to ensure idempotent handling, updating your internal ledger on each status transition.
+Use the envelope `id`, `data.id`, and `timestamp` to ensure idempotent handling, updating your internal ledger on each status transition.
 </Step>
 
 <Step title="Recognize terminal states">
@@ -91,12 +91,12 @@ Response
       "status": "COMPLETED",
       "type": "OUTGOING",
       "source": {
-        "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-        "currency": "USD"
+        "sourceType": "ACCOUNT",
+        "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
       },
       "destination": {
-        "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-        "currency": "EUR"
+        "destinationType": "ACCOUNT",
+        "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
       },
       "sentAmount": {
         "amount": 10000,

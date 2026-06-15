@@ -3,7 +3,7 @@
 # The main edition for the config, see the [docs] for more information.
 #
 # [docs]: https://www.stainless.com/docs/reference/editions
-edition: 2025-10-10
+edition: 2026-05-06
 
 organization:
   # Name of your organization or company, used to determine the name of the client
@@ -36,7 +36,6 @@ targets:
         host:
           stainless: true
   kotlin:
-    edition: kotlin.2025-10-08
     reverse_domain: com.lightspark.grid
     production_repo: lightsparkdev/grid-kotlin-sdk
     publish:
@@ -48,6 +47,31 @@ targets:
     production_repo: null
     publish:
       pypi: false
+  ruby:
+    edition: ruby.2025-10-08
+    gem_name: grid
+    production_repo: null
+    publish:
+      rubygems: false
+  go:
+    edition: go.2026-04-15
+    package_name: grid
+    production_repo: null
+  csharp:
+    edition: csharp.2025-10-08
+    package_name: grid
+    production_repo: null
+    publish:
+      nuget: false
+  php:
+    edition: php.2025-10-08
+    package_name: grid
+    production_repo: null
+    composer_package_name: org-placeholder/grid
+  cli:
+    edition: cli.2025-10-08
+    binary_name: grid
+    production_repo: null
 
 # `environments` are a map of the name of the environment (e.g. "sandbox",
 # "production") to the corresponding url to use.
@@ -75,22 +99,32 @@ resources:
       customer_info_field_name: '#/components/schemas/CustomerInfoFieldName'
       platform_currency_config: '#/components/schemas/PlatformCurrencyConfig'
       platform_config: '#/components/schemas/PlatformConfig'
+      embedded_wallet_config: "#/components/schemas/EmbeddedWalletConfig"
+      platform_config_update_request: '#/components/schemas/PlatformConfigUpdateRequest'
     methods:
       retrieve: get /config
       update: patch /config
 
   customers:
     models:
+      # Customer object + polymorphic response/request unions (INDIVIDUAL | BUSINESS)
       customer: '#/components/schemas/Customer'
-      customer_one_of: "#/components/schemas/CustomerOneOf"
-      customer_create: "#/components/schemas/CustomerCreateRequest"
-      customer_update: "#/components/schemas/CustomerUpdateRequest"
-      customer_type: "#/components/schemas/CustomerType"
-      individual_customer_fields: "#/components/schemas/IndividualCustomerFields"
-      business_customer_fields: "#/components/schemas/BusinessCustomerFields"
-      business_info: "#/components/schemas/BusinessInfo"
+      customer_one_of: '#/components/schemas/CustomerOneOf'
+      customer_list_response: '#/components/schemas/CustomerListResponse'
+      customer_create_request_one_of: '#/components/schemas/CustomerCreateRequestOneOf'
+      customer_update_request_one_of: '#/components/schemas/CustomerUpdateRequestOneOf'
+      individual_customer_create_request: '#/components/schemas/IndividualCustomerCreateRequest'
+      business_customer_create_request: '#/components/schemas/BusinessCustomerCreateRequest'
+      individual_customer_update_request: '#/components/schemas/IndividualCustomerUpdateRequest'
+      business_customer_update_request: '#/components/schemas/BusinessCustomerUpdateRequest'
+      # Internal-account management (list/update/export under this resource)
+      internal_account_list_response: '#/components/schemas/InternalAccountListResponse'
+      internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
+      # KYC link generation
+      kyc_link_create_request: '#/components/schemas/KycLinkCreateRequest'
+      kyc_link_response: '#/components/schemas/KycLinkResponse'
     methods:
       create:
         endpoint: post /customers
@@ -101,9 +135,14 @@ resources:
         endpoint: patch /customers/{customerId}
         body_param_name: UpdateCustomerRequest
       delete: delete /customers/{customerId}
-      get_kyc_link: get /customers/kyc-link
       list_internal_accounts: get /customers/internal-accounts
       export: post /internal-accounts/{id}/export
+      update_internal_account:
+        endpoint: patch /internal-accounts/{id}
+        body_param_name: InternalAccountUpdateRequest
+      create_kyc_link:
+        endpoint: post /customers/{customerId}/kyc-link
+        body_param_name: KycLinkCreateRequest
     # Subresources define resources that are nested within another for more powerful
     # logical groupings, e.g. `cards.payments`.
     subresources:
@@ -172,6 +211,8 @@ resources:
           business_beneficiary: "#/components/schemas/BusinessBeneficiary"
           address: "#/components/schemas/Address"
           beneficiary_verified_data: "#/components/schemas/BeneficiaryVerifiedData"
+          # List response
+          external_account_list_response: "#/components/schemas/ExternalAccountListResponse"
         methods:
           list: get /customers/external-accounts
           create: post /customers/external-accounts
@@ -183,6 +224,8 @@ resources:
           get_job_status: get /customers/bulk/jobs/{jobId}
 
   platform:
+    models:
+      platform_internal_account_list_response: '#/components/schemas/PlatformInternalAccountListResponse'
     methods:
       list_internal_accounts:
         endpoint: get /platform/internal-accounts
@@ -195,6 +238,7 @@ resources:
           retrieve: get /platform/external-accounts/{externalAccountId}
           delete: delete /platform/external-accounts/{externalAccountId}
         models:
+          platform_external_account_create_request: "#/components/schemas/PlatformExternalAccountCreateRequest"
           aed_account_info: "#/components/schemas/AedAccountInfo"
           bdt_account_info: "#/components/schemas/BdtAccountInfo"
           brl_account_info: "#/components/schemas/BrlAccountInfo"
@@ -230,11 +274,11 @@ resources:
           xof_account_info: "#/components/schemas/XofAccountInfo"
           zar_account_info: "#/components/schemas/ZarAccountInfo"
           zmw_account_info: "#/components/schemas/ZmwAccountInfo"
-          # base_external_account_info: "#/components/schemas/BaseExternalAccountInfo"
 
   transfer_in:
     models:
       transaction: "#/components/schemas/TransactionOneOf"
+      transfer_in_request: "#/components/schemas/TransferInRequest"
       base_transaction_destination: "#/components/schemas/BaseTransactionDestination"
       external_account_reference: "#/components/schemas/ExternalAccountReference"
       internal_account_reference: "#/components/schemas/InternalAccountReference"
@@ -242,6 +286,8 @@ resources:
       create: post /transfer-in
 
   transfer_out:
+    models:
+      transfer_out_request: "#/components/schemas/TransferOutRequest"
     methods:
       create: post /transfer-out
 
@@ -249,6 +295,9 @@ resources:
     models:
       counterparty_field_definition: '#/components/schemas/CounterpartyFieldDefinition'
       lookup_response: '#/components/schemas/ReceiverLookupResponse'
+      # Concrete responses returned by the two lookup endpoints
+      uma_lookup_response: '#/components/schemas/ReceiverUmaLookupResponse'
+      external_account_lookup_response: '#/components/schemas/ReceiverExternalAccountLookupResponse'
     methods:
       lookup_uma: get /receiver/uma/{receiverUmaAddress}
       lookup_external_account: get /receiver/external-account/{accountId}
@@ -260,10 +309,10 @@ resources:
       outgoing_rate_details: '#/components/schemas/OutgoingRateDetails'
       quote: '#/components/schemas/Quote'
       quote_destination_one_of: "#/components/schemas/QuoteDestinationOneOf"
-      # base_payment_account_info: "#/components/schemas/BasePaymentAccountInfo"
       base_quote_source: "#/components/schemas/BaseQuoteSource"
       quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
       base_destination: "#/components/schemas/BaseDestination"
+      quote_request: "#/components/schemas/QuoteRequest"
     methods:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
@@ -280,6 +329,7 @@ resources:
       transaction_source_one_of: "#/components/schemas/TransactionSourceOneOf"
       incoming_rate_details: "#/components/schemas/IncomingRateDetails"
       reconciliation_instructions: "#/components/schemas/ReconciliationInstructions"
+      transaction_list_response: "#/components/schemas/TransactionListResponse"
     methods:
       list: get /transactions
       retrieve: get /transactions/{transactionId}
@@ -290,6 +340,8 @@ resources:
     models:
       currency_amount: '#/components/schemas/CurrencyAmount'
       uma_invitation: '#/components/schemas/UmaInvitation'
+      uma_invitation_create_request: '#/components/schemas/UmaInvitationCreateRequest'
+      uma_invitation_claim_request: '#/components/schemas/UmaInvitationClaimRequest'
     methods:
       create: post /invitations
       retrieve: get /invitations/{invitationCode}
@@ -297,22 +349,49 @@ resources:
       cancel: post /invitations/{invitationCode}/cancel
 
   sandbox:
+    models:
+      send_request: '#/components/schemas/SandboxSendRequest'
     methods:
       send_funds: post /sandbox/send
     subresources:
       uma:
+        models:
+          receive_request: '#/components/schemas/SandboxUmaReceiveRequest'
         methods:
           receive_payment: post /sandbox/uma/receive
       internal_accounts:
         models:
           internal_account: '#/components/schemas/InternalAccount'
+          fund_request: '#/components/schemas/SandboxFundRequest'
         methods:
           fund: post /sandbox/internal-accounts/{accountId}/fund
       webhooks:
+        models:
+          test_webhook_request: '#/components/schemas/TestWebhookRequest'
+          test_webhook_response: '#/components/schemas/TestWebhookResponse'
         methods:
           send_test: post /sandbox/webhooks/test
+      cards:
+        subresources:
+          simulate:
+            methods:
+              authorization: post /sandbox/cards/{id}/simulate/authorization
+              clearing: post /sandbox/cards/{id}/simulate/clearing
+              return: post /sandbox/cards/{id}/simulate/return
+            models:
+              card_merchant: "#/components/schemas/CardMerchant"
+              card_pull_summary: "#/components/schemas/CardPullSummary"
+              card_refund_summary: "#/components/schemas/CardRefundSummary"
+              card_settlement_summary: "#/components/schemas/CardSettlementSummary"
+              authorization_request: "#/components/schemas/SandboxCardAuthorizationRequest"
+              clearing_request: "#/components/schemas/SandboxCardClearingRequest"
+              refund_request: "#/components/schemas/SandboxCardReturnRequest"
+              refund: "#/components/schemas/Refund"
 
   uma_providers:
+    models:
+      uma_provider: '#/components/schemas/UmaProvider'
+      uma_provider_list_response: '#/components/schemas/UmaProviderListResponse'
     methods:
       list: get /uma-providers
 
@@ -320,12 +399,17 @@ resources:
     models:
       permission: '#/components/schemas/Permission'
       api_token: '#/components/schemas/ApiToken'
+      api_token_create_request: '#/components/schemas/ApiTokenCreateRequest'
+      token_list_response: '#/components/schemas/TokenListResponse'
     methods:
       create: post /tokens
       list: get /tokens
       retrieve: get /tokens/{tokenId}
       delete: delete /tokens/{tokenId}
   exchange_rates:
+    models:
+      exchange_rate: '#/components/schemas/ExchangeRate'
+      exchange_rate_list_response: '#/components/schemas/ExchangeRateListResponse'
     methods:
       list:
         endpoint: get /exchange-rates
@@ -335,6 +419,7 @@ resources:
     methods:
       unwrap:
         type: webhook_unwrap
+        discriminator: type
 
   $shared:
     models:
@@ -399,7 +484,17 @@ resources:
       ethereum_wallet_external_account_info: "#/components/schemas/EthereumWalletExternalAccountInfo"
       verification_error: "#/components/schemas/VerificationError"
       agent_transfer_details: "#/components/schemas/AgentTransferDetails"
+      slv_external_account_create_info: "#/components/schemas/SlvExternalAccountCreateInfo"
+      slv_beneficiary: "#/components/schemas/SlvBeneficiary"
+      individual_customer: "#/components/schemas/IndividualCustomer"
+      business_customer: "#/components/schemas/BusinessCustomer"
+      beneficial_owner: "#/components/schemas/BeneficialOwner"
+      swift_external_account_create_info: "#/components/schemas/SwiftExternalAccountCreateInfo"
+      swift_beneficiary: "#/components/schemas/SwiftBeneficiary"
   crypto:
+    models:
+      estimate_crypto_withdrawal_fee_request: '#/components/schemas/EstimateCryptoWithdrawalFeeRequest'
+      estimate_crypto_withdrawal_fee_response: '#/components/schemas/EstimateCryptoWithdrawalFeeResponse'
     methods:
       estimate_withdrawal_fee: post /crypto/estimate-withdrawal-fee
   beneficial_owners:
@@ -410,19 +505,35 @@ resources:
       update: patch /beneficial-owners/{beneficialOwnerId}
     models:
       beneficial_owner_personal_info: "#/components/schemas/BeneficialOwnerPersonalInfo"
+      beneficial_owner_create_request: "#/components/schemas/BeneficialOwnerCreateRequest"
+      beneficial_owner_update_request: "#/components/schemas/BeneficialOwnerUpdateRequest"
+      beneficial_owner_list_response: "#/components/schemas/BeneficialOwnerListResponse"
   documents:
+    models:
+      document: '#/components/schemas/Document'
+      document_list_response: '#/components/schemas/DocumentListResponse'
     methods:
-      upload: post /documents
+      upload:
+        endpoint: post /documents
+        body_param_name: DocumentUploadRequest
       list: get /documents
       retrieve: get /documents/{documentId}
-      replace: put /documents/{documentId}
+      replace:
+        endpoint: put /documents/{documentId}
+        body_param_name: DocumentReplaceRequest
       delete: delete /documents/{documentId}
   verifications:
+    models:
+      verification: '#/components/schemas/Verification'
+      verification_list_response: '#/components/schemas/VerificationListResponse'
+      verification_request: '#/components/schemas/VerificationRequest'
     methods:
       submit: post /verifications
       list: get /verifications
       retrieve: get /verifications/{verificationId}
   discoveries:
+    models:
+      discovery_list_response: '#/components/schemas/DiscoveryListResponse'
     methods:
       list:
         endpoint: get /discoveries
@@ -454,21 +565,16 @@ resources:
           auth_signed_request_challenge: '#/components/schemas/AuthSignedRequestChallenge'
           email_otp_credential_create_request: '#/components/schemas/EmailOtpCredentialCreateRequest'
           email_otp_credential_verify_request: '#/components/schemas/EmailOtpCredentialVerifyRequest'
-          email_otp_credential_create_request_fields: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
-          email_otp_credential_verify_request_fields: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
           oauth_credential_create_request: '#/components/schemas/OauthCredentialCreateRequest'
-          oauth_credential_create_request_fields: '#/components/schemas/OauthCredentialCreateRequestFields'
           oauth_credential_verify_request: '#/components/schemas/OauthCredentialVerifyRequest'
-          oauth_credential_verify_request_fields: '#/components/schemas/OauthCredentialVerifyRequestFields'
+          auth_credential_challenge_request: '#/components/schemas/AuthCredentialChallengeRequest'
           passkey_attestation: '#/components/schemas/PasskeyAttestation'
           passkey_assertion: '#/components/schemas/PasskeyAssertion'
           passkey_credential_create_request: '#/components/schemas/PasskeyCredentialCreateRequest'
-          passkey_credential_create_request_fields: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
           passkey_auth_challenge: '#/components/schemas/PasskeyAuthChallenge'
           auth_method_response: '#/components/schemas/AuthMethodResponse'
           auth_credential_response_one_of: '#/components/schemas/AuthCredentialResponseOneOf'
-          passkey_credential_verify_request: '#/components/schemas/PasskeyCredentialVerifyRequest'
-          passkey_credential_verify_request_fields: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
           signed_request_challenge: "#/components/schemas/SignedRequestChallenge"
       sessions:
         methods:
@@ -476,8 +582,12 @@ resources:
             endpoint: get /auth/sessions
             paginated: false
           delete: delete /auth/sessions/{id}
+          refresh:
+            endpoint: post /auth/sessions/{id}/refresh
+            body_param_name: AuthSessionRefreshRequest
         models:
           session_list_response: '#/components/schemas/SessionListResponse'
+          auth_session_refresh_request: '#/components/schemas/AuthSessionRefreshRequest'
 
   agents:
     methods:
@@ -542,6 +652,22 @@ resources:
       agent_action_reject_request: '#/components/schemas/AgentActionRejectRequest'
       agent_policy: "#/components/schemas/AgentPolicy"
       agent_usage: "#/components/schemas/AgentUsage"
+      agent_account_restrictions: "#/components/schemas/AgentAccountRestrictions"
+      agent_account_rule: "#/components/schemas/AgentAccountRule"
+      agent_approval_thresholds: "#/components/schemas/AgentApprovalThresholds"
+      agent_policy_update_request: "#/components/schemas/AgentPolicyUpdateRequest"
+  cards:
+    models:
+      card: "#/components/schemas/Card"
+      card_list_response: "#/components/schemas/CardListResponse"
+      card_create_request: "#/components/schemas/CardCreateRequest"
+      card_update_request: "#/components/schemas/CardUpdateRequest"
+      card_transaction: "#/components/schemas/CardTransaction"
+    methods:
+      issue: post /cards
+      list: get /cards
+      retrieve: get /cards/{id}
+      update: patch /cards/{id}
 
 settings:
   # All generated integration tests that hit the prism mock http server are marked
@@ -660,86 +786,6 @@ pagination:
 openapi:
   code_samples: mintlify
   transforms:
-    # # ── customerType: IndividualCustomerFields / BusinessCustomerFields ──
-    # - command: remove
-    #   reason: >-
-    #     Remove inline customerType enums from customer fields schemas to avoid
-    #     conflicting types when allOf merges them with base schemas (Customer,
-    #     CustomerCreateRequest, CustomerUpdateRequest) that define customerType
-    #     via the shared CustomerType $ref
-    #   args:
-    #     target:
-    #       - "$.components.schemas.IndividualCustomerFields.properties"
-    #       - "$.components.schemas.BusinessCustomerFields.properties"
-    #     keys: [ "customerType" ]
-
-    # # ── accountType: common account info schemas ──
-    # - command: remove
-    #   reason: >-
-    #     Remove inline accountType enums from common account info schemas to
-    #     avoid conflicting types when allOf merges them with
-    #     BaseExternalAccountInfo or BasePaymentAccountInfo, which define
-    #     accountType via shared $ref enums
-    #   args:
-    #     target:
-    #       - "$.components.schemas.UsAccountInfo.properties"
-    #       - "$.components.schemas.ClabeAccountInfo.properties"
-    #       - "$.components.schemas.PixAccountInfo.properties"
-    #       - "$.components.schemas.IbanAccountInfo.properties"
-    #       - "$.components.schemas.UpiAccountInfo.properties"
-    #       - "$.components.schemas.NgnAccountInfo.properties"
-    #       - "$.components.schemas.CadAccountInfo.properties"
-    #       - "$.components.schemas.GbpAccountInfo.properties"
-    #       - "$.components.schemas.PhpAccountInfo.properties"
-    #       - "$.components.schemas.SgdAccountInfo.properties"
-    #       - "$.components.schemas.SparkWalletInfo.properties"
-    #       - "$.components.schemas.LightningInfo.properties"
-    #       - "$.components.schemas.SolanaWalletInfo.properties"
-    #       - "$.components.schemas.TronWalletInfo.properties"
-    #       - "$.components.schemas.PolygonWalletInfo.properties"
-    #       - "$.components.schemas.BaseWalletInfo.properties"
-    #     keys: [ "accountType" ]
-
-    # # ── sourceType: transaction and quote source schemas ──
-    # - command: remove
-    #   reason: >-
-    #     Remove inline sourceType enums from transaction and quote source
-    #     allOf variants to avoid conflicting types with their base schemas
-    #     which define sourceType via shared $ref enums
-    #   args:
-    #     target:
-    #       - "$.components.schemas.AccountTransactionSource.allOf[1].properties"
-    #       - "$.components.schemas.UmaAddressTransactionSource.allOf[1].properties"
-    #       - "$.components.schemas.AccountQuoteSource.allOf[1].properties"
-    #       - "$.components.schemas.RealtimeFundingQuoteSource.allOf[1].properties"
-    #     keys: [ "sourceType" ]
-
-    # # ── destinationType: transaction and quote destination schemas ──
-    # - command: remove
-    #   reason: >-
-    #     Remove inline destinationType enums from transaction and quote
-    #     destination allOf variants to avoid conflicting types with their
-    #     base schemas which define destinationType via shared $ref enums
-    #   args:
-    #     target:
-    #       - "$.components.schemas.AccountTransactionDestination.allOf[1].properties"
-    #       - "$.components.schemas.UmaAddressTransactionDestination.allOf[1].properties"
-    #       - "$.components.schemas.AccountDestination.allOf[1].properties"
-    #       - "$.components.schemas.UmaAddressDestination.allOf[1].properties"
-    #       - "$.components.schemas.ExternalAccountDetailsDestination.allOf[1].properties"
-    #     keys: [ "destinationType" ]
-
-    # # ── beneficiaryType: beneficiary schemas ──
-    # - command: remove
-    #   reason: >-
-    #     Remove inline beneficiaryType enums from beneficiary allOf variants
-    #     to avoid conflicting types with BaseBeneficiary which defines
-    #     beneficiaryType via a shared $ref enum
-    #   args:
-    #     target:
-    #       - "$.components.schemas.IndividualBeneficiary.allOf[1].properties"
-    #       - "$.components.schemas.BusinessBeneficiary.allOf[1].properties"
-    #     keys: [ "beneficiaryType" ]
     # ── customerType: remove from base schemas ──
     - command: remove
       reason: >-
@@ -911,7 +957,6 @@ openapi:
         target:
           - "$.components.schemas.AccountDestination.allOf[0]"
           - "$.components.schemas.UmaAddressDestination.allOf[0]"
-          - "$.components.schemas.ExternalAccountDetailsDestination.allOf[0]"
         keys: [ "$ref" ]
 
     # ── Remove $ref to BaseTransactionSource from transaction source variants ──
@@ -935,7 +980,6 @@ openapi:
         target:
           - "$.components.schemas.AccountTransactionDestination.allOf[0]"
           - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
-          - "$.components.schemas.ExternalAccountDetailsTransactionDestination.allOf[0]"
         keys: [ "$ref" ]
 
     # ── type: auth credential base schemas ──
@@ -964,6 +1008,27 @@ openapi:
           - "$.components.schemas.OauthCredentialVerifyRequest.allOf[0]"
           - "$.components.schemas.PasskeyCredentialVerifyRequest.allOf[0]"
         keys: [ "$ref" ]
+
+    # ── type: remove from BaseWebhook ──
+    - command: remove
+      reason: >-
+        Remove the wide WebhookType $ref from BaseWebhook so the inline
+        single-value enums on each child webhook (e.g. CardStateChangeWebhook,
+        CardFundingSourceChangeWebhook) become the sole definition. Without
+        this, every generated *WebhookEvent has the full WebhookType enum on
+        its `type` field, so the UnwrapWebhookEvent deserializer can't
+        discriminate between variants that share a `data` shape (Card) and
+        picks the first one declared.
+
+        Only `properties.type` is stripped — `keys` requires an object target,
+        and `required` is an array. Leaving `type` in `BaseWebhook.required` is
+        harmless: each child webhook re-declares `type` via its own inline enum,
+        and the standalone-base `Schema/RequiredPropertyNotDefined` diagnostic is
+        ignored below.
+      args:
+        target:
+          - "$.components.schemas.BaseWebhook.properties"
+        keys: [ "type" ]
 
 codeflow:
   detect_breaking_changes: true

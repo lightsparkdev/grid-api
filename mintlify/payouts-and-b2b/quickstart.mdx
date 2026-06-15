@@ -48,51 +48,71 @@ Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"`.
 </Tip>
 
 ## Onboard a Customer
-Onboard a customer using the hosted KYC/KYB link flow.
-### Generate KYC Link
-  Call the `/customers/kyc-link` endpoint with your `redirectUri` parameter to generate a hosted KYC URL for your customer.
-  
-  <Note>
-  The `redirectUri` parameter is embedded in the generated KYC URL and will be used to automatically redirect the customer back to your application after they complete verification.
-  </Note>
-  ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/customers/kyc-link?redirectUri=https://yourapp.com/onboarding-complete&platformCustomerId=019542f5-b3e7-1d02-0000-000000000001" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+Onboard a customer using the hosted KYC/KYB link flow. The flow is two steps: create the customer, then generate a hosted KYC link for that customer.
+
+### Create the customer
+Call `POST /customers` with the customer's `customerType` and any details you already have.
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerType": "INDIVIDUAL",
+    "platformCustomerId": "019542f5-b3e7-1d02-0000-000000000001",
+    "region": "US",
+    "currencies": ["USD", "USDC"],
+    "email": "jane.doe@example.com",
+    "fullName": "Jane Doe"
+  }'
 ```
+
+Persist the returned `id` — you'll use it as `customerId` in the next step.
+
+### Generate a KYC link
+Call `POST /customers/{customerId}/kyc-link` to get a single-use hosted URL.
+
+```bash
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/Customer:019542f5-b3e7-1d02-0000-000000000001/kyc-link" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "redirectUri": "https://yourapp.com/onboarding-complete"
+  }'
+```
+
 **Response:**
 
 ```json
 {
   "kycUrl": "https://kyc.lightspark.com/onboard/abc123def456",
-  "platformCustomerId": "019542f5-b3e7-1d02-0000-000000000001"
+  "expiresAt": "2027-01-15T14:32:00Z",
+  "provider": "SUMSUB",
+  "token": "_act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
+
+<Tip>
+The `token` is only present for providers that support direct SDK integration. You can pass it to the provider's SDK to embed verification in your own UI instead of redirecting; both paths update the customer's `kycStatus` identically.
+</Tip>
+
 ### Redirect Customer
-  Redirect your customer to the returned `kycUrl` where they can complete their identity verification in the hosted interface.
-  
-  <Warning>
-  The KYC link is single-use and expires after a limited time period for security.
-  </Warning>
+Redirect your customer to the returned `kycUrl` where they can complete their identity verification in the hosted interface.
+
+<Warning>
+The KYC link is single-use and expires at `expiresAt`. If a customer needs to retry, call the endpoint again to generate a new link.
+</Warning>
 
 ### Customer Completes Verification
-  The customer completes the identity verification process in the hosted KYC interface, providing required documents and information.
-  
-  <Info>
-  The hosted interface handles document collection, verification checks, and compliance requirements automatically.
-  </Info>
-  
-  <Note>
-  After verification processing, you'll receive a KYC status webhook notification indicating the final verification result.
-  </Note>
+The customer completes the identity verification process in the hosted KYC interface, providing required documents and information.
 
-### Redirect back to your app
-  Upon successful KYC completion, the customer is automatically redirected to your specified `redirectUri` URL.
-  
-  On your redirect page, handle the completed KYC flow and integrate the new customer into your application.
+<Info>
+The hosted interface handles document collection, verification checks, and compliance requirements automatically.
+</Info>
 
-  <Check>
-  The customer account will be automatically created by the system upon successful KYC completion. You can identify the new customer using your `platformCustomerId` or other identifiers.
-  </Check>
+### Track the decision
+Reaching the `redirectUri` only means the customer **finished the hosted flow** — not that they were approved. Wait for the final decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (use the `CUSTOMER.KYB_*` siblings for business customers) — recommended — or by polling `GET /customers/{customerId}` and inspecting `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
 ## Get the Customer's Internal Account
 
@@ -165,9 +185,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accoun
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "currencyCode": "USD",
-    "currencyAmount": 100000,
-    "reference": "FUND-ABC123"
+    "amount": 100000
   }'
 ```
 
@@ -176,7 +194,10 @@ During the funding process, you'll receive transaction status update webhooks.
 **Webhook Notification:**
 ```json
 {
-  "transaction": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
+  "type": "INCOMING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T14:32:00Z",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000010",
     "status": "COMPLETED",
     "type": "INCOMING",
@@ -193,10 +214,7 @@ During the funding process, you'll receive transaction status update webhooks.
     "settledAt": "2025-10-03T14:30:00Z",
     "createdAt": "2025-10-03T14:25:00Z",
     "description": "Internal account funding"
-  },
-  "timestamp": "2025-10-03T14:32:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-  "type": "INCOMING_PAYMENT"
+  }
 }
 ```
 
@@ -295,17 +313,17 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 **Response:**
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PENDING",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "MXN"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -348,17 +366,17 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
 **Response:**
 ```json
 {
-  "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
   "status": "PROCESSING",
   "createdAt": "2025-10-03T15:00:00Z",
   "expiresAt": "2025-10-03T15:05:00Z",
   "source": {
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "destination": {
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "MXN"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "sendingCurrency": {
     "code": "USD",
@@ -385,7 +403,10 @@ The quote status changes to `PROCESSING` and the transfer is initiated. You'll r
 **Completion Webhook:**
 ```json
 {
-  "transaction": {
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000025",
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "timestamp": "2025-10-03T15:03:00Z",
+  "data": {
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
     "status": "COMPLETED",
     "type": "OUTGOING",
@@ -413,10 +434,7 @@ The quote status changes to `PROCESSING` and the transfer is initiated. You'll r
     "description": "Payment to Maria Garcia for services",
     "exchangeRate": 17.25,
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
-  },
-  "timestamp": "2025-10-03T15:03:00Z",
-  "webhookId": "Webhook:019542f5-b3e7-1d02-0000-000000000025",
-  "type": "OUTGOING_PAYMENT"
+  }
 }
 ```
 

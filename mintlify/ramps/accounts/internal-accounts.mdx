@@ -136,22 +136,26 @@ Internal accounts support both fiat and crypto balances:
 
 ## Monitoring account balance changes
 
-Subscribe to `ACCOUNT_STATUS` webhooks to receive real-time balance updates:
+Subscribe to `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks to receive real-time balance updates:
 
 ```json
 {
-  "accountId": "InternalAccount:btc456",
-  "oldBalance": {
-    "amount": 5000000,
-    "currency": { "code": "BTC", "decimals": 8 }
-  },
-  "newBalance": {
-    "amount": 10000000,
-    "currency": { "code": "BTC", "decimals": 8 }
-  },
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "type": "INTERNAL_ACCOUNT.BALANCE_UPDATED",
   "timestamp": "2025-10-03T14:32:00Z",
-  "webhookId": "Webhook:webhook001",
-  "type": "ACCOUNT_STATUS"
+  "data": {
+    "id": "InternalAccount:btc456",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "type": "INTERNAL_CRYPTO",
+    "status": "ACTIVE",
+    "balance": {
+      "amount": 10000000,
+      "currency": { "code": "BTC", "name": "Bitcoin", "symbol": "₿", "decimals": 8 }
+    },
+    "fundingPaymentInstructions": [],
+    "createdAt": "2025-08-01T10:00:00Z",
+    "updatedAt": "2025-10-03T14:32:00Z"
+  }
 }
 ```
 
@@ -177,8 +181,8 @@ const btcAccount = accounts.data.find(
 if (btcAccount.balance.amount >= requiredSats) {
   // Create quote to convert BTC to fiat
   const quote = await createQuote({
-    source: { accountId: btcAccount.id },
-    destination: { accountId: bankAccountId, currency: "USD" },
+    source: { sourceType: "ACCOUNT", accountId: btcAccount.id },
+    destination: { destinationType: "ACCOUNT", accountId: bankAccountId },
     lockedCurrencySide: "SENDING",
     lockedCurrencyAmount: requiredSats,
   });

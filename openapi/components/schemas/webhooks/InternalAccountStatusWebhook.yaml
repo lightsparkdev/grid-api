@@ -10,3 +10,4 @@ allOf:
         type: string
         enum:
           - INTERNAL_ACCOUNT.BALANCE_UPDATED
+          - INTERNAL_ACCOUNT.STATUS_UPDATED

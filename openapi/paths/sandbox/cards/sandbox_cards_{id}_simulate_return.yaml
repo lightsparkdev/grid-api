@@ -1,0 +1,72 @@
+post:
+  summary: Simulate a card return
+  description: >
+    Simulate a merchant-initiated `RETURN` against an existing settled
+    card transaction in the sandbox environment. Creates a `CardRefund` on
+    the parent and either flips the parent to `REFUNDED` (full refund) or
+    keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+
+
+    Production returns `404` on this path.
+  operationId: sandboxSimulateCardReturn
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the card the return applies to.
+      schema:
+        type: string
+      example: Card:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../../components/schemas/cards/SandboxCardReturnRequest.yaml
+        examples:
+          fullRefund:
+            summary: Full refund of a $15.00 settled transaction
+            value:
+              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              amount: 1500
+  responses:
+    '200':
+      description: Simulated return processed. Returns the updated card transaction.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/cards/CardTransaction.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or card transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml

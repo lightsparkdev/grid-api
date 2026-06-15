@@ -2,14 +2,14 @@ Every signed Global Account action uses two key pairs:
 
 | Key pair | Where it lives | What it does |
 |---|---|---|
-| **Client key pair** (P-256) | On the customer's device, generated fresh per verification request | Used as the HPKE recipient key so Grid can encrypt the session signing key to the client. Ephemeral — one pair per `POST /auth/credentials/{id}/verify` call. |
+| **Client key pair** (P-256) | On the customer's device, generated fresh per session-issuing or export request | Used as the HPKE recipient key so Grid can encrypt session keys or wallet export credentials to the client. Ephemeral — one pair per authentication, session refresh, or wallet export. |
 | **Session signing key** (P-256) | Issued by Grid, encrypted to the client public key, decrypted and held on the device | Signs every account action for the lifetime of the session (default 15 minutes). |
 
 This page covers generating the client key pair, sending the public key to your backend, decrypting the session signing key, and signing payloads. Everything here runs **on the client**; your integrator backend only relays opaque byte strings.
 
 ## 1. Generate a client key pair
 
-Generate a fresh P-256 key pair for every authentication and for every wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `EMAIL_OTP` and `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded — a 130-character string starting with `04` — through your integrator backend. The Web Crypto, iOS, and Android APIs shown below all produce this format natively.
+Generate a fresh P-256 key pair for every authentication, session refresh, and wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `EMAIL_OTP` and `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for session refresh it goes on both `/auth/sessions/{id}/refresh` calls; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded — a 130-character string starting with `04` — through your integrator backend. The Web Crypto, iOS, and Android APIs shown below all produce this format natively.
 
 <Tip>
   For local development, you can generate a P-256 key pair from the command line:
@@ -114,6 +114,47 @@ func generateClientKeyPair() -> ClientKeyPair {
   The private key **must not leave the device**. Your integrator backend only ever sees `publicKeyHex`.
 </Note>
 
+## Encrypt the OTP code (`EMAIL_OTP` only)
+
+`EMAIL_OTP` credentials never send the OTP code in plaintext. Instead, the client HPKE-encrypts the code (together with its `publicKeyHex`) to an enclave key, so the code is unreadable in transit and Grid is only a pass-through.
+
+Grid returns an `otpEncryptionTargetBundle` whenever it initiates or reissues an OTP challenge, including `POST /auth/credentials/{id}/challenge` and add-EMAIL_OTP signed-retry responses. First-time EMAIL_OTP wallet bootstrap registration can omit it; if the registration response has no bundle, call `POST /auth/credentials/{id}/challenge` for that credential before verifying. The bundle is a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
+
+Use an HPKE library so you don't hand-roll the suite, `info`, or AAD — `@turnkey/crypto`'s `hpkeEncrypt` + `formatHpkeBuf` produce exactly the shape the enclave expects:
+
+```typescript Web (TypeScript)
+// npm i @turnkey/crypto @noble/hashes
+import { hpkeEncrypt, formatHpkeBuf } from "@turnkey/crypto";
+import { hexToBytes } from "@noble/hashes/utils";
+
+// otpEncryptionTargetBundle: from the registration response when present, or /challenge
+// clientPublicKeyHex: the uncompressed public key you generated in step 1
+// otp: the code the user typed ("000000" in sandbox)
+function buildEncryptedOtpBundle(
+  otpEncryptionTargetBundle: string,
+  clientPublicKeyHex: string,
+  otp: string,
+): string {
+  // Pull the enclave's target key out of the signed bundle.
+  const { data } = JSON.parse(otpEncryptionTargetBundle) as { data: string };
+  const { targetPublic } = JSON.parse(
+    new TextDecoder().decode(hexToBytes(data)),
+  ) as { targetPublic: string };
+
+  // Note the snake_case { otp_code, public_key } — that's what the enclave expects.
+  const plainTextBuf = new TextEncoder().encode(
+    JSON.stringify({ otp_code: otp, public_key: clientPublicKeyHex }),
+  );
+  return formatHpkeBuf(hpkeEncrypt({ plainTextBuf, targetKeyBuf: hexToBytes(targetPublic) }));
+}
+```
+
+<Note>
+  A production client should also verify the bundle's `dataSignature` against its `enclaveQuorumPublic` before trusting `targetPublic`.
+</Note>
+
+The private key of the pair you generated in step 1 stays on the device — it becomes the session signing key once verification completes (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>), so `EMAIL_OTP` responses omit `encryptedSessionSigningKey`.
+
 ## 2. Verify the credential and receive the encrypted session signing key
 
 Your client sends `publicKeyHex` to your integrator backend along with whatever the credential type requires (OTP value, OIDC token, or WebAuthn assertion — see <a href="authentication">Authentication</a>). Your backend calls `POST /auth/credentials/{id}/verify` and returns the `encryptedSessionSigningKey` from Grid's response to the client.
@@ -124,28 +165,50 @@ Grid encrypts the session signing key with **HPKE** (RFC 9180) using the suite:
 - KDF: HKDF-SHA256
 - AEAD: AES-256-GCM
 
-The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag).
+The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag). For HPKE itself, uncompress the encapsulated key to 65-byte SEC1 form, set `info` to UTF-8 `turnkey_hpke`, and authenticate with AAD `encappedPublicUncompressed || recipientPublicKeyUncompressed`.
 
 <Note>
-  **In sandbox, `encryptedSessionSigningKey` is a stub** — random bytes shaped like a real HPKE payload but not encrypted to your `clientPublicKey`. Decrypt attempts will fail. Skip this step entirely on sandbox and use the literal `Grid-Wallet-Signature: sandbox-valid-signature` for any signed action (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>). The decrypt path below applies only to production.
+  Sandbox supports the same decryptable `encryptedSessionSigningKey` format for production-shaped `PASSKEY` and `OAUTH` tests. The legacy `Grid-Wallet-Signature: sandbox-valid-signature` shortcut is still accepted, but using real session bundles and stamps catches client-side format bugs before production.
 </Note>
 
 ## 3. Decrypt the session signing key
 
 <CodeGroup>
 ```typescript Web (TypeScript)
-// npm i @hpke/core @hpke/dhkem-p256 bs58check
+// npm i @hpke/core @hpke/dhkem-p256 @noble/curves bs58check
 import { Aes256Gcm, CipherSuite, HkdfSha256 } from "@hpke/core";
 import { DhkemP256HkdfSha256 } from "@hpke/dhkem-p256";
+import { p256 } from "@noble/curves/nist.js";
 import bs58check from "bs58check";
+
+const TURNKEY_HPKE_INFO = new TextEncoder().encode("turnkey_hpke");
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function concatBytes(...chunks: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(chunks.reduce((len, chunk) => len + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
+}
 
 async function decryptSessionSigningKey(
   clientKeyPair: CryptoKeyPair,
   encryptedSessionSigningKey: string,
 ): Promise<Uint8Array> {
   const payload = bs58check.decode(encryptedSessionSigningKey);
-  const enc = payload.slice(0, 33); // compressed P-256 encapsulated public key
+  const compressedEnc = payload.slice(0, 33);
+  const enc = p256.Point.fromHex(bytesToHex(compressedEnc)).toBytes(false);
   const ciphertext = payload.slice(33);
+  const recipientPub = new Uint8Array(
+    await crypto.subtle.exportKey("raw", clientKeyPair.publicKey),
+  );
+  const aad = concatBytes(enc, recipientPub);
 
   const suite = new CipherSuite({
     kem: new DhkemP256HkdfSha256(),
@@ -156,8 +219,9 @@ async function decryptSessionSigningKey(
   const recipient = await suite.createRecipientContext({
     recipientKey: clientKeyPair.privateKey,
     enc,
+    info: TURNKEY_HPKE_INFO,
   });
-  const plaintext = await recipient.open(ciphertext);
+  const plaintext = await recipient.open(ciphertext, aad);
   return new Uint8Array(plaintext); // 32-byte P-256 session private key (scalar)
 }
 ```
@@ -173,12 +237,16 @@ fun decryptSessionSigningKey(
     alias: String,
     encryptedSessionSigningKey: String, // base58check
 ): ByteArray {
+    // uncompressP256 returns a 65-byte SEC1 public key. uncompressedPublicKey
+    // returns the matching 65-byte SEC1 public key for the private key.
     val payload = Base58Check.decode(encryptedSessionSigningKey)
-    val enc = payload.copyOfRange(0, 33)
+    val enc = uncompressP256(payload.copyOfRange(0, 33))
     val ciphertext = payload.copyOfRange(33, payload.size)
 
     val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
     val privateKey = keyStore.getKey(alias, null) as java.security.interfaces.ECPrivateKey
+    val recipientPub = uncompressedPublicKey(privateKey)
+    val aad = enc + recipientPub
 
     val hpke = HPKE(
         HPKE.mode_base,
@@ -186,8 +254,8 @@ fun decryptSessionSigningKey(
         HPKE.kdf_HKDF_SHA256,
         HPKE.aead_AES_GCM256,
     )
-    val recipient = hpke.setupBaseR(enc, privateKey, byteArrayOf())
-    return recipient.open(byteArrayOf(), ciphertext)
+    val recipient = hpke.setupBaseR(enc, privateKey, "turnkey_hpke".toByteArray())
+    return recipient.open(aad, ciphertext)
 }
 ```
 
@@ -201,17 +269,19 @@ func decryptSessionSigningKey(
     clientPrivateKey: P256.KeyAgreement.PrivateKey,
     encryptedSessionSigningKey: String, // base58check
 ) throws -> Data {
+    // uncompressP256 returns a 65-byte SEC1 public key.
     let payload = try Base58Check.decode(encryptedSessionSigningKey)
-    let enc = payload.prefix(33)
+    let enc = try uncompressP256(payload.prefix(33))
     let ciphertext = payload.suffix(from: 33)
+    let aad = enc + clientPrivateKey.publicKey.x963Representation
 
     var recipient = try HPKE.Recipient(
         privateKey: clientPrivateKey,
         ciphersuite: .P256_SHA256_AES_GCM_256,
-        info: Data(),
-        encapsulatedKey: Data(enc),
+        info: Data("turnkey_hpke".utf8),
+        encapsulatedKey: enc,
     )
-    return try recipient.open(Data(ciphertext), authenticating: Data())
+    return try recipient.open(Data(ciphertext), authenticating: aad)
 }
 ```
 </CodeGroup>
@@ -224,9 +294,19 @@ Grid returns `payloadToSign` strings from several endpoints:
 
 - `POST /quotes` (when the source is a Global Account) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
-- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /internal-accounts/{id}/export` — all 202 response bodies.
+- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for tied `EMAIL_OTP` email updates — all 202 response bodies.
 
-Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The signature is ECDSA over SHA-256 using the session signing key, DER-encoded, then base64-encoded. Pass it as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, the `Request-Id` header echoed back from the 202).
+Stamp the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The session signing key is a Turnkey API key: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the Turnkey stamp JSON:
+
+```json
+{
+  "publicKey": "<compressed P-256 public key hex>",
+  "scheme": "SIGNATURE_SCHEME_TK_API_P256",
+  "signature": "<DER ECDSA signature hex>"
+}
+```
+
+Pass that full stamp as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, echo the 202 `requestId` as `Request-Id`).
 
 <Note>
   **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed account action. Sandbox skips the ECDSA check, so you don't need a real session signing key or an extracted `payloadToSign`. The signing pattern below applies only to production.
@@ -234,36 +314,69 @@ Sign the payload **byte-for-byte as returned** (do not re-parse, re-serialize, o
 
 <CodeGroup>
 ```typescript Web (TypeScript)
-// npm i @noble/curves @noble/hashes
-import { p256 } from "@noble/curves/p256";
-import { sha256 } from "@noble/hashes/sha256";
+// npm i @turnkey/api-key-stamper @turnkey/crypto
+import { signWithApiKey } from "@turnkey/api-key-stamper";
+import { getPublicKey } from "@turnkey/crypto";
 
-function bytesToBase64(bytes: Uint8Array): string {
+const TURNKEY_STAMP_SCHEME = "SIGNATURE_SCHEME_TK_API_P256";
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function base64url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
-  return btoa(binary);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function signPayload(
+async function buildGridWalletSignature(
   sessionPrivateKeyBytes: Uint8Array, // 32 bytes, from decryptSessionSigningKey
   payloadToSign: string,
-): string {
-  const digest = sha256(new TextEncoder().encode(payloadToSign));
-  const signature = p256.sign(digest, sessionPrivateKeyBytes);
-  return bytesToBase64(signature.toDERRawBytes());
+): Promise<string> {
+  const apiPrivateKey = bytesToHex(sessionPrivateKeyBytes);
+  const apiPublicKey = bytesToHex(getPublicKey(apiPrivateKey, true));
+  const signature = await signWithApiKey({
+    content: payloadToSign,
+    publicKey: apiPublicKey,
+    privateKey: apiPrivateKey,
+  });
+  const stamp = JSON.stringify({
+    publicKey: apiPublicKey,
+    scheme: TURNKEY_STAMP_SCHEME,
+    signature,
+  });
+  return base64url(new TextEncoder().encode(stamp));
 }
 ```
 
 ```kotlin Android (Kotlin)
+import android.util.Base64
 import java.security.KeyFactory
 import java.security.Signature
+import java.security.interfaces.ECPrivateKey
 import java.security.spec.ECPrivateKeySpec
 import java.security.spec.ECParameterSpec
-import android.util.Base64
+import org.bouncycastle.jce.ECNamedCurveTable
 
-fun signPayload(
+private const val TURNKEY_STAMP_SCHEME = "SIGNATURE_SCHEME_TK_API_P256"
+
+private fun ByteArray.hex(): String = joinToString("") { "%02x".format(it) }
+
+private fun base64url(value: String): String =
+    Base64.encodeToString(
+        value.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP,
+    )
+
+private fun compressedPublicKeyHex(privateKey: ECPrivateKey): String {
+    val curve = ECNamedCurveTable.getParameterSpec("secp256r1")
+    return curve.g.multiply(privateKey.s).normalize().getEncoded(true).hex()
+}
+
+fun buildGridWalletSignature(
     sessionPrivateScalar: ByteArray, // 32 bytes
     payloadToSign: String,
     p256Params: ECParameterSpec,
@@ -275,8 +388,10 @@ fun signPayload(
         initSign(privateKey)
         update(payloadToSign.toByteArray(Charsets.UTF_8))
     }
-    val der = signer.sign() // JCE returns DER-encoded ECDSA
-    return Base64.encodeToString(der, Base64.NO_WRAP)
+    val derSignatureHex = signer.sign().hex() // JCE returns DER-encoded ECDSA.
+    val publicKeyHex = compressedPublicKeyHex(privateKey as ECPrivateKey) // 33-byte SEC1 form.
+    val stampJson = """{"publicKey":"$publicKeyHex","scheme":"$TURNKEY_STAMP_SCHEME","signature":"$derSignatureHex"}"""
+    return base64url(stampJson)
 }
 ```
 
@@ -284,24 +399,33 @@ fun signPayload(
 import CryptoKit
 import Foundation
 
-func signPayload(
+func buildGridWalletSignature(
     sessionPrivateScalar: Data, // 32 bytes
     payloadToSign: String,
 ) throws -> String {
     let signingKey = try P256.Signing.PrivateKey(rawRepresentation: sessionPrivateScalar)
     let payload = Data(payloadToSign.utf8)
     let signature = try signingKey.signature(for: payload)
-    return signature.derRepresentation.base64EncodedString()
+    let signatureHex = signature.derRepresentation.map { String(format: "%02x", $0) }.joined()
+    let publicKeyHex = signingKey.publicKey.compressedRepresentation
+        .map { String(format: "%02x", $0) }
+        .joined()
+    let stampJson = #"{"publicKey":"\#(publicKeyHex)","scheme":"SIGNATURE_SCHEME_TK_API_P256","signature":"\#(signatureHex)"}"#
+    return Data(stampJson.utf8)
+        .base64EncodedString()
+        .replacingOccurrences(of: "+", with: "-")
+        .replacingOccurrences(of: "/", with: "_")
+        .replacingOccurrences(of: "=", with: "")
 }
 ```
 </CodeGroup>
 
-Your backend adds the signature to the retry request:
+Your backend adds the stamp to the retry request:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE="
+  -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9"
 ```
 
 ## Session lifetime

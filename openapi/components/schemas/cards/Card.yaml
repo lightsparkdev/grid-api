@@ -1,0 +1,100 @@
+type: object
+required:
+  - id
+  - cardholderId
+  - state
+  - form
+  - fundingSources
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique card identifier
+    readOnly: true
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  cardholderId:
+    type: string
+    description: The id of the `Customer` who holds this card.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  platformCardId:
+    type: string
+    description: >-
+      Platform-specific card identifier. Optional on create — system-generated
+      if omitted, mirroring `platformCustomerId` semantics.
+    example: card-emp-aary-001
+  state:
+    $ref: ./CardState.yaml
+  stateReason:
+    anyOf:
+      - $ref: ./CardStateReason.yaml
+      - type: 'null'
+    description: >-
+      Reason associated with the current `state`. Populated when the card is
+      `CLOSED` or when provisioning was rejected; otherwise null.
+  brand:
+    $ref: ./CardBrand.yaml
+  form:
+    $ref: ./CardForm.yaml
+  last4:
+    type: string
+    description: Last four digits of the card PAN.
+    example: '4242'
+  expMonth:
+    type: integer
+    minimum: 1
+    maximum: 12
+    description: Card expiration month (1–12).
+    example: 12
+  expYear:
+    type: integer
+    description: Card expiration year (four digits).
+    example: 2029
+  panEmbedUrl:
+    type: string
+    format: uri
+    description: >-
+      URL of the card issuer's iframe that securely displays the PAN, CVV,
+      and expiry to the cardholder. The full PAN and CVV never cross Grid's
+      servers — render this URL in an iframe in your client to reveal card
+      details.
+    example: https://embed.lithic.com/iframe/...?t=...
+  fundingSources:
+    type: array
+    description: >-
+      Internal account ids bound to this card as funding sources, in priority
+      order — the first entry is tried first by Authorization Decisioning.
+      Every card has at least one funding source.
+    items:
+      type: string
+    example:
+      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  currency:
+    type: string
+    description: >-
+      Currency the card transacts in (ISO 4217 for fiat, tickers for crypto).
+      Derived from the funding sources at issue time — all funding sources
+      bound to a card must be denominated in the same card-eligible currency.
+    example: USD
+    readOnly: true
+  issuerRef:
+    type: string
+    description: >-
+      Opaque identifier for the card on the underlying issuer. Useful for
+      cross-referencing in issuer dashboards; not used for any Grid request
+      routing.
+    example: lithic_card_4f8d3a2b1c
+    readOnly: true
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp
+    readOnly: true
+    example: '2026-05-08T14:10:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp
+    readOnly: true
+    example: '2026-05-08T14:11:00Z'

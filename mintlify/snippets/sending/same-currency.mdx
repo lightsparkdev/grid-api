@@ -32,10 +32,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": { "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123" },
-    "destination": { "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+    "destination": { "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965", "paymentRail": "ACH" },
     "amount": 12550
   }'
 ```
+
+<Tip>
+  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination.
+</Tip>
 
 ```json Success (201 Created)
 {
@@ -43,12 +47,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/transfer-out' \
   "status": "PENDING",
   "type": "OUTGOING",
   "source": {
-    "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-    "currency": "USD"
+    "sourceType": "ACCOUNT",
+    "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
   },
   "destination": {
-    "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "currency": "USD"
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
   },
   "sentAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
   "receivedAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },

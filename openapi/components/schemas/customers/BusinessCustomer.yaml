@@ -5,7 +5,7 @@ allOf:
   - type: object
     properties:
       businessInfo:
-        $ref: ./BusinessInfo.yaml
+        $ref: ./BusinessInfoResponse.yaml
       beneficialOwners:
         type: array
         items:

@@ -14,7 +14,7 @@ Grid Visualizer is an interactive tool that helps integrators understand and get
 
 ## Entry Points
 
-- **Docs site**: grid.lightspark.com
+- **Docs site**: docs.lightspark.com
 - **Marketing site**: lightspark.com/grid
 - **Direct links** shared in sales conversations
 - Currently deployed at: https://grid-flow-builder.vercel.app/

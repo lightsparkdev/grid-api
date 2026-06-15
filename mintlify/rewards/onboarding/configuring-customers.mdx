@@ -40,7 +40,7 @@ The `platformCustomerId` field is optional but recommended. Use your existing us
 When a customer is created successfully, internal accounts are automatically created for each currency configured on your platform. These accounts can be used as sources or destinations for transfers.
 </Info>
 
-### Hanlding KYC/KYC Webhooks 
+### Handling KYC/KYB Webhooks 
 
 <KycWebhooks />
 
@@ -77,6 +77,18 @@ Filter customers updated after this timestamp (ISO 8601)
 
 <ParamField query="updatedBefore" type="string">
 Filter customers updated before this timestamp (ISO 8601)
+</ParamField>
+
+<ParamField query="region" type="string">
+Filter by customer region (ISO 3166-1 alpha-2 country code)
+</ParamField>
+
+<ParamField query="currency" type="string">
+Filter by currency code. Returns customers that have this currency in their enabled currencies list.
+</ParamField>
+
+<ParamField query="umaAddress" type="string">
+Filter by UMA address
 </ParamField>
 
 <ParamField query="isIncludingDeleted" type="boolean">

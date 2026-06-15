@@ -47,6 +47,8 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
     {
       "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "INTERNAL_FIAT",
+      "status": "ACTIVE",
       "balance": {
         "amount": 50000,
         "currency": {
@@ -61,7 +63,7 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
           "instructionsNotes": "Include the reference code in your ACH transfer memo",
           "accountOrWalletInfo": {
             "reference": "FUND-ABC123",
-            "accountType": "US_ACCOUNT",
+            "accountType": "USD_ACCOUNT",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
             "accountHolderName": "Lightspark Payments FBO John Doe",
@@ -121,7 +123,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     {
       "instructionsNotes": "Include the reference code in your ACH transfer memo",
       "accountOrWalletInfo": {
-        "accountType": "US_ACCOUNT",
+        "accountType": "USD_ACCOUNT",
         "reference": "FUND-ABC123",
         "accountNumber": "9876543210",
         "routingNumber": "021000021",
@@ -145,10 +147,10 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     {
       "instructionsNotes": "Include reference in SEPA transfer description",
       "accountOrWalletInfo": {
-        "accountType": "IBAN",
+        "accountType": "EUR_ACCOUNT",
         "reference": "FUND-EUR789",
         "iban": "DE89370400440532013000",
-        "swiftBic": "DEUTDEFF",
+        "swiftCode": "DEUTDEFF",
         "accountHolderName": "Lightspark Payments FBO Maria Garcia",
         "bankName": "Banco de México"
       }
@@ -239,26 +241,32 @@ The internal account balance reflects all deposits and withdrawals. The balance 
 ### Example balance check
 
 ```bash Fetch the balance of an internal account
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts/InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&currency=USD' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 <Accordion title="Response">
 ```json
 {
-  "data": {
-    "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-    "balance": {
-      "amount": 50000,
-      "currency": {
-        "code": "USD",
-        "name": "United States Dollar",
-        "symbol": "$",
-        "decimals": 2
+  "data": [
+    {
+      "id": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "INTERNAL_FIAT",
+      "status": "ACTIVE",
+      "balance": {
+        "amount": 50000,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
       }
     }
-  }
+  ],
+  "hasMore": false,
+  "totalCount": 1
 }
 ```
 </Accordion>
@@ -307,7 +315,7 @@ Show the payment details prominently in your UI:
 Set up webhook listeners to receive notifications when deposits are credited to the internal account. The account balance will update automatically.
 
 <Info>
-You'll receive `ACCOUNT_STATUS` webhook events when the internal account balance changes.
+You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook events when the internal account balance changes.
 </Info>
 </Step>
 </Steps>

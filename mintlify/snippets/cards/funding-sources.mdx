@@ -1,0 +1,97 @@
+A card's `fundingSources` array is the ordered list of internal accounts
+Authorization Decisioning can pull from when an auth lands. The first
+entry is tried first. This page covers binding at issue time and
+replacing the binding via `PATCH /cards/{id}`.
+
+## At issue time
+
+You supply the initial `fundingSources` array on `POST /cards`. Every
+card must be bound to at least one source.
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardholderId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "form": "VIRTUAL",
+    "fundingSources": [
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    ]
+  }'
+```
+
+Each source must:
+
+- Belong to the cardholder (no cross-customer funding in v1).
+- Be denominated in a card-eligible currency (USDB in v1).
+- Match the card's currency. All sources bound to a single card share
+  one currency.
+
+If any source fails these checks, the request is rejected with
+`400 FUNDING_SOURCE_INELIGIBLE`.
+
+## Replacing the binding
+
+`PATCH /cards/{id}` accepts a `fundingSources` field that fully
+replaces the previous binding. Array order is the new priority order —
+first entry is tried first by Authorization Decisioning.
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fundingSources": [
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000003"
+    ]
+  }'
+```
+
+`PATCH` is a sensitive state change, so it uses the
+`202 → signed-retry` flow described in
+[Freezing and closing cards](/cards/card-management/freezing-and-closing).
+The same flow covers `state`, `fundingSources`, or both fields supplied
+together.
+
+`CARD.FUNDING_SOURCE_CHANGE` fires on every successful update with the
+post-change `Card` resource.
+
+### Errors
+
+| Status | Code | What it means |
+|--------|------|---------------|
+| 400 | `FUNDING_SOURCE_INELIGIBLE` | A supplied account doesn't belong to the cardholder or isn't denominated in the card's currency. |
+| 409 | `CARD_NOT_MUTABLE` | The card is `CLOSED`. |
+| 400 | `INVALID_INPUT` | The `fundingSources` array is empty (a card must have at least one source). |
+
+<Warning>
+`fundingSources` is a full replacement, not a delta. Always send the
+complete ordered list you want bound to the card; omitting an existing
+source removes it.
+</Warning>
+
+## Stopping a card from spending
+
+You cannot remove all funding sources from a card — the array must
+contain at least one entry. To stop a card from spending without
+detaching it from its funding source, transition it to `FROZEN`:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "state": "FROZEN" }'
+```
+
+To permanently retire a card, close it with `PATCH /cards/{id}` and
+`state: "CLOSED"`.
+
+## v1 behavior: single active source
+
+`PATCH /cards/{id}` accepts an arbitrary-length ordered array, but in
+v1 Authorization Decisioning only reads the first entry. Additional
+sources are accepted and stored so you can stage multi-source
+decisioning ahead of the v1.5+ rollout, but they don't change
+auth-time behavior today.

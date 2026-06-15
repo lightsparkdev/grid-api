@@ -3,12 +3,26 @@ description: >-
   202 response returned from Embedded Wallet Auth endpoints that require
   a signed retry — `POST /auth/credentials` (adding an additional
   credential), `DELETE /auth/credentials/{id}` (revoking a credential),
-  and `DELETE /auth/sessions/{id}` (revoking a session). Carries the
-  signing fields from `SignedRequestChallenge` plus the `type` of the
-  authentication credential involved (being added, being revoked, or
-  that issued the session being revoked). The client already knows the
-  target resource id from the request path / body it just sent, so
-  nothing beyond `type` is echoed in the response.
+  `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP`
+  branch of `POST /auth/credentials/{id}/verify` (the secure OTP login
+  flow, where the client submits an `encryptedOtpBundle` and receives a
+  `verificationToken` to sign for the second-leg session issuance).
+  Carries the signing fields from `SignedRequestChallenge` plus the
+  `type` of the authentication credential involved (being added,
+  revoked, that issued the session being revoked, or being
+  authenticated). The client already knows the target resource id from
+  the request path / body it just sent, so nothing beyond `type` is
+  echoed in the response.
+
+
+  The keypair used to compute the stamp depends on the operation. For
+  credential / session management retries, sign with the session API
+  keypair of an existing verified credential on the same internal
+  account. For the `EMAIL_OTP` verify retry, sign with the ephemeral
+  Target Encryption Key (TEK) the client generated for this login —
+  its public key is the one carried inside the `encryptedOtpBundle`
+  and bound into the `verificationToken`, and it becomes the client's
+  session API key on successful completion.
 allOf:
   - $ref: ../common/SignedRequestChallenge.yaml
   - type: object
@@ -19,7 +33,8 @@ allOf:
         $ref: ./AuthMethodType.yaml
         description: >-
           Credential type relevant to this challenge: the credential type
-          being added (`POST /auth/credentials`), the credential type
-          being revoked (`DELETE /auth/credentials/{id}`), or the type of
-          credential that issued the session being revoked
-          (`DELETE /auth/sessions/{id}`).
+          being added (`POST /auth/credentials`), revoked
+          (`DELETE /auth/credentials/{id}`), or authenticated
+          (`EMAIL_OTP` branch of `POST /auth/credentials/{id}/verify`).
+          For session revocation, this is the type of credential that
+          issued the session (`DELETE /auth/sessions/{id}`).

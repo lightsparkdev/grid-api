@@ -111,6 +111,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "REALTIME_FUNDING",
       "customerId": "Customer:sandbox001",
       "currency": "USD"
     },
@@ -124,26 +125,26 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   }'
 ```
 
-The quote response includes payment instructions with a reference code.
+The quote response includes payment instructions for the fiat funding step.
 
 ### Step 4: Simulate funding
 
-Use the sandbox endpoint to simulate receiving the fiat payment:
+Use the sandbox endpoint to simulate receiving the fiat payment. Reference the quote by ID and specify the funding currency:
 
 ```bash
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/send' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
-    "reference": "RAMP-ABC123",
-    "currencyCode": "USD",
-    "currencyAmount": 10000
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "currencyCode": "USD"
   }'
 ```
 
 <Note>
-  The reference code must match the one provided in the quote's payment
-  instructions.
+  `currencyCode` must match the funding-source currency on the quote.
+  `currencyAmount` is optional — when omitted, the amount is derived from the
+  quote.
 </Note>
 
 ### Step 5: Verify completion
@@ -190,7 +191,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accoun
 Replace `InternalAccount:btc001` with your actual BTC internal account ID.
 
 <Check>
-  You'll receive an `ACCOUNT_STATUS` webhook showing the updated balance.
+  You'll receive an `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook showing the updated balance.
 </Check>
 
 ### Step 2: Create external bank account
@@ -238,11 +239,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:sandbox_btc001"
     },
     "destination": {
-      "accountId": "ExternalAccount:sandbox_bank001",
-      "currency": "USD"
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:sandbox_bank001"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 5000000,
@@ -342,11 +344,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "ACCOUNT",
       "accountId": "InternalAccount:empty_btc"
     },
     "destination": {
-      "accountId": "ExternalAccount:bank001",
-      "currency": "USD"
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:bank001"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000000

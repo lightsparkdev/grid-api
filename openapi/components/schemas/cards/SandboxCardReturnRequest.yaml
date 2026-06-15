@@ -1,0 +1,25 @@
+type: object
+required:
+  - cardTransactionId
+  - amount
+description: >-
+  Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`.
+  Drives a `RETURN` event against an existing settled `CardTransaction`,
+  which creates a `CardRefund` and pushes the parent transaction towards
+  `REFUNDED` (full) or keeps it `SETTLED` (partial).
+properties:
+  cardTransactionId:
+    type: string
+    description: >-
+      The id of the `CardTransaction` to refund against. Must have at least
+      one settled clearing.
+    example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      Return amount in the smallest unit of the transaction's currency. Must
+      be less than or equal to the net settled amount (settled minus
+      previously-refunded).
+    exclusiveMinimum: 0
+    example: 1500

@@ -1,89 +1,95 @@
 oneOf:
+- $ref: ./AedExternalAccountInfo.yaml
+- $ref: ./BdtExternalAccountInfo.yaml
 - $ref: ./BrlExternalAccountInfo.yaml
+- $ref: ./BwpExternalAccountInfo.yaml
 - $ref: ./CadExternalAccountInfo.yaml
+- $ref: ./CopExternalAccountInfo.yaml
 - $ref: ./DkkExternalAccountInfo.yaml
+- $ref: ./EgpExternalAccountInfo.yaml
 - $ref: ./EurExternalAccountInfo.yaml
 - $ref: ./GbpExternalAccountInfo.yaml
+- $ref: ./GhsExternalAccountInfo.yaml
+- $ref: ./GtqExternalAccountInfo.yaml
 - $ref: ./HkdExternalAccountInfo.yaml
+- $ref: ./HtgExternalAccountInfo.yaml
 - $ref: ./IdrExternalAccountInfo.yaml
 - $ref: ./InrExternalAccountInfo.yaml
+- $ref: ./JmdExternalAccountInfo.yaml
 - $ref: ./KesExternalAccountInfo.yaml
 - $ref: ./MwkExternalAccountInfo.yaml
 - $ref: ./MxnExternalAccountInfo.yaml
 - $ref: ./MyrExternalAccountInfo.yaml
 - $ref: ./NgnExternalAccountInfo.yaml
 - $ref: ./PhpExternalAccountInfo.yaml
+- $ref: ./PkrExternalAccountInfo.yaml
 - $ref: ./RwfExternalAccountInfo.yaml
 - $ref: ./SgdExternalAccountInfo.yaml
+- $ref: ./SlvExternalAccountInfo.yaml
 - $ref: ./ThbExternalAccountInfo.yaml
 - $ref: ./TzsExternalAccountInfo.yaml
 - $ref: ./UgxExternalAccountInfo.yaml
 - $ref: ./UsdExternalAccountInfo.yaml
 - $ref: ./VndExternalAccountInfo.yaml
+- $ref: ./XafExternalAccountInfo.yaml
 - $ref: ./XofExternalAccountInfo.yaml
 - $ref: ./ZarExternalAccountInfo.yaml
 - $ref: ./ZmwExternalAccountInfo.yaml
-- $ref: ./SparkWalletExternalAccountInfo.yaml
-- $ref: ./LightningExternalAccountInfo.yaml
-- $ref: ./SolanaWalletExternalAccountInfo.yaml
-- $ref: ./TronWalletExternalAccountInfo.yaml
-- $ref: ./PolygonWalletExternalAccountInfo.yaml
+- $ref: ./SwiftExternalAccountInfo.yaml
 - $ref: ./BaseWalletExternalAccountInfo.yaml
 - $ref: ./EthereumWalletExternalAccountInfo.yaml
-- $ref: ./AedExternalAccountInfo.yaml
-- $ref: ./BwpExternalAccountInfo.yaml
-- $ref: ./XafExternalAccountInfo.yaml
-- $ref: ./BdtExternalAccountInfo.yaml
-- $ref: ./CopExternalAccountInfo.yaml
-- $ref: ./EgpExternalAccountInfo.yaml
-- $ref: ./GhsExternalAccountInfo.yaml
-- $ref: ./GtqExternalAccountInfo.yaml
-- $ref: ./HtgExternalAccountInfo.yaml
-- $ref: ./JmdExternalAccountInfo.yaml
-- $ref: ./PkrExternalAccountInfo.yaml
+- $ref: ./LightningExternalAccountInfo.yaml
+- $ref: ./PolygonWalletExternalAccountInfo.yaml
+- $ref: ./SolanaWalletExternalAccountInfo.yaml
+- $ref: ./SparkWalletExternalAccountInfo.yaml
+- $ref: ./TronWalletExternalAccountInfo.yaml
+- $ref: ./CnyExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
+    AED_ACCOUNT: ./AedExternalAccountInfo.yaml
+    BDT_ACCOUNT: ./BdtExternalAccountInfo.yaml
     BRL_ACCOUNT: ./BrlExternalAccountInfo.yaml
+    BWP_ACCOUNT: ./BwpExternalAccountInfo.yaml
     CAD_ACCOUNT: ./CadExternalAccountInfo.yaml
+    COP_ACCOUNT: ./CopExternalAccountInfo.yaml
     DKK_ACCOUNT: ./DkkExternalAccountInfo.yaml
+    EGP_ACCOUNT: ./EgpExternalAccountInfo.yaml
     EUR_ACCOUNT: ./EurExternalAccountInfo.yaml
     GBP_ACCOUNT: ./GbpExternalAccountInfo.yaml
+    GHS_ACCOUNT: ./GhsExternalAccountInfo.yaml
+    GTQ_ACCOUNT: ./GtqExternalAccountInfo.yaml
     HKD_ACCOUNT: ./HkdExternalAccountInfo.yaml
+    HTG_ACCOUNT: ./HtgExternalAccountInfo.yaml
     IDR_ACCOUNT: ./IdrExternalAccountInfo.yaml
     INR_ACCOUNT: ./InrExternalAccountInfo.yaml
+    JMD_ACCOUNT: ./JmdExternalAccountInfo.yaml
     KES_ACCOUNT: ./KesExternalAccountInfo.yaml
     MWK_ACCOUNT: ./MwkExternalAccountInfo.yaml
     MXN_ACCOUNT: ./MxnExternalAccountInfo.yaml
     MYR_ACCOUNT: ./MyrExternalAccountInfo.yaml
     NGN_ACCOUNT: ./NgnExternalAccountInfo.yaml
     PHP_ACCOUNT: ./PhpExternalAccountInfo.yaml
+    PKR_ACCOUNT: ./PkrExternalAccountInfo.yaml
     RWF_ACCOUNT: ./RwfExternalAccountInfo.yaml
     SGD_ACCOUNT: ./SgdExternalAccountInfo.yaml
+    SLV_ACCOUNT: ./SlvExternalAccountInfo.yaml
     THB_ACCOUNT: ./ThbExternalAccountInfo.yaml
     TZS_ACCOUNT: ./TzsExternalAccountInfo.yaml
     UGX_ACCOUNT: ./UgxExternalAccountInfo.yaml
     USD_ACCOUNT: ./UsdExternalAccountInfo.yaml
     VND_ACCOUNT: ./VndExternalAccountInfo.yaml
+    XAF_ACCOUNT: ./XafExternalAccountInfo.yaml
     XOF_ACCOUNT: ./XofExternalAccountInfo.yaml
     ZAR_ACCOUNT: ./ZarExternalAccountInfo.yaml
     ZMW_ACCOUNT: ./ZmwExternalAccountInfo.yaml
-    SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
-    LIGHTNING: ./LightningExternalAccountInfo.yaml
-    SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
-    TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
-    POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
+    SWIFT_ACCOUNT: ./SwiftExternalAccountInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
     ETHEREUM_WALLET: ./EthereumWalletExternalAccountInfo.yaml
-    AED_ACCOUNT: ./AedExternalAccountInfo.yaml
-    BWP_ACCOUNT: ./BwpExternalAccountInfo.yaml
-    XAF_ACCOUNT: ./XafExternalAccountInfo.yaml
-    BDT_ACCOUNT: ./BdtExternalAccountInfo.yaml
-    COP_ACCOUNT: ./CopExternalAccountInfo.yaml
-    EGP_ACCOUNT: ./EgpExternalAccountInfo.yaml
-    GHS_ACCOUNT: ./GhsExternalAccountInfo.yaml
-    GTQ_ACCOUNT: ./GtqExternalAccountInfo.yaml
-    HTG_ACCOUNT: ./HtgExternalAccountInfo.yaml
-    JMD_ACCOUNT: ./JmdExternalAccountInfo.yaml
+    LIGHTNING: ./LightningExternalAccountInfo.yaml
     LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
-    PKR_ACCOUNT: ./PkrExternalAccountInfo.yaml
+    POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
+    SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
+    SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
+    TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
+    CNY_ACCOUNT: ./CnyExternalAccountInfo.yaml

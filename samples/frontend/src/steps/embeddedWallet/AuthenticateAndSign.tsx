@@ -23,6 +23,7 @@ const SANDBOX_MODE = (import.meta.env.VITE_SANDBOX_PASSKEY ?? '1') !== '0'
 
 const SANDBOX_PASSKEY_SIGNATURE = 'sandbox-valid-passkey-signature'
 const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
+const TURNKEY_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
 
 // Step 7: Authenticate with the registered passkey and sign payloadToSign.
 //
@@ -35,14 +36,14 @@ const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
 //      Grid returns encryptedSessionSigningKey sealed to clientPublicKey.
 //   5. HPKE-decrypt the session signing key with the client private key
 //      (DHKEM-P256 / HKDF-SHA256 / AES-256-GCM, base58check wire format).
-//   6. ECDSA-sign payloadToSign bytes with the session key, DER-encode,
-//      base64-encode, and pass to step 8 as the Grid-Wallet-Signature header.
+//   6. Build a Turnkey API-key stamp over payloadToSign with the session key
+//      and pass the base64url stamp to step 8 as Grid-Wallet-Signature.
 //
 // Sandbox flow (this is what runs by default):
 //   - Step 3 still triggers the real OS biometric prompt.
 //   - Step 4's wire signature is the magic value sandbox-valid-passkey-signature.
-//   - Step 5 is skipped (the encryptedSessionSigningKey is a stub in sandbox).
-//   - Step 6 returns the magic value sandbox-valid-signature for step 8.
+//   - Step 5 is skipped because this mode intentionally uses sandbox shortcuts.
+//   - Step 6 returns the legacy magic value sandbox-valid-signature for step 8.
 export default function AuthenticateAndSign({
   authMethodId,
   payloadToSign,
@@ -82,7 +83,7 @@ export default function AuthenticateAndSign({
       //    signature or the sandbox magic value below.
       const assertion = (await navigator.credentials.get({
         publicKey: {
-          challenge: base64urlToBytes(challenge.challenge),
+          challenge: new TextEncoder().encode(challenge.challenge),
           userVerification: 'required',
           timeout: 60_000,
         },
@@ -112,15 +113,16 @@ export default function AuthenticateAndSign({
         { 'Request-Id': challenge.requestId },
       )
 
-      // 5 + 6. Decrypt the session signing key and sign payloadToSign. In
-      //        sandbox the encryptedSessionSigningKey is a stub, so we skip
-      //        the crypto and use the magic wallet-signature header value.
+      // 5 + 6. Decrypt the session signing key and sign payloadToSign. In the
+      //        default sandbox shortcut mode, skip the crypto and use the
+      //        magic wallet-signature header value.
       let signature: string
       if (SANDBOX_MODE) {
         signature = SANDBOX_WALLET_SIGNATURE
       } else {
         const sessionKey = await decryptSessionSigningKey(
           keyPair.privateKey,
+          rawPublicKey,
           verify.encryptedSessionSigningKey ?? '',
         )
         signature = signPayload(sessionKey, payloadToSign)
@@ -170,6 +172,7 @@ export default function AuthenticateAndSign({
 // key || ciphertext || 16-byte AES-256-GCM auth tag.
 async function decryptSessionSigningKey(
   recipientPrivateKey: CryptoKey,
+  recipientPublicKey: Uint8Array,
   encryptedSessionSigningKey: string,
 ): Promise<Uint8Array> {
   if (!encryptedSessionSigningKey) throw new Error('No encrypted session signing key returned')
@@ -177,8 +180,10 @@ async function decryptSessionSigningKey(
   if (payload.length < 33 + 16) {
     throw new Error(`encryptedSessionSigningKey too short: ${payload.length} bytes`)
   }
-  const enc = payload.slice(0, 33)
+  const compressedEnc = payload.slice(0, 33)
+  const enc = p256.Point.fromHex(bytesToHex(compressedEnc)).toBytes(false)
   const ciphertext = payload.slice(33)
+  const aad = concatBytes(enc, recipientPublicKey)
   const suite = new CipherSuite({
     kem: new DhkemP256HkdfSha256(),
     kdf: new HkdfSha256(),
@@ -187,27 +192,22 @@ async function decryptSessionSigningKey(
   const recipient = await suite.createRecipientContext({
     recipientKey: recipientPrivateKey,
     enc,
+    info: TURNKEY_HPKE_INFO,
   })
-  const plaintext = await recipient.open(ciphertext)
+  const plaintext = await recipient.open(ciphertext, aad)
   return new Uint8Array(plaintext)
 }
 
-// Sign payloadToSign bytes verbatim (Grid hashes them on its side as part of
-// signature verification). DER-encoded ECDSA signature, base64-encoded.
+// Build the Turnkey API-key stamp expected by Grid-Wallet-Signature.
 function signPayload(sessionPrivateKey: Uint8Array, payloadToSign: string): string {
   const msg = new TextEncoder().encode(payloadToSign)
   const sig = p256.sign(msg, sessionPrivateKey, { format: 'der' })
-  return bytesToBase64(sig as Uint8Array)
-}
-
-function base64urlToBytes(s: string): ArrayBuffer {
-  const pad = '='.repeat((4 - (s.length % 4)) % 4)
-  const b64 = (s + pad).replace(/-/g, '+').replace(/_/g, '/')
-  const bin = atob(b64)
-  const buf = new ArrayBuffer(bin.length)
-  const view = new Uint8Array(buf)
-  for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i)
-  return buf
+  const stamp = JSON.stringify({
+    publicKey: bytesToHex(p256.getPublicKey(sessionPrivateKey, true)),
+    scheme: 'SIGNATURE_SCHEME_TK_API_P256',
+    signature: bytesToHex(sig as Uint8Array),
+  })
+  return bytesToBase64url(new TextEncoder().encode(stamp))
 }
 
 function bytesToBase64url(bytes: Uint8Array): string {
@@ -216,12 +216,16 @@ function bytesToBase64url(bytes: Uint8Array): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let bin = ''
-  for (const b of bytes) bin += String.fromCharCode(b)
-  return btoa(bin)
-}
-
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+function concatBytes(...chunks: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(chunks.reduce((len, chunk) => len + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.length
+  }
+  return out
 }

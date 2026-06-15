@@ -1,4 +1,4 @@
-Every call to `POST /auth/credentials/{id}/verify` creates a new **session** — an authenticated signing context with a 15-minute lifetime by default. Sessions accumulate: a customer signed in on a laptop and a phone has two active sessions, each with its own session signing key held on that device. Use the session endpoints to show the customer their active sign-ins and to sign out of a specific device.
+Every call to `POST /auth/credentials/{id}/verify` creates a new **session** — an authenticated signing context with a 15-minute lifetime by default. Sessions accumulate: a customer signed in on a laptop and a phone has two active sessions, each with its own session signing key held on that device. Use the session endpoints to show active sign-ins, refresh an active session before it expires, and sign out of a specific device.
 
 ## List active sessions
 
@@ -36,6 +36,50 @@ curl -X GET "$GRID_BASE_URL/auth/sessions?accountId=InternalAccount:019542f5-b3e
 
 The list endpoint returns all **active** sessions; expired sessions are not included. `encryptedSessionSigningKey` is never returned here — it is delivered exactly once on the verify response and never again.
 
+## Refresh a session
+
+Session refresh creates a new session signing key from an existing active session. Use this when the customer is still present and the current session is close to expiration. If the session has already expired, reauthenticate with the original credential instead.
+
+<Steps>
+  <Step title="First call — receive the challenge">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003/refresh" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
+    ```
+
+    **Response (202):**
+
+    ```json
+    {
+      "payloadToSign": "{\"organizationId\":\"org_2m9F...\",\"parameters\":{\"targetPublicKey\":\"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2\"},\"timestampMs\":\"1775681700000\",\"type\":\"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2\"}",
+      "requestId": "Request:8c1e7f55-7b9c-4383-86c7-0cbde77c7328",
+      "expiresAt": "2026-04-19T12:10:00Z"
+    }
+    ```
+  </Step>
+  <Step title="Client stamps the payload">
+    Build a Turnkey API-key stamp over `payloadToSign` with the current session signing key.
+  </Step>
+  <Step title="Signed retry — receive the refreshed session">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003/refresh" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9" \
+      -H "Request-Id: Request:8c1e7f55-7b9c-4383-86c7-0cbde77c7328" \
+      -d '{
+        "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+      }'
+    ```
+
+    **Response (201):** `AuthSession` with a new `encryptedSessionSigningKey`. Decrypt it with the private key matching the `clientPublicKey` above and replace the old session signing key on the client.
+  </Step>
+</Steps>
+
 ## Revoke a session
 
 Session revocation uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential management. Unlike credential revocation, a session **can revoke itself** — this is how self-logout works: sign with the session key you are about to invalidate.
@@ -52,21 +96,21 @@ Session revocation uses the same <a href="authentication#the-signed-retry-patter
     ```json
     {
       "type": "PASSKEY",
-      "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
-      "requestId": "2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22",
+      "payloadToSign": "{\"organizationId\":\"org_2m9F...\",\"parameters\":{\"apiKeyIds\":[\"api_key_2m9F...\"],\"userId\":\"user_2m9F...\"},\"timestampMs\":\"1775681700000\",\"type\":\"ACTIVITY_TYPE_DELETE_API_KEYS\"}",
+      "requestId": "Request:2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22",
       "expiresAt": "2026-04-19T12:10:00Z"
     }
     ```
   </Step>
-  <Step title="Client signs the payload">
-    Sign `payloadToSign` with any active session signing key on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
+  <Step title="Client stamps the payload">
+    Build a Turnkey API-key stamp over `payloadToSign` with any active session signing key on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
   </Step>
   <Step title="Signed retry — session is revoked">
     ```bash
     curl -X DELETE "$GRID_BASE_URL/auth/sessions/Session:019542f5-b3e7-1d02-0000-000000000003" \
       -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-      -H "Grid-Wallet-Signature: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=" \
-      -H "Request-Id: 2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9" \
+      -H "Request-Id: Request:2b1e5a08-9c44-4e91-ae7f-6d0b3f8c1e22"
     ```
 
     **Response:** `204 No Content`.

@@ -25,3 +25,7 @@ properties:
     type: string
     description: Document identification number (e.g., passport number)
     example: A12345678
+  issuingAuthority:
+    type: string
+    description: Name of the government agency or organization that issued the document
+    example: U.S. Department of State

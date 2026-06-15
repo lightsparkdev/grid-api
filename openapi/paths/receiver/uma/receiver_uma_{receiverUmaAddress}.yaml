@@ -50,7 +50,9 @@ get:
           schema:
             $ref: ../../../components/schemas/errors/Error401.yaml
     '404':
-      description: UMA address not found
+      description: >-
+        UMA address not found. The address is well-formed but no receiver
+        exists at the counterparty VASP (`UMA_NOT_FOUND`).
       content:
         application/json:
           schema:

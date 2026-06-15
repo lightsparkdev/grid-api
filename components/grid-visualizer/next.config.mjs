@@ -26,7 +26,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://grid.lightspark.com https://*.lightspark.com http://localhost:*",
+            value: "frame-ancestors 'self' https://docs.lightspark.com https://*.lightspark.com http://localhost:*",
           },
         ],
       },

@@ -36,7 +36,14 @@ properties:
   expiresAt:
     type: string
     format: date-time
-    description: When this quote expires (typically 1-5 minutes after creation)
+    description: >-
+      Absolute UTC timestamp when the rate locked in this quote becomes
+      invalid and the quote can no longer be executed. The window depends
+      on the rail and corridor: instant rails (Lightning, Spark, USDC on
+      Solana/Base/Polygon, RTP, SEPA Instant) typically expire in 1–5
+      minutes; corridors with longer settlement guarantees may have longer
+      windows. Always rely on this timestamp rather than assuming a fixed
+      window.
     example: '2025-10-03T12:05:00Z'
   # Transfer details
   source:
@@ -74,7 +81,10 @@ properties:
     format: int64
     description: >-
       The fees associated with the quote in the smallest unit of the sending
-      currency (eg. cents).
+      currency (eg. cents). Note: this value may fluctuate between quotes —
+      some underlying fee components are defined in the receiving currency,
+      so their equivalent in the sending currency moves with the FX rate.
+      The fees shown here are locked only for the lifetime of this quote.
     minimum: 0
     example: 10
   paymentInstructions:

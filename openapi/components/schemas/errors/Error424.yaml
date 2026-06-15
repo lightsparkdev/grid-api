@@ -18,11 +18,13 @@ properties:
       | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
       | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
       | LNURLP_REQUEST_FAILED | LNURLP request failed |
+      | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
     enum:
       - PAYREQ_REQUEST_FAILED
       - COUNTERPARTY_PUBKEY_FETCH_ERROR
       - NO_COMPATIBLE_UMA_VERSION
       - LNURLP_REQUEST_FAILED
+      - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
   message:
     type: string
     description: Error message

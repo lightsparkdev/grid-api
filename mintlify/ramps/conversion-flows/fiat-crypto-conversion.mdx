@@ -49,6 +49,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": {
+      "sourceType": "REALTIME_FUNDING",
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USD"
     },
@@ -67,25 +68,41 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 ```json
 {
   "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
-  "totalSendingAmount": 6500,
-  "receivingAmount": 100000,
+  "status": "PENDING",
+  "createdAt": "2025-10-03T12:00:00Z",
   "expiresAt": "2025-10-03T12:05:00Z",
+  "source": {
+    "sourceType": "REALTIME_FUNDING",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD"
+  },
+  "destination": {
+    "destinationType": "ACCOUNT",
+    "accountId": "ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456"
+  },
+  "sendingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
+  "receivingCurrency": { "code": "BTC", "name": "Bitcoin", "symbol": "₿", "decimals": 8 },
+  "totalSendingAmount": 6500,
+  "totalReceivingAmount": 100000,
+  "exchangeRate": 15.38,
+  "feesIncluded": 200,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000007",
   "paymentInstructions": [
     {
       "accountOrWalletInfo": {
         "accountType": "US_ACCOUNT",
         "reference": "UMA-Q12345-REF",
-          "accountNumber": "1234567890",
-          "routingNumber": "021000021",
-          "bankName": "Grid Settlement Bank"
-        }
-      },
-      {
-        "accountOrWalletInfo": {
-          "accountType": "SOLANA_WALLET",
-          "assetType": "USDC",
-          "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
-        }
+        "accountNumber": "1234567890",
+        "routingNumber": "021000021",
+        "bankName": "Grid Settlement Bank"
+      }
+    },
+    {
+      "accountOrWalletInfo": {
+        "accountType": "SOLANA_WALLET",
+        "assetType": "USDC",
+        "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
+      }
     }
   ]
 }
@@ -102,9 +119,9 @@ function displayPaymentInstructions(quote) {
     bankName: instructions.accountOrWalletInfo.bankName,
     accountNumber: instructions.accountOrWalletInfo.accountNumber,
     routingNumber: instructions.accountOrWalletInfo.routingNumber,
-    referenceCode: instructions.reference, // User must include this
+    referenceCode: instructions.accountOrWalletInfo.reference, // User must include this
     expiresAt: quote.expiresAt,
-    willReceive: `${quote.receivingAmount / 100000000} BTC`,
+    willReceive: `${quote.totalReceivingAmount / 100000000} BTC`,
   };
 }
 ```
@@ -145,11 +162,12 @@ const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
   method: "POST",
   body: JSON.stringify({
     source: {
+      sourceType: "ACCOUNT",
       accountId: "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
     },
     destination: {
+      destinationType: "ACCOUNT",
       accountId: "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-      currency: "USD",
     },
     lockedCurrencySide: "SENDING",
     lockedCurrencyAmount: 100000, // 0.001 BTC

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ResponsePanel from '../../components/ResponsePanel'
 import { apiPost } from '../../lib/api'
+import { randomUUID } from '../../lib/uuid'
 
 interface Props {
   quoteId: string | null
@@ -30,7 +31,7 @@ export default function ExecuteSignedQuote({
       const path = `/api/quotes/${encodeURIComponent(quoteId)}/execute`
       const data = await apiPost<Record<string, unknown>>(path, undefined, {
         'Grid-Wallet-Signature': signature,
-        'Idempotency-Key': crypto.randomUUID(),
+        'Idempotency-Key': randomUUID(),
       })
       setResponse(JSON.stringify(data, null, 2))
       onComplete(data)

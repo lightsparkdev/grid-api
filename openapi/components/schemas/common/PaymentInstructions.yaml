@@ -50,6 +50,9 @@ properties:
     - $ref: ../common/PaymentHtgAccountInfo.yaml
     - $ref: ../common/PaymentJmdAccountInfo.yaml
     - $ref: ../common/PaymentPkrAccountInfo.yaml
+    - $ref: ../common/PaymentSlvAccountInfo.yaml
+    - $ref: ../common/PaymentSwiftAccountInfo.yaml
+    - $ref: ../common/PaymentCnyAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
@@ -104,4 +107,7 @@ properties:
         HTG_ACCOUNT: ../common/PaymentHtgAccountInfo.yaml
         JMD_ACCOUNT: ../common/PaymentJmdAccountInfo.yaml
         PKR_ACCOUNT: ../common/PaymentPkrAccountInfo.yaml
+        SLV_ACCOUNT: ../common/PaymentSlvAccountInfo.yaml
         EMBEDDED_WALLET: ../common/PaymentEmbeddedWalletInfo.yaml
+        SWIFT_ACCOUNT: ../common/PaymentSwiftAccountInfo.yaml
+        CNY_ACCOUNT: ../common/PaymentCnyAccountInfo.yaml

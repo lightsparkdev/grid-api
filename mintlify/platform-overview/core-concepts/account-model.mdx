@@ -31,11 +31,11 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
   <Tab title="US Bank Accounts">
     ```json
     {
-      "accountType": "US_ACCOUNT",
+      "accountType": "USD_ACCOUNT",
       "currency": "USD",
       "accountNumber": "1234567890",
       "routingNumber": "110000000",
-      "accountCategory": "CHECKING",
+      "bankAccountType": "CHECKING",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Alice Johnson",
@@ -54,10 +54,10 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
   <Tab title="IBAN (Europe)">
     ```json
     {
-      "accountType": "IBAN",
+      "accountType": "EUR_ACCOUNT",
       "currency": "EUR",
       "iban": "DE89370400440532013000",
-      "swiftBic": "DEUTDEFF",
+      "swiftCode": "DEUTDEFF",
       "bankName": "Deutsche Bank",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
@@ -70,7 +70,7 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
   <Tab title="PIX (Brazil)">
     ```json
     {
-      "accountType": "PIX",
+      "accountType": "BRL_ACCOUNT",
       "currency": "BRL",
       "pixKey": "user@example.com",
       "pixKeyType": "EMAIL",
@@ -87,7 +87,7 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
   <Tab title="CLABE (Mexico)">
     ```json
     {
-      "accountType": "CLABE",
+      "accountType": "MXN_ACCOUNT",
       "clabeNumber": "012345678901234567",
       "bankName": "BBVA Mexico",
       "beneficiary": {
@@ -101,7 +101,7 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
   <Tab title="UPI (India)">
     ```json
     {
-      "accountType": "UPI",
+      "accountType": "INR_ACCOUNT",
       "currency": "INR",
       "vpa": "user@paytm",
       "beneficiary": {
@@ -164,10 +164,10 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/customers/external-accou
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "USD",
     "accountInfo": {
-      "accountType": "US_ACCOUNT",
+      "accountType": "USD_ACCOUNT",
       "accountNumber": "9876543210",
       "routingNumber": "110000000",
-      "accountCategory": "CHECKING",
+      "bankAccountType": "CHECKING",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Alice Johnson",
@@ -192,7 +192,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/customers/external-accou
   "currency": "USD",
   "status": "PENDING",
   "accountInfo": {
-    "accountType": "US_ACCOUNT",
+    "accountType": "USD_ACCOUNT",
     "accountNumber": "****3210",
     "routingNumber": "110000000"
   }
@@ -210,9 +210,9 @@ PENDING → ACTIVE
 - **PENDING**: Created, undergoing verification/screening
 - **ACTIVE**: Verified, ready for transactions
 - **INACTIVE**: Disabled (can be reactivated)
-- **REJECTED**: Failed verification
+- **UNDER_REVIEW**: Additional review required
 
-You'll receive `ACCOUNT_STATUS` webhooks as status changes.
+You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, and `INTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., ACTIVE to FROZEN).
 
 ### Using External Accounts
 

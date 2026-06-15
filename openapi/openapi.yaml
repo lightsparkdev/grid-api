@@ -1,8 +1,9 @@
+# Bundled into openapi.yaml + mintlify/openapi.yaml via `npm run build:openapi`.
 openapi: 3.1.0
 info:
   title: Grid API
   description: >
-    API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://grid.lightspark.com/.
+    API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
   version: "2025-10-13"
   contact:
     name: Lightspark Support
@@ -71,6 +72,11 @@ tags:
       policy. When an action requires approval, the resulting transaction enters a pending
       state and must be approved by the platform via
       `POST /transactions/{transactionId}/approve`.
+  - name: Cards
+    description: >-
+      Card management endpoints. Issue debit cards against an internal
+      account, freeze / unfreeze, close, manage card funding sources, and
+      list card transactions.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -123,8 +129,8 @@ paths:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
-  /customers/kyc-link:
-    $ref: paths/customers/customers_kyc_link.yaml
+  /customers/{customerId}/kyc-link:
+    $ref: paths/customers/customers_{customerId}_kyc-link.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:
@@ -167,6 +173,8 @@ paths:
     $ref: paths/transactions/transactions.yaml
   /transactions/{transactionId}:
     $ref: paths/transactions/transactions_{transactionId}.yaml
+  /transactions/{transactionId}/confirm:
+    $ref: paths/transactions/transactions_{transactionId}_confirm.yaml
   /transactions/{transactionId}/approve:
     $ref: paths/transactions/transactions_{transactionId}_approve.yaml
   /transactions/{transactionId}/reject:
@@ -199,6 +207,8 @@ paths:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
     $ref: paths/tokens/tokens_{tokenId}.yaml
+  /internal-accounts/{id}:
+    $ref: paths/internal_accounts/internal_accounts_{id}.yaml
   /internal-accounts/{id}/export:
     $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
   /auth/credentials:
@@ -213,6 +223,8 @@ paths:
     $ref: paths/auth/auth_sessions.yaml
   /auth/sessions/{id}:
     $ref: paths/auth/auth_sessions_{id}.yaml
+  /auth/sessions/{id}/refresh:
+    $ref: paths/auth/auth_sessions_{id}_refresh.yaml
   /agents:
     $ref: paths/agents/agents.yaml
   /agents/approvals:
@@ -258,6 +270,16 @@ paths:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
+  /cards:
+    $ref: paths/cards/cards.yaml
+  /cards/{id}:
+    $ref: paths/cards/cards_{id}.yaml
+  /sandbox/cards/{id}/simulate/authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization.yaml
+  /sandbox/cards/{id}/simulate/clearing:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
+  /sandbox/cards/{id}/simulate/return:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
@@ -277,6 +299,10 @@ webhooks:
     $ref: webhooks/internal-account-status.yaml
   verification-update:
     $ref: webhooks/verification-update.yaml
+  card-state-change:
+    $ref: webhooks/card-state-change.yaml
+  card-funding-source-change:
+    $ref: webhooks/card-funding-source-change.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []

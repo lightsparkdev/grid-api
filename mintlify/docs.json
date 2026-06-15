@@ -142,6 +142,7 @@
               "payouts-and-b2b/depositing-funds/depositing-funds",
               "payouts-and-b2b/payment-flow/send-payment",
               "payouts-and-b2b/payment-flow/list-transactions",
+              "payouts-and-b2b/payment-flow/receipts",
               "payouts-and-b2b/payment-flow/reconciliation",
               "payouts-and-b2b/payment-flow/error-handling"
             ]
@@ -326,6 +327,47 @@
               "global-p2p/platform-tools/sandbox-testing",
               "global-p2p/platform-tools/postman-collection",
               "global-p2p/platform-tools/uma-test-wallet"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Cards",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "cards/index",
+              "cards/terminology",
+              "cards/onboarding/implementation-overview",
+              "cards/quickstart"
+            ]
+          },
+          {
+            "group": "Onboarding",
+            "pages": [
+              "cards/onboarding/cardholder-setup"
+            ]
+          },
+          {
+            "group": "Card Management",
+            "pages": [
+              "cards/card-management/issuing-cards",
+              "cards/card-management/funding-sources",
+              "cards/card-management/freezing-and-closing"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "cards/transactions/reconciliation"
+            ]
+          },
+          {
+            "group": "Platform Tools",
+            "pages": [
+              "cards/platform-tools/webhooks",
+              "cards/platform-tools/sandbox-testing"
             ]
           }
         ]

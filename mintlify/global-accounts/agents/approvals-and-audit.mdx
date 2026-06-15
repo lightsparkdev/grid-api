@@ -21,7 +21,7 @@ When an agent submits an action that is not eligible for automatic execution, Gr
 
 1. Agent submits an action (quote execution or transfer).
 2. Grid creates an `AgentAction` with `status: PENDING_APPROVAL` and returns it to the agent.
-3. Grid fires `AGENT_ACTION.PENDING_APPROVAL` to your webhook endpoint with the full action payload.
+3. Grid fires `AGENT_ACTION.PENDING_APPROVAL` to your [webhook endpoint](/global-accounts/platform-tools/webhooks) with the full action payload.
 4. Your backend sends a push notification to the customer.
 5. Your app shows the customer the requested amount, accounts, and reason.
 6. The customer approves or rejects from that trusted surface.
@@ -111,7 +111,6 @@ Support at least two controls:
 Pause is useful for temporary uncertainty. Revoke is appropriate when a device is lost, a credential is exposed, or the customer no longer wants the agent connected.
 
 Grid enforces these controls. Your product should surface the current connection state and expose the relevant actions in your own experience.
-
 ## What to show in the approval UI
 
 Your approval UI should answer:
@@ -126,7 +125,7 @@ All of this information is present in the `AgentAction` payload delivered via we
 
 ## Integration guidance
 
-- Subscribe to `AGENT_ACTION.PENDING_APPROVAL` webhooks and send the customer a push notification immediately — quote-based actions expire quickly.
+- Subscribe to [`AGENT_ACTION.PENDING_APPROVAL` webhooks](/global-accounts/platform-tools/webhooks) and send the customer a push notification immediately — quote-based actions expire quickly.
 - Use `GET /agents/approvals` to build an in-app approval queue as a fallback for users who miss the push notification.
 - Treat approval and rejection calls as idempotent in your integration so duplicate taps or retries do not cause confusing UX.
 - Show `FAILED` and `REJECTED` outcomes clearly — they are distinct states with different meanings for the customer.

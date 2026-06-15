@@ -130,10 +130,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     "currency": "USD",
     "platformAccountId": "user_bank_usd_001",
     "accountInfo": {
-      "accountType": "US_ACCOUNT",
+      "accountType": "USD_ACCOUNT",
       "accountNumber": "123456789",
       "routingNumber": "021000021",
-      "accountCategory": "CHECKING",
+      "bankAccountType": "CHECKING",
       "bankName": "Chase Bank",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
@@ -168,23 +168,16 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accou
   -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
 ```
 
-### Filter by account type
-
-```bash
-curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&accountType=SPARK_WALLET' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
-```
-
 ## Account status and verification
 
 External accounts move through verification states:
 
 | Status     | Description              | Can Use for Conversions |
 | ---------- | ------------------------ | ----------------------- |
-| `PENDING`  | Verification in progress | ❌                      |
-| `ACTIVE`   | Verified and ready       | ✅                      |
-| `FAILED`   | Verification failed      | ❌                      |
-| `DISABLED` | Manually disabled        | ❌                      |
+| `PENDING`       | Verification in progress    | ❌                      |
+| `ACTIVE`        | Verified and ready          | ✅                      |
+| `UNDER_REVIEW`  | Additional review required  | ❌                      |
+| `INACTIVE`      | Manually disabled           | ❌                      |
 
 <Info>
   Spark wallet accounts are immediately `ACTIVE`. Bank accounts may require

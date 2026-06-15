@@ -2,8 +2,6 @@ title: Individual Beneficiary
 type: object
 required:
 - beneficiaryType
-- documentNumber
-- documentType
 - fullName
 properties:
   beneficiaryType:
@@ -32,7 +30,15 @@ properties:
     $ref: ./Address.yaml
   documentType:
     type: string
-    description: The type of identity document (e.g., national ID, passport)
+    description: Identity document type (Colombia)
+    enum:
+    - CC
+    - CE
+    - TI
+    - NIT
+    - PP
   documentNumber:
     type: string
     description: The identity document number
+    minLength: 1
+    maxLength: 50

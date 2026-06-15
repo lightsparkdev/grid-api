@@ -41,7 +41,7 @@ sequenceDiagram
     participant Test as Test UMA Address
 
     Note over Client, Grid: Testing Outgoing Payments
-    Client->>Grid: GET /receiver/$success.usd@sandbox.uma.money
+    Client->>Grid: GET /receiver/uma/$success.usd@sandbox.uma.money
     Grid-->>Client: Supported currencies and requirements
     Client->>Grid: POST /quotes
     Grid-->>Client: Quote with payment instructions
@@ -59,15 +59,15 @@ sequenceDiagram
 1. Look up a sandbox UMA address:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$success.usd@sandbox.uma.money" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$success.usd@sandbox.uma.money" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 2. Create a quote as normal:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
@@ -84,16 +84,15 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   }'
 ```
 
-3. Instead of making a real bank transfer, use the sandbox send endpoint:
+3. Instead of making a real bank transfer, use the sandbox send endpoint with the quote ID:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "reference": "UMA-Q12345-REF",
-    "currencyCode": "USD",
-    "currencyAmount": 10000
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "currencyCode": "USD"
   }'
 ```
 
@@ -105,7 +104,7 @@ To test receiving payments to your platform's users, use the sandbox receive end
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "senderUmaAddress": "$success.usd@sandbox.uma.money",
@@ -125,18 +124,18 @@ This will trigger the same webhook flow as a real incoming payment:
 
 Here's a complete example of testing both directions of payments:
 
-1. First, register a test user:
+1. First, register a test customer:
 
 ```bash
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/users" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "umaAddress": "$test.user@your.domain",
-    "platformUserId": "test_123",
-    "userType": "INDIVIDUAL",
+    "platformCustomerId": "test_123",
+    "customerType": "INDIVIDUAL",
     "fullName": "Test User",
     "birthDate": "1990-01-01",
+    "nationality": "US",
     "address": {
       "line1": "123 Test St",
       "city": "Testville",
@@ -147,11 +146,13 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/users" \
   }'
 ```
 
+The response includes the customer's auto-generated `umaAddress`, which you can use as the `receiverUmaAddress` below.
+
 2. Test receiving a payment:
 
 ```bash
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "senderUmaAddress": "$success.usd@sandbox.uma.money",
@@ -165,12 +166,12 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/uma/receive" \
 
 ```bash
 # 1. Look up recipient
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$success.usd@sandbox.uma.money" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$success.usd@sandbox.uma.money" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 
 # 2. Create quote
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
@@ -188,12 +189,11 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
 
 # 3. Simulate sending payment
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/sandbox/send" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "reference": "UMA-Q12345-REF",
-    "currencyCode": "USD",
-    "currencyAmount": 10000
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "currencyCode": "USD"
   }'
 ```
 
@@ -204,24 +204,24 @@ You can test various error scenarios using the special sandbox UMA addresses:
 1. Test compliance failures:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$fail.compliance.usd@sandbox.uma.money" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$fail.compliance.usd@sandbox.uma.money" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 # ... create quote and attempt payment
 ```
 
 2. Test long-pending payments:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$pending.long.usd@sandbox.uma.money" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$pending.long.usd@sandbox.uma.money" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 # ... create quote and attempt payment
 ```
 
 3. Non-existent UMA address:
 
 ```bash
-curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/\$non.existent.usd@sandbox.uma.money" \
-  -H "Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$non.existent.usd@sandbox.uma.money" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 # ... should return 404 Not Found
 ```
 
