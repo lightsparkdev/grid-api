@@ -916,12 +916,44 @@
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   padding: 4px 16px 24px;
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* The receive funding card sits at the sheet's 16px gutter (like the source /
+   deposit lists), not the confirm step's extra 12px card inset. */
+.fundingScroll .detailsCard {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Footer caption under the card — centered, caption-1, tertiary. */
+.fundingNote {
+  margin: 0;
+  padding: 0 24px;
+  @include ios.ios-text-caption-1;
+  color: var(--ios-label-tertiary);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* Share CTA — icon + label centered with a gap; icon stroke bumped to 2px. */
+.shareCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.shareCtaIcon {
+  flex-shrink: 0;
+
+  path {
+    stroke-width: 2;
   }
 }
 
@@ -931,7 +963,8 @@
   gap: 8px;
 }
 
-.depositIconBtn {
+/* Shared row icon button — deposit copy/QR + funding copy. */
+.rowIconBtn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -964,29 +997,25 @@
 }
 
 @media (hover: hover) {
-  .depositIconBtn:hover {
+  .rowIconBtn:hover {
     background: var(--ios-fill-secondary);
   }
 }
 
-/* funding-details header — flag tile + country/rail line. */
-.fundingIntro {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 14px;
-  padding: 4px 6px 4px;
-}
-
-/* funding-details rows: long values (IBAN/CLABE) wrap; a small copy sits right. */
+/* funding-details rows reuse the shared .detailRow; the only tweak is stretching
+   to the card's RIGHT edge so the divider touches it (iOS list: indented left,
+   flush right) while the value stays 24px off the edge. The left 24px inset +
+   the divider's left start both come from .detailRows' padding. (.detailRow is
+   already vertically centered, so the label centers against a wrapped value.) */
 .fundingRow {
-  align-items: flex-start;
+  margin-right: -24px;
+  padding-right: 24px;
 }
 
 .fundingValueWrap {
   display: flex;
   flex: 1 1 0;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   min-width: 0;
@@ -999,34 +1028,8 @@
   text-align: right;
   font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
   word-break: break-word;
+  text-wrap: balance;
   min-width: 0;
-}
-
-.fundingCopy {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-top: -2px;
-  border: 0;
-  border-radius: 9px;
-  corner-shape: var(--corner-shape);
-  background: var(--ios-fill-tertiary);
-  color: var(--ios-label-secondary);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-
-  svg path {
-    stroke-width: 2;
-  }
-}
-
-@media (hover: hover) {
-  .fundingCopy:hover {
-    background: var(--ios-fill-secondary);
-  }
 }
 
 /* CTA contents — icon + morphing label inside the blue glass pill. Spacing

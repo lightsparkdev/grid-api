@@ -10,6 +10,7 @@ import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-
 import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconQrCode';
 import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
 import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
+import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -514,30 +515,30 @@ function fmtDepositAddr(addr: string): string {
   return addr.length > 14 ? `${addr.slice(0, 6)}…${addr.slice(-6)}` : addr;
 }
 
-/** Representative inbound funding instructions for a country (Receive → bank).
- *  Mirrors the spec's PaymentInstructions.accountOrWalletInfo per rail; values
- *  are illustrative (real ones come from GET /customers/internal-accounts). */
+/** Realistic inbound funding instructions per rail (Receive → bank). Just what a
+ *  sender needs to push a domestic transfer (RTP / ACH / SPEI / SEPA / PIX / …):
+ *  the payee name, the account identifier(s) — which already encode the bank
+ *  (routing / CLABE / IBAN / sort code / IFSC), so there's no separate bank name
+ *  and no SWIFT — and the reference that credits the deposit. Values are
+ *  illustrative; the real ones come from GET /customers/internal-accounts. */
 function receiveFields(country: BankCountry, beneficiary: string): Array<[string, string]> {
   const ref = `GGA-${country.code.toUpperCase()}-7Q4K2X`;
-  const common: Array<[string, string]> = [
-    ['Beneficiary', `Lightspark Payments FBO ${beneficiary}`],
-    ['Bank', country.bankName],
-  ];
+  const payee: [string, string] = ['Beneficiary', `Lightspark Payments FBO ${beneficiary}`];
   switch (country.accountType) {
     case 'USD_ACCOUNT':
-      return [...common, ['Account number', '9876543210'], ['Routing number', '021000021'], ['Rails', 'ACH · Wire · RTP · FedNow'], ['Reference', ref]];
+      return [payee, ['Account number', '9876543210'], ['Routing number', '021000021'], ['Reference', ref]];
     case 'EUR_ACCOUNT':
-      return [...common, ['IBAN', 'DE89 3704 0044 0532 0130 00'], ['SWIFT / BIC', 'DEUTDEFF'], ['Reference', ref]];
+      return [payee, ['IBAN', 'DE89 3704 0044 0532 0130 00'], ['Reference', ref]];
     case 'MXN_ACCOUNT':
-      return [...common, ['CLABE', '012180001234567895'], ['Reference', ref]];
+      return [payee, ['CLABE', '012180001234567895'], ['Reference', ref]];
     case 'GBP_ACCOUNT':
-      return [...common, ['Account number', '12345678'], ['Sort code', '04-00-04'], ['Reference', ref]];
+      return [payee, ['Account number', '12345678'], ['Sort code', '20-00-00'], ['Reference', ref]];
     case 'BRL_ACCOUNT':
-      return [...common, ['PIX key', `gga.${country.code}@lightspark.com`], ['Reference', ref]];
+      return [payee, ['PIX key', `gga.${country.code}@lightspark.com`], ['Reference', ref]];
     case 'INR_ACCOUNT':
-      return [...common, ['Account number', '50100123456789'], ['IFSC', 'HDFC0001234'], ['Reference', ref]];
+      return [payee, ['Account number', '50100123456789'], ['IFSC', 'HDFC0001234'], ['Reference', ref]];
     default:
-      return [...common, ['Account number', '000123456789'], ['Reference', ref]];
+      return [payee, ['Account number', '000123456789'], ['Reference', ref]];
   }
 }
 
@@ -740,6 +741,19 @@ export function AddMoneySheet({
     setCopiedChainId(id);
     window.clearTimeout(copyTimer.current);
     copyTimer.current = window.setTimeout(() => setCopiedChainId(null), 1400);
+  };
+
+  // Share the funding instructions (native share sheet; clipboard fallback).
+  const shareFunding = () => {
+    if (!pickedCountry) return;
+    const text = receiveFields(pickedCountry, formBeneficiary)
+      .map(([label, value]) => `${label}: ${value}`)
+      .join('\n');
+    if (navigator.share) {
+      navigator.share({ title: `Receive from ${pickedCountry.name}`, text }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(text).catch(() => {});
+    }
   };
 
   // Bank flow handlers.
@@ -1170,7 +1184,9 @@ export function AddMoneySheet({
   // The funding-details step titles itself with the picked country's name (e.g.
   // "Mexico"); every other step uses the mode's static step title.
   const displayTitle =
-    step === 'fundingDetails' && pickedCountry ? pickedCountry.name : titles[step];
+    step === 'fundingDetails' && pickedCountry
+      ? `Receive from ${pickedCountry.name}`
+      : titles[step];
   // TRUE push: the incoming screen shares an edge with the outgoing one (full
   // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
   // screen arrives at full opacity — it's a push, not a crossfade.
@@ -1388,7 +1404,7 @@ export function AddMoneySheet({
                             <span className={styles.depositActions}>
                               <button
                                 type="button"
-                                className={styles.depositIconBtn}
+                                className={styles.rowIconBtn}
                                 aria-label={copied ? 'Copied' : `Copy ${chain.name} address`}
                                 onClick={() => copyValue(chain.id, chain.address)}
                               >
@@ -1401,7 +1417,7 @@ export function AddMoneySheet({
                               {/* QR is a visual affordance only (no-op) for the demo. */}
                               <button
                                 type="button"
-                                className={styles.depositIconBtn}
+                                className={styles.rowIconBtn}
                                 aria-label={`Show ${chain.name} QR code`}
                               >
                                 <IconQrCode size={20} />
@@ -1429,17 +1445,6 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={styles.fundingScroll}>
-                  <div className={styles.fundingIntro}>
-                    <span className={styles.depositTile} aria-hidden>
-                      <Flag code={pickedCountry.code} size={20} />
-                    </span>
-                    <span className={styles.depositLabels}>
-                      <span className={styles.depositName}>{pickedCountry.name}</span>
-                      <span className={styles.depositAddr}>
-                        {pickedCountry.rail} · arrives as USDB
-                      </span>
-                    </span>
-                  </div>
                   <div className={clsx(styles.card, styles.detailsCard)}>
                     <div className={styles.detailRows}>
                       {receiveFields(pickedCountry, formBeneficiary).map(([label, value], i, arr) => {
@@ -1459,14 +1464,14 @@ export function AddMoneySheet({
                               <span className={styles.fundingValue}>{value}</span>
                               <button
                                 type="button"
-                                className={styles.fundingCopy}
+                                className={styles.rowIconBtn}
                                 aria-label={copied ? 'Copied' : `Copy ${label}`}
                                 onClick={() => copyValue(id, value)}
                               >
                                 {copied ? (
-                                  <IconCheckmark2Small size={16} />
+                                  <IconCheckmark2Small size={20} />
                                 ) : (
-                                  <IconSquareBehindSquare6 size={16} />
+                                  <IconSquareBehindSquare6 size={20} />
                                 )}
                               </button>
                             </span>
@@ -1475,6 +1480,18 @@ export function AddMoneySheet({
                       })}
                     </div>
                   </div>
+                  <p className={styles.fundingNote}>
+                    Share these details with anyone paying you. Make sure they
+                    include the reference so it reaches your account.
+                  </p>
+                </div>
+                <div className={styles.bottomCtaWrap}>
+                  <GlassTextButton variant="primary" onClick={shareFunding}>
+                    <span className={styles.shareCta}>
+                      <IconArrowOutOfBox size={20} className={styles.shareCtaIcon} />
+                      Share
+                    </span>
+                  </GlassTextButton>
                 </div>
               </motion.div>
             )}
