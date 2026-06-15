@@ -385,10 +385,15 @@ const MODES: Record<
       recipient: '',
       amount: 'Enter amount',
       confirm: 'Confirm add',
-      deposit: '',
+      deposit: 'Add from crypto',
       fundingDetails: '',
     },
-    activeSources: [{ id: 'bank', next: 'banks' }],
+    // Bank → saved-banks list; Crypto → the deposit-address list (send crypto in
+    // to top up). Cash App / Apple Pay stay inactive (no demo path yet).
+    activeSources: [
+      { id: 'bank', next: 'banks' },
+      { id: 'crypto', next: 'deposit' },
+    ],
     sources: [
       BANK_SOURCE,
       {
@@ -898,6 +903,8 @@ export function AddMoneySheet({
             country: 'banks',
             recipient: 'source',
             banks: 'source',
+            // Add-from-crypto: the deposit-address list drills off the source list.
+            deposit: 'source',
           };
   // The entry step shows the X (close); every other step shows the back arrow.
   const isEntryStep =
@@ -1359,24 +1366,28 @@ export function AddMoneySheet({
               >
                 <div className={styles.sourceWrap}>
                   <div className={clsx(styles.card, styles.cardFlush)}>
-                    <button type="button" className={styles.sourceRow} onClick={openAddBank}>
-                      <span className={styles.tile} aria-hidden>
-                        <img
-                          className={styles.tileIcon}
-                          src="/assets/add-money/IconBank.svg"
-                          alt=""
-                          draggable={false}
-                        />
-                      </span>
-                      <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
-                        <span className={styles.sourceLabels}>
-                          <span className={styles.rowTitle}>Bank account</span>
-                          <span className={styles.rowSub}>Local transfer in 65+ countries</span>
-                          <span className={styles.rowSub}>Instant</span>
+                    {/* Receive leads with the bank drill-in; add-from-crypto is
+                        crypto-only (bank is its own row in the add source list). */}
+                    {mode === 'receive' && (
+                      <button type="button" className={styles.sourceRow} onClick={openAddBank}>
+                        <span className={styles.tile} aria-hidden>
+                          <img
+                            className={styles.tileIcon}
+                            src="/assets/add-money/IconBank.svg"
+                            alt=""
+                            draggable={false}
+                          />
                         </span>
-                        <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
-                      </span>
-                    </button>
+                        <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
+                          <span className={styles.sourceLabels}>
+                            <span className={styles.rowTitle}>Bank account</span>
+                            <span className={styles.rowSub}>Local transfer in 65+ countries</span>
+                            <span className={styles.rowSub}>Instant</span>
+                          </span>
+                          <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                        </span>
+                      </button>
+                    )}
                     {DEPOSIT_CHAINS.map((chain, i) => {
                       const copied = copiedChainId === chain.id;
                       return (
