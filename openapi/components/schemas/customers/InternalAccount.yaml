@@ -4,6 +4,7 @@ required:
   - type
   - status
   - balance
+  - totalBalance
   - fundingPaymentInstructions
   - createdAt
   - updatedAt
@@ -22,6 +23,10 @@ properties:
     $ref: ./InternalAccountStatus.yaml
   balance:
     $ref: ../common/CurrencyAmount.yaml
+    description: The balance available to spend, excluding pending and held funds
+  totalBalance:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The total balance, including pending and held funds
   fundingPaymentInstructions:
     type: array
     description: Payment instructions for funding the account
