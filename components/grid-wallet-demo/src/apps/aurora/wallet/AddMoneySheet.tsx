@@ -6,6 +6,10 @@ import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/re
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
+// QR uses the radius-1 (tight-corner) variant so the code squares read crisp.
+import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconQrCode';
+import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
+import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -27,7 +31,18 @@ import styles from './AddMoneySheet.module.scss';
 
 // The bank flow adds three steps between source and amount: a saved-banks list
 // (empty first), a country picker, and a pre-filled account form.
-type Step = 'source' | 'banks' | 'country' | 'bankForm' | 'recipient' | 'amount' | 'confirm';
+type Step =
+  | 'source'
+  | 'banks'
+  | 'country'
+  | 'bankForm'
+  | 'recipient'
+  | 'amount'
+  | 'confirm'
+  // Receive (deposit) flow: the address list is the entry; the bank row drills
+  // into the shared country picker → the picked country's funding instructions.
+  | 'deposit'
+  | 'fundingDetails';
 
 /** A bank the user has "added" this session (persists until Reset). */
 export interface SavedBank {
@@ -293,7 +308,7 @@ const REGION_EXIT = {
 };
 const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
 
-export type MoneySheetMode = 'add' | 'withdraw' | 'send';
+export type MoneySheetMode = 'add' | 'withdraw' | 'send' | 'receive';
 
 /** Figma 109:29332 — the demo Solana address Paste drops into the send flow. */
 export const SEND_DEMO_ADDRESS = '53am6G4kK1QSKPdnmZVqkA1oeq1biAK2nEtfBosNkNV7';
@@ -369,6 +384,8 @@ const MODES: Record<
       recipient: '',
       amount: 'Enter amount',
       confirm: 'Confirm add',
+      deposit: '',
+      fundingDetails: '',
     },
     activeSources: [{ id: 'bank', next: 'banks' }],
     sources: [
@@ -410,6 +427,8 @@ const MODES: Record<
       recipient: 'Enter address',
       amount: 'Enter amount',
       confirm: 'Confirm withdrawal',
+      deposit: '',
+      fundingDetails: '',
     },
     sources: [BANK_SOURCE, CRYPTO_SOURCE],
     activeSources: [
@@ -433,6 +452,8 @@ const MODES: Record<
       recipient: 'Enter address',
       amount: 'Enter amount',
       confirm: 'Confirm send',
+      deposit: '',
+      fundingDetails: '',
     },
     sources: [BANK_SOURCE, CRYPTO_SOURCE],
     // The "Add recipient" chooser (the recipient list is the entry): Bank → add a
@@ -447,7 +468,78 @@ const MODES: Record<
       ['Arrives', 'Instantly'],
     ],
   },
+  receive: {
+    // Deposit-first: the address list is the entry; only the shared country
+    // picker and the picked country's funding-details screen are reachable.
+    // No amount / confirm (receiving is share-and-go).
+    titles: {
+      source: '',
+      banks: '',
+      country: 'Select country',
+      bankForm: '',
+      recipient: '',
+      amount: '',
+      confirm: '',
+      deposit: 'Receive via',
+      fundingDetails: 'Receive',
+    },
+    sources: [],
+    activeSources: [],
+    details: [],
+  },
 };
+
+/** A receivable chain in the deposit list (Receive flow). The logo is a
+ *  self-contained brand tile (rounded bg + mark); addresses are representative. */
+interface DepositChain {
+  id: string;
+  name: string;
+  address: string;
+  logo: string;
+  /** Typical arrival time once sent — the row's third line. */
+  time: string;
+}
+
+const DEPOSIT_CHAINS: DepositChain[] = [
+  { id: 'spark', name: 'Spark', address: 'spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjz123456', logo: '/assets/networks/icon-network-spark.svg', time: 'Instant' },
+  { id: 'ethereum', name: 'Ethereum', address: '0x71C7656EC7ab88b098defB751B7401B5f6d89760', logo: '/assets/networks/icon-network-ethereum.svg', time: '1 min' },
+  { id: 'solana', name: 'Solana', address: '7xECDz9kqYbN3pR5sT8uV2wX4yZ1aB6cD7eF8gHSew4H', logo: '/assets/networks/icon-network-solana.svg', time: 'Instant' },
+  { id: 'base', name: 'Base', address: '0x28c4A1f3b9D2e5C7a8F0b1c2D3e4F5a6B7c8585810', logo: '/assets/networks/icon-network-base.svg', time: 'Instant' },
+  { id: 'tron', name: 'Tron', address: 'TJYeoZ8sd9fHkLmNpQrStUvWxYzAbCdEf456789', logo: '/assets/networks/icon-network-tron.svg', time: 'Instant' },
+  { id: 'btc', name: 'Bitcoin', address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', logo: '/assets/networks/icon-network-bitcoin.svg', time: '10 min' },
+];
+
+/** Middle-truncate to first 6 / last 6 — the deposit-row address style. */
+function fmtDepositAddr(addr: string): string {
+  return addr.length > 14 ? `${addr.slice(0, 6)}…${addr.slice(-6)}` : addr;
+}
+
+/** Representative inbound funding instructions for a country (Receive → bank).
+ *  Mirrors the spec's PaymentInstructions.accountOrWalletInfo per rail; values
+ *  are illustrative (real ones come from GET /customers/internal-accounts). */
+function receiveFields(country: BankCountry, beneficiary: string): Array<[string, string]> {
+  const ref = `GGA-${country.code.toUpperCase()}-7Q4K2X`;
+  const common: Array<[string, string]> = [
+    ['Beneficiary', `Lightspark Payments FBO ${beneficiary}`],
+    ['Bank', country.bankName],
+  ];
+  switch (country.accountType) {
+    case 'USD_ACCOUNT':
+      return [...common, ['Account number', '9876543210'], ['Routing number', '021000021'], ['Rails', 'ACH · Wire · RTP · FedNow'], ['Reference', ref]];
+    case 'EUR_ACCOUNT':
+      return [...common, ['IBAN', 'DE89 3704 0044 0532 0130 00'], ['SWIFT / BIC', 'DEUTDEFF'], ['Reference', ref]];
+    case 'MXN_ACCOUNT':
+      return [...common, ['CLABE', '012180001234567895'], ['Reference', ref]];
+    case 'GBP_ACCOUNT':
+      return [...common, ['Account number', '12345678'], ['Sort code', '04-00-04'], ['Reference', ref]];
+    case 'BRL_ACCOUNT':
+      return [...common, ['PIX key', `gga.${country.code}@lightspark.com`], ['Reference', ref]];
+    case 'INR_ACCOUNT':
+      return [...common, ['Account number', '50100123456789'], ['IFSC', 'HDFC0001234'], ['Reference', ref]];
+    default:
+      return [...common, ['Account number', '000123456789'], ['Reference', ref]];
+  }
+}
 
 const KEYPAD: Array<Array<string>> = [
   ['1', '2', '3'],
@@ -524,7 +616,9 @@ export function AddMoneySheet({
   const brightness = headerGlassBrightness(theme);
   const { titles, sources, activeSources, details } = MODES[mode];
   const balance = formatUsdCents(availableCents);
-  const [step, setStep] = useState<Step>(mode === 'send' ? 'banks' : 'source');
+  const [step, setStep] = useState<Step>(
+    mode === 'send' ? 'banks' : mode === 'receive' ? 'deposit' : 'source',
+  );
   const [back, setBack] = useState(false); // direction of the last nav
   // Bumps on every open so the step stack remounts fresh — a flow opened from
   // another flow appears in place, not sliding in like a forward step nav.
@@ -556,6 +650,9 @@ export function AddMoneySheet({
   const [countryQuery, setCountryQuery] = useState('');
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [formBeneficiary, setFormBeneficiary] = useState(DEMO_BENEFICIARY);
+  // Deposit (Receive) list — per-row copy feedback (copy works; QR is a no-op).
+  const [copiedChainId, setCopiedChainId] = useState<string | null>(null);
+  const copyTimer = useRef(0);
   // Live mid-market rates (Coinbase, cached) with the baked-in usdToLocal as a
   // silent fallback. Display-only; the spread shows as a fee on confirm.
   const { rateFor } = useUsdRates();
@@ -605,7 +702,7 @@ export function AddMoneySheet({
       // Send opens on the recipient list (recipient-first); add/withdraw on the
       // source picker.
       setOpenKey((k) => k + 1);
-      setStep(isSend ? 'banks' : 'source');
+      setStep(mode === 'receive' ? 'deposit' : isSend ? 'banks' : 'source');
       setBack(false);
       setRaw('');
       setStarted(false);
@@ -622,11 +719,27 @@ export function AddMoneySheet({
   useEffect(() => {
     if (open) window.clearTimeout(quoteTimer.current);
   }, [open]);
-  useEffect(() => () => window.clearTimeout(quoteTimer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(quoteTimer.current);
+      window.clearTimeout(copyTimer.current);
+    },
+    [],
+  );
 
   const go = (next: Step, isBack = false) => {
     setBack(isBack);
     setStep(next);
+  };
+
+  // Copy a value to the clipboard (Receive deposit addresses + funding-detail
+  // rows); the tapped control flips to a checkmark for a beat, keyed by `id`.
+  // QR stays a no-op visual.
+  const copyValue = (id: string, text: string) => {
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setCopiedChainId(id);
+    window.clearTimeout(copyTimer.current);
+    copyTimer.current = window.setTimeout(() => setCopiedChainId(null), 1400);
   };
 
   // Bank flow handlers.
@@ -652,7 +765,9 @@ export function AddMoneySheet({
     } else {
       setFormBeneficiary(DEMO_BENEFICIARY);
     }
-    go('bankForm');
+    // Receive shows the picked country's funding instructions; add/withdraw/send
+    // collect the external-account fields.
+    go(mode === 'receive' ? 'fundingDetails' : 'bankForm');
   };
   const updateField = (key: string, value: string) =>
     setFormValues((v) => ({ ...v, [key]: value }));
@@ -745,26 +860,34 @@ export function AddMoneySheet({
   // Back paths differ by mode. Send is recipient-first: the list (banks) is the
   // entry (no back → close), Add opens the Bank/Crypto chooser (source). Add/
   // withdraw are source-first: source is the entry.
-  const backFrom: Partial<Record<Step, Step>> = isSend
-    ? {
-        confirm: 'amount',
-        amount: 'banks',
-        bankForm: 'country',
-        country: 'source',
-        recipient: 'source',
-        source: 'banks',
-      }
-    : {
-        confirm: 'amount',
-        // Crypto withdraw reaches amount via the address step; bank via the list.
-        amount: selectedCrypto ? 'recipient' : 'banks',
-        bankForm: 'country',
-        country: 'banks',
-        recipient: 'source',
-        banks: 'source',
-      };
+  const backFrom: Partial<Record<Step, Step>> =
+    mode === 'receive'
+      ? {
+          // Deposit is the entry (→ close); the picker and details walk back up.
+          country: 'deposit',
+          fundingDetails: 'country',
+        }
+      : isSend
+        ? {
+            confirm: 'amount',
+            amount: 'banks',
+            bankForm: 'country',
+            country: 'source',
+            recipient: 'source',
+            source: 'banks',
+          }
+        : {
+            confirm: 'amount',
+            // Crypto withdraw reaches amount via the address step; bank via the list.
+            amount: selectedCrypto ? 'recipient' : 'banks',
+            bankForm: 'country',
+            country: 'banks',
+            recipient: 'source',
+            banks: 'source',
+          };
   // The entry step shows the X (close); every other step shows the back arrow.
-  const isEntryStep = isSend ? step === 'banks' : step === 'source';
+  const isEntryStep =
+    mode === 'receive' ? step === 'deposit' : isSend ? step === 'banks' : step === 'source';
 
   // Swift's ShakeEffect (8px x sin, three half-cycles), tightened to 0.28s —
   // invalid amount on Continue, or a keypress past the cap.
@@ -1044,6 +1167,10 @@ export function AddMoneySheet({
   // AnimatePresence `custom` prop is re-resolved for exiting children instead.
   type NavDir = { back: boolean; reduceMotion: boolean };
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
+  // The funding-details step titles itself with the picked country's name (e.g.
+  // "Mexico"); every other step uses the mode's static step title.
+  const displayTitle =
+    step === 'fundingDetails' && pickedCountry ? pickedCountry.name : titles[step];
   // TRUE push: the incoming screen shares an edge with the outgoing one (full
   // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
   // screen arrives at full opacity — it's a push, not a crossfade.
@@ -1124,7 +1251,7 @@ export function AddMoneySheet({
                   // ("Send to" source → recipient) keep one span — no slide for
                   // an unchanged title. amount ⇄ confirm share 'transfer' and
                   // morph between their differing titles instead.
-                  key={step === 'amount' || step === 'confirm' ? 'transfer' : titles[step]}
+                  key={step === 'amount' || step === 'confirm' ? 'transfer' : displayTitle}
                   custom={navDir}
                   variants={titleVariants}
                   initial="enter"
@@ -1141,7 +1268,7 @@ export function AddMoneySheet({
                       {titles[step]}
                     </TextMorph>
                   ) : (
-                    titles[step]
+                    displayTitle
                   )}
                 </motion.span>
               </AnimatePresence>
@@ -1201,6 +1328,163 @@ export function AddMoneySheet({
               the same commit (the recipient step's WalletListCard squircle +
               corner measurements), leaving only the enter half of the push. */}
           <AnimatePresence initial={false} custom={navDir}>
+            {/* Receive — deposit list: bank drill-in first, then crypto address
+                rows (copy works, QR is a no-op), grouped like the source list. */}
+            {step === 'deposit' && (
+              <motion.div
+                key="deposit"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.sourceWrap}>
+                  <div className={clsx(styles.card, styles.cardFlush)}>
+                    <button type="button" className={styles.sourceRow} onClick={openAddBank}>
+                      <span className={styles.tile} aria-hidden>
+                        <img
+                          className={styles.tileIcon}
+                          src="/assets/add-money/IconBank.svg"
+                          alt=""
+                          draggable={false}
+                        />
+                      </span>
+                      <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
+                        <span className={styles.sourceLabels}>
+                          <span className={styles.rowTitle}>Bank account</span>
+                          <span className={styles.rowSub}>Local transfer in 65+ countries</span>
+                          <span className={styles.rowSub}>Instant</span>
+                        </span>
+                        <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                      </span>
+                    </button>
+                    {DEPOSIT_CHAINS.map((chain, i) => {
+                      const copied = copiedChainId === chain.id;
+                      return (
+                        <div key={chain.id} className={styles.depositCryptoRow}>
+                          <span className={styles.tile} aria-hidden>
+                            <img
+                              className={styles.depositLogo}
+                              src={chain.logo}
+                              alt=""
+                              draggable={false}
+                            />
+                          </span>
+                          <span
+                            className={clsx(
+                              styles.sourceContent,
+                              i < DEPOSIT_CHAINS.length - 1 && styles.sourceContentBordered,
+                            )}
+                          >
+                            <span className={styles.sourceLabels}>
+                              <span className={styles.rowTitle}>{chain.name}</span>
+                              <span className={styles.rowSub}>{fmtDepositAddr(chain.address)}</span>
+                              <span className={styles.rowSub}>{chain.time}</span>
+                            </span>
+                            {/* Copy + QR button group (replaces the chevron). */}
+                            <span className={styles.depositActions}>
+                              <button
+                                type="button"
+                                className={clsx(
+                                  styles.depositIconBtn,
+                                  copied && styles.depositIconBtnCopied,
+                                )}
+                                aria-label={copied ? 'Copied' : `Copy ${chain.name} address`}
+                                onClick={() => copyValue(chain.id, chain.address)}
+                              >
+                                {copied ? (
+                                  <IconCheckmark2Small size={20} />
+                                ) : (
+                                  <IconSquareBehindSquare6 size={20} />
+                                )}
+                              </button>
+                              {/* QR is a visual affordance only (no-op) for the demo. */}
+                              <button
+                                type="button"
+                                className={styles.depositIconBtn}
+                                aria-label={`Show ${chain.name} QR code`}
+                              >
+                                <IconQrCode size={20} />
+                              </button>
+                            </span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Receive — the picked country's inbound funding instructions. */}
+            {step === 'fundingDetails' && pickedCountry && (
+              <motion.div
+                key="fundingDetails"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.fundingScroll}>
+                  <div className={styles.fundingIntro}>
+                    <span className={styles.depositTile} aria-hidden>
+                      <Flag code={pickedCountry.code} size={20} />
+                    </span>
+                    <span className={styles.depositLabels}>
+                      <span className={styles.depositName}>{pickedCountry.name}</span>
+                      <span className={styles.depositAddr}>
+                        {pickedCountry.rail} · arrives as USDB
+                      </span>
+                    </span>
+                  </div>
+                  <div className={clsx(styles.card, styles.detailsCard)}>
+                    <div className={styles.detailRows}>
+                      {receiveFields(pickedCountry, formBeneficiary).map(([label, value], i, arr) => {
+                        const id = `fd-${label}`;
+                        const copied = copiedChainId === id;
+                        return (
+                          <div
+                            key={label}
+                            className={clsx(
+                              styles.detailRow,
+                              styles.fundingRow,
+                              i < arr.length - 1 && styles.detailRowBordered,
+                            )}
+                          >
+                            <span className={styles.detailLabel}>{label}</span>
+                            <span className={styles.fundingValueWrap}>
+                              <span className={styles.fundingValue}>{value}</span>
+                              <button
+                                type="button"
+                                className={clsx(
+                                  styles.fundingCopy,
+                                  copied && styles.depositIconBtnCopied,
+                                )}
+                                aria-label={copied ? 'Copied' : `Copy ${label}`}
+                                onClick={() => copyValue(id, value)}
+                              >
+                                {copied ? (
+                                  <IconCheckmark2Small size={16} />
+                                ) : (
+                                  <IconSquareBehindSquare6 size={16} />
+                                )}
+                              </button>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {step === 'source' && (
               <motion.div
                 key="source"

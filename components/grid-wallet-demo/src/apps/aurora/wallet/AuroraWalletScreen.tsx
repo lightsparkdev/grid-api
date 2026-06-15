@@ -256,6 +256,13 @@ export function AuroraWalletScreen({
     openSheet('send');
   };
 
+  // Receive — opens the money sheet in 'receive' mode (the deposit list), the
+  // same way Send does, reusing the full-size sheet + shared country picker.
+  const startReceive = () => {
+    setSendReceiveOpen(false);
+    openSheet('receive');
+  };
+
   // Glass toast (overlay layer): transfer confirmations + the tap-to-pay balance
   // guard. A fresh id restarts the hold when one is already up.
   const [toast, setToast] = useState<GlassToastData | null>(null);
@@ -466,6 +473,9 @@ export function AuroraWalletScreen({
     const cents = pendingCents.current;
     const mode = sheetMode;
     const dest = pendingActivity.current;
+    // Receive has no amount/confirm step, so it never reaches finishTransfer —
+    // the guard also narrows `mode` to a transfer mode for the calls below.
+    if (mode === 'receive') return;
     onTransferExecute?.(mode, cents);
     setSheetConfirming(false);
     setSheetOpen(false);
@@ -765,6 +775,7 @@ export function AuroraWalletScreen({
         open={sendReceiveOpen}
         onDismiss={() => setSendReceiveOpen(false)}
         onSend={startSend}
+        onReceive={startReceive}
       />
 
       {/* Add money / Withdraw / Send — one mode-switched sheet; Confirm hands
@@ -775,7 +786,10 @@ export function AuroraWalletScreen({
         availableCents={availableCents}
         confirming={sheetConfirming}
         onDismiss={() => setSheetOpen(false)}
-        onQuote={(cents, dest) => onQuoteCreate?.(sheetMode, cents, dest)}
+        onQuote={(cents, dest) => {
+          // Receive never reaches the amount step, so no quote fires for it.
+          if (sheetMode !== 'receive') onQuoteCreate?.(sheetMode, cents, dest);
+        }}
         onLinkExternalAccount={onLinkExternalAccount}
         onConfirm={(cents, activity) => {
           pendingCents.current = cents;

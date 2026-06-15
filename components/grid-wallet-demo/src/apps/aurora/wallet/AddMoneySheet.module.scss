@@ -883,6 +883,142 @@
   font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
 }
 
+/* ── Receive: deposit address list + funding details ─────────────────────── */
+
+/* Crypto rows reuse the source row's CHILDREN (.tile/.sourceContent) but NOT the
+   interactive .sourceRow itself — they're read-only (only the copy/QR buttons
+   act), so the row is a plain flex layout with no hover/press/cursor. */
+.depositCryptoRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 0 0 0 16px;
+
+  /* The copy/QR button group sits 16px off the row edge (vs the chevron's 24). */
+  .sourceContent {
+    padding-right: 16px;
+  }
+}
+
+/* Network brand mark in the tile. */
+.depositLogo {
+  width: 24px;
+  height: 24px;
+}
+
+/* Scroll container for the funding-details screen (below the overlaid toolbar). */
+.fundingScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 16px 24px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.depositActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.depositIconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+@media (hover: hover) {
+  .depositIconBtn:hover {
+    background: var(--ios-fill-secondary);
+  }
+}
+
+.depositIconBtnCopied {
+  color: var(--p-green);
+}
+
+/* funding-details header — flag tile + country/rail line. */
+.fundingIntro {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 6px 4px;
+}
+
+/* funding-details rows: long values (IBAN/CLABE) wrap; a small copy sits right. */
+.fundingRow {
+  align-items: flex-start;
+}
+
+.fundingValueWrap {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fundingValue {
+  @include ios.ios-text-caption-1;
+  font-weight: 510;
+  color: var(--ios-label-secondary);
+  text-align: right;
+  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+  word-break: break-word;
+  min-width: 0;
+}
+
+.fundingCopy {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-top: -2px;
+  border: 0;
+  border-radius: 9px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+@media (hover: hover) {
+  .fundingCopy:hover {
+    background: var(--ios-fill-secondary);
+  }
+}
+
 /* CTA contents — icon + morphing label inside the blue glass pill. Spacing
    lives on the icon's animated margin (not gap), so it collapses with it. */
 .ctaInner {

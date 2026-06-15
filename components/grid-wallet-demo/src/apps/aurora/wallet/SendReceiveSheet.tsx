@@ -12,16 +12,17 @@ interface SendReceiveSheetProps {
   onDismiss: () => void;
   /** Send tapped — parent swaps this sheet for the money sheet in send mode. */
   onSend: () => void;
+  /** Receive tapped — parent swaps this sheet for the deposit list. */
+  onReceive: () => void;
 }
 
 /**
  * Figma 109:28513 — the "Send or receive" chooser, dressed in the auth
  * phone/email sheet's look (AuthSheet): a 64px gradient icon tile + glass X
  * header, a left-aligned title and subtitle, then the two bordered action
- * pills. Send chains into the money sheet; Receive is shown disabled (a demo
- * no-op until the deposit-address flow exists).
+ * pills. Send chains into the money sheet; Receive opens the deposit list.
  */
-export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetProps) {
+export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendReceiveSheetProps) {
   const theme = useThemeMode();
   return (
     <BottomSheet
@@ -58,12 +59,7 @@ export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetPr
         <ContentAreaButton type="button" variant="bordered" onClick={onSend}>
           Send
         </ContentAreaButton>
-        <ContentAreaButton
-          type="button"
-          variant="bordered"
-          className={styles.receiveBtn}
-          disabled
-        >
+        <ContentAreaButton type="button" variant="bordered" onClick={onReceive}>
           Receive
         </ContentAreaButton>
       </div>
