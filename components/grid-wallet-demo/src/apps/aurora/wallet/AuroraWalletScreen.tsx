@@ -541,7 +541,7 @@ export function AuroraWalletScreen({
         )}
       </AnimatePresence>
 
-      <header className={styles.header}>
+      <header className={clsx(styles.header, !isOpen && styles.headerHome)}>
         <AnimatePresence initial={false}>
           {!isOpen ? (
             <motion.div
@@ -580,6 +580,21 @@ export function AuroraWalletScreen({
           )}
         </AnimatePresence>
       </header>
+
+      {/* Scroll-edge: content that runs under the status bar is progressively
+          blurred + faded into the bg so it never clashes with the status-bar
+          glyphs (and the fixed gear/title/card are covered cleanly). Three
+          stacked blur layers ramp the radius from 0 (bottom) to full (top) so
+          there's no hard cutoff; a bg-color tint sits on top to resolve the very
+          edge into the wallet bg. */}
+      {!isOpen && !isTap && (
+        <div className={styles.topFade} aria-hidden>
+          <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
+          <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
+          <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
+          <div className={styles.fadeTint} />
+        </div>
+      )}
 
       {/* The whole body lifts as one transform during tap-to-pay (card + content
           together) so nothing desyncs — collapsing the header instead reflowed

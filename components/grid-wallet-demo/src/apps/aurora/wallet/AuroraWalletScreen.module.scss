@@ -89,6 +89,76 @@
   box-sizing: border-box;
 }
 
+/* Home: the title + gear drop to the fixed-background layer (below the scrolling
+   body) so the sheet scrolls up over them — same as the card + aurora. The
+   card-detail header keeps z-index 2 so it stays on top while a card is open. */
+.headerHome {
+  z-index: 0;
+}
+
+/* iOS scroll-edge: the strip under the status bar progressively blurs + fades the
+   scroll content into the bg so it never collides with the status-bar glyphs. z 2
+   sits above the body (z 1) and below the AppShell status bar. */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Progressive blur (3-layer stack, à la AddMoneySheet's <TopFade>): each layer
+   ups the blur radius and is masked to a band, so the blur RAMPS from 0 at the
+   bottom to full at the very top — a single uniform backdrop-filter + mask leaves
+   a hard edge where the blur stops, this crossfades it away. backdrop-filter is
+   clipped to each layer's own box; the .topFade parent has no overflow/clip/
+   isolation so the blur still samples the scrolling body beneath it. */
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill kicks backdrop-filter into compositing (the FaceIdAuth trick). */
+  background: rgba(255, 255, 255, 0.01);
+  -webkit-backdrop-filter: blur(var(--fade-blur));
+  backdrop-filter: blur(var(--fade-blur));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+.fadeBlurStrong {
+  --fade-blur: 8px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 16%, transparent 46%);
+}
+
+.fadeBlurMid {
+  --fade-blur: 4px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 34%, transparent 68%);
+}
+
+.fadeBlurSoft {
+  --fade-blur: 2px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
+}
+
+/* bg-color tint on top of the blur — fully resolves the very edge (under the
+   status bar) into the wallet bg so the fixed gear/title/card are covered, then
+   melts to transparent so the blurred content shows through below. */
+.fadeTint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--wallet-bg) 0%,
+    color-mix(in srgb, var(--wallet-bg) 50%, transparent) 50%,
+    transparent 100%
+  );
+}
+
 .headerInner {
   position: absolute;
   inset: 8px 24px;
@@ -119,16 +189,23 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Long content (a growing Activity list) runs off the bottom — no scrolling
-     yet, matching card-home. Flip to `overflow-y: auto` to enable page scroll:
-     the underlap below already starts the scroll clip box at the header's top,
-     so content would scroll under the glass header buttons (z 2 > 1). */
-  overflow: hidden;
-  /* Underlap the full header strip and pad it back (net layout unchanged) — the
-     debit card's ~16px top drop-shadow bleed paints inside the padding,
-     unclipped. */
-  margin-top: calc(-1 * var(--wallet-header-height));
-  padding-top: var(--wallet-header-height);
+  /* Page scroll: the pinned card (sticky, below) stays put while the sheet
+     scrolls up over it; the underlap starts the scroll clip box at the header's
+     top, so content scrolls under the glass gear (z 2 > 1). */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Underlap BOTH the status bar and the header strip so the scroll content runs
+     all the way to the very top edge (under the status bar); padding restores the
+     content to below the gear. The opaque sheet covers the fixed gear/title/card
+     as it scrolls up; the .topFade overlay (z 2) blurs the status-bar edge. */
+  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
+  padding-top: calc(62px + var(--wallet-header-height));
 }
 
 .bodyOpen {
@@ -139,11 +216,17 @@
    header layer hides the header buttons as they fade rather than ghosting them. */
 .bodyTap {
   z-index: 3;
+  /* No page scroll mid-tap (the body is transform-lifted instead). */
+  overflow: hidden;
 }
 
 /* Card slot — top for closed/home, centered for intro/creating/ready. The card
    itself (.cardCarry) layout-animates between the two. */
 .cardAreaTop {
+  /* Pinned: holds while the sheet scrolls up over it. Only active in the home
+     scroll; the card-open/tap states don't scroll. */
+  position: sticky;
+  top: 0;
   flex-shrink: 0;
   padding: 8px 16px 0;
 }
