@@ -32,6 +32,9 @@ type Step = 'source' | 'banks' | 'country' | 'bankForm' | 'recipient' | 'amount'
 export interface SavedBank {
   id: string;
   country: BankCountry;
+  /** Display name for THIS account — cycled from the country's bank pool so
+   *  repeat adds from the same country don't look like duplicates. */
+  bankName: string;
   /** field key -> value, seeded from the spec example + country overrides. */
   values: Record<string, string>;
   beneficiary: string;
@@ -39,13 +42,23 @@ export interface SavedBank {
 
 const DEMO_BENEFICIARY = 'Ava Martinez';
 
+/** Randomize the digits of a sample value so each added account looks distinct
+ *  (keeps length, letters + formatting — a plausible demo number, not a real
+ *  checksum; nothing is submitted to a live API). */
+function randomizeDigits(value: string): string {
+  return value.replace(/\d/g, () => String(Math.floor(Math.random() * 10)));
+}
+
 /** Pre-fill the account form for a country from the spec's sample values
- *  (country override > spec field example), with the fixed CFA region applied. */
+ *  (country override > spec field example), with the fixed CFA region applied.
+ *  Account identifiers get fresh digits each call so two banks from the same
+ *  country don't share a number; enum fields (e.g. pixKeyType) stay intact. */
 function sampleValuesFor(country: BankCountry): Record<string, string> {
   const schema = BANK_ACCOUNT_SCHEMAS[country.accountType];
   const values: Record<string, string> = {};
   for (const f of schema.fields) {
-    values[f.key] = country.sampleOverrides?.[f.key] ?? f.example ?? '';
+    const base = country.sampleOverrides?.[f.key] ?? f.example ?? '';
+    values[f.key] = f.enum ? base : randomizeDigits(base);
   }
   if (country.region) values.region = country.region;
   return values;
@@ -542,9 +555,14 @@ export function AddMoneySheet({
     setFormValues((v) => ({ ...v, [key]: value }));
   const addBank = () => {
     if (!pickedCountry) return;
+    // Cycle the country's bank pool by how many of it are already saved, so a
+    // second add from the same country shows a different bank (not a clone).
+    const pool = pickedCountry.banks ?? [pickedCountry.bankName];
+    const sameCountry = savedBanks.filter((b) => b.country.code === pickedCountry.code).length;
     const bank: SavedBank = {
       id: `${pickedCountry.accountType}-${Date.now()}`,
       country: pickedCountry,
+      bankName: pool[sameCountry % pool.length],
       values: formValues,
       beneficiary: formBeneficiary,
     };
@@ -735,7 +753,7 @@ export function AddMoneySheet({
       <span className={styles.sourceLabels}>
         <span className={styles.rowTitle}>
           {selectedBank
-            ? `${selectedBank.country.bankName} (•••• ${accountLast4(selectedBank.values)})`
+            ? `${selectedBank.bankName} (•••• ${accountLast4(selectedBank.values)})`
             : 'Bank account'}
         </span>
         <span className={styles.rowSub}>{localCurrency} bank account</span>
@@ -1053,7 +1071,7 @@ export function AddMoneySheet({
                           >
                             <span className={styles.sourceLabels}>
                               <span className={styles.rowTitle}>
-                                {b.country.bankName} (•••• {accountLast4(b.values)})
+                                {b.bankName} (•••• {accountLast4(b.values)})
                               </span>
                               <span className={styles.rowSub}>{b.country.name}</span>
                               <span className={styles.rowSub}>

@@ -33,6 +33,10 @@ export interface BankCountry {
   region?: string;
   /** Top-of-picker rank (1 = highest by payment volume); unranked = "All" only. */
   popularRank?: number;
+  /** Illustrative bank-name pool — repeat adds from this country cycle through
+   *  these so saved banks don't look like duplicates. Falls back to [bankName].
+   *  First entry should match `bankName` (the default for the first add). */
+  banks?: string[];
   /** Demo sample overrides where the spec example must be made country-specific
    *  or internally consistent. Keys must be real fields; values must pass the
    *  field pattern (checked by assertBankCountries). */
@@ -51,6 +55,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
     usdToLocal: 5.4,
     bankName: 'Nubank',
     popularRank: 5,
+    banks: ['Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil'],
     // Spec example pairs an email pixKey with pixKeyType CPF; make it consistent.
     sampleOverrides: { pixKey: '12345678901', pixKeyType: 'CPF', taxId: '12345678901' },
   },
@@ -63,11 +68,11 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'ee', name: 'Estonia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Swedbank' },
   { code: 'fi', name: 'Finland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Nordea' },
   { code: 'fr', name: 'France', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'BNP Paribas' },
-  { code: 'de', name: 'Germany', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Deutsche Bank', popularRank: 7 },
+  { code: 'de', name: 'Germany', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Deutsche Bank', popularRank: 7, banks: ['Deutsche Bank', 'Commerzbank', 'N26', 'DKB'] },
   { code: 'gr', name: 'Greece', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Alpha Bank' },
   { code: 'hu', name: 'Hungary', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'OTP Bank' },
   { code: 'is', name: 'Iceland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Landsbankinn' },
-  { code: 'in', name: 'India', accountType: 'INR_ACCOUNT', rail: 'UPI', usdToLocal: 83.3, bankName: 'HDFC Bank', popularRank: 2 },
+  { code: 'in', name: 'India', accountType: 'INR_ACCOUNT', rail: 'UPI', usdToLocal: 83.3, bankName: 'HDFC Bank', popularRank: 2, banks: ['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank'] },
   { code: 'id', name: 'Indonesia', accountType: 'IDR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 15800, bankName: 'Bank Mandiri' },
   { code: 'ie', name: 'Ireland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'AIB' },
   { code: 'it', name: 'Italy', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UniCredit' },
@@ -80,11 +85,11 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'mw', name: 'Malawi', accountType: 'MWK_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1730, bankName: 'National Bank of Malawi' },
   { code: 'my', name: 'Malaysia', accountType: 'MYR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 4.7, bankName: 'Maybank' },
   { code: 'mt', name: 'Malta', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Valletta' },
-  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Nu México', popularRank: 1 },
+  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Nu México', popularRank: 1, banks: ['Nu México', 'BBVA', 'Santander', 'Citibanamex'] },
   { code: 'nl', name: 'Netherlands', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'ING' },
-  { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank', popularRank: 4 },
+  { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank', popularRank: 4, banks: ['GTBank', 'Access Bank', 'Zenith Bank', 'First Bank'] },
   { code: 'no', name: 'Norway', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DNB' },
-  { code: 'ph', name: 'Philippines', accountType: 'PHP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 58, bankName: 'BDO', popularRank: 3 },
+  { code: 'ph', name: 'Philippines', accountType: 'PHP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 58, bankName: 'BDO', popularRank: 3, banks: ['BDO', 'BPI', 'Metrobank', 'UnionBank'] },
   { code: 'pl', name: 'Poland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'PKO Bank Polski' },
   { code: 'pt', name: 'Portugal', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Millennium BCP' },
   { code: 'ro', name: 'Romania', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Banca Transilvania' },
@@ -101,7 +106,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'th', name: 'Thailand', accountType: 'THB_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 36, bankName: 'Bangkok Bank' },
   { code: 'ug', name: 'Uganda', accountType: 'UGX_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3800, bankName: 'Stanbic Bank' },
   { code: 'ae', name: 'United Arab Emirates', accountType: 'AED_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3.67, bankName: 'Emirates NBD' },
-  { code: 'gb', name: 'United Kingdom', accountType: 'GBP_ACCOUNT', rail: 'Faster Payments', usdToLocal: 0.79, bankName: 'Barclays', popularRank: 6 },
+  { code: 'gb', name: 'United Kingdom', accountType: 'GBP_ACCOUNT', rail: 'Faster Payments', usdToLocal: 0.79, bankName: 'Barclays', popularRank: 6, banks: ['Barclays', 'HSBC', 'Lloyds', 'Monzo'] },
   { code: 'us', name: 'United States', accountType: 'USD_ACCOUNT', rail: 'ACH', usdToLocal: 1, bankName: 'Chase' },
   { code: 'vn', name: 'Vietnam', accountType: 'VND_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 25400, bankName: 'Vietcombank' },
   { code: 'zm', name: 'Zambia', accountType: 'ZMW_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 26, bankName: 'Zanaco' },
