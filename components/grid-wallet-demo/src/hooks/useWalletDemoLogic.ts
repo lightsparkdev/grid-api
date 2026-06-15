@@ -62,7 +62,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Demo interaction logic — preserved for phase 2 UI wiring.
- * Returns the full surface area Sidebar / Phone / ApiSteps expect.
+ * Returns the full surface area Sidebar / Phone / ApiPanel expect.
  */
 export function useWalletDemoLogic() {
   const [persona, setPersona] = useState<Persona>('fintech');

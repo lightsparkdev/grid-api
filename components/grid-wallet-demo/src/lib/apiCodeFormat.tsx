@@ -17,10 +17,6 @@ export function stepTitle(entry: ApiCall): string {
   return `${entry.method} ${resource}`;
 }
 
-export function stepDescription(entry: ApiCall): string | undefined {
-  return entry.note;
-}
-
 export function formatCurlString(entry: ApiCall): string {
   const lines: string[] = [];
   const url = formatApiUrl(entry.path);
