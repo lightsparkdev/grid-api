@@ -1388,10 +1388,7 @@ export function AddMoneySheet({
                             <span className={styles.depositActions}>
                               <button
                                 type="button"
-                                className={clsx(
-                                  styles.depositIconBtn,
-                                  copied && styles.depositIconBtnCopied,
-                                )}
+                                className={styles.depositIconBtn}
                                 aria-label={copied ? 'Copied' : `Copy ${chain.name} address`}
                                 onClick={() => copyValue(chain.id, chain.address)}
                               >
@@ -1462,10 +1459,7 @@ export function AddMoneySheet({
                               <span className={styles.fundingValue}>{value}</span>
                               <button
                                 type="button"
-                                className={clsx(
-                                  styles.fundingCopy,
-                                  copied && styles.depositIconBtnCopied,
-                                )}
+                                className={styles.fundingCopy}
                                 aria-label={copied ? 'Copied' : `Copy ${label}`}
                                 onClick={() => copyValue(id, value)}
                               >

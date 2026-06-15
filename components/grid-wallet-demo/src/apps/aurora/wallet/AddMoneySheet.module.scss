@@ -1,4 +1,5 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
+@use '../../shared/glass/glass-button-shadow' as shadow;
 
 /* ── Sheet flow shell ─────────────────────────────────────────────────────────
    Figma 109:29870 — solid near-full-height sheet; top sits just under the
@@ -942,7 +943,20 @@
   background: var(--ios-fill-tertiary);
   color: var(--ios-label-secondary);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+
+  /* Subtle press-scale, same as the content-area buttons (hover 1.02, click
+     1.04). The fill deepening is the press feedback, so cancel the mixin's
+     :active brightness. */
+  @include shadow.glass-button-press-scale(1.04);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.15s ease,
+    color 0.15s ease;
+
+  &:active:not(:disabled) {
+    filter: none;
+  }
 
   svg path {
     stroke-width: 2;
@@ -953,10 +967,6 @@
   .depositIconBtn:hover {
     background: var(--ios-fill-secondary);
   }
-}
-
-.depositIconBtnCopied {
-  color: var(--p-green);
 }
 
 /* funding-details header — flag tile + country/rail line. */
