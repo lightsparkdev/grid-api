@@ -3911,6 +3911,13 @@ paths:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
+                    totalBalance:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
                     fundingPaymentInstructions: []
                     privateEnabled: true
                     createdAt: '2026-04-08T15:30:00Z'
@@ -7662,6 +7669,13 @@ webhooks:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
+                    totalBalance:
+                      amount: 12500
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
                     fundingPaymentInstructions: []
                     createdAt: '2025-08-01T10:00:00Z'
                     updatedAt: '2025-08-15T14:32:00Z'
@@ -7677,6 +7691,13 @@ webhooks:
                     type: INTERNAL_FIAT
                     status: FROZEN
                     balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    totalBalance:
                       amount: 10000
                       currency:
                         code: USD
@@ -12061,6 +12082,7 @@ components:
         - type
         - status
         - balance
+        - totalBalance
         - fundingPaymentInstructions
         - createdAt
         - updatedAt
@@ -12079,6 +12101,10 @@ components:
           $ref: '#/components/schemas/InternalAccountStatus'
         balance:
           $ref: '#/components/schemas/CurrencyAmount'
+          description: The balance available to spend, excluding pending and held funds
+        totalBalance:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The total balance, including pending and held funds
         fundingPaymentInstructions:
           type: array
           description: Payment instructions for funding the account
@@ -12847,24 +12873,31 @@ components:
           type: string
           enum:
             - INDIVIDUAL
+          example: INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
+          example: Jane Smith
         birthDate:
           type: string
           description: The birth date of the beneficiary
+          example: '1990-01-15'
         nationality:
           type: string
           description: The nationality of the beneficiary
+          example: GB
         email:
           type: string
           description: The email of the beneficiary
+          example: jane.smith@example.com
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
+          example: '+447700900123'
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
+          example: GB
         address:
           $ref: '#/components/schemas/Address'
     GbpExternalAccountInfo:
