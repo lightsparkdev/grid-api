@@ -6,11 +6,12 @@ import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/re
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
+import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import NumericText from '@/components/NumericText';
-import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import { FrostPanel, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
@@ -123,9 +124,9 @@ function FormField({
   );
 }
 
-/** Top progressive-blur + sheet-bg fade (the FaceIdAuth recipe): the page
- *  scrolls UP under it, frosting and sinking into the sheet color below the
- *  pinned title + header buttons. */
+/** Progressive top blur — the list scrolls UP under it, frosting toward the
+ *  pinned title + glass search pill. Pairs with the alpha-dissolve on the
+ *  scroll content. */
 function TopFade() {
   return (
     <div className={styles.topFade} aria-hidden>
@@ -1087,19 +1088,6 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={clsx(styles.pickerScroll, styles.pickerScrollCountry)}>
-                  <div className={styles.searchWrap}>
-                    <div className={styles.searchField}>
-                      <input
-                        className={styles.searchInput}
-                        type="text"
-                        inputMode="search"
-                        placeholder="Search country or currency"
-                        value={countryQuery}
-                        onChange={(e) => setCountryQuery(e.target.value)}
-                        aria-label="Search countries"
-                      />
-                    </div>
-                  </div>
                   {countryQ ? (
                     <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
                       {filteredCountries.map((c, i, arr) => (
@@ -1141,6 +1129,48 @@ export function AddMoneySheet({
                   )}
                 </div>
                 <TopFade />
+                {/* Pinned frosted-glass search pill — the list scrolls behind it
+                    and frosts through (FrostPanel: backdrop-filter + specular
+                    rim). Refraction over scrolling DOM isn't possible, so frost. */}
+                <div className={styles.searchPill}>
+                  <FrostPanel
+                    radius={22}
+                    cornerSmoothing={0}
+                    tint="var(--search-pill-tint)"
+                    tintBlur={4}
+                    // The geometry-aware specular IS the rim now (the buttons'
+                    // SYMBOL_GLASS highlight, minus refraction), so drop the flat
+                    // edge stroke that doubled it.
+                    edge="none"
+                    specular={{
+                      rotation: 45,
+                      glowStrength: 0.06,
+                      glowSpread: 0.5,
+                      glowExponent: 1.5,
+                      edgeStrength: 1,
+                      // Button uses 2px, but that rim reads heavier as a flat
+                      // additive highlight on this big pill than as the button's
+                      // refractive glint — halve it so it matches visually.
+                      edgeWidth: 1,
+                      edgeExponent: 1.5,
+                      // Match the back button's specularStrength (1) in both modes.
+                      strength: 1,
+                    }}
+                  >
+                    <div className={styles.searchRow}>
+                      <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />
+                      <input
+                        className={styles.searchInput}
+                        type="text"
+                        inputMode="search"
+                        placeholder="Search country or currency"
+                        value={countryQuery}
+                        onChange={(e) => setCountryQuery(e.target.value)}
+                        aria-label="Search countries"
+                      />
+                    </div>
+                  </FrostPanel>
+                </div>
               </motion.div>
             )}
 
