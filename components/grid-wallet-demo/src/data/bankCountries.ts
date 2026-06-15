@@ -80,7 +80,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'mw', name: 'Malawi', accountType: 'MWK_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1730, bankName: 'National Bank of Malawi' },
   { code: 'my', name: 'Malaysia', accountType: 'MYR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 4.7, bankName: 'Maybank' },
   { code: 'mt', name: 'Malta', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Valletta' },
-  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Banorte', popularRank: 1 },
+  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Nu México', popularRank: 1 },
   { code: 'nl', name: 'Netherlands', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'ING' },
   { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank', popularRank: 4 },
   { code: 'no', name: 'Norway', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DNB' },

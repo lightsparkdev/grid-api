@@ -393,7 +393,7 @@ export function AuroraWalletScreen({
           : {
               id: `${mode}-${Date.now()}`,
               image: '/assets/add-money/flag-mx.svg',
-              title: 'Banorte (•••• 3872)',
+              title: 'Nu México (•••• 3872)',
               detail: mode === 'withdraw' ? 'Withdrawn from balance' : 'Added to balance',
               amount: mode === 'withdraw' ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
               timestamp: Date.now(),

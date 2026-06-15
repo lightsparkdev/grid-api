@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
-import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
@@ -948,7 +947,7 @@ export function AddMoneySheet({
                     glass={{ brightness }}
                     onClick={openAddBank}
                   >
-                    <IconPlusMedium size={18} />
+                    <SfSymbol name="plus" size={15} />
                   </GlassSymbolButton>
                 </motion.span>
               )}
@@ -1185,18 +1184,13 @@ export function AddMoneySheet({
               >
                 <div className={clsx(styles.pickerScroll, styles.pickerScrollForm)}>
                   <div className={clsx(styles.card, styles.formCard)}>
-                    <div className={styles.formHeader}>
-                      <span className={styles.tile} aria-hidden>
-                        <Flag code={pickedCountry.code} size={20} />
-                      </span>
-                      <span className={styles.sourceLabels}>
-                        <span className={styles.rowTitle}>{pickedCountry.name}</span>
-                        <span className={styles.rowSub}>
-                          {currencyFor(pickedCountry)}
-                        </span>
-                      </span>
-                    </div>
                     <div className={styles.formFields}>
+                      {/* Read-only country row — the picked country, styled as the
+                          first field row (no flag, no editing). */}
+                      <div className={styles.formField}>
+                        <span className={styles.formLabel}>Country</span>
+                        <span className={styles.formInput}>{pickedCountry.name}</span>
+                      </div>
                       <FormField
                         label="Account holder"
                         value={formBeneficiary}
