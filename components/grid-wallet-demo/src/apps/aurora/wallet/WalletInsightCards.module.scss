@@ -97,8 +97,8 @@ $card-press-duration: 0.28s;
   align-self: stretch;
 }
 
-/* Figma 91:18192 — gap 4 between title / values / metric */
-.cardBitcoin {
+/* gap 4 between title / values / metric */
+.cardEarnings {
   @extend .cardBase;
   gap: 4px;
 }
@@ -160,35 +160,34 @@ $card-press-duration: 0.28s;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
 }
 
-.metricIcon {
-  flex-shrink: 0;
+/* Earnings "+X today" reads positive — green. */
+.metricPositive {
+  color: var(--p-green);
 }
 
-/* Figma 91:18195 — amount + USD stacked, pb 2 only (no internal gap) */
-.btcBlock {
+/* The "today" qualifier stays secondary even on the positive (green) line. */
+.metricMuted {
+  color: var(--ios-label-secondary);
+}
+
+/* Amount + APY stacked, pb 2 only (no internal gap). */
+.earningsBlock {
   display: flex;
   flex-direction: column;
   width: 100%;
   padding-bottom: 2px;
 }
 
-.btcAmount {
+.earningsAmount {
   margin: 0;
+  color: var(--ios-label-primary);
   @include ios.ios-text-title-2;
   @include ios.ios-type-rounded;
   @include ios.ios-type-rounded-bold(var(--ios-type-title-2-opsz));
 }
 
-.btcWhole {
-  color: var(--ios-label-primary);
-}
-
-.btcSuffix {
-  color: var(--ios-label-secondary);
-}
-
-/* Figma Caption2/Emphasized — sits flush under 28px BTC line (y 28) */
-.btcUsd {
+/* Caption2/Emphasized — sits flush under the amount. */
+.earningsApy {
   margin: 0;
   @include ios.ios-text-caption-2;
   font-weight: 590;

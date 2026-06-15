@@ -40,7 +40,7 @@ import { DebitCard } from './DebitCard';
 import { WalletActions } from './WalletActions';
 import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { TapToPayStatus } from './TapToPayStatus';
-import { WalletInsightCards, type WalletInsightCardsProps } from './WalletInsightCards';
+import { WalletInsightCards } from './WalletInsightCards';
 import type { WalletListItemData } from './WalletListItem';
 import { WalletListSection } from './WalletListSection';
 import { WalletSheet } from './WalletSheet';
@@ -111,6 +111,10 @@ const ENTRY_HOME_SETTLE_MS = 350;
 /** A cold jump straight off the auth screen lands on the wallet, lets the home
  *  entrance reveal play, THEN opens the flow — so it reads "home → sheet". */
 const COLD_ENTRY_SETTLE_MS = 700;
+/** Yield rate shown on the Earnings card; today's accrual = balance × this ÷ 365. */
+const EARNINGS_APY_PERCENT = 5;
+/** Bars in the Weekly activity chart — one per recent card charge. */
+const WEEKLY_BAR_COUNT = 14;
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
@@ -132,7 +136,7 @@ export interface WalletEntry {
   open?: WalletEntryTarget;
 }
 
-interface AuroraWalletScreenProps extends WalletInsightCardsProps {
+interface AuroraWalletScreenProps {
   /** Formatted balance from demo state, e.g. "$0.00". */
   balance?: string;
   /** One-shot mount stagger (card, balance, actions, insights) — the sign-in
@@ -208,7 +212,6 @@ export function AuroraWalletScreen({
   onTransferExecute,
   onCardIssued,
   onTapToPay,
-  ...insights
 }: AuroraWalletScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -224,10 +227,21 @@ export function AuroraWalletScreen({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetConfirming, setSheetConfirming] = useState(false);
   const [deltaCents, setDeltaCents] = useState(0);
+  // Real card spend this session — one entry per Tap to Pay; drives the Weekly
+  // activity bars (which start empty and build left→right) + the spent total.
+  const [spendBars, setSpendBars] = useState<number[]>([]);
   const [activity, setActivity] = useState<WalletListItemData[]>([]);
   const pendingCents = useRef(0);
   const pendingActivity = useRef<TransferActivity | null>(null);
   const availableCents = parseCents(balance) + deltaCents;
+  // Earnings = yield on the live balance, shown as today's accrual. Weekly bars
+  // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
+  // busiest charge so heights vary by amount.
+  const earningsTodayCents = Math.round((availableCents * EARNINGS_APY_PERCENT) / 100 / 365);
+  const visibleSpend = spendBars.slice(-WEEKLY_BAR_COUNT);
+  const maxSpendCents = Math.max(1, ...visibleSpend);
+  const weeklyBars = visibleSpend.map((cents) => cents / maxSpendCents);
+  const weeklySpentCents = spendBars.reduce((sum, cents) => sum + cents, 0);
 
   const openSheet = (mode: MoneySheetMode) => {
     setSheetMode(mode);
@@ -296,6 +310,7 @@ export function AuroraWalletScreen({
       setTapPhase('idle');
       // The card charge comes out of the cash balance, landing with the row.
       setDeltaCents((c) => c - parseCents(tx.amount));
+      setSpendBars((b) => [...b, parseCents(tx.amount)]);
       onTapToPay?.(parseCents(tx.amount), tx.title);
       window.clearTimeout(insertTimer.current);
       insertTimer.current = window.setTimeout(() => {
@@ -637,7 +652,12 @@ export function AuroraWalletScreen({
               />
             </motion.div>
             <motion.div {...enter(3)}>
-              <WalletInsightCards {...insights} />
+              <WalletInsightCards
+                weeklyBars={weeklyBars}
+                weeklySpentCents={weeklySpentCents}
+                earningsTodayCents={earningsTodayCents}
+                apyPercent={EARNINGS_APY_PERCENT}
+              />
             </motion.div>
             <WalletListSection
               title="Activity"

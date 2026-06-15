@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { SfSymbol } from '@/apps/shared/icons';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import styles from './WalletInsightCards.module.scss';
 
@@ -16,20 +15,8 @@ function fmtUsd(cents: number): string {
   })}`;
 }
 
-function splitBtcAmount(btc: number): { whole: string; decimals: string } {
-  const [whole = '0', decimals = '0000'] = fmtBtcAmount(btc).split('.');
-  return { whole, decimals: decimals.padEnd(4, '0').slice(0, 4) };
-}
-
-function fmtBtcAmount(btc: number): string {
-  return btc.toLocaleString('en-US', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
-  });
-}
-
 function fmtPercent(value: number): string {
-  return `${Math.abs(value).toFixed(2)}%`;
+  return `${value.toFixed(2)}%`;
 }
 
 function normalizeBars(values: number[]): number[] {
@@ -40,39 +27,39 @@ function normalizeBars(values: number[]): number[] {
   return bars;
 }
 
-function MetricLine({ children }: { children: ReactNode }) {
+function MetricLine({ positive, children }: { positive?: boolean; children: ReactNode }) {
   return (
     <p className={styles.metric}>
-      <span className={styles.metricLine}>{children}</span>
+      <span
+        className={positive ? `${styles.metricLine} ${styles.metricPositive}` : styles.metricLine}
+      >
+        {children}
+      </span>
     </p>
   );
 }
 
 export interface WalletInsightCardsProps {
-  /** Weekly earned total in USD cents. */
-  weeklyEarnedCents?: number;
-  /** Bar fill ratios 0–1, one per day (defaults to all empty). */
+  /** Bar fill ratios 0–1, one per recent card charge (defaults to all empty). */
   weeklyBars?: number[];
-  /** BTC balance. */
-  btcAmount?: number;
-  /** BTC value in USD cents. */
-  btcUsdCents?: number;
-  /** BTC price change today, percent. */
-  btcChangePercent?: number;
+  /** Total card spend for the window, USD cents. */
+  weeklySpentCents?: number;
+  /** Yield earned today, USD cents (balance × APY ÷ 365). */
+  earningsTodayCents?: number;
+  /** APY shown on the earnings card, percent (e.g. 5 → "5.00% APY"). */
+  apyPercent?: number;
 }
 
-/** Figma 90:13639 — Weekly activity chart + Bitcoin balance cards. */
+/** Figma 90:13639 — Weekly activity (card spend) + Earnings (yield on balance). */
 export function WalletInsightCards({
-  weeklyEarnedCents = 0,
   weeklyBars = DEFAULT_WEEKLY_BARS,
-  btcAmount = 0,
-  btcUsdCents = 0,
-  btcChangePercent = 0,
+  weeklySpentCents = 0,
+  earningsTodayCents = 0,
+  apyPercent = 0,
 }: WalletInsightCardsProps) {
   const bars = normalizeBars(weeklyBars);
-  const { whole, decimals } = splitBtcAmount(btcAmount);
   const weeklyClip = useSquircleClip<HTMLButtonElement>();
-  const bitcoinClip = useSquircleClip<HTMLButtonElement>();
+  const earningsClip = useSquircleClip<HTMLButtonElement>();
 
   return (
     <div className={styles.row}>
@@ -84,7 +71,7 @@ export function WalletInsightCards({
         aria-label="Weekly activity"
       >
         <p className={styles.cardTitle}>Weekly activity</p>
-        <div className={styles.chart} role="img" aria-label="Weekly earnings bar chart">
+        <div className={styles.chart} role="img" aria-label="Weekly spend bar chart">
           {bars.map((fill, index) => {
             const ratio = Math.min(1, Math.max(0, fill));
             return (
@@ -99,32 +86,24 @@ export function WalletInsightCards({
             );
           })}
         </div>
-        <MetricLine>
-          <SfSymbol className={styles.metricIcon} name="arrow.up" size={13} />
-          <span>{` ${fmtUsd(weeklyEarnedCents)} earned`}</span>
-        </MetricLine>
+        <MetricLine>{`${fmtUsd(weeklySpentCents)} spent`}</MetricLine>
       </button>
 
       <button
         type="button"
-        ref={bitcoinClip.ref}
-        style={bitcoinClip.style}
-        className={styles.cardBitcoin}
-        aria-label="Bitcoin balance"
+        ref={earningsClip.ref}
+        style={earningsClip.style}
+        className={styles.cardEarnings}
+        aria-label="Earnings"
       >
-        <p className={styles.cardTitle}>Bitcoin</p>
-        <div className={styles.btcBlock}>
-          <p className={styles.btcAmount}>
-            <span className={styles.btcWhole}>{whole}</span>
-            <span className={styles.btcWhole}>.</span>
-            <span className={styles.btcWhole}>{decimals}</span>
-            <span className={styles.btcSuffix}> BTC</span>
-          </p>
-          <p className={styles.btcUsd}>{fmtUsd(btcUsdCents)}</p>
+        <p className={styles.cardTitle}>Earnings</p>
+        <div className={styles.earningsBlock}>
+          <p className={styles.earningsAmount}>{fmtUsd(earningsTodayCents)}</p>
+          <p className={styles.earningsApy}>{`${fmtPercent(apyPercent)} APY`}</p>
         </div>
-        <MetricLine>
-          <SfSymbol className={styles.metricIcon} name="arrow.up" size={13} />
-          <span>{` ${fmtPercent(btcChangePercent)} today`}</span>
+        <MetricLine positive>
+          {`+${fmtUsd(earningsTodayCents)}`}
+          <span className={styles.metricMuted}>{'\u00A0today'}</span>
         </MetricLine>
       </button>
     </div>
