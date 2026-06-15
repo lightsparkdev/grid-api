@@ -18,7 +18,7 @@ interface SendReceiveSheetProps {
  * sheet (the auth flow's inset-6 frost, not the solid money sheet) with a
  * symbol title, a two-line subtitle, and two large bordered actions. No
  * toolbar — the scrim dismisses. Send chains into the money sheet; Receive
- * is a demo no-op.
+ * is shown disabled (a demo no-op until the deposit-address flow exists).
  */
 export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetProps) {
   return (
@@ -47,7 +47,12 @@ export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetPr
         <ContentAreaButton type="button" variant="bordered" onClick={onSend}>
           Send
         </ContentAreaButton>
-        <ContentAreaButton type="button" variant="bordered">
+        <ContentAreaButton
+          type="button"
+          variant="bordered"
+          className={styles.receiveBtn}
+          disabled
+        >
           Receive
         </ContentAreaButton>
       </div>

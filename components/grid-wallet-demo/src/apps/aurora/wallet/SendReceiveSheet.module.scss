@@ -42,3 +42,18 @@
   gap: 12px;
   padding: 8px 24px 24px;
 }
+
+/* Receive is a no-op: it reads as a normal bordered button at rest, then dims
+   to signal "unavailable" while the button group is hovered (overrides the
+   ContentAreaButton default disabled opacity). */
+.receiveBtn {
+  transition: opacity 0.2s ease;
+}
+
+.actions .receiveBtn:disabled {
+  opacity: 1;
+}
+
+.actions:hover .receiveBtn:disabled {
+  opacity: 0.5;
+}

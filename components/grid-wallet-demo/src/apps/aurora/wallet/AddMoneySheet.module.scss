@@ -132,6 +132,14 @@
   .sourceRow:last-child {
     padding-bottom: 4px;
   }
+
+  /* No-op sources read normal at rest; entering the list dims them to signal
+     they're unavailable, and leaving restores them. */
+  @media (hover: hover) {
+    &:hover .sourceRow:disabled {
+      opacity: 0.5;
+    }
+  }
 }
 
 .sourceRow {
@@ -146,19 +154,25 @@
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.08s ease-out;
+  transition: background-color 0.08s ease-out, opacity 0.2s ease-out;
 
   /* Tertiary on hover, secondary on press — same pattern as the white
      content-area buttons, one fill step stronger for the list rows. */
   @media (hover: hover) {
-    &:hover {
+    &:not(:disabled):hover {
       background: var(--ios-fill-tertiary);
     }
   }
 
-  &:active {
+  &:not(:disabled):active {
     background: var(--ios-fill-secondary);
     transition: none;
+  }
+
+  /* No-op sources (Crypto / Cash App / Apple Pay in Add) are non-interactive;
+     the dim itself is revealed on list hover (see .cardFlush). */
+  &:disabled {
+    cursor: default;
   }
 }
 

@@ -1217,6 +1217,7 @@ export function AddMoneySheet({
                         key={s.id}
                         type="button"
                         className={styles.sourceRow}
+                        disabled={!active}
                         onClick={() => {
                           if (!active) return;
                           // Crypto path starts a fresh address; bank path drops any
