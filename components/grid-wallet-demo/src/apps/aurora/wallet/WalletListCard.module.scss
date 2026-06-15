@@ -195,7 +195,9 @@
 }
 
 .emptySub {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 240px; // wrap longer copy (e.g. the banks empty state) to ~2 lines
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
+  text-wrap: balance; // ...then balance those auto-wrapped lines evenly
 }

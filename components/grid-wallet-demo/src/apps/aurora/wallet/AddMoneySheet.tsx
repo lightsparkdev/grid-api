@@ -308,9 +308,9 @@ const MODES: Record<
   add: {
     titles: {
       source: 'Add money from',
-      banks: 'Bank account',
+      banks: 'Select bank',
       country: 'Select country',
-      bankForm: 'Add bank account',
+      bankForm: 'Enter bank details',
       recipient: '',
       amount: 'Enter amount',
       confirm: 'Confirm add',
@@ -349,9 +349,9 @@ const MODES: Record<
   withdraw: {
     titles: {
       source: 'Withdraw to',
-      banks: 'Bank account',
+      banks: 'Select bank',
       country: 'Select country',
-      bankForm: 'Add bank account',
+      bankForm: 'Enter bank details',
       recipient: '',
       amount: 'Enter amount',
       confirm: 'Confirm withdrawal',
@@ -369,9 +369,9 @@ const MODES: Record<
     // re-slides an unchanged nav title with the screen).
     titles: {
       source: 'Send to',
-      banks: 'Bank account',
+      banks: 'Select bank',
       country: 'Select country',
-      bankForm: 'Add bank account',
+      bankForm: 'Enter bank details',
       recipient: 'Send to',
       amount: 'Enter amount',
       confirm: 'Confirm send',
@@ -1029,13 +1029,8 @@ export function AddMoneySheet({
                         title="Bank accounts"
                         hideTitle
                         emptyTitle="No bank accounts yet"
-                        emptySub={
-                          <>
-                            Add a bank account in any of
-                            <br />
-                            55+ countries to get started
-                          </>
-                        }
+                        emptySub="Add a bank account in 65+ countries to get started"
+                        cta={{ label: 'Add bank', onClick: openAddBank }}
                         concentricBottom
                       />
                     </div>
