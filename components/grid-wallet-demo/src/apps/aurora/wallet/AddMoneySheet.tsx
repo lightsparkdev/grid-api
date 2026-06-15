@@ -1089,16 +1089,19 @@ export function AddMoneySheet({
               >
                 <div className={clsx(styles.pickerScroll, styles.pickerScrollCountry)}>
                   {countryQ ? (
-                    <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
-                      {filteredCountries.map((c, i, arr) => (
-                        <CountryPickRow
-                          key={c.code}
-                          country={c}
-                          bordered={i < arr.length - 1}
-                          onSelect={pickCountry}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <p className={styles.sectionLabel}>Results</p>
+                      <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
+                        {filteredCountries.map((c, i, arr) => (
+                          <CountryPickRow
+                            key={c.code}
+                            country={c}
+                            bordered={i < arr.length - 1}
+                            onSelect={pickCountry}
+                          />
+                        ))}
+                      </div>
+                    </>
                   ) : (
                     <>
                       <p className={styles.sectionLabel}>Popular</p>
