@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { AuthMethod } from '@/data/flow';
-import { easeOutQuick, motionTransition } from '@/lib/easing';
+import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { AuroraAuthScreen } from './AuroraAuthScreen';
 import { AuroraWalletScreen, type WalletEntry, type WalletTransferMode } from './wallet';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
@@ -21,6 +21,9 @@ const INTRO_LEAVE_MS = 300; // caption exit room before the swap/reveal
 // blur-fades out in place — a one-shot exit on a single layer (the app's
 // blur/fade exit language; no sustained filter work).
 const REVEAL_OUT = motionTransition(easeOutQuick, 0.45);
+// Coming BACK to sign-in: the auth screen blur-fades in over the held home —
+// the reverse of REVEAL_OUT.
+const REVEAL_IN = motionTransition(easeOutSnappy, 0.4);
 // Reduced motion (and the wallet's entry beneath): a plain quick crossfade.
 const SWAP_FADE = motionTransition(easeOutQuick, 0.25);
 
@@ -112,6 +115,15 @@ export function AuroraSignInFlow({
             // Above the entering wallet so the exit reads as the aurora screen
             // dissolving off the home, not the home fading in over it.
             className={clsx(styles.screen, styles.screenAuth)}
+            // Re-entry (wallet → sign-in) blur-fades the auth screen in over the
+            // held home — the reverse of its exit. AnimatePresence initial={false}
+            // keeps the first page load from animating.
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
+            animate={
+              reduceMotion
+                ? { opacity: 1, transition: SWAP_FADE }
+                : { opacity: 1, filter: 'blur(0px)', transition: REVEAL_IN }
+            }
             exit={
               reduceMotion
                 ? { opacity: 0, transition: SWAP_FADE }
@@ -133,7 +145,9 @@ export function AuroraSignInFlow({
             className={styles.screen}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: SWAP_FADE }}
-            exit={{ opacity: 0, transition: SWAP_FADE }}
+            // Stay solid underneath while the auth screen blur-fades in over it,
+            // then unmount hidden — no peek at the background mid-transition.
+            exit={{ opacity: 1, transition: REVEAL_IN }}
           >
             <AuroraWalletScreen
               entrance={!reduceMotion}
