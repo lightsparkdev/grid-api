@@ -10,6 +10,7 @@
     "start": "next start -p 4000",
     "lint": "next lint",
     "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths",
+    "fetch:flags": "node scripts/fetch-flags.mjs",
     "gen:bank-fields": "node scripts/generate-bank-fields.mjs",
     "verify:bank-fields": "node scripts/generate-bank-fields.mjs && git diff --exit-code -- src/data/bankAccountFields.generated.ts",
     "verify:bank-data": "tsx scripts/verify-bank-data.ts",

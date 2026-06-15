@@ -31,6 +31,8 @@ export interface BankCountry {
   bankName: string;
   /** Required for XAF/XOF accounts (CFA franc sub-region). */
   region?: string;
+  /** Top-of-picker rank (1 = highest by payment volume); unranked = "All" only. */
+  popularRank?: number;
   /** Demo sample overrides where the spec example must be made country-specific
    *  or internally consistent. Keys must be real fields; values must pass the
    *  field pattern (checked by assertBankCountries). */
@@ -48,6 +50,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
     rail: 'PIX',
     usdToLocal: 5.4,
     bankName: 'Nubank',
+    popularRank: 5,
     // Spec example pairs an email pixKey with pixKeyType CPF; make it consistent.
     sampleOverrides: { pixKey: '12345678901', pixKeyType: 'CPF', taxId: '12345678901' },
   },
@@ -64,7 +67,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'gr', name: 'Greece', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Alpha Bank' },
   { code: 'hu', name: 'Hungary', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'OTP Bank' },
   { code: 'is', name: 'Iceland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Landsbankinn' },
-  { code: 'in', name: 'India', accountType: 'INR_ACCOUNT', rail: 'UPI', usdToLocal: 83.3, bankName: 'HDFC Bank' },
+  { code: 'in', name: 'India', accountType: 'INR_ACCOUNT', rail: 'UPI', usdToLocal: 83.3, bankName: 'HDFC Bank', popularRank: 2 },
   { code: 'id', name: 'Indonesia', accountType: 'IDR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 15800, bankName: 'Bank Mandiri' },
   { code: 'ie', name: 'Ireland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'AIB' },
   { code: 'it', name: 'Italy', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UniCredit' },
@@ -77,11 +80,11 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'mw', name: 'Malawi', accountType: 'MWK_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1730, bankName: 'National Bank of Malawi' },
   { code: 'my', name: 'Malaysia', accountType: 'MYR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 4.7, bankName: 'Maybank' },
   { code: 'mt', name: 'Malta', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Valletta' },
-  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Banorte' },
+  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Banorte', popularRank: 1 },
   { code: 'nl', name: 'Netherlands', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'ING' },
-  { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank' },
+  { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank', popularRank: 4 },
   { code: 'no', name: 'Norway', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DNB' },
-  { code: 'ph', name: 'Philippines', accountType: 'PHP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 58, bankName: 'BDO' },
+  { code: 'ph', name: 'Philippines', accountType: 'PHP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 58, bankName: 'BDO', popularRank: 3 },
   { code: 'pl', name: 'Poland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'PKO Bank Polski' },
   { code: 'pt', name: 'Portugal', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Millennium BCP' },
   { code: 'ro', name: 'Romania', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Banca Transilvania' },

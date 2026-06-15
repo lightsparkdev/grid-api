@@ -4,6 +4,8 @@
    Figma 109:29870 — solid near-full-height sheet; top sits just under the
    status bar. Steps slide horizontally inside .steps. */
 .flow {
+  --sheet-toolbar-h: 66px; // back/X row (40) + toolbar padding (16 + 10)
+  position: relative;
   display: flex;
   flex-direction: column;
   height: calc(var(--app-screen-height, 874px) - 62px);
@@ -11,8 +13,14 @@
 }
 
 /* ── Toolbar (grabber + nav button + centered title) ─────────────────────── */
+/* Overlay (not a flex row) so the scrolling steps can pass UNDER the title +
+   buttons; steps compensate with a top inset of var(--sheet-toolbar-h). */
 .toolbar {
-  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
   padding-top: 16px;
   padding-bottom: 10px;
 }
@@ -75,9 +83,18 @@
 .step {
   position: absolute;
   inset: 0;
+  /* Clear the overlaid toolbar (it no longer reserves flex space). The country
+     step opts OUT (stepFlushTop) so its list scrolls up under the toolbar. */
+  padding-top: var(--sheet-toolbar-h);
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* Country picker: scroll fills behind the overlaid toolbar — its content
+   carries its own top inset instead (.pickerScrollCountry). */
+.stepFlushTop {
+  padding-top: 0;
 }
 
 /* ── Cards (Figma radius 32, straight — no 1.2x compensation) ─────────────── */
@@ -349,6 +366,253 @@
 .chevron {
   flex-shrink: 0;
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+/* ── Bank picker: saved-banks list, country picker, account form ───────────── */
+.bankList {
+  width: auto; // base .card is width:100%; margins would otherwise overflow
+  margin: 4px 16px 0;
+}
+
+/* Empty saved-banks state: pull the shared list card's 16px top inset back to
+   the 4px the "Add money from" list uses, so the header→list gap matches. */
+.banksEmptyOffset {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: -12px;
+}
+
+/* Search field scrolls with the list (it's the first row of the page). */
+.searchWrap {
+  padding: 0 16px 8px;
+}
+
+/* Search pill — mirrors the AuthSheet email/phone input (44px pill, bordered
+   surface, Origin focus ring + halo). Kept local so the auth flow stays
+   self-contained; values intentionally match AuthSheet .card/.input. */
+.searchField {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--ios-bg-primary);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+  --input-ring: rgba(35, 35, 33, 0.3);
+  --input-halo: rgba(38, 38, 35, 0.1);
+
+  :global([data-theme='dark']) & {
+    background: var(--ios-fill-secondary);
+    --input-ring: rgba(245, 245, 245, 0.3);
+    --input-halo: rgba(244, 244, 245, 0.1);
+  }
+
+  &:focus-within {
+    box-shadow:
+      inset 0 0 0 1px var(--input-ring),
+      0 0 0 3px var(--input-halo),
+      0 0 24px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.searchInput {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 24px;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+  }
+}
+
+/* Scroll region that bleeds to the sheet bottom — the list/form scroll under
+   the pinned controls + the bottom progressive blur (no boxed inner scroll). */
+.pickerScroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Top padding lets the search/list rest clear of the top blur; the page then
+   scrolls UP under it. Form keeps bottom room for the anchored CTA. */
+.pickerScrollCountry {
+  padding-top: 100px; // rest below the overlaid toolbar (~66) + a small gap
+  padding-bottom: 16px; // match the cards' 16px left/right margins
+  /* The content itself fades out by ALPHA (not a color overlay) as it scrolls up
+     under the toolbar — so you watch it dissolve into the sheet at the very top
+     edge instead of hitting a solid band. The progressive blur (TopFade) frosts
+     it on the way. Fade zone ≈ the overlaid toolbar height. */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 88px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 88px);
+}
+
+.pickerScrollForm {
+  padding-bottom: 124px;
+}
+
+/* iOS grouped-list section header. */
+.sectionLabel {
+  margin: 0;
+  padding: 16px 32px 6px;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.sectionLabel:first-child {
+  padding-top: 4px;
+}
+
+.pickerCard {
+  width: auto; // base .card is width:100%; margins would otherwise overflow
+  margin: 0 16px;
+}
+
+/* Top progressive blur + sheet-bg gradient (the FaceIdAuth recipe): the title
+   and header buttons sit above it; the page (search included) scrolls UP under
+   it, frosting and sinking into the sheet color as it passes below the header.
+   Heights/strengths are starting points — tune to taste. */
+/* Blur-only (no solid fill) so it starts at the very top — just the progressive
+   backdrop blur below. Clipped to the sheet's rounded top corners via clip-path
+   in <TopFade> (NOT overflow + border-radius, which kills the children's
+   backdrop-filter; a clip-path ANCESTOR is safe, like AppShell's screen clip). */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 112px; // spans the overlaid toolbar (~66) + falloff below it
+  pointer-events: none;
+}
+
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill triggers backdrop-filter compositing without a visible tint
+     (the FaceIdAuth trick). */
+  background: rgba(255, 255, 255, 0.01);
+  /* Round the top corners on the blur element ITSELF — backdrop-filter is
+     clipped by its own border-radius, so corners stay crisp with NO isolating
+     ancestor (a clip-path/overflow parent kills or isolates the blur). */
+  border-radius: 38px 38px 0 0;
+  -webkit-backdrop-filter: blur(var(--fade-blur));
+  backdrop-filter: blur(var(--fade-blur));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+
+.fadeBlurStrong {
+  --fade-blur: 6px;
+  --fade-mask: linear-gradient(to bottom, #000, #000 56px, transparent 88px);
+}
+
+.fadeBlurMid {
+  --fade-blur: 3px;
+  --fade-mask: linear-gradient(to bottom, transparent 28px, #000 60px, transparent 96px);
+}
+
+.fadeBlurSoft {
+  --fade-blur: 1.5px;
+  --fade-mask: linear-gradient(to bottom, transparent 48px, #000 80px, transparent 112px);
+}
+
+.formCard {
+  width: auto; // base .card is width:100%; margins would otherwise overflow
+  margin: 4px 16px 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Editable fields styled like the confirm fee-details table (stacked label),
+   with a LEFT-indented hairline divider (iOS form rows). */
+.formField {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 24px;
+
+  & + &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 0;
+    height: 0.5px;
+    background: rgba(0, 0, 0, 0.12);
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+}
+
+.formLabel {
+  @include ios.ios-text-caption-1;
+  color: var(--ios-label-secondary);
+}
+
+.formInput {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  @include ios.ios-text-footnote;
+  font-weight: 510;
+  color: var(--ios-label-primary);
+  outline: none;
+  appearance: none;
+}
+
+/* Blue primary CTA anchored to the sheet bottom, 32px all around. A sheet-bg
+   gradient backs it so a long form scrolls cleanly into the sheet color (no
+   bottom blur — the progressive blur lives at the top). */
+.bottomCtaWrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 32px;
+  background: linear-gradient(to top, var(--wallet-bg), var(--wallet-bg) 56%, transparent);
 }
 
 /* ── Step 2/3 layout ──────────────────────────────────────────────────────────

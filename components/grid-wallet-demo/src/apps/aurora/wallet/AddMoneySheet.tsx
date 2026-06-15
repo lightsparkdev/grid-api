@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
+import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -14,10 +15,193 @@ import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/app
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
+import { BANK_COUNTRIES, currencyFor, type BankCountry } from '@/data/bankCountries';
+import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
+import { useUsdRates } from '@/hooks/useUsdRates';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
 import { WalletListSection } from './WalletListSection';
+import { Flag } from './Flag';
 import styles from './AddMoneySheet.module.scss';
 
-type Step = 'source' | 'recipient' | 'amount' | 'confirm';
+// The bank flow adds three steps between source and amount: a saved-banks list
+// (empty first), a country picker, and a pre-filled account form.
+type Step = 'source' | 'banks' | 'country' | 'bankForm' | 'recipient' | 'amount' | 'confirm';
+
+/** A bank the user has "added" this session (persists until Reset). */
+export interface SavedBank {
+  id: string;
+  country: BankCountry;
+  /** field key -> value, seeded from the spec example + country overrides. */
+  values: Record<string, string>;
+  beneficiary: string;
+}
+
+const DEMO_BENEFICIARY = 'Ava Martinez';
+
+/** Pre-fill the account form for a country from the spec's sample values
+ *  (country override > spec field example), with the fixed CFA region applied. */
+function sampleValuesFor(country: BankCountry): Record<string, string> {
+  const schema = BANK_ACCOUNT_SCHEMAS[country.accountType];
+  const values: Record<string, string> = {};
+  for (const f of schema.fields) {
+    values[f.key] = country.sampleOverrides?.[f.key] ?? f.example ?? '';
+  }
+  if (country.region) values.region = country.region;
+  return values;
+}
+
+/** "Banco ... 1234" style trailing digits from the main account identifier. */
+function accountLast4(values: Record<string, string>): string {
+  const raw = Object.values(values).join('');
+  const digits = raw.replace(/\D/g, '');
+  return digits.slice(-4) || raw.slice(-4);
+}
+
+/** Compact rate for "1 USD = X" — fewer decimals as the magnitude grows. */
+function formatRate(rate: number): string {
+  const max = rate >= 100 ? 0 : rate >= 1 ? 2 : 4;
+  return rate.toLocaleString('en-US', { maximumFractionDigits: max });
+}
+
+/** Human labels for the spec field keys (fallback: de-camelCase the key). */
+const FIELD_LABELS: Record<string, string> = {
+  accountNumber: 'Account number',
+  routingNumber: 'Routing number',
+  iban: 'IBAN',
+  clabeNumber: 'CLABE',
+  pixKey: 'PIX key',
+  pixKeyType: 'PIX key type',
+  taxId: 'Tax ID',
+  vpa: 'UPI ID',
+  sortCode: 'Sort code',
+  swiftCode: 'SWIFT / BIC',
+  bankName: 'Bank name',
+  phoneNumber: 'Phone number',
+  provider: 'Provider',
+  bankCode: 'Bank code',
+  branchCode: 'Branch code',
+  bankAccountType: 'Account type',
+};
+
+function fieldLabel(key: string): string {
+  return FIELD_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+}
+
+/** One labeled account-form input (or a select for enum fields like pixKeyType). */
+function FormField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options?: string[];
+}) {
+  return (
+    <label className={styles.formField}>
+      <span className={styles.formLabel}>{label}</span>
+      {options ? (
+        <select className={styles.formInput} value={value} onChange={(e) => onChange(e.target.value)}>
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          className={styles.formInput}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </label>
+  );
+}
+
+/** Top progressive-blur + sheet-bg fade (the FaceIdAuth recipe): the page
+ *  scrolls UP under it, frosting and sinking into the sheet color below the
+ *  pinned title + header buttons. */
+function TopFade() {
+  return (
+    <div className={styles.topFade} aria-hidden>
+      <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
+      <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
+      <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
+    </div>
+  );
+}
+
+/** One country row in the picker (flag tile + name + currency · rail + chevron),
+ *  shared by the Popular / All / search-result lists. */
+function CountryPickRow({
+  country,
+  bordered,
+  onSelect,
+}: {
+  country: BankCountry;
+  bordered: boolean;
+  onSelect: (c: BankCountry) => void;
+}) {
+  return (
+    <button type="button" className={styles.sourceRow} onClick={() => onSelect(country)}>
+      <span className={styles.tile} aria-hidden>
+        <Flag code={country.code} size={20} />
+      </span>
+      <span className={clsx(styles.sourceContent, bordered && styles.sourceContentBordered)}>
+        <span className={styles.sourceLabels}>
+          <span className={styles.rowTitle}>{country.name}</span>
+          <span className={styles.rowSub}>
+            {currencyFor(country)} · {country.rail}
+          </span>
+        </span>
+        <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+      </span>
+    </button>
+  );
+}
+
+/** A picker card whose BOTTOM corners go concentric with the phone screen
+ *  (bottom radius = screen corner − 16px inset) — the same hug WalletListCard's
+ *  concentricBottom uses — so the bottom-most country card nests into the
+ *  sheet's bottom corners instead of floating above them. Top keeps the
+ *  wallet-card radius, so it reads like the round 32 of the other picker cards. */
+function ConcentricBottomCard({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  const [cornerRadii, setCornerRadii] = useState<[number, number, number, number]>();
+  const clip = useSquircleClip<HTMLDivElement>({ cornerRadii });
+  useLayoutEffect(() => {
+    const el = clip.ref.current;
+    if (!el) return;
+    const measure = () => {
+      const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
+      if (!Number.isFinite(topR)) return;
+      const screenR = Number.parseFloat(
+        getComputedStyle(el).getPropertyValue('--screen-corner-radius').trim(),
+      );
+      const bottom = Number.isFinite(screenR) ? Math.max(0, screenR - 16) : topR;
+      setCornerRadii([topR, topR, bottom, bottom]);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [clip.ref]);
+  return (
+    <div ref={clip.ref} style={clip.style} className={className}>
+      {children}
+    </div>
+  );
+}
 
 /** Demo FX — matches the Figma copy (1 MXN = 0.06 USD ⇒ 1 USD ≈ 17.9074 MXN). */
 const USD_TO_MXN = 17.9074;
@@ -123,11 +307,14 @@ const MODES: Record<
   add: {
     titles: {
       source: 'Add money from',
+      banks: 'Bank account',
+      country: 'Select country',
+      bankForm: 'Add bank account',
       recipient: '',
       amount: 'Enter amount',
       confirm: 'Confirm add',
     },
-    activeSource: { id: 'bank', next: 'amount' },
+    activeSource: { id: 'bank', next: 'banks' },
     sources: [
       BANK_SOURCE,
       {
@@ -161,12 +348,15 @@ const MODES: Record<
   withdraw: {
     titles: {
       source: 'Withdraw to',
+      banks: 'Bank account',
+      country: 'Select country',
+      bankForm: 'Add bank account',
       recipient: '',
       amount: 'Enter amount',
       confirm: 'Confirm withdrawal',
     },
     sources: [BANK_SOURCE, CRYPTO_SOURCE],
-    activeSource: { id: 'bank', next: 'amount' },
+    activeSource: { id: 'bank', next: 'banks' },
     details: [
       ['Fee', '$0.60'],
       ['Conversion rate', '1 USD = 17.91 MXN'],
@@ -178,6 +368,9 @@ const MODES: Record<
     // re-slides an unchanged nav title with the screen).
     titles: {
       source: 'Send to',
+      banks: 'Bank account',
+      country: 'Select country',
+      bankForm: 'Add bank account',
       recipient: 'Send to',
       amount: 'Enter amount',
       confirm: 'Confirm send',
@@ -265,6 +458,43 @@ export function AddMoneySheet({
   const quoteTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
+  // Bank picker state. savedBanks persists across sheet opens (the sheet content
+  // unmounts on close but this component's state survives) and clears on Reset
+  // (the whole wallet remounts).
+  const [savedBanks, setSavedBanks] = useState<SavedBank[]>([]);
+  const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
+  const [pickedCountry, setPickedCountry] = useState<BankCountry | null>(null);
+  const [countryQuery, setCountryQuery] = useState('');
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [formBeneficiary, setFormBeneficiary] = useState(DEMO_BENEFICIARY);
+  // Live mid-market rates (Coinbase, cached) with the baked-in usdToLocal as a
+  // silent fallback. Display-only; the spread shows as a fee on confirm.
+  const { rateFor } = useUsdRates();
+  const selectedBank = savedBanks.find((b) => b.id === selectedBankId) ?? null;
+  // Amount-step currency/FX follow the selected bank (send is crypto, 1:1 USDC).
+  const localCurrency = selectedBank ? currencyFor(selectedBank.country) : 'MXN';
+  const fxRate =
+    mode === 'send'
+      ? 1
+      : selectedBank
+        ? rateFor(currencyFor(selectedBank.country), selectedBank.country.usdToLocal)
+        : USD_TO_MXN;
+  const fxLabel = mode === 'send' ? 'USDC' : localCurrency;
+
+  // Country picker lists: Popular (by volume) on top, then All (alphabetical);
+  // a non-empty query collapses to one name/currency/code match list.
+  const countryQ = countryQuery.trim().toLowerCase();
+  const allCountries = [...BANK_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
+  const popularCountries = BANK_COUNTRIES.filter((c) => c.popularRank).sort(
+    (a, b) => (a.popularRank ?? 0) - (b.popularRank ?? 0),
+  );
+  const filteredCountries = allCountries.filter(
+    (c) =>
+      c.name.toLowerCase().includes(countryQ) ||
+      currencyFor(c).toLowerCase().includes(countryQ) ||
+      c.code.includes(countryQ),
+  );
+
   // Fresh flow every open — reset DURING render (derive-state-on-prop-change),
   // not in an effect: BottomSheet unmounts the content when closed but this
   // component's state survives, so an effect reset lands a frame AFTER the
@@ -280,6 +510,9 @@ export function AddMoneySheet({
       setStarted(false);
       setQuoting(false);
       setPasted(false);
+      setSelectedBankId(null);
+      setPickedCountry(null);
+      setCountryQuery('');
     }
   }
   // Timer cleanup stays in effects (clearing during render isn't render-pure).
@@ -293,10 +526,45 @@ export function AddMoneySheet({
     setStep(next);
   };
 
-  // Back walks the mode's own path: send detours through the recipient step.
+  // Bank flow handlers.
+  const openAddBank = () => {
+    setPickedCountry(null);
+    setCountryQuery('');
+    go('country');
+  };
+  const pickCountry = (country: BankCountry) => {
+    setPickedCountry(country);
+    setFormValues(sampleValuesFor(country));
+    setFormBeneficiary(DEMO_BENEFICIARY);
+    go('bankForm');
+  };
+  const updateField = (key: string, value: string) =>
+    setFormValues((v) => ({ ...v, [key]: value }));
+  const addBank = () => {
+    if (!pickedCountry) return;
+    const bank: SavedBank = {
+      id: `${pickedCountry.accountType}-${Date.now()}`,
+      country: pickedCountry,
+      values: formValues,
+      beneficiary: formBeneficiary,
+    };
+    setSavedBanks((b) => [...b, bank]);
+    setSelectedBankId(bank.id);
+    go('banks', true);
+  };
+  const selectBank = (id: string) => {
+    setSelectedBankId(id);
+    go('amount');
+  };
+
+  // Back walks the mode's own path: the bank flow detours through banks/country;
+  // send detours through the recipient step.
   const backFrom: Partial<Record<Step, Step>> = {
     confirm: 'amount',
-    amount: mode === 'send' ? 'recipient' : 'source',
+    amount: mode === 'send' ? 'recipient' : 'banks',
+    bankForm: 'country',
+    country: 'banks',
+    banks: 'source',
     recipient: 'source',
   };
 
@@ -349,6 +617,19 @@ export function AddMoneySheet({
   };
 
   const cents = typedToCents(raw);
+
+  // Confirm details: mid-market rate + a 0.30% spread fee (the real FX model).
+  // Bank modes only — send is crypto (1:1 USDC), so it keeps the static details.
+  const FEE_BPS = 30;
+  const feeCents = Math.round((cents * FEE_BPS) / 10000);
+  const confirmDetails: Array<[string, string]> =
+    mode !== 'send' && selectedBank
+      ? [
+          ['Exchange rate', `1 USD = ${formatRate(fxRate)} ${localCurrency}`],
+          ['Fee (0.30%)', formatUsdCents(feeCents)],
+          [mode === 'withdraw' ? 'Arrives in bank' : 'Arrives', 'Instantly'],
+        ]
+      : details;
 
   // "Use max" (withdraw) — fill the typed amount with the exact balance. The
   // forced ".00" renders as typed (solid) cents, same as keying them in.
@@ -445,16 +726,19 @@ export function AddMoneySheet({
   const bankRow = (
     <div className={styles.sourceRowStatic}>
       <span className={styles.tile} aria-hidden>
-        <img
-          className={styles.flagIcon}
-          src="/assets/add-money/flag-mx.svg"
-          alt=""
-          draggable={false}
-        />
+        {selectedBank ? (
+          <Flag code={selectedBank.country.code} size={20} />
+        ) : (
+          <img className={styles.flagIcon} src="/assets/add-money/flag-mx.svg" alt="" draggable={false} />
+        )}
       </span>
       <span className={styles.sourceLabels}>
-        <span className={styles.rowTitle}>Banorte (•••• 3872)</span>
-        <span className={styles.rowSub}>MXN bank account</span>
+        <span className={styles.rowTitle}>
+          {selectedBank
+            ? `${selectedBank.country.bankName} (•••• ${accountLast4(selectedBank.values)})`
+            : 'Bank account'}
+        </span>
+        <span className={styles.rowSub}>{localCurrency} bank account</span>
       </span>
     </div>
   );
@@ -646,6 +930,27 @@ export function AddMoneySheet({
                   </GlassSymbolButton>
                 </motion.span>
               )}
+              {/* Glass + on the saved-banks step — the entry point to add one. */}
+              {step === 'banks' && (
+                <motion.span
+                  key="addbank"
+                  className={styles.toolbarTrailing}
+                  initial={reduceMotion ? false : { opacity: 0, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(10px)' }}
+                  transition={SWAP_TRANSITION}
+                >
+                  <GlassSymbolButton
+                    aria-label="Add bank account"
+                    size={40}
+                    type="button"
+                    glass={{ brightness }}
+                    onClick={openAddBank}
+                  >
+                    <IconPlusMedium size={18} />
+                  </GlassSymbolButton>
+                </motion.span>
+              )}
             </AnimatePresence>
           </div>
         </div>
@@ -701,6 +1006,192 @@ export function AddMoneySheet({
                       </button>
                     ))}
                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'banks' && (
+              <motion.div
+                key="banks"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.recipientWrap}>
+                  {savedBanks.length === 0 ? (
+                    <div className={styles.banksEmptyOffset}>
+                      <WalletListSection
+                        title="Bank accounts"
+                        hideTitle
+                        emptyTitle="No bank accounts yet"
+                        emptySub={
+                          <>
+                            Add a bank account in any of
+                            <br />
+                            55+ countries to get started
+                          </>
+                        }
+                        concentricBottom
+                      />
+                    </div>
+                  ) : (
+                    <div className={clsx(styles.card, styles.cardFlush, styles.bankList)}>
+                      {savedBanks.map((b, i) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          className={styles.sourceRow}
+                          onClick={() => selectBank(b.id)}
+                        >
+                          <span className={styles.tile} aria-hidden>
+                            <Flag code={b.country.code} size={20} />
+                          </span>
+                          <span
+                            className={clsx(
+                              styles.sourceContent,
+                              i < savedBanks.length - 1 && styles.sourceContentBordered,
+                            )}
+                          >
+                            <span className={styles.sourceLabels}>
+                              <span className={styles.rowTitle}>
+                                {b.country.bankName} (•••• {accountLast4(b.values)})
+                              </span>
+                              <span className={styles.rowSub}>{b.country.name}</span>
+                              <span className={styles.rowSub}>
+                                {currencyFor(b.country)} · {b.country.rail}
+                              </span>
+                            </span>
+                            <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'country' && (
+              <motion.div
+                key="country"
+                className={clsx(styles.step, styles.stepFlushTop)}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={clsx(styles.pickerScroll, styles.pickerScrollCountry)}>
+                  <div className={styles.searchWrap}>
+                    <div className={styles.searchField}>
+                      <input
+                        className={styles.searchInput}
+                        type="text"
+                        inputMode="search"
+                        placeholder="Search country or currency"
+                        value={countryQuery}
+                        onChange={(e) => setCountryQuery(e.target.value)}
+                        aria-label="Search countries"
+                      />
+                    </div>
+                  </div>
+                  {countryQ ? (
+                    <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
+                      {filteredCountries.map((c, i, arr) => (
+                        <CountryPickRow
+                          key={c.code}
+                          country={c}
+                          bordered={i < arr.length - 1}
+                          onSelect={pickCountry}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <p className={styles.sectionLabel}>Popular</p>
+                      <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
+                        {popularCountries.map((c, i, arr) => (
+                          <CountryPickRow
+                            key={c.code}
+                            country={c}
+                            bordered={i < arr.length - 1}
+                            onSelect={pickCountry}
+                          />
+                        ))}
+                      </div>
+                      <p className={styles.sectionLabel}>All countries</p>
+                      <ConcentricBottomCard
+                        className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}
+                      >
+                        {allCountries.map((c, i, arr) => (
+                          <CountryPickRow
+                            key={c.code}
+                            country={c}
+                            bordered={i < arr.length - 1}
+                            onSelect={pickCountry}
+                          />
+                        ))}
+                      </ConcentricBottomCard>
+                    </>
+                  )}
+                </div>
+                <TopFade />
+              </motion.div>
+            )}
+
+            {step === 'bankForm' && pickedCountry && (
+              <motion.div
+                key="bankForm"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={clsx(styles.pickerScroll, styles.pickerScrollForm)}>
+                  <div className={clsx(styles.card, styles.formCard)}>
+                    <div className={styles.formHeader}>
+                      <span className={styles.tile} aria-hidden>
+                        <Flag code={pickedCountry.code} size={20} />
+                      </span>
+                      <span className={styles.sourceLabels}>
+                        <span className={styles.rowTitle}>{pickedCountry.name}</span>
+                        <span className={styles.rowSub}>
+                          {currencyFor(pickedCountry)} · {pickedCountry.rail}
+                        </span>
+                      </span>
+                    </div>
+                    <div className={styles.formFields}>
+                      <FormField
+                        label="Account holder"
+                        value={formBeneficiary}
+                        onChange={setFormBeneficiary}
+                      />
+                      {BANK_ACCOUNT_SCHEMAS[pickedCountry.accountType].fields
+                        .filter((f) => f.key !== 'region')
+                        .map((f) => (
+                          <FormField
+                            key={f.key}
+                            label={fieldLabel(f.key)}
+                            value={formValues[f.key] ?? ''}
+                            onChange={(v) => updateField(f.key, v)}
+                            options={f.enum}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.bottomCtaWrap}>
+                  <GlassTextButton variant="primary" onClick={addBank}>
+                    Add bank account
+                  </GlassTextButton>
                 </div>
               </motion.div>
             )}
@@ -842,11 +1333,11 @@ export function AddMoneySheet({
                         </p>
                         <p className={styles.amountSub}>
                           <NumericText
-                            value={(cents / 100) * (mode === 'send' ? 1 : USD_TO_MXN)}
+                            value={(cents / 100) * fxRate}
                             format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
                             style={NUMERIC_PAD}
                           />
-                          {mode === 'send' ? '\u00A0USDC' : '\u00A0MXN'}
+                          {`\u00A0${fxLabel}`}
                           {step === 'amount' && (
                             <SfSymbol name="arrow.up.arrow.down" size={11} />
                           )}
@@ -896,12 +1387,12 @@ export function AddMoneySheet({
                       >
                         <div className={clsx(styles.card, styles.detailsCard)}>
                           <div className={styles.detailRows}>
-                            {details.map(([label, value], i) => (
+                            {confirmDetails.map(([label, value], i) => (
                               <div
                                 key={label}
                                 className={clsx(
                                   styles.detailRow,
-                                  i < details.length - 1 && styles.detailRowBordered,
+                                  i < confirmDetails.length - 1 && styles.detailRowBordered,
                                 )}
                               >
                                 <span className={styles.detailLabel}>{label}</span>
