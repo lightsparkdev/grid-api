@@ -23,6 +23,8 @@ interface WalletListSectionProps {
   /** Grow with content past the available height (the page scrolls) instead of
    *  fill + clip inside the card. */
   grow?: boolean;
+  /** Round (vs squircle) skeleton avatar placeholder — the send recipient list. */
+  roundGraphic?: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ export function WalletListSection({
   concentricBottom = false,
   items,
   grow = false,
+  roundGraphic = false,
 }: WalletListSectionProps) {
   return (
     <section className={clsx(styles.section, grow && styles.sectionGrow)} aria-label={title}>
@@ -45,6 +48,7 @@ export function WalletListSection({
       <WalletListCard
         concentricBottom={concentricBottom}
         grow={grow}
+        roundGraphic={roundGraphic}
         items={items}
         emptyTitle={emptyTitle}
         emptySub={emptySub}

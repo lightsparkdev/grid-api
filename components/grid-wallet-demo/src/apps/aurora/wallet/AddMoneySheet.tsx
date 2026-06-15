@@ -15,7 +15,7 @@ import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/app
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
-import { BANK_COUNTRIES, currencyFor, type BankCountry } from '@/data/bankCountries';
+import { BANK_COUNTRIES, currencyFor, recipientNamesFor, type BankCountry } from '@/data/bankCountries';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { useUsdRates } from '@/hooks/useUsdRates';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
@@ -40,7 +40,27 @@ export interface SavedBank {
   beneficiary: string;
 }
 
+/** A saved crypto recipient — just the pasted address (+ network). The send flow
+ *  saves these so they read as recipients alongside bank accounts. */
+export interface CryptoRecipient {
+  id: string;
+  address: string;
+  network: string;
+}
+
+/** A send recipient: someone else's bank account OR a crypto address.
+ *  Discriminate with `'address' in r` (only the crypto variant has it). */
+export type SavedRecipient = SavedBank | CryptoRecipient;
+
 const DEMO_BENEFICIARY = 'Ava Martinez';
+
+/** Random base58-ish address so each saved crypto recipient is distinct (demo). */
+const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function randomAddress(): string {
+  let s = '';
+  for (let i = 0; i < 44; i++) s += BASE58[Math.floor(Math.random() * BASE58.length)];
+  return s;
+}
 
 /** Randomize the digits of a sample value so each added account looks distinct
  *  (keeps length, letters + formatting — a plausible demo number, not a real
@@ -71,6 +91,14 @@ function accountLast4(values: Record<string, string>): string {
   return digits.slice(-4) || raw.slice(-4);
 }
 
+/** First + last initial for a recipient avatar ("Carlos Herrera" → "CH"). */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (parts[0][0] + last).toUpperCase();
+}
+
 /** Compact rate for "1 USD = X" — fewer decimals as the magnitude grows. */
 function formatRate(rate: number): string {
   const max = rate >= 100 ? 0 : rate >= 1 ? 2 : 4;
@@ -99,6 +127,19 @@ const FIELD_LABELS: Record<string, string> = {
 
 function fieldLabel(key: string): string {
   return FIELD_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+}
+
+/** Name-led recipient avatar — first+last initials with the country flag badged
+ *  in the bottom-right corner. Used by the send flow's recipient rows. */
+function RecipientAvatar({ name, code }: { name: string; code: string }) {
+  return (
+    <span className={styles.recipientAvatar} aria-hidden>
+      <span className={styles.recipientInitials}>{initials(name)}</span>
+      <span className={styles.recipientFlag}>
+        <Flag code={code} size={16} />
+      </span>
+    </span>
+  );
 }
 
 /** One labeled account-form input (or a select for enum fields like pixKeyType). */
@@ -311,8 +352,9 @@ const MODES: Record<
     /** `recipient` only renders in send mode — '' elsewhere (step unreachable). */
     titles: Record<Step, string>;
     sources: SourceRow[];
-    /** The tappable source row, and the step it pushes to. */
-    activeSource: { id: string; next: Step };
+    /** The tappable source rows + the step each pushes to (send has two: bank
+     *  and crypto). */
+    activeSources: { id: string; next: Step }[];
     /** Confirm-step details card rows (label, value). */
     details: Array<[string, string]>;
   }
@@ -327,7 +369,7 @@ const MODES: Record<
       amount: 'Enter amount',
       confirm: 'Confirm add',
     },
-    activeSource: { id: 'bank', next: 'banks' },
+    activeSources: [{ id: 'bank', next: 'banks' }],
     sources: [
       BANK_SOURCE,
       {
@@ -369,7 +411,7 @@ const MODES: Record<
       confirm: 'Confirm withdrawal',
     },
     sources: [BANK_SOURCE, CRYPTO_SOURCE],
-    activeSource: { id: 'bank', next: 'banks' },
+    activeSources: [{ id: 'bank', next: 'banks' }],
     details: [
       ['Fee', '$0.60'],
       ['Conversion rate', '1 USD = 17.91 MXN'],
@@ -377,19 +419,24 @@ const MODES: Record<
     ],
   },
   send: {
-    // Source and recipient share the title — the push still slides it (iOS
-    // re-slides an unchanged nav title with the screen).
+    // Recipient-first: the list (banks) is the entry ("Send to"); "Add recipient"
+    // opens the chooser (source); crypto enters an address (recipient).
     titles: {
-      source: 'Send to',
-      banks: 'Select bank',
+      source: 'Add recipient',
+      banks: 'Send to',
       country: 'Select country',
       bankForm: 'Enter bank details',
-      recipient: 'Send to',
+      recipient: 'Enter address',
       amount: 'Enter amount',
       confirm: 'Confirm send',
     },
     sources: [BANK_SOURCE, CRYPTO_SOURCE],
-    activeSource: { id: 'crypto', next: 'recipient' },
+    // The "Add recipient" chooser (the recipient list is the entry): Bank → add a
+    // bank recipient (country picker); Crypto → enter an address.
+    activeSources: [
+      { id: 'bank', next: 'country' },
+      { id: 'crypto', next: 'recipient' },
+    ],
     details: [
       ['Fee', '$0.60'],
       ['Conversion rate', '1 USD = 1 USDC'],
@@ -460,21 +507,29 @@ export function AddMoneySheet({
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
-  const { titles, sources, activeSource, details } = MODES[mode];
+  const { titles, sources, activeSources, details } = MODES[mode];
   const balance = formatUsdCents(availableCents);
-  const [step, setStep] = useState<Step>('source');
+  const [step, setStep] = useState<Step>(mode === 'send' ? 'banks' : 'source');
   const [back, setBack] = useState(false); // direction of the last nav
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
   const [started, setStarted] = useState(false); // Swift's hasStartedTyping
   const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
   const [pasted, setPasted] = useState(false); // send: address card filled
+  const [pastedAddress, setPastedAddress] = useState(''); // the entered crypto address
   const quoteTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
-  // Bank picker state. savedBanks persists across sheet opens (the sheet content
-  // unmounts on close but this component's state survives) and clears on Reset
-  // (the whole wallet remounts).
+  // Bank picker state. savedBanks/savedRecipients persist across sheet opens (the
+  // content unmounts on close but this component's state survives) and clear on
+  // Reset (the whole wallet remounts). Send picks a RECIPIENT's bank (someone
+  // else's), so it keeps a SEPARATE list from your own add/withdraw accounts; the
+  // flow + selection always operate on whichever list the current mode is on.
+  const isSend = mode === 'send';
   const [savedBanks, setSavedBanks] = useState<SavedBank[]>([]);
+  const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
+  // The active list for the current mode: send = recipients (a bank OR a crypto
+  // address); add/withdraw = your own bank accounts.
+  const banks: SavedRecipient[] = isSend ? savedRecipients : savedBanks;
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
   const [pickedCountry, setPickedCountry] = useState<BankCountry | null>(null);
   const [countryQuery, setCountryQuery] = useState('');
@@ -483,16 +538,21 @@ export function AddMoneySheet({
   // Live mid-market rates (Coinbase, cached) with the baked-in usdToLocal as a
   // silent fallback. Display-only; the spread shows as a fee on confirm.
   const { rateFor } = useUsdRates();
-  const selectedBank = savedBanks.find((b) => b.id === selectedBankId) ?? null;
-  // Amount-step currency/FX follow the selected bank (send is crypto, 1:1 USDC).
+  // The selected recipient splits into bank vs crypto so the existing bank logic
+  // (FX, rows) stays untouched and crypto keys off its own branch.
+  const selected = banks.find((b) => b.id === selectedBankId) ?? null;
+  const selectedBank = selected && !('address' in selected) ? selected : null;
+  const selectedCrypto = selected && 'address' in selected ? selected : null;
+  // Amount-step currency/FX follow the selected bank — including a send to a
+  // recipient's bank (USD → their local currency). Only a crypto send (no bank
+  // selected) stays 1:1 USDC.
   const localCurrency = selectedBank ? currencyFor(selectedBank.country) : 'MXN';
-  const fxRate =
-    mode === 'send'
+  const fxRate = selectedBank
+    ? rateFor(currencyFor(selectedBank.country), selectedBank.country.usdToLocal)
+    : mode === 'send'
       ? 1
-      : selectedBank
-        ? rateFor(currencyFor(selectedBank.country), selectedBank.country.usdToLocal)
-        : USD_TO_MXN;
-  const fxLabel = mode === 'send' ? 'USDC' : localCurrency;
+      : USD_TO_MXN;
+  const fxLabel = mode === 'send' && !selectedBank ? 'USDC' : localCurrency;
 
   // Country picker lists: Popular (by volume) on top, then All (alphabetical);
   // a non-empty query collapses to one name/currency/code match list.
@@ -517,12 +577,15 @@ export function AddMoneySheet({
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
-      setStep('source');
+      // Send opens on the recipient list (recipient-first); add/withdraw on the
+      // source picker.
+      setStep(isSend ? 'banks' : 'source');
       setBack(false);
       setRaw('');
       setStarted(false);
       setQuoting(false);
       setPasted(false);
+      setPastedAddress('');
       setSelectedBankId(null);
       setPickedCountry(null);
       setCountryQuery('');
@@ -543,12 +606,25 @@ export function AddMoneySheet({
   const openAddBank = () => {
     setPickedCountry(null);
     setCountryQuery('');
-    go('country');
+    // Send: choose Bank or Crypto first (the recipient list is the entry).
+    // Add/withdraw: straight to the country picker (source is the entry).
+    go(isSend ? 'source' : 'country');
   };
   const pickCountry = (country: BankCountry) => {
     setPickedCountry(country);
     setFormValues(sampleValuesFor(country));
-    setFormBeneficiary(DEMO_BENEFICIARY);
+    // Send is to someone else: cycle the country's recipient-name pool by how many
+    // recipients from it are already saved, so repeats aren't the same person.
+    // Add/withdraw are your own accounts, so it's you.
+    if (isSend) {
+      const pool = recipientNamesFor(country);
+      const count = banks.filter(
+        (b) => !('address' in b) && b.country.code === country.code,
+      ).length;
+      setFormBeneficiary(pool[count % pool.length]);
+    } else {
+      setFormBeneficiary(DEMO_BENEFICIARY);
+    }
     go('bankForm');
   };
   const updateField = (key: string, value: string) =>
@@ -558,7 +634,9 @@ export function AddMoneySheet({
     // Cycle the country's bank pool by how many of it are already saved, so a
     // second add from the same country shows a different bank (not a clone).
     const pool = pickedCountry.banks ?? [pickedCountry.bankName];
-    const sameCountry = savedBanks.filter((b) => b.country.code === pickedCountry.code).length;
+    const sameCountry = banks.filter(
+      (b) => !('address' in b) && b.country.code === pickedCountry.code,
+    ).length;
     const bank: SavedBank = {
       id: `${pickedCountry.accountType}-${Date.now()}`,
       country: pickedCountry,
@@ -566,8 +644,24 @@ export function AddMoneySheet({
       values: formValues,
       beneficiary: formBeneficiary,
     };
-    setSavedBanks((b) => [...b, bank]);
+    if (isSend) setSavedRecipients((r) => [...r, bank]);
+    else setSavedBanks((r) => [...r, bank]);
     setSelectedBankId(bank.id);
+    go('banks', true);
+  };
+
+  // Save the pasted crypto address as a recipient, then drop back to the list
+  // (selected) — mirrors the bank add.
+  const addCryptoRecipient = () => {
+    const recipient: CryptoRecipient = {
+      id: `crypto-${Date.now()}`,
+      address: pastedAddress || randomAddress(),
+      network: 'Solana',
+    };
+    setSavedRecipients((r) => [...r, recipient]);
+    setSelectedBankId(recipient.id);
+    setPasted(false);
+    setPastedAddress('');
     go('banks', true);
   };
   const selectBank = (id: string) => {
@@ -577,14 +671,27 @@ export function AddMoneySheet({
 
   // Back walks the mode's own path: the bank flow detours through banks/country;
   // send detours through the recipient step.
-  const backFrom: Partial<Record<Step, Step>> = {
-    confirm: 'amount',
-    amount: mode === 'send' ? 'recipient' : 'banks',
-    bankForm: 'country',
-    country: 'banks',
-    banks: 'source',
-    recipient: 'source',
-  };
+  // Back paths differ by mode. Send is recipient-first: the list (banks) is the
+  // entry (no back → close), Add opens the Bank/Crypto chooser (source). Add/
+  // withdraw are source-first: source is the entry.
+  const backFrom: Partial<Record<Step, Step>> = isSend
+    ? {
+        confirm: 'amount',
+        amount: 'banks',
+        bankForm: 'country',
+        country: 'source',
+        recipient: 'source',
+        source: 'banks',
+      }
+    : {
+        confirm: 'amount',
+        amount: 'banks',
+        bankForm: 'country',
+        country: 'banks',
+        banks: 'source',
+      };
+  // The entry step shows the X (close); every other step shows the back arrow.
+  const isEntryStep = isSend ? step === 'banks' : step === 'source';
 
   // Swift's ShakeEffect (8px x sin, three half-cycles), tightened to 0.28s —
   // invalid amount on Continue, or a keypress past the cap.
@@ -637,17 +744,17 @@ export function AddMoneySheet({
   const cents = typedToCents(raw);
 
   // Confirm details: mid-market rate + a 0.30% spread fee (the real FX model).
-  // Bank modes only — send is crypto (1:1 USDC), so it keeps the static details.
+  // Any selected bank (incl. a send to a recipient's bank); a crypto send (no
+  // bank) keeps the static 1:1 USDC details.
   const FEE_BPS = 30;
   const feeCents = Math.round((cents * FEE_BPS) / 10000);
-  const confirmDetails: Array<[string, string]> =
-    mode !== 'send' && selectedBank
-      ? [
-          ['Exchange rate', `1 USD = ${formatRate(fxRate)} ${localCurrency}`],
-          ['Fee (0.30%)', formatUsdCents(feeCents)],
-          [mode === 'withdraw' ? 'Arrives in bank' : 'Arrives', 'Instantly'],
-        ]
-      : details;
+  const confirmDetails: Array<[string, string]> = selectedBank
+    ? [
+        ['Exchange rate', `1 USD = ${formatRate(fxRate)} ${localCurrency}`],
+        ['Fee (0.30%)', formatUsdCents(feeCents)],
+        [mode === 'add' ? 'Arrives' : 'Arrives in bank', 'Instantly'],
+      ]
+    : details;
 
   // "Use max" (withdraw) — fill the typed amount with the exact balance. The
   // forced ".00" renders as typed (solid) cents, same as keying them in.
@@ -809,14 +916,37 @@ export function AddMoneySheet({
         />
       </span>
       <span className={styles.sourceLabels}>
-        <span className={styles.rowTitle}>{truncateAddress(SEND_DEMO_ADDRESS)}</span>
-        <span className={styles.rowSub}>Solana wallet</span>
+        <span className={styles.rowTitle}>
+          {truncateAddress(selectedCrypto?.address ?? SEND_DEMO_ADDRESS)}
+        </span>
+        <span className={styles.rowSub}>{selectedCrypto?.network ?? 'Solana'} wallet</span>
       </span>
     </div>
   );
-  // Send moves USDC, not MXN — the bottom card is the recipient instead of the
-  // bank, and the conversion line runs 1:1.
-  const bottomRow = mode === 'add' ? balanceRow : mode === 'withdraw' ? bankRow : recipientRow;
+  // Send-to-bank destination: the recipient, name-led (initials avatar + their
+  // bank) — distinct from withdraw's bank-led row (your own account).
+  const recipientBankRow = selectedBank ? (
+    <div className={styles.sourceRowStatic}>
+      <RecipientAvatar name={selectedBank.beneficiary} code={selectedBank.country.code} />
+      <span className={styles.sourceLabels}>
+        <span className={styles.rowTitle}>{selectedBank.beneficiary}</span>
+        <span className={styles.rowSub}>
+          {selectedBank.bankName} •••• {accountLast4(selectedBank.values)}
+        </span>
+      </span>
+    </div>
+  ) : null;
+
+  // Bottom card = destination: add → your balance; withdraw → your bank; send →
+  // the recipient's bank (name-led) or, for a crypto send, the address.
+  const bottomRow =
+    mode === 'add'
+      ? balanceRow
+      : mode === 'withdraw'
+        ? bankRow
+        : selectedBank
+          ? recipientBankRow
+          : recipientRow;
 
   // iOS push: forward = in from the right / out to the left; back = reverse.
   // Variants + `custom` (not inline objects): an EXITING screen never re-renders,
@@ -869,7 +999,7 @@ export function AddMoneySheet({
       <div className={styles.flow}>
         <div className={styles.toolbar}>
           <div className={styles.toolbarRow}>
-            {step === 'source' ? (
+            {isEntryStep ? (
               <GlassSymbolButton
                 aria-label="Close"
                 size={40}
@@ -959,7 +1089,7 @@ export function AddMoneySheet({
                   transition={SWAP_TRANSITION}
                 >
                   <GlassSymbolButton
-                    aria-label="Add bank account"
+                    aria-label={isSend ? 'Add recipient' : 'Add bank account'}
                     size={40}
                     type="button"
                     glass={{ brightness }}
@@ -994,12 +1124,14 @@ export function AddMoneySheet({
               >
                 <div className={styles.sourceWrap}>
                   <div className={clsx(styles.card, styles.cardFlush)}>
-                    {sources.map((s, i) => (
+                    {sources.map((s, i) => {
+                      const active = activeSources.find((a) => a.id === s.id);
+                      return (
                       <button
                         key={s.id}
                         type="button"
                         className={styles.sourceRow}
-                        onClick={() => s.id === activeSource.id && go(activeSource.next)}
+                        onClick={() => active && go(active.next)}
                       >
                         <span className={styles.tile} aria-hidden>
                           {s.Icon ? (
@@ -1022,7 +1154,8 @@ export function AddMoneySheet({
                           <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
                         </span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -1040,43 +1173,81 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={styles.recipientWrap}>
-                  {savedBanks.length === 0 ? (
+                  {banks.length === 0 ? (
                     <div className={styles.banksEmptyOffset}>
                       <WalletListSection
-                        title="Bank accounts"
+                        title={isSend ? 'Recipients' : 'Bank accounts'}
                         hideTitle
-                        emptyTitle="No bank accounts yet"
-                        emptySub="Add a bank account in 65+ countries to get started"
-                        cta={{ label: 'Add bank', onClick: openAddBank }}
+                        emptyTitle={isSend ? 'No recipients yet' : 'No bank accounts yet'}
+                        emptySub={
+                          isSend
+                            ? 'Send to a bank account in 65+ countries or any crypto wallet'
+                            : 'Add a bank account in 65+ countries to get started'
+                        }
+                        cta={{
+                          label: isSend ? 'Add recipient' : 'Add bank',
+                          onClick: openAddBank,
+                        }}
+                        roundGraphic={isSend}
                         concentricBottom
                       />
                     </div>
                   ) : (
                     <div className={clsx(styles.card, styles.cardFlush, styles.bankList)}>
-                      {savedBanks.map((b, i) => (
+                      {banks.map((b, i) => (
                         <button
                           key={b.id}
                           type="button"
                           className={styles.sourceRow}
                           onClick={() => selectBank(b.id)}
                         >
-                          <span className={styles.tile} aria-hidden>
-                            <Flag code={b.country.code} size={20} />
-                          </span>
+                          {'address' in b ? (
+                            <span className={styles.recipientAvatar} aria-hidden>
+                              <img
+                                className={styles.tokenIconSm}
+                                src="/assets/send/icon-token-sol.svg"
+                                alt=""
+                                draggable={false}
+                              />
+                            </span>
+                          ) : isSend ? (
+                            <RecipientAvatar name={b.beneficiary} code={b.country.code} />
+                          ) : (
+                            <span className={styles.tile} aria-hidden>
+                              <Flag code={b.country.code} size={20} />
+                            </span>
+                          )}
                           <span
                             className={clsx(
                               styles.sourceContent,
-                              i < savedBanks.length - 1 && styles.sourceContentBordered,
+                              i < banks.length - 1 && styles.sourceContentBordered,
                             )}
                           >
                             <span className={styles.sourceLabels}>
-                              <span className={styles.rowTitle}>
-                                {b.bankName} (•••• {accountLast4(b.values)})
-                              </span>
-                              <span className={styles.rowSub}>{b.country.name}</span>
-                              <span className={styles.rowSub}>
-                                {currencyFor(b.country)}
-                              </span>
+                              {'address' in b ? (
+                                <>
+                                  <span className={styles.rowTitle}>
+                                    {truncateAddress(b.address)}
+                                  </span>
+                                  <span className={styles.rowSub}>{b.network} wallet</span>
+                                </>
+                              ) : isSend ? (
+                                <>
+                                  <span className={styles.rowTitle}>{b.beneficiary}</span>
+                                  <span className={styles.rowSub}>
+                                    {b.bankName} •••• {accountLast4(b.values)}
+                                  </span>
+                                  <span className={styles.rowSub}>{currencyFor(b.country)}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className={styles.rowTitle}>
+                                    {b.bankName} (•••• {accountLast4(b.values)})
+                                  </span>
+                                  <span className={styles.rowSub}>{b.country.name}</span>
+                                  <span className={styles.rowSub}>{currencyFor(b.country)}</span>
+                                </>
+                              )}
                             </span>
                             <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
                           </span>
@@ -1230,7 +1401,7 @@ export function AddMoneySheet({
                 </div>
                 <div className={styles.bottomCtaWrap}>
                   <GlassTextButton variant="primary" onClick={addBank}>
-                    Add bank account
+                    {isSend ? 'Add recipient' : 'Add bank account'}
                   </GlassTextButton>
                 </div>
               </motion.div>
@@ -1267,7 +1438,7 @@ export function AddMoneySheet({
                               <div
                                 className={clsx(styles.addressLabels, styles.addressLabelsFilled)}
                               >
-                                <p className={styles.addressValue}>{SEND_DEMO_ADDRESS}</p>
+                                <p className={styles.addressValue}>{pastedAddress}</p>
                                 <p className={styles.addressSub}>Solana</p>
                               </div>
                               <span className={clsx(styles.tile, styles.addressTile)} aria-hidden>
@@ -1305,34 +1476,27 @@ export function AddMoneySheet({
                         <ContentAreaButton
                           className={styles.addressBtn}
                           variant={pasted ? 'filled' : 'secondary'}
-                          onClick={() => (pasted ? go('amount') : setPasted(true))}
+                          onClick={() => {
+                            // Paste fills a demo address; the prominent state saves
+                            // it as a recipient and returns to the list.
+                            if (pasted) addCryptoRecipient();
+                            else {
+                              setPastedAddress(randomAddress());
+                              setPasted(true);
+                            }
+                          }}
                         >
                           <TextMorph
                             as="span"
                             duration={MORPH_MS}
                             ease={cubicBezierCss(easeOutSwift)}
                           >
-                            {pasted ? 'Continue' : 'Paste'}
+                            {pasted ? 'Add recipient' : 'Paste'}
                           </TextMorph>
                         </ContentAreaButton>
                       </div>
                     </div>
                   </div>
-                  {/* Contacts — same skeleton + empty reveal as the other
-                      lists, captionless (the address card reads as the head). */}
-                  <WalletListSection
-                    title="Contacts"
-                    hideTitle
-                    emptyTitle="No contacts yet"
-                    emptySub={
-                      <>
-                        People you send money to
-                        <br />
-                        will show up here
-                      </>
-                    }
-                    concentricBottom
-                  />
                 </div>
               </motion.div>
             )}

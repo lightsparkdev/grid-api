@@ -117,6 +117,46 @@ export function currencyFor(country: BankCountry): string {
   return BANK_ACCOUNT_SCHEMAS[country.accountType].currency;
 }
 
+/** Illustrative demo recipient name per country for the SEND flow (name-led
+ *  recipient rows). NOT spec data — purely for the demo's "send to someone
+ *  else's bank" story. Falls back to a neutral name. */
+const DEMO_RECIPIENTS: Record<string, string> = {
+  at: 'Lukas Gruber', be: 'Lucas Peeters', bj: 'Kossi Adjavon', br: 'Lucas Silva',
+  bg: 'Georgi Ivanov', cm: 'Jean Mbarga', hr: 'Ivan Horvat', cy: 'Andreas Georgiou',
+  cz: 'Jan Novák', dk: 'Mads Jensen', ee: 'Kristjan Tamm', fi: 'Mikko Virtanen',
+  fr: 'Lucas Martin', de: 'Anna Müller', gr: 'Giorgos Papadopoulos', hu: 'Bence Nagy',
+  is: 'Jón Jónsson', in: 'Priya Sharma', id: 'Budi Santoso', ie: 'Conor Murphy',
+  it: 'Giulia Rossi', ci: 'Kouadio Yao', ke: 'Wanjiru Kamau', lv: 'Jānis Bērziņš',
+  li: 'Thomas Frick', lt: 'Tomas Kazlauskas', lu: 'Marc Weber', mw: 'Chimwemwe Banda',
+  my: 'Nurul Abdullah', mt: 'Joseph Borg', mx: 'Carlos Herrera', nl: 'Daan de Vries',
+  ng: 'Chidi Okafor', no: 'Henrik Hansen', ph: 'Maria Santos', pl: 'Jakub Kowalski',
+  pt: 'João Silva', ro: 'Andrei Popescu', rw: 'Eric Mugisha', sn: 'Abdou Diop',
+  sg: 'Wei Lim', sk: 'Martin Horváth', si: 'Luka Novak', za: 'Thabo Nkosi',
+  es: 'Javier García', se: 'Erik Andersson', ch: 'Luca Meier', tz: 'Juma Mwita',
+  th: 'Somchai Suwan', ug: 'David Okello', ae: 'Ahmed Al Mansoori', gb: 'James Smith',
+  us: 'Emily Johnson', vn: 'Minh Nguyen', zm: 'Mwila Phiri',
+};
+
+/** Illustrative recipient-name POOLS for the popular corridors — repeat sends to
+ *  the same country cycle through these so recipients don't duplicate (mirrors the
+ *  bank-name pools). Others fall back to the single DEMO_RECIPIENTS name. */
+const DEMO_RECIPIENT_POOLS: Record<string, string[]> = {
+  mx: ['Carlos Herrera', 'Sofía Ramírez', 'Diego Torres', 'Valentina Cruz'],
+  in: ['Priya Sharma', 'Arjun Patel', 'Ananya Iyer', 'Rohan Gupta'],
+  ph: ['Maria Santos', 'Jose Reyes', 'Andrea Cruz', 'Mark Dela Rosa'],
+  ng: ['Chidi Okafor', 'Aisha Bello', 'Emeka Eze', 'Ngozi Adeyemi'],
+  br: ['Lucas Silva', 'Mariana Costa', 'Gabriel Souza', 'Beatriz Oliveira'],
+  gb: ['James Smith', 'Olivia Brown', 'Oliver Jones', 'Emily Wilson'],
+  de: ['Anna Müller', 'Lukas Schmidt', 'Lena Wagner', 'Felix Becker'],
+};
+
+/** Demo recipient-name pool for a country's send flow — cycle by saved count so
+ *  repeat recipients differ. Popular corridors have several; others fall back to
+ *  the single name. Illustrative, not spec data. */
+export function recipientNamesFor(country: BankCountry): string[] {
+  return DEMO_RECIPIENT_POOLS[country.code] ?? [DEMO_RECIPIENTS[country.code] ?? 'Alex Rivera'];
+}
+
 /**
  * Dev-time accuracy guard: every accountType must exist in the spec-generated
  * schemas, every `region` must be one of that field's spec enum values, and any

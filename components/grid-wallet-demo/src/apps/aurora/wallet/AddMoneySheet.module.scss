@@ -327,6 +327,43 @@
   border-radius: 50%;
 }
 
+/* Send recipient avatar — first+last initials in a circular tile (fills the same
+   56px slot as .tile so rows align) with the country flag badged bottom-right. */
+.recipientAvatar {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  corner-shape: round; // override the global squircle → a true circle
+  background: var(--ios-fill-tertiary);
+}
+
+.recipientInitials {
+  @include ios.ios-type-rounded; // SF Pro Rounded, like iOS contact avatars
+  font-size: 18px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+.recipientFlag {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round; // round badge + ring, not the global squircle
+  overflow: hidden;
+  /* Ring in the card bg separates the badge from the avatar fill. */
+  box-shadow: 0 0 0 2px var(--add-card-bg, var(--ios-bg-primary));
+}
+
 .sourceContent {
   display: flex;
   flex: 1 1 0;

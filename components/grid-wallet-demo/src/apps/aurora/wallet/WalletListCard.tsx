@@ -44,6 +44,8 @@ interface WalletListCardProps {
   items?: WalletListItemData[];
   /** Grow with content (so a scrolling parent scrolls) instead of fill + clip. */
   grow?: boolean;
+  /** Round (vs squircle) skeleton avatar placeholder — the send recipient list. */
+  roundGraphic?: boolean;
 }
 
 /**
@@ -58,6 +60,7 @@ export function WalletListCard({
   concentricBottom = false,
   items,
   grow = false,
+  roundGraphic = false,
 }: WalletListCardProps) {
   const reduceMotion = useReducedMotion();
   const hasItems = !!items && items.length > 0;
@@ -209,8 +212,8 @@ export function WalletListCard({
           >
             <div className={styles.skeletonLayer}>
               <div className={styles.list} aria-hidden>
-                <SkeletonRow bordered />
-                <SkeletonRow />
+                <SkeletonRow bordered round={roundGraphic} />
+                <SkeletonRow round={roundGraphic} />
                 <div
                   className={clsx(
                     styles.gradientMask,
@@ -244,10 +247,10 @@ export function WalletListCard({
   );
 }
 
-function SkeletonRow({ bordered }: { bordered?: boolean }) {
+function SkeletonRow({ bordered, round }: { bordered?: boolean; round?: boolean }) {
   return (
     <div className={styles.row}>
-      <div className={styles.rowGraphic} />
+      <div className={clsx(styles.rowGraphic, round && styles.rowGraphicRound)} />
       <div className={bordered ? styles.rowContentBordered : styles.rowContent}>
         <div className={styles.rowInner}>
           <div className={styles.rowLabels}>

@@ -83,6 +83,12 @@
   background: var(--ios-fill-quaternary);
 }
 
+/* Circular avatar placeholder — the send recipient list (people, not banks). */
+.rowGraphicRound {
+  border-radius: 50%;
+  corner-shape: round;
+}
+
 .rowContent {
   display: flex;
   flex: 1 1 0;
