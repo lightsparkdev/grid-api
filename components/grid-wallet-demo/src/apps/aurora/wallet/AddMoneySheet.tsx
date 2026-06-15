@@ -895,11 +895,13 @@ export function AddMoneySheet({
       isSend ? 'Add recipient' : 'Add bank account',
     );
     setSelectedBankId(bank.id);
-    go('banks', true);
+    // Intent is clear (you just added it), so skip the list and go straight to
+    // amount; Back from there returns to the list (backFrom['amount'] → 'banks').
+    go('amount');
   };
 
-  // Save the pasted crypto address as a recipient, then drop back to the list
-  // (selected) — mirrors the bank add.
+  // Save the pasted crypto address as a recipient, then go straight to amount
+  // (Back returns to the recipient list) — mirrors the bank add.
   const addCryptoRecipient = () => {
     const recipient: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
@@ -914,7 +916,7 @@ export function AddMoneySheet({
     setSelectedBankId(recipient.id);
     setPasted(false);
     setPastedAddress('');
-    go('banks', true);
+    go('amount');
   };
   const selectBank = (id: string) => {
     setSelectedBankId(id);
