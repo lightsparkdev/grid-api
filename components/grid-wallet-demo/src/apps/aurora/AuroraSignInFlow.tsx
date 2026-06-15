@@ -7,7 +7,7 @@ import type { AuthMethod } from '@/data/flow';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { AuroraAuthScreen } from './AuroraAuthScreen';
 import { AuroraWalletScreen, type WalletEntry, type WalletTransferMode } from './wallet';
-import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
+import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import styles from './AuroraSignInFlow.module.scss';
 
 // The auth screen plays the sign-in intro (content out → mask dissolve → logo
@@ -44,6 +44,7 @@ interface AuroraSignInFlowProps {
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
+  onReceivePayment?: (info: ReceivePaymentInfo) => void;
   /** Auth-side overlays (passkey / email sheets) — rendered with the auth screen. */
   children?: ReactNode;
 }
@@ -68,6 +69,7 @@ export function AuroraSignInFlow({
   onTransferExecute,
   onCardIssued,
   onTapToPay,
+  onReceivePayment,
   children,
 }: AuroraSignInFlowProps) {
   const reduceMotion = useReducedMotion();
@@ -157,6 +159,7 @@ export function AuroraSignInFlow({
               onTransferExecute={onTransferExecute}
               onCardIssued={onCardIssued}
               onTapToPay={onTapToPay}
+              onReceivePayment={onReceivePayment}
             />
           </motion.div>
         )}

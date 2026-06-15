@@ -19,10 +19,12 @@ import {
   otpVerifyCall,
   passkeyChallengeCall,
   passkeyVerifyCall,
+  receivePaymentCalls,
   tapCalls,
   transferExecuteCalls,
   transferQuoteCall,
   type ExternalAccountInput,
+  type ReceivePaymentInfo,
   type TransferDest,
 } from '@/data/apiCalls';
 import { oauthNonce, passkeyCeremony } from '@/lib/auth';
@@ -445,6 +447,31 @@ export function useWalletDemoLogic() {
     [pushCalls],
   );
 
+  // A payment landed (Receive flow): no client call to make — Grid POSTs the
+  // inbound webhook, then we read the transaction. The webhook lands now and the
+  // GET a beat later (same 1-by-1 cadence as a transfer's settle).
+  const onReceivePayment = useCallback(
+    (info: ReceivePaymentInfo) => {
+      // Add-from-crypto is the same inbound webhook, just grouped + checked as the
+      // Add flow (you topped up your own balance) rather than Receive.
+      const isAdd = info.intent === 'add';
+      const label = isAdd ? 'Add money' : 'Receive payment';
+      const gid = newGroupId();
+      const [webhookCall, ...rest] = receivePaymentCalls(info);
+      pushCalls([webhookCall], label, gid);
+      if (rest.length) {
+        const timer = setTimeout(() => {
+          settleTimers.current.delete(timer);
+          pushCalls(rest, label, gid);
+        }, SETTLE_DELAY_MS);
+        settleTimers.current.add(timer);
+      }
+      setWallet((w) => ({ ...w, balanceCents: w.balanceCents + info.amountCents }));
+      setCompleted((c) => ({ ...c, [isAdd ? 'add' : 'receive']: true }));
+    },
+    [pushCalls],
+  );
+
   // "Sign in again" — drop back to the auth screen to replay the flow. Resets
   // the session wallet to fresh, but KEEPS the API log and the sidebar
   // checkmarks (completed flows) — only "Reset" wipes those.
@@ -617,5 +644,6 @@ export function useWalletDemoLogic() {
     onTransferExecute,
     onCardIssued,
     onTapToPay,
+    onReceivePayment,
   };
 }

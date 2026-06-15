@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
-import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
+import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import {
   APPLE_CLIENT_ID,
   appleRedirectUri,
@@ -96,6 +96,7 @@ export interface PhoneProps {
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
+  onReceivePayment?: (info: ReceivePaymentInfo) => void;
 }
 
 export default function Phone({

@@ -1,6 +1,7 @@
 import { IconArrowBoxRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowBoxRight';
 import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
+import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCreditCardAdd } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCardAdd';
 import { IconNfc1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconNfc1';
@@ -13,15 +14,17 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   create: IconArrowBoxRight,
   add: IconPlusMedium,
   send: IconPaperPlaneTopRight,
+  receive: IconArrowInbox,
   withdraw: IconBank,
   card: IconCreditCardAdd,
   tap: IconNfc1,
 };
 
 export const FLOW_ICON_COLORS: Record<ActionId, string> = {
-  create: 'var(--icon-success)',
-  add: '#11A98B',
-  send: 'var(--color-sky-500)',
+  create: '#34C759',
+  add: 'var(--icon-success)',
+  send: '#11A98B',
+  receive: 'var(--color-sky-500)',
   withdraw: '#009DE0',
   card: 'var(--color-blue-500)',
   tap: 'var(--icon-info)',

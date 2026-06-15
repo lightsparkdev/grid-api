@@ -145,6 +145,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
         onTransferExecute={props.onTransferExecute}
         onCardIssued={props.onCardIssued}
         onTapToPay={props.onTapToPay}
+        onReceivePayment={props.onReceivePayment}
       >
         {passkeySheet}
         {authSheet}

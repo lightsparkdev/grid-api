@@ -50,6 +50,9 @@ export interface ApiCall {
   status: string;
   /** Longer explanatory copy under the title. */
   note?: string;
+  /** Inbound webhook (Grid → your endpoint): `path` is your full URL, and the
+   *  curl drops the Grid `Authorization` header (Grid signs it instead). */
+  inbound?: boolean;
 }
 
 const AUTH_LABEL: Record<AuthMethod, string> = {

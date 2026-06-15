@@ -34,6 +34,7 @@ export interface CompletedFlows {
   signIn: boolean;
   add: boolean;
   send: boolean;
+  receive: boolean;
   withdraw: boolean;
   card: boolean;
   tap: boolean;
@@ -43,6 +44,7 @@ export const initialCompleted: CompletedFlows = {
   signIn: false,
   add: false,
   send: false,
+  receive: false,
   withdraw: false,
   card: false,
   tap: false,
@@ -55,7 +57,7 @@ export function fmt(cents: number): string {
   );
 }
 
-export type ActionId = 'create' | 'add' | 'send' | 'withdraw' | 'card' | 'tap';
+export type ActionId = 'create' | 'add' | 'send' | 'receive' | 'withdraw' | 'card' | 'tap';
 
 export interface ActionDef {
   id: ActionId;
@@ -93,6 +95,14 @@ export const ACTIONS: ActionDef[] = [
     icon: 'send',
     available: () => true,
     done: (c) => c.send,
+  },
+  {
+    id: 'receive',
+    label: 'Receive payment',
+    desc: 'Get paid into your account',
+    icon: 'receive',
+    available: () => true,
+    done: (c) => c.receive,
   },
   {
     id: 'withdraw',
@@ -251,6 +261,11 @@ export function runAction(id: ActionId, s: WalletState, method: AuthMethod): Act
           ],
         },
       };
+
+    case 'receive':
+      // Legacy scripted path is unused — the live receive flow is interactive
+      // (deposit list → share/copy fires a simulated inbound). Kept exhaustive.
+      return { calls: [], frames: [], next: s };
 
     case 'withdraw':
       return {

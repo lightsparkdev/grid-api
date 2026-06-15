@@ -178,24 +178,10 @@ export function WalletListCard({
                       animate={{ y: 0 }}
                       transition={motionTransition(undefined, INSERT_DURATION_S)}
                     >
-                      <WalletListItem
-                        Icon={item.Icon}
-                        image={item.image}
-                        title={item.title}
-                        detail={item.detail}
-                        time={relativeTime(item.timestamp, now)}
-                        amount={item.amount}
-                      />
+                      <WalletListItem {...item} time={relativeTime(item.timestamp, now)} />
                     </motion.div>
                   ) : (
-                    <WalletListItem
-                      Icon={item.Icon}
-                      image={item.image}
-                      title={item.title}
-                      detail={item.detail}
-                      time={relativeTime(item.timestamp, now)}
-                      amount={item.amount}
-                    />
+                    <WalletListItem {...item} time={relativeTime(item.timestamp, now)} />
                   )}
                 </motion.div>
               );

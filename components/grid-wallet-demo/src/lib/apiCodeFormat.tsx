@@ -19,13 +19,15 @@ export function stepTitle(entry: ApiCall): string {
 
 export function formatCurlString(entry: ApiCall): string {
   const lines: string[] = [];
-  const url = formatApiUrl(entry.path);
+  // Inbound webhooks are sent BY Grid TO your endpoint, so `path` is already a
+  // full URL and there's no Grid auth header (Grid signs with X-Grid-Signature).
+  // Everything else is an outbound call to the Grid API with your key.
+  const url = entry.inbound ? entry.path : formatApiUrl(entry.path);
   const headerEntries = Object.entries(entry.headers ?? {});
-  const hasExtraHeaders = headerEntries.length > 0;
+  if (!entry.inbound) headerEntries.unshift(['Authorization', 'Basic $GRID_KEY']);
   const hasBody = !!entry.reqBody;
 
-  lines.push(`curl -X ${entry.method} "${url}" \\`);
-  lines.push(`  -H "Authorization: Basic $GRID_KEY" \\`);
+  lines.push(`curl -X ${entry.method} "${url}"${headerEntries.length || hasBody ? ' \\' : ''}`);
 
   headerEntries.forEach(([name, value], i) => {
     const cont = i < headerEntries.length - 1 || hasBody ? ' \\' : '';

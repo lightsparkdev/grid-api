@@ -12,6 +12,7 @@
 
 /* Figma 2143:41029 — 56px square, radius 16, tertiary fill, centered 24px glyph. */
 .graphic {
+  position: relative;
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -29,6 +30,35 @@
   }
 }
 
+/* Crypto payments + person avatars use a true circle (coin/contact style). */
+.graphicCircle {
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+/* Initials avatar (person counterparty) — SF Pro Rounded, like iOS contacts. */
+.avatarInitials {
+  @include ios.ios-type-rounded;
+  font-size: 18px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+/* Country flag badged in the avatar's corner, ringed in the card bg. */
+.avatarFlag {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--list-card-bg, var(--ios-bg-primary));
+}
+
 /* Image graphic (e.g. flag) — circular, 20px: glyphs carry built-in padding at
    24, so an edge-to-edge image at 24 reads optically bigger than the icons. */
 .graphicImage {
@@ -36,6 +66,15 @@
   height: 20px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* Brand/network tiles (e.g. crypto logos) already carry their own corner radius,
+   so they skip the circular flag clip and sit at 24px (full-bleed reads smaller
+   than a circle, matching the deposit list). */
+.graphicImageSquare {
+  width: 24px;
+  height: 24px;
+  border-radius: 0;
 }
 
 /* Figma 2143:41034 — fills, pr 24, items-center. */

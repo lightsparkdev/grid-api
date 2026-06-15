@@ -73,10 +73,42 @@ const DEMO_BENEFICIARY = 'Ava Martinez';
 
 /** Random base58-ish address so each saved crypto recipient is distinct (demo). */
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-function randomAddress(): string {
+const HEX = '0123456789abcdef';
+const BECH32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+function randomFrom(set: string, n: number): string {
   let s = '';
-  for (let i = 0; i < 44; i++) s += BASE58[Math.floor(Math.random() * BASE58.length)];
+  for (let i = 0; i < n; i++) s += set[Math.floor(Math.random() * set.length)];
   return s;
+}
+function randomAddress(): string {
+  return randomFrom(BASE58, 44);
+}
+
+/** A plausible random SENDER address on a network — prefix + charset match the
+ *  chain so a received-from address reads right (Receive demo; not a real key). */
+function randomNetworkAddress(network: string): string {
+  switch (network) {
+    case 'Ethereum':
+    case 'Base':
+      return `0x${randomFrom(HEX, 40)}`;
+    case 'Tron':
+      return `T${randomFrom(BASE58, 33)}`;
+    case 'Bitcoin':
+      // P2WPKH native SegWit: bc1q + 38 bech32 chars = 42 total.
+      return `bc1q${randomFrom(BECH32, 38)}`;
+    case 'Spark':
+      // bech32m, HRP "spark", fixed "pgss" payload prefix; mainnet is ~68 chars.
+      return `spark1pgss${randomFrom(BECH32, 58)}`;
+    default:
+      return randomFrom(BASE58, 44); // Solana — base58 ed25519 pubkey
+  }
+}
+
+/** "Carlos Herrera" → "Carlos H." — the Receive payer label (fiat). */
+function firstNameLastInitial(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return parts[0] ?? name;
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
 
 /** Randomize the digits of a sample value so each added account looks distinct
@@ -311,12 +343,29 @@ const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
 
 export type MoneySheetMode = 'add' | 'withdraw' | 'send' | 'receive';
 
+/** A simulated inbound payment fired from the Receive flow (Share/Copy). Carries
+ *  just enough for the wallet to render the toast + Activity row + webhook log:
+ *  a crypto deposit (sender address + network) or a fiat one (payer + country). */
+export type ReceivedPayment =
+  | { via: 'crypto'; network: string; logo: string; address: string }
+  | {
+      via: 'bank';
+      countryCode: string;
+      countryName: string;
+      payer: string;
+      payerFull: string;
+      /** The rail the funds arrived on (PaymentRail enum), by corridor. */
+      rail: string;
+    };
+
 /** Figma 109:29332 — the demo Solana address Paste drops into the send flow. */
 export const SEND_DEMO_ADDRESS = '53am6G4kK1QSKPdnmZVqkA1oeq1biAK2nEtfBosNkNV7';
 
-/** "53am6G…" → "53am…kNV7" — first/last 4 around an ellipsis (Figma 109:28992). */
+/** Middle-truncate an address to first/last 6 around an ellipsis, e.g.
+ *  "53am6G…sNkNV7" (only when it'd actually shorten). Used everywhere an
+ *  address is shown: send/recipient rows, deposit list, activity, toasts. */
 export function truncateAddress(addr: string): string {
-  return `${addr.slice(0, 4)}…${addr.slice(-4)}`;
+  return addr.length > 13 ? `${addr.slice(0, 6)}…${addr.slice(-6)}` : addr;
 }
 
 /** Solana token chip (Figma 109:29428) for WalletListItem's Icon slot — rendered
@@ -507,18 +556,24 @@ interface DepositChain {
 }
 
 const DEPOSIT_CHAINS: DepositChain[] = [
-  { id: 'spark', name: 'Spark', address: 'spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjz123456', logo: '/assets/networks/icon-network-spark.svg', time: 'Instant' },
+  { id: 'spark', name: 'Spark', address: 'spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu', logo: '/assets/networks/icon-network-spark.svg', time: 'Instant' },
   { id: 'ethereum', name: 'Ethereum', address: '0x71C7656EC7ab88b098defB751B7401B5f6d89760', logo: '/assets/networks/icon-network-ethereum.svg', time: '1 min' },
   { id: 'solana', name: 'Solana', address: '7xECDz9kqYbN3pR5sT8uV2wX4yZ1aB6cD7eF8gHSew4H', logo: '/assets/networks/icon-network-solana.svg', time: 'Instant' },
-  { id: 'base', name: 'Base', address: '0x28c4A1f3b9D2e5C7a8F0b1c2D3e4F5a6B7c8585810', logo: '/assets/networks/icon-network-base.svg', time: 'Instant' },
-  { id: 'tron', name: 'Tron', address: 'TJYeoZ8sd9fHkLmNpQrStUvWxYzAbCdEf456789', logo: '/assets/networks/icon-network-tron.svg', time: 'Instant' },
+  { id: 'base', name: 'Base', address: '0x28c4A1f3b9D2e5C7a8F0b1c2D3e4F5a6B7c85858', logo: '/assets/networks/icon-network-base.svg', time: 'Instant' },
+  { id: 'tron', name: 'Tron', address: 'TWq9sN4rPxKpV3hYmLcZ9aB2dE5fG6hJkR', logo: '/assets/networks/icon-network-tron.svg', time: 'Instant' },
   { id: 'btc', name: 'Bitcoin', address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', logo: '/assets/networks/icon-network-bitcoin.svg', time: '10 min' },
 ];
 
-/** Middle-truncate to first 6 / last 6 — the deposit-row address style. */
-function fmtDepositAddr(addr: string): string {
-  return addr.length > 14 ? `${addr.slice(0, 6)}…${addr.slice(-6)}` : addr;
-}
+/** The instant rail an inbound transfer arrives on, by corridor (PaymentRail
+ *  enum) — shown in the received-payment webhook's REALTIME_FUNDING source. */
+const RECEIVE_RAIL: Record<string, string> = {
+  USD_ACCOUNT: 'RTP',
+  EUR_ACCOUNT: 'SEPA_INSTANT',
+  MXN_ACCOUNT: 'SPEI',
+  GBP_ACCOUNT: 'FASTER_PAYMENTS',
+  BRL_ACCOUNT: 'PIX',
+  INR_ACCOUNT: 'UPI',
+};
 
 /** Realistic inbound funding instructions per rail (Receive → bank). Just what a
  *  sender needs to push a domestic transfer (RTP / ACH / SPEI / SEPA / PIX / …):
@@ -596,6 +651,8 @@ interface AddMoneySheetProps {
   onQuote?: (cents: number, dest?: TransferDest) => void;
   /** A bank/crypto recipient was added — parent logs POST /customers/external-accounts. */
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
+  /** Receive flow: Share/Copy fired a (simulated) inbound payment. */
+  onReceive?: (payment: ReceivedPayment) => void;
 }
 
 /**
@@ -616,6 +673,7 @@ export function AddMoneySheet({
   onConfirm,
   onQuote,
   onLinkExternalAccount,
+  onReceive,
 }: AddMoneySheetProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -759,6 +817,24 @@ export function AddMoneySheet({
     } else {
       navigator.clipboard?.writeText(text).catch(() => {});
     }
+  };
+
+  // Share the bank details, then fire the (simulated) inbound payment from a
+  // random payer in the country's name pool — name + last initial for display,
+  // full name for the webhook's counterpartyInformation.
+  const shareFundingAndReceive = () => {
+    shareFunding();
+    if (!pickedCountry) return;
+    const pool = recipientNamesFor(pickedCountry);
+    const full = pool[Math.floor(Math.random() * pool.length)];
+    onReceive?.({
+      via: 'bank',
+      countryCode: pickedCountry.code,
+      countryName: pickedCountry.name,
+      payer: firstNameLastInitial(full),
+      payerFull: full,
+      rail: RECEIVE_RAIL[pickedCountry.accountType] ?? 'BANK_TRANSFER',
+    });
   };
 
   // Bank flow handlers.
@@ -1408,7 +1484,7 @@ export function AddMoneySheet({
                           >
                             <span className={styles.sourceLabels}>
                               <span className={styles.rowTitle}>{chain.name}</span>
-                              <span className={styles.rowSub}>{fmtDepositAddr(chain.address)}</span>
+                              <span className={styles.rowSub}>{truncateAddress(chain.address)}</span>
                               <span className={styles.rowSub}>{chain.time}</span>
                             </span>
                             {/* Copy + QR button group (replaces the chevron). */}
@@ -1417,7 +1493,19 @@ export function AddMoneySheet({
                                 type="button"
                                 className={styles.rowIconBtn}
                                 aria-label={copied ? 'Copied' : `Copy ${chain.name} address`}
-                                onClick={() => copyValue(chain.id, chain.address)}
+                                onClick={() => {
+                                  copyValue(chain.id, chain.address);
+                                  // Copying a deposit address simulates funds
+                                  // landing on that chain a beat later — a payment
+                                  // (Receive) or a top-up (Add from crypto). The
+                                  // parent frames it by the sheet's mode.
+                                  onReceive?.({
+                                    via: 'crypto',
+                                    network: chain.name,
+                                    logo: chain.logo,
+                                    address: randomNetworkAddress(chain.name),
+                                  });
+                                }}
                               >
                                 {copied ? (
                                   <IconCheckmark2Small size={20} />
@@ -1497,7 +1585,7 @@ export function AddMoneySheet({
                   </p>
                 </div>
                 <div className={styles.bottomCtaWrap}>
-                  <GlassTextButton variant="primary" onClick={shareFunding}>
+                  <GlassTextButton variant="primary" onClick={shareFundingAndReceive}>
                     <span className={styles.shareCta}>
                       <IconArrowOutOfBox size={20} className={styles.shareCtaIcon} />
                       Share

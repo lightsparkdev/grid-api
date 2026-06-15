@@ -23,13 +23,14 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
+import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import {
   AddMoneySheet,
   formatUsdCents,
   SolanaTokenIcon,
   truncateAddress,
   type MoneySheetMode,
+  type ReceivedPayment,
   type TransferActivity,
 } from './AddMoneySheet';
 import { SendReceiveSheet } from './SendReceiveSheet';
@@ -83,6 +84,12 @@ const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp'>> = [
 // beat as tap-to-pay).
 const SHEET_INSERT_DELAY_MS = 700;
 
+// Receive: tapping Share/Copy lets the action register, then the sheet closes;
+// the inbound payment "arrives" a beat after that (real receives are async, so
+// the gap sells it — sharing your details doesn't instantly cause a payment).
+const RECEIVE_DISMISS_MS = 480;
+const RECEIVE_TOAST_MS = 2100;
+
 /** "$5,000.00" → cents. */
 function parseCents(formatted: string): number {
   const n = Number.parseFloat(formatted.replace(/[^0-9.]/g, ''));
@@ -126,7 +133,7 @@ export type WalletTransferMode = 'add' | 'withdraw' | 'send';
 
 /** A jump command from the Configure sidebar: provision state (so flows are
  *  reachable out of order) then open the target screen/sheet. */
-export type WalletEntryTarget = 'add' | 'withdraw' | 'send' | 'card' | 'tap';
+export type WalletEntryTarget = 'add' | 'withdraw' | 'send' | 'receive' | 'card' | 'tap';
 export interface WalletEntry {
   /** Bumped per command so the wallet applies it exactly once. */
   nonce: number;
@@ -155,12 +162,22 @@ interface AuroraWalletScreenProps {
   onCardIssued?: () => void;
   /** A tap-to-pay charge landed on the phone. */
   onTapToPay?: (cents: number, merchant: string) => void;
+  /** A payment was received (Receive flow) — log the inbound webhook + settle. */
+  onReceivePayment?: (info: ReceivePaymentInfo) => void;
+}
+
+/** First + last initial for a contact avatar ("Carlos Herrera" → "CH"). */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (parts[0][0] + last).toUpperCase();
 }
 
 /** Build an Activity row from the confirmed transfer's real destination: a
- *  crypto send shows the token chip + truncated address; a bank shows its
- *  country flag, name, and last 4. Outgoing shows the plain amount — only
- *  incoming (add) gets the "+". */
+ *  crypto payment shows the token chip in a circular tile; a person (bank) shows
+ *  a contact avatar (initials + flag); your own bank keeps the flag tile.
+ *  Outgoing shows the plain amount — only incoming (add) gets the "+". */
 function makeTransferRow(
   mode: WalletTransferMode,
   cents: number,
@@ -171,6 +188,7 @@ function makeTransferRow(
     return {
       id: `${mode}-${ts}`,
       Icon: SolanaTokenIcon,
+      tileCircle: true,
       title: truncateAddress(dest.address),
       detail:
         mode === 'withdraw'
@@ -183,9 +201,12 @@ function makeTransferRow(
   const flag = dest ? `/assets/flags/${dest.countryCode}.svg` : '/assets/add-money/flag-mx.svg';
   const bankLabel = dest ? `${dest.bankName} (•••• ${dest.last4})` : 'Bank account';
   if (mode === 'send') {
+    // Sent to a person → contact avatar (initials + flag); only a destination-less
+    // edge case falls back to the flag tile.
     return {
       id: `send-${ts}`,
-      image: flag,
+      avatar: dest ? { initials: initials(dest.recipientName || dest.bankName), code: dest.countryCode } : undefined,
+      image: dest ? undefined : flag,
       title: dest?.recipientName || bankLabel,
       detail: dest ? `Sent to ${dest.bankName}` : 'Sent from balance',
       amount: formatUsdCents(cents),
@@ -202,6 +223,42 @@ function makeTransferRow(
   };
 }
 
+/** A believable inbound amount — low hundreds with cents (demo "bullshit mode"). */
+function randomReceiveCents(): number {
+  const dollars = 120 + Math.floor(Math.random() * 760); // $120–$879
+  return dollars * 100 + Math.floor(Math.random() * 100);
+}
+
+/** Activity row for a received payment (always inbound, "+"): crypto shows the
+ *  sender's truncated address + network logo; fiat shows the payer (name + last
+ *  initial) + country flag. */
+function makeReceiveRow(p: ReceivedPayment, cents: number, asAdd = false): WalletListItemData {
+  const ts = Date.now();
+  const amount = `+${formatUsdCents(cents)}`;
+  if (p.via === 'crypto') {
+    return {
+      id: `receive-${ts}`,
+      image: p.logo,
+      imageSquare: true,
+      // Payments (receive) get the circular coin tile; an add is a funding source,
+      // not a contact, so it keeps the square tile like the bank add.
+      tileCircle: !asAdd,
+      title: truncateAddress(p.address),
+      detail: asAdd ? `Added from ${p.network} wallet` : `From ${p.network} wallet`,
+      amount,
+      timestamp: ts,
+    };
+  }
+  return {
+    id: `receive-${ts}`,
+    avatar: { initials: initials(p.payerFull), code: p.countryCode },
+    title: p.payer,
+    detail: 'Payment received',
+    amount,
+    timestamp: ts,
+  };
+}
+
 /** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). */
 export function AuroraWalletScreen({
   balance = '$0.00',
@@ -212,6 +269,7 @@ export function AuroraWalletScreen({
   onTransferExecute,
   onCardIssued,
   onTapToPay,
+  onReceivePayment,
 }: AuroraWalletScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -389,6 +447,7 @@ export function AuroraWalletScreen({
       (entry.open === 'add' && sheetOpen && sheetMode === 'add') ||
       (entry.open === 'withdraw' && sheetOpen && sheetMode === 'withdraw') ||
       (entry.open === 'send' && sheetOpen && sheetMode === 'send') ||
+      (entry.open === 'receive' && sheetOpen && sheetMode === 'receive') ||
       (entry.open === 'card' && isIssuance) ||
       (entry.open === 'tap' && cardView === 'home');
     if (alreadyHere) return;
@@ -409,6 +468,9 @@ export function AuroraWalletScreen({
           break;
         case 'send':
           startSend();
+          break;
+        case 'receive':
+          startReceive();
           break;
         case 'card':
           // Flows are replayable demos: "Issue a card" always runs the full
@@ -499,6 +561,38 @@ export function AuroraWalletScreen({
     }, SHEET_INSERT_DELAY_MS);
   };
   useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
+
+  // Receive (Share/Copy in the deposit list): the demo "bullshit mode" payment.
+  // Close the sheet a beat after the tap, then a moment later a payment "lands":
+  // balance bumps, a toast drops, an Activity row inserts, and the inbound
+  // webhook is logged. Amount is random (low hundreds); the payer is the sender
+  // address (crypto) or a name + last initial from the country's pool (fiat).
+  const receiveTimers = useRef<number[]>([]);
+  const handleReceivePayment = (p: ReceivedPayment) => {
+    // Same trigger in Add-from-crypto, but framed as a top-up (you funded your own
+    // balance) rather than a payment from someone else.
+    const asAdd = sheetMode === 'add';
+    receiveTimers.current.push(
+      window.setTimeout(() => setSheetOpen(false), RECEIVE_DISMISS_MS),
+      window.setTimeout(() => {
+        const cents = randomReceiveCents();
+        const payer = p.via === 'crypto' ? truncateAddress(p.address) : p.payer;
+        setDeltaCents((c) => c + cents);
+        showToast(
+          asAdd ? `${toastUsd(cents)} added to balance` : `Received ${toastUsd(cents)} from ${payer}`,
+        );
+        setActivity((prev) => [makeReceiveRow(p, cents, asAdd), ...prev]);
+        onReceivePayment?.({
+          amountCents: cents,
+          viaCrypto: p.via === 'crypto',
+          counterparty: p.via === 'crypto' ? p.address : p.payerFull,
+          paymentRail: p.via === 'bank' ? p.rail : undefined,
+          intent: asAdd ? 'add' : 'receive',
+        });
+      }, RECEIVE_TOAST_MS),
+    );
+  };
+  useEffect(() => () => receiveTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
   // Face ID + the glass toast render in AppShell's overlay layer (above the
   // status bar) so the blur frosts the status bar and the toast can slide in
@@ -791,6 +885,7 @@ export function AuroraWalletScreen({
           if (sheetMode !== 'receive') onQuoteCreate?.(sheetMode, cents, dest);
         }}
         onLinkExternalAccount={onLinkExternalAccount}
+        onReceive={handleReceivePayment}
         onConfirm={(cents, activity) => {
           pendingCents.current = cents;
           pendingActivity.current = activity;

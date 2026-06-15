@@ -17,6 +17,7 @@ const CRYPTO = 'ExternalAccount:019e8f4a-9b2e-71f4-0000-3c5e7a2b9f08';
 const CUSTOMER = 'Customer:019e8f47-2a3d-1d02-0000-6b1f0c4e2a91';
 const QUOTE = 'Quote:019e8f49-3c8f-5246-0000-4d75f9a6d1d1';
 const TXN = 'Transaction:019e8f49-3ca4-b78f-0000-1d3e9a411168';
+const WEBHOOK = 'Webhook:019e8f49-7b3e-1d02-0000-9a4c2e7f1d05';
 const PUBKEY = '04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783ad…';
 
 /** A linked external account to create — a bank (account fields + beneficiary)
@@ -311,4 +312,80 @@ export function tapCalls(merchant: string, cents: number): ApiCall[] {
 /** Withdraw — cash out to a linked bank (signed). */
 export function withdrawCalls(cents: number): ApiCall[] {
   return [transferQuoteCall('withdraw', cents), ...transferExecuteCalls('withdraw')];
+}
+
+/** Where Grid POSTs inbound webhooks — your own endpoint. Shown as a full URL so
+ *  the curl reads as Grid → you, not an outbound call to the Grid API. */
+const WEBHOOK_ENDPOINT = 'https://your-app.com/webhooks/grid';
+
+/** An inbound payment the customer received. There's no client-initiated call to
+ *  "receive" — Grid POSTs an INCOMING_PAYMENT webhook to your endpoint when funds
+ *  land, and you read the settled transaction. */
+export interface ReceivePaymentInfo {
+  amountCents: number;
+  /** Crypto deposit (USDC; sender = wallet address) vs. fiat (sender = name). */
+  viaCrypto: boolean;
+  /** Sender wallet address (crypto) or sender's full name (fiat). */
+  counterparty: string;
+  /** The fiat rail the funds arrived on (PaymentRail enum) — omitted for crypto. */
+  paymentRail?: string;
+  /** 'add' = topping up your own balance from a crypto wallet; 'receive' = a
+   *  payment from someone else. Drives the API-panel group + sidebar checkmark. */
+  intent?: 'add' | 'receive';
+}
+
+/** Receive — the inbound webhook Grid pushes to you + the GET that confirms it.
+ *  The body is an IncomingTransaction (openapi/components/.../IncomingTransaction):
+ *  `source` is REALTIME_FUNDING (external funds landing — the originator fields
+ *  are populated best-effort). Demo: the event itself is simulated. */
+export function receivePaymentCalls(info: ReceivePaymentInfo): ApiCall[] {
+  const reference = `REF-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+  // The originator (sender). Crypto: the wallet address is the account
+  // identifier on its rail; fiat: the payer name + the rail it arrived on.
+  const source = info.viaCrypto
+    ? { sourceType: 'REALTIME_FUNDING', currency: 'USDC', accountIdentifier: info.counterparty }
+    : {
+        sourceType: 'REALTIME_FUNDING',
+        currency: 'USD',
+        accountHolderName: info.counterparty,
+        paymentRail: info.paymentRail ?? 'RTP',
+      };
+  const data = {
+    id: TXN,
+    type: 'INCOMING',
+    status: 'COMPLETED',
+    customerId: CUSTOMER,
+    platformCustomerId: '18d3e5f7b4a9c2',
+    destination: { destinationType: 'ACCOUNT', accountId: ACCOUNT },
+    source,
+    receivedAmount: {
+      amount: info.amountCents,
+      currency: { code: 'USD', name: 'United States Dollar', symbol: '$', decimals: 2 },
+    },
+    reconciliationInstructions: { reference },
+  };
+  return [
+    {
+      method: 'POST',
+      path: WEBHOOK_ENDPOINT,
+      inbound: true,
+      title: 'Incoming payment',
+      headers: { 'X-Grid-Signature': '<signature>' },
+      reqBody: {
+        id: WEBHOOK,
+        type: 'INCOMING_PAYMENT.COMPLETED',
+        timestamp: new Date().toISOString(),
+        data,
+      },
+      status: '200 OK',
+      note: 'Simulated — Grid POSTs this to your webhook endpoint when funds land.',
+    },
+    {
+      method: 'GET',
+      path: `/transactions/${TXN}`,
+      title: 'Get transaction',
+      status: '200 OK',
+      note: 'Inbound transfer settled — COMPLETED.',
+    },
+  ];
 }

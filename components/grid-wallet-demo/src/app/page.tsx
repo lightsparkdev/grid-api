@@ -66,6 +66,7 @@ export default function Page() {
             onTransferExecute={logic.onTransferExecute}
             onCardIssued={logic.onCardIssued}
             onTapToPay={logic.onTapToPay}
+            onReceivePayment={logic.onReceivePayment}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
