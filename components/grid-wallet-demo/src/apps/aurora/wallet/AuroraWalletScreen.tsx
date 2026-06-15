@@ -884,7 +884,17 @@ export function AuroraWalletScreen({
           // Receive never reaches the amount step, so no quote fires for it.
           if (sheetMode !== 'receive') onQuoteCreate?.(sheetMode, cents, dest);
         }}
-        onLinkExternalAccount={onLinkExternalAccount}
+        onLinkExternalAccount={(input, label) => {
+          onLinkExternalAccount?.(input, label);
+          // Confirm the save (fires after the sheet's 500ms validate beat).
+          showToast(
+            label === 'Add bank account'
+              ? 'Bank account saved'
+              : label === 'Add crypto wallet'
+                ? 'Wallet added'
+                : 'Recipient saved',
+          );
+        }}
         onReceive={handleReceivePayment}
         onConfirm={(cents, activity) => {
           pendingCents.current = cents;

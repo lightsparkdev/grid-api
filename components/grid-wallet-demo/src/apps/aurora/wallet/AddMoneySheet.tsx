@@ -312,6 +312,8 @@ const USD_TO_MXN = 17.9074;
 const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.28);
 /** Fake quote-creation beat: Continue spins this long before the confirm step. */
 const QUOTE_MS = 750;
+/** Validate+save beat: the add bank/recipient CTA spins this long before amount. */
+const SAVE_MS = 500;
 // Small element swaps (CTA glyph, etc.) inside the persistent transfer layout.
 const SWAP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
 const MORPH_MS = 280;
@@ -690,12 +692,14 @@ export function AddMoneySheet({
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
   const [started, setStarted] = useState(false); // Swift's hasStartedTyping
   const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
+  const [saving, setSaving] = useState(false); // 500ms validate+save beat on add
   const [pasted, setPasted] = useState(false); // send: address card filled
   const [pastedAddress, setPastedAddress] = useState(''); // the entered crypto address
   // Withdraw-to-crypto destination — a one-off wallet (not a saved list, unlike
   // send recipients). Set when the address is confirmed; feeds selectedCrypto.
   const [cryptoDest, setCryptoDest] = useState<CryptoRecipient | null>(null);
   const quoteTimer = useRef(0);
+  const saveTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
   // Bank picker state. savedBanks/savedRecipients persist across sheet opens (the
@@ -771,6 +775,7 @@ export function AddMoneySheet({
       setRaw('');
       setStarted(false);
       setQuoting(false);
+      setSaving(false);
       setPasted(false);
       setPastedAddress('');
       setCryptoDest(null);
@@ -787,6 +792,7 @@ export function AddMoneySheet({
     () => () => {
       window.clearTimeout(quoteTimer.current);
       window.clearTimeout(copyTimer.current);
+      window.clearTimeout(saveTimer.current);
     },
     [],
   );
@@ -867,76 +873,96 @@ export function AddMoneySheet({
   const updateField = (key: string, value: string) =>
     setFormValues((v) => ({ ...v, [key]: value }));
   const addBank = () => {
-    if (!pickedCountry) return;
+    if (!pickedCountry || saving) return;
+    const country = pickedCountry;
     // Cycle the country's bank pool by how many of it are already saved, so a
     // second add from the same country shows a different bank (not a clone).
-    const pool = pickedCountry.banks ?? [pickedCountry.bankName];
+    const pool = country.banks ?? [country.bankName];
     const sameCountry = banks.filter(
-      (b) => !('address' in b) && b.country.code === pickedCountry.code,
+      (b) => !('address' in b) && b.country.code === country.code,
     ).length;
     const bank: SavedBank = {
-      id: `${pickedCountry.accountType}-${Date.now()}`,
-      country: pickedCountry,
+      id: `${country.accountType}-${Date.now()}`,
+      country,
       bankName: pool[sameCountry % pool.length],
       values: formValues,
       beneficiary: formBeneficiary,
     };
-    if (isSend) setSavedRecipients((r) => [...r, bank]);
-    else setSavedBanks((r) => [...r, bank]);
-    onLinkExternalAccount?.(
-      {
-        kind: 'bank',
-        accountType: pickedCountry.accountType,
-        currency: currencyFor(pickedCountry),
-        bankName: bank.bankName,
-        fields: formValues,
-        beneficiary: formBeneficiary,
-      },
-      isSend ? 'Add recipient' : 'Add bank account',
-    );
-    setSelectedBankId(bank.id);
-    // Intent is clear (you just added it), so skip the list and go straight to
+    // Brief validate+save beat (spinner in the CTA) before landing on amount, so
+    // the save reads as real; the external-account call + toast fire on completion.
+    // Intent is clear (you just added it), so we then skip the list and go to
     // amount; Back from there returns to the list (backFrom['amount'] → 'banks').
-    go('amount');
+    setSaving(true);
+    window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      if (isSend) setSavedRecipients((r) => [...r, bank]);
+      else setSavedBanks((r) => [...r, bank]);
+      onLinkExternalAccount?.(
+        {
+          kind: 'bank',
+          accountType: country.accountType,
+          currency: currencyFor(country),
+          bankName: bank.bankName,
+          fields: formValues,
+          beneficiary: formBeneficiary,
+        },
+        isSend ? 'Add recipient' : 'Add bank account',
+      );
+      setSelectedBankId(bank.id);
+      setSaving(false);
+      go('amount');
+    }, SAVE_MS);
   };
 
-  // Save the pasted crypto address as a recipient, then go straight to amount
-  // (Back returns to the recipient list) — mirrors the bank add.
+  // Save the pasted crypto address as a recipient (after a validate+save beat),
+  // then go straight to amount (Back returns to the recipient list).
   const addCryptoRecipient = () => {
+    if (saving) return;
     const recipient: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
       address: pastedAddress || randomAddress(),
       network: 'Solana',
     };
-    setSavedRecipients((r) => [...r, recipient]);
-    onLinkExternalAccount?.(
-      { kind: 'crypto', address: recipient.address, network: recipient.network },
-      'Add recipient',
-    );
-    setSelectedBankId(recipient.id);
-    setPasted(false);
-    setPastedAddress('');
-    go('amount');
+    setSaving(true);
+    window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      setSavedRecipients((r) => [...r, recipient]);
+      onLinkExternalAccount?.(
+        { kind: 'crypto', address: recipient.address, network: recipient.network },
+        'Add recipient',
+      );
+      setSelectedBankId(recipient.id);
+      setPasted(false);
+      setPastedAddress('');
+      setSaving(false);
+      go('amount');
+    }, SAVE_MS);
   };
   const selectBank = (id: string) => {
     setSelectedBankId(id);
     go('amount');
   };
 
-  // Withdraw-to-crypto: confirm the typed wallet as a one-off destination, link
-  // it as an external account, then go straight to amount (no saved list).
+  // Withdraw-to-crypto: confirm the typed wallet as a one-off destination (after a
+  // validate+save beat), link it as an external account, then go to amount.
   const useCryptoWithdraw = () => {
+    if (saving) return;
     const dest: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
       address: pastedAddress || randomAddress(),
       network: 'Solana',
     };
-    setCryptoDest(dest);
-    onLinkExternalAccount?.(
-      { kind: 'crypto', address: dest.address, network: dest.network },
-      'Add crypto wallet',
-    );
-    go('amount');
+    setSaving(true);
+    window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      setCryptoDest(dest);
+      onLinkExternalAccount?.(
+        { kind: 'crypto', address: dest.address, network: dest.network },
+        'Add crypto wallet',
+      );
+      setSaving(false);
+      go('amount');
+    }, SAVE_MS);
   };
 
   // The just-confirmed destination — drives the wallet's Activity row + toast so
@@ -1901,7 +1927,15 @@ export function AddMoneySheet({
                 </div>
                 <div className={styles.bottomCtaWrap}>
                   <GlassTextButton variant="primary" onClick={addBank}>
-                    {isSend ? 'Add recipient' : 'Add bank account'}
+                    {saving ? (
+                      <span className={styles.spinner} aria-label="Saving">
+                        <IconLoadingCircle size={20} />
+                      </span>
+                    ) : isSend ? (
+                      'Add recipient'
+                    ) : (
+                      'Add bank account'
+                    )}
                   </GlassTextButton>
                 </div>
               </motion.div>
@@ -1977,6 +2011,7 @@ export function AddMoneySheet({
                           className={styles.addressBtn}
                           variant={pasted ? 'filled' : 'secondary'}
                           onClick={() => {
+                            if (saving) return;
                             // Paste fills a demo address; the prominent state then
                             // saves it (send → recipient list) or carries it to the
                             // amount step (withdraw → one-off wallet).
@@ -1989,13 +2024,19 @@ export function AddMoneySheet({
                             }
                           }}
                         >
-                          <TextMorph
-                            as="span"
-                            duration={MORPH_MS}
-                            ease={cubicBezierCss(easeOutSwift)}
-                          >
-                            {pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste'}
-                          </TextMorph>
+                          {saving ? (
+                            <span className={styles.spinner} aria-label="Saving">
+                              <IconLoadingCircle size={20} />
+                            </span>
+                          ) : (
+                            <TextMorph
+                              as="span"
+                              duration={MORPH_MS}
+                              ease={cubicBezierCss(easeOutSwift)}
+                            >
+                              {pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste'}
+                            </TextMorph>
+                          )}
                         </ContentAreaButton>
                       </div>
                     </div>
