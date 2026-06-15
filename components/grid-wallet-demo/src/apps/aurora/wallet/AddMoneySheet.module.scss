@@ -424,7 +424,7 @@
    (only a stroke-1.5 variant ships). */
 .searchIcon {
   flex-shrink: 0;
-  color: var(--ios-label-secondary);
+  color: var(--ios-label-tertiary);
 
   path {
     stroke-width: 2;
@@ -465,7 +465,7 @@
 /* Top padding lets the search/list rest clear of the top blur; the page then
    scrolls UP under it. Form keeps bottom room for the anchored CTA. */
 .pickerScrollCountry {
-  padding-top: 148px; // rest below the pill + its 32px crisp zone before the fade
+  padding-top: 126px; // "Popular" rests 16px under the pill (bottom 114 + label's 4px top)
   padding-bottom: 16px; // match the cards' 16px left/right margins
   /* Content fades by ALPHA toward the top — eased down to a LOW (not zero) alpha
      so the upper rows read faint/blended into the sheet (visible, just less
@@ -483,7 +483,7 @@
 /* iOS grouped-list section header. */
 .sectionLabel {
   margin: 0;
-  padding: 16px 32px 6px;
+  padding: 16px 36px 14px;
   @include ios.ios-text-footnote;
   font-weight: 590;
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));

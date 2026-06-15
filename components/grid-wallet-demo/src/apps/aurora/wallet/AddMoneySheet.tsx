@@ -137,7 +137,7 @@ function TopFade() {
   );
 }
 
-/** One country row in the picker (flag tile + name + currency · rail + chevron),
+/** One country row in the picker (flag tile + name + currency + chevron),
  *  shared by the Popular / All / search-result lists. */
 function CountryPickRow({
   country,
@@ -157,7 +157,7 @@ function CountryPickRow({
         <span className={styles.sourceLabels}>
           <span className={styles.rowTitle}>{country.name}</span>
           <span className={styles.rowSub}>
-            {currencyFor(country)} · {country.rail}
+            {currencyFor(country)}
           </span>
         </span>
         <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
@@ -1063,7 +1063,7 @@ export function AddMoneySheet({
                               </span>
                               <span className={styles.rowSub}>{b.country.name}</span>
                               <span className={styles.rowSub}>
-                                {currencyFor(b.country)} · {b.country.rail}
+                                {currencyFor(b.country)}
                               </span>
                             </span>
                             <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
@@ -1148,13 +1148,13 @@ export function AddMoneySheet({
                       glowSpread: 0.5,
                       glowExponent: 1.5,
                       edgeStrength: 1,
-                      // Button uses 2px, but that rim reads heavier as a flat
-                      // additive highlight on this big pill than as the button's
-                      // refractive glint — halve it so it matches visually.
-                      edgeWidth: 1,
+                      // Dark: 1px reads like the button's delicate glint. Light: a
+                      // white rim barely shows on the near-white pill, so thicken it.
+                      edgeWidth: theme === 'dark' ? 1 : 2,
                       edgeExponent: 1.5,
-                      // Match the back button's specularStrength (1) in both modes.
-                      strength: 1,
+                      // Dark matches the button (1); light pushes the gain harder so
+                      // the edge reads against the bright fill.
+                      strength: theme === 'dark' ? 1 : 1.6,
                     }}
                   >
                     <div className={styles.searchRow}>
@@ -1194,7 +1194,7 @@ export function AddMoneySheet({
                       <span className={styles.sourceLabels}>
                         <span className={styles.rowTitle}>{pickedCountry.name}</span>
                         <span className={styles.rowSub}>
-                          {currencyFor(pickedCountry)} · {pickedCountry.rail}
+                          {currencyFor(pickedCountry)}
                         </span>
                       </span>
                     </div>
