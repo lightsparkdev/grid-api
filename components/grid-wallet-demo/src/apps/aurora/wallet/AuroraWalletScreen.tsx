@@ -162,10 +162,13 @@ function makeTransferRow(
   const ts = Date.now();
   if (dest?.kind === 'crypto') {
     return {
-      id: `send-${ts}`,
+      id: `${mode}-${ts}`,
       Icon: SolanaTokenIcon,
       title: truncateAddress(dest.address),
-      detail: `Sent to ${dest.network} wallet`,
+      detail:
+        mode === 'withdraw'
+          ? `Withdrawn to ${dest.network} wallet`
+          : `Sent to ${dest.network} wallet`,
       amount: formatUsdCents(cents),
       timestamp: ts,
     };

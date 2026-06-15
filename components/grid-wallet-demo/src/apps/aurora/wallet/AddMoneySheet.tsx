@@ -407,12 +407,15 @@ const MODES: Record<
       banks: 'Select bank',
       country: 'Select country',
       bankForm: 'Enter bank details',
-      recipient: '',
+      recipient: 'Enter address',
       amount: 'Enter amount',
       confirm: 'Confirm withdrawal',
     },
     sources: [BANK_SOURCE, CRYPTO_SOURCE],
-    activeSources: [{ id: 'bank', next: 'banks' }],
+    activeSources: [
+      { id: 'bank', next: 'banks' },
+      { id: 'crypto', next: 'recipient' },
+    ],
     details: [
       ['Fee', '$0.60'],
       ['Conversion rate', '1 USD = 17.91 MXN'],
@@ -528,6 +531,9 @@ export function AddMoneySheet({
   const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
   const [pasted, setPasted] = useState(false); // send: address card filled
   const [pastedAddress, setPastedAddress] = useState(''); // the entered crypto address
+  // Withdraw-to-crypto destination — a one-off wallet (not a saved list, unlike
+  // send recipients). Set when the address is confirmed; feeds selectedCrypto.
+  const [cryptoDest, setCryptoDest] = useState<CryptoRecipient | null>(null);
   const quoteTimer = useRef(0);
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
@@ -554,17 +560,21 @@ export function AddMoneySheet({
   // (FX, rows) stays untouched and crypto keys off its own branch.
   const selected = banks.find((b) => b.id === selectedBankId) ?? null;
   const selectedBank = selected && !('address' in selected) ? selected : null;
-  const selectedCrypto = selected && 'address' in selected ? selected : null;
+  // Send picks crypto from the saved list; withdraw uses a one-off cryptoDest.
+  const selectedCrypto = cryptoDest ?? (selected && 'address' in selected ? selected : null);
   // Amount-step currency/FX follow the selected bank — including a send to a
   // recipient's bank (USD → their local currency). Only a crypto send (no bank
   // selected) stays 1:1 USDC.
   const localCurrency = selectedBank ? currencyFor(selectedBank.country) : 'MXN';
+  // A crypto destination (a crypto send, or a withdraw to a wallet) stays 1:1
+  // USDC; a send with no bank yet is also USDC. Everything else follows the bank.
+  const stablecoinDest = !selectedBank && (selectedCrypto != null || mode === 'send');
   const fxRate = selectedBank
     ? rateFor(currencyFor(selectedBank.country), selectedBank.country.usdToLocal)
-    : mode === 'send'
+    : stablecoinDest
       ? 1
       : USD_TO_MXN;
-  const fxLabel = mode === 'send' && !selectedBank ? 'USDC' : localCurrency;
+  const fxLabel = stablecoinDest ? 'USDC' : localCurrency;
 
   // Country picker lists: Popular (by volume) on top, then All (alphabetical);
   // a non-empty query collapses to one name/currency/code match list.
@@ -598,6 +608,7 @@ export function AddMoneySheet({
       setQuoting(false);
       setPasted(false);
       setPastedAddress('');
+      setCryptoDest(null);
       setSelectedBankId(null);
       setPickedCountry(null);
       setCountryQuery('');
@@ -696,6 +707,22 @@ export function AddMoneySheet({
     go('amount');
   };
 
+  // Withdraw-to-crypto: confirm the typed wallet as a one-off destination, link
+  // it as an external account, then go straight to amount (no saved list).
+  const useCryptoWithdraw = () => {
+    const dest: CryptoRecipient = {
+      id: `crypto-${Date.now()}`,
+      address: pastedAddress || randomAddress(),
+      network: 'Solana',
+    };
+    setCryptoDest(dest);
+    onLinkExternalAccount?.(
+      { kind: 'crypto', address: dest.address, network: dest.network },
+      'Add crypto wallet',
+    );
+    go('amount');
+  };
+
   // The just-confirmed destination — drives the wallet's Activity row + toast so
   // they mirror the real bank/recipient (not a placeholder).
   const activityForConfirm = (): TransferActivity =>
@@ -725,9 +752,11 @@ export function AddMoneySheet({
       }
     : {
         confirm: 'amount',
-        amount: 'banks',
+        // Crypto withdraw reaches amount via the address step; bank via the list.
+        amount: selectedCrypto ? 'recipient' : 'banks',
         bankForm: 'country',
         country: 'banks',
+        recipient: 'source',
         banks: 'source',
       };
   // The entry step shows the X (close); every other step shows the back arrow.
@@ -788,13 +817,21 @@ export function AddMoneySheet({
   // bank) keeps the static 1:1 USDC details.
   const FEE_BPS = 30;
   const feeCents = Math.round((cents * FEE_BPS) / 10000);
+  // A crypto destination (send or withdraw) settles 1:1 in USDC — no FX row.
+  const cryptoDetails: Array<[string, string]> = [
+    ['Fee', '$0.60'],
+    ['Conversion rate', '1 USD = 1 USDC'],
+    [mode === 'withdraw' ? 'Arrives in wallet' : 'Arrives', 'Instantly'],
+  ];
   const confirmDetails: Array<[string, string]> = selectedBank
     ? [
         ['Exchange rate', `1 USD = ${formatRate(fxRate)} ${localCurrency}`],
         ['Fee (0.30%)', formatUsdCents(feeCents)],
         [mode === 'add' ? 'Arrives' : 'Arrives in bank', 'Instantly'],
       ]
-    : details;
+    : selectedCrypto
+      ? cryptoDetails
+      : details;
 
   // "Use max" (withdraw) — fill the typed amount with the exact balance. The
   // forced ".00" renders as typed (solid) cents, same as keying them in.
@@ -811,12 +848,13 @@ export function AddMoneySheet({
   const tryContinue = () => {
     if (confirming || quoting) return;
     if (cents > 0 && (mode === 'add' || cents <= availableCents)) {
-      // Send references the picked recipient: crypto wallet vs bank off-ramp.
-      const dest: TransferDest | undefined = isSend
-        ? selectedCrypto
-          ? { kind: 'crypto' }
-          : { kind: 'bank', currency: localCurrency }
-        : undefined;
+      // Reference the picked destination: a crypto wallet, or a bank (the
+      // recipient's for a send, the off-ramp bank for a withdraw).
+      const dest: TransferDest | undefined = selectedCrypto
+        ? { kind: 'crypto' }
+        : selectedBank
+          ? { kind: 'bank', currency: localCurrency }
+          : undefined;
       onQuote?.(cents, dest);
       setQuoting(true);
       window.clearTimeout(quoteTimer.current);
@@ -989,7 +1027,9 @@ export function AddMoneySheet({
     mode === 'add'
       ? balanceRow
       : mode === 'withdraw'
-        ? bankRow
+        ? selectedCrypto
+          ? recipientRow
+          : bankRow
         : selectedBank
           ? recipientBankRow
           : recipientRow;
@@ -1105,7 +1145,7 @@ export function AddMoneySheet({
             {/* Figma 109:28547 — glass QR scan button, recipient step only.
                 Blur-fades between steps, the wallet home header language. */}
             <AnimatePresence initial={false}>
-              {mode === 'send' && step === 'recipient' && (
+              {step === 'recipient' && (
                 <motion.span
                   key="qr"
                   className={styles.toolbarTrailing}
@@ -1177,7 +1217,20 @@ export function AddMoneySheet({
                         key={s.id}
                         type="button"
                         className={styles.sourceRow}
-                        onClick={() => active && go(active.next)}
+                        onClick={() => {
+                          if (!active) return;
+                          // Crypto path starts a fresh address; bank path drops any
+                          // crypto destination so the two never bleed together.
+                          if (s.id === 'crypto') {
+                            setSelectedBankId(null);
+                            setCryptoDest(null);
+                            setPasted(false);
+                            setPastedAddress('');
+                          } else {
+                            setCryptoDest(null);
+                          }
+                          go(active.next);
+                        }}
                       >
                         <span className={styles.tile} aria-hidden>
                           {s.Icon ? (
@@ -1523,10 +1576,13 @@ export function AddMoneySheet({
                           className={styles.addressBtn}
                           variant={pasted ? 'filled' : 'secondary'}
                           onClick={() => {
-                            // Paste fills a demo address; the prominent state saves
-                            // it as a recipient and returns to the list.
-                            if (pasted) addCryptoRecipient();
-                            else {
+                            // Paste fills a demo address; the prominent state then
+                            // saves it (send → recipient list) or carries it to the
+                            // amount step (withdraw → one-off wallet).
+                            if (pasted) {
+                              if (isSend) addCryptoRecipient();
+                              else useCryptoWithdraw();
+                            } else {
                               setPastedAddress(randomAddress());
                               setPasted(true);
                             }
@@ -1537,7 +1593,7 @@ export function AddMoneySheet({
                             duration={MORPH_MS}
                             ease={cubicBezierCss(easeOutSwift)}
                           >
-                            {pasted ? 'Add recipient' : 'Paste'}
+                            {pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste'}
                           </TextMorph>
                         </ContentAreaButton>
                       </div>

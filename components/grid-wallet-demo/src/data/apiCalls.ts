@@ -174,6 +174,21 @@ export function transferQuoteCall(mode: TransferMode, cents: number, dest?: Tran
     };
   }
   if (mode === 'withdraw') {
+    if (dest?.kind === 'crypto') {
+      return {
+        method: 'POST',
+        path: `/quotes`,
+        title: 'Create quote',
+        reqBody: {
+          source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
+          destination: { destinationType: 'ACCOUNT', accountId: CRYPTO, currency: 'USDC' },
+          lockedCurrencySide: 'SENDING',
+          lockedCurrencyAmount: cents,
+        },
+        status: '201 Created',
+        note: 'Withdrawal to a crypto wallet (USDB → USDC) with a payloadToSign.',
+      };
+    }
     return {
       method: 'POST',
       path: `/quotes`,
