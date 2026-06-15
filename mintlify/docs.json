@@ -79,6 +79,7 @@
             "group": "Overview",
             "pages": [
               "global-accounts/index",
+              "global-accounts/demo",
               "global-accounts/implementation-overview"
             ]
           },
