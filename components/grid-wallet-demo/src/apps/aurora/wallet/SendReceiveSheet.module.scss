@@ -1,46 +1,80 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 109:28519 — centered title group: pb 16, px 32, gap 8. The group's
-   pt 8 rode under a toolbar strip; with no toolbar, 24 clears the sheet's
-   40px top curve while keeping the mini sheet compact. */
-.titleGroup {
+/* Mirrors AuthSheet (the phone/email sheet): an icon tile + glass X header, a
+   left-aligned title and subtitle, then the action pills. */
+
+/* Header row — the icon tile (30px top/left). */
+.header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  padding: 32px 32px 16px;
-  text-align: center;
+  align-items: flex-start;
+  padding: 30px 24px 8px 30px;
 }
 
-/* Title3/Emphasized 20/25/-0.45 with the ⇅ symbol inline before the text. */
-.title {
-  display: inline-flex;
+/* Glass X — pinned 24px off the sheet's top-right corner. */
+.close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1;
+}
+
+/* 64px gradient tile with a centered white glyph — the AuthSheet treatment, on
+   the same aurora-sampled fill with a blurred under-layer so the edges feather
+   out, the crisp glyph stacked on top. */
+.tile {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  color: #ffffff;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    corner-shape: var(--corner-shape);
+    background: linear-gradient(135deg, #98d9ed 0%, #32b9df 55%, #0698d0 100%);
+    filter: blur(6px);
+  }
+
+  :global([data-theme='dark']) &::before {
+    background: linear-gradient(135deg, #024a82 0%, #00396a 55%, #00254a 100%);
+  }
+
+  svg {
+    position: relative;
+  }
+}
+
+/* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45, left-aligned. */
+.heading {
   margin: 0;
+  padding: 16px 32px 0;
   @include ios.ios-text-title-3;
   font-weight: 590;
-  color: var(--ios-label-primary);
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
 }
 
-.titleSymbol {
-  flex-shrink: 0;
-}
-
-/* Footnote/Regular 13/18/-0.08 secondary, two centered lines. */
-.subtitle {
+/* Footnote / Regular — 13/18, tracking -0.08, secondary; own row below title. */
+.sub {
   margin: 0;
+  padding: 8px 32px 20px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
+  text-wrap: pretty;
 }
 
-/* Figma 109:28526 — actions: pt 8, pb 24, px 24, gap 12; large bordered pills. */
+/* Two large bordered pills, stacked (Figma 109:28526). */
 .actions {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 8px 24px 24px;
+  padding: 0 24px 24px;
 }
 
 /* Receive is a no-op: it reads as a normal bordered button at rest, then dims
@@ -54,6 +88,8 @@
   opacity: 1;
 }
 
-.actions:hover .receiveBtn:disabled {
-  opacity: 0.5;
+@media (hover: hover) {
+  .actions:hover .receiveBtn:disabled {
+    opacity: 0.5;
+  }
 }

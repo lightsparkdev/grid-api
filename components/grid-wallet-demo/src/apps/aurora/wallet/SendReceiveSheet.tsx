@@ -2,8 +2,9 @@
 
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
-import { SHEET_GLASS } from '@/apps/shared/glass';
+import { GlassSymbolButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
+import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './SendReceiveSheet.module.scss';
 
 interface SendReceiveSheetProps {
@@ -14,34 +15,44 @@ interface SendReceiveSheetProps {
 }
 
 /**
- * Figma 109:28513 — the "Send or receive" chooser: a small floating frosted
- * sheet (the auth flow's inset-6 frost, not the solid money sheet) with a
- * symbol title, a two-line subtitle, and two large bordered actions. No
- * toolbar — the scrim dismisses. Send chains into the money sheet; Receive
- * is shown disabled (a demo no-op until the deposit-address flow exists).
+ * Figma 109:28513 — the "Send or receive" chooser, dressed in the auth
+ * phone/email sheet's look (AuthSheet): a 64px gradient icon tile + glass X
+ * header, a left-aligned title and subtitle, then the two bordered action
+ * pills. Send chains into the money sheet; Receive is shown disabled (a demo
+ * no-op until the deposit-address flow exists).
  */
 export function SendReceiveSheet({ open, onDismiss, onSend }: SendReceiveSheetProps) {
+  const theme = useThemeMode();
   return (
     <BottomSheet
       open={open}
       onDismiss={onDismiss}
-      inset={8}
+      inset={16}
       topRadius={40}
-      // Standard frost, but tinted toward the wallet's #f9f9f9 on light (the
-      // shared sheet tint reads cooler against this screen); dark unchanged.
+      // Standard frost, tinted toward the wallet's #f9f9f9 on light — the same
+      // float-sheet treatment as the auth sheet; dark unchanged.
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
     >
-      <div className={styles.titleGroup}>
-        <h2 className={styles.title}>
-          <SfSymbol name="arrow.up.arrow.down" size={22} className={styles.titleSymbol} />
-          Send or receive
-        </h2>
-        <p className={styles.subtitle}>
-          Move money to and from any
-          <br />
-          bank account or wallet
-        </p>
+      {/* Persistent header: the activity-row icon tile top-left, glass X top-right. */}
+      <div className={styles.header}>
+        <span className={styles.tile} aria-hidden>
+          <SfSymbol name="arrow.up.arrow.down" size={28} />
+        </span>
       </div>
+      <span className={styles.close}>
+        <GlassSymbolButton
+          aria-label="Close"
+          size={40}
+          type="button"
+          glass={{ brightness: headerGlassBrightness(theme) }}
+          onClick={onDismiss}
+        >
+          <SfSymbol name="xmark" size={14} />
+        </GlassSymbolButton>
+      </span>
+
+      <h2 className={styles.heading}>Send or receive</h2>
+      <p className={styles.sub}>Move money to and from any bank account or wallet</p>
 
       <div className={styles.actions}>
         <ContentAreaButton type="button" variant="bordered" onClick={onSend}>
