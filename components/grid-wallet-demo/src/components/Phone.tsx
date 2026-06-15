@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import { authCta } from '@/data/flow';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
+import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import {
   APPLE_CLIENT_ID,
   appleRedirectUri,
@@ -90,7 +91,8 @@ export interface PhoneProps {
   /** Skip the sign-in intro hold for fast-forward jumps. */
   skipIntro?: boolean;
   /** Aurora wallet events bubbled up so the demo logs the matching Grid calls. */
-  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
+  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;

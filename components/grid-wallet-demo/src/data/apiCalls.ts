@@ -13,9 +13,66 @@ const ACCOUNT = 'InternalAccount:019e8f48-1135-438c-0000-8b9d28990463';
 const AUTH_METHOD = 'AuthMethod:019e8f48-11a8-0dca-0000-947363f18d5a';
 const PLATFORM_USD = 'InternalAccount:019e8f47-0b4f-4b8d-0000-6c37ad0a58fb';
 const BANK = 'ExternalAccount:019e8f4a-781d-7e0c-0000-a0d9afbf1314';
+const CRYPTO = 'ExternalAccount:019e8f4a-9b2e-71f4-0000-3c5e7a2b9f08';
+const CUSTOMER = 'Customer:019e8f47-2a3d-1d02-0000-6b1f0c4e2a91';
 const QUOTE = 'Quote:019e8f49-3c8f-5246-0000-4d75f9a6d1d1';
 const TXN = 'Transaction:019e8f49-3ca4-b78f-0000-1d3e9a411168';
 const PUBKEY = '04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783ad…';
+
+/** A linked external account to create — a bank (account fields + beneficiary)
+ *  or a crypto wallet (just the address). Built by the sheet from the saved
+ *  recipient; drives the POST /customers/external-accounts body. */
+export type ExternalAccountInput =
+  | {
+      kind: 'bank';
+      accountType: string;
+      currency: string;
+      bankName: string;
+      fields: Record<string, string>;
+      beneficiary: string;
+    }
+  | { kind: 'crypto'; address: string; network: string };
+
+/** Where a transfer is going — lets the quote reference the real destination
+ *  (a recipient's bank for off-ramp, or a crypto wallet) instead of a UMA. */
+export type TransferDest =
+  | { kind: 'bank'; currency: string }
+  | { kind: 'crypto' };
+
+/** Link a recipient — POST /customers/external-accounts. Fires when a bank or
+ *  crypto address is added; returns an ExternalAccount the transfer references. */
+export function externalAccountCreateCall(input: ExternalAccountInput): ApiCall {
+  if (input.kind === 'crypto') {
+    return {
+      method: 'POST',
+      path: '/customers/external-accounts',
+      title: 'Create external account',
+      reqBody: {
+        customerId: CUSTOMER,
+        currency: 'USDC',
+        accountInfo: { accountType: 'SOLANA_WALLET', address: input.address },
+      },
+      status: '201 Created',
+      note: `Linked ${input.network} wallet — returns an ExternalAccount id.`,
+    };
+  }
+  return {
+    method: 'POST',
+    path: '/customers/external-accounts',
+    title: 'Create external account',
+    reqBody: {
+      customerId: CUSTOMER,
+      currency: input.currency,
+      accountInfo: {
+        accountType: input.accountType,
+        ...input.fields,
+        beneficiary: { beneficiaryType: 'INDIVIDUAL', fullName: input.beneficiary },
+      },
+    },
+    status: '201 Created',
+    note: `Linked ${input.bankName} (${input.currency}) — returns an ExternalAccount id.`,
+  };
+}
 
 /** OTP request (challenge) — fires the moment the phone/email is submitted. */
 export function otpRequestCall(method: 'email_otp' | 'sms', contact?: string): ApiCall {
@@ -98,8 +155,9 @@ export function signInCalls(method: AuthMethod, contact?: string): ApiCall[] {
 
 export type TransferMode = 'add' | 'withdraw' | 'send';
 
-/** Step 1 of a transfer — POST /quotes. Fires when the amount is committed. */
-export function transferQuoteCall(mode: TransferMode, cents: number): ApiCall {
+/** Step 1 of a transfer — POST /quotes. Fires when the amount is committed.
+ *  `dest` lets a send reference the recipient's bank or crypto wallet. */
+export function transferQuoteCall(mode: TransferMode, cents: number, dest?: TransferDest): ApiCall {
   if (mode === 'add') {
     return {
       method: 'POST',
@@ -130,18 +188,32 @@ export function transferQuoteCall(mode: TransferMode, cents: number): ApiCall {
       note: 'Off-ramp quote (USDB → USD) with a payloadToSign.',
     };
   }
+  // Send: off-ramp to the recipient's bank, or USDC to their crypto wallet. No
+  // dest = the seed's historical UMA send.
+  const sendDestination =
+    dest?.kind === 'bank'
+      ? { destinationType: 'ACCOUNT', accountId: BANK, currency: dest.currency }
+      : dest?.kind === 'crypto'
+        ? { destinationType: 'ACCOUNT', accountId: CRYPTO, currency: 'USDC' }
+        : { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' };
+  const sendNote =
+    dest?.kind === 'bank'
+      ? "Off-ramp quote to the recipient's bank, with a payloadToSign."
+      : dest?.kind === 'crypto'
+        ? 'USDC quote to the recipient wallet, with a payloadToSign.'
+        : 'Quote returns a payloadToSign for the embedded wallet.';
   return {
     method: 'POST',
     path: `/quotes`,
     title: 'Create quote',
     reqBody: {
       source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
-      destination: { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' },
+      destination: sendDestination,
       lockedCurrencySide: 'SENDING',
       lockedCurrencyAmount: cents,
     },
     status: '201 Created',
-    note: 'Quote returns a payloadToSign for the embedded wallet.',
+    note: sendNote,
   };
 }
 

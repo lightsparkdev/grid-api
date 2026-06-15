@@ -13,6 +13,7 @@ import {
 } from '@/data/actions';
 import {
   cardCalls,
+  externalAccountCreateCall,
   oauthVerifyCall,
   otpRequestCall,
   otpVerifyCall,
@@ -21,6 +22,8 @@ import {
   tapCalls,
   transferExecuteCalls,
   transferQuoteCall,
+  type ExternalAccountInput,
+  type TransferDest,
 } from '@/data/apiCalls';
 import { oauthNonce, passkeyCeremony } from '@/lib/auth';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
@@ -381,10 +384,19 @@ export function useWalletDemoLogic() {
   // create-quote (amount committed) opens a group; the execute (Face ID) streams
   // into that same group and moves the balance.
   const onQuoteCreate = useCallback(
-    (mode: WalletTransferMode, cents: number) => {
+    (mode: WalletTransferMode, cents: number, dest?: TransferDest) => {
       const gid = newGroupId();
       transferGroup.current = gid;
-      pushCalls([transferQuoteCall(mode, cents)], TRANSFER_LABEL[mode], gid);
+      pushCalls([transferQuoteCall(mode, cents, dest)], TRANSFER_LABEL[mode], gid);
+    },
+    [pushCalls],
+  );
+
+  // Linking a recipient (a bank account or a crypto address) — its own group,
+  // logged the moment "Add bank account" / "Add recipient" is confirmed.
+  const onLinkExternalAccount = useCallback(
+    (input: ExternalAccountInput, label: string) => {
+      pushCalls([externalAccountCreateCall(input)], label);
     },
     [pushCalls],
   );
@@ -601,6 +613,7 @@ export function useWalletDemoLogic() {
     walletEntry,
     skipIntro,
     onQuoteCreate,
+    onLinkExternalAccount,
     onTransferExecute,
     onCardIssued,
     onTapToPay,

@@ -62,6 +62,7 @@ export default function Page() {
             walletEntry={logic.walletEntry}
             skipIntro={logic.skipIntro}
             onQuoteCreate={logic.onQuoteCreate}
+            onLinkExternalAccount={logic.onLinkExternalAccount}
             onTransferExecute={logic.onTransferExecute}
             onCardIssued={logic.onCardIssued}
             onTapToPay={logic.onTapToPay}

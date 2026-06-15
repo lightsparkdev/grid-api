@@ -141,6 +141,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
         skipIntro={props.skipIntro}
         entry={props.walletEntry}
         onQuoteCreate={props.onQuoteCreate}
+        onLinkExternalAccount={props.onLinkExternalAccount}
         onTransferExecute={props.onTransferExecute}
         onCardIssued={props.onCardIssued}
         onTapToPay={props.onTapToPay}

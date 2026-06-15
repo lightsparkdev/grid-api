@@ -23,6 +23,7 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import {
   AddMoneySheet,
   formatUsdCents,
@@ -136,8 +137,11 @@ interface AuroraWalletScreenProps extends WalletInsightCardsProps {
   entrance?: boolean;
   /** Jump command from the sidebar — provision + open a flow out of order. */
   entry?: WalletEntry;
-  /** Amount committed in a transfer sheet — log the create-quote call. */
-  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  /** Amount committed in a transfer sheet — log the create-quote call. `dest`
+   *  lets a send reference the recipient's bank/crypto wallet. */
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
+  /** A bank/crypto recipient was added — log POST /customers/external-accounts. */
+  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   /** A virtual card finished issuing on the phone. */
@@ -152,6 +156,7 @@ export function AuroraWalletScreen({
   entrance = false,
   entry,
   onQuoteCreate,
+  onLinkExternalAccount,
   onTransferExecute,
   onCardIssued,
   onTapToPay,
@@ -664,7 +669,8 @@ export function AuroraWalletScreen({
         availableCents={availableCents}
         confirming={sheetConfirming}
         onDismiss={() => setSheetOpen(false)}
-        onQuote={(cents) => onQuoteCreate?.(sheetMode, cents)}
+        onQuote={(cents, dest) => onQuoteCreate?.(sheetMode, cents, dest)}
+        onLinkExternalAccount={onLinkExternalAccount}
         onConfirm={(cents) => {
           pendingCents.current = cents;
           setSheetConfirming(true);

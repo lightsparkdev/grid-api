@@ -10,6 +10,7 @@ import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
 import type { ActionId, WalletState } from '@/data/actions';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
+import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import styles from './AppPanel.module.scss';
 
 export interface DemoLogicPhoneSlice {
@@ -44,7 +45,8 @@ export interface DemoLogicPhoneSlice {
   popupWait: boolean;
   walletEntry?: WalletEntry;
   skipIntro?: boolean;
-  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
+  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
@@ -98,6 +100,7 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
     walletEntry: p.walletEntry,
     skipIntro: p.skipIntro,
     onQuoteCreate: p.onQuoteCreate,
+    onLinkExternalAccount: p.onLinkExternalAccount,
     onTransferExecute: p.onTransferExecute,
     onCardIssued: p.onCardIssued,
     onTapToPay: p.onTapToPay,

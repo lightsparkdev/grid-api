@@ -16,6 +16,7 @@ import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { BANK_COUNTRIES, currencyFor, recipientNamesFor, type BankCountry } from '@/data/bankCountries';
+import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { useUsdRates } from '@/hooks/useUsdRates';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
@@ -482,8 +483,11 @@ interface AddMoneySheetProps {
   onDismiss: () => void;
   /** Confirm tapped with the typed amount (cents). Parent runs Face ID. */
   onConfirm: (cents: number) => void;
-  /** Amount committed (the quote beat) — parent logs the create-quote call. */
-  onQuote?: (cents: number) => void;
+  /** Amount committed (the quote beat) — parent logs the create-quote call.
+   *  `dest` lets a send reference the recipient's bank/crypto wallet. */
+  onQuote?: (cents: number, dest?: TransferDest) => void;
+  /** A bank/crypto recipient was added — parent logs POST /customers/external-accounts. */
+  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
 }
 
 /**
@@ -503,6 +507,7 @@ export function AddMoneySheet({
   onDismiss,
   onConfirm,
   onQuote,
+  onLinkExternalAccount,
 }: AddMoneySheetProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -646,6 +651,17 @@ export function AddMoneySheet({
     };
     if (isSend) setSavedRecipients((r) => [...r, bank]);
     else setSavedBanks((r) => [...r, bank]);
+    onLinkExternalAccount?.(
+      {
+        kind: 'bank',
+        accountType: pickedCountry.accountType,
+        currency: currencyFor(pickedCountry),
+        bankName: bank.bankName,
+        fields: formValues,
+        beneficiary: formBeneficiary,
+      },
+      isSend ? 'Add recipient' : 'Add bank account',
+    );
     setSelectedBankId(bank.id);
     go('banks', true);
   };
@@ -659,6 +675,10 @@ export function AddMoneySheet({
       network: 'Solana',
     };
     setSavedRecipients((r) => [...r, recipient]);
+    onLinkExternalAccount?.(
+      { kind: 'crypto', address: recipient.address, network: recipient.network },
+      'Add recipient',
+    );
     setSelectedBankId(recipient.id);
     setPasted(false);
     setPastedAddress('');
@@ -771,7 +791,13 @@ export function AddMoneySheet({
   const tryContinue = () => {
     if (confirming || quoting) return;
     if (cents > 0 && (mode === 'add' || cents <= availableCents)) {
-      onQuote?.(cents);
+      // Send references the picked recipient: crypto wallet vs bank off-ramp.
+      const dest: TransferDest | undefined = isSend
+        ? selectedCrypto
+          ? { kind: 'crypto' }
+          : { kind: 'bank', currency: localCurrency }
+        : undefined;
+      onQuote?.(cents, dest);
       setQuoting(true);
       window.clearTimeout(quoteTimer.current);
       quoteTimer.current = window.setTimeout(() => {

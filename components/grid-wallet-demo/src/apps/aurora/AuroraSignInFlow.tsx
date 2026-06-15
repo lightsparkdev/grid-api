@@ -7,6 +7,7 @@ import type { AuthMethod } from '@/data/flow';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import { AuroraAuthScreen } from './AuroraAuthScreen';
 import { AuroraWalletScreen, type WalletEntry, type WalletTransferMode } from './wallet';
+import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import styles from './AuroraSignInFlow.module.scss';
 
 // The auth screen plays the sign-in intro (content out → mask dissolve → logo
@@ -35,7 +36,8 @@ interface AuroraSignInFlowProps {
   /** Jump command handed to the wallet so the sidebar can provision + open a flow. */
   entry?: WalletEntry;
   /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
-  onQuoteCreate?: (mode: WalletTransferMode, cents: number) => void;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
+  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
@@ -59,6 +61,7 @@ export function AuroraSignInFlow({
   skipIntro,
   entry,
   onQuoteCreate,
+  onLinkExternalAccount,
   onTransferExecute,
   onCardIssued,
   onTapToPay,
@@ -136,6 +139,7 @@ export function AuroraSignInFlow({
               entrance={!reduceMotion}
               entry={entry}
               onQuoteCreate={onQuoteCreate}
+              onLinkExternalAccount={onLinkExternalAccount}
               onTransferExecute={onTransferExecute}
               onCardIssued={onCardIssued}
               onTapToPay={onTapToPay}
