@@ -325,7 +325,10 @@ function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
 
 export function ApiCallList({ entries }: ApiCallListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const now = useNowTick();
+  // Re-sample every second so the live seconds (5s…59s) count up smoothly and a
+  // new call never renders the rest against a stale clock. Cheap: the per-call
+  // code blocks are memoized, so only the sub-minute rows change text.
+  const now = useNowTick(1000);
   // Reverse-chron everywhere: newest group on top, and newest call on top within
   // each group (e.g. Verify OTP above Request OTP).
   const groups = useMemo(

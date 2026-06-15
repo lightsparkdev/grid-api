@@ -3,7 +3,10 @@ export function formatRelativeTime(timestamp: number, now = Date.now()): string 
   const diffMs = Math.max(0, now - timestamp);
   const diffSec = Math.floor(diffMs / 1000);
 
-  if (diffSec < 10) return 'Just now';
+  // A brief "Just now" the instant a call fires (avoids a flickery "0s ago"),
+  // then live seconds until the minute rolls over to 1m/2m/…. The seconds tick,
+  // so the panel must re-sample ~1s — otherwise they freeze (the bug this fixed).
+  if (diffSec < 5) return 'Just now';
   if (diffSec < 60) return `${diffSec}s ago`;
 
   const diffMin = Math.floor(diffSec / 60);
