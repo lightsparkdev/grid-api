@@ -20,6 +20,7 @@ import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/app
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
+import { randomNetworkAddress, randomSolanaAddress } from '@/lib/cryptoAddresses';
 import { BANK_COUNTRIES, currencyFor, recipientNamesFor, type BankCountry } from '@/data/bankCountries';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
@@ -70,39 +71,6 @@ export interface CryptoRecipient {
 export type SavedRecipient = SavedBank | CryptoRecipient;
 
 const DEMO_BENEFICIARY = 'Ava Martinez';
-
-/** Random base58-ish address so each saved crypto recipient is distinct (demo). */
-const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-const HEX = '0123456789abcdef';
-const BECH32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-function randomFrom(set: string, n: number): string {
-  let s = '';
-  for (let i = 0; i < n; i++) s += set[Math.floor(Math.random() * set.length)];
-  return s;
-}
-function randomAddress(): string {
-  return randomFrom(BASE58, 44);
-}
-
-/** A plausible random SENDER address on a network — prefix + charset match the
- *  chain so a received-from address reads right (Receive demo; not a real key). */
-function randomNetworkAddress(network: string): string {
-  switch (network) {
-    case 'Ethereum':
-    case 'Base':
-      return `0x${randomFrom(HEX, 40)}`;
-    case 'Tron':
-      return `T${randomFrom(BASE58, 33)}`;
-    case 'Bitcoin':
-      // P2WPKH native SegWit: bc1q + 38 bech32 chars = 42 total.
-      return `bc1q${randomFrom(BECH32, 38)}`;
-    case 'Spark':
-      // bech32m, HRP "spark", fixed "pgss" payload prefix; mainnet is ~68 chars.
-      return `spark1pgss${randomFrom(BECH32, 58)}`;
-    default:
-      return randomFrom(BASE58, 44); // Solana — base58 ed25519 pubkey
-  }
-}
 
 /** "Carlos Herrera" → "Carlos H." — the Receive payer label (fiat). */
 function firstNameLastInitial(name: string): string {
@@ -361,7 +329,7 @@ export type ReceivedPayment =
     };
 
 /** Figma 109:29332 — the demo Solana address Paste drops into the send flow. */
-export const SEND_DEMO_ADDRESS = '53am6G4kK1QSKPdnmZVqkA1oeq1biAK2nEtfBosNkNV7';
+export const SEND_DEMO_ADDRESS = 'DQLoc5rpDPz9vtUv9TxApy3z8HWPB3XCTwdSmDCRn9JT';
 
 /** Middle-truncate an address to first/last 6 around an ellipsis, e.g.
  *  "53am6G…sNkNV7" (only when it'd actually shorten). Used everywhere an
@@ -558,12 +526,12 @@ interface DepositChain {
 }
 
 const DEPOSIT_CHAINS: DepositChain[] = [
-  { id: 'spark', name: 'Spark', address: 'spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu', logo: '/assets/networks/icon-network-spark.svg', time: 'Instant' },
-  { id: 'ethereum', name: 'Ethereum', address: '0x71C7656EC7ab88b098defB751B7401B5f6d89760', logo: '/assets/networks/icon-network-ethereum.svg', time: '1 min' },
-  { id: 'solana', name: 'Solana', address: '7xECDz9kqYbN3pR5sT8uV2wX4yZ1aB6cD7eF8gHSew4H', logo: '/assets/networks/icon-network-solana.svg', time: 'Instant' },
-  { id: 'base', name: 'Base', address: '0x28c4A1f3b9D2e5C7a8F0b1c2D3e4F5a6B7c85858', logo: '/assets/networks/icon-network-base.svg', time: 'Instant' },
-  { id: 'tron', name: 'Tron', address: 'TWq9sN4rPxKpV3hYmLcZ9aB2dE5fG6hJkR', logo: '/assets/networks/icon-network-tron.svg', time: 'Instant' },
-  { id: 'btc', name: 'Bitcoin', address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', logo: '/assets/networks/icon-network-bitcoin.svg', time: '10 min' },
+  { id: 'spark', name: 'Spark', address: 'spark1pgssymd2tclhssydekkfgcj6ldu4d7z0pprcw7nxfng9hktmk7tpmekd4v202u', logo: '/assets/networks/icon-network-spark.svg', time: 'Instant' },
+  { id: 'ethereum', name: 'Ethereum', address: '0x7c22793FDae21bBB841B7E25594939Bfdf77c6Cb', logo: '/assets/networks/icon-network-ethereum.svg', time: '1 min' },
+  { id: 'solana', name: 'Solana', address: '3JZ4hmYF6u5es6ZtfpuvXxqFZdVVixFZwYrGKuWtHJ5G', logo: '/assets/networks/icon-network-solana.svg', time: 'Instant' },
+  { id: 'base', name: 'Base', address: '0x35e6Ea58548aA9Af6b9b059d565888507FeD8C1e', logo: '/assets/networks/icon-network-base.svg', time: 'Instant' },
+  { id: 'tron', name: 'Tron', address: 'TF3YB383dJFpxvezNwFVKMEQhSeJ5JTerq', logo: '/assets/networks/icon-network-tron.svg', time: 'Instant' },
+  { id: 'btc', name: 'Bitcoin', address: 'bc1qsu2qrhp5vq5csy97qv3w8eku8wrh2l7dtenv7p', logo: '/assets/networks/icon-network-bitcoin.svg', time: '10 min' },
 ];
 
 /** The instant rail an inbound transfer arrives on, by corridor (PaymentRail
@@ -920,7 +888,7 @@ export function AddMoneySheet({
     if (saving) return;
     const recipient: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
-      address: pastedAddress || randomAddress(),
+      address: pastedAddress || randomSolanaAddress(),
       network: 'Solana',
     };
     setSaving(true);
@@ -949,7 +917,7 @@ export function AddMoneySheet({
     if (saving) return;
     const dest: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
-      address: pastedAddress || randomAddress(),
+      address: pastedAddress || randomSolanaAddress(),
       network: 'Solana',
     };
     setSaving(true);
@@ -2019,7 +1987,7 @@ export function AddMoneySheet({
                               if (isSend) addCryptoRecipient();
                               else useCryptoWithdraw();
                             } else {
-                              setPastedAddress(randomAddress());
+                              setPastedAddress(randomSolanaAddress());
                               setPasted(true);
                             }
                           }}
