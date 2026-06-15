@@ -9,5 +9,5 @@ allOf:
       items:
         type: string
         enum:
-        - MOBILE_MONEY
         - BANK_TRANSFER
+        - MOBILE_MONEY
