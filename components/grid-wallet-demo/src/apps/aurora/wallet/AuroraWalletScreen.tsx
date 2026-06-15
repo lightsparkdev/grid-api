@@ -108,6 +108,9 @@ const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
 /** A flow switch returns to home first (aurora out ≈ 0.3s) before opening the
  *  target sheet/view — long enough that home reads as the in-between beat. */
 const ENTRY_HOME_SETTLE_MS = 350;
+/** A cold jump straight off the auth screen lands on the wallet, lets the home
+ *  entrance reveal play, THEN opens the flow — so it reads "home → sheet". */
+const COLD_ENTRY_SETTLE_MS = 700;
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
@@ -341,6 +344,18 @@ export function AuroraWalletScreen({
   // first, then open the target — works whether the wallet just mounted (cold
   // jump from the auth screen) or is already up (warm jump).
   const lastEntryNonce = useRef(0);
+  // True only for the very first commit. A jump that arrives on mount came
+  // straight off the auth screen (cold) — it should let the home land first.
+  const coldMountRef = useRef(true);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      coldMountRef.current = false;
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+  // The cold-open timer lives in a ref (not an effect cleanup) so StrictMode's
+  // dev double-invoke can't clear it before it fires — see the cold branch below.
+  const coldOpenTimer = useRef(0);
   useEffect(() => {
     if (!entry || entry.nonce === lastEntryNonce.current) return;
     lastEntryNonce.current = entry.nonce;
@@ -355,6 +370,9 @@ export function AuroraWalletScreen({
       (entry.open === 'card' && isIssuance) ||
       (entry.open === 'tap' && cardView === 'home');
     if (alreadyHere) return;
+
+    // A newly applied jump cancels a pending cold-open from a prior rapid tap.
+    window.clearTimeout(coldOpenTimer.current);
 
     if (entry.provision?.issued) setIssued(true);
     if (typeof entry.provision?.fundCents === 'number') setDeltaCents(entry.provision.fundCents);
@@ -383,8 +401,25 @@ export function AuroraWalletScreen({
       }
     };
 
-    // Already on a clean home screen (incl. a cold jump that just mounted) — open
-    // the target right away, no detour.
+    // Cold jump off the auth screen: the wallet is mounting now. Let the home's
+    // entrance reveal land FIRST, then open the flow — so it reads "home →
+    // sheet", not the sheet riding in on the wallet's entrance. (No entrance to
+    // wait for — e.g. reduced motion — opens right away.)
+    if (coldMountRef.current) {
+      if (!entrance) {
+        openTarget();
+        return;
+      }
+      // No effect cleanup on purpose: StrictMode runs effect cleanups between
+      // its two dev mount passes and the nonce guard makes the second pass a
+      // no-op — a cleanup here would clear the timer with nothing to reschedule
+      // it (home shows, sheet never opens). A stray fire after a real unmount
+      // just no-ops on the gone tree; a new jump clears it (above).
+      coldOpenTimer.current = window.setTimeout(openTarget, COLD_ENTRY_SETTLE_MS);
+      return;
+    }
+
+    // Already on a clean home screen — open the target right away, no detour.
     const awayFromHome =
       cardView !== 'closed' ||
       sheetOpen ||
