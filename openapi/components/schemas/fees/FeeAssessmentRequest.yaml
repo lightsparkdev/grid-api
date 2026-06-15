@@ -1,0 +1,34 @@
+type: object
+description: >-
+  Request to assess a defined fee against an account. The chosen fixed amount
+  and variable fee rate must fall within the ranges defined on the fee.
+required:
+  - feeId
+  - accountId
+properties:
+  feeId:
+    type: string
+    description: The identifier of the fee to assess.
+    example: Fee:019542f5-b3e7-1d02-0000-000000000010
+  accountId:
+    type: string
+    description: The identifier of the account to charge the fee against.
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  fixedAmount:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      The fixed fee amount to assess, in the smallest unit of the currency
+      (e.g. cents). Required if the fee defines a fixedFeeRange, and must fall
+      within that range.
+    example: 250
+  variableFeeRate:
+    type: integer
+    minimum: 0
+    maximum: 10000
+    description: >-
+      The variable fee rate to assess, in basis points (e.g. 100 = 1.00%).
+      Required if the fee defines a variableFeeRange, and must fall within that
+      range.
+    example: 100

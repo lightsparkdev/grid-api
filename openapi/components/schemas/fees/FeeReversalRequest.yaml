@@ -1,0 +1,23 @@
+type: object
+description: >-
+  Request to reverse all or part of a previously assessed fee.
+required:
+  - transactionId
+properties:
+  transactionId:
+    type: string
+    description: The identifier of the fee assessment transaction to reverse.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The amount to reverse, in the smallest unit of the currency (e.g. cents).
+      For a partial reversal, provide an amount less than the original fee. If
+      omitted, the full assessed fee is reversed.
+    example: 100
+  reason:
+    type: string
+    description: Human-readable reason for the reversal.
+    example: Goodwill credit issued to customer

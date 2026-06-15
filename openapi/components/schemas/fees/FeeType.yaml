@@ -1,0 +1,8 @@
+type: string
+enum:
+  - TRANSFER_OUT
+  - TRANSFER_IN
+description: >-
+  The type of operation a fee applies to. TRANSFER_OUT applies to transfer-out
+  operations; TRANSFER_IN applies to transfer-in operations.
+example: TRANSFER_OUT

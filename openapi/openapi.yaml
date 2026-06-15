@@ -77,6 +77,10 @@ tags:
       Card management endpoints. Issue debit cards against an internal
       account, freeze / unfreeze, close, manage card funding sources, and
       list card transactions.
+  - name: Fees
+    description: >-
+      Endpoints for platforms to define the fees they charge their customers and
+      to assess or reverse those fees against an account.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -280,6 +284,14 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /fees:
+    $ref: paths/fees/fees.yaml
+  /fees/{feeId}:
+    $ref: paths/fees/fees_{feeId}.yaml
+  /fee-assessments:
+    $ref: paths/fees/fee_assessments.yaml
+  /fee-reversals:
+    $ref: paths/fees/fee_reversals.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
