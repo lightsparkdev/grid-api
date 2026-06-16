@@ -19,6 +19,10 @@
     /* Primary glass CTA (sheets) — brand purple instead of iOS blue. */
     --text-glass-primary-backdrop: linear-gradient(180deg, #a770ff 0%, #9147ff 55%, #7a30e6 100%);
 
+    /* Brand wash — the balance-hero card + the card-issuance background (in place
+       of Aurora's WebGL field). */
+    --app-wash: linear-gradient(170deg, #a770ff 0%, #9147ff 56%, #8434f0 100%);
+
     /* Sheets are edge-to-edge here (inset 0), so the content gets compensatory
        breathing room off the screen edges. */
     --sheet-content-pad: 8px;

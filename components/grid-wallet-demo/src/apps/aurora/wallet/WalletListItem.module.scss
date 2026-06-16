@@ -119,6 +119,12 @@
   color: var(--ios-label-secondary);
 }
 
+/* Twitch-style colored counterparty handle inside the detail line. */
+.handle {
+  font-weight: 510;
+  color: var(--app-tint, var(--ios-label-primary));
+}
+
 /* Figma 90:13701 (Amounts) — Footnote/Emphasized 13/18, -0.08, right-aligned. */
 .amount {
   flex-shrink: 0;

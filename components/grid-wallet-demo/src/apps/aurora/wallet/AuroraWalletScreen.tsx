@@ -16,6 +16,8 @@ import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-
 import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
+import { SkinTabBar } from '@/apps/skinned/blocks/SkinTabBar';
+import type { SkinHomeConfig } from '@/apps/skinned/types';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { GlassToast, type GlassToastData } from '@/apps/shared/GlassToast';
@@ -164,6 +166,9 @@ interface AuroraWalletScreenProps {
   onTapToPay?: (cents: number, merchant: string) => void;
   /** A payment was received (Receive flow) — log the inbound webhook + settle. */
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
+  /** Skin home config — repaints the header/hero/actions/insights/activity/tab bar
+   *  + issuance background. Omit → the Aurora-default wallet home. */
+  home?: SkinHomeConfig;
 }
 
 /** First + last initial for a contact avatar ("Carlos Herrera" → "CH"). */
@@ -270,6 +275,7 @@ export function AuroraWalletScreen({
   onCardIssued,
   onTapToPay,
   onReceivePayment,
+  home,
 }: AuroraWalletScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -326,13 +332,34 @@ export function AuroraWalletScreen({
   const [toast, setToast] = useState<GlassToastData | null>(null);
   const showToast = (text: string) => setToast({ id: Date.now(), text });
 
-  // Home Activity = money movements + card transactions, newest first. Derived
-  // (not double-inserted) so each WalletListCard instance keeps its own
-  // fresh-row bookkeeping — the grow-in insert still runs per list.
-  const homeActivity = useMemo(
-    () => [...activity, ...transactions].sort((a, b) => b.timestamp - a.timestamp),
-    [activity, transactions],
+  // Skin seed activity — config fixtures converted to live timestamps once on
+  // mount (so the "2m ago" labels stay correct as time passes).
+  const [seedActivity] = useState<WalletListItemData[]>(() =>
+    (home?.activity?.fixtures ?? []).map(({ agoMinutes, ...row }) => ({
+      ...row,
+      timestamp: Date.now() - agoMinutes * 60_000,
+    })),
   );
+
+  // Home Activity = money movements + card transactions + skin seed, newest
+  // first. Derived (not double-inserted) so each WalletListCard instance keeps
+  // its own fresh-row bookkeeping — the grow-in insert still runs per list.
+  const homeActivity = useMemo(
+    () =>
+      [...activity, ...transactions, ...seedActivity].sort((a, b) => b.timestamp - a.timestamp),
+    [activity, transactions, seedActivity],
+  );
+
+  // Skin Activity filter tabs (e.g. All / Sent / Received). Received = a "+"
+  // amount; everything else reads as Sent. No tabs config → Aurora's plain list.
+  const activityTabs = home?.activity?.tabs;
+  const [activityTab, setActivityTab] = useState(0);
+  const filteredActivity = useMemo(() => {
+    const tab = activityTabs?.[activityTab];
+    if (tab === 'Sent') return homeActivity.filter((r) => !r.amount.includes('+'));
+    if (tab === 'Received') return homeActivity.filter((r) => r.amount.includes('+'));
+    return homeActivity;
+  }, [activityTabs, activityTab, homeActivity]);
 
   // Sign-in entrance: card → balance → actions → insights reveal in once on
   // mount (the issuance stagger language); the Activity card's own skeleton
@@ -630,11 +657,15 @@ export function AuroraWalletScreen({
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, transition: AURORA_IN }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transition: AURORA_OUT }}
           >
-            <AuroraBackground
-              showRadialGradient={false}
-              className={styles.fullAuroraBg}
-              fieldId="issuance"
-            />
+            {home?.issuanceBg === 'wash' ? (
+              <div className={styles.fullWash} />
+            ) : (
+              <AuroraBackground
+                showRadialGradient={false}
+                className={styles.fullAuroraBg}
+                fieldId="issuance"
+              />
+            )}
             <div
               className={clsx(
                 styles.auroraFade,
@@ -656,15 +687,46 @@ export function AuroraWalletScreen({
               exit={HEADER_HIDDEN}
               transition={HEADER_TRANSITION}
             >
-              <h1 className={styles.title}>Aurora</h1>
-              <GlassSymbolButton
-                aria-label="Settings"
-                size={40}
-                type="button"
-                glass={{ brightness: headerGlassBrightness(theme) }}
-              >
-                <SfSymbol name="gearshape.fill" size={17} />
-              </GlassSymbolButton>
+              {home?.header ? (
+                <>
+                  {home.header.avatarSrc ? (
+                    <img
+                      className={styles.avatar}
+                      src={home.header.avatarSrc}
+                      alt=""
+                      aria-hidden
+                      draggable={false}
+                    />
+                  ) : (
+                    <h1 className={styles.title}>{home.header.title ?? 'Wallet'}</h1>
+                  )}
+                  <div className={styles.headerButtons}>
+                    {home.header.buttons?.map((b) => (
+                      <button
+                        key={b.ariaLabel}
+                        type="button"
+                        className={styles.headerButton}
+                        aria-label={b.ariaLabel}
+                        onClick={b.target === 'openCard' ? openCard : undefined}
+                      >
+                        <b.Icon size={24} />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h1 className={styles.title}>Aurora</h1>
+                  <GlassSymbolButton
+                    aria-label="Settings"
+                    size={40}
+                    type="button"
+                    glass={{ brightness: headerGlassBrightness(theme) }}
+                  >
+                    <SfSymbol name="gearshape.fill" size={17} />
+                  </GlassSymbolButton>
+                </>
+              )}
             </motion.div>
           ) : isTap ? null : (
             <motion.div
@@ -715,7 +777,10 @@ export function AuroraWalletScreen({
         transition={CARD_TRANSITION}
       >
         {/* The card is a single element that carries through every state — it
-            layout-animates between the top slot and the centered issuance slot. */}
+            layout-animates between the top slot and the centered issuance slot.
+            Skins that lead with a balance hero hide it on the closed home; it
+            still mounts for the issuance/card-home flow (opened from the header). */}
+        {!(home?.hideHomeCard && cardView === 'closed') && (
         <div
           className={clsx(
             styles.cardArea,
@@ -753,6 +818,7 @@ export function AuroraWalletScreen({
           </motion.div>
           {cardView === 'creating' && <CreatingCaption />}
         </div>
+        )}
 
         {/* Wallet sheet — always mounted; translates straight down out of the way
             when the card opens (no fade). It drops out of the flex flow while open
@@ -765,39 +831,81 @@ export function AuroraWalletScreen({
           transition={SHEET_SLIDE}
         >
           <WalletSheet dismissed={isOpen}>
-            <motion.div {...enter(1)}>
-              <BalanceHero balance={formatUsdCents(availableCents)} />
-            </motion.div>
-            <motion.div {...enter(2)}>
-              <WalletActions
-                onAdd={() => openSheet('add')}
-                onWithdraw={() => openSheet('withdraw')}
-                onSend={() => setSendReceiveOpen(true)}
-              />
-            </motion.div>
+            <div className={clsx(styles.heroGroup, home?.heroStyle === 'wash' && styles.heroWash)}>
+              <motion.div {...enter(1)}>
+                <BalanceHero balance={formatUsdCents(availableCents)} label={home?.balanceLabel} />
+              </motion.div>
+              <motion.div {...enter(2)}>
+                <WalletActions
+                  actions={home?.actions}
+                  onAdd={() => openSheet('add')}
+                  onWithdraw={() => openSheet('withdraw')}
+                  onSend={() => setSendReceiveOpen(true)}
+                />
+              </motion.div>
+            </div>
             <motion.div {...enter(3)}>
               <WalletInsightCards
+                cards={home?.insightCards}
                 weeklyBars={weeklyBars}
                 weeklySpentCents={weeklySpentCents}
                 earningsTodayCents={earningsTodayCents}
                 apyPercent={EARNINGS_APY_PERCENT}
               />
             </motion.div>
-            <WalletListSection
-              title="Activity"
-              emptyTitle="Nothing here, yet"
-              emptySub={
-                <>
-                  Fund your account to start
-                  <br />
-                  using your wallet
-                </>
-              }
-              cta={{ label: 'Add money', onClick: () => openSheet('add') }}
-              items={homeActivity}
-              concentricBottom
-              grow
-            />
+            {activityTabs ? (
+              <>
+                <div className={styles.activityTabs} role="tablist" aria-label="Activity filter">
+                  {activityTabs.map((t, i) => (
+                    <button
+                      key={t}
+                      type="button"
+                      role="tab"
+                      aria-selected={i === activityTab}
+                      className={clsx(
+                        styles.activityTab,
+                        i === activityTab && styles.activityTabActive,
+                      )}
+                      onClick={() => setActivityTab(i)}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <WalletListSection
+                  title="Activity"
+                  hideTitle
+                  emptyTitle="Nothing here, yet"
+                  emptySub={
+                    <>
+                      Fund your account to start
+                      <br />
+                      using your wallet
+                    </>
+                  }
+                  cta={{ label: 'Add money', onClick: () => openSheet('add') }}
+                  items={filteredActivity}
+                  concentricBottom
+                  grow
+                />
+              </>
+            ) : (
+              <WalletListSection
+                title="Activity"
+                emptyTitle="Nothing here, yet"
+                emptySub={
+                  <>
+                    Fund your account to start
+                    <br />
+                    using your wallet
+                  </>
+                }
+                cta={{ label: 'Add money', onClick: () => openSheet('add') }}
+                items={homeActivity}
+                concentricBottom
+                grow
+              />
+            )}
           </WalletSheet>
         </motion.div>
 
@@ -862,6 +970,10 @@ export function AuroraWalletScreen({
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Skin bottom tab bar (decorative) — home only; hidden during the card /
+          tap flows like the header. */}
+      {home?.tabBar && !isOpen && !isTap ? <SkinTabBar {...home.tabBar} /> : null}
 
       {/* Send or receive chooser — Send chains into the money sheet below
           (rendered first so the rising money sheet stacks over its exit). */}

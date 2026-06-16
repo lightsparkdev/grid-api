@@ -128,6 +128,7 @@ export function SkinnedSignInFlow({
             <AuroraWalletScreen
               entrance={!reduceMotion}
               entry={entry}
+              home={skin.config.home}
               onQuoteCreate={onQuoteCreate}
               onLinkExternalAccount={onLinkExternalAccount}
               onTransferExecute={onTransferExecute}

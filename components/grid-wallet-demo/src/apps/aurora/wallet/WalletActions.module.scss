@@ -3,10 +3,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  /* Skins inside a wash card tighten this via --actions-pad. */
+  padding: var(--actions-pad, 8px 16px);
 }
 
 .button {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* Skin hero pills: dark translucent on the brand wash, white glyph + label
+   (overrides the bordered surface). */
+:global([data-app='wiggle']) .button {
+  background: rgba(0, 0, 0, 0.28);
+  border: 0;
+  box-shadow: none;
+  color: #ffffff;
 }

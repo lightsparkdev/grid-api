@@ -103,6 +103,68 @@ $card-press-duration: 0.28s;
   gap: 4px;
 }
 
+/* ── Skin metric card (icon-circle + value + caption) ─────────────────────── */
+
+.metricCard {
+  @extend .cardBase;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.metricTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.metricIcon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  corner-shape: round;
+  color: #fff;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+.metricValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ios-label-primary);
+  @include ios.ios-text-title-2;
+  @include ios.ios-type-rounded;
+  @include ios.ios-type-rounded-bold(var(--ios-type-title-2-opsz));
+}
+
+.metricUnit {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-secondary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.metricCaption {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-footnote;
+  font-weight: 510;
+  color: var(--ios-label-secondary);
+}
+
+.metricCaptionPositive {
+  color: var(--p-green);
+}
+
 .cardTitle {
   margin: 0;
   width: 100%;

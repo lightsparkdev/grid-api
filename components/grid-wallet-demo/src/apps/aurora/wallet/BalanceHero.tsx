@@ -7,6 +7,8 @@ import styles from './BalanceHero.module.scss';
 interface BalanceHeroProps {
   /** Formatted USD, e.g. "$5,000.00". */
   balance: string;
+  /** Caption above the amount (default "Total balance"). */
+  label?: string;
 }
 
 function parseAmount(value: string): { dollars: number; cents: number } {
@@ -27,7 +29,7 @@ const NUMERIC_PAD = { padding: '0.08em 0' };
  * iOS-numericText port — split into whole + cents instances so the cents keep
  * the dimmer treatment.
  */
-export function BalanceHero({ balance }: BalanceHeroProps) {
+export function BalanceHero({ balance, label = 'Total balance' }: BalanceHeroProps) {
   const target = parseAmount(balance);
   const [shown, setShown] = useState({ dollars: 0, cents: 0 });
 
@@ -37,8 +39,8 @@ export function BalanceHero({ balance }: BalanceHeroProps) {
   }, [target.dollars, target.cents]);
 
   return (
-    <section className={styles.hero} aria-label={`Total balance ${balance}`}>
-      <p className={styles.label}>Total balance</p>
+    <section className={styles.hero} aria-label={`${label} ${balance}`}>
+      <p className={styles.label}>{label}</p>
       <p className={styles.amount}>
         <NumericText
           className={styles.whole}

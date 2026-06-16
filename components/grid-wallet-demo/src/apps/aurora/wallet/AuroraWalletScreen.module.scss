@@ -337,3 +337,118 @@
   z-index: 50;
   pointer-events: none;
 }
+
+/* ── Skin seams (config-driven; absent for Aurora) ────────────────────────── */
+
+/* Skins that hide the home debit card lead with the balance hero, so the sheet
+   has no card to overlap — sit it flush under the header instead of pulling it
+   up by the card peek (176px). */
+:global([data-app='wiggle']) .root {
+  --wallet-sheet-overlap: 0px;
+}
+
+/* Solid brand wash behind the card during a skin's issuance flow (vs the aurora
+   field). The .auroraFade gradient above resolves it into the wallet bg. */
+.fullWash {
+  position: absolute;
+  inset: 0;
+  background: var(--app-wash, #9147ff);
+}
+
+/* Skin home header: avatar (left) + icon buttons (right). Raised above the body
+   so the buttons stay tappable (Aurora's title/gear sit behind the scroll). */
+:global([data-app='wiggle']) .headerHome {
+  z-index: 3;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  corner-shape: round;
+  object-fit: cover;
+  background: var(--ios-fill-tertiary);
+}
+
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+/* heroGroup is invisible to layout for Aurora (balance + actions stay direct
+   flex children of the sheet); a skin's `wash` flips it to a painted card. */
+.heroGroup {
+  display: contents;
+}
+
+.heroWash {
+  display: block;
+  margin: 8px 16px;
+  padding: 8px 0 16px;
+  border-radius: 20px;
+  corner-shape: var(--corner-shape);
+  background: var(--app-wash, #9147ff);
+  /* Repaint the balance + action pills light on the wash (read by BalanceHero /
+     WalletActions via these vars). */
+  --balance-label-color: rgba(255, 255, 255, 0.72);
+  --balance-amount-color: #ffffff;
+  --balance-decimals-color: rgba(255, 255, 255, 0.6);
+  --balance-pad: 16px 20px 12px;
+  --actions-pad: 0 20px 4px;
+}
+
+/* Activity filter tabs (skin) — sit where the "Activity" title would be. */
+.activityTabs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px 8px;
+}
+
+.activityTab {
+  position: relative;
+  padding: 2px 0 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--ios-label-secondary);
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.activityTabActive {
+  color: var(--ios-label-primary);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--app-tint, var(--ios-label-primary));
+  }
+}

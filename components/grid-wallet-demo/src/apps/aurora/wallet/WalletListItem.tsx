@@ -31,8 +31,12 @@ export interface WalletListItemData {
   /** Person counterparty — render the initials avatar (wins over icon/image). */
   avatar?: WalletItemAvatar;
   title: string;
-  /** Merchant detail line, e.g. "Tap to Pay". */
+  /** Merchant detail line, e.g. "Tap to Pay" or "from". */
   detail: string;
+  /** Optional counterparty handle appended to `detail` (e.g. "@caseoh_"). */
+  handle?: string;
+  /** Accent color for `handle` (Twitch-style chat colors). */
+  handleColor?: string;
   /** Epoch ms — rendered as a live relative label ("Just now", "2m ago"…). */
   timestamp: number;
   /** Formatted amount, e.g. "$7.32". */
@@ -57,6 +61,8 @@ export function WalletListItem({
   avatar,
   title,
   detail,
+  handle,
+  handleColor,
   time,
   amount,
 }: WalletListItemProps) {
@@ -88,7 +94,20 @@ export function WalletListItem({
         <div className={styles.container}>
           <div className={styles.labels}>
             <p className={styles.title}>{title}</p>
-            <p className={styles.sub}>{detail}</p>
+            <p className={styles.sub}>
+              {detail}
+              {handle ? (
+                <>
+                  {detail ? ' ' : ''}
+                  <span
+                    className={styles.handle}
+                    style={handleColor ? { color: handleColor } : undefined}
+                  >
+                    {handle}
+                  </span>
+                </>
+              ) : null}
+            </p>
             <p className={styles.sub}>{time}</p>
           </div>
           <p className={styles.amount}>{amount}</p>
