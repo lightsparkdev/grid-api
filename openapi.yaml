@@ -16856,6 +16856,8 @@ components:
         - UTILITY_BILL
         - DONATION
         - TRAVEL
+        - FAMILY_SUPPORT
+        - SALARY_PAYMENT
         - OTHER
     QuoteRequest:
       type: object
