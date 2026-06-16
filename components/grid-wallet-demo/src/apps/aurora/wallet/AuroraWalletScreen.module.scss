@@ -342,9 +342,15 @@
 
 /* Skins that hide the home debit card lead with the balance hero, so the sheet
    has no card to overlap — sit it flush under the header instead of pulling it
-   up by the card peek (176px). */
+   up by the card peek (176px). Light home reads on pure white; dark keeps the
+   brand dark base (else the white leaks into dark mode via source order). */
 :global([data-app='wiggle']) .root {
   --wallet-sheet-overlap: 0px;
+  --wallet-bg: #f7f7f8;
+}
+
+:global([data-theme='dark']) :global([data-app='wiggle']) .root {
+  --wallet-bg: #0e0e10;
 }
 
 /* Solid brand wash behind the card during a skin's issuance flow (vs the aurora
@@ -414,20 +420,23 @@
   --balance-amount-color: #ffffff;
   --balance-decimals-color: rgba(255, 255, 255, 0.6);
   --balance-pad: 16px 20px 12px;
-  --actions-pad: 0 20px 4px;
+  --actions-pad: 0 16px 4px;
 }
 
-/* Activity filter tabs (skin) — sit where the "Activity" title would be. */
+/* Activity filter tabs (skin) — sit where the "Activity" title would be. No row
+   gap (each tab's 8px side padding provides the spacing); reduced row padding (16)
+   keeps the first tab's text aligned to the content margin. */
 .activityTabs {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 12px 24px 8px;
+  gap: 0;
+  padding: 12px 16px 8px;
 }
 
 .activityTab {
   position: relative;
-  padding: 2px 0 6px;
+  /* Bottom padding sets the gap between the tab text and its underline. */
+  padding: 2px 8px 12px;
   border: 0;
   background: none;
   cursor: pointer;
@@ -440,15 +449,15 @@
 
 .activityTabActive {
   color: var(--ios-label-primary);
+}
 
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--app-tint, var(--ios-label-primary));
-  }
+/* Shared (layoutId) underline — glides between tabs instead of repainting. */
+.activityIndicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--app-tint, var(--ios-label-primary));
 }

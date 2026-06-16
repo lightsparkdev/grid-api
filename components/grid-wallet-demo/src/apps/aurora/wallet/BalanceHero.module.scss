@@ -11,6 +11,25 @@
   word-break: break-word;
 }
 
+:global([data-app='wiggle']) .hero {
+  gap: 0;
+}
+
+/* Nudge the label in to sit over the amount's optical edge (the $ glyph reads
+   a hair left of the text origin). */
+:global([data-app='wiggle']) .label {
+  padding-left: 4px;
+}
+
+/* Balance reads in the brand font (Inter), not SF Pro Rounded; tight -3% tracking.
+   Size/line-height stay from ios-text-wallet-balance; reset the rounded GRAD/opsz
+   axes to a plain bold weight for Inter. */
+:global([data-app='wiggle']) .amount {
+  font-family: var(--font-family-inter);
+  font-variation-settings: 'wght' 700;
+  letter-spacing: -0.03em;
+}
+
 /* Footnote/Emphasized */
 .label {
   margin: 0;

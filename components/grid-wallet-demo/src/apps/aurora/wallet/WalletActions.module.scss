@@ -12,11 +12,45 @@
   min-width: 0;
 }
 
-/* Skin hero pills: dark translucent on the brand wash, white glyph + label
-   (overrides the bordered surface). */
+/* Icon-only action (e.g. Send ↑↓) is a true circle: equal padding around the
+   24px glyph makes width == height regardless of flex (aspect-ratio doesn't
+   transfer here — flex-basis:auto pins the width to content). 13px ≈ the labeled
+   pill height. width:auto cancels ContentAreaButton's width:100%; the double
+   class beats that single-class rule. */
+.button.buttonHug {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 13px;
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+/* Skin hero pills: a SOLID dark-purple on the brand wash (not a translucent
+   black) so the auth-style white-wash hover lifts cleanly to a brighter purple,
+   instead of desaturating to mud — black + white overlays read gray. */
 :global([data-app='wiggle']) .button {
-  background: rgba(0, 0, 0, 0.28);
+  background: #642cb0;
   border: 0;
   box-shadow: none;
   color: #ffffff;
+  /* Darken the solid purple on hover/press (a white wash washes it out). */
+  --content-area-hover: rgba(0, 0, 0, 0.14);
+  --content-area-active: rgba(0, 0, 0, 0.22);
+
+  /* Central glyphs bake a 1.5 stroke — render these at a true 2px. */
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+/* Tighter icon→label gap on the labeled actions. */
+:global([data-app='wiggle']) .button:not(.buttonHug) {
+  gap: 4px;
+}
+
+/* The +/↙ glyphs carry built-in whitespace in their 24px box, so the centered
+   content reads with a heavier left gap. Pull the icon back to balance it
+   optically (the icon span is the button's first child). */
+:global([data-app='wiggle']) .button:not(.buttonHug) > span:first-child {
+  margin-left: -4px;
 }

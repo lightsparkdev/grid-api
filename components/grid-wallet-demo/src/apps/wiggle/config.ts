@@ -1,4 +1,5 @@
 import { IconHomeOpen } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconHomeOpen';
+import { IconHomeOpen as IconHomeOpenFilled } from '@central-icons-react/round-filled-radius-0-stroke-1.5/IconHomeOpen';
 import { IconVideoClip } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconVideoClip';
 import { IconAnalytics } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconAnalytics';
 import { IconPeople } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconPeople';
@@ -85,23 +86,26 @@ export const WIGGLE_CONFIG: SkinConfig = {
       {
         Icon: IconGrowth,
         accent: '#00c16e',
-        value: '6%',
+        value: '5%',
         unit: 'APY',
-        caption: '+$25.00 this month',
+        // Live "+$X today" from the balance, like the Aurora earnings card.
+        caption: '+$0.00 today',
         captionPositive: true,
+        dynamic: 'earnings',
       },
       {
         Icon: IconHeart,
         accent: '#ff5fa2',
         value: '1345',
-        caption: '+56 followers from last stream',
+        captionAmount: '+56',
+        caption: 'followers from last stream',
       },
     ],
     issuanceBg: 'wash',
     hideHomeCard: true,
     tabBar: {
       items: [
-        { Icon: IconHomeOpen, label: 'Home', active: true },
+        { Icon: IconHomeOpen, activeIcon: IconHomeOpenFilled, label: 'Home', active: true },
         { Icon: IconVideoClip, label: 'Content' },
         { Icon: IconAnalytics, label: 'Analytics' },
         { Icon: IconPeople, label: 'Channel' },

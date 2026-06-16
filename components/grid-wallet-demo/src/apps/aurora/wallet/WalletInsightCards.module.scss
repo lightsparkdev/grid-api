@@ -113,6 +113,9 @@ $card-press-duration: 0.28s;
   gap: 16px;
   justify-content: space-between;
   padding: 16px;
+  /* Flat gray surface in light; dark keeps the elevated-card value (its
+     [data-theme='dark'] rule outranks this single-class override). */
+  background: #efeff1;
 }
 
 .metricTop {
@@ -136,6 +139,9 @@ $card-press-duration: 0.28s;
 
   svg path {
     stroke-width: 2;
+    /* Glyph is drawn at 20 in a 24 viewBox — keep a true 2 screen px instead of
+       scaling down to ~1.67. */
+    vector-effect: non-scaling-stroke;
   }
 }
 
@@ -167,6 +173,19 @@ $card-press-duration: 0.28s;
 
 .metricCaptionPositive {
   color: var(--p-green);
+}
+
+/* Bold the live earnings amount; the "today" qualifier stays regular + secondary.
+   The caption is a variable font (ios-text-footnote sets the wght axis via
+   font-variation-settings), so plain font-weight is ignored — set the axis. */
+.metricCaptionAmount {
+  font-weight: 700;
+  font-variation-settings: 'wght' 700;
+}
+
+.metricCaptionMuted {
+  font-weight: 510;
+  color: var(--ios-label-secondary);
 }
 
 .cardTitle {

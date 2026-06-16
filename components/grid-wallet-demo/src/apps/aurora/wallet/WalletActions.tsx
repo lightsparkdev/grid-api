@@ -24,7 +24,8 @@ export function WalletActions({ onAdd, onWithdraw, onSend, actions }: WalletActi
         {actions.map(({ id, label, Icon, ariaLabel }) => (
           <ContentAreaButton
             key={id}
-            className={styles.button}
+            // Icon-only actions hug their glyph; labeled ones share the row.
+            className={label ? styles.button : `${styles.button} ${styles.buttonHug}`}
             type="button"
             variant="bordered"
             aria-label={ariaLabel ?? label}

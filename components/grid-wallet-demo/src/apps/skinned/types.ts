@@ -65,14 +65,21 @@ export interface SkinInsightCard {
   value: string;
   /** Small unit after the value, e.g. "APY". */
   unit?: string;
-  /** Sub caption, e.g. "+$25.00 this month". */
+  /** Bold leading amount in the caption, e.g. "+56". Ignored when `dynamic` is set. */
+  captionAmount?: string;
+  /** Sub caption, e.g. "followers from last stream". Ignored when `dynamic` is set. */
   caption: string;
   /** Tint the caption positive (green). */
   captionPositive?: boolean;
+  /** Drive the caption from a live wallet metric instead of `caption`:
+   *  `earnings` → "+$X today" (balance × APY ÷ 365), like the Aurora wallet. */
+  dynamic?: 'earnings';
 }
 
 export interface SkinTabBarItem {
   Icon: SkinIcon;
+  /** Glyph shown when the item is active (e.g. a filled variant); falls back to `Icon`. */
+  activeIcon?: SkinIcon;
   label: string;
   active?: boolean;
 }

@@ -55,8 +55,18 @@ export interface WalletInsightCardsProps {
   cards?: [SkinInsightCard, SkinInsightCard];
 }
 
-/** One icon-circle metric card (skin style): accent circle + value/unit + caption. */
-function MetricCard({ Icon, accent, value, unit, caption, captionPositive }: SkinInsightCard) {
+/** One icon-circle metric card (skin style): accent circle + value/unit + caption.
+ *  `captionNode` overrides the static `caption` (e.g. a live earnings figure). */
+function MetricCard({
+  Icon,
+  accent,
+  value,
+  unit,
+  caption,
+  captionAmount,
+  captionPositive,
+  captionNode,
+}: SkinInsightCard & { captionNode?: ReactNode }) {
   // 8px Figma corner (auto-scaled), keeping the phone-shell squircle smoothing.
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   return (
@@ -71,7 +81,15 @@ function MetricCard({ Icon, accent, value, unit, caption, captionPositive }: Ski
         </span>
       </div>
       <p className={clsx(styles.metricCaption, captionPositive && styles.metricCaptionPositive)}>
-        {caption}
+        {captionNode ??
+          (captionAmount ? (
+            <>
+              <span className={styles.metricCaptionAmount}>{captionAmount}</span>
+              {`\u00A0${caption}`}
+            </>
+          ) : (
+            caption
+          ))}
       </p>
     </button>
   );
@@ -90,10 +108,23 @@ export function WalletInsightCards({
   const earningsClip = useSquircleClip<HTMLButtonElement>();
 
   if (cards) {
+    // Live "+$X today" earnings caption (balance × APY ÷ 365), like the Aurora
+    // earnings card — amount green, "today" muted.
+    const earningsCaption = (
+      <>
+        <span className={styles.metricCaptionAmount}>{`+${fmtUsd(earningsTodayCents)}`}</span>
+        <span className={styles.metricCaptionMuted}>{'\u00A0today'}</span>
+      </>
+    );
     return (
       <div className={styles.row}>
-        <MetricCard {...cards[0]} />
-        <MetricCard {...cards[1]} />
+        {cards.map((card, i) => (
+          <MetricCard
+            key={i}
+            {...card}
+            captionNode={card.dynamic === 'earnings' ? earningsCaption : undefined}
+          />
+        ))}
       </div>
     );
   }

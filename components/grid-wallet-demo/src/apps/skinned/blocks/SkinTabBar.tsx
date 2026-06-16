@@ -12,18 +12,21 @@ export function SkinTabBar({ items, fab }: SkinTabBarConfig) {
   const left = fab ? items.slice(0, mid) : items;
   const right = fab ? items.slice(mid) : [];
 
-  const renderItem = (item: SkinTabBarItem) => (
-    <button
-      key={item.label}
-      type="button"
-      className={clsx(styles.item, item.active && styles.itemActive)}
-      aria-label={item.label}
-      aria-current={item.active ? 'page' : undefined}
-    >
-      <item.Icon size={24} />
-      <span className={styles.label}>{item.label}</span>
-    </button>
-  );
+  const renderItem = (item: SkinTabBarItem) => {
+    const Icon = item.active && item.activeIcon ? item.activeIcon : item.Icon;
+    return (
+      <button
+        key={item.label}
+        type="button"
+        className={clsx(styles.item, item.active && styles.itemActive)}
+        aria-label={item.label}
+        aria-current={item.active ? 'page' : undefined}
+      >
+        <Icon size={24} />
+        <span className={styles.label}>{item.label}</span>
+      </button>
+    );
+  };
 
   return (
     <nav className={styles.bar} aria-label="Navigation">

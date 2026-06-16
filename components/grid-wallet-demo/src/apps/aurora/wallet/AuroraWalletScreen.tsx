@@ -114,6 +114,8 @@ const AURORA_IN = motionTransition(easeOutQuick, 0.5, { delay: 0.15 });
 const AURORA_OUT = motionTransition(easeOutQuick, 0.3);
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
+/** Activity filter underline glide between tabs. */
+const TAB_INDICATOR_TRANSITION = motionTransition(easeOutSnappy, 0.35);
 /** A flow switch returns to home first (aurora out ≈ 0.3s) before opening the
  *  target sheet/view — long enough that home reads as the in-between beat. */
 const ENTRY_HOME_SETTLE_MS = 350;
@@ -869,6 +871,13 @@ export function AuroraWalletScreen({
                       onClick={() => setActivityTab(i)}
                     >
                       {t}
+                      {i === activityTab && (
+                        <motion.span
+                          layoutId="activityTabIndicator"
+                          className={styles.activityIndicator}
+                          transition={reduceMotion ? { duration: 0 } : TAB_INDICATOR_TRANSITION}
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
