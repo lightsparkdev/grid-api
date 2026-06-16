@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
-import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
+import { primaryAuthMethod, USE_CASES, type UseCaseId } from '@/data/configure';
 import {
   initialCompleted,
   initialWallet,
@@ -600,11 +600,19 @@ export function useWalletDemoLogic() {
       }
     : base;
 
+  // Selecting a use case also switches the rendered persona, so the phone shows
+  // that skin (persona + useCase stay in sync for the apps that exist).
+  const selectUseCase = useCallback((id: UseCaseId) => {
+    setUseCase(id);
+    const next = USE_CASES.find((u) => u.id === id)?.persona;
+    if (next) setPersona(next);
+  }, []);
+
   return {
     persona,
     setPersona,
     useCase,
-    setUseCase,
+    setUseCase: selectUseCase,
     methods,
     toggleMethod,
     method,

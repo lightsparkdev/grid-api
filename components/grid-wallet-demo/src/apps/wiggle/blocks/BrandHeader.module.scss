@@ -1,0 +1,38 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  color: inherit;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logo {
+  width: 25px;
+  height: auto;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.name {
+  font-family: var(--ios-font-family);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: normal;
+  color: var(--brand-header-name-color, inherit);
+}
+
+.tagline {
+  font-family: var(--ios-font-family);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: normal;
+  color: inherit;
+  opacity: 0.4;
+}

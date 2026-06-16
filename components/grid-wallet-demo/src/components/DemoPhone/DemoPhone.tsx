@@ -15,7 +15,7 @@ import {
 } from '@/components/Phone';
 import { applePopup, googleTokenPopup, preloadOauthPopups } from '@/lib/auth';
 import type { GlassConfig } from '@/components/liquid-glass';
-import { AuroraSignInFlow } from '@/apps/aurora';
+import { SignInFlow } from '@/apps/SignInFlow';
 import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
 import { AuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
 import { AppShell } from '@/apps/shared/AppShell';
@@ -34,8 +34,10 @@ interface DemoPhoneProps extends PhoneProps {
 function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const brand = PHONE_BRAND[props.persona];
   const authMethod = props.signInMethod ?? props.method;
-  const isAurora = skin.id === 'aurora';
-  const onAuthScreen = isAurora && props.phone.screen === 'auth';
+  // A persona renders the full app when its skin provides both screens (Aurora
+  // today). Drives the same auth overlays + sign-in flow for every skin.
+  const flowActive = Boolean(skin.AuthScreen && skin.WalletScreen);
+  const onAuthScreen = flowActive && props.phone.screen === 'auth';
 
   const passkeySheet = onAuthScreen ? (
     <PasskeySheet
@@ -55,14 +57,14 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const sheetMethod: AuthSheetMethod | null =
     authMethod === 'email_otp' ? 'email' : authMethod === 'sms' ? 'phone' : null;
   const entry = sheetMethod === 'phone' ? props.phoneEntry : props.email;
-  const sheetFlow = isAurora && sheetMethod !== null;
+  const sheetFlow = flowActive && sheetMethod !== null;
   const sheetSending = Boolean(
     sheetFlow &&
       props.phone.screen === 'creating' &&
       !entry?.active &&
       !props.otp?.active,
   );
-  const authSheet = isAurora ? (
+  const authSheet = flowActive ? (
     <AuthSheet
       method={sheetMethod ?? 'email'}
       open={Boolean(entry?.active || sheetSending || props.otp?.active)}
@@ -77,13 +79,13 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     />
   ) : null;
 
-  if (props.email?.active && !isAurora) {
+  if (props.email?.active && !flowActive) {
     return <EmailEntryScreen brand={brand} onSubmit={props.email.onSubmit} />;
   }
-  if (props.phoneEntry?.active && !isAurora) {
+  if (props.phoneEntry?.active && !flowActive) {
     return <PhoneEntryScreen brand={brand} onSubmit={props.phoneEntry.onSubmit} />;
   }
-  if (props.otp?.active && !isAurora) {
+  if (props.otp?.active && !flowActive) {
     return <OtpEntryScreen onSubmit={props.otp.onSubmit} />;
   }
   if (props.google?.nonce) {
@@ -105,7 +107,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   // the entry prompt while the screen state is still 'creating' for a beat —
   // and without it that frame falls through to the full-screen creating view,
   // unmounting (and instantly remounting) the whole aurora flow + sheet.
-  const auroraAuthBridge =
+  const authBridge =
     sheetFlow &&
     props.phone.screen === 'creating' &&
     (sheetSending || Boolean(props.otp?.active) || Boolean(entry?.active));
@@ -124,14 +126,16 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     props.onSignInWithMethod?.(m);
   };
   if (
-    isAurora &&
+    flowActive &&
     (props.phone.screen === 'auth' ||
       props.phone.screen === 'wallet' ||
       props.phone.screen === 'card' ||
-      auroraAuthBridge)
+      authBridge)
   ) {
     return (
-      <AuroraSignInFlow
+      <SignInFlow
+        AuthScreen={skin.AuthScreen!}
+        WalletScreen={skin.WalletScreen!}
         screen={
           props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
         }
@@ -149,7 +153,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       >
         {passkeySheet}
         {authSheet}
-      </AuroraSignInFlow>
+      </SignInFlow>
     );
   }
 

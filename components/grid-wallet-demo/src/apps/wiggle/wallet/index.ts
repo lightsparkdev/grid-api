@@ -1,0 +1,1 @@
+export { WiggleWalletScreen } from './WiggleWalletScreen';

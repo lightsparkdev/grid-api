@@ -6,7 +6,7 @@ import { authCta, type AuthMethod } from '@/data/flow';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { AUTH_METHOD_ICONS, AUTH_METHOD_ORDER } from '@/apps/shared/authMethodIcons';
-import { CreatingCaption } from './wallet/CardIssuanceContent';
+import { CreatingCaption } from '@/apps/shared/wallet-flows';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './AuroraAuthScreen.module.scss';
 

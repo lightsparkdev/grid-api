@@ -1,0 +1,21 @@
+/* The CTA column; the parent auth composition owns the surrounding padding. */
+.actions {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* CTA wrapper — animates real height (+ bottom-margin gap) on add/remove so the
+   column reflows. overflow:hidden clips the collapse; the negative inline margin
+   + matching padding give the press bloom horizontal room. */
+.action {
+  overflow: hidden;
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+/* Trailing pad optically balances each button's leading icon. */
+.action button {
+  padding-right: 24px;
+}

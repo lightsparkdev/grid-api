@@ -1,0 +1,490 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clear the iOS status bar — screenBody underlaps it (see AppShell). */
+  padding-top: 62px;
+  background: var(--wallet-bg);
+
+  /* Figma DS.screenBackground — off-white, a hair below the #fff cards. */
+  --wallet-bg: #f9f9f9;
+  /* Debit card height (232) minus visible peek (~56) when sheet is resting. */
+  --wallet-sheet-overlap: 176px;
+  /* Resting card slot: top pad (8) + card height (232). Used to pin the sheet to
+     its closed position when it goes absolute (open) so the slide doesn't jump. */
+  --card-slot-height: 240px;
+  /* Header strip height — the body underlaps it by this much (scroll-under). */
+  --wallet-header-height: 56px;
+
+  :global([data-theme='dark']) & {
+    /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
+    --wallet-bg: #111111;
+  }
+}
+
+/* ── Full-screen issuance aurora (behind header + body) ───────────────────── */
+
+.fullAurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  /* Hit-testable (NOT pointer-events:none) so the status bar tone sampler, which
+     uses elementsFromPoint, can read the aurora and flip the glyphs to white. It
+     sits at z-index 0 behind the body, so it never intercepts real interaction. */
+}
+
+/* Bleed past the top/sides so blurred streaks clip mid-flow; bottom flush. */
+.fullAuroraBg {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  bottom: 0;
+  left: -80px;
+}
+
+/* Tall auth-style fade — aurora reads at the top, then resolves to the wallet bg
+   well above the bottom content so the copy/CTA sit on solid ground. */
+.auroraFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 76%;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--wallet-bg) 12%, transparent) 18%,
+    color-mix(in srgb, var(--wallet-bg) 40%, transparent) 34%,
+    color-mix(in srgb, var(--wallet-bg) 70%, transparent) 48%,
+    color-mix(in srgb, var(--wallet-bg) 92%, transparent) 58%,
+    var(--wallet-bg) 66%
+  );
+}
+
+/* Creating screen: drop the fade so the aurora full-bleeds behind the card. */
+.auroraFadeHidden {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auroraFade {
+    transition: none;
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  height: var(--wallet-header-height);
+  padding: 8px 24px;
+  box-sizing: border-box;
+}
+
+/* Home: the title + gear drop to the fixed-background layer (below the scrolling
+   body) so the sheet scrolls up over them — same as the card + aurora. The
+   card-detail header keeps z-index 2 so it stays on top while a card is open. */
+.headerHome {
+  z-index: 0;
+}
+
+/* iOS scroll-edge: the strip under the status bar progressively blurs + fades the
+   scroll content into the bg so it never collides with the status-bar glyphs. z 2
+   sits above the body (z 1) and below the AppShell status bar. */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Progressive blur (3-layer stack, à la AddMoneySheet's <TopFade>): each layer
+   ups the blur radius and is masked to a band, so the blur RAMPS from 0 at the
+   bottom to full at the very top — a single uniform backdrop-filter + mask leaves
+   a hard edge where the blur stops, this crossfades it away. backdrop-filter is
+   clipped to each layer's own box; the .topFade parent has no overflow/clip/
+   isolation so the blur still samples the scrolling body beneath it. */
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill kicks backdrop-filter into compositing (the FaceIdAuth trick). */
+  background: rgba(255, 255, 255, 0.01);
+  -webkit-backdrop-filter: blur(var(--fade-blur));
+  backdrop-filter: blur(var(--fade-blur));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+.fadeBlurStrong {
+  --fade-blur: 8px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 16%, transparent 46%);
+}
+
+.fadeBlurMid {
+  --fade-blur: 4px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 34%, transparent 68%);
+}
+
+.fadeBlurSoft {
+  --fade-blur: 2px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
+}
+
+/* bg-color tint on top of the blur — fully resolves the very edge (under the
+   status bar) into the wallet bg so the fixed gear/title/card are covered, then
+   melts to transparent so the blurred content shows through below. */
+.fadeTint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--wallet-bg) 0%,
+    color-mix(in srgb, var(--wallet-bg) 50%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+.headerInner {
+  position: absolute;
+  inset: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: auto;
+}
+
+/* Figma 90:13587 — Title3/Emphasized. */
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* ── Body (above the aurora; transparent so the aurora shows through) ──────── */
+
+.body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Default (issuance / card-open / tap): no page scroll. Underlap JUST the
+     header strip (not the status bar) so the card's top drop-shadow bleed paints
+     unclipped while the aurora (z 0) stays the topmost layer under the status bar
+     — the tone sampler reads it through the transparent body and flips the glyphs
+     white. The plain home opts into the status-bar underlap via .bodyHome. */
+  overflow: hidden;
+  margin-top: calc(-1 * var(--wallet-header-height));
+  padding-top: var(--wallet-header-height);
+}
+
+/* Plain wallet home: the sheet page-scrolls up over the pinned card / aurora /
+   header. Underlap the status bar too so content runs to the very top edge; the
+   .topFade overlay (z 2) blurs + fades that edge. Scoped to home so the
+   issuance/open/tap states keep the aurora hit-testable under the bar (otherwise
+   the transparent body sits over it and the tone sampler reads the light wallet
+   bg → black glyphs over the aurora). */
+.bodyHome {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
+  padding-top: calc(62px + var(--wallet-header-height));
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.bodyOpen {
+  overflow: hidden;
+}
+
+/* Tap-to-pay lifts the body over the (still-present) header; raising it above the
+   header layer hides the header buttons as they fade rather than ghosting them. */
+.bodyTap {
+  z-index: 3;
+  /* No page scroll mid-tap (the body is transform-lifted instead). */
+  overflow: hidden;
+}
+
+/* Card slot — top for closed/home, centered for intro/creating/ready. The card
+   itself (.cardCarry) layout-animates between the two. */
+.cardAreaTop {
+  /* Pinned: holds while the sheet scrolls up over it. Only active in the home
+     scroll; the card-open/tap states don't scroll. */
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  padding: 8px 16px 0;
+}
+
+/* Card-home (issued): 8px gap below the card before the transactions list. */
+.bodyOpen .cardAreaTop {
+  padding-bottom: 8px;
+}
+
+.cardAreaCentered {
+  position: relative;
+  z-index: 2; /* above the sheet as it slides out from underneath */
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+}
+
+/* Figma 2219:48842 — card + "Creating..." caption, gap 12. The centered content
+   sits up by half this padding: 96px ⇒ 48px above true center. */
+.cardAreaCreating {
+  gap: 12px;
+  padding-bottom: 96px;
+}
+
+.cardCarry {
+  width: 100%;
+}
+
+.cardScale {
+  width: 100%;
+  transform-origin: center center;
+}
+
+.sheetWrap {
+  display: flex;
+  /* Grow with content, never shrink below it: a long Activity list extends the
+     sheet past the viewport and the body page-scrolls it (like card-home). */
+  flex: 1 0 auto;
+  flex-direction: column;
+  will-change: transform;
+}
+
+/* While the card is open the sheet leaves the flex flow (pinned to its resting
+   slot) so the card area can take the full height and carry to center without the
+   sheet stealing space. It still translates straight down from the same spot.
+   The top inset matches .body's padding-top: absolute inset is measured from the
+   body's padding BOX (lifted by the underlap margin), while the resting flow
+   position starts at the content box — inset: 0 teleported the sheet up by the
+   underlap on the render that started the slide. */
+.sheetWrapOpen {
+  position: absolute;
+  inset: var(--wallet-header-height) 0 0;
+  z-index: 1;
+  flex: none;
+  padding-top: var(--card-slot-height);
+}
+
+/* Intro / ready bottom-anchored copy + CTA. */
+.bottomContent {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Card-home body — transactions list fills, Apple Wallet button pinned below. */
+.homeContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+/* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
+   beneath it (Figma 2143:41178 section pt 50). */
+.tapStatus {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+  padding-top: 50px;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── Wiggle (creator) overrides ───────────────────────────────────────────── */
+
+.root {
+  background: var(--app-bg);
+  --wallet-bg: var(--app-bg);
+  --wallet-sheet-overlap: 0px;
+
+  :global([data-theme='dark']) & {
+    --wallet-bg: var(--app-bg);
+  }
+}
+
+/* Brand wash behind the issuance card (in place of Aurora's WebGL field). */
+.fullWash {
+  position: absolute;
+  inset: 0;
+  background: var(--app-wash);
+}
+
+/* Scrolling brand header — avatar left, icon buttons right. */
+.headerScroll {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--wallet-header-height);
+  padding: 8px 24px;
+  box-sizing: border-box;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  corner-shape: superellipse;
+  object-fit: cover;
+}
+
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.headerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+}
+
+/* Purple wash balance hero — label + amount + Deposit / Withdraw / Send. */
+.heroWash {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 16px 12px;
+  padding: 20px;
+  background: var(--app-wash);
+  border-radius: 16px;
+  corner-shape: superellipse;
+  color: #fff;
+}
+
+.balanceLabel {
+  padding-left: 4px;
+  font-size: 13px;
+  font-weight: 510;
+  opacity: 0.85;
+}
+
+.balanceAmount {
+  font-family: var(--font-family-inter);
+  font-variation-settings: 'wght' 700;
+  font-size: 40px;
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1 1 0;
+  height: 48px;
+  border: 0;
+  border-radius: 14px;
+  corner-shape: superellipse;
+  background: #642cb0;
+  color: #fff;
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 590;
+  cursor: pointer;
+}
+
+.actionIcon {
+  flex: 0 0 auto;
+  width: 48px;
+  padding: 0;
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+/* Activity filter tabs with a gliding underline. */
+.activityTabs {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 4px 24px 12px;
+}
+
+.activityTab {
+  position: relative;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 510;
+  color: var(--app-text-secondary);
+  cursor: pointer;
+}
+
+.activityTabActive {
+  color: var(--app-text-primary);
+}
+
+.activityIndicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--app-tint);
+}

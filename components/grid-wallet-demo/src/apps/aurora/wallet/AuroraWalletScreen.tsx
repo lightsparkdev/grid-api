@@ -1,106 +1,48 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
-import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheeseburger';
-import { IconCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCup';
-import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
-import { IconFashion } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFashion';
-import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
-import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShoppingBag1';
-import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
-import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStore1';
-import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
-import { GlassToast, type GlassToastData } from '@/apps/shared/GlassToast';
+import { GlassToast } from '@/apps/shared/GlassToast';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
+import { useWalletHome } from '@/apps/shared/wallet';
+import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
 import {
   AddMoneySheet,
+  CardHomeContent,
+  CreatingCaption,
+  DebitCard,
+  IntroContent,
+  ReadyContent,
+  SendReceiveSheet,
+  TapToPayStatus,
+  WalletCardDetailHeader,
+  WalletListSection,
   formatUsdCents,
-  SolanaTokenIcon,
-  truncateAddress,
-  type MoneySheetMode,
-  type ReceivedPayment,
-  type TransferActivity,
-} from './AddMoneySheet';
-import { SendReceiveSheet } from './SendReceiveSheet';
+} from '@/apps/shared/wallet-flows';
 import { BalanceHero } from './BalanceHero';
-import { CardHomeContent } from './CardHomeContent';
-import { CreatingCaption, IntroContent, ReadyContent } from './CardIssuanceContent';
-import { DebitCard } from './DebitCard';
 import { WalletActions } from './WalletActions';
-import { WalletCardDetailHeader } from './WalletCardDetailHeader';
-import { TapToPayStatus } from './TapToPayStatus';
 import { WalletInsightCards } from './WalletInsightCards';
-import type { WalletListItemData } from './WalletListItem';
-import { WalletListSection } from './WalletListSection';
 import { WalletSheet } from './WalletSheet';
 import styles from './AuroraWalletScreen.module.scss';
 
-type CardView = 'closed' | 'intro' | 'creating' | 'ready' | 'home';
-type TapPhase = 'idle' | 'hold' | 'auth' | 'done';
+// Re-exported for back-compat: these types now live with the headless logic.
+export type { WalletEntry, WalletEntryTarget, WalletTransferMode } from '@/apps/shared/wallet';
 
 const SHEET_DURATION = 0.4;
 const HEADER_DURATION = 0.2;
-const CREATING_MS = 2200;
 /** Issuance card is the home card scaled to Figma 338 / 370. */
 const CARD_ISSUANCE_SCALE = 338 / 370;
 const SHEET_OFFSCREEN = 'calc(100% + 224px)';
-const TAP_HOLD_MS = 1200; // Hold Near Reader dwell before Face ID kicks in.
-const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home.
-// Insert the transaction AFTER card-home has re-entered (content settles ~0.7s)
-// so the new row visibly grows in and pushes the list down.
-const TAP_INSERT_DELAY_MS = 900;
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
-
-// Figma 2143:41027 (row shape) — the tap-to-pay merchant pool: globally
-// recognizable chains with FIXED, plausible charges (deterministic per
-// merchant) so repeat taps read as real purchases around town.
-const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp'>> = [
-  { Icon: IconHotDrinkCup, title: 'Starbucks', detail: 'Tap to Pay', amount: '$7.45' },
-  { Icon: IconCheeseburger, title: "McDonald's", detail: 'Tap to Pay', amount: '$11.84' },
-  { Icon: IconStore1, title: '7-Eleven', detail: 'Tap to Pay', amount: '$6.27' },
-  { Icon: IconCup, title: 'Pret a Manger', detail: 'Tap to Pay', amount: '$9.15' },
-  { Icon: IconFashion, title: 'Uniqlo', detail: 'Tap to Pay', amount: '$39.90' },
-  { Icon: IconShoppingBag1, title: 'Zara', detail: 'Tap to Pay', amount: '$45.90' },
-  { Icon: IconTag, title: 'H&M', detail: 'Tap to Pay', amount: '$34.99' },
-  { Icon: IconSofa, title: 'IKEA', detail: 'Tap to Pay', amount: '$86.53' },
-  { Icon: IconDeskLamp, title: 'Muji', detail: 'Tap to Pay', amount: '$28.40' },
-  { Icon: IconBasket1, title: 'Carrefour', detail: 'Tap to Pay', amount: '$43.76' },
-];
-
-// Insert the Activity row a beat after the Add money / Withdraw sheet has
-// dismissed, so the slide-down insert is visible on the settled wallet (same
-// beat as tap-to-pay).
-const SHEET_INSERT_DELAY_MS = 700;
-
-// Receive: tapping Share/Copy lets the action register, then the sheet closes;
-// the inbound payment "arrives" a beat after that (real receives are async, so
-// the gap sells it — sharing your details doesn't instantly cause a payment).
-const RECEIVE_DISMISS_MS = 480;
-const RECEIVE_TOAST_MS = 2100;
-
-/** "$5,000.00" → cents. */
-function parseCents(formatted: string): number {
-  const n = Number.parseFloat(formatted.replace(/[^0-9.]/g, ''));
-  return Number.isFinite(n) ? Math.round(n * 100) : 0;
-}
-
-/** Toast copy amount — whole dollars drop the ".00" ("$1,500"); cents keep it. */
-function toastUsd(cents: number): string {
-  const usd = formatUsdCents(cents);
-  return cents % 100 === 0 ? usd.slice(0, -3) : usd;
-}
 
 const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
 /* The transition is staggered so it doesn't all fire at once: the card carries +
@@ -112,36 +54,11 @@ const AURORA_IN = motionTransition(easeOutQuick, 0.5, { delay: 0.15 });
 const AURORA_OUT = motionTransition(easeOutQuick, 0.3);
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
-/** A flow switch returns to home first (aurora out ≈ 0.3s) before opening the
- *  target sheet/view — long enough that home reads as the in-between beat. */
-const ENTRY_HOME_SETTLE_MS = 350;
-/** A cold jump straight off the auth screen lands on the wallet, lets the home
- *  entrance reveal play, THEN opens the flow — so it reads "home → sheet". */
-const COLD_ENTRY_SETTLE_MS = 700;
-/** Yield rate shown on the Earnings card; today's accrual = balance × this ÷ 365. */
-const EARNINGS_APY_PERCENT = 5;
-/** Bars in the Weekly activity chart — one per recent card charge. */
-const WEEKLY_BAR_COUNT = 14;
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
 const CONTENT_HIDDEN = { opacity: 0, y: 12, filter: 'blur(8px)' };
 const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
-
-/** The money movements the wallet reports up so the demo can log API calls. */
-export type WalletTransferMode = 'add' | 'withdraw' | 'send';
-
-/** A jump command from the Configure sidebar: provision state (so flows are
- *  reachable out of order) then open the target screen/sheet. */
-export type WalletEntryTarget = 'add' | 'withdraw' | 'send' | 'receive' | 'card' | 'tap';
-export interface WalletEntry {
-  /** Bumped per command so the wallet applies it exactly once. */
-  nonce: number;
-  /** Instant, animation-free setup so a deep flow is reachable directly. */
-  provision?: { issued?: boolean; fundCents?: number };
-  /** Which sheet/view to open after provisioning. */
-  open?: WalletEntryTarget;
-}
 
 interface AuroraWalletScreenProps {
   /** Formatted balance from demo state, e.g. "$0.00". */
@@ -166,433 +83,56 @@ interface AuroraWalletScreenProps {
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
 }
 
-/** First + last initial for a contact avatar ("Carlos Herrera" → "CH"). */
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-  return (parts[0][0] + last).toUpperCase();
-}
-
-/** Build an Activity row from the confirmed transfer's real destination: a
- *  crypto payment shows the token chip in a circular tile; a person (bank) shows
- *  a contact avatar (initials + flag); your own bank keeps the flag tile.
- *  Outgoing shows the plain amount — only incoming (add) gets the "+". */
-function makeTransferRow(
-  mode: WalletTransferMode,
-  cents: number,
-  dest: TransferActivity | null,
-): WalletListItemData {
-  const ts = Date.now();
-  if (dest?.kind === 'crypto') {
-    return {
-      id: `${mode}-${ts}`,
-      Icon: SolanaTokenIcon,
-      tileCircle: true,
-      title: truncateAddress(dest.address),
-      detail:
-        mode === 'withdraw'
-          ? `Withdrawn to ${dest.network} wallet`
-          : `Sent to ${dest.network} wallet`,
-      amount: formatUsdCents(cents),
-      timestamp: ts,
-    };
-  }
-  const flag = dest ? `/assets/flags/${dest.countryCode}.svg` : '/assets/add-money/flag-mx.svg';
-  const bankLabel = dest ? `${dest.bankName} (•••• ${dest.last4})` : 'Bank account';
-  if (mode === 'send') {
-    // Sent to a person → contact avatar (initials + flag); only a destination-less
-    // edge case falls back to the flag tile.
-    return {
-      id: `send-${ts}`,
-      avatar: dest ? { initials: initials(dest.recipientName || dest.bankName), code: dest.countryCode } : undefined,
-      image: dest ? undefined : flag,
-      title: dest?.recipientName || bankLabel,
-      detail: dest ? `Sent to ${dest.bankName}` : 'Sent from balance',
-      amount: formatUsdCents(cents),
-      timestamp: ts,
-    };
-  }
-  return {
-    id: `${mode}-${ts}`,
-    image: flag,
-    title: bankLabel,
-    detail: mode === 'withdraw' ? 'Withdrawn from balance' : 'Added to balance',
-    amount: mode === 'withdraw' ? formatUsdCents(cents) : `+${formatUsdCents(cents)}`,
-    timestamp: ts,
-  };
-}
-
-/** A believable inbound amount — low hundreds with cents (demo "bullshit mode"). */
-function randomReceiveCents(): number {
-  const dollars = 120 + Math.floor(Math.random() * 760); // $120–$879
-  return dollars * 100 + Math.floor(Math.random() * 100);
-}
-
-/** Activity row for a received payment (always inbound, "+"): crypto shows the
- *  sender's truncated address + network logo; fiat shows the payer (name + last
- *  initial) + country flag. */
-function makeReceiveRow(p: ReceivedPayment, cents: number, asAdd = false): WalletListItemData {
-  const ts = Date.now();
-  const amount = `+${formatUsdCents(cents)}`;
-  if (p.via === 'crypto') {
-    return {
-      id: `receive-${ts}`,
-      image: p.logo,
-      imageSquare: true,
-      // Payments (receive) get the circular coin tile; an add is a funding source,
-      // not a contact, so it keeps the square tile like the bank add.
-      tileCircle: !asAdd,
-      title: truncateAddress(p.address),
-      detail: asAdd ? `Added from ${p.network} wallet` : `From ${p.network} wallet`,
-      amount,
-      timestamp: ts,
-    };
-  }
-  return {
-    id: `receive-${ts}`,
-    avatar: { initials: initials(p.payerFull), code: p.countryCode },
-    title: p.payer,
-    detail: 'Payment received',
-    amount,
-    timestamp: ts,
-  };
-}
-
-/** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). */
-export function AuroraWalletScreen({
-  balance = '$0.00',
-  entrance = false,
-  entry,
-  onQuoteCreate,
-  onLinkExternalAccount,
-  onTransferExecute,
-  onCardIssued,
-  onTapToPay,
-  onReceivePayment,
-}: AuroraWalletScreenProps) {
+/** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). The
+ *  view layer — all state/effects/handlers live in the shared `useWalletHome`. */
+export function AuroraWalletScreen(props: AuroraWalletScreenProps) {
+  const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
-  const [cardView, setCardView] = useState<CardView>('closed');
-  const [issued, setIssued] = useState(false);
-  const [tapPhase, setTapPhase] = useState<TapPhase>('idle');
-  const [transactions, setTransactions] = useState<WalletListItemData[]>([]);
 
-  // Add money / Withdraw flow: ONE mode-switched sheet + Face ID confirm +
-  // local balance/activity bookkeeping (deltaCents = net adds − withdrawals).
-  const [sheetMode, setSheetMode] = useState<MoneySheetMode>('add');
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [sheetConfirming, setSheetConfirming] = useState(false);
-  const [deltaCents, setDeltaCents] = useState(0);
-  // Real card spend this session — one entry per Tap to Pay; drives the Weekly
-  // activity bars (which start empty and build left→right) + the spent total.
-  const [spendBars, setSpendBars] = useState<number[]>([]);
-  const [activity, setActivity] = useState<WalletListItemData[]>([]);
-  const pendingCents = useRef(0);
-  const pendingActivity = useRef<TransferActivity | null>(null);
-  const availableCents = parseCents(balance) + deltaCents;
-  // Earnings = yield on the live balance, shown as today's accrual. Weekly bars
-  // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
-  // busiest charge so heights vary by amount.
-  const earningsTodayCents = Math.round((availableCents * EARNINGS_APY_PERCENT) / 100 / 365);
-  const visibleSpend = spendBars.slice(-WEEKLY_BAR_COUNT);
-  const maxSpendCents = Math.max(1, ...visibleSpend);
-  const weeklyBars = visibleSpend.map((cents) => cents / maxSpendCents);
-  const weeklySpentCents = spendBars.reduce((sum, cents) => sum + cents, 0);
-
-  const openSheet = (mode: MoneySheetMode) => {
-    setSheetMode(mode);
-    setSheetOpen(true);
-  };
-
-  // "Send or receive" chooser (Figma 109:28513). Send swaps it for the money
-  // sheet in one beat: the mini sheet drops as the tall sheet rises.
-  const [sendReceiveOpen, setSendReceiveOpen] = useState(false);
-  const startSend = () => {
-    setSendReceiveOpen(false);
-    openSheet('send');
-  };
-
-  // Receive — opens the money sheet in 'receive' mode (the deposit list), the
-  // same way Send does, reusing the full-size sheet + shared country picker.
-  const startReceive = () => {
-    setSendReceiveOpen(false);
-    openSheet('receive');
-  };
-
-  // Glass toast (overlay layer): transfer confirmations + the tap-to-pay balance
-  // guard. A fresh id restarts the hold when one is already up.
-  const [toast, setToast] = useState<GlassToastData | null>(null);
-  const showToast = (text: string) => setToast({ id: Date.now(), text });
-
-  // Home Activity = money movements + card transactions, newest first. Derived
-  // (not double-inserted) so each WalletListCard instance keeps its own
-  // fresh-row bookkeeping — the grow-in insert still runs per list.
-  const homeActivity = useMemo(
-    () => [...activity, ...transactions].sort((a, b) => b.timestamp - a.timestamp),
-    [activity, transactions],
-  );
+  const {
+    cardView,
+    setCardView,
+    issued,
+    tapPhase,
+    setTapPhase,
+    transactions,
+    sheetMode,
+    sheetOpen,
+    setSheetOpen,
+    sheetConfirming,
+    sendReceiveOpen,
+    setSendReceiveOpen,
+    toast,
+    setToast,
+    showToast,
+    availableCents,
+    earningsTodayCents,
+    weeklyBars,
+    weeklySpentCents,
+    homeActivity,
+    apyPercent,
+    isOpen,
+    isIssuance,
+    showFullAurora,
+    cardCentered,
+    isTap,
+    openSheet,
+    startSend,
+    startReceive,
+    openCard,
+    startTapToPay,
+    finishTransfer,
+    confirmTransfer,
+    handleReceivePayment,
+  } = useWalletHome(props);
 
   // Sign-in entrance: card → balance → actions → insights reveal in once on
   // mount (the issuance stagger language); the Activity card's own skeleton
   // reveal carries the list. `entrance` off spreads a no-op (rest pose).
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
-
-  const isOpen = cardView !== 'closed';
-  const isIssuance = cardView === 'intro' || cardView === 'creating' || cardView === 'ready';
-  const showFullAurora = cardView === 'intro' || cardView === 'creating';
-  const cardCentered = isIssuance; // centered for intro/creating/ready; top for closed/home
-  const isTap = tapPhase !== 'idle'; // tap-to-pay sub-flow over the card-home screen
-
-  // Simulated card creation: auto-advance creating -> ready (and mark issued).
-  useEffect(() => {
-    if (cardView !== 'creating') return;
-    const t = window.setTimeout(() => {
-      setIssued(true);
-      setCardView('ready');
-    }, CREATING_MS);
-    return () => window.clearTimeout(t);
-  }, [cardView]);
-
-  // Tap-to-pay: Hold Near Reader dwells, then Face ID runs.
-  useEffect(() => {
-    if (tapPhase !== 'hold') return;
-    const t = window.setTimeout(() => setTapPhase('auth'), TAP_HOLD_MS);
-    return () => window.clearTimeout(t);
-  }, [tapPhase]);
-
-  // Tap-to-pay: once the Done check lands, resolve back to card-home, THEN drop
-  // the transaction in once the screen has settled — so the new row pushes the
-  // list down instead of already being there. The insert timer lives in a ref:
-  // the effect re-runs on the idle flip, and a cleanup there would kill it.
-  const insertTimer = useRef(0);
-  useEffect(() => {
-    if (tapPhase !== 'done') return;
-    const t = window.setTimeout(() => {
-      const tx = pendingTapTx.current; // the merchant picked at tap start
-      setTapPhase('idle');
-      // The card charge comes out of the cash balance, landing with the row.
-      setDeltaCents((c) => c - parseCents(tx.amount));
-      setSpendBars((b) => [...b, parseCents(tx.amount)]);
-      onTapToPay?.(parseCents(tx.amount), tx.title);
-      window.clearTimeout(insertTimer.current);
-      insertTimer.current = window.setTimeout(() => {
-        setTransactions((prev) => [
-          { ...tx, id: `tap-${Date.now()}`, timestamp: Date.now() },
-          ...prev,
-        ]);
-      }, TAP_INSERT_DELAY_MS);
-    }, TAP_DONE_MS);
-    return () => window.clearTimeout(t);
-  }, [tapPhase]);
-  useEffect(() => () => window.clearTimeout(insertTimer.current), []);
-
-  const openCard = () => setCardView(issued ? 'home' : 'intro');
-
-  // The merchant is picked when the tap STARTS — the balance guard, the charge,
-  // and the inserted row all see the same one. Shuffled-deck draw: every
-  // merchant appears once (random order) before any repeats; the reshuffle
-  // keeps the previous deck's last card off the top so back-to-back can't
-  // happen across deck boundaries. A blocked tap puts the card back.
-  const merchantDeck = useRef<typeof TAP_MERCHANTS>([]);
-  const pendingTapTx = useRef(TAP_MERCHANTS[0]);
-  const startTapToPay = () => {
-    if (merchantDeck.current.length === 0) {
-      const deck = [...TAP_MERCHANTS];
-      for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-      }
-      if (deck[0] === pendingTapTx.current) deck.push(deck.shift()!);
-      merchantDeck.current = deck;
-    }
-    const merchant = merchantDeck.current[0];
-    // Not enough for THIS merchant — the flow doesn't start, a toast says why.
-    if (availableCents < parseCents(merchant.amount)) {
-      showToast('Not enough balance');
-      return;
-    }
-    merchantDeck.current.shift();
-    pendingTapTx.current = merchant;
-    setTapPhase('hold');
-  };
-
-  // Apply a sidebar jump command exactly once (nonce-guarded so re-renders and
-  // StrictMode's double-invoke don't replay it). Provision any instant setup
-  // first, then open the target — works whether the wallet just mounted (cold
-  // jump from the auth screen) or is already up (warm jump).
-  const lastEntryNonce = useRef(0);
-  // True only for the very first commit. A jump that arrives on mount came
-  // straight off the auth screen (cold) — it should let the home land first.
-  const coldMountRef = useRef(true);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      coldMountRef.current = false;
-    });
-    return () => cancelAnimationFrame(id);
-  }, []);
-  // The cold-open timer lives in a ref (not an effect cleanup) so StrictMode's
-  // dev double-invoke can't clear it before it fires — see the cold branch below.
-  const coldOpenTimer = useRef(0);
-  useEffect(() => {
-    if (!entry || entry.nonce === lastEntryNonce.current) return;
-    lastEntryNonce.current = entry.nonce;
-
-    // Re-clicking the flow you're already in is a no-op — don't reset to home
-    // and replay it. ("Issue a card" only counts as "here" mid-issuance, so it
-    // can still replay from the card home.)
-    const alreadyHere =
-      (entry.open === 'add' && sheetOpen && sheetMode === 'add') ||
-      (entry.open === 'withdraw' && sheetOpen && sheetMode === 'withdraw') ||
-      (entry.open === 'send' && sheetOpen && sheetMode === 'send') ||
-      (entry.open === 'receive' && sheetOpen && sheetMode === 'receive') ||
-      (entry.open === 'card' && isIssuance) ||
-      (entry.open === 'tap' && cardView === 'home');
-    if (alreadyHere) return;
-
-    // A newly applied jump cancels a pending cold-open from a prior rapid tap.
-    window.clearTimeout(coldOpenTimer.current);
-
-    if (entry.provision?.issued) setIssued(true);
-    if (typeof entry.provision?.fundCents === 'number') setDeltaCents(entry.provision.fundCents);
-
-    const openTarget = () => {
-      switch (entry.open) {
-        case 'add':
-          openSheet('add');
-          break;
-        case 'withdraw':
-          openSheet('withdraw');
-          break;
-        case 'send':
-          startSend();
-          break;
-        case 'receive':
-          startReceive();
-          break;
-        case 'card':
-          // Flows are replayable demos: "Issue a card" always runs the full
-          // issuance animation again, even if a card already exists (no
-          // "unissue" — replaying is the reset; it ends back on the card home).
-          setCardView('intro');
-          break;
-        case 'tap':
-          // Land on the debit-card screen; the user taps "Tap to pay".
-          setCardView('home');
-          break;
-      }
-    };
-
-    // Cold jump off the auth screen: the wallet is mounting now. Let the home's
-    // entrance reveal land FIRST, then open the flow — so it reads "home →
-    // sheet", not the sheet riding in on the wallet's entrance. (No entrance to
-    // wait for — e.g. reduced motion — opens right away.)
-    if (coldMountRef.current) {
-      if (!entrance) {
-        openTarget();
-        return;
-      }
-      // No effect cleanup on purpose: StrictMode runs effect cleanups between
-      // its two dev mount passes and the nonce guard makes the second pass a
-      // no-op — a cleanup here would clear the timer with nothing to reschedule
-      // it (home shows, sheet never opens). A stray fire after a real unmount
-      // just no-ops on the gone tree; a new jump clears it (above).
-      coldOpenTimer.current = window.setTimeout(openTarget, COLD_ENTRY_SETTLE_MS);
-      return;
-    }
-
-    // Already on a clean home screen — open the target right away, no detour.
-    const awayFromHome =
-      cardView !== 'closed' ||
-      sheetOpen ||
-      sheetConfirming ||
-      sendReceiveOpen ||
-      tapPhase !== 'idle';
-    if (!awayFromHome) {
-      openTarget();
-      return;
-    }
-
-    // Otherwise return to home FIRST, let it land, THEN open the target — so a
-    // flow switch reads as "home → sheet", never the next flow rising over the
-    // previous one's leftovers (e.g. the card-issuance aurora behind a sheet).
-    setSheetOpen(false);
-    setSheetConfirming(false);
-    setSendReceiveOpen(false);
-    setTapPhase('idle');
-    setCardView('closed');
-    const t = window.setTimeout(openTarget, ENTRY_HOME_SETTLE_MS);
-    return () => window.clearTimeout(t);
-  }, [entry]);
-
-  // Add/Withdraw confirmed (Face ID done): dismiss the sheet, move the balance
-  // (signed), and drop the Activity row in once the wallet has settled (visible
-  // insert).
-  const sheetInsertTimer = useRef(0);
-  const finishTransfer = () => {
-    const cents = pendingCents.current;
-    const mode = sheetMode;
-    const dest = pendingActivity.current;
-    // Receive has no amount/confirm step, so it never reaches finishTransfer —
-    // the guard also narrows `mode` to a transfer mode for the calls below.
-    if (mode === 'receive') return;
-    onTransferExecute?.(mode, cents);
-    setSheetConfirming(false);
-    setSheetOpen(false);
-    setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
-    const sentTo =
-      dest?.kind === 'crypto'
-        ? truncateAddress(dest.address)
-        : dest?.kind === 'bank'
-          ? dest.recipientName || dest.bankName
-          : 'recipient';
-    showToast(
-      mode === 'add'
-        ? `${toastUsd(cents)} added to balance`
-        : mode === 'withdraw'
-          ? `${toastUsd(cents)} withdrawn from balance`
-          : `${toastUsd(cents)} sent to ${sentTo}`,
-    );
-    window.clearTimeout(sheetInsertTimer.current);
-    sheetInsertTimer.current = window.setTimeout(() => {
-      setActivity((prev) => [makeTransferRow(mode, cents, dest), ...prev]);
-    }, SHEET_INSERT_DELAY_MS);
-  };
-  useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
-
-  // Receive (Share/Copy in the deposit list): the demo "bullshit mode" payment.
-  // Close the sheet a beat after the tap, then a moment later a payment "lands":
-  // balance bumps, a toast drops, an Activity row inserts, and the inbound
-  // webhook is logged. Amount is random (low hundreds); the payer is the sender
-  // address (crypto) or a name + last initial from the country's pool (fiat).
-  const receiveTimers = useRef<number[]>([]);
-  const handleReceivePayment = (p: ReceivedPayment) => {
-    // Same trigger in Add-from-crypto, but framed as a top-up (you funded your own
-    // balance) rather than a payment from someone else.
-    const asAdd = sheetMode === 'add';
-    receiveTimers.current.push(
-      window.setTimeout(() => setSheetOpen(false), RECEIVE_DISMISS_MS),
-      window.setTimeout(() => {
-        const cents = randomReceiveCents();
-        const payer = p.via === 'crypto' ? truncateAddress(p.address) : p.payer;
-        setDeltaCents((c) => c + cents);
-        showToast(
-          asAdd ? `${toastUsd(cents)} added to balance` : `Received ${toastUsd(cents)} from ${payer}`,
-        );
-        setActivity((prev) => [makeReceiveRow(p, cents, asAdd), ...prev]);
-        onReceivePayment?.({
-          amountCents: cents,
-          viaCrypto: p.via === 'crypto',
-          counterparty: p.via === 'crypto' ? p.address : p.payerFull,
-          paymentRail: p.via === 'bank' ? p.rail : undefined,
-          intent: asAdd ? 'add' : 'receive',
-        });
-      }, RECEIVE_TOAST_MS),
-    );
-  };
-  useEffect(() => () => receiveTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
   // Face ID + the glass toast render in AppShell's overlay layer (above the
   // status bar) so the blur frosts the status bar and the toast can slide in
@@ -780,7 +320,7 @@ export function AuroraWalletScreen({
                 weeklyBars={weeklyBars}
                 weeklySpentCents={weeklySpentCents}
                 earningsTodayCents={earningsTodayCents}
-                apyPercent={EARNINGS_APY_PERCENT}
+                apyPercent={apyPercent}
               />
             </motion.div>
             <WalletListSection
@@ -896,11 +436,7 @@ export function AuroraWalletScreen({
           );
         }}
         onReceive={handleReceivePayment}
-        onConfirm={(cents, activity) => {
-          pendingCents.current = cents;
-          pendingActivity.current = activity;
-          setSheetConfirming(true);
-        }}
+        onConfirm={confirmTransfer}
       />
 
       {screenOverlay}

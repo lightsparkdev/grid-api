@@ -1,0 +1,70 @@
+.bar {
+  position: relative;
+  z-index: 4;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  /* Bar height + room for the home indicator below it. */
+  padding: 10px 8px 24px;
+  background: var(--app-tabbar-bg, var(--wallet-bg));
+  border-top: 1px solid var(--app-hairline, color-mix(in srgb, var(--ios-label-primary) 8%, transparent));
+}
+
+.group {
+  display: flex;
+  flex: 1 1 0;
+  justify-content: space-around;
+  gap: 4px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--app-tabbar-fg, var(--ios-label-secondary));
+  -webkit-tap-highlight-color: transparent;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+.itemActive {
+  color: var(--app-tint, var(--ios-label-primary));
+}
+
+.label {
+  font-family: var(--ios-font-family);
+  font-size: 10px;
+  font-weight: 510;
+  letter-spacing: 0.1px;
+  line-height: 1;
+}
+
+.fab {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 36px;
+  margin: 2px 8px 0;
+  border: 0;
+  border-radius: 18px;
+  corner-shape: round;
+  background: var(--app-tint, #9147ff);
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
