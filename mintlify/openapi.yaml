@@ -6326,7 +6326,7 @@ paths:
       description: |
         Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
-        New cards start in `state: "PENDING_ISSUE"` while the card issuer provisions the card. The `card.state_change` webhook fires on the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
+        New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
       operationId: createCard
       tags:
         - Cards
@@ -7812,7 +7812,7 @@ webhooks:
     post:
       summary: Card state change
       description: |
-        Webhook that is called when a card's lifecycle state changes. Fires on `PENDING_ISSUE → ACTIVE`, on `PENDING_ISSUE → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+        Webhook that is called when a card's lifecycle state changes. Fires on `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -7839,7 +7839,7 @@ webhooks:
               $ref: '#/components/schemas/CardStateChangeWebhook'
             examples:
               activated:
-                summary: Card transitioned from PENDING_ISSUE to ACTIVE
+                summary: Card transitioned from PROCESSING to ACTIVE
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000020
                   type: CARD.STATE_CHANGE
@@ -18442,7 +18442,7 @@ components:
       type: string
       enum:
         - PENDING_KYC
-        - PENDING_ISSUE
+        - PROCESSING
         - ACTIVE
         - FROZEN
         - CLOSED
@@ -18452,7 +18452,7 @@ components:
         | State | Description |
         |-------|-------------|
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this state cannot transact. |
-        | `PENDING_ISSUE` | The card has been requested and is being provisioned with the issuer. |
+        | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible state. |
@@ -18469,7 +18469,7 @@ components:
 
         | Reason | Description |
         |--------|-------------|
-        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PENDING_ISSUE`. |
+        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
         | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
         | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
     CardBrand:

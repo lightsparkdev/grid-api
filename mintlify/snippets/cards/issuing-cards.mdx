@@ -32,7 +32,7 @@ one currency.
 ## The lifecycle
 
 ```text
-PENDING_ISSUE ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSED
+PROCESSING    ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSED
        │             │                              ▲
        │             └──────────────────────────────┘
        │
@@ -41,7 +41,7 @@ PENDING_ISSUE ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSE
 
 | State | When you see it |
 |-------|-----------------|
-| `PENDING_ISSUE` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
+| `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
 | `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `state: "FROZEN"`. |
 | `CLOSED` | You called `PATCH /cards/{id}` with `state: "CLOSED"` (or the issuer rejected provisioning). Terminal. |
@@ -51,7 +51,7 @@ issuance is gated on KYC up front.
 
 ## After issuance
 
-`POST /cards` returns immediately with `state: "PENDING_ISSUE"`. The
+`POST /cards` returns immediately with `state: "PROCESSING"`. The
 issuer provisions the card asynchronously; on success a
 `CARD.STATE_CHANGE` webhook fires with the activated `Card` resource
 including the populated `last4`, `expMonth`, `expYear`, and

@@ -25,7 +25,7 @@ A card moves through five states:
 | State | Meaning |
 |-------|---------|
 | `PENDING_KYC` | Cardholder has not finished KYC; the card cannot transact yet. |
-| `PENDING_ISSUE` | Card has been requested and is being provisioned with the issuer. |
+| `PROCESSING` | Card has been requested and is being provisioned with the issuer. |
 | `ACTIVE` | Card is live and can authorize transactions. |
 | `FROZEN` | Card is temporarily disabled. New authorizations are declined; in-flight settlements continue. |
 | `CLOSED` | Card is permanently closed. Terminal, irreversible. |

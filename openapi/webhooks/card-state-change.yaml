@@ -2,7 +2,7 @@ post:
   summary: Card state change
   description: >
     Webhook that is called when a card's lifecycle state changes. Fires on
-    `PENDING_ISSUE → ACTIVE`, on `PENDING_ISSUE → CLOSED (ISSUER_REJECTED)`
+    `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)`
     when issuer provisioning fails, and on every subsequent
     `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
 
@@ -42,7 +42,7 @@ post:
           $ref: ../components/schemas/webhooks/CardStateChangeWebhook.yaml
         examples:
           activated:
-            summary: Card transitioned from PENDING_ISSUE to ACTIVE
+            summary: Card transitioned from PROCESSING to ACTIVE
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000020
               type: CARD.STATE_CHANGE

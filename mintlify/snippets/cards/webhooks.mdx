@@ -12,7 +12,7 @@ extends the Transaction model with a card destination type).
 
 | Type | Fires on |
 |------|----------|
-| `CARD.STATE_CHANGE` | `PENDING_ISSUE → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
 
 All three carry the standard envelope:
@@ -60,7 +60,7 @@ activation after issuance:
 
 Common branches to handle in your consumer:
 
-- `state: "ACTIVE"` after `PENDING_ISSUE` — the card is live; surface
+- `state: "ACTIVE"` after `PROCESSING` — the card is live; surface
   `panEmbedUrl` to the cardholder.
 - `state: "CLOSED"`, `stateReason: "ISSUER_REJECTED"` — the issuer
   rejected provisioning; offer to issue a new card.
