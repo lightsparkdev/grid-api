@@ -110,12 +110,30 @@ Internal accounts support both fiat and crypto balances:
           "symbol": "$",
           "decimals": 2
         }
+      },
+      "totalBalance": {
+        "amount": 100000,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
       }
     },
     {
       "id": "InternalAccount:btc456",
       "customerId": "Customer:cust001",
       "balance": {
+        "amount": 10000000,
+        "currency": {
+          "code": "BTC",
+          "name": "Bitcoin",
+          "symbol": "₿",
+          "decimals": 8
+        }
+      },
+      "totalBalance": {
         "amount": 10000000,
         "currency": {
           "code": "BTC",
@@ -149,6 +167,10 @@ Subscribe to `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks to receive real-time ba
     "type": "INTERNAL_CRYPTO",
     "status": "ACTIVE",
     "balance": {
+      "amount": 10000000,
+      "currency": { "code": "BTC", "name": "Bitcoin", "symbol": "₿", "decimals": 8 }
+    },
+    "totalBalance": {
       "amount": 10000000,
       "currency": { "code": "BTC", "name": "Bitcoin", "symbol": "₿", "decimals": 8 }
     },
