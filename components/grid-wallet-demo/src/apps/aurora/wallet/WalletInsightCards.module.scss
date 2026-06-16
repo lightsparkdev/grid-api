@@ -107,6 +107,9 @@ $card-press-duration: 0.28s;
 
 .metricCard {
   @extend .cardBase;
+  /* Match the taller sibling so both cards fill the row height evenly (the
+     .row is items-start; stretch overrides just these). */
+  align-self: stretch;
   gap: 16px;
   justify-content: space-between;
   padding: 16px;
@@ -159,6 +162,7 @@ $card-press-duration: 0.28s;
   @include ios.ios-text-footnote;
   font-weight: 510;
   color: var(--ios-label-secondary);
+  text-wrap: pretty;
 }
 
 .metricCaptionPositive {

@@ -57,7 +57,8 @@ export interface WalletInsightCardsProps {
 
 /** One icon-circle metric card (skin style): accent circle + value/unit + caption. */
 function MetricCard({ Icon, accent, value, unit, caption, captionPositive }: SkinInsightCard) {
-  const clip = useSquircleClip<HTMLButtonElement>();
+  // 8px Figma corner (auto-scaled), keeping the phone-shell squircle smoothing.
+  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   return (
     <button type="button" ref={clip.ref} style={clip.style} className={styles.metricCard}>
       <div className={styles.metricTop}>
