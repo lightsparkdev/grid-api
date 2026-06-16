@@ -70,6 +70,7 @@ export const WIGGLE_CONFIG: SkinConfig = {
     balanceLabel: 'Available Balance',
     header: {
       avatarSrc: LOGO,
+      scroll: true,
       buttons: [
         { Icon: IconSettingsGear2, ariaLabel: 'Settings', target: 'settings' },
         { Icon: IconCreditCard2, ariaLabel: 'Debit card', target: 'openCard' },

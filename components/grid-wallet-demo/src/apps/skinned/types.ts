@@ -53,6 +53,8 @@ export interface SkinHeaderConfig {
   title?: string;
   /** Right-aligned icon buttons (e.g. settings + card). */
   buttons?: SkinHeaderButton[];
+  /** Scroll the header with the content instead of pinning it (default pinned). */
+  scroll?: boolean;
 }
 
 /** An insight card in the skin's "icon-circle metric" style (Wiggle restyles

@@ -367,14 +367,30 @@
   z-index: 3;
 }
 
+/* Skins with header.scroll render the header as the first child INSIDE the
+   scrolling body, so it scrolls up under the topFade with the content. No pinned
+   header reserves space, so the home body underlaps only the status bar (62). */
+:global([data-app='wiggle']) .bodyHome {
+  margin-top: -62px;
+  padding-top: 62px;
+}
+
+.headerScroll {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--wallet-header-height);
+  padding: 8px 24px;
+  box-sizing: border-box;
+}
+
 .avatar {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  corner-shape: round;
-  object-fit: cover;
-  background: var(--ios-fill-tertiary);
+  height: 28px;
+  width: auto;
+  user-select: none;
 }
 
 .headerButtons {
@@ -411,7 +427,9 @@
   display: block;
   margin: 8px 16px;
   padding: 8px 0 16px;
-  border-radius: 20px;
+  /* Figma 10px corner; bumped ×1.2 for the superellipse under @supports below
+     (matches the clip-path cards' figmaRadii: 10). */
+  border-radius: 10px;
   corner-shape: var(--corner-shape);
   background: var(--app-wash, #9147ff);
   /* Repaint the balance + action pills light on the wash (read by BalanceHero /
@@ -420,7 +438,16 @@
   --balance-amount-color: #ffffff;
   --balance-decimals-color: rgba(255, 255, 255, 0.6);
   --balance-pad: 16px 20px 12px;
-  --actions-pad: 0 16px 4px;
+  --actions-pad: 64px 16px 4px;
+}
+
+/* Bump the radius ×1.2 where corner-shape is supported so the superellipse reads
+   as a Figma 10px corner (matches the clip-path cards' figmaRadii: 10); Safari
+   keeps the plain 10px above. */
+@supports (corner-shape: squircle) {
+  .heroWash {
+    border-radius: calc(10px * var(--corner-superellipse-scale));
+  }
 }
 
 /* Activity filter tabs (skin) — sit where the "Activity" title would be. No row

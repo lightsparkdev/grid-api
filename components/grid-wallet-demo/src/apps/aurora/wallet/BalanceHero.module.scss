@@ -28,6 +28,13 @@
   font-family: var(--font-family-inter);
   font-variation-settings: 'wght' 700;
   letter-spacing: -0.03em;
+  font-size: 40px;
+  line-height: 1.16;
+}
+
+/* Inter's period carries wide side bearings — pull the decimal toward the digits. */
+:global([data-app='wiggle']) .dot {
+  margin: 0 -0.08em;
 }
 
 /* Footnote/Emphasized */

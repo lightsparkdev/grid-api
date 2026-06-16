@@ -67,8 +67,8 @@ function MetricCard({
   captionPositive,
   captionNode,
 }: SkinInsightCard & { captionNode?: ReactNode }) {
-  // 8px Figma corner (auto-scaled), keeping the phone-shell squircle smoothing.
-  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
+  // 10px Figma corner (×1.2 superellipse scale), phone-shell smoothing kept.
+  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 10 });
   return (
     <button type="button" ref={clip.ref} style={clip.style} className={styles.metricCard}>
       <div className={styles.metricTop}>

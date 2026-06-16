@@ -48,7 +48,7 @@ export function BalanceHero({ balance, label = 'Total balance' }: BalanceHeroPro
           format={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }}
           style={NUMERIC_PAD}
         />
-        <span className={styles.decimals} aria-hidden>
+        <span className={`${styles.decimals} ${styles.dot}`} aria-hidden>
           .
         </span>
         <NumericText

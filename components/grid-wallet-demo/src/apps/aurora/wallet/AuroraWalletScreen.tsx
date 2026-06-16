@@ -645,6 +645,53 @@ export function AuroraWalletScreen({
     <div className={styles.faceIdLayer}>{overlayContent}</div>
   );
 
+  // Home header content (brand avatar/title + icon buttons, or Aurora's title +
+  // gear). Shared by the pinned header (Aurora) and the in-scroll header (skins
+  // with header.scroll), so it's defined once.
+  const homeHeaderInner = home?.header ? (
+    <>
+      {home.header.avatarSrc ? (
+        <img
+          className={styles.avatar}
+          src={home.header.avatarSrc}
+          alt=""
+          aria-hidden
+          draggable={false}
+        />
+      ) : (
+        <h1 className={styles.title}>{home.header.title ?? 'Wallet'}</h1>
+      )}
+      <div className={styles.headerButtons}>
+        {home.header.buttons?.map((b) => (
+          <button
+            key={b.ariaLabel}
+            type="button"
+            className={styles.headerButton}
+            aria-label={b.ariaLabel}
+            onClick={b.target === 'openCard' ? openCard : undefined}
+          >
+            <b.Icon size={24} />
+          </button>
+        ))}
+      </div>
+    </>
+  ) : (
+    <>
+      <h1 className={styles.title}>Aurora</h1>
+      <GlassSymbolButton
+        aria-label="Settings"
+        size={40}
+        type="button"
+        glass={{ brightness: headerGlassBrightness(theme) }}
+      >
+        <SfSymbol name="gearshape.fill" size={17} />
+      </GlassSymbolButton>
+    </>
+  );
+  // Skins can scroll the header with the content instead of pinning it; then it's
+  // rendered as the first child inside the scrolling body (home only).
+  const scrollHeader = Boolean(home?.header?.scroll);
+
   return (
     <div className={styles.root}>
       {/* Full-screen aurora behind everything (incl. the header) during issuance.
@@ -678,6 +725,9 @@ export function AuroraWalletScreen({
         )}
       </AnimatePresence>
 
+      {/* Pinned header — Aurora always; skins with a scrolling header only use it
+          for the card-detail view (the home header rides the scroll instead). */}
+      {(!scrollHeader || isOpen) && (
       <header className={clsx(styles.header, !isOpen && styles.headerHome)}>
         <AnimatePresence initial={false}>
           {!isOpen ? (
@@ -689,46 +739,7 @@ export function AuroraWalletScreen({
               exit={HEADER_HIDDEN}
               transition={HEADER_TRANSITION}
             >
-              {home?.header ? (
-                <>
-                  {home.header.avatarSrc ? (
-                    <img
-                      className={styles.avatar}
-                      src={home.header.avatarSrc}
-                      alt=""
-                      aria-hidden
-                      draggable={false}
-                    />
-                  ) : (
-                    <h1 className={styles.title}>{home.header.title ?? 'Wallet'}</h1>
-                  )}
-                  <div className={styles.headerButtons}>
-                    {home.header.buttons?.map((b) => (
-                      <button
-                        key={b.ariaLabel}
-                        type="button"
-                        className={styles.headerButton}
-                        aria-label={b.ariaLabel}
-                        onClick={b.target === 'openCard' ? openCard : undefined}
-                      >
-                        <b.Icon size={24} />
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h1 className={styles.title}>Aurora</h1>
-                  <GlassSymbolButton
-                    aria-label="Settings"
-                    size={40}
-                    type="button"
-                    glass={{ brightness: headerGlassBrightness(theme) }}
-                  >
-                    <SfSymbol name="gearshape.fill" size={17} />
-                  </GlassSymbolButton>
-                </>
-              )}
+              {homeHeaderInner}
             </motion.div>
           ) : isTap ? null : (
             <motion.div
@@ -748,6 +759,7 @@ export function AuroraWalletScreen({
           )}
         </AnimatePresence>
       </header>
+      )}
 
       {/* Scroll-edge: content that runs under the status bar is progressively
           blurred + faded into the bg so it never clashes with the status-bar
@@ -778,6 +790,12 @@ export function AuroraWalletScreen({
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={CARD_TRANSITION}
       >
+        {/* Skin header that rides the scroll (vs Aurora's pinned header) — first
+            child so it scrolls up under the topFade with the rest of the content. */}
+        {scrollHeader && !isOpen && !isTap && (
+          <div className={styles.headerScroll}>{homeHeaderInner}</div>
+        )}
+
         {/* The card is a single element that carries through every state — it
             layout-animates between the top slot and the centered issuance slot.
             Skins that lead with a balance hero hide it on the closed home; it

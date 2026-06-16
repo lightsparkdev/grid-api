@@ -12,15 +12,14 @@
   min-width: 0;
 }
 
-/* Icon-only action (e.g. Send ↑↓) is a true circle: equal padding around the
-   24px glyph makes width == height regardless of flex (aspect-ratio doesn't
-   transfer here — flex-basis:auto pins the width to content). 13px ≈ the labeled
-   pill height. width:auto cancels ContentAreaButton's width:100%; the double
-   class beats that single-class rule. */
+/* Icon-only action (e.g. Send ↑↓) is a fixed 48px circle (matches the labeled
+   pill height). Explicit width cancels ContentAreaButton's width:100%; the
+   double class beats that single-class rule. */
 .button.buttonHug {
   flex: 0 0 auto;
-  width: auto;
-  padding: 13px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
   border-radius: 50%;
   corner-shape: round;
 }
@@ -43,9 +42,14 @@
   }
 }
 
-/* Tighter icon→label gap on the labeled actions. */
+/* Labeled actions: 48px tall, iOS Subheadline (15px) label (icon stays 24px).
+   Zero vertical padding — the flex centering handles it within the fixed height. */
 :global([data-app='wiggle']) .button:not(.buttonHug) {
   gap: 4px;
+  height: 48px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--ios-type-subheadline-size);
 }
 
 /* The +/↙ glyphs carry built-in whitespace in their 24px box, so the centered
@@ -53,4 +57,17 @@
    optically (the icon span is the button's first child). */
 :global([data-app='wiggle']) .button:not(.buttonHug) > span:first-child {
   margin-left: -4px;
+}
+
+/* The 20px Send glyph sits in a fixed 24px icon box — center it there (the 40px
+   button then centers the box). */
+:global([data-app='wiggle']) .button.buttonHug > span:first-child {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Heavier Send stroke — true 2.25px regardless of the 20px scale-down. */
+:global([data-app='wiggle']) .button.buttonHug svg path {
+  stroke-width: 2.25;
+  vector-effect: non-scaling-stroke;
 }

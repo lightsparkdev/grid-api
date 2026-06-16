@@ -29,7 +29,7 @@ export function WalletActions({ onAdd, onWithdraw, onSend, actions }: WalletActi
             type="button"
             variant="bordered"
             aria-label={ariaLabel ?? label}
-            icon={<Icon size={24} />}
+            icon={<Icon size={label ? 24 : 20} />}
             onClick={handlerFor(id)}
           >
             {label}

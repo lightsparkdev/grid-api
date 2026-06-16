@@ -22,6 +22,15 @@
   }
 }
 
+/* Skins that hide the debit card have no card for the sheet to lift over, so the
+   sheet-over-card treatment is dropped: flat (no rounded top, no shadow; the
+   overlap is already 0 via --wallet-sheet-overlap) — one column scrolling under
+   the topFade. */
+:global([data-app='wiggle']) .sheet {
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .sheetDismissed {
   box-shadow: none;
 }
