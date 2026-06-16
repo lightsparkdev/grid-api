@@ -19,11 +19,8 @@ export const ReceiptExample = () => {
       <div style={{ width: '100%', maxWidth: '600px', background: '#ffffff', border: hair, borderRadius: '16px', overflow: 'hidden', boxShadow: '0px 1px 2px -1px rgba(0,0,0,0.04), 0px 8px 24px rgba(0,0,0,0.05)', color: '#1a1a1a', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
 
         <div style={{ padding: '28px 32px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', borderBottom: hair }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg viewBox="0 0 38.169 24" width="28" height="17.6" fill="none" aria-hidden="true">
-              <path d="M1.48818 21.4182L13.3963 13.685H-0.000427246L5.18801 10.3155H17.0957V2.58255L21.0719 0.000396729V8.70034L30.4925 2.58253L36.6789 2.58253L24.7711 10.3155H38.1685L32.9801 13.685H21.0719V21.4182L17.0957 24.0003V15.3L7.67461 21.4182H1.48818Z" fill="#1a1a1a" />
-            </svg>
-            <span style={{ fontSize: '20px', fontWeight: 500, letterSpacing: '-0.6px' }}>Lightspark</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '10px 16px', border: '1px dashed #c1c0b8', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#989898', fontFamily: mono }}>Your Logo</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '4px 10px 4px 9px', background: '#dbfdee', borderRadius: '999px', fontSize: '12px', fontWeight: 450, color: '#118453' }}>
@@ -32,12 +29,6 @@ export const ReceiptExample = () => {
             </span>
             <span style={{ fontFamily: mono, fontSize: '11px', color: '#989898', textAlign: 'right', lineHeight: 1.5 }}>06 / 10 / 2026<br />14:32:08 PDT</span>
           </div>
-        </div>
-
-        <div style={{ padding: '16px 32px', background: '#fafaf9', borderBottom: hair, display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '12px', color: '#7c7c7c', lineHeight: 1.5 }}>
-          <span style={{ fontSize: '13px', fontWeight: 500, color: '#1a1a1a' }}>Lightspark Payments, LLC&nbsp;&nbsp;·&nbsp;&nbsp;NMLS ID 2429193</span>
-          <span>8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069</span>
-          <span>www.lightspark.com&nbsp;&nbsp;·&nbsp;&nbsp;(855) 516-0103</span>
         </div>
 
         <div style={{ padding: '28px 32px 24px', display: 'flex', alignItems: 'flex-end', gap: '24px', borderBottom: hair }}>
@@ -114,6 +105,11 @@ export const ReceiptExample = () => {
             <p style={{ margin: 0 }}>You may cancel for a full refund within 30 minutes of payment, unless the funds have already been picked up or deposited. See the <a href="https://support.lightspark.com/hc/en-us/categories/51347651720859-Cards" style={{ color: '#1a1a1a', fontWeight: 450 }}>refund policy</a> or call the number above.</p>
           </div>
           <p style={{ margin: 0, fontSize: '11px', color: '#989898', borderTop: '1px solid rgba(38,38,35,0.08)', paddingTop: '10px' }}>Recipient may receive less than the total to recipient due to fees charged by the recipient's bank and any foreign taxes. <em>(Foreign remittance only.)</em></p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '12px', color: '#7c7c7c', lineHeight: 1.5, borderTop: '1px solid rgba(38,38,35,0.08)', paddingTop: '14px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1a1a1a' }}>Lightspark Payments, LLC&nbsp;&nbsp;·&nbsp;&nbsp;NMLS ID 2429193</span>
+            <span>8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069</span>
+            <span>www.lightspark.com&nbsp;&nbsp;·&nbsp;&nbsp;(855) 516-0103</span>
+          </div>
         </div>
 
       </div>
