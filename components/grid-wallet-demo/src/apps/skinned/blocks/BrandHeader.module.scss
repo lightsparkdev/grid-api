@@ -24,7 +24,7 @@
   font-weight: 600;
   letter-spacing: -0.5px;
   line-height: normal;
-  color: inherit;
+  color: var(--brand-header-name-color, inherit);
 }
 
 .tagline {

@@ -6,10 +6,12 @@
   color: var(--marquee-color, currentColor);
   user-select: none;
   pointer-events: none;
+  /* Clip horizontal scroll only — row overflow:hidden was clipping descenders. */
+  overflow-x: hidden;
 }
 
 .row {
-  overflow: hidden;
+  overflow: visible;
   white-space: nowrap;
 }
 
@@ -19,7 +21,7 @@
   display: inline-flex;
   width: max-content;
   will-change: transform;
-  animation: marquee-scroll var(--marquee-dur, 30s) linear infinite;
+  animation: marquee-scroll var(--marquee-dur, 48s) linear infinite;
 }
 
 .reverse {
@@ -40,6 +42,23 @@
   letter-spacing: -0.5px;
   line-height: 1;
   opacity: 0.4;
+}
+
+.interactive {
+  pointer-events: auto;
+}
+
+.interactive .word {
+  pointer-events: auto;
+  cursor: default;
+  transition:
+    color 0.6s var(--ease-out-snappy),
+    opacity 0.6s var(--ease-out-snappy);
+}
+
+.interactive .word:hover {
+  color: var(--marquee-hover-color, #fff);
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

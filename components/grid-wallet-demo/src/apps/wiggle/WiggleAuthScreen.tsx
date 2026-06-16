@@ -59,7 +59,7 @@ export function WiggleAuthScreen({
         />
 
         <div className={styles.hero}>
-          <Marquee rows={config.auth.marquee} />
+          <Marquee rows={config.auth.marquee} interactive />
         </div>
 
         <div className={styles.footer}>

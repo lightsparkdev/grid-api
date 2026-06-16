@@ -26,6 +26,7 @@
 .header {
   flex-shrink: 0;
   padding: 72px 24px 0;
+  --brand-header-name-color: #fff;
 }
 
 .hero {
@@ -34,7 +35,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .footer {
