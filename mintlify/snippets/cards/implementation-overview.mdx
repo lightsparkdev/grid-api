@@ -46,7 +46,7 @@ balance before approving each auth, so:
 ## Issuing and lifecycle
 
 Issuance is a single `POST /cards` call. New cards start in
-`PENDING_ISSUE` while the issuer provisions them and transition to
+`PROCESSING` while the issuer provisions them and transition to
 `ACTIVE` automatically — you observe both transitions via the
 `CARD.STATE_CHANGE` webhook. Day-to-day operational changes are:
 
