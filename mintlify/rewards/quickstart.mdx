@@ -81,6 +81,15 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accoun
           "decimals": 2
         }
       },
+      "totalBalance": {
+        "amount": 0,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
+      },
       "fundingPaymentInstructions": [
         {
           "instructionsNotes": "Include the reference code in your ACH transfer memo",
@@ -148,6 +157,15 @@ When the funds are received and the internal account balance is updated, you'll 
     "type": "INTERNAL_FIAT",
     "status": "ACTIVE",
     "balance": {
+      "amount": 200000,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "totalBalance": {
       "amount": 200000,
       "currency": {
         "code": "USD",
