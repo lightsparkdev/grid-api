@@ -4,11 +4,13 @@ import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconSettingsGear2';
-import { IconCreditCard2 } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconCreditCard2';
-import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconPlusMedium';
-import { IconArrowDownLeft } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconArrowDownLeft';
-import { IconArrowBottomTop } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconArrowBottomTop';
+import {
+  IconArrowBottomTop,
+  IconArrowDownLeft,
+  IconCreditCard2,
+  IconPlusMedium,
+  IconSettingsGear2,
+} from '../icons';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';

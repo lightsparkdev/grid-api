@@ -1,14 +1,16 @@
-import { IconHomeOpen } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconHomeOpen';
-import { IconHomeOpen as IconHomeOpenFilled } from '@central-icons-react/round-filled-radius-0-stroke-1.5/IconHomeOpen';
-import { IconVideoClip } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconVideoClip';
-import { IconAnalytics } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconAnalytics';
-import { IconPeople } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconPeople';
-import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconPlusMedium';
 import type { SkinTabBarConfig } from './types';
+import {
+  IconAnalytics,
+  IconHomeOpen,
+  IconHomeOpenFilled,
+  IconPeople,
+  IconPlusMedium,
+  IconVideoClip,
+} from './icons';
 
 /** Wiggle (creator platform) — a Twitch-style live-streaming skin. Brand + auth
  *  copy live here; the home layout/visuals live in WiggleWalletScreen. */
-export const WIGGLE_LOGO = '/assets/creator/logo-wiggle.svg';
+export const WIGGLE_LOGO = '/assets/creator/logo-creator-platform.svg';
 
 /** Auth hero copy + the scrolling category marquee (Figma 2375:10338). */
 export const WIGGLE_AUTH = {

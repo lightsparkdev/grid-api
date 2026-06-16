@@ -3,7 +3,8 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { authCta, type AuthMethod } from '@/data/flow';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
-import { AUTH_METHOD_ICONS, AUTH_METHOD_ORDER } from '@/apps/shared/authMethodIcons';
+import { AUTH_METHOD_ORDER } from '@/apps/shared/authMethodIcons';
+import { WIGGLE_AUTH_METHOD_ICONS } from '../icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './AuthCtaList.module.scss';
 
@@ -31,7 +32,7 @@ function AuthCta({
   busy?: boolean;
   onSignIn: (method: AuthMethod) => void;
 }) {
-  const Icon = AUTH_METHOD_ICONS[method];
+  const Icon = WIGGLE_AUTH_METHOD_ICONS[method];
   return (
     <motion.div
       className={styles.action}

@@ -17,6 +17,8 @@
     "verify:bank": "npm run verify:bank-fields && npm run verify:bank-data"
   },
   "dependencies": {
+    "@central-icons-react/round-filled-radius-0-stroke-2": "^1.1.267",
+    "@central-icons-react/round-outlined-radius-0-stroke-2": "^1.1.267",
     "@central-icons-react/round-outlined-radius-1-stroke-1.5": "^1.1.265",
     "@central-icons-react/round-outlined-radius-3-stroke-1.5": "^1.1.135",
     "@lightsparkdev/origin": "^0.13.4",

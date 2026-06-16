@@ -2,7 +2,7 @@
 $fill-button-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
 
 @mixin fill-quaternary-surface {
-  background: var(--ios-fill-quaternary);
+  background: var(--content-btn-bg, var(--ios-fill-quaternary));
   border: 0;
   box-shadow: $fill-button-shadow;
 }

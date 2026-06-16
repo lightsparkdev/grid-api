@@ -1,7 +1,6 @@
 'use client';
 
-import { IconGrowth } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconGrowth';
-import { IconHeart } from '@central-icons-react/round-outlined-radius-0-stroke-1.5/IconHeart';
+import { IconGrowth, IconHeart } from '../icons';
 import { formatUsdCents } from '@/apps/shared/wallet-flows';
 import styles from './WiggleInsightCards.module.scss';
 
