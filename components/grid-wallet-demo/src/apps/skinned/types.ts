@@ -104,6 +104,9 @@ export interface SkinActivityConfig {
   tabs?: string[];
   /** Seed rows shown on the home Activity list. */
   fixtures?: SkinActivityFixture[];
+  /** Render each row as its own filled card (10px squircle, 4px gap) instead of
+   *  Aurora's single elevated container. */
+  itemCards?: boolean;
 }
 
 export interface SkinHomeConfig {

@@ -113,9 +113,9 @@ $card-press-duration: 0.28s;
   gap: 16px;
   justify-content: space-between;
   padding: 16px;
-  /* Flat gray surface in light; dark keeps the elevated-card value (its
+  /* White surface in light; dark keeps the elevated-card value (its
      [data-theme='dark'] rule outranks this single-class override). */
-  background: #efeff1;
+  background: #ffffff;
 }
 
 .metricTop {

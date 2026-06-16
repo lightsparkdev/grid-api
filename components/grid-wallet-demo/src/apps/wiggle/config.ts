@@ -14,14 +14,6 @@ import type { SkinConfig } from '@/apps/skinned/types';
 
 const LOGO = '/assets/creator/logo-wiggle.svg';
 
-/** Twitch-style chat colors for activity counterparty handles. */
-const HANDLE = {
-  purple: '#a970ff',
-  green: '#2ee6a0',
-  blue: '#4f9cf0',
-  pink: '#ff5fa2',
-} as const;
-
 /** Wiggle (creator platform) — a Twitch-style live-streaming skin. */
 export const WIGGLE_CONFIG: SkinConfig = {
   brand: {
@@ -115,51 +107,7 @@ export const WIGGLE_CONFIG: SkinConfig = {
     },
     activity: {
       tabs: ['All', 'Sent', 'Received'],
-      fixtures: [
-        {
-          id: 'fx-received',
-          Icon: IconPeople,
-          tileCircle: true,
-          title: 'Received',
-          detail: 'from',
-          handle: 'JRandall1017',
-          handleColor: HANDLE.green,
-          amount: '+ $5.00',
-          agoMinutes: 2,
-        },
-        {
-          id: 'fx-payout',
-          image: LOGO,
-          imageSquare: true,
-          title: 'Creator Payout',
-          detail: 'from',
-          handle: 'Wiggle',
-          handleColor: HANDLE.purple,
-          amount: '+ $10.00',
-          agoMinutes: 18,
-        },
-        {
-          id: 'fx-deposit',
-          Icon: IconCreditCard2,
-          title: 'Deposit',
-          detail: 'from',
-          handle: 'Chase (1234)',
-          handleColor: HANDLE.blue,
-          amount: '+ $100.00',
-          agoMinutes: 65,
-        },
-        {
-          id: 'fx-sent',
-          Icon: IconPeople,
-          tileCircle: true,
-          title: 'Sent',
-          detail: 'to',
-          handle: 'caseoh_',
-          handleColor: HANDLE.pink,
-          amount: '- $100.00',
-          agoMinutes: 140,
-        },
-      ],
+      itemCards: true,
     },
   },
 };

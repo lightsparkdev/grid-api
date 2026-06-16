@@ -46,6 +46,8 @@ export interface WalletListItemData {
 export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'timestamp'> {
   /** Pre-formatted relative time label, e.g. "Just now". */
   time: string;
+  /** Row sits in its own card — uniform padding all sides (vs the list-row insets). */
+  itemCard?: boolean;
 }
 
 /**
@@ -65,9 +67,10 @@ export function WalletListItem({
   handleColor,
   time,
   amount,
+  itemCard,
 }: WalletListItemProps) {
   return (
-    <div className={styles.row}>
+    <div className={clsx(styles.row, itemCard && styles.rowCard)}>
       <span
         className={clsx(styles.graphic, (tileCircle || avatar) && styles.graphicCircle)}
         aria-hidden
@@ -90,7 +93,7 @@ export function WalletListItem({
           Icon && <Icon size={24} />
         )}
       </span>
-      <div className={styles.content}>
+      <div className={clsx(styles.content, itemCard && styles.contentCard)}>
         <div className={styles.container}>
           <div className={styles.labels}>
             <p className={styles.title}>{title}</p>

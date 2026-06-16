@@ -52,6 +52,79 @@
   width: 100%;
 }
 
+/* ── Per-item card mode (itemCards): each row is its own filled squircle ──── */
+
+/* The shared container goes transparent — the rows carry the fill/shape. */
+.cardItems {
+  background: none;
+  box-shadow: none;
+  min-height: 0;
+  padding: 0;
+}
+
+.itemsGap {
+  gap: 10px;
+}
+
+/* One row as a card — fill + 10px squircle (clip-path via useSquircleClip, which
+   sets border-radius:0 inline; overflow clips the row to the squircle). */
+.itemCard {
+  background: var(--list-card-bg, var(--ios-bg-primary));
+  overflow: hidden;
+}
+
+/* Empty/skeleton in item-card mode: the container is transparent, so the empty
+   state needs its own min height for the centered message + skeleton.
+   (Double-class so these win over the base rules, which appear later in source.) */
+.cardInner.cardInnerItemCards {
+  min-height: 232px;
+  height: auto;
+}
+
+/* Skeleton rows stack as mini-cards (matching the real item cards). */
+.list.listItemCards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: auto;
+}
+
+/* Skeleton row in item-card mode: NO card fill — just the faint placeholder
+   shapes on the page (super subtle), positioned with the card's uniform 16px
+   inset. The page-bg gradient cover fades them out toward the message. */
+.row.rowSkeletonCard {
+  height: auto;
+  padding: 16px;
+  /* Light-but-visible skeleton card fill + 10px (×1.2) squircle, so the cards
+     read as part of the skeleton (subtle on the off-white page). */
+  background: #f2f2f4;
+  border-radius: calc(10px * var(--corner-superellipse-scale));
+  corner-shape: var(--corner-shape);
+
+  .rowContent {
+    height: auto;
+    padding-right: 0;
+  }
+}
+
+/* Brighter, low-contrast placeholder shapes (tile + pills) — close to the card
+   fill so they read as a subtle skeleton. */
+.row.rowSkeletonCard .rowGraphic,
+.row.rowSkeletonCard .skeletonPill {
+  background: #ececef;
+}
+
+/* Cover fades the skeleton cards into the page bg toward the message. Starts
+   fully transparent so the top mini-card(s) stay crisp (they're white on the
+   off-white page — a wash at the top would erase them), then ramps to the page
+   bg lower down where the centered message sits. */
+.gradientMask.gradientMaskItemCards {
+  height: 100%;
+  /* One continuous fade: fully clear at the top of the first card → page bg at
+     the bottom of the second card. */
+  background: linear-gradient(to bottom, transparent 0%, var(--wallet-bg) 100%);
+}
+
 .skeletonLayer {
   position: relative;
   width: 100%;

@@ -46,6 +46,67 @@ interface WalletListCardProps {
   grow?: boolean;
   /** Round (vs squircle) skeleton avatar placeholder — the send recipient list. */
   roundGraphic?: boolean;
+  /** Each row is its own filled card (10px squircle, 4px gap) instead of one
+   *  shared elevated container. Empty state collapses to a simple centered line. */
+  itemCards?: boolean;
+}
+
+/** One activity row, optionally wrapped as its own squircle card (itemCards). Its
+ *  own component so each card can own a `useSquircleClip` (hooks can't run in a
+ *  map). Mount rows stagger-reveal; later rows grow-in (clipped by overflow). */
+function ListRow({
+  item,
+  index,
+  fresh,
+  itemCards,
+  reduceMotion,
+  now,
+}: {
+  item: WalletListItemData;
+  index: number;
+  fresh: boolean;
+  itemCards: boolean;
+  reduceMotion: boolean | null;
+  now: number;
+}) {
+  // 10px Figma corner (×1.2 superellipse), cross-browser via clip-path. The hook
+  // is a no-op for Aurora rows (ref never attached).
+  const clip = useSquircleClip<HTMLDivElement>({ figmaRadii: 10 });
+  const row = (
+    <WalletListItem {...item} time={relativeTime(item.timestamp, now)} itemCard={itemCards} />
+  );
+  const style = itemCards
+    ? { ...clip.style, ...(fresh ? { overflow: 'hidden' as const } : null) }
+    : fresh
+      ? { overflow: 'hidden' as const }
+      : undefined;
+  return (
+    <motion.div
+      ref={itemCards ? clip.ref : undefined}
+      className={itemCards ? styles.itemCard : undefined}
+      style={style}
+      initial={reduceMotion ? false : fresh ? INSERT_HIDDEN : ITEM_HIDDEN}
+      animate={fresh ? INSERT_VISIBLE : ITEM_VISIBLE}
+      transition={
+        fresh
+          ? motionTransition(undefined, INSERT_DURATION_S)
+          : motionTransition(undefined, 0.4, { delay: index * ITEM_STAGGER_S })
+      }
+    >
+      {fresh ? (
+        // Slide the row down into the slot as it opens.
+        <motion.div
+          initial={reduceMotion ? false : { y: -ROW_H }}
+          animate={{ y: 0 }}
+          transition={motionTransition(undefined, INSERT_DURATION_S)}
+        >
+          {row}
+        </motion.div>
+      ) : (
+        row
+      )}
+    </motion.div>
+  );
 }
 
 /**
@@ -61,6 +122,7 @@ export function WalletListCard({
   items,
   grow = false,
   roundGraphic = false,
+  itemCards = false,
 }: WalletListCardProps) {
   const reduceMotion = useReducedMotion();
   const hasItems = !!items && items.length > 0;
@@ -144,9 +206,11 @@ export function WalletListCard({
       )}
     >
       <div
-        ref={cardClip.ref}
-        style={cardClip.style}
-        className={clsx(styles.card, grow && styles.cardGrow)}
+        // Per-item mode: the container is transparent and the rows (real or
+        // skeleton) carry the fill/shape — so no shared card clip.
+        ref={itemCards ? undefined : cardClip.ref}
+        style={itemCards ? undefined : cardClip.style}
+        className={clsx(styles.card, grow && styles.cardGrow, itemCards && styles.cardItems)}
       >
         {/* popLayout pops the exiting empty state out of flow, so the first row
             grows in from the top of the card while the skeleton/message dissolve
@@ -156,53 +220,36 @@ export function WalletListCard({
             the second and subsequent tap-to-pays. */}
         <AnimatePresence mode="popLayout">
         {hasItems ? (
-          <div key="items" className={styles.items}>
-            {(items ?? []).map((item, i) => {
-              const fresh = freshIds.current.has(item.id);
-              return (
-                <motion.div
-                  key={item.id}
-                  style={fresh ? { overflow: 'hidden' } : undefined}
-                  initial={reduceMotion ? false : fresh ? INSERT_HIDDEN : ITEM_HIDDEN}
-                  animate={fresh ? INSERT_VISIBLE : ITEM_VISIBLE}
-                  transition={
-                    fresh
-                      ? motionTransition(undefined, INSERT_DURATION_S)
-                      : motionTransition(undefined, 0.4, { delay: i * ITEM_STAGGER_S })
-                  }
-                >
-                  {fresh ? (
-                    // Slide the row down into the slot as it opens.
-                    <motion.div
-                      initial={reduceMotion ? false : { y: -ROW_H }}
-                      animate={{ y: 0 }}
-                      transition={motionTransition(undefined, INSERT_DURATION_S)}
-                    >
-                      <WalletListItem {...item} time={relativeTime(item.timestamp, now)} />
-                    </motion.div>
-                  ) : (
-                    <WalletListItem {...item} time={relativeTime(item.timestamp, now)} />
-                  )}
-                </motion.div>
-              );
-            })}
+          <div key="items" className={clsx(styles.items, itemCards && styles.itemsGap)}>
+            {(items ?? []).map((item, i) => (
+              <ListRow
+                key={item.id}
+                item={item}
+                index={i}
+                fresh={freshIds.current.has(item.id)}
+                itemCards={itemCards}
+                reduceMotion={reduceMotion}
+                now={now}
+              />
+            ))}
           </div>
         ) : (
           <motion.div
             key="empty"
-            className={styles.cardInner}
+            className={clsx(styles.cardInner, itemCards && styles.cardInnerItemCards)}
             exit={
               reduceMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(8px)' }
             }
             transition={motionTransition(undefined, 0.35)}
           >
             <div className={styles.skeletonLayer}>
-              <div className={styles.list} aria-hidden>
-                <SkeletonRow bordered round={roundGraphic} />
-                <SkeletonRow round={roundGraphic} />
+              <div className={clsx(styles.list, itemCards && styles.listItemCards)} aria-hidden>
+                <SkeletonRow bordered={!itemCards} round={roundGraphic} itemCard={itemCards} />
+                <SkeletonRow round={roundGraphic} itemCard={itemCards} />
                 <div
                   className={clsx(
                     styles.gradientMask,
+                    itemCards && styles.gradientMaskItemCards,
                     (coverVisible || reduceMotion === true) && styles.gradientMaskVisible,
                   )}
                   style={{ ['--cover-duration' as string]: `${REVEAL_DURATION_S}s` }}
@@ -233,9 +280,17 @@ export function WalletListCard({
   );
 }
 
-function SkeletonRow({ bordered, round }: { bordered?: boolean; round?: boolean }) {
+function SkeletonRow({
+  bordered,
+  round,
+  itemCard,
+}: {
+  bordered?: boolean;
+  round?: boolean;
+  itemCard?: boolean;
+}) {
   return (
-    <div className={styles.row}>
+    <div className={clsx(styles.row, itemCard && styles.rowSkeletonCard)}>
       <div className={clsx(styles.rowGraphic, round && styles.rowGraphicRound)} />
       <div className={bordered ? styles.rowContentBordered : styles.rowContent}>
         <div className={styles.rowInner}>

@@ -912,6 +912,7 @@ export function AuroraWalletScreen({
                   }
                   cta={{ label: 'Add money', onClick: () => openSheet('add') }}
                   items={filteredActivity}
+                  itemCards={home?.activity?.itemCards}
                   concentricBottom
                   grow
                 />

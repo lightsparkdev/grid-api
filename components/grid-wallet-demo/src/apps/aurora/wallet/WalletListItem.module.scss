@@ -87,6 +87,18 @@
   padding-right: 24px;
 }
 
+/* Item-card mode: uniform 16px padding all sides (vs the row's 16-left / 24-right /
+   centered-in-80 insets); height grows to fit the padded content. */
+.rowCard {
+  height: auto;
+  padding: 16px;
+}
+
+.contentCard {
+  height: auto;
+  padding-right: 0;
+}
+
 /* Figma 2143:41035 — labels + amount, gap 16, top-aligned. */
 .container {
   display: flex;

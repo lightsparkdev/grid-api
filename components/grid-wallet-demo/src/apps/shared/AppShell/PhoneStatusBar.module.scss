@@ -15,6 +15,9 @@
   padding: 21px 24px 19px;
   /* Explicit black — don't use --ios-label-primary; it flips white under [data-theme='dark']. */
   color: #000000;
+  /* Always SF Pro — the iOS status bar never takes the skin font (e.g. Wiggle's
+     Inter). Overriding the var here flows into the .time type mixin. */
+  --ios-font-family: var(--font-family-sf-pro);
   font-feature-settings: normal;
   letter-spacing: 0;
   pointer-events: none;
