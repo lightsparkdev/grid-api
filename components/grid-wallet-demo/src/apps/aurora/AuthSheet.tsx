@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type InputHTMLAttributes,
-  type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
@@ -165,12 +164,10 @@ interface AuthSheetProps {
   onCancel?: () => void;
   /** App brand name for the delivery copy (email sender / SMS body). */
   brand?: string;
-  /** Screen-aligned copy the OTP notification refracts (what's behind it).
-   *  Defaults to Aurora's live aurora field. */
-  notifField?: ReactNode;
-  /** The notifField is a static copy (a skin) → SVG lens on both engines; off =
-   *  Aurora's live field (Safari recomputes it in a WebGL lens). */
-  notifFieldStatic?: boolean;
+  /** Skins use the cheap frosted notification (no aurora field copy to refract). */
+  frosted?: boolean;
+  /** Floating inset (px) from the screen edges; 0 = edge-to-edge. Default 16. */
+  inset?: number;
 }
 
 /**
@@ -188,8 +185,8 @@ export function AuthSheet({
   onBack,
   onCancel,
   brand = 'Aurora',
-  notifField,
-  notifFieldStatic,
+  frosted,
+  inset = 16,
 }: AuthSheetProps) {
   const theme = useThemeMode();
   const reduceMotion = useReducedMotion();
@@ -381,7 +378,7 @@ export function AuthSheet({
   // The capsule is a real displacement lens over a positioned copy of the screen
   // behind it (backdrop-filter can't refract portably — Aave's copy-in-the-glass).
   // Aurora copies its live aurora field; a skin supplies its own static copy.
-  const fieldContent = notifField ?? (
+  const fieldContent = (
     <div
       className={auroraStyles.root}
       style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
@@ -389,7 +386,7 @@ export function AuthSheet({
       <AuroraCssField className={styles.auroraCopyField} />
     </div>
   );
-  const refractionCopy = notifFieldStatic ? null : (
+  const refractionCopy = frosted ? null : (
     <div
       aria-hidden
       style={{
@@ -423,8 +420,7 @@ export function AuthSheet({
       body={notif.body}
       bodyLines={notif.bodyLines}
       backdropNode={refractionCopy}
-      field={notifFieldStatic ? notifField : undefined}
-      staticBackdrop={notifFieldStatic}
+      frosted={frosted}
       onTap={autofill}
     />
   );
@@ -436,7 +432,7 @@ export function AuthSheet({
       open={open}
       // The scrim can't cancel mid-verify — the staged submit is committed.
       onDismiss={phase === 'idle' ? (onCancel ?? (() => {})) : () => {}}
-      inset={16}
+      inset={inset}
       topRadius={40}
       // Same float-sheet treatment as the send/receive picker.
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}

@@ -15,6 +15,23 @@
   z-index: 1;
 }
 
+:global([data-app='wiggle']) {
+  .header {
+    /* 8px sheetInner pad + 24px = 32px — lines up with .close and cardContainer. */
+    padding: 24px 24px 8px;
+  }
+
+  .sub {
+    padding-bottom: 22px;
+  }
+
+  .close {
+    /* sheetInner pad doesn't shift absolute children — nudge in with the flow content. */
+    top: 32px;
+    right: 32px;
+  }
+}
+
 /* The activity-row graphic treatment (WalletListItem), sized up — 64px tile,
    radius 16, centered 28px glyph at a true 2px stroke. The FILL lives on a
    blurred under-layer (8px) so the tile's edges feather out, with the crisp

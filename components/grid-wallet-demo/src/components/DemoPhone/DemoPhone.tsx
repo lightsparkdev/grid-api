@@ -41,7 +41,6 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const skinEntry = isAurora ? undefined : SKINS[props.persona];
   const flowActive = isAurora || Boolean(skinEntry);
   const brandName = skinEntry?.config.brand.name ?? brand.name;
-  const SkinNotifField = skinEntry?.NotifField;
   const onAuthScreen = flowActive && props.phone.screen === 'auth';
 
   const passkeySheet = onAuthScreen ? (
@@ -83,8 +82,8 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       onBack={props.otp?.onBack}
       onCancel={props.otp?.active ? props.otp?.onCancel : entry?.onCancel}
       brand={brandName}
-      notifField={SkinNotifField ? <SkinNotifField /> : undefined}
-      notifFieldStatic={Boolean(skinEntry)}
+      frosted={Boolean(skinEntry)}
+      inset={skinEntry ? 0 : 16}
     />
   ) : null;
 

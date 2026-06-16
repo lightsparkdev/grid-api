@@ -31,6 +31,4 @@ export interface SkinEntry {
   persona: Persona;
   config: SkinConfig;
   AuthScreen: ComponentType<SkinAuthScreenProps>;
-  /** Screen-aligned copy the OTP notification refracts (the skin's static field). */
-  NotifField?: ComponentType;
 }

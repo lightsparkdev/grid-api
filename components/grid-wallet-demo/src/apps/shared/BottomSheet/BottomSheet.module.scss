@@ -38,4 +38,9 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  /* Compensatory breathing room for edge-to-edge skins (inset: 0). Padding, not
+     margin — child margins aren't painted by the frost panel and leave a dead
+     gap at the bottom. Default 0 — floating sheets (Aurora, inset 16) already
+     have their gap. */
+  padding: var(--sheet-content-pad, 0);
 }

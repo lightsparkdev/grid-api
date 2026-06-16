@@ -89,11 +89,9 @@ interface GlassNotificationProps {
    * aurora lens.
    */
   backdropNode?: ReactNode;
-  /** Render via the traveling-lens path (content fixed, the lens slides over it)
-   *  for skins whose backdrop is static DOM, not the live aurora. Needs `field`. */
-  staticBackdrop?: boolean;
-  /** The fixed screen-content copy the traveling lens refracts (skins). */
-  field?: ReactNode;
+  /** Skins render the cheap frosted notification (backdrop-filter + specular rim)
+   *  instead of Aurora's refraction path. */
+  frosted?: boolean;
   onTap?: () => void;
 }
 
@@ -112,14 +110,13 @@ export function GlassNotification({
   bodyLines = 1,
   time = 'now',
   backdropNode,
-  staticBackdrop,
-  field,
+  frosted,
   onTap,
 }: GlassNotificationProps) {
   // Skins use the cheap frosted notification (backdrop-filter + specular rim), not
   // the SVG displacement lens — the live lens tanks Safari's framerate. Aurora
   // keeps its refraction path below.
-  if (staticBackdrop) {
+  if (frosted) {
     return (
       <FrostedNotification
         show={show}

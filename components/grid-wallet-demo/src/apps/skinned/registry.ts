@@ -1,6 +1,5 @@
 import type { Persona } from '@/data/flow';
 import { WiggleAuthScreen } from '@/apps/wiggle/WiggleAuthScreen';
-import { WiggleNotifField } from '@/apps/wiggle/WiggleNotifField';
 import { WIGGLE_CONFIG } from '@/apps/wiggle/config';
 import type { SkinEntry } from './types';
 
@@ -13,6 +12,5 @@ export const SKINS: Partial<Record<Persona, SkinEntry>> = {
     persona: 'creator',
     config: WIGGLE_CONFIG,
     AuthScreen: WiggleAuthScreen,
-    NotifField: WiggleNotifField,
   },
 };
