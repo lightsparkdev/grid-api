@@ -27,35 +27,35 @@ export const USE_CASES: UseCaseOption[] = [
   },
   {
     id: 'creator',
+    persona: 'creator',
     label: 'Creator platform',
     iconSrc: '/assets/app-icon-creator.png',
     enabled: true,
   },
+  // Not yet ported — shown as "Coming soon" (disabled) until they have a skin.
   {
     id: 'social',
-    persona: 'social',
     label: 'Social platform',
     iconSrc: '/assets/app-icon-social.png',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'marketplace',
-    persona: 'marketplace',
     label: 'Marketplace',
     iconSrc: '/assets/app-icon-marketplace.png',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'ondemand',
     label: 'On-demand platform',
     iconSrc: '/assets/app-icon-ondemand.png',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'messaging',
     label: 'Messaging platform',
     iconSrc: '/assets/app-icon-messaging.png',
-    enabled: true,
+    enabled: false,
   },
 ];
 

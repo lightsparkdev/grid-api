@@ -19,6 +19,8 @@
 :root {
   --font-family-sans: 'Suisse Intl', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-family-mono: "Suisse Int'l Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Wiggle (creator) skin face — var(--font-inter) is set by next/font on <html>. */
+  --font-family-inter: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* App-wide corner curve, single source of truth. superellipse(1.24) = exp ~2.48,

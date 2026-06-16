@@ -9,10 +9,12 @@ interface PasskeySheetProps {
   open: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** App brand name shown in the registration copy. */
+  brand?: string;
 }
 
 /** Figma 2183:47617 — passkey registration bottom sheet. */
-export function PasskeySheet({ open, onConfirm, onCancel }: PasskeySheetProps) {
+export function PasskeySheet({ open, onConfirm, onCancel, brand = 'Aurora' }: PasskeySheetProps) {
   return (
     <BottomSheet open={open} onDismiss={onCancel}>
       <div className={styles.toolbar}>
@@ -26,7 +28,7 @@ export function PasskeySheet({ open, onConfirm, onCancel }: PasskeySheetProps) {
         <div className={styles.copy}>
           <h2 className={styles.title}>Save a passkey?</h2>
           <p className={styles.description}>
-            &ldquo;Aurora&rdquo; supports passkeys, a stronger alternative to
+            &ldquo;{brand}&rdquo; supports passkeys, a stronger alternative to
             passwords that cannot be leaked or stolen. A passkey will be saved in
             &ldquo;Passwords&rdquo;.
           </p>

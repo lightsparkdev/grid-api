@@ -57,6 +57,19 @@
        true 2 screen px instead of scaling to ~2.33. */
     vector-effect: non-scaling-stroke;
   }
+
+  /* Ported skins drop the aurora-sampled feather for a flat fill-tertiary tile
+     with a brand-tinted glyph. */
+  :global([data-app='wiggle']) & {
+    color: var(--app-tint);
+    background: var(--ios-fill-tertiary);
+    border-radius: 16px;
+    corner-shape: var(--corner-shape);
+  }
+
+  :global([data-app='wiggle']) &::before {
+    display: none;
+  }
 }
 
 /* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45. */

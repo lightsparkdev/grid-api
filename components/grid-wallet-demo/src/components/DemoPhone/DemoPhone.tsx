@@ -18,6 +18,8 @@ import type { GlassConfig } from '@/components/liquid-glass';
 import { AuroraSignInFlow } from '@/apps/aurora';
 import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
 import { AuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
+import { SkinnedSignInFlow } from '@/apps/skinned/SkinnedSignInFlow';
+import { SKINS } from '@/apps/skinned/registry';
 import { AppShell } from '@/apps/shared/AppShell';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
@@ -35,13 +37,19 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const brand = PHONE_BRAND[props.persona];
   const authMethod = props.signInMethod ?? props.method;
   const isAurora = skin.id === 'aurora';
-  const onAuthScreen = isAurora && props.phone.screen === 'auth';
+  // Ported skins render through the shared SkinnedSignInFlow; Aurora keeps its own.
+  const skinEntry = isAurora ? undefined : SKINS[props.persona];
+  const flowActive = isAurora || Boolean(skinEntry);
+  const brandName = skinEntry?.config.brand.name ?? brand.name;
+  const SkinNotifField = skinEntry?.NotifField;
+  const onAuthScreen = flowActive && props.phone.screen === 'auth';
 
   const passkeySheet = onAuthScreen ? (
     <PasskeySheet
       open={Boolean(props.passkey?.active)}
       onConfirm={props.passkey?.onConfirm ?? (() => {})}
       onCancel={props.passkey?.onCancel ?? (() => {})}
+      brand={brandName}
     />
   ) : null;
 
@@ -55,14 +63,14 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const sheetMethod: AuthSheetMethod | null =
     authMethod === 'email_otp' ? 'email' : authMethod === 'sms' ? 'phone' : null;
   const entry = sheetMethod === 'phone' ? props.phoneEntry : props.email;
-  const sheetFlow = isAurora && sheetMethod !== null;
+  const sheetFlow = flowActive && sheetMethod !== null;
   const sheetSending = Boolean(
     sheetFlow &&
       props.phone.screen === 'creating' &&
       !entry?.active &&
       !props.otp?.active,
   );
-  const authSheet = isAurora ? (
+  const authSheet = flowActive ? (
     <AuthSheet
       method={sheetMethod ?? 'email'}
       open={Boolean(entry?.active || sheetSending || props.otp?.active)}
@@ -74,16 +82,19 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       // still cancels the whole flow.
       onBack={props.otp?.onBack}
       onCancel={props.otp?.active ? props.otp?.onCancel : entry?.onCancel}
+      brand={brandName}
+      notifField={SkinNotifField ? <SkinNotifField /> : undefined}
+      notifFieldStatic={Boolean(skinEntry)}
     />
   ) : null;
 
-  if (props.email?.active && !isAurora) {
+  if (props.email?.active && !flowActive) {
     return <EmailEntryScreen brand={brand} onSubmit={props.email.onSubmit} />;
   }
-  if (props.phoneEntry?.active && !isAurora) {
+  if (props.phoneEntry?.active && !flowActive) {
     return <PhoneEntryScreen brand={brand} onSubmit={props.phoneEntry.onSubmit} />;
   }
-  if (props.otp?.active && !isAurora) {
+  if (props.otp?.active && !flowActive) {
     return <OtpEntryScreen onSubmit={props.otp.onSubmit} />;
   }
   if (props.google?.nonce) {
@@ -105,7 +116,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   // the entry prompt while the screen state is still 'creating' for a beat —
   // and without it that frame falls through to the full-screen creating view,
   // unmounting (and instantly remounting) the whole aurora flow + sheet.
-  const auroraAuthBridge =
+  const authBridge =
     sheetFlow &&
     props.phone.screen === 'creating' &&
     (sheetSending || Boolean(props.otp?.active) || Boolean(entry?.active));
@@ -124,29 +135,39 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     props.onSignInWithMethod?.(m);
   };
   if (
-    isAurora &&
+    flowActive &&
     (props.phone.screen === 'auth' ||
       props.phone.screen === 'wallet' ||
       props.phone.screen === 'card' ||
-      auroraAuthBridge)
+      authBridge)
   ) {
+    const flowScreen: 'auth' | 'wallet' =
+      props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth';
+    const flowProps = {
+      screen: flowScreen,
+      busy: props.busy && !props.popupWait,
+      methods: props.methods ?? [props.method],
+      onSignIn: signIn,
+      skipIntro: props.skipIntro,
+      entry: props.walletEntry,
+      onQuoteCreate: props.onQuoteCreate,
+      onLinkExternalAccount: props.onLinkExternalAccount,
+      onTransferExecute: props.onTransferExecute,
+      onCardIssued: props.onCardIssued,
+      onTapToPay: props.onTapToPay,
+      onReceivePayment: props.onReceivePayment,
+    };
+    // Aurora keeps its own flow; ported skins render via the shared one.
+    if (skinEntry) {
+      return (
+        <SkinnedSignInFlow skin={skinEntry} {...flowProps}>
+          {passkeySheet}
+          {authSheet}
+        </SkinnedSignInFlow>
+      );
+    }
     return (
-      <AuroraSignInFlow
-        screen={
-          props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
-        }
-        busy={props.busy && !props.popupWait}
-        methods={props.methods ?? [props.method]}
-        onSignIn={signIn}
-        skipIntro={props.skipIntro}
-        entry={props.walletEntry}
-        onQuoteCreate={props.onQuoteCreate}
-        onLinkExternalAccount={props.onLinkExternalAccount}
-        onTransferExecute={props.onTransferExecute}
-        onCardIssued={props.onCardIssued}
-        onTapToPay={props.onTapToPay}
-        onReceivePayment={props.onReceivePayment}
-      >
+      <AuroraSignInFlow {...flowProps}>
         {passkeySheet}
         {authSheet}
       </AuroraSignInFlow>

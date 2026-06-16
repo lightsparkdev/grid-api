@@ -11,7 +11,8 @@
   width: 100%;
   margin: 0;
   padding: 14px 20px;
-  border-radius: 1000px;
+  /* Default = pill; skins can square it off via --content-btn-radius. */
+  border-radius: var(--content-btn-radius, 1000px);
   /* globals.scss sets corner-shape: superellipse on * — pills need round. */
   corner-shape: round;
   color: var(--ios-label-primary);
@@ -24,9 +25,11 @@
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
 
   /* Hover/active wash — iOS fills (themed). Deepens tertiary → secondary on press
-     (quaternary reads as nothing on the white pills). filled flips both below. */
-  --content-area-hover: var(--ios-fill-tertiary);
-  --content-area-active: var(--ios-fill-secondary);
+     (quaternary reads as nothing on the white pills). filled flips both below.
+     Skins with a solid brand fill can swap to a brighten wash (e.g. white over a
+     colored button) via --content-btn-hover/-active. */
+  --content-area-hover: var(--content-btn-hover, var(--ios-fill-tertiary));
+  --content-area-active: var(--content-btn-active, var(--ios-fill-secondary));
 
   /* Tint overlay — fades in on hover, sits under the icon/label (z-index: 1). */
   &::after {
@@ -75,6 +78,10 @@
 
 .quaternary {
   @include fill.fill-quaternary-surface;
+  /* Skins can swap the frosted quaternary for a solid brand fill via tokens
+     (defaults = the Aurora iOS look). */
+  background: var(--content-btn-bg, var(--ios-fill-quaternary));
+  color: var(--content-btn-fg, var(--ios-label-primary));
 }
 
 /* Resting fill-secondary chip (no border/shadow) — the hover/active wash layers

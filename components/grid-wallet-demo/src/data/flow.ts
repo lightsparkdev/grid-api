@@ -5,7 +5,7 @@
    then freely triggers actions on the app.
    ============================================================ */
 
-export type Persona = 'fintech' | 'social' | 'marketplace';
+export type Persona = 'fintech' | 'creator';
 export type AuthMethod = 'passkey' | 'oauth' | 'apple' | 'email_otp' | 'sms';
 
 /** Full API base for cURL — version lives here, not in operation paths. */

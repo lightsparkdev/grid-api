@@ -1,6 +1,5 @@
 @use '../../aurora/skin' as aurora-skin;
-@use '../../pulse/skin' as pulse-skin;
-@use '../../bazaar/skin' as bazaar-skin;
+@use '../../skinned/skins' as skinned-skins;
 @use '../colors/ios-colors' as ios-colors;
 @use '../colors/app-colors' as app-colors;
 
@@ -119,8 +118,7 @@
   @include app-colors.tokens;
 
   @include aurora-skin.tokens;
-  @include pulse-skin.tokens;
-  @include bazaar-skin.tokens;
+  @include skinned-skins.tokens;
 }
 
 .screenToneLight {

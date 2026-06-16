@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type InputHTMLAttributes,
+  type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
@@ -162,6 +163,14 @@ interface AuthSheetProps {
   /** X past the first step — steps back instead of dismissing. */
   onBack?: () => void;
   onCancel?: () => void;
+  /** App brand name for the delivery copy (email sender / SMS body). */
+  brand?: string;
+  /** Screen-aligned copy the OTP notification refracts (what's behind it).
+   *  Defaults to Aurora's live aurora field. */
+  notifField?: ReactNode;
+  /** The notifField is a static copy (a skin) → SVG lens on both engines; off =
+   *  Aurora's live field (Safari recomputes it in a WebGL lens). */
+  notifFieldStatic?: boolean;
 }
 
 /**
@@ -178,10 +187,22 @@ export function AuthSheet({
   onSubmitCode,
   onBack,
   onCancel,
+  brand = 'Aurora',
+  notifField,
+  notifFieldStatic,
 }: AuthSheetProps) {
   const theme = useThemeMode();
   const reduceMotion = useReducedMotion();
   const cfg = METHODS[method];
+  // Brand-aware delivery copy — the email sender + the SMS body name the app.
+  const notif = {
+    ...cfg.notification,
+    title: method === 'email' ? brand : cfg.notification.title,
+    body:
+      method === 'phone'
+        ? `Your ${brand} verification code is: ${DEMO_CODE}. This code will expire in 10 minutes. Don\u2019t share this code with anyone.`
+        : cfg.notification.body,
+  };
 
   // The DISPLAYED step only follows the live prompts while the sheet is open —
   // when the flow completes, codeActive flips off mid-dismiss, and without the
@@ -357,7 +378,18 @@ export function AuthSheet({
   // screen-aligned copy lives inside the clipped window at the equivalent
   // offset, so alignment is unchanged.
   const COPY_BLEED = 48;
-  const refractionCopy = (
+  // The capsule is a real displacement lens over a positioned copy of the screen
+  // behind it (backdrop-filter can't refract portably — Aave's copy-in-the-glass).
+  // Aurora copies its live aurora field; a skin supplies its own static copy.
+  const fieldContent = notifField ?? (
+    <div
+      className={auroraStyles.root}
+      style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
+    >
+      <AuroraCssField className={styles.auroraCopyField} />
+    </div>
+  );
+  const refractionCopy = notifFieldStatic ? null : (
     <div
       aria-hidden
       style={{
@@ -377,12 +409,7 @@ export function AuthSheet({
           height: 874,
         }}
       >
-        <div
-          className={auroraStyles.root}
-          style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
-        >
-          <AuroraCssField className={styles.auroraCopyField} />
-        </div>
+        {fieldContent}
         <PhoneStatusBar tone="light" />
       </div>
     </div>
@@ -390,12 +417,14 @@ export function AuthSheet({
   const notification = (
     <GlassNotification
       show={notifOn}
-      icon={cfg.notification.icon}
-      badge={cfg.notification.badge}
-      title={cfg.notification.title}
-      body={cfg.notification.body}
-      bodyLines={cfg.notification.bodyLines}
+      icon={notif.icon}
+      badge={notif.badge}
+      title={notif.title}
+      body={notif.body}
+      bodyLines={notif.bodyLines}
       backdropNode={refractionCopy}
+      field={notifFieldStatic ? notifField : undefined}
+      staticBackdrop={notifFieldStatic}
       onTap={autofill}
     />
   );

@@ -1,0 +1,22 @@
+/* Host for the auth ⇄ home swap — both screens fill it; the exiting one stays
+   absolutely stacked under the entering one during the crossfade. */
+.flow {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The exiting auth screen blur-fades OVER the freshly mounted home. */
+.screenAuth {
+  z-index: 1;
+}

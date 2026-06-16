@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
-import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
+import { primaryAuthMethod, USE_CASES, type UseCaseId } from '@/data/configure';
 import {
   initialCompleted,
   initialWallet,
@@ -69,6 +69,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function useWalletDemoLogic() {
   const [persona, setPersona] = useState<Persona>('fintech');
   const [useCase, setUseCase] = useState<UseCaseId>('fintech');
+  // Selecting a use case also switches the phone's persona (skin) so the picker
+  // drives which app renders. Disabled ("Coming soon") options have no persona.
+  const selectUseCase = (id: UseCaseId) => {
+    setUseCase(id);
+    const next = USE_CASES.find((o) => o.id === id)?.persona;
+    if (next) setPersona(next);
+  };
   const [methods, setMethods] = useState<AuthMethod[]>([
     'email_otp',
     'sms',
@@ -604,7 +611,7 @@ export function useWalletDemoLogic() {
     persona,
     setPersona,
     useCase,
-    setUseCase,
+    setUseCase: selectUseCase,
     methods,
     toggleMethod,
     method,

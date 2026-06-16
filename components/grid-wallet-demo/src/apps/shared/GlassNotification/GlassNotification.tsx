@@ -8,6 +8,7 @@ import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import styles from './GlassNotification.module.scss';
+import { FrostedNotification } from './FrostedNotification';
 
 /** The capsule's resting slot — callers building a refraction copy offset
  *  their screen-aligned content by these (keep in sync with .layer padding). */
@@ -83,9 +84,16 @@ interface GlassNotificationProps {
   /**
    * TRUE refraction source: a positioned copy of the screen behind the capsule
    * (offset by the slot constants above). When provided the capsule is a real
-   * displacement lens (GlassOver) instead of the frosted FrostPanel.
+   * displacement lens (GlassOver) instead of the frosted FrostPanel. Chromium
+   * only — WebKit renders a copied subtree empty, so Safari falls to the WebGL
+   * aurora lens.
    */
   backdropNode?: ReactNode;
+  /** Render via the traveling-lens path (content fixed, the lens slides over it)
+   *  for skins whose backdrop is static DOM, not the live aurora. Needs `field`. */
+  staticBackdrop?: boolean;
+  /** The fixed screen-content copy the traveling lens refracts (skins). */
+  field?: ReactNode;
   onTap?: () => void;
 }
 
@@ -104,8 +112,27 @@ export function GlassNotification({
   bodyLines = 1,
   time = 'now',
   backdropNode,
+  staticBackdrop,
+  field,
   onTap,
 }: GlassNotificationProps) {
+  // Skins use the cheap frosted notification (backdrop-filter + specular rim), not
+  // the SVG displacement lens — the live lens tanks Safari's framerate. Aurora
+  // keeps its refraction path below.
+  if (staticBackdrop) {
+    return (
+      <FrostedNotification
+        show={show}
+        icon={icon}
+        badge={badge}
+        title={title}
+        body={body}
+        bodyLines={bodyLines}
+        time={time}
+        onTap={onTap}
+      />
+    );
+  }
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   // The shadow underlay carries the glass's exact squircle (blur runs after

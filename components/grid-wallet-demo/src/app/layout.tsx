@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import { easingVarsStylesheet } from '@/lib/easing';
 import './globals.scss';
+
+/** Inter — the Wiggle (creator) skin's typeface. Self-hosted by next/font; the
+ *  --font-inter var is wired to --font-family-inter in globals.scss. */
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Grid Global Accounts — Live demo',
@@ -10,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#F0F0EE" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />

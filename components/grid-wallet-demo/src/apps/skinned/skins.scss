@@ -1,0 +1,7 @@
+/* Aggregator for the ported (non-Aurora) skins' token blocks. Add each new
+   skin's mixin here; AppShell @includes this once on the phone .screen. */
+@use '../wiggle/skin' as wiggle-skin;
+
+@mixin tokens {
+  @include wiggle-skin.tokens;
+}

@@ -1,0 +1,58 @@
+.marquee {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  color: var(--marquee-color, currentColor);
+  user-select: none;
+  pointer-events: none;
+}
+
+.row {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Two identical groups side by side; translateX(-50%) advances exactly one group
+   so the loop is seamless. */
+.track {
+  display: inline-flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee-scroll var(--marquee-dur, 30s) linear infinite;
+}
+
+.reverse {
+  animation-direction: reverse;
+}
+
+.group {
+  display: inline-flex;
+  gap: 8px;
+  /* The trailing gap before the next group keeps spacing uniform across the seam. */
+  padding-right: 8px;
+}
+
+.word {
+  font-family: var(--ios-font-family);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

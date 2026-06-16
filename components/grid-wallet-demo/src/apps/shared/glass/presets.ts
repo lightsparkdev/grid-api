@@ -81,5 +81,7 @@ export const TEXT_GLASS: GlassConfig = {
 
 export const TEXT_GLASS_BACKDROP = 'linear-gradient(180deg, #ffffff 0%, #ebebef 100%)';
 
+/** Primary CTA fill the glass refracts — a CSS var so a skin can rebrand it
+ *  (default = iOS blue / Aurora). */
 export const TEXT_GLASS_PRIMARY_BACKDROP =
-  'linear-gradient(180deg, #3395ff 0%, #007aff 55%, #0062d1 100%)';
+  'var(--text-glass-primary-backdrop, linear-gradient(180deg, #3395ff 0%, #007aff 55%, #0062d1 100%))';

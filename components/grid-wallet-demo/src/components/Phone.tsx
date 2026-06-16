@@ -24,8 +24,7 @@ import styles from './Phone.module.scss';
 
 export const PHONE_BRAND: Record<Persona, { name: string; tag: string }> = {
   fintech: { name: 'Aurora', tag: 'Your money, everywhere' },
-  social: { name: 'Pulse', tag: 'Get paid to post' },
-  marketplace: { name: 'Bazaar', tag: 'Buy and sell anywhere' },
+  creator: { name: 'Wiggle', tag: 'Watch anything live' },
 };
 
 const DEVICE_W = 300;
