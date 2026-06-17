@@ -18,7 +18,7 @@ export function PlaygroundIntro() {
         <span className={styles.titleSecondary}>Playground</span>
       </div>
       <p className={styles.body}>
-        Create a Grid Global Account and watch the exact API calls fire as you go.
+        Create a Global Account and watch the exact API calls fire as you go
       </p>
     </section>
   );
