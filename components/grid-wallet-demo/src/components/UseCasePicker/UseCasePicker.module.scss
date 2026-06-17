@@ -9,8 +9,6 @@ $active-border-gradient: linear-gradient(
   var(--color-green-600) 100%
 );
 
-$ring-ease: cubic-bezier(0.19, 1, 0.22, 1);
-$ring-duration: 0.22s;
 $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
 .group {
@@ -44,9 +42,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: visible;
   cursor: pointer;
-  transition:
-    background 100ms ease,
-    opacity $ring-duration $ring-ease;
+  transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-925);
@@ -94,10 +90,45 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   }
 }
 
-/* Hovering the tile group dims the not-yet-built use cases (clickable no-ops) so
-   the only live one — Financial app — stays prominent. Snappy ease (easing.ts). */
-.group:hover .card[data-unbuilt] {
-  opacity: 0.5;
+/* Cursor-following "Coming soon" tag (portaled to <body>). The anchor rides the
+   cursor with spring lag; the inner pill fades in over not-built tiles and falls
+   on click. pointer-events: none so it never blocks the tiles. */
+.comingSoonAnchor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.comingSoonTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border: 0.5px solid var(--border-primary);
+  border-radius: 6px;
+  // Surface fill — white in light, black in dark — with muted secondary text.
+  background: var(--surface-base);
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  // Suisse Mono's bold is too heavy — stroke the glyphs in the text color to
+  // nudge the weight up a hair (currentColor keeps it theme-aware).
+  -webkit-text-stroke: 0.3px currentColor;
+  white-space: nowrap;
+  transform-origin: left center;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+
+  :global([data-theme='dark']) & {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .cardSelected {
