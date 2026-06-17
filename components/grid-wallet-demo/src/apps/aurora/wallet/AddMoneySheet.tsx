@@ -1046,7 +1046,7 @@ export function AddMoneySheet({
   const confirmDetails: Array<[string, string]> = selectedBank
     ? [
         ['Exchange rate', `1 USD = ${formatRate(fxRate)} ${localCurrency}`],
-        ['Fee (0.30%)', formatUsdCents(feeCents)],
+        ['Fee', formatUsdCents(feeCents)],
         [mode === 'add' ? 'Arrives' : 'Arrives in bank', 'Instantly'],
       ]
     : selectedCrypto
