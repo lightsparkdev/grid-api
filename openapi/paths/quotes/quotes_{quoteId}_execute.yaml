@@ -70,7 +70,11 @@ post:
         `scaChallenge`; from that point the **only** way to release the transfer
         is `POST /transactions/{transactionId}/authorize` for the quote's
         `transactionId` (re-calling `execute` returns 409). The inline
-        `scaAuthorization` field is therefore for the initial call only.
+        `scaAuthorization` field is therefore for the initial call only. (For a
+        realtime-funding quote that returned 202 from `POST /quotes`, authorize
+        the quote itself via `POST /quotes/{quoteId}/authorize` instead.) If an
+        SMS code lapses, re-send it via
+        `POST /transactions/{transactionId}/authorize/resend`.
       content:
         application/json:
           schema:

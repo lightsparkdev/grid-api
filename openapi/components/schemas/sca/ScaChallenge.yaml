@@ -46,6 +46,19 @@ properties:
       - 'null'
     additionalProperties: true
     description: >-
-      Opaque WebAuthn assertion request options, present only when `factor` is
+      Opaque WebAuthn assertion request options (including the relying-party id,
+      challenge, and allowed credentials), present only when `factor` is
       `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion
       submitted back in `ScaAuthorization.passkeyAssertion`.
+  passkeyAllowedOrigins:
+    type:
+      - array
+      - 'null'
+    items:
+      type: string
+    description: >-
+      The origins the WebAuthn ceremony may run against, present only when
+      `factor` is `PASSKEY`. The origin the assertion is produced against must
+      be one of these and must be echoed back as `ScaAuthorization.origin`.
+    example:
+      - https://app.example.com

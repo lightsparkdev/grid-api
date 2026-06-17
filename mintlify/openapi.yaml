@@ -2866,7 +2866,7 @@ paths:
           description: |
             Quote confirmed successfully. The transfer has been initiated and the quote status has been updated.
 
-            For customers whose provider requires Strong Customer Authentication (e.g. EU): supplying `scaAuthorization` **upfront on this call** satisfies the challenge in one shot and avoids the pending state. Without it, the quote comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`; from that point the **only** way to release the transfer is `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` (re-calling `execute` returns 409). The inline `scaAuthorization` field is therefore for the initial call only.
+            For customers whose provider requires Strong Customer Authentication (e.g. EU): supplying `scaAuthorization` **upfront on this call** satisfies the challenge in one shot and avoids the pending state. Without it, the quote comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`; from that point the **only** way to release the transfer is `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` (re-calling `execute` returns 409). The inline `scaAuthorization` field is therefore for the initial call only. (For a realtime-funding quote that returned 202 from `POST /quotes`, authorize the quote itself via `POST /quotes/{quoteId}/authorize` instead.) If an SMS code lapses, re-send it via `POST /transactions/{transactionId}/authorize/resend`.
           content:
             application/json:
               schema:
@@ -2964,6 +2964,58 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: The customer's payment provider does not require SCA, or the quote has no pending challenge to authorize.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/authorize/resend:
+    parameters:
+      - name: quoteId
+        in: path
+        description: The unique identifier of the quote whose SCA challenge code should be re-sent.
+        required: true
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000006
+    post:
+      summary: Resend a quote's SCA challenge code
+      description: |
+        Re-send the one-time code for a realtime-funding quote in
+        `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
+        existing challenge is reused — no new challenge is issued.
+
+        Only meaningful for customers whose provider requires SCA (e.g. EU); other
+        providers return 409. `PASSKEY` challenges cannot be re-sent and return 409.
+
+        In sandbox, the code is always `123456`.
+      operationId: resendQuoteScaCode
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Code re-sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's provider does not require SCA, the quote has no pending SMS challenge, or the challenge uses a factor whose code cannot be re-sent (e.g. passkey).
           content:
             application/json:
               schema:
@@ -3386,6 +3438,60 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: The customer's payment provider does not require SCA, or the transaction has no pending challenge to authorize.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /transactions/{transactionId}/authorize/resend:
+    parameters:
+      - name: transactionId
+        in: path
+        description: The unique identifier of the transaction whose SCA challenge code should be re-sent.
+        required: true
+        schema:
+          type: string
+        example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+    post:
+      summary: Resend a transaction's SCA challenge code
+      description: |
+        Re-send the one-time code for a transaction in `PENDING_AUTHORIZATION`
+        status whose `scaChallenge.factor` is `SMS_OTP` (e.g. the customer didn't
+        receive it, or it expired). The existing challenge is reused — no new
+        challenge is issued.
+
+        Only meaningful for customers whose provider requires SCA (e.g. EU); other
+        providers return 409. `PASSKEY` challenges cannot be re-sent (there is no
+        code to deliver) and return 409.
+
+        In sandbox, the code is always `123456`.
+      operationId: resendTransactionScaCode
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Code re-sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's provider does not require SCA, the transaction has no pending SMS challenge, or the challenge uses a factor whose code cannot be re-sent (e.g. passkey).
           content:
             application/json:
               schema:
@@ -17115,7 +17221,16 @@ components:
             - object
             - 'null'
           additionalProperties: true
-          description: Opaque WebAuthn assertion request options, present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
+          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
+        passkeyAllowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against, present only when `factor` is `PASSKEY`. The origin the assertion is produced against must be one of these and must be echoed back as `ScaAuthorization.origin`.
+          example:
+            - https://app.example.com
     Transaction:
       type: object
       required:
@@ -17804,7 +17919,7 @@ components:
             - $ref: '#/components/schemas/PaymentRail'
     ScaAuthorization:
       type: object
-      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`).
+      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound to the origin it was produced against, and the provider rejects a passkey confirmation without it.
       properties:
         code:
           type:
@@ -17818,6 +17933,12 @@ components:
             - 'null'
           additionalProperties: true
           description: Opaque WebAuthn assertion produced by the device from the challenge's `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against (one of the challenge's `passkeyAllowedOrigins`). **Required** alongside `passkeyAssertion`; omit it for the `code` path.
+          example: https://app.example.com
     TransferOutRequest:
       type: object
       required:
