@@ -17,7 +17,7 @@ import {
   externalAccountCreateCall,
   oauthVerifyCall,
   otpRequestCall,
-  otpVerifyCall,
+  otpVerifyCalls,
   passkeyChallengeCall,
   passkeyVerifyCall,
   receivePaymentCalls,
@@ -309,7 +309,7 @@ export function useWalletDemoLogic() {
         // Code accepted → verify fires; then let the sheet's dismiss VISIBLY
         // finish (transient clears first so the auth screen is back underneath
         // the departing sheet) before the wallet flip starts the intro.
-        pushCalls([otpVerifyCall(m)], 'Sign in', gid);
+        pushCalls(otpVerifyCalls(m), 'Sign in', gid);
         setTransient(null);
         await sleep(400);
       } else if (m === 'passkey') {

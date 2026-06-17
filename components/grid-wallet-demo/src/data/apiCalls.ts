@@ -88,20 +88,43 @@ export function otpRequestCall(method: 'email_otp' | 'sms', contact?: string): A
   };
 }
 
-/** OTP verify — fires when the code is submitted. */
+function otpVerifyRequestBody(method: 'email_otp' | 'sms'): Record<string, unknown> {
+  return {
+    type: method === 'sms' ? 'SMS_OTP' : 'EMAIL_OTP',
+    encryptedOtpBundle: '<HPKE encrypted OTP bundle>',
+  };
+}
+
+/** OTP verify — first leg after the code is submitted. */
 export function otpVerifyCall(method: 'email_otp' | 'sms'): ApiCall {
   return {
     method: 'POST',
     path: `/auth/credentials/${AUTH_METHOD}/verify`,
     title: 'Verify OTP',
-    reqBody: {
-      type: method === 'sms' ? 'SMS_OTP' : 'EMAIL_OTP',
-      otp: '000000',
-      clientPublicKey: PUBKEY,
-    },
-    status: '200 OK',
-    note: 'Returns the HPKE-sealed session signing key + 15-min expiry.',
+    reqBody: otpVerifyRequestBody(method),
+    status: '202 Accepted',
+    note: 'Returns a verificationToken to sign with the TEK keypair.',
   };
+}
+
+/** OTP verify — signed retry that issues the auth session. */
+export function otpSessionIssueCall(method: 'email_otp' | 'sms'): ApiCall {
+  return {
+    method: 'POST',
+    path: `/auth/credentials/${AUTH_METHOD}/verify`,
+    title: 'Issue auth session',
+    headers: {
+      'Grid-Wallet-Signature': '<TEK signature>',
+      'Request-Id': '<requestId>',
+    },
+    reqBody: otpVerifyRequestBody(method),
+    status: '200 OK',
+    note: 'Signed retry issues the session; the TEK private key is the session signing key.',
+  };
+}
+
+export function otpVerifyCalls(method: 'email_otp' | 'sms'): ApiCall[] {
+  return [otpVerifyCall(method), otpSessionIssueCall(method)];
 }
 
 /** Passkey challenge — fires when the passkey ceremony starts. */
@@ -125,7 +148,7 @@ export function passkeyVerifyCall(): ApiCall {
     headers: { 'Request-Id': '<requestId>' },
     reqBody: { type: 'PASSKEY', assertion: '<webauthn assertion>' },
     status: '200 OK',
-    note: 'Assertion verified; session signing key returned.',
+    note: 'Assertion verified; encryptedSessionSigningKey returned.',
   };
 }
 
@@ -141,14 +164,14 @@ export function oauthVerifyCall(method: 'oauth' | 'apple'): ApiCall {
       clientPublicKey: PUBKEY,
     },
     status: '200 OK',
-    note: 'Fresh OIDC token verified; session signing key returned.',
+    note: 'Fresh OIDC token verified; encryptedSessionSigningKey returned.',
   };
 }
 
 /** Full sign-in sequence for a method — used for the fast-forward setup group. */
 export function signInCalls(method: AuthMethod, contact?: string): ApiCall[] {
-  if (method === 'email_otp') return [otpRequestCall('email_otp', contact), otpVerifyCall('email_otp')];
-  if (method === 'sms') return [otpRequestCall('sms', contact), otpVerifyCall('sms')];
+  if (method === 'email_otp') return [otpRequestCall('email_otp', contact), ...otpVerifyCalls('email_otp')];
+  if (method === 'sms') return [otpRequestCall('sms', contact), ...otpVerifyCalls('sms')];
   if (method === 'passkey') return [passkeyChallengeCall(), passkeyVerifyCall()];
   return [oauthVerifyCall(method)];
 }
