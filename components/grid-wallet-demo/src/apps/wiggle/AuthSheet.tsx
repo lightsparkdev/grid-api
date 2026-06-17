@@ -118,7 +118,7 @@ const METHODS: Record<AuthSheetMethod, MethodConfig> = {
     mask: maskEmail,
     notification: {
       icon: '/assets/auth/mail-app-icon.webp',
-      title: 'Aurora',
+      title: 'Wiggle',
       body: `Your one-time code is ${DEMO_CODE.slice(0, 3)}-${DEMO_CODE.slice(3)}`,
       bodyLines: 1,
     },
@@ -143,7 +143,7 @@ const METHODS: Record<AuthSheetMethod, MethodConfig> = {
       icon: '/assets/auth/generic-contact.svg',
       badge: '/assets/auth/messages-app-icon.webp',
       title: '22395',
-      body: `Your Aurora verification code is: ${DEMO_CODE}. This code will expire in 10 minutes. Don\u2019t share this code with anyone.`,
+      body: `Your Wiggle verification code is: ${DEMO_CODE}. This code will expire in 10 minutes. Don\u2019t share this code with anyone.`,
       bodyLines: 2,
     },
   },

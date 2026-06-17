@@ -24,7 +24,7 @@ const VALUE_PROPS = [
   {
     Icon: IconWallet1,
     title: 'Add your card to Apple Wallet',
-    sub: 'Use your Aurora card on all your devices',
+    sub: 'Use your Wiggle card on all your devices',
   },
 ];
 
