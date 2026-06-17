@@ -1,5 +1,6 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 @use '../../styles/breakpoints' as *;
+@use '../../styles/breakpoints' as *;
 
 .list {
   flex: 1;
@@ -55,10 +56,31 @@
   box-sizing: border-box;
 }
 
+.entryTitleRow {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
 .entryTitle {
   @include body;
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
+}
+
+/* "New call" bullet (stacked layout only) — a bigger origin blue-600 glyph,
+   torph-morphed in/out before the title; hidden at wide (always in view). */
+.titleBullet {
+  flex-shrink: 0;
+  color: var(--color-blue-600);
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+@media (min-width: $breakpoint-layout-wide) {
+  .titleBullet {
+    display: none;
+  }
 }
 
 .timestamp {

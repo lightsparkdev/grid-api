@@ -1,4 +1,5 @@
 @use '../../styles/breakpoints' as *;
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
 .panel {
   flex: 1;
@@ -33,6 +34,29 @@
   flex-direction: column;
 }
 
+/* New-call count pill on the "API calls" header — origin blue-600 / white. Only
+   shown in the stacked layout (hidden at wide, where calls are always in view). */
+.newPill {
+  @include label-sm;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  // True round pill/circle (no squircle smoothing): circle at one digit, pill at more.
+  corner-shape: round;
+  background: var(--color-blue-500);
+  color: #fff;
+  // Proportional (not tabular) figures — tabular read as monospaced.
+  font-feature-settings: 'tnum' 0;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-blue-600);
+  }
+}
+
 @media (max-width: ($breakpoint-layout-wide - 1px)) {
   .panel {
     overflow: visible;
@@ -59,5 +83,10 @@
 
   .headerStacked {
     border-left: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  /* Side-by-side: calls are always in view, so no "new" signifier. */
+  .newPill {
+    display: none;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { TextMorph } from 'torph/react';
 import clsx from 'clsx';
 import { Badge } from '@lightsparkdev/origin/badge';
 import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
@@ -16,7 +17,7 @@ import {
 import { formatAbsoluteTime, formatRelativeTime } from '@/lib/formatRelativeTime';
 import { groupApiEntries } from '@/lib/groupApiEntries';
 import { useNowTick } from '@/hooks/useNowTick';
-import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import type { Entry, EntryGroup } from './types';
 import styles from './ApiCallList.module.scss';
@@ -223,7 +224,7 @@ function FeedTimestamp({ timestamp, now }: { timestamp: number; now: number }) {
   );
 }
 
-function ApiCallBlock({ entry, now }: { entry: Entry; now: number }) {
+function ApiCallBlock({ entry, now, isNew }: { entry: Entry; now: number; isNew: boolean }) {
   const [tab, setTab] = useState<CodeTab>('request');
 
   const curl = useMemo(() => formatCurlString(entry), [entry]);
@@ -238,7 +239,18 @@ function ApiCallBlock({ entry, now }: { entry: Entry; now: number }) {
   return (
     <div className={styles.callCard}>
       <div className={styles.entryHeader}>
-        <span className={styles.entryTitle}>{stepTitle(entry)}</span>
+        <span className={styles.entryTitleRow}>
+          <TextMorph
+            as="span"
+            className={styles.titleBullet}
+            duration={TITLE_MORPH_MS}
+            ease={cubicBezierCss(easeOutSwift)}
+            aria-hidden
+          >
+            {isNew ? '\u2022\u00A0' : ''}
+          </TextMorph>
+          <span className={styles.entryTitle}>{stepTitle(entry)}</span>
+        </span>
         <FeedTimestamp timestamp={entry.createdAt} now={now} />
       </div>
       <EndpointBlock method={entry.method} path={entry.path} />
@@ -259,6 +271,8 @@ function ApiCallBlock({ entry, now }: { entry: Entry; now: number }) {
 
 interface ApiCallListProps {
   entries: Entry[];
+  /** Keys of calls not yet seen — each gets a "new" dot (stacked layout only). */
+  newKeys: Set<string>;
 }
 
 // New entries/groups animate their real HEIGHT (0 → auto), so the cards below are
@@ -273,8 +287,10 @@ const RISE_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 const EXPAND_HIDDEN = { height: 0 };
 const EXPAND_REST = { height: 'auto' as const };
 const EXPAND_EXIT = { height: 0, opacity: 0 };
+// The "new call" bullet is torph-morphed in/out before the title.
+const TITLE_MORPH_MS = 300;
 
-function FeedEntry({ entry, now }: { entry: Entry; now: number }) {
+function FeedEntry({ entry, now, isNew }: { entry: Entry; now: number; isNew: boolean }) {
   return (
     <motion.div
       className={styles.feedEntry}
@@ -284,13 +300,21 @@ function FeedEntry({ entry, now }: { entry: Entry; now: number }) {
       transition={FEED_IN}
     >
       <motion.div initial={RISE_HIDDEN} animate={RISE_REST} transition={FEED_IN}>
-        <ApiCallBlock entry={entry} now={now} />
+        <ApiCallBlock entry={entry} now={now} isNew={isNew} />
       </motion.div>
     </motion.div>
   );
 }
 
-function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
+function FeedGroup({
+  group,
+  now,
+  newKeys,
+}: {
+  group: EntryGroup;
+  now: number;
+  newKeys: Set<string>;
+}) {
   return (
     <motion.article
       className={styles.group}
@@ -314,7 +338,7 @@ function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
               added to an existing group expand + rise in one at a time. */}
           <AnimatePresence initial={false}>
             {group.entries.map((entry) => (
-              <FeedEntry key={entry.key} entry={entry} now={now} />
+              <FeedEntry key={entry.key} entry={entry} now={now} isNew={newKeys.has(entry.key)} />
             ))}
           </AnimatePresence>
         </div>
@@ -323,7 +347,7 @@ function FeedGroup({ group, now }: { group: EntryGroup; now: number }) {
   );
 }
 
-export function ApiCallList({ entries }: ApiCallListProps) {
+export function ApiCallList({ entries, newKeys }: ApiCallListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // Re-sample every second so the live seconds (5s…59s) count up smoothly and a
   // new call never renders the rest against a stale clock. Cheap: the per-call
@@ -354,7 +378,7 @@ export function ApiCallList({ entries }: ApiCallListProps) {
             on the groups below — no snap). */}
         <AnimatePresence initial={false}>
           {groups.map((group) => (
-            <FeedGroup key={group.groupId} group={group} now={now} />
+            <FeedGroup key={group.groupId} group={group} now={now} newKeys={newKeys} />
           ))}
         </AnimatePresence>
       </div>
