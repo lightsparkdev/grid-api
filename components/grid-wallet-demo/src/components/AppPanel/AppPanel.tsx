@@ -109,31 +109,12 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
   };
 }
 
-interface AppPanelProps extends DemoLogicPhoneSlice {
-  onReset: () => void;
-}
-
-export function AppPanel({ onReset, ...phone }: AppPanelProps) {
+export function AppPanel(phone: DemoLogicPhoneSlice) {
   const phoneProps = toPhoneProps(phone);
 
   return (
     <section className={styles.panel}>
-      <PanelHeader
-        icon={<IconPhoneDynamicIsland size={20} />}
-        title="App"
-        actions={
-          phone.wallet.created ? (
-            <button
-              type="button"
-              className={styles.resetBtn}
-              onClick={onReset}
-              disabled={phone.running}
-            >
-              Reset
-            </button>
-          ) : null
-        }
-      />
+      <PanelHeader icon={<IconPhoneDynamicIsland size={20} />} title="App" />
       <div className={styles.body}>
         <div className={styles.phoneStage}>
           <DotGridCanvas glassConfig={PHONE_SHELL_GLASS}>

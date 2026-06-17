@@ -21,6 +21,7 @@ export interface ConfigurePanelProps {
   completed: CompletedFlows;
   running: boolean;
   onAction: (id: ActionId) => void;
+  onReset: () => void;
 }
 
 export function ConfigurePanel({
@@ -32,6 +33,7 @@ export function ConfigurePanel({
   completed,
   running,
   onAction,
+  onReset,
 }: ConfigurePanelProps) {
   // Only the fintech (Aurora) app is built today, so selecting a use case just
   // highlights it — the phone stays on Aurora. A "coming soon" treatment for the
@@ -58,7 +60,21 @@ export function ConfigurePanel({
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Explore flows" />
+            <SectionDivider
+              label="Explore flows"
+              action={
+                wallet.created ? (
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    onClick={onReset}
+                    disabled={running}
+                  >
+                    Reset
+                  </button>
+                ) : null
+              }
+            />
             <FlowPicker
               wallet={wallet}
               completed={completed}

@@ -1,7 +1,6 @@
 .divider {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3xs);
   padding-block: var(--spacing-xs);
   padding-inline: var(--spacing-xs);
 }
@@ -11,6 +10,7 @@
   flex-shrink: 0;
   align-items: center;
   gap: 4px;
+  margin-right: var(--spacing-3xs);
 }
 
 .icon {
@@ -39,4 +39,20 @@
   flex: 1;
   height: 0;
   border-top: var(--stroke-xs) solid var(--border-primary);
+}
+
+/* Right-aligned control (e.g. Reset). It animates its width 0↔auto (clipped via
+   overflow), so the rule fills the space in tandem — no sequential "grow after
+   it leaves". The line-to-action gap lives inside .actionInner so it collapses
+   with the width (no leftover gap). */
+.action {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.actionInner {
+  display: flex;
+  align-items: center;
+  padding-left: var(--spacing-3xs);
+  white-space: nowrap;
 }
