@@ -20,7 +20,7 @@ The last three characters of `platformCardId` (or `cardholderId` when
 
 | Suffix | Behavior |
 |--------|----------|
-| `001` | Stays `PENDING_ISSUE` indefinitely (test the polling path) |
+| `001` | Stays `PROCESSING` indefinitely (test the polling path) |
 | `002` | Issuer provisioning rejected → `state: CLOSED`, `stateReason: "ISSUER_REJECTED"` |
 | `005` | Delayed activation (~30s) before the `CARD.STATE_CHANGE` webhook fires |
 | any other | Instant activation → `state: ACTIVE`, `last4` deterministic from the suffix |

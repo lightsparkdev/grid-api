@@ -289,14 +289,18 @@ private fun buildPhpBeneficiary(node: JsonNode?): PhpExternalAccountCreateInfo.B
 
 private fun buildEurBeneficiary(node: JsonNode?): EurExternalAccountCreateInfo.Beneficiary {
     val f = parseBeneficiaryFields(node)
+    val countryOfResidence = node?.optText("countryOfResidence")
+        ?: f.nationality
+        ?: throw IllegalArgumentException("EUR beneficiary requires countryOfResidence")
     return EurExternalAccountCreateInfo.Beneficiary.ofIndividual(
         EurBeneficiary.builder()
             .beneficiaryType(EurBeneficiary.BeneficiaryType.INDIVIDUAL)
             .fullName(f.fullName)
-            .address(f.address ?: throw IllegalArgumentException("EUR beneficiary requires an address"))
+            .countryOfResidence(countryOfResidence)
             .apply {
                 f.nationality?.let { nationality(it) }
                 f.birthDate?.let { birthDate(it) }
+                f.address?.let { address(it) }
             }
             .build()
     )

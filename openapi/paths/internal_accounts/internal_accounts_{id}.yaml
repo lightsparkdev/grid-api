@@ -90,6 +90,13 @@ patch:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
+                totalBalance:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
                 fundingPaymentInstructions: []
                 privateEnabled: true
                 createdAt: '2026-04-08T15:30:00Z'

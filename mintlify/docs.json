@@ -126,7 +126,8 @@
             "group": "Onboarding",
             "pages": [
               "payouts-and-b2b/onboarding/platform-configuration",
-              "payouts-and-b2b/onboarding/configuring-customers"
+              "payouts-and-b2b/onboarding/configuring-customers",
+              "payouts-and-b2b/onboarding/disclosures"
             ]
           },
           {

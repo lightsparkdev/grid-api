@@ -3911,6 +3911,13 @@ paths:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
+                    totalBalance:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
                     fundingPaymentInstructions: []
                     privateEnabled: true
                     createdAt: '2026-04-08T15:30:00Z'
@@ -6319,7 +6326,7 @@ paths:
       description: |
         Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
-        New cards start in `state: "PENDING_ISSUE"` while the card issuer provisions the card. The `card.state_change` webhook fires on the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
+        New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
       operationId: createCard
       tags:
         - Cards
@@ -7662,6 +7669,13 @@ webhooks:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
+                    totalBalance:
+                      amount: 12500
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
                     fundingPaymentInstructions: []
                     createdAt: '2025-08-01T10:00:00Z'
                     updatedAt: '2025-08-15T14:32:00Z'
@@ -7677,6 +7691,13 @@ webhooks:
                     type: INTERNAL_FIAT
                     status: FROZEN
                     balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    totalBalance:
                       amount: 10000
                       currency:
                         code: USD
@@ -7791,7 +7812,7 @@ webhooks:
     post:
       summary: Card state change
       description: |
-        Webhook that is called when a card's lifecycle state changes. Fires on `PENDING_ISSUE → ACTIVE`, on `PENDING_ISSUE → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+        Webhook that is called when a card's lifecycle state changes. Fires on `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -7818,7 +7839,7 @@ webhooks:
               $ref: '#/components/schemas/CardStateChangeWebhook'
             examples:
               activated:
-                summary: Card transitioned from PENDING_ISSUE to ACTIVE
+                summary: Card transitioned from PROCESSING to ACTIVE
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000020
                   type: CARD.STATE_CHANGE
@@ -8451,18 +8472,26 @@ components:
       type: string
       enum:
         - ACH
+        - ACH_COLOMBIA
         - BANK_TRANSFER
+        - BRE_B
+        - CIPS
         - FAST
         - FASTER_PAYMENTS
         - FEDNOW
+        - INSTAPAY
         - MOBILE_MONEY
+        - NEFT
         - PAYNOW
+        - PESONET
         - PIX
+        - RTGS
         - RTP
         - SEPA
         - SEPA_INSTANT
         - SPEI
         - SWIFT
+        - UNIONPAY
         - UPI
         - WIRE
       description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
@@ -12061,6 +12090,7 @@ components:
         - type
         - status
         - balance
+        - totalBalance
         - fundingPaymentInstructions
         - createdAt
         - updatedAt
@@ -12079,6 +12109,10 @@ components:
           $ref: '#/components/schemas/InternalAccountStatus'
         balance:
           $ref: '#/components/schemas/CurrencyAmount'
+          description: The balance available to spend, excluding pending and held funds
+        totalBalance:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The total balance, including pending and held funds
         fundingPaymentInstructions:
           type: array
           description: Payment instructions for funding the account
@@ -12847,24 +12881,31 @@ components:
           type: string
           enum:
             - INDIVIDUAL
+          example: INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
+          example: Jane Smith
         birthDate:
           type: string
           description: The birth date of the beneficiary
+          example: '1990-01-15'
         nationality:
           type: string
           description: The nationality of the beneficiary
+          example: GB
         email:
           type: string
           description: The email of the beneficiary
+          example: jane.smith@example.com
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
+          example: '+447700900123'
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
+          example: GB
         address:
           $ref: '#/components/schemas/Address'
     GbpExternalAccountInfo:
@@ -18401,7 +18442,7 @@ components:
       type: string
       enum:
         - PENDING_KYC
-        - PENDING_ISSUE
+        - PROCESSING
         - ACTIVE
         - FROZEN
         - CLOSED
@@ -18411,7 +18452,7 @@ components:
         | State | Description |
         |-------|-------------|
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this state cannot transact. |
-        | `PENDING_ISSUE` | The card has been requested and is being provisioned with the issuer. |
+        | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible state. |
@@ -18428,7 +18469,7 @@ components:
 
         | Reason | Description |
         |--------|-------------|
-        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PENDING_ISSUE`. |
+        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
         | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
         | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
     CardBrand:

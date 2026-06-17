@@ -69,6 +69,13 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
+                totalBalance:
+                  amount: 12500
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
                 fundingPaymentInstructions: []
                 createdAt: '2025-08-01T10:00:00Z'
                 updatedAt: '2025-08-15T14:32:00Z'
@@ -84,6 +91,13 @@ post:
                 type: INTERNAL_FIAT
                 status: FROZEN
                 balance:
+                  amount: 10000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                totalBalance:
                   amount: 10000
                   currency:
                     code: USD

@@ -49,7 +49,7 @@ curl -X POST "$GRID_BASE_URL/cards" \
   }'
 ```
 
-The card comes back in `state: "PENDING_ISSUE"` while the issuer
+The card comes back in `state: "PROCESSING"` while the issuer
 provisions it. In Sandbox, activation is near-instant for any
 `platformCardId` whose last three characters aren't a magic suffix —
 see the [Sandbox testing guide](/cards/platform-tools/sandbox-testing)
