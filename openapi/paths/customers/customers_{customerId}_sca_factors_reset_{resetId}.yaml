@@ -1,0 +1,59 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer whose reset status is polled.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  - name: resetId
+    in: path
+    description: The reset handle returned by the start call.
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get 2FA reset status
+  description: |
+    Poll the status of an in-progress 2FA reset until it reaches the provider's
+    liveness-passed value, after which the reset can be completed.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+  operationId: getTwoFactorResetStatus
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The current reset status.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/TwoFactorResetStatus.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or reset not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

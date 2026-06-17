@@ -1,0 +1,31 @@
+type: object
+description: >-
+  Opaque WebAuthn registration options relayed to the end user's device to
+  enroll a passkey factor. Grid performs no crypto; pass `options` to the
+  device's WebAuthn API to produce a credential, then submit that credential to
+  the confirm endpoint unmodified.
+required:
+  - options
+  - allowedOrigins
+  - relyingPartyId
+properties:
+  options:
+    type: object
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn `PublicKeyCredentialCreationOptions`. Pass to the device's
+      WebAuthn registration API unmodified.
+  allowedOrigins:
+    type: array
+    description: >-
+      The origins the WebAuthn registration ceremony may run against. The origin
+      the credential is produced against must be one of these and must be echoed
+      back on the confirm call.
+    items:
+      type: string
+    example:
+      - https://app.example.com
+  relyingPartyId:
+    type: string
+    description: The WebAuthn relying-party id the credential is bound to.
+    example: app.example.com

@@ -1,0 +1,47 @@
+type: object
+description: >-
+  Confirms trusting or untrusting a beneficiary by submitting the SCA proof.
+  Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` /
+  `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the
+  `whitelistedId` returned by the trust start and, when the start issued one,
+  the `challengeId`.
+required:
+  - whitelistedId
+properties:
+  whitelistedId:
+    type: string
+    description: >-
+      The provider beneficiary handle returned as `whitelistedId` by the trust
+      start, threaded back so confirm need not re-whitelist.
+  challengeId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The challenge handle from the trust start's `scaChallenge`, when one was
+      issued. Omit when the start returned no challenge.
+  code:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The one-time code the customer received by SMS, or read from their
+      authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is
+      always `123456`.
+    example: '123456'
+  passkeyAssertion:
+    type:
+      - object
+      - 'null'
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn assertion produced by the device from the challenge's
+      assertion options. Required when satisfying a `PASSKEY` challenge.
+  origin:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The WebAuthn origin the `passkeyAssertion` was produced against. Required
+      alongside `passkeyAssertion`; omit it for the `code` path.
+    example: https://app.example.com

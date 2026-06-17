@@ -1103,6 +1103,991 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer whose enrolled factors are listed.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: List enrolled SCA factors
+      description: |
+        List the Strong Customer Authentication factors the customer has enrolled.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: listScaFactors
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The customer's enrolled SCA factors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaFactorList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/totp:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer enrolling a TOTP factor.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Start TOTP factor enrollment
+      description: |
+        Begin enrolling a time-based one-time-password (TOTP) authenticator factor
+        for the customer. Returns the shared secret and an `otpauth://` provisioning
+        URI; the customer scans it into an authenticator app and confirms with the
+        first code via `POST /customers/{customerId}/sca/factors/totp/confirm`.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: startTotpFactorEnrollment
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: TOTP enrollment started; the shared secret is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpEnrollmentStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/totp/confirm:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer confirming a TOTP factor.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Confirm TOTP factor enrollment
+      description: |
+        Finalize TOTP factor enrollment by submitting the shared secret from the
+        start call and the first code the customer's authenticator app produces.
+        Returns one-time recovery codes shown to the customer only once.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+
+        In sandbox, the code is always `123456`.
+      operationId: confirmTotpFactorEnrollment
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotpEnrollmentConfirmRequest'
+      responses:
+        '200':
+          description: TOTP factor enrolled; recovery codes are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpEnrollmentConfirmResponse'
+        '400':
+          description: Invalid or incorrect confirmation code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/passkey:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer enrolling a passkey factor.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Start passkey factor enrollment
+      description: |
+        Begin enrolling a WebAuthn passkey factor for the customer. Returns opaque
+        WebAuthn registration `options`; pass them to the device's WebAuthn API and
+        submit the resulting credential via
+        `POST /customers/{customerId}/sca/factors/passkey/confirm`.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: startPasskeyFactorEnrollment
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Passkey enrollment started; WebAuthn registration options are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasskeyEnrollmentStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/passkey/confirm:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer confirming a passkey factor.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Confirm passkey factor enrollment
+      description: |
+        Finalize passkey factor enrollment by submitting the WebAuthn credential the
+        device produced for the registration challenge, along with the origin it was
+        produced against. Returns the enrolled factor.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: confirmPasskeyFactorEnrollment
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasskeyEnrollmentConfirmRequest'
+      responses:
+        '200':
+          description: Passkey factor enrolled; the enrolled factor is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasskeyEnrollmentConfirmResponse'
+        '400':
+          description: Invalid credential or origin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/passkey/{credentialId}:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer whose passkey is being deleted.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: credentialId
+        in: path
+        description: The credential id of the passkey to delete (from the enrolled factor's `credentialId`).
+        required: true
+        schema:
+          type: string
+    delete:
+      summary: Delete an enrolled passkey factor
+      description: |
+        Delete an enrolled WebAuthn passkey factor by its credential id.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: deletePasskeyFactor
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Passkey deleted; no content is returned.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or passkey not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/login/start:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer starting an SCA login.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Start an SCA login
+      description: |
+        Begin an SCA login for the customer with the chosen factor, opening the
+        end-user SCA session (an exemption gating read / account access beyond the
+        per-transaction window). Returns factor-specific material: `SMS_OTP`
+        dispatches a code and returns a `challengeId` + `expiresAt`; `TOTP` returns
+        only the factor (the customer reads the code from their app); `PASSKEY`
+        returns WebAuthn `passkeyOptions`. Complete with
+        `POST /customers/{customerId}/sca/login/complete`.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: startScaLogin
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaLoginStartRequest'
+      responses:
+        '200':
+          description: SCA login started; factor-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaLoginStart'
+        '400':
+          description: Invalid or unknown factor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/login/complete:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer completing an SCA login.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Complete an SCA login
+      description: |
+        Finalize an SCA login by submitting the proof for the started factor
+        (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for
+        `PASSKEY`), echoing the `challengeId` for `SMS_OTP`. Returns the
+        provider-reported session status.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: completeScaLogin
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaLoginCompleteRequest'
+      responses:
+        '200':
+          description: SCA login completed; the session status is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaLoginComplete'
+        '400':
+          description: Invalid or expired proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/record-event:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer the security event is recorded for.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Record a security event
+      description: |
+        Record a client-side security-relevant event for the customer with the
+        underlying provider's risk engine (e.g. a sign-in, a sensitive view), to
+        feed adaptive-authentication signals.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: recordSecurityEvent
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordSecurityEventRequest'
+      responses:
+        '204':
+          description: Event recorded; no content is returned.
+        '400':
+          description: Invalid event type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/reset:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer resetting a factor.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Start a 2FA reset
+      description: |
+        Begin recovering a lost enrolled factor via a liveness-gated, poll-based
+        flow. Opens the provider's liveness check and returns a `resetId` plus the
+        opaque liveness handles (`sumsubAccessToken` / `verificationLink`) the end
+        user completes it with. Poll
+        `GET /customers/{customerId}/sca/factors/reset/{resetId}` until liveness
+        passes, then call the complete endpoint.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: startTwoFactorReset
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorResetStartRequest'
+      responses:
+        '201':
+          description: Reset initiated; the reset handle and liveness material are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorResetStart'
+        '400':
+          description: Invalid or unknown factor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/reset/{resetId}:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer whose reset status is polled.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: resetId
+        in: path
+        description: The reset handle returned by the start call.
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get 2FA reset status
+      description: |
+        Poll the status of an in-progress 2FA reset until it reaches the provider's
+        liveness-passed value, after which the reset can be completed.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: getTwoFactorResetStatus
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The current reset status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorResetStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or reset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/sca/factors/reset/{resetId}/complete:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer completing the reset.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: resetId
+        in: path
+        description: The reset handle returned by the start call.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Complete a 2FA reset
+      description: |
+        Complete a 2FA reset once liveness has passed, clearing the lost factor so
+        the customer can re-enroll.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: completeTwoFactorReset
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Reset completed; no content is returned.
+        '400':
+          description: Reset not ready (liveness not yet passed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or reset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/external-accounts/{externalAccountId}/trust:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer who owns the external account.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being trusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Start trusting a beneficiary
+      description: |
+        Begin trusting (whitelisting) an external account so future sends to it can
+        skip the per-transaction SCA ceremony. Creates the whitelist entry and
+        returns a `whitelistedId` handle plus, when the provider issues one, the
+        `scaChallenge` to satisfy. Complete with
+        `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+      operationId: startBeneficiaryTrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Beneficiary trust started; the whitelist handle and any challenge are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer who owns the external account.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being trusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm trusting a beneficiary
+      description: |
+        Finalize trusting a beneficiary by submitting the `whitelistedId` from the
+        trust start and the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+        one was issued. Returns `trusted: true`.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: confirmBeneficiaryTrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BeneficiaryTrustConfirmRequest'
+      responses:
+        '200':
+          description: Beneficiary trusted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustConfirm'
+        '400':
+          description: Invalid or expired proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/external-accounts/{externalAccountId}/untrust/confirm:
+    parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer who owns the external account.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being untrusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm untrusting a beneficiary
+      description: |
+        Finalize untrusting a beneficiary by submitting the `whitelistedId` from the
+        trust start and the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+        one was issued. Returns `trusted: false`.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires SCA (e.g. EU customers). For customers whose provider has no such
+        requirement, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: confirmBeneficiaryUntrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BeneficiaryTrustConfirmRequest'
+      responses:
+        '200':
+          description: Beneficiary untrusted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustConfirm'
+        '400':
+          description: Invalid or expired proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require SCA.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/internal-accounts:
     get:
       summary: List Customer internal accounts
@@ -10261,6 +11246,389 @@ components:
           type: string
           description: The one-time verification code the customer received via email or SMS. In sandbox, the code is always `123456`.
           example: '123456'
+    ScaFactor:
+      type: string
+      enum:
+        - SMS_OTP
+        - TOTP
+        - PASSKEY
+      description: |
+        A Strong Customer Authentication factor.
+
+        | Factor | Description |
+        |--------|-------------|
+        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
+        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
+        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
+    ScaFactorView:
+      type: object
+      description: An enrolled Strong Customer Authentication factor.
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The kind of enrolled factor.
+        credentialId:
+          type:
+            - string
+            - 'null'
+          description: The per-credential id, populated only for `PASSKEY` factors (the id passed to delete a passkey). Omitted for `TOTP` and `SMS_OTP`, which have no per-credential id.
+        name:
+          type:
+            - string
+            - 'null'
+          description: An optional human-readable label for this factor.
+    ScaFactorList:
+      type: object
+      description: The Strong Customer Authentication factors a customer has enrolled.
+      required:
+        - factors
+      properties:
+        factors:
+          type: array
+          description: The customer's enrolled SCA factors.
+          items:
+            $ref: '#/components/schemas/ScaFactorView'
+    TotpEnrollmentStart:
+      type: object
+      description: The shared secret a customer's authenticator app needs to enroll a TOTP factor. Returned by `POST /customers/{customerId}/sca/factors/totp`; the customer scans `totpUri` (an `otpauth://` provisioning URI) and confirms with the first code their app produces.
+      required:
+        - secret
+        - secretBase32Encoded
+        - totpUri
+      properties:
+        secret:
+          type: string
+          description: The raw TOTP shared secret.
+        secretBase32Encoded:
+          type: string
+          description: The Base32-encoded shared secret, suitable for manual entry into an authenticator app that does not scan QR codes.
+        totpUri:
+          type: string
+          description: The `otpauth://` provisioning URI (the QR-code payload) the customer's authenticator app scans to enroll the factor.
+          example: otpauth://totp/Grid:customer@example.com?secret=ABC123&issuer=Grid
+    TotpEnrollmentConfirmRequest:
+      type: object
+      description: The shared secret returned by the TOTP enrollment start, plus the first code the customer's authenticator app produces, submitted to confirm and finalize the TOTP factor.
+      required:
+        - secret
+        - code
+      properties:
+        secret:
+          type: string
+          description: The shared secret returned as `secret` by the TOTP enrollment start, threaded back to bind the confirmation to that enrollment.
+        code:
+          type: string
+          description: The current time-based one-time code from the customer's authenticator app. In sandbox, the code is always `123456`.
+          example: '123456'
+    TotpEnrollmentConfirmResponse:
+      type: object
+      description: The one-time recovery codes issued once a TOTP factor is enrolled. These are shown to the customer only once; store them somewhere safe to recover access if the authenticator device is lost.
+      required:
+        - recoveryCodes
+      properties:
+        recoveryCodes:
+          type: array
+          description: The one-time recovery codes for this TOTP factor.
+          items:
+            type: string
+          example:
+            - ABCD-EFGH-IJKL
+            - MNOP-QRST-UVWX
+    PasskeyEnrollmentStart:
+      type: object
+      description: Opaque WebAuthn registration options relayed to the end user's device to enroll a passkey factor. Grid performs no crypto; pass `options` to the device's WebAuthn API to produce a credential, then submit that credential to the confirm endpoint unmodified.
+      required:
+        - options
+        - allowedOrigins
+        - relyingPartyId
+      properties:
+        options:
+          type: object
+          additionalProperties: true
+          description: Opaque WebAuthn `PublicKeyCredentialCreationOptions`. Pass to the device's WebAuthn registration API unmodified.
+        allowedOrigins:
+          type: array
+          description: The origins the WebAuthn registration ceremony may run against. The origin the credential is produced against must be one of these and must be echoed back on the confirm call.
+          items:
+            type: string
+          example:
+            - https://app.example.com
+        relyingPartyId:
+          type: string
+          description: The WebAuthn relying-party id the credential is bound to.
+          example: app.example.com
+    PasskeyEnrollmentConfirmRequest:
+      type: object
+      description: The WebAuthn credential a device produced for a passkey registration challenge, submitted to enroll the passkey factor.
+      required:
+        - origin
+        - credential
+      properties:
+        origin:
+          type: string
+          description: The WebAuthn origin the `credential` was produced against (one of the enrollment start's `allowedOrigins`).
+          example: https://app.example.com
+        credential:
+          type: object
+          additionalProperties: true
+          description: Opaque WebAuthn credential the device produced from the enrollment start's `options`.
+    PasskeyEnrollmentConfirmResponse:
+      type: object
+      description: The enrolled passkey factor returned after a successful confirmation.
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactorView'
+    ScaLoginStartRequest:
+      type: object
+      description: Selects which enrolled factor to start an SCA login with. The factor must already be enrolled (or, for `SMS_OTP`, the phone verified).
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor to authenticate with.
+    ScaLoginStart:
+      type: object
+      description: 'The factor-specific material a customer needs to complete an SCA login. Each factor surfaces only the fields it issues: `SMS_OTP` carries `challengeId` and `expiresAt`; `TOTP` carries neither (the customer reads the code from their authenticator app); `PASSKEY` carries the opaque WebAuthn `passkeyOptions` with `allowedOrigins` and `relyingPartyId`.'
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this login was started for.
+        challengeId:
+          type:
+            - string
+            - 'null'
+          description: The challenge handle for an `SMS_OTP` login, threaded back on the complete call. Present only for `SMS_OTP`.
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Absolute UTC timestamp after which the `SMS_OTP` code expires. Present only for `SMS_OTP`.
+          example: '2025-10-03T12:05:00Z'
+        passkeyOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options. Present only for `PASSKEY`; pass to the device's WebAuthn API to produce the assertion submitted on the complete call.
+        allowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against. Present only for `PASSKEY`.
+          example:
+            - https://app.example.com
+        relyingPartyId:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn relying-party id. Present only for `PASSKEY`.
+          example: app.example.com
+    ScaLoginCompleteRequest:
+      type: object
+      description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor being completed; must match the started login.
+        challengeId:
+          type:
+            - string
+            - 'null'
+          description: The challenge handle returned by the login start, required for `SMS_OTP` and omitted for other factors.
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the login start's `passkeyOptions`. Required when completing a `PASSKEY` login.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against (one of the login start's `allowedOrigins`). Required alongside `passkeyAssertion`; omit it for the `code` path.
+          example: https://app.example.com
+    ScaLoginComplete:
+      type: object
+      description: The provider-reported status of a completed SCA login session.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: The provider-reported status of the login session.
+          example: SUCCESS
+    RecordSecurityEventRequest:
+      type: object
+      description: Records a client-side security-relevant event for the customer with the underlying provider's risk engine (e.g. a sign-in, a sensitive view). Used to feed the provider's adaptive-authentication signals.
+      required:
+        - eventType
+      properties:
+        eventType:
+          type: string
+          description: The provider-defined event type to record.
+          example: LOGIN
+    TwoFactorResetStartRequest:
+      type: object
+      description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The enrolled factor to reset.
+    TwoFactorResetStart:
+      type: object
+      description: The reset handle plus the opaque provider liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `sumsubAccessToken` and `verificationLink` are omitted when the provider does not return them.
+      required:
+        - resetId
+      properties:
+        resetId:
+          type: string
+          description: Identifier for this reset; pass it to the status and complete endpoints.
+        sumsubAccessToken:
+          type:
+            - string
+            - 'null'
+          description: Access token for the embedded liveness/verification SDK, bound to this reset. Omitted when the provider does not return one.
+        verificationLink:
+          type:
+            - string
+            - 'null'
+          description: Hosted identity-verification page URL for completing liveness. Omitted when the provider does not return one.
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Absolute UTC timestamp at the end of the reset window. Omitted when the provider does not return one.
+          example: '2025-10-03T12:30:00Z'
+    TwoFactorResetStatus:
+      type: object
+      description: The provider-reported status of an in-progress 2FA reset, polled until it reaches the provider's liveness-passed value.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: The provider-reported status of the reset.
+          example: PENDING
+    ScaChallenge:
+      type: object
+      description: |-
+        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer's payment provider requires SCA** (e.g. EU customers on an e-money provider); for customers whose provider has no such requirement it is omitted entirely and no action is needed.
+
+        When present on a quote or transaction, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or `POST /transactions/{transactionId}/authorize`, or inline via the optional `scaAuthorization` field on the originating `execute` / `transfer-out` call.
+      required:
+        - id
+        - expiresAt
+        - factor
+        - availableFactors
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
+          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
+        expiresAt:
+          type: string
+          format: date-time
+          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
+          example: '2025-10-03T12:05:00Z'
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
+        availableFactors:
+          type: array
+          description: The factors the customer may use to satisfy this challenge.
+          items:
+            $ref: '#/components/schemas/ScaFactor'
+          example:
+            - SMS_OTP
+        passkeyAssertionOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
+        passkeyAllowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against, present only when `factor` is `PASSKEY`. The origin the assertion is produced against must be one of these and must be echoed back as `ScaAuthorization.origin`.
+          example:
+            - https://app.example.com
+    BeneficiaryTrustStart:
+      type: object
+      description: The provider handle plus the SCA challenge a caller authorizes to finish trusting (or untrusting) a beneficiary. `whitelistedId` is the provider's beneficiary handle; thread it back on the confirm call so confirm need not re-whitelist (which could trigger a second challenge). `scaChallenge` is omitted when the provider does not surface one on the whitelist response; the caller then confirms without a `challengeId`.
+      required:
+        - whitelistedId
+      properties:
+        whitelistedId:
+          type: string
+          description: The provider's beneficiary (whitelist) handle. Thread it back on the confirm call.
+        scaChallenge:
+          $ref: '#/components/schemas/ScaChallenge'
+          description: The SCA challenge to satisfy on the confirm call. Omitted when the provider issues no challenge on the whitelist response.
+    BeneficiaryTrustConfirmRequest:
+      type: object
+      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `whitelistedId` returned by the trust start and, when the start issued one, the `challengeId`.
+      required:
+        - whitelistedId
+      properties:
+        whitelistedId:
+          type: string
+          description: The provider beneficiary handle returned as `whitelistedId` by the trust start, threaded back so confirm need not re-whitelist.
+        challengeId:
+          type:
+            - string
+            - 'null'
+          description: The challenge handle from the trust start's `scaChallenge`, when one was issued. Omit when the start returned no challenge.
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the challenge's assertion options. Required when satisfying a `PASSKEY` challenge.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against. Required alongside `passkeyAssertion`; omit it for the `code` path.
+          example: https://app.example.com
+    BeneficiaryTrustConfirm:
+      type: object
+      description: The result of a confirm-trust / confirm-untrust call. `trusted` is `true` after a successful trust and `false` after a successful untrust.
+      required:
+        - trusted
+      properties:
+        trusted:
+          type: boolean
+          description: Whether the beneficiary is now trusted. `true` after a successful trust, `false` after a successful untrust.
     InternalAccountType:
       title: Internal Account Type
       type: string
@@ -16730,66 +18098,6 @@ components:
         FULL_NAME: John Sender
         BIRTH_DATE: '1985-06-15'
         NATIONALITY: DE
-    ScaFactor:
-      type: string
-      enum:
-        - SMS_OTP
-        - TOTP
-        - PASSKEY
-      description: |
-        A Strong Customer Authentication factor.
-
-        | Factor | Description |
-        |--------|-------------|
-        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
-        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
-        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
-    ScaChallenge:
-      type: object
-      description: |-
-        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer's payment provider requires SCA** (e.g. EU customers on an e-money provider); for customers whose provider has no such requirement it is omitted entirely and no action is needed.
-
-        When present on a quote or transaction, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or `POST /transactions/{transactionId}/authorize`, or inline via the optional `scaAuthorization` field on the originating `execute` / `transfer-out` call.
-      required:
-        - id
-        - expiresAt
-        - factor
-        - availableFactors
-      properties:
-        id:
-          type: string
-          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
-          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
-        expiresAt:
-          type: string
-          format: date-time
-          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
-          example: '2025-10-03T12:05:00Z'
-        factor:
-          $ref: '#/components/schemas/ScaFactor'
-          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
-        availableFactors:
-          type: array
-          description: The factors the customer may use to satisfy this challenge.
-          items:
-            $ref: '#/components/schemas/ScaFactor'
-          example:
-            - SMS_OTP
-        passkeyAssertionOptions:
-          type:
-            - object
-            - 'null'
-          additionalProperties: true
-          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
-        passkeyAllowedOrigins:
-          type:
-            - array
-            - 'null'
-          items:
-            type: string
-          description: The origins the WebAuthn ceremony may run against, present only when `factor` is `PASSKEY`. The origin the assertion is produced against must be one of these and must be echoed back as `ScaAuthorization.origin`.
-          example:
-            - https://app.example.com
     Transaction:
       type: object
       required:

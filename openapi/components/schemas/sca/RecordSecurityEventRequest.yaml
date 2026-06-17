@@ -1,0 +1,12 @@
+type: object
+description: >-
+  Records a client-side security-relevant event for the customer with the
+  underlying provider's risk engine (e.g. a sign-in, a sensitive view). Used to
+  feed the provider's adaptive-authentication signals.
+required:
+  - eventType
+properties:
+  eventType:
+    type: string
+    description: The provider-defined event type to record.
+    example: LOGIN

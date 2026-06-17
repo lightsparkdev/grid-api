@@ -1,0 +1,9 @@
+type: object
+description: The provider-reported status of a completed SCA login session.
+required:
+  - status
+properties:
+  status:
+    type: string
+    description: The provider-reported status of the login session.
+    example: SUCCESS

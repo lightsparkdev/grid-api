@@ -1,0 +1,68 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer who owns the external account.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  - name: externalAccountId
+    in: path
+    description: The unique identifier of the external account (beneficiary) being trusted.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Start trusting a beneficiary
+  description: |
+    Begin trusting (whitelisting) an external account so future sends to it can
+    skip the per-transaction SCA ceremony. Creates the whitelist entry and
+    returns a `whitelistedId` handle plus, when the provider issues one, the
+    `scaChallenge` to satisfy. Complete with
+    `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+  operationId: startBeneficiaryTrust
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Beneficiary trust started; the whitelist handle and any challenge are returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/BeneficiaryTrustStart.yaml
+    '400':
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or external account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

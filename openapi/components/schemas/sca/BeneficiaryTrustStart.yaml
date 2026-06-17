@@ -1,0 +1,21 @@
+type: object
+description: >-
+  The provider handle plus the SCA challenge a caller authorizes to finish
+  trusting (or untrusting) a beneficiary. `whitelistedId` is the provider's
+  beneficiary handle; thread it back on the confirm call so confirm need not
+  re-whitelist (which could trigger a second challenge). `scaChallenge` is
+  omitted when the provider does not surface one on the whitelist response; the
+  caller then confirms without a `challengeId`.
+required:
+  - whitelistedId
+properties:
+  whitelistedId:
+    type: string
+    description: >-
+      The provider's beneficiary (whitelist) handle. Thread it back on the
+      confirm call.
+  scaChallenge:
+    $ref: ./ScaChallenge.yaml
+    description: >-
+      The SCA challenge to satisfy on the confirm call. Omitted when the
+      provider issues no challenge on the whitelist response.
