@@ -203,7 +203,7 @@ export async function passkeyCeremony(): Promise<void> {
     publicKey: {
       challenge: toArrayBuffer(challenge),
       rp: { id: location.hostname, name: 'Aurora' },
-      user: { id: toArrayBuffer(userId), name: 'ava@aurora.app', displayName: 'Ava Martinez' },
+      user: { id: toArrayBuffer(userId), name: 'demo@lightspark.com', displayName: 'Pat Teehantri' },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 }, // ES256
         { type: 'public-key', alg: -257 }, // RS256

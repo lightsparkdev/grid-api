@@ -267,7 +267,7 @@ export function addMoneySettlementCalls(cents: number, fundingCurrency = 'USD'):
     amountCents: cents,
     viaCrypto: false,
     sourceCurrency: fundingCurrency,
-    counterparty: 'Ava Martínez',
+    counterparty: 'Pat Teehantri',
     paymentRail: 'RTP',
     intent: 'add',
   });

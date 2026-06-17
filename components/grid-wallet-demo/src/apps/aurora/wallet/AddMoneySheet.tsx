@@ -70,7 +70,7 @@ export interface CryptoRecipient {
  *  Discriminate with `'address' in r` (only the crypto variant has it). */
 export type SavedRecipient = SavedBank | CryptoRecipient;
 
-const DEMO_BENEFICIARY = 'Ava Martinez';
+const DEMO_BENEFICIARY = 'Pat Teehantri';
 
 /** "Carlos Herrera" → "Carlos H." — the Receive payer label (fiat). */
 function firstNameLastInitial(name: string): string {
