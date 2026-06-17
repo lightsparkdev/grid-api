@@ -3,7 +3,14 @@ import { AuroraAuthScreen } from './aurora/AuroraAuthScreen';
 import { AuroraWalletScreen } from './aurora/wallet';
 import { WiggleAuthScreen } from './wiggle/WiggleAuthScreen';
 import { WiggleWalletScreen } from './wiggle/wallet';
-import type { SkinAuthScreen, SkinWalletScreen } from './types';
+import { PasskeySheet as WigglePasskeySheet } from './wiggle/PasskeySheet';
+import { AuthSheet as WiggleAuthSheet } from './wiggle/AuthSheet';
+import type {
+  SkinAuthScreen,
+  SkinWalletScreen,
+  SkinPasskeySheet,
+  SkinAuthSheet,
+} from './types';
 
 export type AppSkinId = 'aurora' | 'wiggle' | 'pulse' | 'bazaar';
 
@@ -18,6 +25,9 @@ export interface AppSkin {
   fontFamily: string;
   AuthScreen?: SkinAuthScreen;
   WalletScreen?: SkinWalletScreen;
+  /** Sign-in auth overlays. Omit to fall back to Aurora's (DemoPhone default). */
+  PasskeySheet?: SkinPasskeySheet;
+  AuthSheet?: SkinAuthSheet;
 }
 
 const SF_PRO = "'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
@@ -39,6 +49,8 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     fontFamily: SF_PRO,
     AuthScreen: WiggleAuthScreen,
     WalletScreen: WiggleWalletScreen,
+    PasskeySheet: WigglePasskeySheet,
+    AuthSheet: WiggleAuthSheet,
   },
   social: {
     id: 'pulse',

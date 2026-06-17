@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { CreatingCaption } from '@/apps/aurora/wallet/CardIssuanceContent';
+import { CreatingCaption } from './wallet/CardIssuanceContent';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import type { SkinAuthScreenProps } from '@/apps/types';
 import { BrandHeader } from './blocks/BrandHeader';

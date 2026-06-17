@@ -32,9 +32,10 @@ src/apps/
                     #   AddMoneySheet, SendReceiveSheet, CardHomeContent,
                     #   CardIssuanceContent, DebitCard, TapToPayStatus,
                     #   WalletCardDetailHeader, WalletListSection/Card/Item, Flag.
-  wiggle/           # example custom skin (own auth + home; reuses Aurora's sheets)
+  wiggle/           # full worked example: owns every face (auth, auth overlays,
+                    #   home, + all flow faces) — each a thin view over the brains.
   <yourskin>/       # your skin lives here
-  skins.ts          # persona -> skin registry (AuthScreen / WalletScreen)
+  skins.ts          # persona -> skin registry (AuthScreen / WalletScreen / overlays)
   SignInFlow.tsx    # shared auth <-> wallet handoff (generic; don't fork)
   types.ts          # SkinAuthScreenProps / SkinWalletScreenProps contracts
 data/, lib/, hooks/ # shared data + logic (apiCalls, bankCountries, cryptoAddresses, useWalletDemoLogic, FX, …)
@@ -84,10 +85,11 @@ To give your skin its own sheet:
 
 Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
 
-> Other flows (SendReceiveSheet, the card flow) still bundle brain + face. To fork
-> one before its brain is extracted, copy the whole file (the logic comes with it),
-> or extract a `use<Flow>` hook first, mirroring `useMoneySheet` (move state +
-> handlers into `apps/shared/wallet`, leave the JSX in the skin).
+> The rest of the flows are already brain/face-split a different way: their brains
+> live in `useWalletHome` (card issuance, tap-to-pay, send/receive triggers) and the
+> components (SendReceiveSheet, the card flow, the activity list) are thin faces.
+> Fork them straight into `apps/<skin>/wallet/` and restyle — no extraction needed.
+> Wiggle does exactly this: it owns every flow face.
 
 ## Add a new skin (step by step)
 
@@ -109,9 +111,10 @@ Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
    home) or `aurora/wallet/AuroraWalletScreen.tsx` (baseline), call
    `useWalletHome(props)`, render your layout + the flow faces (reused or copied).
 5. **Register** — add the entry to `APP_SKINS` in `apps/skins.ts`
-   (`{ id, persona, label, fontFamily, AuthScreen, WalletScreen }`) and the id to
-   `AppSkinId`. `DemoPhone` routes by persona automatically; a skin with no
-   `AuthScreen`/`WalletScreen` stays dark ("coming soon").
+   (`{ id, persona, label, fontFamily, AuthScreen, WalletScreen }`, plus optional
+   `PasskeySheet` / `AuthSheet` to own the sign-in overlays — omit them to fall back
+   to Aurora's) and the id to `AppSkinId`. `DemoPhone` routes by persona
+   automatically; a skin with no `AuthScreen`/`WalletScreen` stays dark ("coming soon").
 
 ## Run + verify
 

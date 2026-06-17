@@ -6,8 +6,8 @@ import type { PhoneProps } from '@/components/Phone';
 import { applePopup, googleTokenPopup, preloadOauthPopups } from '@/lib/auth';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { SignInFlow } from '@/apps/SignInFlow';
-import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
-import { AuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
+import { PasskeySheet as AuroraPasskeySheet } from '@/apps/aurora/PasskeySheet';
+import { AuthSheet as AuroraAuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
 import { AppShell } from '@/apps/shared/AppShell';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
@@ -24,6 +24,9 @@ interface DemoPhoneProps extends PhoneProps {
 function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const authMethod = props.signInMethod ?? props.method;
   const flowActive = Boolean(skin.AuthScreen && skin.WalletScreen);
+  // Auth overlays are per-skin too — fall back to Aurora's when a skin omits them.
+  const PasskeySheet = skin.PasskeySheet ?? AuroraPasskeySheet;
+  const AuthSheet = skin.AuthSheet ?? AuroraAuthSheet;
   const onAuthScreen = flowActive && props.phone.screen === 'auth';
 
   const passkeySheet = onAuthScreen ? (

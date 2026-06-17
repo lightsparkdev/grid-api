@@ -48,7 +48,7 @@ import {
   type ReceivedPayment,
   type TransferActivity,
 } from '@/apps/shared/wallet';
-import { WalletListSection } from '@/apps/aurora/wallet/WalletListSection';
+import { WalletListSection } from './WalletListSection';
 import { Flag } from '@/apps/aurora/wallet/Flag';
 import styles from './AddMoneySheet.module.scss';
 
