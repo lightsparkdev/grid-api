@@ -3,16 +3,6 @@
 import { useEffect } from 'react';
 import type { AuthMethod } from '@/data/flow';
 import type { PhoneProps } from '@/components/Phone';
-import {
-  AppleSignInScreen,
-  CreatingScreen,
-  CredentialScreen,
-  EmailEntryScreen,
-  GoogleSignInScreen,
-  OtpEntryScreen,
-  PhoneEntryScreen,
-  PHONE_BRAND,
-} from '@/components/Phone';
 import { applePopup, googleTokenPopup, preloadOauthPopups } from '@/lib/auth';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { AuroraSignInFlow } from '@/apps/aurora';
@@ -32,7 +22,6 @@ interface DemoPhoneProps extends PhoneProps {
 }
 
 function DemoScreen(props: PhoneProps, skin: AppSkin) {
-  const brand = PHONE_BRAND[props.persona];
   const authMethod = props.signInMethod ?? props.method;
   const isAurora = skin.id === 'aurora';
   const onAuthScreen = isAurora && props.phone.screen === 'auth';
@@ -77,44 +66,10 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     />
   ) : null;
 
-  if (props.email?.active && !isAurora) {
-    return <EmailEntryScreen brand={brand} onSubmit={props.email.onSubmit} />;
-  }
-  if (props.phoneEntry?.active && !isAurora) {
-    return <PhoneEntryScreen brand={brand} onSubmit={props.phoneEntry.onSubmit} />;
-  }
-  if (props.otp?.active && !isAurora) {
-    return <OtpEntryScreen onSubmit={props.otp.onSubmit} />;
-  }
-  if (props.google?.nonce) {
-    return (
-      <GoogleSignInScreen nonce={props.google.nonce} onCredential={props.google.onCredential} />
-    );
-  }
-  if (props.apple?.nonce) {
-    return (
-      <AppleSignInScreen nonce={props.apple.nonce} onCredential={props.apple.onCredential} />
-    );
-  }
-
-  // Aurora's auth ⇄ wallet pair renders through ONE stable component so the
-  // post-sign-in intro can hold the auth screen across the screen flip. The
-  // OTP flows' 'creating' stretch (sending beat + OTP entry) stays on the
-  // auth screen too — the sheet bridges it.
-  // entry.active is part of the bridge too: backing out of the OTP re-arms
-  // the entry prompt while the screen state is still 'creating' for a beat —
-  // and without it that frame falls through to the full-screen creating view,
-  // unmounting (and instantly remounting) the whole aurora flow + sheet.
-  const auroraAuthBridge =
-    sheetFlow &&
-    props.phone.screen === 'creating' &&
-    (sheetSending || Boolean(props.otp?.active) || Boolean(entry?.active));
   // Airbnb-model OAuth: OUR CTA opens the REAL provider popup synchronously
   // inside the tap gesture (any await first would trip popup blockers), and
-  // hands the pending promise to the sign-in loop. While the popup is open
-  // the phone stays exactly as it is — `popupWait` suppresses the busy look
-  // below, while the RAW busy still guards double-fire (a second tap is
-  // swallowed before a second window can open).
+  // hands the pending promise to the sign-in loop. While the popup is open the
+  // phone stays exactly as it is — `popupWait` suppresses the busy look.
   const signIn = (m: AuthMethod) => {
     if (m === 'oauth' || m === 'apple') {
       if (props.busy) return;
@@ -123,46 +78,32 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     }
     props.onSignInWithMethod?.(m);
   };
-  if (
-    isAurora &&
-    (props.phone.screen === 'auth' ||
-      props.phone.screen === 'wallet' ||
-      props.phone.screen === 'card' ||
-      auroraAuthBridge)
-  ) {
-    return (
-      <AuroraSignInFlow
-        screen={
-          props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
-        }
-        busy={props.busy && !props.popupWait}
-        methods={props.methods ?? [props.method]}
-        onSignIn={signIn}
-        skipIntro={props.skipIntro}
-        entry={props.walletEntry}
-        onQuoteCreate={props.onQuoteCreate}
-        onLinkExternalAccount={props.onLinkExternalAccount}
-        onTransferExecute={props.onTransferExecute}
-        onCardIssued={props.onCardIssued}
-        onTapToPay={props.onTapToPay}
-        onReceivePayment={props.onReceivePayment}
-      >
-        {passkeySheet}
-        {authSheet}
-      </AuroraSignInFlow>
-    );
-  }
 
-  switch (props.phone.screen) {
-    case 'auth':
-      return passkeySheet;
-    case 'creating':
-      return <CreatingScreen brand={brand} note={props.phone.note} />;
-    case 'credential':
-      return <CredentialScreen method={authMethod} />;
-    default:
-      return null;
-  }
+  // Aurora is the only built skin; its auth ⇄ wallet pair renders through ONE
+  // stable component so the post-sign-in intro can hold the auth screen across
+  // the flip — including the OTP 'creating' stretch, which the sheet bridges.
+  if (!isAurora) return null;
+  return (
+    <AuroraSignInFlow
+      screen={
+        props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
+      }
+      busy={props.busy && !props.popupWait}
+      methods={props.methods ?? [props.method]}
+      onSignIn={signIn}
+      skipIntro={props.skipIntro}
+      entry={props.walletEntry}
+      onQuoteCreate={props.onQuoteCreate}
+      onLinkExternalAccount={props.onLinkExternalAccount}
+      onTransferExecute={props.onTransferExecute}
+      onCardIssued={props.onCardIssued}
+      onTapToPay={props.onTapToPay}
+      onReceivePayment={props.onReceivePayment}
+    >
+      {passkeySheet}
+      {authSheet}
+    </AuroraSignInFlow>
+  );
 }
 
 /** Demo phone — routes persona → skin UI inside the shared glass shell. */
