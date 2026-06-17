@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { animate } from 'motion/react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
+import { useGlassEngine } from '@/components/liquid-glass/useGlassEngine';
 import { easeOutSnappy } from '@/lib/easing';
 import { StageGL, type StageGLHandle } from '@/components/glass-gl/StageGL';
 import { PhoneBootProvider } from './PhoneBootContext';
@@ -21,6 +22,10 @@ interface DotGridCanvasProps {
 
 export function DotGridCanvas({ children, glassConfig }: DotGridCanvasProps) {
   const stageRef = useRef<StageGLHandle>(null);
+  // WebKit runs the glass shader on a slow path, so animating the entrance (the
+  // lens recomputes every frame) stutters. On Safari we skip the animation and
+  // let the phone + glass appear at full strength instead.
+  const { isSafari } = useGlassEngine();
   const [dotsReady, setDotsReady] = useState(false);
   const [bootReady, setBootReady] = useState(false);
   const [bootOpacity, setBootOpacity] = useState(0);
@@ -41,9 +46,17 @@ export function DotGridCanvas({ children, glassConfig }: DotGridCanvasProps) {
     };
   }, [realignLens]);
 
-  // One shared 0→1 curve drives screen content AND the WebGL glass lens.
+  // One shared 0→1 curve drives screen content AND the WebGL glass lens. Safari
+  // skips the animation — the phone + glass appear instantly (no per-frame shader).
   useEffect(() => {
     if (!bootReady) return;
+    if (isSafari) {
+      setBootOpacity(1);
+      realignLens();
+      // One more realign next frame in case the fit-scale is still settling.
+      const raf = requestAnimationFrame(() => realignLens());
+      return () => cancelAnimationFrame(raf);
+    }
     const anim = animate(0, 1, {
       duration: PHONE_BOOT_DURATION_S,
       ease: easeOutSnappy,
@@ -53,7 +66,7 @@ export function DotGridCanvas({ children, glassConfig }: DotGridCanvasProps) {
       },
     });
     return () => anim.stop();
-  }, [bootReady, realignLens]);
+  }, [bootReady, isSafari, realignLens]);
 
   return (
     <PhoneBootProvider value={{ ready: bootReady, bootOpacity, realignLens }}>
