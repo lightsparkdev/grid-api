@@ -154,17 +154,17 @@
   }
 
   .fadeBlurStrong {
-    --fade-blur: 8px;
+    --fade-blur: 3px;
     --fade-mask: linear-gradient(to top, #000 0%, #000 16%, transparent 46%);
   }
 
   .fadeBlurMid {
-    --fade-blur: 4px;
+    --fade-blur: 2px;
     --fade-mask: linear-gradient(to top, #000 0%, #000 34%, transparent 68%);
   }
 
   .fadeBlurSoft {
-    --fade-blur: 2px;
+    --fade-blur: 1px;
     --fade-mask: linear-gradient(to top, #000 0%, #000 56%, transparent 100%);
   }
 
@@ -175,8 +175,8 @@
     inset: 0;
     background: linear-gradient(
       to top,
-      var(--explore-fade-bg) 0%,
-      color-mix(in srgb, var(--explore-fade-bg) 50%, transparent) 50%,
+      color-mix(in srgb, var(--explore-fade-bg) 45%, transparent) 0%,
+      color-mix(in srgb, var(--explore-fade-bg) 15%, transparent) 50%,
       transparent 100%
     );
   }
@@ -200,7 +200,8 @@
     font-feature-settings: 'salt' 1;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    box-shadow: var(--shadow-lg);
+    /* --shadow-lg is the top of the scale; add a deeper layer for more lift. */
+    box-shadow: var(--shadow-lg), 0 12px 28px rgba(0, 0, 0, 0.16);
     transition: transform 150ms ease, background-color 150ms ease;
 
     :global([data-theme='dark']) & {
