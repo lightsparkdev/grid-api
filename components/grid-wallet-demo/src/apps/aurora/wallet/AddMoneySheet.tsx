@@ -1576,8 +1576,7 @@ export function AddMoneySheet({
                     </div>
                   </div>
                   <p className={styles.fundingNote}>
-                    Share these details with anyone paying you. Make sure they
-                    include the reference so it reaches your account.
+                    Share these details with anyone paying you
                   </p>
                 </div>
                 <div className={styles.bottomCtaWrap}>
