@@ -68,7 +68,7 @@ const TAP_LIFT = -56; // Lift the body by the header height so the card sits und
 // merchant) so repeat taps read as real purchases around town.
 const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp'>> = [
   { Icon: IconHotDrinkCup, title: 'Starbucks', detail: 'Tap to Pay', amount: '$7.45' },
-  { Icon: IconCheeseburger, title: "McDonald's", detail: 'Tap to Pay', amount: '$11.84' },
+  { Icon: IconCheeseburger, title: 'McDonald\u2019s', detail: 'Tap to Pay', amount: '$11.84' },
   { Icon: IconStore1, title: '7-Eleven', detail: 'Tap to Pay', amount: '$6.27' },
   { Icon: IconCup, title: 'Pret a Manger', detail: 'Tap to Pay', amount: '$9.15' },
   { Icon: IconFashion, title: 'Uniqlo', detail: 'Tap to Pay', amount: '$39.90' },
