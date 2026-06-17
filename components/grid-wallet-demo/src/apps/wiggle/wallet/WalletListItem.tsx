@@ -1,43 +1,13 @@
 'use client';
 
-import type { ComponentType } from 'react';
 import clsx from 'clsx';
-import { Flag } from '@/apps/aurora/wallet/Flag';
+import { Flag } from '@/apps/shared/Flag';
+import type { WalletListItemData, WalletItemAvatar } from '@/apps/shared/wallet';
 import styles from './WalletListItem.module.scss';
 
-/** central-icons component shape (accepts `size`, spreads the rest onto the
- *  svg). `size` includes string to match CentralIconBaseProps exactly — a
- *  narrower number-only signature rejects the icon components' propTypes. */
-type ListIcon = ComponentType<{ size?: number | string; className?: string }>;
-
-/** Contact-style avatar for a person counterparty — first+last initial in the
- *  circular tile with the country flag badged in the corner. */
-export interface WalletItemAvatar {
-  initials: string;
-  code: string;
-}
-
-export interface WalletListItemData {
-  id: string;
-  /** Glyph graphic (central-icons). */
-  Icon?: ListIcon;
-  /** Image graphic (e.g. a country flag) — wins over Icon when both are set. */
-  image?: string;
-  /** The image is a self-contained brand tile with its own corner radius (e.g. a
-   *  crypto network logo) — skip the circular flag clip. */
-  imageSquare?: boolean;
-  /** Round the 56px tile (crypto payments — coin-style) instead of the square. */
-  tileCircle?: boolean;
-  /** Person counterparty — render the initials avatar (wins over icon/image). */
-  avatar?: WalletItemAvatar;
-  title: string;
-  /** Merchant detail line, e.g. "Tap to Pay". */
-  detail: string;
-  /** Epoch ms — rendered as a live relative label ("Just now", "2m ago"…). */
-  timestamp: number;
-  /** Formatted amount, e.g. "$7.32". */
-  amount: string;
-}
+// The row data shape is the shared brain's contract — re-export it so this skin's
+// sibling faces still import it from here; only the rendering below is per-skin.
+export type { WalletListItemData, WalletItemAvatar };
 
 export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'timestamp'> {
   /** Pre-formatted relative time label, e.g. "Just now". */

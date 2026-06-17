@@ -49,7 +49,7 @@ import {
   type TransferActivity,
 } from '@/apps/shared/wallet';
 import { WalletListSection } from './WalletListSection';
-import { Flag } from './Flag';
+import { Flag } from '@/apps/shared/Flag';
 import styles from './AddMoneySheet.module.scss';
 
 // Back-compat: these flow types/helpers used to be defined here; other modules

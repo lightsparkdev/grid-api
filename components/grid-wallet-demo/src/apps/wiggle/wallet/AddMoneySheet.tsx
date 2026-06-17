@@ -49,7 +49,7 @@ import {
   type TransferActivity,
 } from '@/apps/shared/wallet';
 import { WalletListSection } from './WalletListSection';
-import { Flag } from '@/apps/aurora/wallet/Flag';
+import { Flag } from '@/apps/shared/Flag';
 import styles from './AddMoneySheet.module.scss';
 
 /** Name-led recipient avatar — first+last initials with the country flag badged
