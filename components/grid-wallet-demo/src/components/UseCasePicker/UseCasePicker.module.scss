@@ -44,7 +44,9 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: visible;
   cursor: pointer;
-  transition: background 100ms ease;
+  transition:
+    background 100ms ease,
+    opacity $ring-duration $ring-ease;
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-925);
@@ -90,6 +92,12 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
       background: var(--color-alpha-white-04);
     }
   }
+}
+
+/* Hovering the tile group dims the not-yet-built use cases (clickable no-ops) so
+   the only live one — Financial app — stays prominent. Snappy ease (easing.ts). */
+.group:hover .card[data-unbuilt] {
+  opacity: 0.5;
 }
 
 .cardSelected {

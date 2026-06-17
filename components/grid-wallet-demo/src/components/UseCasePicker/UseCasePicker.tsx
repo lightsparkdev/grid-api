@@ -23,7 +23,10 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
               key={opt.id}
               type="button"
               className={clsx(styles.card, isSelected && styles.cardSelected)}
-              onClick={() => onSelect(opt.id)}
+              // Only the built use case selects; the others are clickable no-ops so
+              // the active indicator stays put (they dim on group hover instead).
+              onClick={opt.built ? () => onSelect(opt.id) : undefined}
+              data-unbuilt={!opt.built || undefined}
               disabled={!opt.enabled}
               aria-pressed={isSelected}
             >

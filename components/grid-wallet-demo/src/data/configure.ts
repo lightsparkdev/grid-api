@@ -15,6 +15,10 @@ export interface UseCaseOption {
   label: string;
   iconSrc: string;
   enabled: boolean;
+  /** Whether the on-phone experience is actually built. Only the financial app
+   *  (Aurora) is live today; the rest render in the picker but are no-ops — the
+   *  active indicator stays on the built one, and they dim on group hover. */
+  built: boolean;
 }
 
 export const USE_CASES: UseCaseOption[] = [
@@ -24,12 +28,14 @@ export const USE_CASES: UseCaseOption[] = [
     label: 'Financial app',
     iconSrc: '/assets/app-icon-wallet.png',
     enabled: true,
+    built: true,
   },
   {
     id: 'creator',
     label: 'Creator platform',
     iconSrc: '/assets/app-icon-creator.png',
     enabled: true,
+    built: false,
   },
   {
     id: 'social',
@@ -37,6 +43,7 @@ export const USE_CASES: UseCaseOption[] = [
     label: 'Social platform',
     iconSrc: '/assets/app-icon-social.png',
     enabled: true,
+    built: false,
   },
   {
     id: 'marketplace',
@@ -44,18 +51,21 @@ export const USE_CASES: UseCaseOption[] = [
     label: 'Marketplace',
     iconSrc: '/assets/app-icon-marketplace.png',
     enabled: true,
+    built: false,
   },
   {
     id: 'ondemand',
     label: 'On-demand platform',
     iconSrc: '/assets/app-icon-ondemand.png',
     enabled: true,
+    built: false,
   },
   {
     id: 'messaging',
     label: 'Messaging platform',
     iconSrc: '/assets/app-icon-messaging.png',
     enabled: true,
+    built: false,
   },
 ];
 
