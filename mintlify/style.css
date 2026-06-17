@@ -4214,3 +4214,22 @@ html:has(#wallet-demo-container) body {
   overflow: hidden !important;
 }
 
+/* Wallet demo mobile breadcrumb — hide text + chevron, keep hamburger, show
+   (0, 0, 0) on the right (matches the flow-builder tab). */
+html:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
+  display: none !important;
+}
+
+html:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"]::after {
+  content: "(0, 0, 0)";
+  margin-left: auto;
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px !important;
+  font-weight: 400;
+  color: var(--ls-gray-400);
+}
+
+html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"]::after {
+  color: var(--ls-gray-700);
+}
+

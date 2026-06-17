@@ -26,6 +26,12 @@
     height: 100dvh;
     border-right: none;
   }
+
+  // Hide the "Configure" header bar on mobile — the content has its own heading,
+  // so the panel goes straight to it (the body's 24px top padding matches the sides).
+  .panel .headerBar {
+    display: none;
+  }
 }
 
 .body {
@@ -39,10 +45,12 @@
     padding: $layout-laptop-content-padding;
   }
 
-  // Mobile: tighter 24px padding + room for the fixed "Explore playground"
-  // button. Declared after the base padding so it wins at equal specificity.
+  // Mobile: tighter 24px padding (32px on top for breathing room under the navbar)
+  // + room for the fixed "Explore playground" button. Declared after the base
+  // padding so it wins at equal specificity.
   @media (max-width: $breakpoint-layout-mobile) {
     padding: var(--spacing-xl);
+    padding-top: var(--spacing-2xl);
     padding-bottom: 96px;
   }
 }
@@ -79,8 +87,10 @@
   cursor: pointer;
   transition: color 150ms ease;
 
-  &:hover:not(:disabled) {
-    color: var(--text-primary);
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      color: var(--text-primary);
+    }
   }
 
   &:disabled {

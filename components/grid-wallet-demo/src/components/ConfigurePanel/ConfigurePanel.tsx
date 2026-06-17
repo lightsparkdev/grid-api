@@ -40,7 +40,11 @@ export function ConfigurePanel({
   // others can hook in here later.
   return (
     <aside className={styles.panel}>
-      <PanelHeader icon={<IconSettingsSliderHor size={20} />} title="Configure" />
+      <PanelHeader
+        icon={<IconSettingsSliderHor size={20} />}
+        title="Configure"
+        className={styles.headerBar}
+      />
       <div className={styles.body}>
         <div className={styles.content}>
           <PlaygroundIntro />

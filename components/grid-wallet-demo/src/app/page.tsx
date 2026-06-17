@@ -161,6 +161,13 @@ export default function Page() {
       </div>
 
       {/* Mobile-only controls (hidden on desktop via CSS). */}
+      {/* Progressive blur tray behind the sticky CTA (configure view). */}
+      <div className={styles.exploreFade} aria-hidden>
+        <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
+        <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
+        <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
+        <div className={styles.fadeTint} />
+      </div>
       <button type="button" className={styles.exploreBtn} onClick={goPlayground}>
         Explore playground
         <IconArrowRight size={16} />
