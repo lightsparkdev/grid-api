@@ -4111,11 +4111,12 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
   min-height: calc(100dvh - 112px) !important;
 }
 
-/* Hide everything in the content column except the embed */
-#content-area:has(#wallet-demo-container) > header#header,
-#content-area:has(#wallet-demo-container) > #pagination,
-#content-area:has(#wallet-demo-container) > footer#footer,
-#content-area:has(#wallet-demo-container) > div.sticky {
+/* Show only the embed — hide all docs chrome: header, pagination, footer, the
+   sticky bar, AND the "Was this page helpful?" feedback widget (which only
+   renders on staging/prod). A catch-all (everything that isn't #content / the
+   embed) covers the feedback wherever Mintlify injects it. */
+#content-area:has(#wallet-demo-container) > *:not(#content),
+#content:has(#wallet-demo-container) > *:not(#wallet-demo-container) {
   display: none !important;
   height: 0 !important;
   margin: 0 !important;
@@ -4195,8 +4196,15 @@ html.dark #wallet-demo-host {
     min-height: calc(100dvh - 120px) !important;
   }
 
+  /* Mobile has no sidebar (hamburger nav), so the embed goes full-bleed below
+     the navbar — fixed so it isn't shoved under the navbar or short at the
+     bottom (matches the flow-builder embed). */
   #wallet-demo-container {
-    height: calc(100dvh - 120px);
+    position: fixed !important;
+    top: 120px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: calc(100dvh - 120px) !important;
   }
 }
 

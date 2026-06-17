@@ -1,6 +1,5 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 @use '../../styles/breakpoints' as *;
-@use '../../styles/breakpoints' as *;
 
 .list {
   flex: 1;
@@ -16,7 +15,14 @@
   width: 100%;
   padding: 48px;
   padding-top: calc(var(--spacing-md) + 4px);
+
+  // Mobile: match the Configure panel's 24px side padding.
+  @media (max-width: $breakpoint-layout-mobile) {
+    padding-left: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
 }
+
 
 .group {
   // Height animates 0 → auto on entrance (pushes the groups below via real

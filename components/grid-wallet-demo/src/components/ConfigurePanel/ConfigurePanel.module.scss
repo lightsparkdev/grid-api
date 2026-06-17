@@ -23,8 +23,8 @@
 @media (max-width: $breakpoint-layout-mobile) {
   .panel {
     width: 100%;
+    height: 100dvh;
     border-right: none;
-    border-bottom: var(--stroke-xs) solid var(--border-primary);
   }
 }
 
@@ -37,6 +37,13 @@
 
   @include layout-laptop {
     padding: $layout-laptop-content-padding;
+  }
+
+  // Mobile: tighter 24px padding + room for the fixed "Explore playground"
+  // button. Declared after the base padding so it wins at equal specificity.
+  @media (max-width: $breakpoint-layout-mobile) {
+    padding: var(--spacing-xl);
+    padding-bottom: 96px;
   }
 }
 

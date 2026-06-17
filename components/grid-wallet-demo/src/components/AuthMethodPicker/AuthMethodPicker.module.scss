@@ -82,7 +82,9 @@
   display: none;
 }
 
-@include layout-laptop {
+// Compact labels (e.g. "Phone" instead of "Phone / SMS") below the wide
+// breakpoint — laptop AND mobile, where the tiles are too narrow for the full text.
+@media (max-width: ($breakpoint-layout-wide - 1px)) {
   .labelFull {
     display: none;
   }
