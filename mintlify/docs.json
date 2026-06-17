@@ -78,8 +78,8 @@
           {
             "group": "Overview",
             "pages": [
-              "global-accounts/index",
               "global-accounts/demo",
+              "global-accounts/index",
               "global-accounts/implementation-overview"
             ]
           },
