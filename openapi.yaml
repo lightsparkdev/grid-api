@@ -21,6 +21,8 @@ tags:
     description: Platform configuration endpoints for managing global settings. You can also configure these settings in the Grid dashboard.
   - name: Customers
     description: Customer management endpoints for creating and updating customer information
+  - name: Contact Verification
+    description: Endpoints for verifying a customer's email and phone via one-time codes. Required only for customers whose payment provider mandates contact verification (e.g. EU customers); other providers return 409.
   - name: KYC/KYB Verifications
     description: Endpoints for Know Your Customer (KYC) and Know Your Business (KYB) verification, including managing beneficial owners and triggering verification for customers.
   - name: Documents
@@ -847,6 +849,252 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider requires contact verification and the customer's email and phone are not both `VERIFIED` yet. Complete contact verification (see `verify-email` and `verify-phone`) before generating a KYC link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/verify-email:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID to send an email verification code to.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Send an email verification code to a customer
+      description: |
+        Send (or resend) a one-time code to the customer's email address to begin
+        email verification.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires contact verification (e.g. EU customers); the customer's
+        `contactVerification.email` status reflects progress. For customers whose
+        provider has no such requirement, this returns `409`.
+
+        Call `POST /customers/{customerId}/verify-email/confirm` with the received
+        code to complete verification. Re-POST this endpoint to resend the code.
+
+        In sandbox, no email is sent and the code is always `123456`.
+      operationId: sendCustomerEmailVerification
+      tags:
+        - Contact Verification
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Verification code sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require contact verification, or the email is already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/verify-email/confirm:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID whose email is being verified.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm a customer's email verification code
+      description: |
+        Submit the one-time code the customer received by email to mark their email
+        as `VERIFIED`. On success, `contactVerification.email` becomes `VERIFIED`.
+
+        Both email and phone must be `VERIFIED` before the customer can begin KYC.
+
+        In sandbox, the code is always `123456`.
+      operationId: confirmCustomerEmailVerification
+      tags:
+        - Contact Verification
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactVerificationConfirmRequest'
+      responses:
+        '200':
+          description: Email verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require contact verification, or the email is already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/verify-phone:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID to send a phone verification code to.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Send a phone verification code to a customer
+      description: |
+        Send (or resend) a one-time code via SMS to the customer's phone number to
+        begin phone verification.
+
+        This endpoint is only meaningful for customers whose payment provider
+        requires contact verification (e.g. EU customers); the customer's
+        `contactVerification.phone` status reflects progress. For customers whose
+        provider has no such requirement, this returns `409`.
+
+        Call `POST /customers/{customerId}/verify-phone/confirm` with the received
+        code to complete verification. Re-POST this endpoint to resend the code.
+
+        In sandbox, no SMS is sent and the code is always `123456`.
+      operationId: sendCustomerPhoneVerification
+      tags:
+        - Contact Verification
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Verification code sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require contact verification, or the phone is already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/verify-phone/confirm:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID whose phone is being verified.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm a customer's phone verification code
+      description: |
+        Submit the one-time code the customer received via SMS to mark their phone
+        as `VERIFIED`. On success, `contactVerification.phone` becomes `VERIFIED`.
+
+        Both email and phone must be `VERIFIED` before the customer can begin KYC.
+
+        In sandbox, the code is always `123456`.
+      operationId: confirmCustomerPhoneVerification
+      tags:
+        - Contact Verification
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactVerificationConfirmRequest'
+      responses:
+        '200':
+          description: Phone verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's payment provider does not require contact verification, or the phone is already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8779,6 +9027,26 @@ components:
         - BUSINESS
       description: Whether the customer is an individual or a business entity
       example: INDIVIDUAL
+    ContactVerificationStatus:
+      type: string
+      description: Status of an individual contact-verification channel (email or phone). `PENDING` means verification is required but not yet completed; `VERIFIED` means the channel has been confirmed.
+      enum:
+        - PENDING
+        - VERIFIED
+      example: VERIFIED
+    ContactVerification:
+      type: object
+      description: |-
+        Email and/or phone verification state for the customer. This object is **only present when the customer's regulatory jurisdiction requires contact verification** (e.g. EU customers). For customers who have no such requirement, this object is omitted entirely — no action is needed.
+
+        Each channel is reported independently: only the channels the customer's provider actually requires are present. A provider may require both email and phone, just one of them, or — when the object is absent — neither. Every channel that **is** present must reach `VERIFIED` before the customer can begin KYC. Drive each present channel with `POST /customers/{customerId}/verify-email` and/or `POST /customers/{customerId}/verify-phone` (and their `/confirm` sub-routes).
+      properties:
+        email:
+          $ref: '#/components/schemas/ContactVerificationStatus'
+          description: Verification status of the customer's email address. Present only when the provider requires email verification.
+        phone:
+          $ref: '#/components/schemas/ContactVerificationStatus'
+          description: Verification status of the customer's phone number. Present only when the provider requires phone verification.
     Customer:
       type: object
       required:
@@ -8835,6 +9103,11 @@ components:
           description: Whether the customer is marked as deleted
           example: false
           readOnly: true
+        contactVerification:
+          allOf:
+            - $ref: '#/components/schemas/ContactVerification'
+          readOnly: true
+          description: Email and phone verification state. **Only present when the customer's payment provider requires it** (e.g. EU customers); omitted otherwise.
     KycStatus:
       type: string
       enum:
@@ -9705,6 +9978,16 @@ components:
           type: string
           description: Provider-specific token that can be used in place of the hosted URL — for example, to embed the provider's SDK directly in your application. Only returned for providers that support direct SDK integration. Whether to use the hosted URL or the embedded SDK is up to you; both flows result in the same `kycStatus` update on the customer.
           example: _act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    ContactVerificationConfirmRequest:
+      type: object
+      description: Request body for confirming an email or phone verification challenge.
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The one-time verification code the customer received via email or SMS. In sandbox, the code is always `123456`.
+          example: '123456'
     InternalAccountType:
       title: Internal Account Type
       type: string

@@ -1,0 +1,56 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID to send a phone verification code to.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Send a phone verification code to a customer
+  description: |
+    Send (or resend) a one-time code via SMS to the customer's phone number to
+    begin phone verification.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires contact verification (e.g. EU customers); the customer's
+    `contactVerification.phone` status reflects progress. For customers whose
+    provider has no such requirement, this returns `409`.
+
+    Call `POST /customers/{customerId}/verify-phone/confirm` with the received
+    code to complete verification. Re-POST this endpoint to resend the code.
+
+    In sandbox, no SMS is sent and the code is always `123456`.
+  operationId: sendCustomerPhoneVerification
+  tags:
+    - Contact Verification
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Verification code sent.
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's payment provider does not require contact verification,
+        or the phone is already verified.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

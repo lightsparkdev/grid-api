@@ -18,6 +18,11 @@ tags:
       also configure these settings in the Grid dashboard.
   - name: Customers
     description: Customer management endpoints for creating and updating customer information
+  - name: Contact Verification
+    description: >-
+      Endpoints for verifying a customer's email and phone via one-time codes.
+      Required only for customers whose payment provider mandates contact
+      verification (e.g. EU customers); other providers return 409.
   - name: KYC/KYB Verifications
     description: >-
       Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)
@@ -136,6 +141,14 @@ paths:
     $ref: paths/customers/customers_{customerId}.yaml
   /customers/{customerId}/kyc-link:
     $ref: paths/customers/customers_{customerId}_kyc-link.yaml
+  /customers/{customerId}/verify-email:
+    $ref: paths/customers/customers_{customerId}_verify-email.yaml
+  /customers/{customerId}/verify-email/confirm:
+    $ref: paths/customers/customers_{customerId}_verify-email_confirm.yaml
+  /customers/{customerId}/verify-phone:
+    $ref: paths/customers/customers_{customerId}_verify-phone.yaml
+  /customers/{customerId}/verify-phone/confirm:
+    $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:

@@ -1,0 +1,9 @@
+type: string
+description: >-
+  Status of an individual contact-verification channel (email or phone).
+  `PENDING` means verification is required but not yet completed; `VERIFIED`
+  means the channel has been confirmed.
+enum:
+  - PENDING
+  - VERIFIED
+example: VERIFIED

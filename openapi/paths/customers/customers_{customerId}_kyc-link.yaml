@@ -59,6 +59,16 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's payment provider requires contact verification and the
+        customer's email and phone are not both `VERIFIED` yet. Complete contact
+        verification (see `verify-email` and `verify-phone`) before generating a
+        KYC link.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
