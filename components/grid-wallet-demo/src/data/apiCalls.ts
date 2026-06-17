@@ -11,7 +11,6 @@ import type { ApiCall, AuthMethod } from './flow';
 // Realistic placeholder ids (same formats the sandbox returns).
 const ACCOUNT = 'InternalAccount:019e8f48-1135-438c-0000-8b9d28990463';
 const AUTH_METHOD = 'AuthMethod:019e8f48-11a8-0dca-0000-947363f18d5a';
-const PLATFORM_USD = 'InternalAccount:019e8f47-0b4f-4b8d-0000-6c37ad0a58fb';
 const BANK = 'ExternalAccount:019e8f4a-781d-7e0c-0000-a0d9afbf1314';
 const CRYPTO = 'ExternalAccount:019e8f4a-9b2e-71f4-0000-3c5e7a2b9f08';
 const CUSTOMER = 'Customer:019e8f47-2a3d-1d02-0000-6b1f0c4e2a91';
@@ -160,18 +159,19 @@ export type TransferMode = 'add' | 'withdraw' | 'send';
  *  `dest` lets a send reference the recipient's bank or crypto wallet. */
 export function transferQuoteCall(mode: TransferMode, cents: number, dest?: TransferDest): ApiCall {
   if (mode === 'add') {
+    const fundingCurrency = dest?.kind === 'bank' ? dest.currency : 'USD';
     return {
       method: 'POST',
       path: `/quotes`,
-      title: 'Create quote',
+      title: 'Create pay-in quote',
       reqBody: {
-        source: { sourceType: 'ACCOUNT', accountId: PLATFORM_USD },
-        destination: { destinationType: 'ACCOUNT', accountId: ACCOUNT, currency: 'USDB' },
-        lockedCurrencySide: 'SENDING',
+        source: { sourceType: 'REALTIME_FUNDING', customerId: CUSTOMER, currency: fundingCurrency },
+        destination: { destinationType: 'ACCOUNT', accountId: ACCOUNT },
+        lockedCurrencySide: 'RECEIVING',
         lockedCurrencyAmount: cents,
       },
       status: '201 Created',
-      note: 'Locked platform-funded on-ramp quote (USD → USDB).',
+      note: `Pay-in quote funded by ${fundingCurrency} payment instructions; credits the Global Account in USDB.`,
     };
   }
   if (mode === 'withdraw') {
@@ -233,31 +233,19 @@ export function transferQuoteCall(mode: TransferMode, cents: number, dest?: Tran
   };
 }
 
-/** Step 2 of a transfer — execute + settle. Fires on Face ID confirm. */
-export function transferExecuteCalls(mode: TransferMode): ApiCall[] {
-  const execute: ApiCall =
-    mode === 'add'
-      ? {
-          method: 'POST',
-          path: `/quotes/${QUOTE}/execute`,
-          title: 'Execute quote',
-          reqBody: {},
-          status: '200 OK',
-          note: 'Incoming funds; no customer session or wallet signature required.',
-        }
-      : {
-          method: 'POST',
-          path: `/quotes/${QUOTE}/execute`,
-          title: 'Execute quote',
-          headers: { 'Grid-Wallet-Signature': '<signature>' },
-          reqBody: {},
-          status: '200 OK',
-          note: 'Grid-Wallet-Signature header — stamped by the session key.',
-        };
+/** Step 2 of an outbound transfer — execute + settle. Fires on Face ID confirm. */
+export function transferExecuteCalls(mode: Exclude<TransferMode, 'add'>): ApiCall[] {
+  const execute: ApiCall = {
+    method: 'POST',
+    path: `/quotes/${QUOTE}/execute`,
+    title: 'Execute quote',
+    headers: { 'Grid-Wallet-Signature': '<signature>' },
+    reqBody: {},
+    status: '200 OK',
+    note: 'Grid-Wallet-Signature header — stamped by the session key.',
+  };
   const settleNote =
-    mode === 'add'
-      ? 'Funds settle to the balance — COMPLETED.'
-      : mode === 'withdraw'
+    mode === 'withdraw'
         ? 'Paid out via RTP — COMPLETED.'
         : 'Delivered — COMPLETED.';
   return [
@@ -272,9 +260,22 @@ export function transferExecuteCalls(mode: TransferMode): ApiCall[] {
   ];
 }
 
-/** Add money — platform-funded on-ramp into the USDB Global Account. */
+/** Add money — after the pay-in quote, Grid detects the external deposit and
+ *  posts the incoming-payment webhook; there is no quote execute call. */
+export function addMoneySettlementCalls(cents: number, fundingCurrency = 'USD'): ApiCall[] {
+  return receivePaymentCalls({
+    amountCents: cents,
+    viaCrypto: false,
+    sourceCurrency: fundingCurrency,
+    counterparty: 'Ava Martínez',
+    paymentRail: 'RTP',
+    intent: 'add',
+  });
+}
+
+/** Add money — external real-time funding into the USDB Global Account. */
 export function addMoneyCalls(cents: number): ApiCall[] {
-  return [transferQuoteCall('add', cents), ...transferExecuteCalls('add')];
+  return [transferQuoteCall('add', cents), ...addMoneySettlementCalls(cents)];
 }
 
 /** Send — pay a UMA address from the embedded wallet (signed). */
@@ -325,6 +326,8 @@ export interface ReceivePaymentInfo {
   amountCents: number;
   /** Crypto deposit (USDC; sender = wallet address) vs. fiat (sender = name). */
   viaCrypto: boolean;
+  /** Fiat funding currency for the incoming source; defaults to USD. */
+  sourceCurrency?: string;
   /** Sender wallet address (crypto) or sender's full name (fiat). */
   counterparty: string;
   /** The fiat rail the funds arrived on (PaymentRail enum) — omitted for crypto. */
@@ -346,7 +349,7 @@ export function receivePaymentCalls(info: ReceivePaymentInfo): ApiCall[] {
     ? { sourceType: 'REALTIME_FUNDING', currency: 'USDC', accountIdentifier: info.counterparty }
     : {
         sourceType: 'REALTIME_FUNDING',
-        currency: 'USD',
+        currency: info.sourceCurrency ?? 'USD',
         accountHolderName: info.counterparty,
         paymentRail: info.paymentRail ?? 'RTP',
       };

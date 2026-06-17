@@ -41,6 +41,22 @@ export function formatCurlString(entry: ApiCall): string {
   return lines.join('\n');
 }
 
+function objectField(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)[key]
+    : undefined;
+}
+
+function isRealtimeFundingQuote(entry: ApiCall): boolean {
+  if (!entry.path.endsWith('/quotes') || entry.method !== 'POST') return false;
+  return objectField(objectField(entry.reqBody, 'source'), 'sourceType') === 'REALTIME_FUNDING';
+}
+
+function quoteFundingCurrency(entry: ApiCall): string {
+  const currency = objectField(objectField(entry.reqBody, 'source'), 'currency');
+  return typeof currency === 'string' ? currency : 'USD';
+}
+
 export function stubResponseBody(entry: ApiCall): Record<string, unknown> {
   if (entry.path.includes('/verify')) {
     return {
@@ -49,6 +65,30 @@ export function stubResponseBody(entry: ApiCall): Record<string, unknown> {
     };
   }
   if (entry.path.endsWith('/quotes') && entry.method === 'POST') {
+    if (isRealtimeFundingQuote(entry)) {
+      const fundingCurrency = quoteFundingCurrency(entry);
+      return {
+        id: 'Quote:019e8f49-3c8f-5246-0000-4d75f9a6d1d1',
+        status: 'PENDING',
+        source: entry.reqBody?.source,
+        destination: entry.reqBody?.destination,
+        sendingCurrency: { code: fundingCurrency, decimals: 2 },
+        receivingCurrency: { code: 'USDB', decimals: 6 },
+        paymentInstructions: [
+          {
+            instructionsNotes: 'Include the reference code in the transfer memo',
+            accountOrWalletInfo: {
+              accountType: `${fundingCurrency}_ACCOUNT`,
+              reference: 'PAYIN-8F49',
+              accountNumber: '9876543210',
+              routingNumber: '021000021',
+              bankName: 'JP Morgan Chase',
+              accountHolderName: 'Lightspark Payments FBO Customer',
+            },
+          },
+        ],
+      };
+    }
     return {
       id: 'Quote:019e8f49-3c8f-5246-0000-4d75f9a6d1d1',
       status: 'PENDING',

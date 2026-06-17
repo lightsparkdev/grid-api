@@ -12,6 +12,7 @@ import {
   type WalletState,
 } from '@/data/actions';
 import {
+  addMoneySettlementCalls,
   cardCalls,
   externalAccountCreateCall,
   oauthVerifyCall,
@@ -109,6 +110,7 @@ export function useWalletDemoLogic() {
   // The in-flight transfer's group id — its create-quote and execute calls
   // stream into one API-panel group.
   const transferGroup = useRef<string | null>(null);
+  const transferFundingCurrency = useRef<string | null>(null);
   // Pending "transaction settled" pushes (so execute and the GET land 1-by-1);
   // cleared on reset so a late push can't re-add a row to a wiped panel.
   const settleTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -389,6 +391,8 @@ export function useWalletDemoLogic() {
     (mode: WalletTransferMode, cents: number, dest?: TransferDest) => {
       const gid = newGroupId();
       transferGroup.current = gid;
+      transferFundingCurrency.current =
+        mode === 'add' && dest?.kind === 'bank' ? dest.currency : null;
       pushCalls([transferQuoteCall(mode, cents, dest)], TRANSFER_LABEL[mode], gid);
     },
     [pushCalls],
@@ -407,8 +411,25 @@ export function useWalletDemoLogic() {
     (mode: WalletTransferMode, cents: number) => {
       const gid = transferGroup.current ?? newGroupId();
       transferGroup.current = null;
+      if (mode === 'add') {
+        const fundingCurrency = transferFundingCurrency.current ?? 'USD';
+        transferFundingCurrency.current = null;
+        const [webhookCall, ...settleCalls] = addMoneySettlementCalls(cents, fundingCurrency);
+        pushCalls([webhookCall], TRANSFER_LABEL[mode], gid);
+        if (settleCalls.length) {
+          const timer = setTimeout(() => {
+            settleTimers.current.delete(timer);
+            pushCalls(settleCalls, TRANSFER_LABEL[mode], gid);
+          }, SETTLE_DELAY_MS);
+          settleTimers.current.add(timer);
+        }
+        setWallet((w) => ({ ...w, balanceCents: w.balanceCents + cents }));
+        setCompleted((c) => ({ ...c, add: true }));
+        return;
+      }
       // Calls land one at a time: execute now, the transaction settles a beat
       // later (real interactions only — fast-forward batches its setup group).
+      transferFundingCurrency.current = null;
       const [executeCall, ...settleCalls] = transferExecuteCalls(mode);
       pushCalls([executeCall], TRANSFER_LABEL[mode], gid);
       if (settleCalls.length) {
@@ -420,8 +441,7 @@ export function useWalletDemoLogic() {
       }
       setWallet((w) => ({
         ...w,
-        balanceCents:
-          mode === 'add' ? w.balanceCents + cents : Math.max(0, w.balanceCents - cents),
+        balanceCents: Math.max(0, w.balanceCents - cents),
       }));
       setCompleted((c) => ({ ...c, [mode]: true }));
     },
@@ -487,6 +507,7 @@ export function useWalletDemoLogic() {
     }
     session.current = {};
     transferGroup.current = null;
+    transferFundingCurrency.current = null;
     settleTimers.current.forEach((t) => clearTimeout(t));
     settleTimers.current.clear();
     setWallet(initialWallet);
@@ -559,6 +580,7 @@ export function useWalletDemoLogic() {
     }
     session.current = {};
     transferGroup.current = null;
+    transferFundingCurrency.current = null;
     settleTimers.current.forEach((t) => clearTimeout(t));
     settleTimers.current.clear();
     setWallet(initialWallet);
