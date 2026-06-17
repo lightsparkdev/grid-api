@@ -81,7 +81,21 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
     opacity: 0.55;
   }
 
-  &:not(:disabled):not(.cardSelected):hover {
+  // Hover only on devices with a real pointer — otherwise the fill sticks after a
+  // tap on touch (mobile emulates :hover until you tap elsewhere).
+  @media (hover: hover) {
+    &:not(:disabled):not(.cardSelected):hover {
+      background: color-mix(in srgb, var(--surface-base) 98%, black);
+
+      :global([data-theme='dark']) & {
+        background: var(--color-alpha-white-04);
+      }
+    }
+  }
+
+  // Tap/press feedback — applies on touch too and resets on release (unlike
+  // :hover, which sticks after a tap). Same fill as the hover state.
+  &:not(:disabled):not(.cardSelected):active {
     background: color-mix(in srgb, var(--surface-base) 98%, black);
 
     :global([data-theme='dark']) & {
@@ -182,12 +196,15 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
   }
 
-  .card:not(:disabled):hover & {
-    transform: scale(1.05);
+  @media (hover: hover) {
+    .card:not(:disabled):hover & {
+      transform: scale(1.05);
+    }
   }
 
+  // Pop on press — visible on tap (touch, no hover baseline) and resets on release.
   .card:not(:disabled):active & {
-    transform: scale(1);
+    transform: scale(1.08);
     transition-duration: 120ms;
   }
 }

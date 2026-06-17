@@ -39,9 +39,21 @@
 .optionEnabled {
   cursor: pointer;
 
-  &:hover {
-    // Opaque equivalent of alpha-black-02 on surface-base — transparent tokens
-    // composite differently depending on parent bg (see use case/auth vs flow).
+  // Hover only with a real pointer — avoids the fill sticking after a tap on touch.
+  @media (hover: hover) {
+    &:hover {
+      // Opaque equivalent of alpha-black-02 on surface-base — transparent tokens
+      // composite differently depending on parent bg (see use case/auth vs flow).
+      background: color-mix(in srgb, var(--surface-base) 98%, black);
+
+      :global([data-theme='dark']) & {
+        background: var(--color-alpha-white-04);
+      }
+    }
+  }
+
+  // Tap/press feedback — works on touch and resets on release (unlike :hover).
+  &:active {
     background: color-mix(in srgb, var(--surface-base) 98%, black);
 
     :global([data-theme='dark']) & {

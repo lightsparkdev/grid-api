@@ -189,11 +189,42 @@ export function applePopup(): Promise<string> {
   });
 }
 
+/** Safari/WebKit (desktop + every iOS browser) exposes the non-standard
+ *  GestureEvent; Blink (Chrome/Edge) and Gecko (Firefox) don't. */
+function isWebKit(): boolean {
+  if (typeof window === 'undefined') return false;
+  if ('GestureEvent' in window) return true;
+  const ua = navigator.userAgent || '';
+  return /iP(hone|ad|od)/.test(ua) || (/Mac/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+/** Running inside an iframe (the docs embed) vs. opened top-level. */
+function inIframe(): boolean {
+  return typeof window !== 'undefined' && window.self !== window.top;
+}
+
+/**
+ * Safari/WebKit can't run WebAuthn registration (`create()`) inside a
+ * cross-origin iframe and exposes no way to turn it on (the
+ * `publickey-credentials-create` permission token is ignored). In the embed we
+ * skip the real ceremony so the passkey flow doesn't dead-end — it falls through
+ * to the simulated Face ID gesture (the credential is throwaway anyway). Real
+ * Touch ID / passkeys still run on Chrome/Firefox in the embed, and on Safari
+ * opened top-level (standalone).
+ */
+function passkeyCreateBlocked(): boolean {
+  return isWebKit() && inIframe();
+}
+
 /**
  * Real WebAuthn prompt (Touch ID / Face ID) so passkey sign-in feels genuine.
- * The created credential isn't kept — it's purely the device gesture.
+ * The created credential isn't kept — it's purely the device gesture. On
+ * Safari/WebKit in the embed it can't run (see passkeyCreateBlocked), so we
+ * resolve and let the demo play the simulated Face ID instead.
  */
 export async function passkeyCeremony(): Promise<void> {
+  if (passkeyCreateBlocked()) return;
+
   if (!('credentials' in navigator) || !window.PublicKeyCredential) {
     throw new Error('This browser does not support passkeys (WebAuthn).');
   }

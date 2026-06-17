@@ -17,7 +17,8 @@
 
 /* Mobile-only controls — hidden everywhere except the mobile breakpoint. */
 .exploreBtn,
-.backPill {
+.backPill,
+.exploreFade {
   display: none;
 }
 
@@ -113,6 +114,73 @@
     overflow: visible;
   }
 
+  /* Progressive blur tray behind the sticky CTA — content scrolls UP under the
+     button and frosts + fades into the panel bg, feathering out 40px above it.
+     pointer-events: none (inherited by the layers too) so the rows it overlaps
+     stay tappable. Same 3-layer ramp as the wallet scroll-edge, flipped to anchor
+     at the bottom; no corner clipping needed here (page-level, square). */
+  .exploreFade {
+    --explore-fade-bg: var(--surface-primary);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* button bottom inset + button height (52px) + 40px feather above it */
+    height: calc(var(--spacing-xl) + 52px + 40px);
+    z-index: 99; /* just under the button (z 100) */
+    pointer-events: none;
+
+    :global([data-theme='dark']) & {
+      --explore-fade-bg: var(--color-gray-950);
+    }
+  }
+
+  /* Each layer ups the blur radius + is masked to a band, so the blur RAMPS from
+     full at the bottom to 0 up top (one uniform blur leaves a hard edge; the
+     crossfade removes it). The parent has no overflow/clip/isolation so the blur
+     samples the scrolling panel beneath. Knobs: blur px + mask stops. */
+  .fadeBlur {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.01); /* hairline fill kicks compositing on */
+    -webkit-backdrop-filter: blur(var(--fade-blur));
+    backdrop-filter: blur(var(--fade-blur));
+    mask-image: var(--fade-mask);
+    -webkit-mask-image: var(--fade-mask);
+
+    :global([data-theme='dark']) & {
+      background: rgba(0, 0, 0, 0.01);
+    }
+  }
+
+  .fadeBlurStrong {
+    --fade-blur: 8px;
+    --fade-mask: linear-gradient(to top, #000 0%, #000 16%, transparent 46%);
+  }
+
+  .fadeBlurMid {
+    --fade-blur: 4px;
+    --fade-mask: linear-gradient(to top, #000 0%, #000 34%, transparent 68%);
+  }
+
+  .fadeBlurSoft {
+    --fade-blur: 2px;
+    --fade-mask: linear-gradient(to top, #000 0%, #000 56%, transparent 100%);
+  }
+
+  /* bg-color tint over the blur — solid panel bg behind/below the button, melting
+     to transparent 40px above so the blurred content shows through up top. */
+  .fadeTint {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      var(--explore-fade-bg) 0%,
+      color-mix(in srgb, var(--explore-fade-bg) 50%, transparent) 50%,
+      transparent 100%
+    );
+  }
+
   /* Sticky primary CTA in Configure → Playground. */
   .exploreBtn {
     @include label;
@@ -133,15 +201,22 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     box-shadow: var(--shadow-lg);
-    transition: transform 150ms ease;
+    transition: transform 150ms ease, background-color 150ms ease;
 
     :global([data-theme='dark']) & {
       background: var(--color-gray-050);
       color: var(--color-gray-950);
     }
 
+    // Tap fill — lifts the dark button toward charcoal on press (and the light
+    // button toward gray in dark mode); resets on release.
     &:active {
       transform: scale(0.98);
+      background: color-mix(in srgb, var(--color-gray-950) 88%, white);
+
+      :global([data-theme='dark']) & {
+        background: color-mix(in srgb, var(--color-gray-050) 90%, black);
+      }
     }
 
     svg path {
@@ -173,7 +248,13 @@
     white-space: nowrap;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 200ms ease;
+    transition: transform 200ms ease, background-color 200ms ease;
+
+    /* Keep the translateX(-50%) centering while pressing in; fill a touch more solid. */
+    &:active {
+      transform: translateX(-50%) scale(0.98);
+      background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+    }
 
     svg path {
       vector-effect: non-scaling-stroke;
@@ -187,6 +268,10 @@
   /* Show the right control for the active view. */
   .layout[data-mobile-view='configure'] .exploreBtn {
     display: flex;
+  }
+
+  .layout[data-mobile-view='configure'] .exploreFade {
+    display: block;
   }
 
   .layout[data-mobile-view='playground'] .backPill {

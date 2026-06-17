@@ -91,6 +91,10 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
   const tag = useAnimationControls();
   const overUnbuilt = useRef(false);
   const lastClient = useRef({ x: -1, y: -1 });
+  // Touch/pen have no hover model, so the cursor-following tag would get stranded
+  // on screen (revealed with nothing to dismiss it). Track whether the active
+  // pointer is a mouse and gate the follow + auto-reappear on it.
+  const pointerIsMouse = useRef(true);
   // While a tag is mid-fall, hold the live tag back so it doesn't reappear over
   // the falling one (the "pause").
   const suppressed = useRef(false);
@@ -121,6 +125,9 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
   };
 
   const handleMove = (e: PointerEvent<HTMLDivElement>) => {
+    pointerIsMouse.current = e.pointerType === 'mouse';
+    // Touch/pen have no hover, so the follow tag would never get dismissed — skip it.
+    if (!pointerIsMouse.current) return;
     lastClient.current = { x: e.clientX, y: e.clientY };
     const over = Boolean((e.target as Element).closest?.('[data-unbuilt]'));
     if (over && !overUnbuilt.current && !suppressed.current) {
@@ -131,6 +138,12 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
     }
     mx.set(e.clientX + TAG_OFFSET_X);
     my.set(e.clientY + TAG_OFFSET_Y);
+  };
+
+  // A tap can fire no pointermove, so capture the pointer kind on press too — the
+  // click handler uses it to run the auto-reappear on mouse only.
+  const handleDown = (e: PointerEvent<HTMLDivElement>) => {
+    pointerIsMouse.current = e.pointerType === 'mouse';
   };
 
   const handleLeave = () => {
@@ -148,6 +161,10 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
     setFallers((list) => [...list, { id, x: fx, y: fy }]);
     overUnbuilt.current = false;
     tag.set(TAG_HIDDEN);
+    // Touch/pen: no hover, so the auto-reappear below would re-show the tag at the
+    // stale tap point with nothing to dismiss it (it sticks on screen). The flicked
+    // copy still falls; we just don't bring the live tag back.
+    if (!pointerIsMouse.current) return;
     // Pause: hold the live tag back until the flicked-off one has (mostly) fallen.
     suppressed.current = true;
     clearTimeout(suppressTimer.current);
@@ -166,7 +183,12 @@ export function UseCasePicker({ selected, onSelect }: UseCasePickerProps) {
 
   return (
     <LayoutGroup>
-      <div className={styles.group} onPointerMove={handleMove} onPointerLeave={handleLeave}>
+      <div
+        className={styles.group}
+        onPointerDown={handleDown}
+        onPointerMove={handleMove}
+        onPointerLeave={handleLeave}
+      >
         {USE_CASES.map((opt) => {
           const isSelected = selected === opt.id;
           return (
