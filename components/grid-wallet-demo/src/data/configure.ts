@@ -32,10 +32,11 @@ export const USE_CASES: UseCaseOption[] = [
   },
   {
     id: 'creator',
+    persona: 'creator',
     label: 'Creator platform',
     iconSrc: '/assets/app-icon-creator.png',
     enabled: true,
-    built: false,
+    built: true,
   },
   {
     id: 'social',

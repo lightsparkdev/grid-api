@@ -1,4 +1,5 @@
 @use '../../aurora/skin' as aurora-skin;
+@use '../../wiggle/skin' as wiggle-skin;
 @use '../../pulse/skin' as pulse-skin;
 @use '../../bazaar/skin' as bazaar-skin;
 @use '../colors/ios-colors' as ios-colors;
@@ -119,6 +120,7 @@
   @include app-colors.tokens;
 
   @include aurora-skin.tokens;
+  @include wiggle-skin.tokens;
   @include pulse-skin.tokens;
   @include bazaar-skin.tokens;
 }

@@ -5,7 +5,7 @@ import type { AuthMethod } from '@/data/flow';
 import type { PhoneProps } from '@/components/Phone';
 import { applePopup, googleTokenPopup, preloadOauthPopups } from '@/lib/auth';
 import type { GlassConfig } from '@/components/liquid-glass';
-import { AuroraSignInFlow } from '@/apps/aurora';
+import { SignInFlow } from '@/apps/SignInFlow';
 import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
 import { AuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
 import { AppShell } from '@/apps/shared/AppShell';
@@ -23,8 +23,8 @@ interface DemoPhoneProps extends PhoneProps {
 
 function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const authMethod = props.signInMethod ?? props.method;
-  const isAurora = skin.id === 'aurora';
-  const onAuthScreen = isAurora && props.phone.screen === 'auth';
+  const flowActive = Boolean(skin.AuthScreen && skin.WalletScreen);
+  const onAuthScreen = flowActive && props.phone.screen === 'auth';
 
   const passkeySheet = onAuthScreen ? (
     <PasskeySheet
@@ -44,14 +44,14 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const sheetMethod: AuthSheetMethod | null =
     authMethod === 'email_otp' ? 'email' : authMethod === 'sms' ? 'phone' : null;
   const entry = sheetMethod === 'phone' ? props.phoneEntry : props.email;
-  const sheetFlow = isAurora && sheetMethod !== null;
+  const sheetFlow = flowActive && sheetMethod !== null;
   const sheetSending = Boolean(
     sheetFlow &&
       props.phone.screen === 'creating' &&
       !entry?.active &&
       !props.otp?.active,
   );
-  const authSheet = isAurora ? (
+  const authSheet = flowActive ? (
     <AuthSheet
       method={sheetMethod ?? 'email'}
       open={Boolean(entry?.active || sheetSending || props.otp?.active)}
@@ -82,9 +82,11 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   // Aurora is the only built skin; its auth ⇄ wallet pair renders through ONE
   // stable component so the post-sign-in intro can hold the auth screen across
   // the flip — including the OTP 'creating' stretch, which the sheet bridges.
-  if (!isAurora) return null;
+  if (!flowActive) return null;
   return (
-    <AuroraSignInFlow
+    <SignInFlow
+      AuthScreen={skin.AuthScreen!}
+      WalletScreen={skin.WalletScreen!}
       screen={
         props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
       }
@@ -102,7 +104,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     >
       {passkeySheet}
       {authSheet}
-    </AuroraSignInFlow>
+    </SignInFlow>
   );
 }
 

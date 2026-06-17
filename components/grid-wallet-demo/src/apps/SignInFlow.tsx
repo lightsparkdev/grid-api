@@ -4,30 +4,31 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { AuthMethod } from '@/data/flow';
-import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import { AuroraAuthScreen } from './AuroraAuthScreen';
-import { AuroraWalletScreen, type WalletEntry, type WalletTransferMode } from './wallet';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
-import styles from './AuroraSignInFlow.module.scss';
+import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
+import type { SkinAuthScreen, SkinWalletScreen } from './types';
+import styles from './SignInFlow.module.scss';
 
 // The auth screen plays the sign-in intro (content out → mask dissolve → logo
 // to center → "Creating your account..." hold) on `dismissed`. The exit is
 // strictly sequenced: the caption animates OUT first (`leaving`), and only
-// then does the swap + reveal begin. Keep in step with AuroraAuthScreen.
+// then does the swap + reveal begin.
 const INTRO_HOLD_MS = 2300; // dismiss → caption starts leaving
 const INTRO_LEAVE_MS = 300; // caption exit room before the swap/reveal
 
-// The reveal: the wallet mounts UNDER the held aurora screen, which then
-// blur-fades out in place — a one-shot exit on a single layer (the app's
-// blur/fade exit language; no sustained filter work).
+// The reveal: the wallet mounts UNDER the held auth screen, which then blur-fades
+// out in place — a one-shot exit on a single layer.
 const REVEAL_OUT = motionTransition(easeOutQuick, 0.45);
-// Coming BACK to sign-in: the auth screen blur-fades in over the held home —
-// the reverse of REVEAL_OUT.
+// Coming BACK to sign-in: the auth screen blur-fades in over the held home.
 const REVEAL_IN = motionTransition(easeOutSnappy, 0.4);
 // Reduced motion (and the wallet's entry beneath): a plain quick crossfade.
 const SWAP_FADE = motionTransition(easeOutQuick, 0.25);
 
-interface AuroraSignInFlowProps {
+interface SignInFlowProps {
+  /** The active skin's auth + wallet screens (from the registry). */
+  AuthScreen: SkinAuthScreen;
+  WalletScreen: SkinWalletScreen;
   /** Demo screen from the wallet logic — flips auth → wallet on sign-in. */
   screen: 'auth' | 'wallet';
   busy?: boolean;
@@ -50,14 +51,16 @@ interface AuroraSignInFlowProps {
 }
 
 /**
- * Auth ⇄ wallet handoff with the post-sign-in intro. When the demo flips
- * `screen` to `wallet` (any auth method that lands directly — passkey today),
- * the auth screen is HELD while it plays its dismiss choreography ending on
- * the "Creating your account..." beat; then the wallet mounts BENEATH it and
- * the whole aurora screen blur-fades away as the home staggers in. Reduced
+ * Shared auth ⇄ wallet handoff with the post-sign-in intro — used by every skin.
+ * When the demo flips `screen` to `wallet` (any auth method that lands directly —
+ * passkey today), the auth screen is HELD while it plays its dismiss choreography
+ * ending on the "Creating your account..." beat; then the wallet mounts BENEATH
+ * it and the whole auth screen blur-fades away as the home staggers in. Reduced
  * motion skips the hold — just the crossfade.
  */
-export function AuroraSignInFlow({
+export function SignInFlow({
+  AuthScreen,
+  WalletScreen,
   screen,
   busy,
   methods,
@@ -71,7 +74,7 @@ export function AuroraSignInFlow({
   onTapToPay,
   onReceivePayment,
   children,
-}: AuroraSignInFlowProps) {
+}: SignInFlowProps) {
   const reduceMotion = useReducedMotion();
   const [shown, setShown] = useState(screen);
   // 'hold' = intro playing (creating beat); 'leaving' = caption exiting.
@@ -114,12 +117,9 @@ export function AuroraSignInFlow({
         {shown === 'auth' ? (
           <motion.div
             key="auth"
-            // Above the entering wallet so the exit reads as the aurora screen
+            // Above the entering wallet so the exit reads as the auth screen
             // dissolving off the home, not the home fading in over it.
             className={clsx(styles.screen, styles.screenAuth)}
-            // Re-entry (wallet → sign-in) blur-fades the auth screen in over the
-            // held home — the reverse of its exit. AnimatePresence initial={false}
-            // keeps the first page load from animating.
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
             animate={
               reduceMotion
@@ -132,7 +132,7 @@ export function AuroraSignInFlow({
                 : { opacity: 0, filter: 'blur(10px)', transition: REVEAL_OUT }
             }
           >
-            <AuroraAuthScreen
+            <AuthScreen
               busy={busy}
               methods={methods}
               dismissed={intro !== 'none'}
@@ -151,7 +151,7 @@ export function AuroraSignInFlow({
             // then unmount hidden — no peek at the background mid-transition.
             exit={{ opacity: 1, transition: REVEAL_IN }}
           >
-            <AuroraWalletScreen
+            <WalletScreen
               entrance={!reduceMotion}
               entry={entry}
               onQuoteCreate={onQuoteCreate}
