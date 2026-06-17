@@ -1,0 +1,209 @@
+@use '../../shared/fill-button' as fill;
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 84:12455 / 2143:40929 — 16px inset; card fills remainder. */
+.cardWrap {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px 16px 0;
+}
+
+/* Bezel-hugging cards (concentricBottom, e.g. wallet Activity) keep a uniform
+   16px bottom inset; filling cards (card-home transactions) stay flush so the
+   list reaches down toward the CTA below it. */
+.cardWrapInsetBottom {
+  padding-bottom: 16px;
+}
+
+/* Grow with content (vs. fill + clip) so a scrolling parent can scroll the list. */
+.cardWrapGrow,
+.cardGrow {
+  flex: 1 0 auto;
+}
+
+/* Figma 84:12456 / 2143:40930 — min 232pt empty state; grows to fill remainder. */
+.card {
+  @include fill.wallet-elevated-card;
+  box-sizing: border-box;
+  position: relative;
+  flex: 1 1 0;
+  min-height: 232px;
+  padding: 4px 0 0;
+  --list-card-bg: var(--ios-bg-primary);
+
+  :global([data-theme='dark']) & {
+    --list-card-bg: var(--ios-bg-secondary);
+  }
+}
+
+.cardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Real rows stack top-down (skeleton/empty uses .cardInner instead). */
+.items {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.skeletonLayer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.list {
+  position: relative;
+  width: 100%;
+  height: 160px;
+}
+
+/* Figma 84:12458 — row h 80 pl 16 gap 16 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 80px;
+  padding-left: 16px;
+}
+
+.rowGraphic {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-quaternary);
+}
+
+/* Circular avatar placeholder — the send recipient list (people, not banks). */
+.rowGraphicRound {
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+.rowContent {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  height: 80px;
+  padding-right: 24px;
+}
+
+.rowContentBordered {
+  @extend .rowContent;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.rowInner {
+  display: flex;
+  flex: 1 1 0;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.rowLabels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowAmount {
+  flex-shrink: 0;
+  width: 50px;
+}
+
+.skeletonLine {
+  display: flex;
+  align-items: center;
+  height: 18px;
+}
+
+.skeletonPill {
+  height: 14px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--ios-fill-quaternary);
+}
+
+/* Figma 2143:41379 — gradient mask over list; skeleton peeks through at top. */
+.gradientMask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--list-card-bg) 50%, transparent) 0%,
+    var(--list-card-bg) 64.235%
+  );
+}
+
+.gradientMaskVisible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradientMask {
+    transition: none;
+  }
+}
+
+.messageLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.emptySub {
+  margin: 0 auto;
+  max-width: 240px; // wrap longer copy (e.g. the banks empty state) to ~2 lines
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-wrap: balance; // ...then balance those auto-wrapped lines evenly
+}

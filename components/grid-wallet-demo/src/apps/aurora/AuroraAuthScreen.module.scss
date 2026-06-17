@@ -1,0 +1,191 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2145:45329 — column pinned to bottom below status bar. Relative so the
+   sign-in intro layers (full-screen aurora, gliding logo, caption) can stack.
+
+   Stacking (root context — .hero deliberately does NOT isolate):
+     0 aurora field · 2 content sleeve (gradient strip + copy + actions) ·
+     4 caption · 5 logo
+   so the logo can glide OVER the departing sleeve. */
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--app-bg);
+
+  /* Match the wallet home surface (--wallet-bg in AuroraWalletScreen) instead
+     of pure white/black, so the sign-in intro's reveal lands on the SAME color
+     it fades from. The fade/cover overlays mix from this token too. */
+  --app-bg: #f9f9f9;
+
+  :global([data-theme='dark']) & {
+    --app-bg: #111111;
+  }
+}
+
+/* ONE full-screen aurora — rest and intro share this surface; the hero "mask"
+   is the sleeve's gradient strip, so full-bleed is the SAME field, not a
+   second instance crossfading in. Bleeds past top/sides so blurred streaks
+   clip mid-flow (the phone screen clips); bottom flush. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.auroraBg {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  bottom: 0;
+  left: -80px;
+}
+
+/* Figma 2145:45395 — hero keeps the logo's flex slot. No overflow clip and no
+   isolation: the logo must escape downward (glide) and stack over the copy.
+   Hit-transparent so the status-bar tone sampler (elementsFromPoint) reads
+   the aurora base color THROUGH the hero instead of resolving the root's
+   light background and keeping dark glyphs over the vivid field. */
+.hero {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* The content sleeve — copy + actions over a solid base whose TOP STRIP is
+   the gradient mask (painted into 340px of padding, underlapped by margin so
+   the rest layout matches the old hero-overlay look: the extra -64 keeps the
+   copy overlapping the hero exactly as before, with the strip's solid end
+   landing at the copy's top edge). The intro slides the whole sleeve down —
+   one GPU transform — so the mask LEAVES with the content and the aurora is
+   uncovered on the same track. Hit-transparent so the strip never blocks the
+   hero; the inner blocks re-enable pointer events. */
+.sleeve {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: -404px;
+  padding-top: 340px;
+  pointer-events: none;
+  /* The band runs PAST the padding strip, going fully solid 64px into the
+     copy (the old hero-overlay landed there — solid at the copy's top edge
+     left a dead gap above "Aurora"). */
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 184px,
+    color-mix(in srgb, var(--app-bg) 8%, transparent) 224px,
+    color-mix(in srgb, var(--app-bg) 28%, transparent) 260px,
+    color-mix(in srgb, var(--app-bg) 52%, transparent) 294px,
+    color-mix(in srgb, var(--app-bg) 74%, transparent) 326px,
+    color-mix(in srgb, var(--app-bg) 90%, transparent) 358px,
+    var(--app-bg) 396px
+  );
+}
+
+.wallet {
+  position: relative;
+  z-index: 5;
+  /* 656×512 source; 126px wide ≈ 98px tall (~8px taller than the prior 116px/90px). */
+  width: 126px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+
+  /* Same (light) artwork on dark, dimmed so it settles into the dark background. */
+  :global([data-theme='dark']) & {
+    opacity: 0.6;
+  }
+}
+
+/* Figma 2145:45344 — px 40, gap 16, Title2 + Footnote. The text sits on the
+   heroCover/heroFade overlays (z 1), not its own gradient backdrop. */
+.copy {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 40px 0;
+  pointer-events: auto;
+}
+
+/* Figma 2145:45345 — Title2/Regular 22/28, tracking -0.26. */
+.headings {
+  display: flex;
+  flex-direction: column;
+  line-height: 28px;
+}
+
+/* Title2/Emphasized — same 590 weight as the CTAs below. */
+.title {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+}
+
+.tagline {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  font-weight: 590;
+  color: var(--ios-label-secondary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+}
+
+.description {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-wrap: balance;
+}
+
+/* Figma 2145:45349 — p 32, gap 12, buttons 338px (402 − 64). The gap lives on
+   each .action's animated margin-bottom (so it collapses with the item on
+   add/remove); the reduced bottom padding compensates the last item's 12px. */
+.actions {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 32px 20px;
+  pointer-events: auto;
+}
+
+/* CTA wrapper — animates its REAL height (+ bottom-margin gap) on add/remove so
+   the whole column reflows naturally per frame. overflow:hidden clips the
+   collapse; the negative inline margin + matching padding give the button's
+   hover/press bloom horizontal room so it isn't cut off at rest. */
+.action {
+  overflow: hidden;
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+/* +4px trailing padding (20 base → 24) optically balances each button's leading
+   icon — nudges the centered icon+label group back toward true visual center. */
+.action button {
+  padding-right: 24px;
+}
+
+/* "Creating your account..." slot — beneath the centered logo, the issuance
+   creating layout (caption under the centered artwork; CreatingCaption brings
+   its own 16px top pad ≈ the issuance rhythm). 61px = half the logo's ~98px
+   rendered height (126px wide × 512/656) + the issuance 12px gap. */
+.creatingSlot {
+  position: absolute;
+  top: calc(50% + 61px);
+  right: 0;
+  left: 0;
+  z-index: 4;
+}

@@ -1,0 +1,208 @@
+@use '../../shared/fill-button' as fill;
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+$card-press-ease: cubic-bezier(0.22, 1, 0.36, 1);
+$card-press-duration: 0.28s;
+
+/* Figma 90:13640 — row: gap 12, px 16 py 8, items-start */
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 16px;
+}
+
+/* Squircle corners via useSquircleClip (clip-path) — not border-radius/corner-shape. */
+.cardBase {
+  @include fill.wallet-elevated-card;
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  margin: 0;
+  padding: 20px 24px;
+  color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  /* translateZ(0) at EVERY state (incl. rest) keeps a persistent GPU layer, so the
+     browser never de-promotes + re-rasterizes the text on settle — that re-raster
+     is the ~0.5px end-of-ease shift. More reliable than will-change in Safari. */
+  transform: translateZ(0) scale(1);
+  transform-origin: center center;
+  will-change: transform;
+  backface-visibility: hidden;
+  transition: transform $card-press-duration $card-press-ease;
+  /* Browsers lazily create the GPU layer for will-change/translateZ only on the
+     first real transform (a click), so the first hover would otherwise jitter.
+     This imperceptible mount nudge (0.00001 scale) forces the layer eagerly. */
+  animation: card-layer-warm 0.25s linear;
+
+  /* Hover/active fill — iOS fills (themed). Deepens tertiary → secondary on press. */
+  --card-hover: var(--ios-fill-tertiary);
+  --card-active: var(--ios-fill-secondary);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-hover);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+
+  &:active::after {
+    opacity: 1;
+    background: var(--card-active);
+  }
+
+  &:hover {
+    transform: translateZ(0) scale(1.01);
+  }
+
+  &:active {
+    transform: translateZ(0) scale(1.02);
+  }
+}
+
+/* Keep card content above the dark-mode hover wash. */
+.cardBase > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Imperceptible mount nudge — forces the compositor layer eagerly (see .cardBase). */
+@keyframes card-layer-warm {
+  from {
+    transform: translateZ(0) scale(0.99999);
+  }
+  to {
+    transform: translateZ(0) scale(1);
+  }
+}
+
+/* Figma 90:13641 — gap 12 between title / chart / metric, self-stretch */
+.cardWeekly {
+  @extend .cardBase;
+  gap: 12px;
+  align-self: stretch;
+}
+
+/* gap 4 between title / values / metric */
+.cardEarnings {
+  @extend .cardBase;
+  gap: 4px;
+}
+
+.cardTitle {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* Figma 90:13643 — flex-1 chart area, 4px bar gap, 27px bar height */
+.chart {
+  display: flex;
+  flex: 1 0 0;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 27px;
+}
+
+.bar {
+  position: relative;
+  flex: 1 0 0;
+  height: 27px;
+  min-width: 0;
+}
+
+.barBackground {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--ios-fill-secondary);
+}
+
+.barActive {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--ios-label-primary);
+}
+
+.metric {
+  margin: 0;
+  width: 100%;
+}
+
+.metricLine {
+  display: inline-flex;
+  align-items: center;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-secondary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* Earnings "+X today" reads positive — green. */
+.metricPositive {
+  color: var(--p-green);
+}
+
+/* The "today" qualifier stays secondary even on the positive (green) line. */
+.metricMuted {
+  color: var(--ios-label-secondary);
+}
+
+/* Amount + APY stacked, pb 2 only (no internal gap). */
+.earningsBlock {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-bottom: 2px;
+}
+
+.earningsAmount {
+  margin: 0;
+  color: var(--ios-label-primary);
+  @include ios.ios-text-title-2;
+  @include ios.ios-type-rounded;
+  @include ios.ios-type-rounded-bold(var(--ios-type-title-2-opsz));
+}
+
+/* Caption2/Emphasized — sits flush under the amount. */
+.earningsApy {
+  margin: 0;
+  @include ios.ios-text-caption-2;
+  font-weight: 590;
+  color: var(--ios-label-tertiary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-caption-2-opsz);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardBase {
+    transition: none;
+    animation: none;
+
+    &:hover,
+    &:active {
+      transform: none;
+    }
+  }
+}

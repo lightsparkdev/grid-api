@@ -1,0 +1,90 @@
+@use '../../styles/breakpoints' as *;
+
+.panel {
+  width: 475px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-primary);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+}
+
+@include layout-laptop {
+  .panel {
+    width: $layout-laptop-config-width;
+  }
+}
+
+@media (max-width: $breakpoint-layout-mobile) {
+  .panel {
+    width: 100%;
+    height: 100dvh;
+    border-right: none;
+  }
+}
+
+.body {
+  flex: 1;
+  padding: var(--spacing-4xl);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+
+  @include layout-laptop {
+    padding: $layout-laptop-content-padding;
+  }
+
+  // Mobile: tighter 24px padding + room for the fixed "Explore playground"
+  // button. Declared after the base padding so it wins at equal specificity.
+  @media (max-width: $breakpoint-layout-mobile) {
+    padding: var(--spacing-xl);
+    padding-bottom: 96px;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+/* Reset control, right-aligned in the Explore flows divider. Matches the section
+   label exactly (type + tertiary color, no padding) so it never changes the
+   divider height. */
+.resetBtn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  cursor: pointer;
+  transition: color 150ms ease;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

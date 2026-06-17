@@ -1,0 +1,141 @@
+/* iOS Dynamic Type mixins — safe to @use from CSS modules (no :root). */
+
+@mixin ios-type-base {
+  font-family: var(--ios-font-family);
+  font-synthesis: none;
+  font-kerning: normal;
+  font-feature-settings: normal;
+  font-variant-numeric: normal;
+  font-variant-ligatures: normal;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@mixin ios-type-variation($weight, $opsz) {
+  font-variation-settings: 'wght' $weight, 'wdth' 100, 'opsz' $opsz;
+}
+
+@mixin ios-text-large-title {
+  @include ios-type-base;
+  font-size: var(--ios-type-large-title-size);
+  line-height: var(--ios-type-large-title-line);
+  font-weight: var(--ios-type-large-title-weight);
+  @include ios-type-variation(var(--ios-type-large-title-weight), var(--ios-type-large-title-opsz));
+}
+
+@mixin ios-text-title-1 {
+  @include ios-type-base;
+  font-size: var(--ios-type-title-1-size);
+  line-height: var(--ios-type-title-1-line);
+  font-weight: var(--ios-type-title-1-weight);
+  @include ios-type-variation(var(--ios-type-title-1-weight), var(--ios-type-title-1-opsz));
+}
+
+@mixin ios-text-title-2 {
+  @include ios-type-base;
+  font-size: var(--ios-type-title-2-size);
+  line-height: var(--ios-type-title-2-line);
+  font-weight: var(--ios-type-title-2-weight);
+  @include ios-type-variation(var(--ios-type-title-2-weight), var(--ios-type-title-2-opsz));
+  letter-spacing: -0.26px;
+}
+
+@mixin ios-text-title-3 {
+  @include ios-type-base;
+  font-size: var(--ios-type-title-3-size);
+  line-height: var(--ios-type-title-3-line);
+  font-weight: var(--ios-type-title-3-weight);
+  @include ios-type-variation(var(--ios-type-title-3-weight), var(--ios-type-title-3-opsz));
+  letter-spacing: -0.45px;
+}
+
+@mixin ios-text-headline {
+  @include ios-type-base;
+  font-size: var(--ios-type-headline-size);
+  line-height: var(--ios-type-headline-line);
+  font-weight: var(--ios-type-headline-weight);
+  @include ios-type-variation(var(--ios-type-headline-weight), var(--ios-type-headline-opsz));
+  letter-spacing: -0.43px;
+}
+
+@mixin ios-text-body {
+  @include ios-type-base;
+  font-size: var(--ios-type-body-size);
+  line-height: var(--ios-type-body-line);
+  font-weight: var(--ios-type-body-weight);
+  @include ios-type-variation(var(--ios-type-body-weight), var(--ios-type-body-opsz));
+  letter-spacing: -0.43px;
+}
+
+@mixin ios-text-callout {
+  @include ios-type-base;
+  font-size: var(--ios-type-callout-size);
+  line-height: var(--ios-type-callout-line);
+  font-weight: var(--ios-type-callout-weight);
+  @include ios-type-variation(var(--ios-type-callout-weight), var(--ios-type-callout-opsz));
+  letter-spacing: -0.31px;
+}
+
+@mixin ios-text-subheadline {
+  @include ios-type-base;
+  font-size: var(--ios-type-subheadline-size);
+  line-height: var(--ios-type-subheadline-line);
+  font-weight: var(--ios-type-subheadline-weight);
+  @include ios-type-variation(var(--ios-type-subheadline-weight), var(--ios-type-subheadline-opsz));
+  letter-spacing: -0.23px;
+}
+
+@mixin ios-text-footnote {
+  @include ios-type-base;
+  font-size: var(--ios-type-footnote-size);
+  line-height: var(--ios-type-footnote-line);
+  font-weight: var(--ios-type-footnote-weight);
+  @include ios-type-variation(var(--ios-type-footnote-weight), var(--ios-type-footnote-opsz));
+  letter-spacing: -0.08px;
+}
+
+@mixin ios-text-caption-1 {
+  @include ios-type-base;
+  font-size: var(--ios-type-caption-1-size);
+  line-height: var(--ios-type-caption-1-line);
+  font-weight: var(--ios-type-caption-1-weight);
+  @include ios-type-variation(var(--ios-type-caption-1-weight), var(--ios-type-caption-1-opsz));
+}
+
+@mixin ios-text-caption-2 {
+  @include ios-type-base;
+  font-size: var(--ios-type-caption-2-size);
+  line-height: var(--ios-type-caption-2-line);
+  font-weight: var(--ios-type-caption-2-weight);
+  @include ios-type-variation(var(--ios-type-caption-2-weight), var(--ios-type-caption-2-opsz));
+  letter-spacing: 0.06px;
+}
+
+@mixin ios-text-wallet-balance {
+  @include ios-type-base;
+  font-size: var(--ios-type-wallet-balance-size);
+  line-height: var(--ios-type-wallet-balance-line);
+  font-weight: var(--ios-type-wallet-balance-weight);
+  @include ios-type-variation(var(--ios-type-wallet-balance-weight), var(--ios-type-wallet-balance-opsz));
+}
+
+/** Swap SF Pro → SF Pro Rounded after an ios-text-* mixin (size/line stay on the stack). */
+@mixin ios-type-rounded {
+  font-family: var(--font-family-sf-pro-rounded);
+}
+
+/** Bold rounded amounts — GRAD axis for SF Pro Rounded. Pass opsz token from the text style. */
+@mixin ios-type-rounded-bold($opsz) {
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'GRAD' 400, 'wdth' 100, 'opsz' $opsz;
+}
+
+/* Status bar time — Figma semibold 590 at 17/22 (between Body and Headline). */
+@mixin ios-text-status-time {
+  @include ios-type-base;
+  font-size: var(--ios-type-headline-size);
+  line-height: var(--ios-type-headline-line);
+  font-weight: 590;
+  @include ios-type-variation(590, var(--ios-type-headline-opsz));
+}

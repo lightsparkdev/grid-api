@@ -4076,3 +4076,141 @@ html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="tex
   color: var(--ls-gray-700);
 }
 
+/* ===========================================
+   Wallet demo page (global-accounts/demo)
+   Docs sidebar stays; content column is iframe-only, edge-to-edge.
+   =========================================== */
+
+#content-container:has(#wallet-demo-container) {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Mintlify wraps content in max-w-5xl (1024px) — bust it for the demo */
+#content-container:has(#wallet-demo-container) > div.max-w-5xl,
+#content-container:has(#wallet-demo-container) > div[class*="max-w-5xl"] {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  gap: 0 !important;
+}
+
+#content-area:has(#wallet-demo-container) {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  contain: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  /* navbar (64px bar + 48px tabs = 112px) */
+  min-height: calc(100dvh - 112px) !important;
+}
+
+/* Show only the embed — hide all docs chrome: header, pagination, footer, the
+   sticky bar, AND the "Was this page helpful?" feedback widget (which only
+   renders on staging/prod). A catch-all (everything that isn't #content / the
+   embed) covers the feedback wherever Mintlify injects it. */
+#content-area:has(#wallet-demo-container) > *:not(#content),
+#content:has(#wallet-demo-container) > *:not(#wallet-demo-container) {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+#content-container:has(#wallet-demo-container) #content-side-layout {
+  display: none !important;
+}
+
+#content-area:has(#wallet-demo-container) > #content {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  contain: none !important;
+}
+
+#content:has(#wallet-demo-container) .prose,
+.prose:has(#wallet-demo-container) {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Placeholder that defines the embed's box. The actual iframe lives in
+   #wallet-demo-host on <body> (so theme toggles don't reload it) and is glued
+   to this box's position by the embed script. */
+#wallet-demo-container {
+  width: 100%;
+  height: calc(100dvh - 112px);
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  background: var(--ls-gray-100);
+}
+
+html.dark #wallet-demo-container {
+  background: var(--ls-gray-975);
+}
+
+/* Persistent iframe host — body-mounted, positioned over the placeholder. */
+#wallet-demo-host {
+  background: var(--ls-gray-100);
+}
+
+html.dark #wallet-demo-host {
+  background: var(--ls-gray-975);
+}
+
+#wallet-demo-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border: none !important;
+  display: block !important;
+  aspect-ratio: unset !important;
+}
+
+/* Flatten Mintlify's iframe aspect-ratio wrapper */
+#wallet-demo-container > div,
+#wallet-demo-container > [style*="aspect-ratio"] {
+  aspect-ratio: unset !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 1023px) {
+  #content-area:has(#wallet-demo-container) {
+    min-height: calc(100dvh - 120px) !important;
+  }
+
+  /* Mobile has no sidebar (hamburger nav), so the embed goes full-bleed below
+     the navbar — fixed so it isn't shoved under the navbar or short at the
+     bottom (matches the flow-builder embed). */
+  #wallet-demo-container {
+    position: fixed !important;
+    top: 120px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: calc(100dvh - 120px) !important;
+  }
+}
+
+/* Prevent outer page scroll when the wallet demo is present */
+html:has(#wallet-demo-container),
+html:has(#wallet-demo-container) body {
+  overflow: hidden !important;
+}
+

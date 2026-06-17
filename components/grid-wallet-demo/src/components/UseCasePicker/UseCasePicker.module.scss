@@ -1,0 +1,263 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '../../styles/breakpoints' as *;
+
+$active-border-gradient: linear-gradient(
+  to top right,
+  color-mix(in srgb, var(--color-sky-500) 60%, transparent) 0%,
+  var(--color-sky-500) 17%,
+  var(--color-blue-500) 41%,
+  var(--color-green-600) 100%
+);
+
+$ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+.group {
+  corner-shape: var(--corner-shape);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  // Ring extends past cell bounds (and morphs across cells during layout animation).
+  overflow: visible;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+}
+
+.card {
+  all: unset;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  padding: var(--spacing-xl) var(--spacing-md);
+  background: var(--surface-base);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
+  overflow: visible;
+  cursor: pointer;
+  transition: background 100ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+
+  &:nth-child(odd) {
+    border-right: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  &:nth-child(even) {
+    border-right: none;
+  }
+
+  &:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+
+  &:first-child {
+    border-top-left-radius: var(--corner-radius-md);
+  }
+
+  &:nth-child(2) {
+    border-top-right-radius: var(--corner-radius-md);
+  }
+
+  &:nth-last-child(2) {
+    border-bottom-left-radius: var(--corner-radius-md);
+  }
+
+  &:last-child {
+    border-bottom-right-radius: var(--corner-radius-md);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  &:not(:disabled):not(.cardSelected):hover {
+    background: color-mix(in srgb, var(--surface-base) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-04);
+    }
+  }
+}
+
+/* Cursor-following "Coming soon" tag (portaled to <body>). The anchor rides the
+   cursor with spring lag; the inner pill fades in over not-built tiles and falls
+   on click. pointer-events: none so it never blocks the tiles. */
+.comingSoonAnchor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.comingSoonTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border: 0.5px solid var(--border-primary);
+  border-radius: 6px;
+  // Surface fill — white in light, black in dark — with muted secondary text.
+  background: var(--surface-base);
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  // Suisse Mono's bold is too heavy — stroke the glyphs in the text color to
+  // nudge the weight up a hair (currentColor keeps it theme-aware).
+  -webkit-text-stroke: 0.3px currentColor;
+  white-space: nowrap;
+  transform-origin: left center;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+
+  :global([data-theme='dark']) & {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.cardSelected {
+  // Elevate the selected cell so the ring paints over adjacent grid lines.
+  z-index: 2;
+}
+
+.activeRing {
+  position: absolute;
+  inset: calc(var(--stroke-xs) - var(--stroke-md));
+  z-index: 2;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-md);
+  padding: var(--stroke-md);
+  background: $active-border-gradient;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-xs);
+  width: 100%;
+}
+
+.icon {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: contain;
+  transform-origin: center;
+  transition: transform 250ms $ease-out-swift;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
+    drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
+
+  :global([data-theme='dark']) & {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  }
+
+  .card:not(:disabled):hover & {
+    transform: scale(1.05);
+  }
+
+  .card:not(:disabled):active & {
+    transform: scale(1);
+    transition-duration: 120ms;
+  }
+}
+
+.label {
+  @include label;
+  width: 100%;
+  text-align: center;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+@include layout-laptop {
+  .group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-right: none;
+    border-radius: 0;
+    border-bottom: var(--stroke-xs) solid var(--border-primary);
+
+    &:nth-child(odd),
+    &:nth-child(even) {
+      border-right: none;
+    }
+
+    &:nth-child(2) {
+      border-top-right-radius: 0;
+    }
+
+    &:nth-last-child(-n + 2) {
+      border-bottom: var(--stroke-xs) solid var(--border-primary);
+    }
+
+    &:nth-last-child(2) {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    &:last-child {
+      border-bottom: none;
+      border-bottom-left-radius: var(--corner-radius-md);
+      border-bottom-right-radius: var(--corner-radius-md);
+    }
+
+    &:first-child {
+      border-top-left-radius: var(--corner-radius-md);
+      border-top-right-radius: var(--corner-radius-md);
+    }
+  }
+
+  .content {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding-top: 0;
+  }
+
+  .icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .label {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+}

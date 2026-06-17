@@ -1,0 +1,78 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.group {
+  corner-shape: var(--corner-shape);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+}
+
+.option {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 200px;
+  padding: var(--spacing-lg) var(--spacing-md);
+  background: var(--surface-base);
+  cursor: default;
+  transition: background 100ms ease;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+
+  &:not(:last-child) {
+    border-bottom: var(--stroke-xs) solid var(--border-primary);
+  }
+}
+
+.optionEnabled {
+  cursor: pointer;
+
+  &:hover {
+    // Opaque equivalent of alpha-black-02 on surface-base — transparent tokens
+    // composite differently depending on parent bg (see use case/auth vs flow).
+    background: color-mix(in srgb, var(--surface-base) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-04);
+    }
+  }
+}
+
+.optionIcon {
+  display: flex;
+  flex-shrink: 0;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.optionLabel {
+  @include label;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+.optionCheck {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--icon-primary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}

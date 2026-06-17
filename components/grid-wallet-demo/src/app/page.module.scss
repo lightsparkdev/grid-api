@@ -1,0 +1,195 @@
+@use '../styles/breakpoints' as *;
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.layout {
+  --panel-header-height: 52px;
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Wraps ConfigurePanel. Transparent on desktop/laptop (the panel stays the flex
+   child exactly as before); a toggle target for the mobile two-view layout. */
+.configCol {
+  display: contents;
+}
+
+/* Mobile-only controls — hidden everywhere except the mobile breakpoint. */
+.exploreBtn,
+.backPill {
+  display: none;
+}
+
+.stackCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.appCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--dot-grid-bg);
+}
+
+.apiCol {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Laptop: configure left, app over API on the right. Floored at the mobile
+   breakpoint so these rules never leak into the mobile single-column layout. */
+@media (min-width: ($breakpoint-layout-mobile + 1px)) and (max-width: ($breakpoint-layout-wide - 1px)) {
+  .stackCol {
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .appCol {
+    flex: none;
+    width: 100% !important;
+    min-height: calc(100% - var(--panel-header-height, 52px));
+    overflow: visible;
+  }
+
+  .apiCol {
+    flex: none;
+    width: 100% !important;
+    min-height: 0;
+    overflow: visible;
+  }
+}
+
+/* Mobile: two swappable views — Configure (the panel) and Playground (app over
+   API). Only one shows at a time and the page (window) scrolls. */
+@media (max-width: $breakpoint-layout-mobile) {
+  .layout {
+    display: block;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .layout[data-mobile-view='playground'] .configCol {
+    display: none;
+  }
+
+  .layout[data-mobile-view='configure'] .stackCol {
+    display: none;
+  }
+
+  /* Playground: full-screen app over API. The phone fills the first screen with
+     the API header peeking at the bottom; scroll within to reveal the calls
+     (the same stacked behavior as the laptop layout). */
+  .stackCol {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .appCol {
+    flex: none;
+    width: 100% !important;
+    min-height: calc(100% - var(--panel-header-height, 52px));
+    overflow: visible;
+  }
+
+  .apiCol {
+    flex: none;
+    width: 100% !important;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  /* Sticky primary CTA in Configure → Playground. */
+  .exploreBtn {
+    @include label;
+    position: fixed;
+    bottom: var(--spacing-xl);
+    left: var(--spacing-xl);
+    right: var(--spacing-xl);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    height: 52px;
+    background: var(--color-gray-950);
+    color: var(--color-gray-050);
+    border: none;
+    border-radius: var(--corner-radius-md);
+    font-feature-settings: 'salt' 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: var(--shadow-lg);
+    transition: transform 150ms ease;
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-050);
+      color: var(--color-gray-950);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    svg path {
+      vector-effect: non-scaling-stroke;
+    }
+  }
+
+  /* Floating back pill in Playground → Configure (hides on scroll down). */
+  .backPill {
+    @include label-sm;
+    position: fixed;
+    bottom: var(--spacing-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    height: 44px;
+    padding: 0 var(--spacing-lg);
+    background: color-mix(in srgb, var(--surface-primary) 70%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-primary);
+    border: var(--stroke-xs) solid var(--border-tertiary);
+    border-radius: var(--corner-radius-md);
+    box-shadow: var(--shadow-md);
+    font-feature-settings: 'salt' 1;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 200ms ease;
+
+    svg path {
+      vector-effect: non-scaling-stroke;
+    }
+  }
+
+  .backPillHidden {
+    transform: translateX(-50%) translateY(calc(100% + var(--spacing-xl) + 20px));
+  }
+
+  /* Show the right control for the active view. */
+  .layout[data-mobile-view='configure'] .exploreBtn {
+    display: flex;
+  }
+
+  .layout[data-mobile-view='playground'] .backPill {
+    display: flex;
+  }
+}

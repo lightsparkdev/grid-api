@@ -1,0 +1,173 @@
+@use '../../styles/breakpoints' as *;
+
+$skeleton-bone-light: var(--color-gray-075);
+$skeleton-bone-dark: var(--color-gray-850);
+
+.list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 48px;
+  padding-top: calc(var(--spacing-md) + 4px);
+  gap: var(--spacing-md);
+  opacity: 0.5;
+
+  :global([data-theme='dark']) & {
+    opacity: 0.2;
+  }
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.groupEntries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.feedEntry {
+  min-width: 0;
+}
+
+.callCard {
+  --badge-height: 20px;
+  --row-padding: calc((48px - var(--badge-height)) / 2);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--surface-base);
+  border: 0.5px solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+}
+
+.entryHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: calc(var(--row-padding) - 2px) var(--row-padding) 0;
+}
+
+.bone {
+  border-radius: 9999px;
+  background: $skeleton-bone-light;
+
+  :global([data-theme='dark']) & {
+    background: $skeleton-bone-dark;
+  }
+}
+
+.entryTitle {
+  height: 14px;
+  max-width: 180px;
+}
+
+.timestamp {
+  width: 52px;
+  height: 14px;
+}
+
+.endpointBlock {
+  padding: var(--row-padding) 0 var(--row-padding) var(--row-padding);
+  border-bottom: 0.5px solid var(--border-tertiary);
+}
+
+.endpointScroll {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.methodBadge {
+  flex-shrink: 0;
+  width: 40px;
+  height: 20px;
+}
+
+.pathLine {
+  height: 14px;
+  min-width: 0;
+}
+
+.endpointPath {
+  flex: 1;
+  min-width: 0;
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.codeBlockToolbar {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: var(--spacing-xs);
+  border-bottom: 0.5px solid var(--border-tertiary);
+}
+
+.tabGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.tab {
+  width: 52px;
+  height: 14px;
+}
+
+.codeBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-md);
+}
+
+.codeLine {
+  height: 14px;
+  min-width: 0;
+}
+
+.codeLineIndent1 {
+  margin-left: 16px;
+}
+
+.codeLineIndent2 {
+  margin-left: 32px;
+}
+
+@include layout-laptop {
+  .list {
+    align-items: center;
+  }
+
+  .feed {
+    width: 100%;
+    max-width: $layout-laptop-api-content-max-width;
+    padding-left: $layout-laptop-content-padding;
+    padding-right: $layout-laptop-content-padding;
+    padding-bottom: $layout-laptop-content-padding;
+  }
+}

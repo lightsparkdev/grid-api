@@ -1,0 +1,160 @@
+@use '../typography/ios-type-mixins' as ios;
+
+/* Fills AppShell's overlay layer; the capsule rests in the iOS banner slot
+   below the status bar / Dynamic Island. The layer stays hit-transparent —
+   only the capsule takes taps. */
+.layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Equal rhythm: phone top → status bar contents (21px) = contents → capsule
+     (21 + 22 + 21 = 64). 20px sides — 362px capsule on the 402px screen. */
+  padding: 64px 20px 0;
+  pointer-events: none;
+}
+
+/* Figma 2343:49986 — iOS 26 collapsed notification on real glass (FrostPanel
+   squircle, radius 24). The wrapper button carries the drop shadow OUTSIDE
+   the glass clip (the square-halo rule) and the tap behavior. */
+.capsule {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* iOS notification ink — dark over the light field, white over the dark. */
+  color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  /* Swoop reads as dropping IN from above. */
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.glass {
+  width: 100%;
+}
+
+/* Drop shadow as a blurred squircle-clipped underlay — browser-consistent.
+   `filter: drop-shadow` on the wrapper read the COMPOSITED (SVG-filtered)
+   child's bounds on Safari and shaded a mismatched, rounder corner; box-shadow
+   would follow the wrapper's circular-fallback border-radius. A clipped blob
+   blurred AFTER its own clip has exactly the glass's curve in every browser. */
+.shadowBlob {
+  position: absolute;
+  inset: 0;
+  filter: blur(12px);
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.shadowShape {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.inner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  height: 64px;
+  padding: 12px 14px;
+}
+
+/* Multi-line bodies (the SMS notification) grow the capsule with the text —
+   same padding rhythm, the 64px single-line height becomes the floor. */
+.inner[data-multiline] {
+  height: auto;
+  min-height: 64px;
+}
+
+/* Icon slot — anchors the optional sender-avatar badge. */
+.iconWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+}
+
+/* App icon — iOS notification size (38px rounded square). */
+.icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  corner-shape: var(--corner-shape);
+  user-select: none;
+}
+
+/* The iOS sender-avatar badge — the sending app's icon (20px) overlapping the
+   avatar's bottom-right corner. */
+.badge {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  display: flex;
+  width: 20px;
+  height: 20px;
+
+  img,
+  svg {
+    width: 100%;
+    height: 100%;
+    user-select: none;
+  }
+}
+
+.texts {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+/* Subheadline/Emphasized 15/17. */
+.title {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  line-height: 17px;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+/* Footnote 13/17, dimmed. The 3px right pad optically balances the stamp
+   against the capsule's rounded edge. */
+.time {
+  flex-shrink: 0;
+  @include ios.ios-text-footnote;
+  padding-right: 3px;
+  line-height: 17px;
+  color: var(--ios-label-secondary);
+}
+
+/* Subheadline/Regular 15/18, one line. */
+.body {
+  overflow: hidden;
+  @include ios.ios-text-subheadline;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line budget: wrap and clamp (-webkit-line-clamp arrives inline from
+   the bodyLines prop). */
+.body[data-clamp] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}

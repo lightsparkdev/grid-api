@@ -1,0 +1,81 @@
+.root {
+  /* Themed aurora palette — read by the GPU renderer (auroraField.ts) via the
+     inherited custom properties, so the WebGL field flips with [data-theme] in
+     the same frame as the rest of the app. KEEP these names: auroraField reads
+     --aurora-base and --aurora-stripe-1..5. */
+  --aurora-base: #006fa8;
+  --aurora-stripe-1: #005882;
+  --aurora-stripe-2: #0196c9;
+  --aurora-stripe-3: #94c8e3;
+  --aurora-stripe-4: #0196c9;
+  --aurora-stripe-5: #45b8e5;
+
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Solid themed base behind the GPU aurora — hidden until the canvas has painted
+     so boot never flashes flat `--aurora-base`. WebGL-unavailable still reads this
+     once [data-aurora-painted] is set (see AuroraCanvas). */
+  background: transparent;
+
+  &[data-aurora-painted='true'] {
+    background: var(--aurora-base);
+  }
+
+  :global([data-theme='dark']) & {
+    --aurora-base: #011829;
+    --aurora-stripe-1: #010f19;
+    --aurora-stripe-2: #014566;
+    --aurora-stripe-3: #016894;
+    --aurora-stripe-4: #014566;
+    --aurora-stripe-5: #0180b0;
+  }
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* The GPU aurora fills the backdrop. It's opaque (renders base + 0.92 group),
+   so the .root base only shows as a pre-paint / no-WebGL fallback. */
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.root[data-fade-bottom='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 82%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 14%,
+    color-mix(in srgb, var(--app-bg) 8%, transparent) 30%,
+    color-mix(in srgb, var(--app-bg) 28%, transparent) 44%,
+    color-mix(in srgb, var(--app-bg) 52%, transparent) 58%,
+    color-mix(in srgb, var(--app-bg) 74%, transparent) 70%,
+    color-mix(in srgb, var(--app-bg) 90%, transparent) 82%,
+    var(--app-bg) 100%
+  );
+  pointer-events: none;
+}

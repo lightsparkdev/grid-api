@@ -1,0 +1,54 @@
+@use './glass-button-shadow' as shadow;
+
+.root {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  /* Pill/symbol controls stay circular — override global superellipse on *. */
+  corner-shape: round;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  @include shadow.glass-button-shadow;
+  @include shadow.glass-button-press(44px);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.glass {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  /* Themed label: black on the light glass, white in dark mode (matches the
+     themed --glass-symbol-backdrop the button sits on). Override --glass-symbol-glyph
+     when the button sits on a dark backdrop (e.g. the issuance aurora). */
+  color: var(--glass-symbol-glyph, var(--ios-label-primary));
+}
+
+.size40 {
+  width: 40px;
+  height: 40px;
+  @include shadow.glass-button-press(40px);
+
+  .glyph {
+    height: 40px;
+  }
+}

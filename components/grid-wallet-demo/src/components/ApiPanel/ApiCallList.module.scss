@@ -1,0 +1,370 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '../../styles/breakpoints' as *;
+
+.list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 48px;
+  padding-top: calc(var(--spacing-md) + 4px);
+
+  // Mobile: match the Configure panel's 24px side padding.
+  @media (max-width: $breakpoint-layout-mobile) {
+    padding-left: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
+}
+
+
+.group {
+  // Height animates 0 → auto on entrance (pushes the groups below via real
+  // reflow); clip so the reveal is crisp and the inner rise stays inside.
+  overflow: hidden;
+}
+
+.groupInner {
+  display: flex;
+  flex-direction: column;
+}
+
+// Spacing lives on the boxes, not as flex `gap`, so a collapsed (height: 0) item
+// reserves no space — the gap grows with the height instead of popping in first.
+.groupDivider {
+  margin-bottom: var(--spacing-md);
+}
+
+.groupEntries {
+  display: flex;
+  flex-direction: column;
+}
+
+.feedEntry {
+  min-width: 0;
+  padding-bottom: var(--spacing-md);
+  overflow: hidden;
+}
+
+.entryHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  padding: calc(var(--row-padding) - 2px) var(--row-padding) 0;
+  box-sizing: border-box;
+}
+
+.entryTitleRow {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.entryTitle {
+  @include body;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+/* "New call" bullet (stacked layout only) — a bigger origin blue-600 glyph,
+   torph-morphed in/out before the title; hidden at wide (always in view). */
+.titleBullet {
+  flex-shrink: 0;
+  color: var(--color-blue-600);
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+@media (min-width: $breakpoint-layout-wide) {
+  .titleBullet {
+    display: none;
+  }
+}
+
+.timestamp {
+  @include label-sm;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+}
+
+.callCard {
+  corner-shape: var(--corner-shape);
+  --badge-height: 20px;
+  --row-padding: calc((48px - var(--badge-height)) / 2);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--surface-base);
+  border: 0.5px solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+
+  &:hover,
+  &:focus-within {
+    .codeBlockToolbar .copyBtn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .codeBlockToolbar .copyBtn {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease, background 150ms ease;
+  }
+}
+
+.endpointBlock,
+.codeBlockToolbar {
+  box-sizing: border-box;
+  min-height: 48px;
+}
+
+.endpointBlock {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: var(--row-padding) 0 var(--row-padding) var(--row-padding);
+  background: inherit;
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-secondary);
+  }
+}
+
+.endpointScroll {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  > :first-child {
+    flex-shrink: 0;
+  }
+}
+
+.path {
+  @include label-sm;
+  color: var(--text-primary);
+  font-family: var(--font-family-mono);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+  user-select: text;
+  cursor: text;
+}
+
+.endpointFade {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 88px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  background: linear-gradient(to right, transparent, var(--surface-base) 52%);
+
+  :global([data-theme='dark']) & {
+    background: linear-gradient(to right, transparent, var(--color-gray-925) 52%);
+  }
+}
+
+.endpointCopyBtn {
+  position: absolute;
+  top: 50%;
+  right: var(--spacing-xs);
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 150ms ease;
+}
+
+.endpointBlock:hover,
+.endpointBlock:focus-within {
+  .endpointFade,
+  .endpointCopyBtn {
+    opacity: 1;
+  }
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.codeBlockToolbar {
+  --toolbar-tab-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  border-bottom: var(--stroke-xs) solid var(--border-tertiary);
+  min-width: 0;
+}
+
+.tabGroup {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tabIndicator {
+  position: absolute;
+  height: 1.5px;
+  background: var(--text-primary);
+  bottom: calc(
+    -1 * var(--spacing-xs) -
+    (48px - 2 * var(--spacing-xs) - var(--toolbar-tab-height)) / 2
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tab {
+  all: unset;
+  corner-shape: var(--corner-shape);
+  box-sizing: border-box;
+  @include label-sm;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--spacing-xs);
+  border-radius: var(--corner-radius-xs);
+  cursor: pointer;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.tabActive {
+  color: var(--text-primary);
+}
+
+.copyBtn {
+  all: unset;
+  corner-shape: var(--corner-shape);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--corner-radius-sm);
+  cursor: pointer;
+  color: var(--icon-tertiary);
+  transition: background 150ms ease;
+
+  &:hover {
+    background: var(--color-alpha-black-04);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-06);
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.codeBlockContent {
+  padding: var(--spacing-md);
+  overflow-x: auto;
+}
+
+.codePre {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-primary);
+  white-space: pre;
+  tab-size: 2;
+  font-feature-settings: 'salt' 1;
+}
+
+.syntaxDefault {
+  color: #24292e;
+
+  :global([data-theme='dark']) & {
+    color: #e1e4e8;
+  }
+}
+
+.syntaxCommand {
+  color: #6f42c1;
+
+  :global([data-theme='dark']) & {
+    color: #b392f0;
+  }
+}
+
+.syntaxFlag {
+  color: #2b5581;
+
+  :global([data-theme='dark']) & {
+    color: #79b8ff;
+  }
+}
+
+.syntaxString {
+  color: #22863a;
+
+  :global([data-theme='dark']) & {
+    color: #85e89d;
+  }
+}
+
+@include layout-laptop {
+  .list {
+    align-items: center;
+  }
+
+  .feed {
+    width: 100%;
+    max-width: $layout-laptop-api-content-max-width;
+    padding-left: $layout-laptop-content-padding;
+    padding-right: $layout-laptop-content-padding;
+    padding-bottom: $layout-laptop-content-padding;
+  }
+}
+

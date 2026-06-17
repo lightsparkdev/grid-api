@@ -1,0 +1,16 @@
+/** App + API side-by-side inside the right column (large desktop). */
+$breakpoint-layout-wide: 1800px;
+
+/** Configure stacks above app + API (phone). */
+$breakpoint-layout-mobile: 767px;
+
+/** Configure left, app over API on the right (between mobile and wide). */
+$layout-laptop-config-width: 400px;
+$layout-laptop-content-padding: 40px;
+$layout-laptop-api-content-max-width: 680px;
+
+@mixin layout-laptop {
+  @media (max-width: ($breakpoint-layout-wide - 1px)) and (min-width: ($breakpoint-layout-mobile + 1px)) {
+    @content;
+  }
+}

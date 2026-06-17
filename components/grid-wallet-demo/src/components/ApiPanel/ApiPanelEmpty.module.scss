@@ -1,0 +1,131 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '../../styles/breakpoints' as *;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.skeletonLayer {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.skeletonCover {
+  --cover-fade-height: 56px;
+  --cover-top: 0px;
+  position: absolute;
+  inset: var(--cover-top) 0 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: none;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to top,
+    var(--surface-primary) calc(100% - var(--cover-fade-height)),
+    transparent 100%
+  );
+
+  :global([data-theme='dark']) & {
+    background: linear-gradient(
+      to top,
+      var(--color-gray-950) calc(100% - var(--cover-fade-height)),
+      transparent 100%
+    );
+  }
+}
+
+.skeletonCoverVisible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonCover {
+    transition: none;
+  }
+}
+
+.messageLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  pointer-events: none;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  max-width: 240px;
+  text-align: center;
+}
+
+.iconBox {
+  corner-shape: var(--corner-shape);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: var(--spacing-sm);
+  background: var(--surface-primary);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-sm);
+  color: var(--icon-secondary);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.title {
+  @include label;
+  margin: 0;
+  width: 100%;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.description {
+  @include body;
+  margin: 0;
+  width: 100%;
+  color: var(--text-tertiary);
+  line-height: var(--font-leading-20);
+  font-feature-settings: 'salt' 1;
+}
+
+/* Mobile (Playground): one screenful with the centered message, not the full
+   intrinsic skeleton height — so the API section isn't a tall empty void. */
+@media (max-width: $breakpoint-layout-mobile) {
+  .root {
+    flex: none;
+    height: calc(100dvh - 52px);
+  }
+}
