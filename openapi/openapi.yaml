@@ -155,6 +155,36 @@ paths:
     $ref: paths/customers/customers_{customerId}_verify-phone.yaml
   /customers/{customerId}/verify-phone/confirm:
     $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
+  /customers/{customerId}/sca/factors:
+    $ref: paths/customers/customers_{customerId}_sca_factors.yaml
+  /customers/{customerId}/sca/factors/totp:
+    $ref: paths/customers/customers_{customerId}_sca_factors_totp.yaml
+  /customers/{customerId}/sca/factors/totp/confirm:
+    $ref: paths/customers/customers_{customerId}_sca_factors_totp_confirm.yaml
+  /customers/{customerId}/sca/factors/passkey:
+    $ref: paths/customers/customers_{customerId}_sca_factors_passkey.yaml
+  /customers/{customerId}/sca/factors/passkey/confirm:
+    $ref: paths/customers/customers_{customerId}_sca_factors_passkey_confirm.yaml
+  /customers/{customerId}/sca/factors/passkey/{credentialId}:
+    $ref: paths/customers/customers_{customerId}_sca_factors_passkey_{credentialId}.yaml
+  /customers/{customerId}/sca/login/start:
+    $ref: paths/customers/customers_{customerId}_sca_login_start.yaml
+  /customers/{customerId}/sca/login/complete:
+    $ref: paths/customers/customers_{customerId}_sca_login_complete.yaml
+  /customers/{customerId}/sca/record-event:
+    $ref: paths/customers/customers_{customerId}_sca_record-event.yaml
+  /customers/{customerId}/sca/factors/reset:
+    $ref: paths/customers/customers_{customerId}_sca_factors_reset.yaml
+  /customers/{customerId}/sca/factors/reset/{resetId}:
+    $ref: paths/customers/customers_{customerId}_sca_factors_reset_{resetId}.yaml
+  /customers/{customerId}/sca/factors/reset/{resetId}/complete:
+    $ref: paths/customers/customers_{customerId}_sca_factors_reset_{resetId}_complete.yaml
+  /customers/{customerId}/external-accounts/{externalAccountId}/trust:
+    $ref: paths/customers/customers_{customerId}_external-accounts_{externalAccountId}_trust.yaml
+  /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm:
+    $ref: paths/customers/customers_{customerId}_external-accounts_{externalAccountId}_trust_confirm.yaml
+  /customers/{customerId}/external-accounts/{externalAccountId}/untrust/confirm:
+    $ref: paths/customers/customers_{customerId}_external-accounts_{externalAccountId}_untrust_confirm.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:

@@ -1,0 +1,17 @@
+type: object
+description: >-
+  The provider-reported status of an in-progress 2FA reset, polled until it
+  reaches the provider's liveness-passed value.
+required:
+  - status
+properties:
+  status:
+    type: string
+    description: >-
+      The provider-reported status of the reset, passed through verbatim (Grid
+      does not normalize it). Keep polling while it reports a non-terminal value
+      such as `PENDING`; once it reaches the liveness-passed value
+      (`LIVENESS_PASSED`), call the complete endpoint. Other provider-specific
+      values may appear, so treat anything other than the liveness-passed
+      sentinel as "not ready yet" rather than failing.
+    example: PENDING

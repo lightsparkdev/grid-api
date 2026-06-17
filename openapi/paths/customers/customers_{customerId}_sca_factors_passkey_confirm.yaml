@@ -1,0 +1,66 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer confirming a passkey factor.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Confirm passkey factor enrollment
+  description: |
+    Finalize passkey factor enrollment by submitting the WebAuthn credential the
+    device produced for the registration challenge, along with the origin it was
+    produced against. Returns the enrolled factor.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+  operationId: confirmPasskeyFactorEnrollment
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/PasskeyEnrollmentConfirmRequest.yaml
+  responses:
+    '200':
+      description: Passkey factor enrolled; the enrolled factor is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/PasskeyEnrollmentConfirmResponse.yaml
+    '400':
+      description: Invalid credential or origin
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

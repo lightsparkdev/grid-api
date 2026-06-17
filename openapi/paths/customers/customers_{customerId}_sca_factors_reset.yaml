@@ -1,0 +1,69 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer resetting a factor.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Start a 2FA reset
+  description: |
+    Begin recovering a lost enrolled factor via a liveness-gated, poll-based
+    flow. Opens the provider's liveness check and returns a `resetId` plus the
+    opaque liveness handles (`sumsubAccessToken` / `verificationLink`) the end
+    user completes it with. Poll
+    `GET /customers/{customerId}/sca/factors/reset/{resetId}` until liveness
+    passes, then call the complete endpoint.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+  operationId: startTwoFactorReset
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/TwoFactorResetStartRequest.yaml
+  responses:
+    '201':
+      description: Reset initiated; the reset handle and liveness material are returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/TwoFactorResetStart.yaml
+    '400':
+      description: Invalid or unknown factor
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

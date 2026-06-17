@@ -1,0 +1,61 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer enrolling a passkey factor.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Start passkey factor enrollment
+  description: |
+    Begin enrolling a WebAuthn passkey factor for the customer. Returns opaque
+    WebAuthn registration `options`; pass them to the device's WebAuthn API and
+    submit the resulting credential via
+    `POST /customers/{customerId}/sca/factors/passkey/confirm`.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+  operationId: startPasskeyFactorEnrollment
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Passkey enrollment started; WebAuthn registration options are returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/PasskeyEnrollmentStart.yaml
+    '400':
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,75 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer who owns the external account.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  - name: externalAccountId
+    in: path
+    description: The unique identifier of the external account (beneficiary) being untrusted.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Confirm untrusting a beneficiary
+  description: |
+    Finalize untrusting a beneficiary by submitting the `whitelistedId` from the
+    trust start and the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+    `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+    one was issued. Returns `trusted: false`.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+
+    In sandbox, the SMS/TOTP code is always `123456`.
+  operationId: confirmBeneficiaryUntrust
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/BeneficiaryTrustConfirmRequest.yaml
+  responses:
+    '200':
+      description: Beneficiary untrusted.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/BeneficiaryTrustConfirm.yaml
+    '400':
+      description: Invalid or expired proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or external account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
