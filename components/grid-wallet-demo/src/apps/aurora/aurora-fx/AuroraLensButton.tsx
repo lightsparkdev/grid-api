@@ -20,9 +20,9 @@ import {
   type AuroraLuts,
   type AuroraPalette,
   type AuroraUniformLocations,
-} from '@/apps/shared/AuroraBackground/auroraField';
-import { SYMBOL_GLASS } from './presets';
-import styles from './GlassSymbolButton.module.scss';
+} from './auroraField';
+import { SYMBOL_GLASS } from '@/apps/shared/glass/presets';
+import styles from '@/apps/shared/glass/GlassSymbolButton.module.scss';
 
 /**
  * Close-button glass that refracts the LIVE aurora on the GPU.

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { FrostPanel, GlassOver, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { AuroraLensPanel, TEXT_GLASS } from '@/apps/shared/glass';
+import { TEXT_GLASS } from '@/apps/shared/glass';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
@@ -17,31 +17,6 @@ export const NOTIFICATION_INSET_PX = 20;
 const IS_SAFARI =
   typeof navigator !== 'undefined' &&
   /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-// Safari WebGL lens optics — the SAME knobs as the Chromium GlassOver below
-// (keep in sync by eye): the issuance-X tuning family with the prominent
-// rim/specular. The lens recomputes the live aurora at bent coordinates, so it
-// needs no displacement map / mapSize. The highlight reads hotter over the
-// dark field, so dark mode pulls the specular back.
-const SAFARI_LENS_GLASS = {
-  ...TEXT_GLASS,
-  depth: 2,
-  scale: 22,
-  splay: 0.7,
-  chromaticAberration: 0.5,
-  edgeStrength: 1.6,
-  edgeWidth: 1,
-  specularStrength: 1.6,
-};
-const SAFARI_LENS_GLASS_DARK = {
-  ...SAFARI_LENS_GLASS,
-  edgeStrength: 1.1,
-  specularStrength: 0.9,
-};
-
-// The notification only shows over the auth screen's live aurora (AuthSheet),
-// whose AuroraBackground is tagged fieldId="signin".
-const AURORA_FIELD_SELECTOR = '[data-aurora-field="signin"]';
 
 // Swoop-in: starts far (small), SQUISHED (flatter than wide) and blurred, and
 // arcs down out of the Z axis — the bouncy springs overshoot past 1 so it
@@ -86,6 +61,17 @@ interface GlassNotificationProps {
    * displacement lens (GlassOver) instead of the frosted FrostPanel.
    */
   backdropNode?: ReactNode;
+  /** Safari-only injected WebGL lens. Skins with a live refraction field (e.g.
+   *  Aurora) provide it; others omit it and the capsule frosts. Keeps this
+   *  shared component skin-blind — no skin-specific effect lives here. */
+  renderSafariLens?: (args: {
+    inner: ReactNode;
+    className?: string;
+    radius: number;
+    cornerSmoothing: number;
+    tint: string;
+    onUnavailable: () => void;
+  }) => ReactNode;
   onTap?: () => void;
 }
 
@@ -104,6 +90,7 @@ export function GlassNotification({
   bodyLines = 1,
   time = 'now',
   backdropNode,
+  renderSafariLens,
   onTap,
 }: GlassNotificationProps) {
   const reduceMotion = useReducedMotion();
@@ -116,14 +103,14 @@ export function GlassNotification({
 
   // WebKit can't run the displacement filter over a copied subtree at all
   // (verified: the filter output renders EMPTY except a dark premultiplied
-  // specular ring — the parked refraction experiment's conclusion). Safari
-  // gets a WebGL lens instead: the shader RECOMPUTES the live aurora field at
-  // bent coordinates (AuroraLensButton's pattern) — identical by construction,
-  // no SVG filter involved. Chromium keeps the SVG displacement lens.
+  // specular ring). Safari instead uses a caller-injected WebGL lens
+  // (`renderSafariLens`) when the skin supplies one; otherwise it frosts.
+  // Chromium keeps the SVG displacement lens.
   const refract = Boolean(backdropNode) && !IS_SAFARI;
   // Runtime fallback: if WebGL context creation fails, drop to the frost.
   const [lensFailed, setLensFailed] = useState(false);
-  const webglLens = Boolean(backdropNode) && IS_SAFARI && !lensFailed;
+  const webglLens =
+    Boolean(backdropNode) && IS_SAFARI && !lensFailed && Boolean(renderSafariLens);
 
   const multiline = bodyLines > 1;
   const inner = (
@@ -214,20 +201,17 @@ export function GlassNotification({
                 {inner}
               </GlassOver>
             ) : webglLens ? (
-              // TRUE refraction (Safari): a WebGL lens that recomputes the live
-              // aurora at bent coordinates — same optics knobs as the GlassOver
-              // above, same themed material tint as its tint layer.
-              <AuroraLensPanel
-                className={styles.glass}
-                radius={28.8}
-                cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
-                glass={theme === 'dark' ? SAFARI_LENS_GLASS_DARK : SAFARI_LENS_GLASS}
-                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.55)'}
-                fieldSelector={AURORA_FIELD_SELECTOR}
-                onUnavailable={() => setLensFailed(true)}
-              >
-                {inner}
-              </AuroraLensPanel>
+              // Safari: the skin's injected WebGL lens (recomputes its refraction
+              // without the SVG filter). Same capsule shape + themed tint as the
+              // GlassOver above; the skin owns the field-specific optics.
+              renderSafariLens!({
+                inner,
+                className: styles.glass,
+                radius: 28.8,
+                cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
+                tint: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.55)',
+                onUnavailable: () => setLensFailed(true),
+              })
             ) : (
               // Frost (Safari + no-backdrop callers): backdrop-filter over the
               // REAL screen — live-synced, squircle-clipped, iOS material.

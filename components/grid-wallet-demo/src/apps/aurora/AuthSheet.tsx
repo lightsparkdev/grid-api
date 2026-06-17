@@ -13,8 +13,14 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
-import { AuroraCssField } from '@/apps/shared/AuroraBackground/AuroraCssField';
-import auroraStyles from '@/apps/shared/AuroraBackground/AuroraBackground.module.scss';
+import {
+  AuroraCssField,
+  AuroraLensPanel,
+  NOTIFICATION_LENS_GLASS,
+  NOTIFICATION_LENS_GLASS_DARK,
+  AURORA_FIELD_SELECTOR,
+} from '@/apps/aurora/aurora-fx';
+import auroraStyles from '@/apps/aurora/aurora-fx/AuroraBackground.module.scss';
 import {
   GlassNotification,
   NOTIFICATION_INSET_PX,
@@ -396,6 +402,21 @@ export function AuthSheet({
       body={cfg.notification.body}
       bodyLines={cfg.notification.bodyLines}
       backdropNode={refractionCopy}
+      // Safari: Aurora injects its WebGL field lens (the shared notification is
+      // skin-blind and frosts when a skin omits this).
+      renderSafariLens={(a) => (
+        <AuroraLensPanel
+          className={a.className}
+          radius={a.radius}
+          cornerSmoothing={a.cornerSmoothing}
+          glass={theme === 'dark' ? NOTIFICATION_LENS_GLASS_DARK : NOTIFICATION_LENS_GLASS}
+          tint={a.tint}
+          fieldSelector={AURORA_FIELD_SELECTOR}
+          onUnavailable={a.onUnavailable}
+        >
+          {a.inner}
+        </AuroraLensPanel>
+      )}
       onTap={autofill}
     />
   );

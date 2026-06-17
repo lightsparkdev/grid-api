@@ -13,8 +13,6 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
-import { AuroraCssField } from '@/apps/shared/AuroraBackground/AuroraCssField';
-import auroraStyles from '@/apps/shared/AuroraBackground/AuroraBackground.module.scss';
 import {
   GlassNotification,
   NOTIFICATION_INSET_PX,
@@ -377,12 +375,7 @@ export function AuthSheet({
           height: 874,
         }}
       >
-        <div
-          className={auroraStyles.root}
-          style={{ position: 'absolute', top: -80, right: -80, bottom: 0, left: -80 }}
-        >
-          <AuroraCssField className={styles.auroraCopyField} />
-        </div>
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--app-wash)' }} />
         <PhoneStatusBar tone="light" />
       </div>
     </div>

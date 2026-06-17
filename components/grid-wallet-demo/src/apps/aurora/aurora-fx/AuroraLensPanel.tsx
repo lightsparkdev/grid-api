@@ -21,7 +21,7 @@ import {
   type AuroraLuts,
   type AuroraPalette,
   type AuroraUniformLocations,
-} from '@/apps/shared/AuroraBackground/auroraField';
+} from './auroraField';
 
 /**
  * Rectangular-squircle glass panel that refracts the LIVE aurora on the GPU —

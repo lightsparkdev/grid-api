@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { authCta, type AuthMethod } from '@/data/flow';
-import { AuroraBackground } from '@/apps/shared/AuroraBackground';
+import { AuroraBackground } from '@/apps/aurora/aurora-fx';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { AUTH_METHOD_ICONS, AUTH_METHOD_ORDER } from '@/apps/shared/authMethodIcons';
 import { CreatingCaption } from './wallet/CardIssuanceContent';

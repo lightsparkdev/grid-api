@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
-import { AuroraBackground } from '@/apps/shared/AuroraBackground';
+import { AuroraBackground } from '@/apps/aurora/aurora-fx';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { GlassToast } from '@/apps/shared/GlassToast';

@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { useId, useState } from 'react';
 import { motion, useAnimate, useReducedMotion } from 'motion/react';
 import { TextMorph } from 'torph/react';
-import { AuroraBackground } from '@/apps/shared/AuroraBackground';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutOvershoot, easeOutSwift, motionTransition } from '@/lib/easing';
 import styles from './DebitCard.module.scss';
@@ -93,9 +92,10 @@ export function DebitCard({
         onMouseEnter={() => interactive && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <AuroraBackground
-          showRadialGradient={false}
+        <div
+          aria-hidden
           className={clsx(styles.aurora, bordered && styles.auroraHidden)}
+          style={{ background: 'var(--app-wash)' }}
         />
         <div className={styles.top}>
           <TextMorph

@@ -1,6 +1,7 @@
 'use client';
 
-import { AuroraLensButton, GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
+import { AuroraLensButton } from '@/apps/aurora/aurora-fx';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './WalletCardDetailHeader.module.scss';

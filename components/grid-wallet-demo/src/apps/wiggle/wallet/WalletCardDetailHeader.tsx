@@ -1,6 +1,6 @@
 'use client';
 
-import { AuroraLensButton, GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './WalletCardDetailHeader.module.scss';
@@ -24,35 +24,18 @@ export function WalletCardDetailHeader({
 }: WalletCardDetailHeaderProps) {
   const theme = useThemeMode();
   const brightness = headerGlassBrightness(theme);
-  // The live aurora lens already shows the refracted field, so it needs only a
-  // hint of the white lift the flat SVG glass uses — full brightness washes it
-  // out on the light surface. (Dark stays 0.)
-  const lensBrightness = brightness * 0.2;
 
   return (
     <div className={styles.root}>
-      {closeOnAurora ? (
-        <AuroraLensButton
-          aria-label="Close"
-          size={40}
-          type="button"
-          className={styles.closeOnAurora}
-          brightness={lensBrightness}
-          onClick={onClose}
-        >
-          <SfSymbol name="xmark" size={14} />
-        </AuroraLensButton>
-      ) : (
-        <GlassSymbolButton
-          aria-label="Close"
-          size={40}
-          type="button"
-          glass={{ brightness }}
-          onClick={onClose}
-        >
-          <SfSymbol name="xmark" size={14} />
-        </GlassSymbolButton>
-      )}
+      <GlassSymbolButton
+        aria-label="Close"
+        size={40}
+        type="button"
+        glass={{ brightness }}
+        onClick={onClose}
+      >
+        <SfSymbol name="xmark" size={14} />
+      </GlassSymbolButton>
 
       {showActions ? (
         <GlassWindowButtonGroup
