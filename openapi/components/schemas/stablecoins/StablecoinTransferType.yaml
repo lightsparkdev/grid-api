@@ -1,0 +1,9 @@
+type: string
+enum:
+- WIRE
+- ACH_DEBIT
+- SAME_DAY_ACH_DEBIT
+- ACH_CREDIT
+- SAME_DAY_ACH_CREDIT
+- RTP_CREDIT
+description: Provider-supported transfer type for stablecoin funding or redemption.

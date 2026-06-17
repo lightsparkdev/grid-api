@@ -77,6 +77,9 @@ tags:
       Card management endpoints. Issue debit cards against an internal
       account, freeze / unfreeze, close, manage card funding sources, and
       list card transactions.
+  - name: Stablecoins
+    description: >-
+      Stablecoin issuance endpoints. Register provider-created stablecoins, link provider accounts and external bank accounts, create mint/burn quotes, execute them, and track the resulting operations.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -280,6 +283,30 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /stablecoin-provider-accounts:
+    $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
+  /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
+    $ref: paths/stablecoins/stablecoin-provider-accounts_{stablecoinProviderAccountId}.yaml
+  /stablecoins:
+    $ref: paths/stablecoins/stablecoins.yaml
+  /stablecoins/{stablecoinId}:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}.yaml
+  /stablecoin-external-account-link-sessions:
+    $ref: paths/stablecoins/stablecoin-external-account-link-sessions.yaml
+  /stablecoin-external-accounts:
+    $ref: paths/stablecoins/stablecoin-external-accounts.yaml
+  /stablecoin-external-accounts/{stablecoinExternalAccountId}:
+    $ref: paths/stablecoins/stablecoin-external-accounts_{stablecoinExternalAccountId}.yaml
+  /stablecoins/{stablecoinId}/quotes:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_quotes.yaml
+  /stablecoins/{stablecoinId}/quotes/{stablecoinQuoteId}:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_quotes_{stablecoinQuoteId}.yaml
+  /stablecoins/{stablecoinId}/quotes/{stablecoinQuoteId}/execute:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_quotes_{stablecoinQuoteId}_execute.yaml
+  /stablecoins/{stablecoinId}/operations:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_operations.yaml
+  /stablecoin-operations/{stablecoinOperationId}:
+    $ref: paths/stablecoins/stablecoin-operations_{stablecoinOperationId}.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml

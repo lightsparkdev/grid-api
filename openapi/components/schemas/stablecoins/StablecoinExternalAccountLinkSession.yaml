@@ -1,0 +1,36 @@
+type: object
+required:
+- id
+- provider
+- stablecoinProviderAccountId
+- accountType
+- linkToken
+- expiresAt
+- createdAt
+properties:
+  id:
+    type: string
+    description: System-generated stablecoin external-account link-session identifier.
+    example: StablecoinExternalAccountLinkSession:019542f5-b3e7-1d02-0000-000000000003
+  provider:
+    $ref: StablecoinProvider.yaml
+  stablecoinProviderAccountId:
+    type: string
+    description: Stablecoin provider account link selected for this session.
+    example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+  accountType:
+    $ref: StablecoinExternalAccountType.yaml
+  linkToken:
+    type: string
+    description: Provider/Plaid frontend token for the link flow.
+    example: link-sandbox-123
+  expiresAt:
+    type: string
+    format: date-time
+    description: Link token expiration timestamp.
+    example: '2026-05-20T18:20:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-05-20T17:20:00Z'

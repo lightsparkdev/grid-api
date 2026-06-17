@@ -1,0 +1,8 @@
+type: string
+enum:
+- PENDING_REVIEW
+- PROVISIONING
+- PROVISIONED
+- REJECTED
+- FAILED
+description: Provider issuance/linking status for the registered stablecoin.

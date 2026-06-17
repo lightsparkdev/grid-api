@@ -1,0 +1,8 @@
+type: string
+enum:
+- WIRE
+- ACH_CREDIT
+- SAME_DAY_ACH_CREDIT
+- RTP_CREDIT
+description: Fiat payout rail for a burn/redemption. Debit rails are funding-only and are not valid payout
+  rails.

@@ -1,0 +1,22 @@
+type: object
+required:
+- operationType
+- amount
+- fundingSource
+- destination
+properties:
+  operationType:
+    type: string
+    enum:
+    - MINT
+  amount:
+    $ref: StablecoinAmount.yaml
+  fundingSource:
+    $ref: StablecoinMintFundingSource.yaml
+  destination:
+    $ref: StablecoinMintDestination.yaml
+  description:
+    type: string
+    maxLength: 1024
+    description: Optional platform-supplied description carried through to the executed operation.
+    example: Initial mint

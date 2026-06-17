@@ -1,0 +1,19 @@
+type: object
+required:
+- type
+- amount
+- currency
+properties:
+  type:
+    type: string
+    description: Fee type identifier (for example PROVIDER, GRID, RAIL, NETWORK).
+    example: PROVIDER
+  amount:
+    type: string
+    pattern: ^[0-9]+$
+    description: Fee amount as a base-10 integer string in the smallest unit of `currency`.
+    example: '0'
+  currency:
+    type: string
+    description: Currency of the fee amount.
+    example: USD

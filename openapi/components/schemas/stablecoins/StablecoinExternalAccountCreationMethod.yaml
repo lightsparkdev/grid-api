@@ -1,0 +1,6 @@
+type: string
+enum:
+- GRID_EXTERNAL_ACCOUNT
+- PLAID
+- DIRECT_BANK_ENTRY
+description: How the stablecoin external account was linked.

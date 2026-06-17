@@ -1,0 +1,4 @@
+type: string
+enum:
+- US_BANK_ACCOUNT
+description: External account type supported for stablecoin provider linking.

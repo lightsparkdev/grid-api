@@ -1,0 +1,27 @@
+type: object
+required:
+- creationMethod
+- provider
+- linkSessionId
+- linkResultToken
+- requestedTransferTypes
+properties:
+  creationMethod:
+    type: string
+    enum:
+    - PLAID
+  provider:
+    $ref: StablecoinProvider.yaml
+  linkSessionId:
+    type: string
+    description: Stablecoin external-account link-session id.
+    example: StablecoinExternalAccountLinkSession:019542f5-b3e7-1d02-0000-000000000003
+  linkResultToken:
+    type: string
+    writeOnly: true
+    description: Provider/Plaid public token returned by the frontend link flow.
+    example: public-sandbox-123
+  requestedTransferTypes:
+    type: array
+    items:
+      $ref: StablecoinTransferType.yaml

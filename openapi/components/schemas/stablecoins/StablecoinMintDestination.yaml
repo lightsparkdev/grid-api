@@ -1,0 +1,13 @@
+type: object
+required:
+- type
+- sparkAddress
+properties:
+  type:
+    type: string
+    enum:
+    - SPARK_ADDRESS
+  sparkAddress:
+    type: string
+    description: Destination Spark address that should receive the minted stablecoin.
+    example: sp1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq

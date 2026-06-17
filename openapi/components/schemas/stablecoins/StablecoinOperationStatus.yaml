@@ -1,0 +1,11 @@
+type: string
+enum:
+- CREATED
+- PENDING
+- PROCESSING
+- COMPLETED
+- FAILED
+- EXPIRED
+description: Current status of the stablecoin operation. EXPIRED applies to wire-funded mints that were
+  never funded within the expiry window. Provider-canceled states map to FAILED with a stable failure
+  reason.

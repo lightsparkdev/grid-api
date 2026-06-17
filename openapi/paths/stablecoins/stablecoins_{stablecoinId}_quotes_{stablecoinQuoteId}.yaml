@@ -1,0 +1,45 @@
+parameters:
+- name: stablecoinId
+  in: path
+  description: System-generated stablecoin identifier
+  required: true
+  schema:
+    type: string
+- name: stablecoinQuoteId
+  in: path
+  description: System-generated stablecoin quote identifier
+  required: true
+  schema:
+    type: string
+get:
+  summary: Get a stablecoin quote
+  operationId: getStablecoinQuote
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinQuote.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin or quote not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,39 @@
+parameters:
+- name: stablecoinOperationId
+  in: path
+  description: System-generated stablecoin operation identifier
+  required: true
+  schema:
+    type: string
+get:
+  summary: Get a stablecoin operation
+  operationId: getStablecoinOperation
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinOperation.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin operation not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

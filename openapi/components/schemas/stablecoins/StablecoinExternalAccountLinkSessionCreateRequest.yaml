@@ -1,0 +1,23 @@
+type: object
+required:
+- provider
+- accountType
+- requestedTransferTypes
+- owner
+properties:
+  provider:
+    $ref: StablecoinProvider.yaml
+  stablecoinProviderAccountId:
+    type: string
+    description: Stablecoin provider account link that should own the linked external account. Optional
+      when the platform has exactly one active provider account link; required (via a `STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED`
+      error) when the selection is ambiguous.
+    example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+  accountType:
+    $ref: StablecoinExternalAccountType.yaml
+  requestedTransferTypes:
+    type: array
+    items:
+      $ref: StablecoinTransferType.yaml
+  owner:
+    $ref: StablecoinExternalAccountOwner.yaml

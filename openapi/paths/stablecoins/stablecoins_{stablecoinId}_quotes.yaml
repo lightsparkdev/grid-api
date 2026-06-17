@@ -1,0 +1,68 @@
+parameters:
+- name: stablecoinId
+  in: path
+  description: System-generated stablecoin identifier
+  required: true
+  schema:
+    type: string
+post:
+  summary: Create a stablecoin quote
+  description: |
+    Create a MINT or BURN quote for this stablecoin. A quote is a validation preview only: it locks no exchange rate, reserves no fee, and holds no balance. Execution re-validates everything; for burns, the balance hold happens at execution time. Execute the quote with `executeStablecoinQuote` before it expires.
+  operationId: createStablecoinQuote
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  parameters:
+  - name: Idempotency-Key
+    in: header
+    description: Idempotency key scoped to this quote request. Replays return the prior quote; conflicting
+      payloads are rejected.
+    required: true
+    schema:
+      type: string
+      maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinQuoteRequest.yaml
+  responses:
+    '201':
+      description: Quote created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinQuote.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin or linked account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

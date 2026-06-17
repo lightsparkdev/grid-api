@@ -1,0 +1,54 @@
+post:
+  summary: Create a stablecoin external-account link session
+  description: Create a provider/Plaid link session for linking a bank account to the stablecoin provider.
+  operationId: createStablecoinExternalAccountLinkSession
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  parameters:
+  - name: Idempotency-Key
+    in: header
+    description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting
+      payloads are rejected.
+    required: true
+    schema:
+      type: string
+      maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinExternalAccountLinkSessionCreateRequest.yaml
+  responses:
+    '201':
+      description: Link session created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinExternalAccountLinkSession.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

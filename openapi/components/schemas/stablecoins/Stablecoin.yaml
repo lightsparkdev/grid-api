@@ -1,0 +1,74 @@
+type: object
+required:
+- id
+- name
+- symbol
+- baseCurrency
+- network
+- decimals
+- issuanceStatus
+- gridOperationsStatus
+- networkTokenIdentifier
+- provider
+- stablecoinProviderAccountId
+- providerEnvironment
+- providerTokenIdentifier
+- createdAt
+- updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated stablecoin identifier.
+    example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+  name:
+    type: string
+    description: Stablecoin display name.
+    example: Acme Dollar
+  symbol:
+    type: string
+    description: Stablecoin symbol.
+    example: ACME
+  baseCurrency:
+    type: string
+    description: Fiat currency the stablecoin is denominated against.
+    example: USD
+  network:
+    $ref: StablecoinNetwork.yaml
+  decimals:
+    type: integer
+    description: Number of decimal places used by the stablecoin.
+    example: 6
+  issuanceStatus:
+    $ref: StablecoinIssuanceStatus.yaml
+  gridOperationsStatus:
+    $ref: StablecoinGridOperationsStatus.yaml
+  networkTokenIdentifier:
+    type: string
+    description: Token identifier in the namespace selected by `network`.
+    example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
+  currency:
+    type: string
+    description: Grid currency code after the stablecoin is enabled for Grid operations.
+    example: ACME
+  provider:
+    $ref: StablecoinProvider.yaml
+  stablecoinProviderAccountId:
+    type: string
+    description: Stablecoin provider account link selected for this stablecoin.
+    example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+  providerEnvironment:
+    $ref: StablecoinProviderEnvironment.yaml
+  providerTokenIdentifier:
+    type: string
+    description: Provider token identifier. For Brale this maps to `value_type`.
+    example: ACME
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-05-20T16:40:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2026-05-20T17:10:00Z'

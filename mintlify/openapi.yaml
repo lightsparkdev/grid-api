@@ -55,6 +55,8 @@ tags:
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
+  - name: Stablecoins
+    description: Stablecoin issuance endpoints. Register provider-created stablecoins, link provider accounts and external bank accounts, create mint/burn quotes, execute them, and track the resulting operations.
 paths:
   /config:
     get:
@@ -6871,6 +6873,837 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /stablecoin-provider-accounts:
+    post:
+      summary: Link a stablecoin provider account
+      description: |
+        Link provider API credentials for the authenticated platform. Provider credentials are account-scoped and can be reused for multiple stablecoins. In V1 the only supported provider is `BRALE`; the provider environment is derived from the authenticated Grid platform mode.
+      operationId: linkStablecoinProviderAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting payloads are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinProviderAccountLinkRequest'
+      responses:
+        '201':
+          description: Stablecoin provider account linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinProviderAccount'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List stablecoin provider account links
+      description: Retrieve stablecoin provider account links for the authenticated platform.
+      operationId: listStablecoinProviderAccounts
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProvider'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProviderAccountStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinProviderAccountListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
+    parameters:
+      - name: stablecoinProviderAccountId
+        in: path
+        description: System-generated stablecoin provider account link identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin provider account link
+      operationId: getStablecoinProviderAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinProviderAccount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin provider account link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins:
+    post:
+      summary: Register an existing provider-created stablecoin
+      description: |
+        Register an existing provider-created stablecoin as a Grid `Stablecoin`. This endpoint links provider token metadata to Grid; it does not create the token with the provider. Grid derives the active provider account link from the authenticated platform, provider, and provider environment.
+      operationId: registerStablecoin
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting payloads are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinRegisterRequest'
+      responses:
+        '201':
+          description: Stablecoin registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stablecoin'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Referenced stablecoin provider account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List stablecoins
+      description: Retrieve stablecoins registered to the authenticated platform.
+      operationId: listStablecoins
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: issuanceStatus
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinIssuanceStatus'
+        - name: gridOperationsStatus
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinGridOperationsStatus'
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProvider'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin
+      operationId: getStablecoin
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stablecoin'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-external-account-link-sessions:
+    post:
+      summary: Create a stablecoin external-account link session
+      description: Create a provider/Plaid link session for linking a bank account to the stablecoin provider.
+      operationId: createStablecoinExternalAccountLinkSession
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting payloads are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinExternalAccountLinkSessionCreateRequest'
+      responses:
+        '201':
+          description: Link session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinExternalAccountLinkSession'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-external-accounts:
+    post:
+      summary: Link a stablecoin external account
+      description: |
+        Link a Grid external account, provider/Plaid link result, or direct-entry bank account to the stablecoin provider. The returned resource stores provider address metadata used for stablecoin mints and burns.
+      operationId: linkStablecoinExternalAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting payloads are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinExternalAccountLinkRequest'
+      responses:
+        '201':
+          description: Stablecoin external account linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinExternalAccount'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account or link session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List stablecoin external accounts
+      operationId: listStablecoinExternalAccounts
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProvider'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinExternalAccountStatus'
+        - name: gridExternalAccountId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinExternalAccountListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-external-accounts/{stablecoinExternalAccountId}:
+    parameters:
+      - name: stablecoinExternalAccountId
+        in: path
+        description: System-generated stablecoin external account identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin external account
+      operationId: getStablecoinExternalAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinExternalAccount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}/quotes:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create a stablecoin quote
+      description: |
+        Create a MINT or BURN quote for this stablecoin. A quote is a validation preview only: it locks no exchange rate, reserves no fee, and holds no balance. Execution re-validates everything; for burns, the balance hold happens at execution time. Execute the quote with `executeStablecoinQuote` before it expires.
+      operationId: createStablecoinQuote
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key scoped to this quote request. Replays return the prior quote; conflicting payloads are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinQuoteRequest'
+      responses:
+        '201':
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinQuote'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin or linked account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}/quotes/{stablecoinQuoteId}:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+      - name: stablecoinQuoteId
+        in: path
+        description: System-generated stablecoin quote identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin quote
+      operationId: getStablecoinQuote
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinQuote'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin or quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}/quotes/{stablecoinQuoteId}/execute:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+      - name: stablecoinQuoteId
+        in: path
+        description: System-generated stablecoin quote identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Execute a stablecoin quote
+      description: |
+        Execute an open, unexpired quote, creating the StablecoinOperation and the first provider side effect. Execution re-validates the quoted inputs (stablecoin state, credential status, external-account capability, and for burns the source balance). Expired or already-executed quotes are rejected; create a new quote instead.
+      operationId: executeStablecoinQuote
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key scoped to creating the operation and provider side effects. Replays against the same quote return the prior operation; replays against a different quote are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      responses:
+        '201':
+          description: Operation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperation'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin or quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}/operations:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List stablecoin operations
+      operationId: listStablecoinOperations
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinOperationType'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinOperationStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperationListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-operations/{stablecoinOperationId}:
+    parameters:
+      - name: stablecoinOperationId
+        in: path
+        description: System-generated stablecoin operation identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin operation
+      operationId: getStablecoinOperation
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   agent-action:
     post:
@@ -8376,6 +9209,22 @@ components:
             | INCOMPLETE | Document is missing pages or sides |
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
             | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+            | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
+            | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
+            | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | STABLECOIN_VERIFICATION_FAILED | Provider verification of the stablecoin or credentials failed |
+            | STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED | Linking the external account with the provider failed |
+            | STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED | The request must specify a supported external-account link method |
+            | STABLECOIN_NOT_PROVISIONED | The stablecoin is not provisioned with the provider |
+            | STABLECOIN_GRID_OPERATIONS_NOT_ENABLED | Grid operations are not enabled for this stablecoin |
+            | STABLECOIN_QUOTE_EXPIRED | The stablecoin quote has expired |
+            | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented in the target currency or token precision |
+            | STABLECOIN_OPERATION_NOT_SUPPORTED | The requested stablecoin operation is not supported |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED | The stablecoin external account is not linked or not active |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED | The stablecoin external account does not support the requested transfer type |
+            | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account is not supported |
+            | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider token-balance funding source is not linked |
+            | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected or failed the request |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -8412,6 +9261,22 @@ components:
             - INCOMPLETE
             - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
             - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+            - STABLECOIN_PROVIDER_ACCOUNT_INVALID
+            - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
+            - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - STABLECOIN_VERIFICATION_FAILED
+            - STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED
+            - STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED
+            - STABLECOIN_NOT_PROVISIONED
+            - STABLECOIN_GRID_OPERATIONS_NOT_ENABLED
+            - STABLECOIN_QUOTE_EXPIRED
+            - STABLECOIN_AMOUNT_NOT_REPRESENTABLE
+            - STABLECOIN_OPERATION_NOT_SUPPORTED
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED
+            - STABLECOIN_BURN_SOURCE_NOT_SUPPORTED
+            - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
+            - STABLECOIN_PROVIDER_ERROR
         message:
           type: string
           description: Error message
@@ -9316,12 +10181,16 @@ components:
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
+            | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with the same symbol is already registered for this platform |
+            | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with the same network token identifier is already registered |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
             - CONFLICT
+            - STABLECOIN_SYMBOL_ALREADY_EXISTS
+            - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
         message:
           type: string
           description: Error message
@@ -9355,6 +10224,11 @@ components:
             | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
             | REFERENCE_NOT_FOUND | Reference not found |
             | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
+            | STABLECOIN_NOT_FOUND | Stablecoin not found |
+            | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND | Stablecoin external account not found |
+            | STABLECOIN_QUOTE_NOT_FOUND | Stablecoin quote not found |
+            | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -9365,6 +10239,11 @@ components:
             - BULK_UPLOAD_JOB_NOT_FOUND
             - REFERENCE_NOT_FOUND
             - UMA_NOT_FOUND
+            - STABLECOIN_NOT_FOUND
+            - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND
+            - STABLECOIN_QUOTE_NOT_FOUND
+            - STABLECOIN_OPERATION_NOT_FOUND
         message:
           type: string
           description: Error message
@@ -18846,6 +19725,995 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    StablecoinProvider:
+      type: string
+      enum:
+        - BRALE
+      description: Stablecoin provider backing the linked account, stablecoin, or operation.
+    StablecoinProviderAccountStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INVALID
+        - REVOKED
+      description: Status of the linked stablecoin provider account credentials.
+    StablecoinProviderEnvironment:
+      type: string
+      enum:
+        - SANDBOX
+        - PRODUCTION
+      description: Provider environment derived from the authenticated Grid platform mode.
+    StablecoinProviderAccount:
+      type: object
+      required:
+        - id
+        - provider
+        - providerAccountId
+        - providerEnvironment
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin provider account link identifier.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        providerAccountId:
+          type: string
+          description: Provider account id.
+          example: 2VcUIonJeVQzFoBuC7LdFT0dRe4
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        status:
+          $ref: '#/components/schemas/StablecoinProviderAccountStatus'
+        lastVerifiedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last successful provider credential verification.
+          example: '2026-05-20T16:35:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T16:35:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T16:35:00Z'
+    StablecoinProviderAccountListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinProviderAccount'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoin provider account links matching the criteria.
+    StablecoinProviderAccountLinkRequest:
+      type: object
+      required:
+        - provider
+        - apiClientId
+        - apiClientSecret
+      properties:
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        apiClientId:
+          type: string
+          description: Provider API client id used to verify and link the provider account.
+          example: provider_client_123
+        apiClientSecret:
+          type: string
+          writeOnly: true
+          description: Provider API client secret. Grid verifies and stores this secret encrypted; it is never returned.
+          example: provider_secret_456
+        providerAccountId:
+          type: string
+          description: Provider account id. Optional when the submitted credentials expose exactly one provider account.
+          example: 2VcUIonJeVQzFoBuC7LdFT0dRe4
+    StablecoinIssuanceStatus:
+      type: string
+      enum:
+        - PENDING_REVIEW
+        - PROVISIONING
+        - PROVISIONED
+        - REJECTED
+        - FAILED
+      description: Provider issuance/linking status for the registered stablecoin.
+    StablecoinGridOperationsStatus:
+      type: string
+      enum:
+        - NOT_ENABLED
+        - PENDING_APPROVAL
+        - ENABLING
+        - ENABLED
+        - DISABLED
+      description: Whether the stablecoin has been enabled for normal Grid operations.
+    StablecoinNetwork:
+      type: string
+      enum:
+        - SPARK_MAINNET
+      description: Network namespace for the stablecoin token identifier.
+    Stablecoin:
+      type: object
+      required:
+        - id
+        - name
+        - symbol
+        - baseCurrency
+        - network
+        - decimals
+        - issuanceStatus
+        - gridOperationsStatus
+        - networkTokenIdentifier
+        - provider
+        - stablecoinProviderAccountId
+        - providerEnvironment
+        - providerTokenIdentifier
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin identifier.
+          example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+        name:
+          type: string
+          description: Stablecoin display name.
+          example: Acme Dollar
+        symbol:
+          type: string
+          description: Stablecoin symbol.
+          example: ACME
+        baseCurrency:
+          type: string
+          description: Fiat currency the stablecoin is denominated against.
+          example: USD
+        network:
+          $ref: '#/components/schemas/StablecoinNetwork'
+        decimals:
+          type: integer
+          description: Number of decimal places used by the stablecoin.
+          example: 6
+        issuanceStatus:
+          $ref: '#/components/schemas/StablecoinIssuanceStatus'
+        gridOperationsStatus:
+          $ref: '#/components/schemas/StablecoinGridOperationsStatus'
+        networkTokenIdentifier:
+          type: string
+          description: Token identifier in the namespace selected by `network`.
+          example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
+        currency:
+          type: string
+          description: Grid currency code after the stablecoin is enabled for Grid operations.
+          example: ACME
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link selected for this stablecoin.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        providerTokenIdentifier:
+          type: string
+          description: Provider token identifier. For Brale this maps to `value_type`.
+          example: ACME
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T16:40:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T17:10:00Z'
+    StablecoinListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stablecoin'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoins matching the criteria.
+    StablecoinRegisterRequest:
+      type: object
+      required:
+        - providerTokenIdentifier
+        - networkTokenIdentifier
+        - network
+      properties:
+        providerTokenIdentifier:
+          type: string
+          description: Provider identifier for the stablecoin. For Brale this maps to `value_type`.
+          example: ACME
+        networkTokenIdentifier:
+          type: string
+          description: Token identifier in the namespace selected by `network`.
+          example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
+        network:
+          $ref: '#/components/schemas/StablecoinNetwork'
+        stablecoinProviderAccountId:
+          type: string
+          description: Provider account link to register against. Optional when exactly one active link exists for the authenticated platform; required to resolve STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED when multiple links exist.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+    StablecoinExternalAccountType:
+      type: string
+      enum:
+        - US_BANK_ACCOUNT
+      description: External account type supported for stablecoin provider linking.
+    StablecoinTransferType:
+      type: string
+      enum:
+        - WIRE
+        - ACH_DEBIT
+        - SAME_DAY_ACH_DEBIT
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Provider-supported transfer type for stablecoin funding or redemption.
+    StablecoinExternalAccountOwner:
+      type: object
+      required:
+        - legalName
+      properties:
+        legalName:
+          type: string
+          description: Legal name of the account owner.
+          example: Acme Inc
+        emailAddress:
+          type: string
+          format: email
+          description: Email address for the account owner.
+          example: finance@example.com
+        phoneNumber:
+          type: string
+          description: Phone number for the account owner.
+          example: '+14155550100'
+        dateOfBirth:
+          type: string
+          format: date
+          description: Date of birth when required by the provider link flow.
+          example: '1990-01-01'
+    StablecoinExternalAccountLinkSessionCreateRequest:
+      type: object
+      required:
+        - provider
+        - accountType
+        - requestedTransferTypes
+        - owner
+      properties:
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link that should own the linked external account. Optional when the platform has exactly one active provider account link; required (via a `STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED` error) when the selection is ambiguous.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        accountType:
+          $ref: '#/components/schemas/StablecoinExternalAccountType'
+        requestedTransferTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinTransferType'
+        owner:
+          $ref: '#/components/schemas/StablecoinExternalAccountOwner'
+    StablecoinExternalAccountLinkSession:
+      type: object
+      required:
+        - id
+        - provider
+        - stablecoinProviderAccountId
+        - accountType
+        - linkToken
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin external-account link-session identifier.
+          example: StablecoinExternalAccountLinkSession:019542f5-b3e7-1d02-0000-000000000003
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link selected for this session.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        accountType:
+          $ref: '#/components/schemas/StablecoinExternalAccountType'
+        linkToken:
+          type: string
+          description: Provider/Plaid frontend token for the link flow.
+          example: link-sandbox-123
+        expiresAt:
+          type: string
+          format: date-time
+          description: Link token expiration timestamp.
+          example: '2026-05-20T18:20:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T17:20:00Z'
+    StablecoinExternalAccountStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+        - NEEDS_UPDATE
+        - FAILED
+      description: Status of a provider-linked stablecoin external account. NEEDS_UPDATE indicates the provider link requires attention (for example Plaid reauthentication).
+    StablecoinExternalAccountCreationMethod:
+      type: string
+      enum:
+        - GRID_EXTERNAL_ACCOUNT
+        - PLAID
+        - DIRECT_BANK_ENTRY
+      description: How the stablecoin external account was linked.
+    StablecoinExternalAccount:
+      type: object
+      required:
+        - id
+        - provider
+        - stablecoinProviderAccountId
+        - providerEnvironment
+        - accountType
+        - creationMethod
+        - status
+        - supportedTransferTypes
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin external account identifier.
+          example: StablecoinExternalAccount:019542f5-b3e7-1d02-0000-000000000005
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link for this external account.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        accountType:
+          $ref: '#/components/schemas/StablecoinExternalAccountType'
+        creationMethod:
+          $ref: '#/components/schemas/StablecoinExternalAccountCreationMethod'
+        status:
+          $ref: '#/components/schemas/StablecoinExternalAccountStatus'
+        gridExternalAccountId:
+          type: string
+          description: Linked normal Grid external account id, when one exists.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000004
+        supportedTransferTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinTransferType'
+        providerStatus:
+          type: string
+          description: Safe provider status summary.
+          example: active
+        lastVerifiedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last successful provider external-account verification.
+          example: '2026-05-20T17:25:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T17:25:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T17:25:00Z'
+    StablecoinExternalAccountListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinExternalAccount'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoin external accounts matching the criteria.
+    StablecoinExternalAccountGridLinkRequest:
+      type: object
+      required:
+        - creationMethod
+        - provider
+        - gridExternalAccountId
+        - requestedTransferTypes
+      properties:
+        creationMethod:
+          type: string
+          enum:
+            - GRID_EXTERNAL_ACCOUNT
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link that should own the linked external account. Optional when the platform has exactly one active provider account link; required (via a `STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED` error) when the selection is ambiguous.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        gridExternalAccountId:
+          type: string
+          description: Existing Grid external account to link to the provider.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000004
+        requestedTransferTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinTransferType'
+    StablecoinExternalAccountProviderLinkRequest:
+      type: object
+      required:
+        - creationMethod
+        - provider
+        - linkSessionId
+        - linkResultToken
+        - requestedTransferTypes
+      properties:
+        creationMethod:
+          type: string
+          enum:
+            - PLAID
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        linkSessionId:
+          type: string
+          description: Stablecoin external-account link-session id.
+          example: StablecoinExternalAccountLinkSession:019542f5-b3e7-1d02-0000-000000000003
+        linkResultToken:
+          type: string
+          writeOnly: true
+          description: Provider/Plaid public token returned by the frontend link flow.
+          example: public-sandbox-123
+        requestedTransferTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinTransferType'
+    StablecoinDirectEntryUsBankDetails:
+      type: object
+      required:
+        - routingNumber
+        - accountNumber
+        - accountType
+        - accountHolderName
+      properties:
+        routingNumber:
+          type: string
+          writeOnly: true
+          description: US bank routing number.
+          example: '021000021'
+        accountNumber:
+          type: string
+          writeOnly: true
+          description: US bank account number.
+          example: '123456789'
+        accountType:
+          type: string
+          enum:
+            - CHECKING
+            - SAVINGS
+          description: US bank account type.
+        accountHolderName:
+          type: string
+          description: Bank account holder legal name.
+          example: Acme Inc
+        institutionName:
+          type: string
+          description: Bank/institution display name.
+          example: Example Bank
+        beneficiaryAddress:
+          allOf:
+            - $ref: '#/components/schemas/Address'
+          description: Beneficiary postal address. Required by some payout rails (especially WIRE) and when `createGridExternalAccount` is true.
+        bankAddress:
+          allOf:
+            - $ref: '#/components/schemas/Address'
+          description: Bank branch postal address. Required by some payout rails (especially WIRE).
+    StablecoinExternalAccountDirectEntryRequest:
+      type: object
+      required:
+        - creationMethod
+        - provider
+        - accountType
+        - requestedTransferTypes
+        - bankDetails
+      properties:
+        creationMethod:
+          type: string
+          enum:
+            - DIRECT_BANK_ENTRY
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link that should own the linked external account. Optional when the platform has exactly one active provider account link; required (via a `STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED` error) when the selection is ambiguous.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        accountType:
+          $ref: '#/components/schemas/StablecoinExternalAccountType'
+        requestedTransferTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinTransferType'
+        bankDetails:
+          $ref: '#/components/schemas/StablecoinDirectEntryUsBankDetails'
+        createGridExternalAccount:
+          type: boolean
+          description: Whether Grid should also create a normal Grid external account when the request contains enough data.
+          example: true
+    StablecoinExternalAccountLinkRequest:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinExternalAccountGridLinkRequest'
+        - $ref: '#/components/schemas/StablecoinExternalAccountProviderLinkRequest'
+        - $ref: '#/components/schemas/StablecoinExternalAccountDirectEntryRequest'
+      discriminator:
+        propertyName: creationMethod
+        mapping:
+          GRID_EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountGridLinkRequest'
+          PLAID: '#/components/schemas/StablecoinExternalAccountProviderLinkRequest'
+          DIRECT_BANK_ENTRY: '#/components/schemas/StablecoinExternalAccountDirectEntryRequest'
+    StablecoinAmount:
+      type: string
+      pattern: ^[1-9][0-9]*$
+      description: Amount in the stablecoin's smallest unit, as a base-10 integer string (uint128 range). Strings avoid JavaScript precision loss. Must convert exactly to a provider-representable fiat amount (whole cents for USD).
+      example: '100000000'
+    StablecoinWireMintFundingSource:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - WIRE
+    StablecoinAchDebitMintFundingSource:
+      type: object
+      required:
+        - type
+        - stablecoinExternalAccountId
+      properties:
+        type:
+          type: string
+          enum:
+            - ACH_DEBIT
+            - SAME_DAY_ACH_DEBIT
+        stablecoinExternalAccountId:
+          type: string
+          description: Linked provider external account to debit.
+          example: StablecoinExternalAccount:019542f5-b3e7-1d02-0000-000000000005
+    StablecoinCryptoNetwork:
+      type: string
+      enum:
+        - ETHEREUM
+        - SOLANA
+        - BASE
+        - POLYGON
+        - SPARK
+        - TRON
+      description: Crypto network used by a provider token-balance funding source.
+    StablecoinProviderTokenBalanceMintFundingSource:
+      type: object
+      required:
+        - type
+        - sourceTokenIdentifier
+        - cryptoNetwork
+      properties:
+        type:
+          type: string
+          enum:
+            - PROVIDER_TOKEN_BALANCE
+        sourceTokenIdentifier:
+          type: string
+          description: Provider token/value identifier to fund the mint from.
+          example: USDC
+        cryptoNetwork:
+          $ref: '#/components/schemas/StablecoinCryptoNetwork'
+    StablecoinMintFundingSource:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinWireMintFundingSource'
+        - $ref: '#/components/schemas/StablecoinAchDebitMintFundingSource'
+        - $ref: '#/components/schemas/StablecoinProviderTokenBalanceMintFundingSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          WIRE: '#/components/schemas/StablecoinWireMintFundingSource'
+          ACH_DEBIT: '#/components/schemas/StablecoinAchDebitMintFundingSource'
+          SAME_DAY_ACH_DEBIT: '#/components/schemas/StablecoinAchDebitMintFundingSource'
+          PROVIDER_TOKEN_BALANCE: '#/components/schemas/StablecoinProviderTokenBalanceMintFundingSource'
+    StablecoinMintDestination:
+      type: object
+      required:
+        - type
+        - sparkAddress
+      properties:
+        type:
+          type: string
+          enum:
+            - SPARK_ADDRESS
+        sparkAddress:
+          type: string
+          description: Destination Spark address that should receive the minted stablecoin.
+          example: sp1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+    StablecoinMintQuoteRequest:
+      type: object
+      required:
+        - operationType
+        - amount
+        - fundingSource
+        - destination
+      properties:
+        operationType:
+          type: string
+          enum:
+            - MINT
+        amount:
+          $ref: '#/components/schemas/StablecoinAmount'
+        fundingSource:
+          $ref: '#/components/schemas/StablecoinMintFundingSource'
+        destination:
+          $ref: '#/components/schemas/StablecoinMintDestination'
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional platform-supplied description carried through to the executed operation.
+          example: Initial mint
+    StablecoinBurnSource:
+      type: object
+      required:
+        - type
+        - accountId
+      properties:
+        type:
+          type: string
+          enum:
+            - GRID_INTERNAL_ACCOUNT
+        accountId:
+          type: string
+          description: Grid-controlled internal account holding the stablecoin balance to redeem.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
+    StablecoinPayoutRail:
+      type: string
+      enum:
+        - WIRE
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Fiat payout rail for a burn/redemption. Debit rails are funding-only and are not valid payout rails.
+    StablecoinBurnDestination:
+      type: object
+      required:
+        - type
+        - stablecoinExternalAccountId
+        - rail
+      properties:
+        type:
+          type: string
+          enum:
+            - STABLECOIN_EXTERNAL_ACCOUNT
+        stablecoinExternalAccountId:
+          type: string
+          description: Linked stablecoin external account to receive the fiat redemption.
+          example: StablecoinExternalAccount:019542f5-b3e7-1d02-0000-000000000005
+        rail:
+          $ref: '#/components/schemas/StablecoinPayoutRail'
+    StablecoinBurnQuoteRequest:
+      type: object
+      required:
+        - operationType
+        - amount
+        - source
+        - destination
+      properties:
+        operationType:
+          type: string
+          enum:
+            - BURN
+        amount:
+          $ref: '#/components/schemas/StablecoinAmount'
+        source:
+          $ref: '#/components/schemas/StablecoinBurnSource'
+        destination:
+          $ref: '#/components/schemas/StablecoinBurnDestination'
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional platform-supplied description carried through to the executed operation.
+          example: Redeem ACME
+    StablecoinQuoteRequest:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinMintQuoteRequest'
+        - $ref: '#/components/schemas/StablecoinBurnQuoteRequest'
+      discriminator:
+        propertyName: operationType
+        mapping:
+          MINT: '#/components/schemas/StablecoinMintQuoteRequest'
+          BURN: '#/components/schemas/StablecoinBurnQuoteRequest'
+    StablecoinOperationType:
+      type: string
+      enum:
+        - MINT
+        - BURN
+      description: Stablecoin issuer operation type.
+    StablecoinQuoteStatus:
+      type: string
+      enum:
+        - OPEN
+        - EXECUTED
+        - EXPIRED
+        - FAILED
+      description: Current status of the stablecoin quote.
+    StablecoinFee:
+      type: object
+      required:
+        - type
+        - amount
+        - currency
+      properties:
+        type:
+          type: string
+          description: Fee type identifier (for example PROVIDER, GRID, RAIL, NETWORK).
+          example: PROVIDER
+        amount:
+          type: string
+          pattern: ^[0-9]+$
+          description: Fee amount as a base-10 integer string in the smallest unit of `currency`.
+          example: '0'
+        currency:
+          type: string
+          description: Currency of the fee amount.
+          example: USD
+    StablecoinFundingInstructions:
+      type: object
+      description: Sanitized funding instructions for the selected funding rail. Shape varies by rail; contains only intentionally public deposit coordinates.
+      required:
+        - rail
+      properties:
+        rail:
+          $ref: '#/components/schemas/StablecoinTransferType'
+      additionalProperties: true
+    StablecoinEstimatedDelivery:
+      type: object
+      description: Sanitized fiat delivery estimate for a burn/redemption.
+      required:
+        - rail
+        - amount
+        - currency
+      properties:
+        rail:
+          $ref: '#/components/schemas/StablecoinPayoutRail'
+        amount:
+          type: string
+          pattern: ^[0-9]+$
+          description: Estimated delivery amount as a base-10 integer string in the smallest unit of `currency`.
+          example: '100000000'
+        currency:
+          type: string
+          description: Currency of the estimated delivery.
+          example: USD
+    StablecoinQuote:
+      type: object
+      required:
+        - id
+        - stablecoinId
+        - operationType
+        - status
+        - amount
+        - expiresAt
+        - fees
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin quote identifier.
+          example: StablecoinQuote:019542f5-b3e7-1d02-0000-000000000008
+        stablecoinId:
+          type: string
+          description: Stablecoin this quote belongs to.
+          example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+        operationType:
+          $ref: '#/components/schemas/StablecoinOperationType'
+        status:
+          $ref: '#/components/schemas/StablecoinQuoteStatus'
+        amount:
+          $ref: '#/components/schemas/StablecoinAmount'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Quote expiration time. Execution rejects expired quotes.
+          example: '2026-05-20T17:25:00Z'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinFee'
+          description: Previewed provider, Grid, rail, or network fees.
+        fundingSource:
+          $ref: '#/components/schemas/StablecoinMintFundingSource'
+        destination:
+          description: Quoted destination. For mints this is a Spark address destination; for burns this is a linked stablecoin external account destination.
+          oneOf:
+            - $ref: '#/components/schemas/StablecoinMintDestination'
+            - $ref: '#/components/schemas/StablecoinBurnDestination'
+          discriminator:
+            propertyName: type
+            mapping:
+              SPARK_ADDRESS: '#/components/schemas/StablecoinMintDestination'
+              STABLECOIN_EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinBurnDestination'
+        source:
+          $ref: '#/components/schemas/StablecoinBurnSource'
+        fundingInstructions:
+          $ref: '#/components/schemas/StablecoinFundingInstructions'
+        estimatedDelivery:
+          $ref: '#/components/schemas/StablecoinEstimatedDelivery'
+        operationId:
+          type: string
+          description: Operation created by executing this quote, when the quote has been executed.
+          example: StablecoinOperation:019542f5-b3e7-1d02-0000-000000000007
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional platform-supplied description carried through to the executed operation.
+          example: Initial mint
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T17:20:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T17:25:00Z'
+    StablecoinOperationStatus:
+      type: string
+      enum:
+        - CREATED
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - EXPIRED
+      description: Current status of the stablecoin operation. EXPIRED applies to wire-funded mints that were never funded within the expiry window. Provider-canceled states map to FAILED with a stable failure reason.
+    StablecoinOperation:
+      type: object
+      required:
+        - id
+        - stablecoinId
+        - operationType
+        - status
+        - amount
+        - provider
+        - providerEnvironment
+        - stablecoinProviderAccountId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin operation identifier.
+          example: StablecoinOperation:019542f5-b3e7-1d02-0000-000000000007
+        stablecoinId:
+          type: string
+          description: Stablecoin this operation belongs to.
+          example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+        operationType:
+          $ref: '#/components/schemas/StablecoinOperationType'
+        status:
+          $ref: '#/components/schemas/StablecoinOperationStatus'
+        amount:
+          $ref: '#/components/schemas/StablecoinAmount'
+        quoteId:
+          type: string
+          description: Quote that produced this operation.
+          example: StablecoinQuote:019542f5-b3e7-1d02-0000-000000000008
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link used by this operation.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        fundingSource:
+          $ref: '#/components/schemas/StablecoinMintFundingSource'
+        fundingInstructions:
+          $ref: '#/components/schemas/StablecoinFundingInstructions'
+        source:
+          $ref: '#/components/schemas/StablecoinBurnSource'
+        destination:
+          description: Stablecoin operation destination. For mints this is a Spark address; for burns this is a linked stablecoin external account.
+          oneOf:
+            - $ref: '#/components/schemas/StablecoinMintDestination'
+            - $ref: '#/components/schemas/StablecoinBurnDestination'
+          discriminator:
+            propertyName: type
+            mapping:
+              SPARK_ADDRESS: '#/components/schemas/StablecoinMintDestination'
+              STABLECOIN_EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinBurnDestination'
+        estimatedDelivery:
+          $ref: '#/components/schemas/StablecoinEstimatedDelivery'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiry for operations that wait on external funding (wire-funded mints). Past-due unfunded operations transition to EXPIRED.
+          example: '2026-06-19T17:20:00Z'
+        providerStatus:
+          type: string
+          description: Safe provider status summary.
+          example: processing
+        failureReason:
+          type: string
+          description: Safe failure reason, when the operation failed.
+          example: provider_rejected
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional platform-supplied description copied from the executed quote.
+          example: Initial mint
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T17:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T17:35:00Z'
+    StablecoinOperationListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinOperation'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoin operations matching the criteria.
     WebhookType:
       type: string
       enum:

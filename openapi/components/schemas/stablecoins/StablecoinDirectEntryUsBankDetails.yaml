@@ -1,0 +1,40 @@
+type: object
+required:
+- routingNumber
+- accountNumber
+- accountType
+- accountHolderName
+properties:
+  routingNumber:
+    type: string
+    writeOnly: true
+    description: US bank routing number.
+    example: '021000021'
+  accountNumber:
+    type: string
+    writeOnly: true
+    description: US bank account number.
+    example: '123456789'
+  accountType:
+    type: string
+    enum:
+    - CHECKING
+    - SAVINGS
+    description: US bank account type.
+  accountHolderName:
+    type: string
+    description: Bank account holder legal name.
+    example: Acme Inc
+  institutionName:
+    type: string
+    description: Bank/institution display name.
+    example: Example Bank
+  beneficiaryAddress:
+    allOf:
+    - $ref: ../common/Address.yaml
+    description: Beneficiary postal address. Required by some payout rails (especially WIRE) and when
+      `createGridExternalAccount` is true.
+  bankAddress:
+    allOf:
+    - $ref: ../common/Address.yaml
+    description: Bank branch postal address. Required by some payout rails (especially WIRE).

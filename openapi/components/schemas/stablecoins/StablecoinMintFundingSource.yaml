@@ -1,0 +1,11 @@
+oneOf:
+- $ref: StablecoinWireMintFundingSource.yaml
+- $ref: StablecoinAchDebitMintFundingSource.yaml
+- $ref: StablecoinProviderTokenBalanceMintFundingSource.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    WIRE: StablecoinWireMintFundingSource.yaml
+    ACH_DEBIT: StablecoinAchDebitMintFundingSource.yaml
+    SAME_DAY_ACH_DEBIT: StablecoinAchDebitMintFundingSource.yaml
+    PROVIDER_TOKEN_BALANCE: StablecoinProviderTokenBalanceMintFundingSource.yaml

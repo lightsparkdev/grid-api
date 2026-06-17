@@ -1,0 +1,22 @@
+type: object
+required:
+- operationType
+- amount
+- source
+- destination
+properties:
+  operationType:
+    type: string
+    enum:
+    - BURN
+  amount:
+    $ref: StablecoinAmount.yaml
+  source:
+    $ref: StablecoinBurnSource.yaml
+  destination:
+    $ref: StablecoinBurnDestination.yaml
+  description:
+    type: string
+    maxLength: 1024
+    description: Optional platform-supplied description carried through to the executed operation.
+    example: Redeem ACME

@@ -49,6 +49,22 @@ properties:
       | INCOMPLETE | Document is missing pages or sides |
       | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+      | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
+      | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
+      | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | STABLECOIN_VERIFICATION_FAILED | Provider verification of the stablecoin or credentials failed |
+      | STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED | Linking the external account with the provider failed |
+      | STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED | The request must specify a supported external-account link method |
+      | STABLECOIN_NOT_PROVISIONED | The stablecoin is not provisioned with the provider |
+      | STABLECOIN_GRID_OPERATIONS_NOT_ENABLED | Grid operations are not enabled for this stablecoin |
+      | STABLECOIN_QUOTE_EXPIRED | The stablecoin quote has expired |
+      | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented in the target currency or token precision |
+      | STABLECOIN_OPERATION_NOT_SUPPORTED | The requested stablecoin operation is not supported |
+      | STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED | The stablecoin external account is not linked or not active |
+      | STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED | The stablecoin external account does not support the requested transfer type |
+      | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account is not supported |
+      | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider token-balance funding source is not linked |
+      | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected or failed the request |
     enum:
       - INVALID_INPUT
       - MISSING_MANDATORY_USER_INFO
@@ -85,6 +101,22 @@ properties:
       - INCOMPLETE
       - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
       - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+      - STABLECOIN_PROVIDER_ACCOUNT_INVALID
+      - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
+      - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - STABLECOIN_VERIFICATION_FAILED
+      - STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED
+      - STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED
+      - STABLECOIN_NOT_PROVISIONED
+      - STABLECOIN_GRID_OPERATIONS_NOT_ENABLED
+      - STABLECOIN_QUOTE_EXPIRED
+      - STABLECOIN_AMOUNT_NOT_REPRESENTABLE
+      - STABLECOIN_OPERATION_NOT_SUPPORTED
+      - STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED
+      - STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED
+      - STABLECOIN_BURN_SOURCE_NOT_SUPPORTED
+      - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
+      - STABLECOIN_PROVIDER_ERROR
   message:
     type: string
     description: Error message

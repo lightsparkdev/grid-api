@@ -1,0 +1,73 @@
+type: object
+required:
+- id
+- stablecoinId
+- operationType
+- status
+- amount
+- expiresAt
+- fees
+- createdAt
+properties:
+  id:
+    type: string
+    description: System-generated stablecoin quote identifier.
+    example: StablecoinQuote:019542f5-b3e7-1d02-0000-000000000008
+  stablecoinId:
+    type: string
+    description: Stablecoin this quote belongs to.
+    example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+  operationType:
+    $ref: StablecoinOperationType.yaml
+  status:
+    $ref: StablecoinQuoteStatus.yaml
+  amount:
+    $ref: StablecoinAmount.yaml
+  expiresAt:
+    type: string
+    format: date-time
+    description: Quote expiration time. Execution rejects expired quotes.
+    example: '2026-05-20T17:25:00Z'
+  fees:
+    type: array
+    items:
+      $ref: StablecoinFee.yaml
+    description: Previewed provider, Grid, rail, or network fees.
+  fundingSource:
+    $ref: StablecoinMintFundingSource.yaml
+  destination:
+    description: Quoted destination. For mints this is a Spark address destination; for burns this is
+      a linked stablecoin external account destination.
+    oneOf:
+    - $ref: StablecoinMintDestination.yaml
+    - $ref: StablecoinBurnDestination.yaml
+    discriminator:
+      propertyName: type
+      mapping:
+        SPARK_ADDRESS: StablecoinMintDestination.yaml
+        STABLECOIN_EXTERNAL_ACCOUNT: StablecoinBurnDestination.yaml
+  source:
+    $ref: StablecoinBurnSource.yaml
+  fundingInstructions:
+    $ref: StablecoinFundingInstructions.yaml
+  estimatedDelivery:
+    $ref: StablecoinEstimatedDelivery.yaml
+  operationId:
+    type: string
+    description: Operation created by executing this quote, when the quote has been executed.
+    example: StablecoinOperation:019542f5-b3e7-1d02-0000-000000000007
+  description:
+    type: string
+    maxLength: 1024
+    description: Optional platform-supplied description carried through to the executed operation.
+    example: Initial mint
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-05-20T17:20:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2026-05-20T17:25:00Z'
