@@ -1,0 +1,7 @@
+type: object
+description: The enrolled passkey factor returned after a successful confirmation.
+required:
+  - factor
+properties:
+  factor:
+    $ref: ./ScaFactorView.yaml

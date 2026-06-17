@@ -1,0 +1,69 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The unique identifier of the customer completing an SCA login.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Complete an SCA login
+  description: |
+    Finalize an SCA login by submitting the proof for the started factor
+    (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for
+    `PASSKEY`), echoing the `challengeId` for `SMS_OTP`. Returns the
+    provider-reported session status.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+
+    In sandbox, the SMS/TOTP code is always `123456`.
+  operationId: completeScaLogin
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/ScaLoginCompleteRequest.yaml
+  responses:
+    '200':
+      description: SCA login completed; the session status is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/ScaLoginComplete.yaml
+    '400':
+      description: Invalid or expired proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The customer's payment provider does not require SCA.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
