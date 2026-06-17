@@ -48,28 +48,9 @@ import {
   type ReceivedPayment,
   type TransferActivity,
 } from '@/apps/shared/wallet';
-import { WalletListSection } from './WalletListSection';
-import { Flag } from './Flag';
+import { WalletListSection } from '@/apps/aurora/wallet/WalletListSection';
+import { Flag } from '@/apps/aurora/wallet/Flag';
 import styles from './AddMoneySheet.module.scss';
-
-// Back-compat: these flow types/helpers used to be defined here; other modules
-// still import them from this path. The brain now owns them (apps/shared/wallet).
-export {
-  formatUsdCents,
-  truncateAddress,
-  typedToCents,
-  SEND_DEMO_ADDRESS,
-};
-export type {
-  Step,
-  SavedBank,
-  CryptoRecipient,
-  SavedRecipient,
-  SendNetwork,
-  MoneySheetMode,
-  ReceivedPayment,
-  TransferActivity,
-};
 
 /** Name-led recipient avatar — first+last initials with the country flag badged
  *  in the bottom-right corner. Used by the send flow's recipient rows. */
@@ -1077,30 +1058,8 @@ export function AddMoneySheet({
                     and frosts through (FrostPanel: backdrop-filter + specular
                     rim). Refraction over scrolling DOM isn't possible, so frost. */}
                 <div className={styles.searchPill}>
-                  <FrostPanel
-                    radius={22}
-                    cornerSmoothing={0}
-                    tint="var(--search-pill-tint)"
-                    tintBlur={4}
-                    // The geometry-aware specular IS the rim now (the buttons'
-                    // SYMBOL_GLASS highlight, minus refraction), so drop the flat
-                    // edge stroke that doubled it.
-                    edge="none"
-                    specular={{
-                      rotation: 45,
-                      glowStrength: 0.06,
-                      glowSpread: 0.5,
-                      glowExponent: 1.5,
-                      edgeStrength: 1,
-                      // Dark: 1px reads like the button's delicate glint. Light: a
-                      // white rim barely shows on the near-white pill, so thicken it.
-                      edgeWidth: theme === 'dark' ? 1 : 2,
-                      edgeExponent: 1.5,
-                      // Dark matches the button (1); light pushes the gain harder so
-                      // the edge reads against the bright fill.
-                      strength: theme === 'dark' ? 1 : 1.6,
-                    }}
-                  >
+                  {/* Wiggle: flat solid pill (no frost) — the skin owns this face. */}
+                  <div className={styles.searchPillFlat}>
                     <div className={styles.searchRow}>
                       <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />
                       <input
@@ -1113,7 +1072,7 @@ export function AddMoneySheet({
                         aria-label="Search countries"
                       />
                     </div>
-                  </FrostPanel>
+                  </div>
                 </div>
               </motion.div>
             )}

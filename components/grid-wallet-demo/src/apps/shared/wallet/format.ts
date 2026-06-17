@@ -21,3 +21,6 @@ export function formatUsdCents(cents: number): string {
 export function truncateAddress(addr: string): string {
   return addr.length > 13 ? `${addr.slice(0, 6)}…${addr.slice(-6)}` : addr;
 }
+
+/** Figma 109:29332 — the demo Solana address Paste drops into the send flow. */
+export const SEND_DEMO_ADDRESS = 'DQLoc5rpDPz9vtUv9TxApy3z8HWPB3XCTwdSmDCRn9JT';

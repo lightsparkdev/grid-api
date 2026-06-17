@@ -20,10 +20,12 @@ brain.
 ```
 src/apps/
   shared/
-    wallet/         # THE BRAIN (no JSX): useWalletHome(), activity builders,
+    wallet/         # THE BRAIN (no JSX): useWalletHome() (home), useMoneySheet()
+                    #   (add/withdraw/send/receive flow), activity builders,
+                    #   moneySheet.ts (flow data/config: MODES, networks, helpers),
                     #   format.ts (formatUsdCents/truncateAddress/typedToCents),
-                    #   types.ts (MoneySheetMode, TransferActivity, ReceivedPayment,
-                    #   WalletListItemData, …) — the canonical shared contract.
+                    #   types.ts (MoneySheetMode, TransferActivity, …) — the
+                    #   canonical shared contract.
     BottomSheet/    # MECHANIC: sheet rise/scrim/portal (skin-blind). Reuse as-is.
     AppShell, glass, icons, FaceIdAuth, GlassToast, AuroraBackground, useStaggerReveal, …  # primitives
   aurora/           # reference skin (skin zero). Its wallet/ holds the FACES:
@@ -64,19 +66,28 @@ implements `SkinAuthScreenProps` (both in `apps/types.ts`).
 
 ## Sheets & flows: the face is yours, the brain isn't
 
-The flow UI (AddMoneySheet, SendReceiveSheet, the card flow, list rows) is a
-**face**, and faces are per-skin. The `BottomSheet` rise/scrim mechanic and the
-brain/data behind a flow are shared. So for a flow you have two choices:
+A flow's **brain** (step machine, validation, FX, API callbacks) is a shared hook;
+its **face** (the sheet UI) is per-skin. Add money is fully split: `useMoneySheet()`
+(in `apps/shared/wallet`) is the brain, and both Aurora's and Wiggle's
+`wallet/AddMoneySheet.tsx` are thin views over it. `BottomSheet` (rise/scrim) is a
+shared mechanic.
 
+To give your skin its own sheet:
+
+- **Fork the face** — copy `apps/aurora/wallet/AddMoneySheet.tsx` (+ its
+  `.module.scss`) into `apps/<skin>/wallet/`, point `WalletScreen` at it, and
+  restyle freely (Wiggle flattened the frosted search pill into a solid one, for
+  example). Because the face is a thin view over `useMoneySheet`, the copy carries
+  **no logic** — the brain stays single-source, so flow changes happen once.
 - **Reuse Aurora's face** — `import { AddMoneySheet } from '@/apps/aurora/wallet/AddMoneySheet'`
-  (and friends). Fastest; the sheet looks like Aurora's. Wiggle does this today.
-- **Own the face** — copy the sheet file from `apps/aurora/wallet/` into
-  `apps/<skin>/wallet/` and restyle it freely (flat instead of frosted, different
-  layout, your own buttons). It keeps calling the same shared handlers/data.
+  when Aurora's look is fine.
 
-Do **not** add props/tokens to Aurora's sheet to make it configurable for another
-skin — copy it and edit the copy. Duplicated view code is the accepted trade for
-unfettered per-skin freedom.
+Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
+
+> Other flows (SendReceiveSheet, the card flow) still bundle brain + face. To fork
+> one before its brain is extracted, copy the whole file (the logic comes with it),
+> or extract a `use<Flow>` hook first, mirroring `useMoneySheet` (move state +
+> handlers into `apps/shared/wallet`, leave the JSX in the skin).
 
 ## Add a new skin (step by step)
 

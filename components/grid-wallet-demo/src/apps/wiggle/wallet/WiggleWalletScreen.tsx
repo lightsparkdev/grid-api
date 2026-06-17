@@ -17,7 +17,7 @@ import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { GlassToast } from '@/apps/shared/GlassToast';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
-import { AddMoneySheet } from '@/apps/aurora/wallet/AddMoneySheet';
+import { AddMoneySheet } from './AddMoneySheet';
 import { CardHomeContent } from '@/apps/aurora/wallet/CardHomeContent';
 import { CreatingCaption, IntroContent, ReadyContent } from '@/apps/aurora/wallet/CardIssuanceContent';
 import { DebitCard } from '@/apps/aurora/wallet/DebitCard';
