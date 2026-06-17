@@ -1,0 +1,39 @@
+type: object
+required:
+- id
+- provider
+- providerAccountId
+- providerEnvironment
+- status
+- createdAt
+- updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated stablecoin provider account link identifier.
+    example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+  provider:
+    $ref: StablecoinProvider.yaml
+  providerAccountId:
+    type: string
+    description: Provider account id.
+    example: 2VcUIonJeVQzFoBuC7LdFT0dRe4
+  providerEnvironment:
+    $ref: StablecoinProviderEnvironment.yaml
+  status:
+    $ref: StablecoinProviderAccountStatus.yaml
+  lastVerifiedAt:
+    type: string
+    format: date-time
+    description: Timestamp of the last successful provider credential verification.
+    example: '2026-05-20T16:35:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-05-20T16:35:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2026-05-20T16:35:00Z'

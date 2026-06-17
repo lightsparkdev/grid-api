@@ -55,6 +55,8 @@ tags:
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
+  - name: Stablecoins
+    description: Stablecoin issuance endpoints. Link provider accounts, register provider-created stablecoins, create mint/burn quotes, execute them, and track the resulting operations.
 paths:
   /config:
     get:
@@ -6871,6 +6873,161 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /stablecoin-provider-accounts:
+    post:
+      summary: Link a stablecoin provider account
+      description: |
+        Link provider API credentials for the authenticated platform. Provider credentials are account-scoped and can be reused for multiple stablecoins. Currently, the only supported provider is `BRALE`; the provider environment is derived from the authenticated Grid platform mode.
+      operationId: linkStablecoinProviderAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting payloads are rejected.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinProviderAccountLinkRequest'
+      responses:
+        '201':
+          description: Stablecoin provider account linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinProviderAccount'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List stablecoin provider account links
+      description: Retrieve stablecoin provider account links for the authenticated platform.
+      operationId: listStablecoinProviderAccounts
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProvider'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProviderAccountStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinProviderAccountListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
+    parameters:
+      - name: stablecoinProviderAccountId
+        in: path
+        description: System-generated stablecoin provider account link identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin provider account link
+      description: Retrieve a stablecoin provider account link by id for the authenticated platform.
+      operationId: getStablecoinProviderAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinProviderAccount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin provider account link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   agent-action:
     post:
@@ -8376,6 +8533,9 @@ components:
             | INCOMPLETE | Document is missing pages or sides |
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
             | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+            | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
+            | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
+            | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -8412,6 +8572,9 @@ components:
             - INCOMPLETE
             - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
             - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+            - STABLECOIN_PROVIDER_ACCOUNT_INVALID
+            - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
+            - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
         message:
           type: string
           description: Error message
@@ -9355,6 +9518,7 @@ components:
             | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
             | REFERENCE_NOT_FOUND | Reference not found |
             | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
+            | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -9365,6 +9529,7 @@ components:
             - BULK_UPLOAD_JOB_NOT_FOUND
             - REFERENCE_NOT_FOUND
             - UMA_NOT_FOUND
+            - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
         message:
           type: string
           description: Error message
@@ -18846,6 +19011,105 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    StablecoinProvider:
+      type: string
+      enum:
+        - BRALE
+      description: Stablecoin provider backing the linked account, stablecoin, or operation.
+    StablecoinProviderAccountStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INVALID
+        - REVOKED
+      description: Status of the linked stablecoin provider account credentials.
+    StablecoinProviderEnvironment:
+      type: string
+      enum:
+        - SANDBOX
+        - PRODUCTION
+      description: Provider environment derived from the authenticated Grid platform mode.
+    StablecoinProviderAccount:
+      type: object
+      required:
+        - id
+        - provider
+        - providerAccountId
+        - providerEnvironment
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin provider account link identifier.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        providerAccountId:
+          type: string
+          description: Provider account id.
+          example: 2VcUIonJeVQzFoBuC7LdFT0dRe4
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        status:
+          $ref: '#/components/schemas/StablecoinProviderAccountStatus'
+        lastVerifiedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last successful provider credential verification.
+          example: '2026-05-20T16:35:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T16:35:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T16:35:00Z'
+    StablecoinProviderAccountListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinProviderAccount'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoin provider account links matching the criteria.
+    StablecoinProviderAccountLinkRequest:
+      type: object
+      required:
+        - provider
+        - apiClientId
+        - apiClientSecret
+      properties:
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        apiClientId:
+          type: string
+          description: Provider API client id used to verify and link the provider account.
+          example: provider_client_123
+        apiClientSecret:
+          type: string
+          writeOnly: true
+          description: Provider API client secret. Grid verifies and stores this secret encrypted; it is never returned.
+          example: provider_secret_456
+        providerAccountId:
+          type: string
+          description: Provider account id. Optional when the submitted credentials expose exactly one provider account.
+          example: 2VcUIonJeVQzFoBuC7LdFT0dRe4
     WebhookType:
       type: string
       enum:
