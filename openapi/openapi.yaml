@@ -195,6 +195,8 @@ paths:
     $ref: paths/quotes/quotes_{quoteId}_execute.yaml
   /quotes/{quoteId}/authorize:
     $ref: paths/quotes/quotes_{quoteId}_authorize.yaml
+  /quotes/{quoteId}/authorize/resend:
+    $ref: paths/quotes/quotes_{quoteId}_authorize_resend.yaml
   /transactions:
     $ref: paths/transactions/transactions.yaml
   /transactions/{transactionId}:
@@ -207,6 +209,8 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_reject.yaml
   /transactions/{transactionId}/authorize:
     $ref: paths/transactions/transactions_{transactionId}_authorize.yaml
+  /transactions/{transactionId}/authorize/resend:
+    $ref: paths/transactions/transactions_{transactionId}_authorize_resend.yaml
   /crypto/estimate-withdrawal-fee:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:
