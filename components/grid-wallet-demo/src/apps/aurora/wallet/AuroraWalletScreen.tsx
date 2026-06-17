@@ -27,7 +27,6 @@ import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/d
 import {
   AddMoneySheet,
   formatUsdCents,
-  SolanaTokenIcon,
   truncateAddress,
   type MoneySheetMode,
   type ReceivedPayment,
@@ -187,7 +186,8 @@ function makeTransferRow(
   if (dest?.kind === 'crypto') {
     return {
       id: `${mode}-${ts}`,
-      Icon: SolanaTokenIcon,
+      image: dest.logo,
+      imageSquare: true,
       tileCircle: true,
       title: truncateAddress(dest.address),
       detail:

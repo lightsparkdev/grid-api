@@ -16,11 +16,11 @@ import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import NumericText from '@/components/NumericText';
 import { FrostPanel, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { GlassSymbolButton, GlassTextButton, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassSymbolButton, GlassTextButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
-import { randomNetworkAddress, randomSolanaAddress } from '@/lib/cryptoAddresses';
+import { randomNetworkAddress } from '@/lib/cryptoAddresses';
 import { BANK_COUNTRIES, currencyFor, recipientNamesFor, type BankCountry } from '@/data/bankCountries';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
@@ -64,6 +64,12 @@ export interface CryptoRecipient {
   id: string;
   address: string;
   network: string;
+  /** Brand logo for the recipient avatar / address tile. */
+  logo: string;
+  /** Settlement currency (USDC/USDB/USDT/BTC) — drives the amount label + quote. */
+  currency: string;
+  /** ExternalAccount accountType for the linked-account call. */
+  accountType: string;
 }
 
 /** A send recipient: someone else's bank account OR a crypto address.
@@ -338,21 +344,6 @@ export function truncateAddress(addr: string): string {
   return addr.length > 13 ? `${addr.slice(0, 6)}…${addr.slice(-6)}` : addr;
 }
 
-/** Solana token chip (Figma 109:29428) for WalletListItem's Icon slot — rendered
- *  as the rounded-square asset instead of the circular `image` crop. */
-export function SolanaTokenIcon({ className }: { className?: string }) {
-  return (
-    <img
-      className={className}
-      src="/assets/send/icon-token-sol.svg"
-      alt=""
-      width={20}
-      height={20}
-      draggable={false}
-    />
-  );
-}
-
 interface SourceRow {
   id: string;
   /** SVG asset graphic — most rows. */
@@ -534,6 +525,41 @@ const DEPOSIT_CHAINS: DepositChain[] = [
   { id: 'btc', name: 'Bitcoin', address: 'bc1qsu2qrhp5vq5csy97qv3w8eku8wrh2l7dtenv7p', logo: '/assets/networks/icon-network-bitcoin.svg', time: '10 min' },
 ];
 
+/** Static demo BTC price — an L1 Bitcoin send shows the amount in BTC and this
+ *  rate on confirm (the real quote settles in BTC). */
+const BTC_USD = 65000;
+
+/** On-chain Bitcoin network fee estimate for the L1 send — a ~150 vByte
+ *  native-segwit (P2WPKH) transaction at a moderately busy ~40 sat/vByte
+ *  (~6,000 sats ≈ $3.90 at the demo price). Flat: network fees track the
+ *  transaction's size, not the amount sent, so this doesn't scale with input. */
+const BTC_TX_VBYTES = 150;
+const BTC_FEE_SAT_PER_VBYTE = 40;
+const BTC_NETWORK_FEE_USD = ((BTC_TX_VBYTES * BTC_FEE_SAT_PER_VBYTE) / 1e8) * BTC_USD;
+
+/** A pickable crypto destination (Send / Withdraw-to-crypto). Reuses the Receive
+ *  chains' addresses + brand logos, plus the ExternalAccount `accountType` and
+ *  settlement `currency` each maps to so the linked-account + quote calls are
+ *  accurate per network. `BITCOIN_WALLET` is a demo stand-in (the API ships
+ *  LIGHTNING for BTC today) so the picker can offer an on-chain L1 send. */
+export interface SendNetwork extends DepositChain {
+  accountType: string;
+  currency: string;
+}
+const SEND_NETWORK_META: Record<string, { accountType: string; currency: string }> = {
+  spark: { accountType: 'SPARK_WALLET', currency: 'USDB' },
+  ethereum: { accountType: 'ETHEREUM_WALLET', currency: 'USDC' },
+  solana: { accountType: 'SOLANA_WALLET', currency: 'USDC' },
+  base: { accountType: 'BASE_WALLET', currency: 'USDC' },
+  tron: { accountType: 'TRON_WALLET', currency: 'USDT' },
+  btc: { accountType: 'BITCOIN_WALLET', currency: 'BTC' },
+};
+const SEND_NETWORKS: SendNetwork[] = DEPOSIT_CHAINS.map((c) => ({
+  ...c,
+  ...SEND_NETWORK_META[c.id],
+}));
+const DEFAULT_SEND_NETWORK = SEND_NETWORKS.find((n) => n.id === 'solana') ?? SEND_NETWORKS[0];
+
 /** The instant rail an inbound transfer arrives on, by corridor (PaymentRail
  *  enum) — shown in the received-payment webhook's REALTIME_FUNDING source. */
 const RECEIVE_RAIL: Record<string, string> = {
@@ -602,7 +628,7 @@ export function formatUsdCents(cents: number): string {
  *  and toast reflect the real bank/recipient instead of a placeholder. */
 export type TransferActivity =
   | { kind: 'bank'; countryCode: string; bankName: string; last4: string; recipientName: string }
-  | { kind: 'crypto'; address: string; network: string };
+  | { kind: 'crypto'; address: string; network: string; logo: string };
 
 interface AddMoneySheetProps {
   open: boolean;
@@ -663,6 +689,8 @@ export function AddMoneySheet({
   const [saving, setSaving] = useState(false); // 500ms validate+save beat on add
   const [pasted, setPasted] = useState(false); // send: address card filled
   const [pastedAddress, setPastedAddress] = useState(''); // the entered crypto address
+  const [pickerOpen, setPickerOpen] = useState(false); // crypto network picker sheet
+  const [pickedNetwork, setPickedNetwork] = useState<SendNetwork | null>(null);
   // Withdraw-to-crypto destination — a one-off wallet (not a saved list, unlike
   // send recipients). Set when the address is confirmed; feeds selectedCrypto.
   const [cryptoDest, setCryptoDest] = useState<CryptoRecipient | null>(null);
@@ -702,15 +730,22 @@ export function AddMoneySheet({
   // recipient's bank (USD → their local currency). Only a crypto send (no bank
   // selected) stays 1:1 USDC.
   const localCurrency = selectedBank ? currencyFor(selectedBank.country) : 'MXN';
-  // A crypto destination (a crypto send, or a withdraw to a wallet) stays 1:1
-  // USDC; a send with no bank yet is also USDC. Everything else follows the bank.
+  // A crypto destination settles in the network's currency (USDC/USDB/USDT, or
+  // BTC for an L1 Bitcoin send); a send with no recipient yet defaults to USDC.
+  // Everything else (a bank dest) follows the bank's local currency.
+  const cryptoCurrency = selectedCrypto?.currency ?? 'USDC';
+  const isBtcDest = cryptoCurrency === 'BTC';
   const stablecoinDest = !selectedBank && (selectedCrypto != null || mode === 'send');
   const fxRate = selectedBank
     ? rateFor(currencyFor(selectedBank.country), selectedBank.country.usdToLocal)
     : stablecoinDest
-      ? 1
+      ? isBtcDest
+        ? 1 / BTC_USD
+        : 1
       : USD_TO_MXN;
-  const fxLabel = stablecoinDest ? 'USDC' : localCurrency;
+  // BTC shows fractional precision; stablecoins (and fiat) use 2 decimals.
+  const fxFractionDigits = stablecoinDest && isBtcDest ? 6 : 2;
+  const fxLabel = stablecoinDest ? cryptoCurrency : localCurrency;
 
   // Country picker lists: Popular (by volume) on top, then All (alphabetical);
   // a non-empty query collapses to one name/currency/code match list.
@@ -746,6 +781,8 @@ export function AddMoneySheet({
       setSaving(false);
       setPasted(false);
       setPastedAddress('');
+      setPickerOpen(false);
+      setPickedNetwork(null);
       setCryptoDest(null);
       setSelectedBankId(null);
       setPickedCountry(null);
@@ -768,6 +805,15 @@ export function AddMoneySheet({
   const go = (next: Step, isBack = false) => {
     setBack(isBack);
     setStep(next);
+  };
+
+  // Pick a crypto network in the secondary sheet — fills the address card with
+  // that network's wallet (icon + name + address), then closes the picker.
+  const pickNetwork = (net: SendNetwork) => {
+    setPickedNetwork(net);
+    setPastedAddress(net.address);
+    setPasted(true);
+    setPickerOpen(false);
   };
 
   // Copy a value to the clipboard (Receive deposit addresses + funding-detail
@@ -886,17 +932,27 @@ export function AddMoneySheet({
   // then go straight to amount (Back returns to the recipient list).
   const addCryptoRecipient = () => {
     if (saving) return;
+    const net = pickedNetwork ?? DEFAULT_SEND_NETWORK;
     const recipient: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
-      address: pastedAddress || randomSolanaAddress(),
-      network: 'Solana',
+      address: pastedAddress || net.address,
+      network: net.name,
+      logo: net.logo,
+      currency: net.currency,
+      accountType: net.accountType,
     };
     setSaving(true);
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       setSavedRecipients((r) => [...r, recipient]);
       onLinkExternalAccount?.(
-        { kind: 'crypto', address: recipient.address, network: recipient.network },
+        {
+          kind: 'crypto',
+          address: recipient.address,
+          network: recipient.network,
+          accountType: recipient.accountType,
+          currency: recipient.currency,
+        },
         'Add recipient',
       );
       setSelectedBankId(recipient.id);
@@ -915,17 +971,27 @@ export function AddMoneySheet({
   // validate+save beat), link it as an external account, then go to amount.
   const useCryptoWithdraw = () => {
     if (saving) return;
+    const net = pickedNetwork ?? DEFAULT_SEND_NETWORK;
     const dest: CryptoRecipient = {
       id: `crypto-${Date.now()}`,
-      address: pastedAddress || randomSolanaAddress(),
-      network: 'Solana',
+      address: pastedAddress || net.address,
+      network: net.name,
+      logo: net.logo,
+      currency: net.currency,
+      accountType: net.accountType,
     };
     setSaving(true);
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       setCryptoDest(dest);
       onLinkExternalAccount?.(
-        { kind: 'crypto', address: dest.address, network: dest.network },
+        {
+          kind: 'crypto',
+          address: dest.address,
+          network: dest.network,
+          accountType: dest.accountType,
+          currency: dest.currency,
+        },
         'Add crypto wallet',
       );
       setSaving(false);
@@ -937,7 +1003,12 @@ export function AddMoneySheet({
   // they mirror the real bank/recipient (not a placeholder).
   const activityForConfirm = (): TransferActivity =>
     selectedCrypto
-      ? { kind: 'crypto', address: selectedCrypto.address, network: selectedCrypto.network }
+      ? {
+          kind: 'crypto',
+          address: selectedCrypto.address,
+          network: selectedCrypto.network,
+          logo: selectedCrypto.logo,
+        }
       : {
           kind: 'bank',
           countryCode: selectedBank?.country.code ?? 'mx',
@@ -1037,10 +1108,14 @@ export function AddMoneySheet({
   // bank) keeps the static 1:1 USDC details.
   const FEE_BPS = 30;
   const feeCents = Math.round((cents * FEE_BPS) / 10000);
-  // A crypto destination (send or withdraw) settles 1:1 in USDC — no FX row.
+  // A crypto destination settles in the network's currency: 1:1 for stablecoins,
+  // a BTC rate for an L1 Bitcoin send.
   const cryptoDetails: Array<[string, string]> = [
-    ['Fee', '$0.60'],
-    ['Conversion rate', '1 USD = 1 USDC'],
+    ['Fee', isBtcDest ? formatUsdCents(Math.round(BTC_NETWORK_FEE_USD * 100)) : '$0.60'],
+    [
+      'Conversion rate',
+      isBtcDest ? `1 BTC = ${formatUsdCents(BTC_USD * 100)}` : `1 USD = 1 ${cryptoCurrency}`,
+    ],
     [mode === 'withdraw' ? 'Arrives in wallet' : 'Arrives', 'Instantly'],
   ];
   const confirmDetails: Array<[string, string]> = selectedBank
@@ -1071,7 +1146,7 @@ export function AddMoneySheet({
       // Reference the picked destination: a crypto wallet, or a bank (the
       // recipient's for a send, the off-ramp bank for a withdraw).
       const dest: TransferDest | undefined = selectedCrypto
-        ? { kind: 'crypto' }
+        ? { kind: 'crypto', currency: selectedCrypto.currency }
         : selectedBank
           ? { kind: 'bank', currency: localCurrency }
           : undefined;
@@ -1213,8 +1288,8 @@ export function AddMoneySheet({
     <div className={styles.sourceRowStatic}>
       <span className={styles.tile} aria-hidden>
         <img
-          className={styles.tokenIconSm}
-          src="/assets/send/icon-token-sol.svg"
+          className={styles.depositLogo}
+          src={selectedCrypto?.logo ?? DEFAULT_SEND_NETWORK.logo}
           alt=""
           draggable={false}
         />
@@ -1290,6 +1365,7 @@ export function AddMoneySheet({
   };
 
   return (
+    <>
     <BottomSheet
       open={open}
       onDismiss={dismiss}
@@ -1698,7 +1774,7 @@ export function AddMoneySheet({
                             <span className={styles.recipientAvatar} aria-hidden>
                               <img
                                 className={styles.tokenIconSm}
-                                src="/assets/send/icon-token-sol.svg"
+                                src={b.logo}
                                 alt=""
                                 draggable={false}
                               />
@@ -1940,12 +2016,12 @@ export function AddMoneySheet({
                                 className={clsx(styles.addressLabels, styles.addressLabelsFilled)}
                               >
                                 <p className={styles.addressValue}>{pastedAddress}</p>
-                                <p className={styles.addressSub}>Solana</p>
+                                <p className={styles.addressSub}>{pickedNetwork?.name ?? ''}</p>
                               </div>
                               <span className={clsx(styles.tile, styles.addressTile)} aria-hidden>
                                 <img
                                   className={styles.tokenIcon}
-                                  src="/assets/send/icon-token-sol.svg"
+                                  src={pickedNetwork?.logo ?? DEFAULT_SEND_NETWORK.logo}
                                   alt=""
                                   draggable={false}
                                 />
@@ -1986,8 +2062,7 @@ export function AddMoneySheet({
                               if (isSend) addCryptoRecipient();
                               else useCryptoWithdraw();
                             } else {
-                              setPastedAddress(randomSolanaAddress());
-                              setPasted(true);
+                              setPickerOpen(true);
                             }
                           }}
                         >
@@ -2049,7 +2124,10 @@ export function AddMoneySheet({
                         <p className={styles.amountSub}>
                           <NumericText
                             value={(cents / 100) * fxRate}
-                            format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+                            format={{
+                              minimumFractionDigits: fxFractionDigits,
+                              maximumFractionDigits: fxFractionDigits,
+                            }}
                             style={NUMERIC_PAD}
                           />
                           {`\u00A0${fxLabel}`}
@@ -2177,5 +2255,60 @@ export function AddMoneySheet({
         </div>
       </div>
     </BottomSheet>
+
+    {/* Secondary "Clipboard" sheet — the auth/send-receive float-sheet treatment
+        (inset, gradient icon tile + glass X, left-aligned heading). Framed as a
+        paste affordance: tap an address to drop it into the recipient card. Each
+        row reuses a Receive chain (brand logo + address) and carries that
+        network's accountType + settlement currency into the calls. */}
+    <BottomSheet
+      open={pickerOpen}
+      onDismiss={() => setPickerOpen(false)}
+      inset={16}
+      topRadius={40}
+      glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
+    >
+      <div className={styles.clipboardHeader}>
+        <h2 className={styles.clipboardHeading}>Paste address</h2>
+        <GlassSymbolButton
+          aria-label="Close"
+          size={40}
+          type="button"
+          glass={{ brightness }}
+          onClick={() => setPickerOpen(false)}
+        >
+          <SfSymbol name="xmark" size={14} />
+        </GlassSymbolButton>
+      </div>
+
+      <div className={styles.clipboardList}>
+        <div className={clsx(styles.card, styles.cardFlush)}>
+          {SEND_NETWORKS.map((net, i) => (
+            <button
+              key={net.id}
+              type="button"
+              className={styles.sourceRow}
+              onClick={() => pickNetwork(net)}
+            >
+              <span className={styles.recipientAvatar} aria-hidden>
+                <img className={styles.tokenIconSm} src={net.logo} alt="" draggable={false} />
+              </span>
+              <span
+                className={clsx(
+                  styles.sourceContent,
+                  i < SEND_NETWORKS.length - 1 && styles.sourceContentBordered,
+                )}
+              >
+                <span className={styles.sourceLabels}>
+                  <span className={styles.rowTitle}>{truncateAddress(net.address)}</span>
+                  <span className={styles.rowSub}>{net.name} wallet</span>
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </BottomSheet>
+    </>
   );
 }

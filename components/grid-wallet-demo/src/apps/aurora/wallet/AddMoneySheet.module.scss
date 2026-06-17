@@ -908,6 +908,29 @@
   height: 24px;
 }
 
+/* ── Secondary "Clipboard" sheet (Send / Withdraw → crypto picker) ─────────
+   A float sheet (auth/send-receive treatment): the "Clipboard" heading inline
+   with a glass X, then the tappable address rows (the saved-recipient row look —
+   circle avatar, truncated address, "<network> wallet"). */
+.clipboardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px 32px;
+}
+
+.clipboardHeading {
+  margin: 0;
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--ios-label-primary);
+}
+
+.clipboardList {
+  padding: 4px 16px 20px;
+}
+
 /* Scroll container for the funding-details screen (below the overlaid toolbar). */
 .fundingScroll {
   flex: 1;

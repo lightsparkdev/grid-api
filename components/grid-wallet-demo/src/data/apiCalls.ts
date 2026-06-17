@@ -31,13 +31,13 @@ export type ExternalAccountInput =
       fields: Record<string, string>;
       beneficiary: string;
     }
-  | { kind: 'crypto'; address: string; network: string };
+  | { kind: 'crypto'; address: string; network: string; accountType: string; currency: string };
 
 /** Where a transfer is going — lets the quote reference the real destination
  *  (a recipient's bank for off-ramp, or a crypto wallet) instead of a UMA. */
 export type TransferDest =
   | { kind: 'bank'; currency: string }
-  | { kind: 'crypto' };
+  | { kind: 'crypto'; currency: string };
 
 /** Link a recipient — POST /customers/external-accounts. Fires when a bank or
  *  crypto address is added; returns an ExternalAccount the transfer references. */
@@ -49,11 +49,11 @@ export function externalAccountCreateCall(input: ExternalAccountInput): ApiCall 
       title: 'Create external account',
       reqBody: {
         customerId: CUSTOMER,
-        currency: 'USDC',
-        accountInfo: { accountType: 'SOLANA_WALLET', address: input.address },
+        currency: input.currency,
+        accountInfo: { accountType: input.accountType, address: input.address },
       },
       status: '201 Created',
-      note: `Linked ${input.network} wallet — returns an ExternalAccount id.`,
+      note: `Linked ${input.network} wallet (${input.currency}) — returns an ExternalAccount id.`,
     };
   }
   return {
@@ -182,12 +182,12 @@ export function transferQuoteCall(mode: TransferMode, cents: number, dest?: Tran
         title: 'Create quote',
         reqBody: {
           source: { sourceType: 'ACCOUNT', accountId: ACCOUNT },
-          destination: { destinationType: 'ACCOUNT', accountId: CRYPTO, currency: 'USDC' },
+          destination: { destinationType: 'ACCOUNT', accountId: CRYPTO, currency: dest.currency },
           lockedCurrencySide: 'SENDING',
           lockedCurrencyAmount: cents,
         },
         status: '201 Created',
-        note: 'Withdrawal to a crypto wallet (USDB → USDC) with a payloadToSign.',
+        note: `Withdrawal to a crypto wallet (USDB → ${dest.currency}) with a payloadToSign.`,
       };
     }
     return {
@@ -210,13 +210,13 @@ export function transferQuoteCall(mode: TransferMode, cents: number, dest?: Tran
     dest?.kind === 'bank'
       ? { destinationType: 'ACCOUNT', accountId: BANK, currency: dest.currency }
       : dest?.kind === 'crypto'
-        ? { destinationType: 'ACCOUNT', accountId: CRYPTO, currency: 'USDC' }
+        ? { destinationType: 'ACCOUNT', accountId: CRYPTO, currency: dest.currency }
         : { destinationType: 'UMA_ADDRESS', umaAddress: '$leo@grid.app' };
   const sendNote =
     dest?.kind === 'bank'
       ? "Off-ramp quote to the recipient's bank, with a payloadToSign."
       : dest?.kind === 'crypto'
-        ? 'USDC quote to the recipient wallet, with a payloadToSign.'
+        ? `${dest.currency} quote to the recipient wallet, with a payloadToSign.`
         : 'Quote returns a payloadToSign for the embedded wallet.';
   return {
     method: 'POST',
