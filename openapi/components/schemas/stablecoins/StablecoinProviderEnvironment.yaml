@@ -1,0 +1,5 @@
+type: string
+enum:
+- SANDBOX
+- PRODUCTION
+description: Provider environment derived from the authenticated Grid platform mode.

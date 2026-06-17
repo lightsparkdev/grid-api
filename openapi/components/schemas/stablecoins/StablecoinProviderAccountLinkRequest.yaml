@@ -1,0 +1,23 @@
+type: object
+required:
+- provider
+- apiClientId
+- apiClientSecret
+properties:
+  provider:
+    $ref: StablecoinProvider.yaml
+  apiClientId:
+    type: string
+    description: Provider API client id used to verify and link the provider account.
+    example: provider_client_123
+  apiClientSecret:
+    type: string
+    writeOnly: true
+    description: Provider API client secret. Grid verifies and stores this secret encrypted; it is never
+      returned.
+    example: provider_secret_456
+  providerAccountId:
+    type: string
+    description: Provider account id. Optional when the submitted credentials expose exactly one provider
+      account.
+    example: 2VcUIonJeVQzFoBuC7LdFT0dRe4

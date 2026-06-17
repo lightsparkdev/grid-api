@@ -1,0 +1,114 @@
+post:
+  summary: Link a stablecoin provider account
+  description: |
+    Link provider API credentials for the authenticated platform. Provider credentials are account-scoped and can be reused for multiple stablecoins. Currently, the only supported provider is `BRALE`; the provider environment is derived from the authenticated Grid platform mode.
+  operationId: linkStablecoinProviderAccount
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  parameters:
+  - name: Idempotency-Key
+    in: header
+    description: Idempotency key for retrying this request safely. Replays return the prior result; conflicting
+      payloads are rejected.
+    required: true
+    schema:
+      type: string
+      maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinProviderAccountLinkRequest.yaml
+  responses:
+    '201':
+      description: Stablecoin provider account linked
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinProviderAccount.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List stablecoin provider account links
+  description: Retrieve stablecoin provider account links for the authenticated platform.
+  operationId: listStablecoinProviderAccounts
+  tags:
+  - Stablecoins
+  security:
+  - BasicAuth: []
+  parameters:
+  - name: provider
+    in: query
+    required: false
+    schema:
+      $ref: ../../components/schemas/stablecoins/StablecoinProvider.yaml
+  - name: status
+    in: query
+    required: false
+    schema:
+      $ref: ../../components/schemas/stablecoins/StablecoinProviderAccountStatus.yaml
+  - name: limit
+    in: query
+    description: Maximum number of results to return (default 20, max 100)
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 20
+  - name: cursor
+    in: query
+    description: Cursor for pagination (returned from previous request)
+    required: false
+    schema:
+      type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinProviderAccountListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

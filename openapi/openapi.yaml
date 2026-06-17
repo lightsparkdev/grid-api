@@ -77,6 +77,11 @@ tags:
       Card management endpoints. Issue debit cards against an internal
       account, freeze / unfreeze, close, manage card funding sources, and
       list card transactions.
+  - name: Stablecoins
+    description: >-
+      Stablecoin issuance endpoints. Link provider accounts, register
+      provider-created stablecoins, create mint/burn quotes, execute them, and
+      track the resulting operations.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -280,6 +285,10 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /stablecoin-provider-accounts:
+    $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
+  /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
+    $ref: paths/stablecoins/stablecoin-provider-accounts_{stablecoinProviderAccountId}.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
