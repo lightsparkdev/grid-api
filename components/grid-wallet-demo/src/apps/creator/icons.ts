@@ -10,13 +10,14 @@ import { IconGoogle } from '@central-icons-react/round-outlined-radius-0-stroke-
 import { IconGrowth } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconGrowth';
 import { IconHeart } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconHeart';
 import { IconHomeOpen } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconHomeOpen';
-import { IconHomeOpen as IconHomeOpenFilled } from '@central-icons-react/round-filled-radius-0-stroke-2/IconHomeOpen';
 import { IconPeople } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPeople';
 import { IconPhone } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPhone';
 import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPlusMedium';
 import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconSettingsGear2';
 import { IconUserKey } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconUserKey';
 import { IconVideoClip } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconVideoClip';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconWallet1';
+import { IconWallet1 as IconWallet1Filled } from '@central-icons-react/round-filled-radius-0-stroke-2/IconWallet1';
 import type { AuthMethod } from '@/data/flow';
 
 export {
@@ -31,13 +32,14 @@ export {
   IconGrowth,
   IconHeart,
   IconHomeOpen,
-  IconHomeOpenFilled,
   IconPeople,
   IconPhone,
   IconPlusMedium,
   IconSettingsGear2,
   IconUserKey,
   IconVideoClip,
+  IconWallet1,
+  IconWallet1Filled,
 };
 
 export type CreatorIcon = typeof IconEmail1;

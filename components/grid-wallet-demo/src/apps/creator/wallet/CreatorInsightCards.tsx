@@ -39,7 +39,10 @@ export function CreatorInsightCards({ earningsTodayCents, apyPercent }: CreatorI
           <span className={styles.value}>1345</span>
         </div>
         <p className={styles.caption}>
-          <span className={styles.captionAmount}>+56</span> followers from last stream
+          <span className={styles.captionAmount}>+56</span>{' '}
+          <span className={styles.captionMuted}>followers</span>
+          <br />
+          <span className={styles.captionMuted}>since last stream</span>
         </p>
       </div>
     </div>

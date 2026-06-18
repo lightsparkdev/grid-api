@@ -37,15 +37,20 @@
 }
 
 .itemActive {
-  color: var(--app-tint, var(--ios-label-primary));
+  color: var(--app-tabbar-active, var(--app-tint, var(--ios-label-primary)));
 }
 
 .label {
-  font-family: var(--ios-font-family);
+  display: block;
+  font-family: var(--font-family-inter);
   font-size: 10px;
   font-weight: 510;
-  letter-spacing: 0.1px;
+  letter-spacing: 0.3px;
+  /* letter-spacing adds trailing space after the last glyph, which shifts
+     the word left inside a centered flex child — pull it back optically. */
+  margin-right: -0.3px;
   line-height: 1;
+  text-align: center;
 }
 
 .fab {

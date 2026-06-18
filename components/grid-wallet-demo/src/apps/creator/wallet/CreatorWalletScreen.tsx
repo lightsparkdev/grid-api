@@ -14,6 +14,7 @@ import {
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { GlassToast } from '@/apps/shared/GlassToast';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
@@ -27,7 +28,7 @@ import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import { SkinTabBar } from '../blocks/SkinTabBar';
-import { CREATOR_LOGO, CREATOR_TAB_BAR } from '../config';
+import { CREATOR_LOGO_PURPLE, CREATOR_TAB_BAR } from '../config';
 import { CreatorInsightCards } from './CreatorInsightCards';
 import styles from './CreatorWalletScreen.module.scss';
 
@@ -60,6 +61,7 @@ const ACTIVITY_TABS = ['All', 'Sent', 'Received'];
 export function CreatorWalletScreen(props: SkinWalletScreenProps) {
   const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
+  const heroClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 10 });
   const overlayEl = useScreenOverlay();
 
   const {
@@ -197,7 +199,7 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
           <div className={styles.headerScroll}>
             <img
               className={styles.avatar}
-              src={CREATOR_LOGO}
+              src={CREATOR_LOGO_PURPLE}
               alt=""
               aria-hidden
               draggable={false}
@@ -264,7 +266,12 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
         >
           {!isOpen && (
             <>
-              <motion.div {...enter(1)} className={styles.heroWash}>
+              <motion.div
+                {...enter(1)}
+                ref={heroClip.ref}
+                style={heroClip.style}
+                className={styles.heroWash}
+              >
                 <span className={styles.balanceLabel}>Available Balance</span>
                 <span className={styles.balanceAmount}>{formatUsdCents(availableCents)}</span>
                 <div className={styles.actions}>

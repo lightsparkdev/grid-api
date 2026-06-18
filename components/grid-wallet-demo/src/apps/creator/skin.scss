@@ -1,10 +1,11 @@
 /* Creator (creator) skin — Twitch-style: Inter, purple, dark-leaning home.
-   Overrides --app-* (brand) + the shared ContentAreaButton tokens; leaves the
-   canonical --ios-* alone. Light defaults + a [data-theme='dark'] block. */
+   Overrides --app-* (brand) + the shared ContentAreaButton tokens; also sets
+   --ios-label-primary per theme. Light defaults + a [data-theme='dark'] block. */
 @mixin tokens {
   &[data-app='creator'] {
     --ios-font-family: var(--font-family-inter);
     --app-tint: #9147ff;
+    --app-tabbar-active: #772ce8;
     /* iOS accent — links, carets, secondary buttons, "Resend" — follows the brand. */
     --ios-tint: var(--app-tint);
 
@@ -35,8 +36,10 @@
     --sheet-content-pad: 8px;
 
     /* Home / sheets — light. (The v1 placeholder home reads these.) */
-    --app-text-primary: #18181b;
+    --ios-label-primary: #0e0e10;
+    --app-text-primary: #0e0e10;
     --app-text-secondary: #53535f;
+    --app-tabbar-fg: #0e0e10;
     --app-bg: #f7f7f8;
 
     /* Activity list panel — light white / dark elevated + hairline bottom edge. */
@@ -48,10 +51,13 @@
 
     :global([data-theme='dark']) & {
       --ios-tint: var(--app-tint);
+      --ios-label-primary: #efeff1;
       --app-text-primary: #efeff1;
       --app-text-secondary: #adadb8;
       --app-bg: #0e0e10;
       --app-tabbar-bg: #0e0e10;
+      --app-tabbar-fg: #ffffff;
+      --app-tabbar-active: #bf94ff;
       /* Elevated surface on the dark page — mirrors insight cards / ios-bg-secondary. */
       --list-panel-bg: #1c1c1e;
       --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);

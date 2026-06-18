@@ -403,8 +403,7 @@
   margin: 0 16px 12px;
   padding: 20px;
   background: var(--app-wash);
-  border-radius: 16px;
-  corner-shape: superellipse;
+  border-radius: 0;
   color: #fff;
 }
 
@@ -437,8 +436,8 @@
   flex: 1 1 0;
   height: 48px;
   border: 0;
-  border-radius: 14px;
-  corner-shape: superellipse;
+  border-radius: 1000px;
+  corner-shape: round;
   background: #642cb0;
   color: #fff;
   font-family: var(--ios-font-family);

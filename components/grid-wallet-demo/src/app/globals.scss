@@ -9,6 +9,7 @@
 @use '@lightsparkdev/origin/src/tokens/reset';
 @use './fonts/sf-pro';
 @use './fonts/sf-pro-rounded';
+@use './fonts/inter';
 @use '../apps/shared/typography/ios-type';
 
 /* Origin sets --font-family-sans/-mono to just "Suisse Intl" with NO fallback,

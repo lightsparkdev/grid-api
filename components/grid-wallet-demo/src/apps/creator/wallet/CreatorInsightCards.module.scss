@@ -1,6 +1,6 @@
 .cards {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   padding: 0 16px;
 }
 
@@ -24,6 +24,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  corner-shape: round;
   color: #fff;
 }
 
