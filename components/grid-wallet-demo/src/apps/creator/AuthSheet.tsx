@@ -28,6 +28,7 @@ import { AUTH_METHOD_ICONS, type AuthMethodIcon } from '@/apps/shared/authMethod
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { BRAND } from './config';
 import { formatUsPhone, maskUsPhone } from '@/lib/phoneFormat';
 import styles from './AuthSheet.module.scss';
 
@@ -116,7 +117,7 @@ const METHODS: Record<AuthSheetMethod, MethodConfig> = {
     mask: maskEmail,
     notification: {
       icon: '/assets/auth/mail-app-icon.webp',
-      title: 'Wiggle',
+      title: BRAND,
       body: `Your one-time code is ${DEMO_CODE.slice(0, 3)}-${DEMO_CODE.slice(3)}`,
       bodyLines: 1,
     },
@@ -141,7 +142,7 @@ const METHODS: Record<AuthSheetMethod, MethodConfig> = {
       icon: '/assets/auth/generic-contact.svg',
       badge: '/assets/auth/messages-app-icon.webp',
       title: '22395',
-      body: `Your Wiggle verification code is: ${DEMO_CODE}. This code will expire in 10 minutes. Don\u2019t share this code with anyone.`,
+      body: `Your ${BRAND} verification code is: ${DEMO_CODE}. This code will expire in 10 minutes. Don\u2019t share this code with anyone.`,
       bodyLines: 2,
     },
   },

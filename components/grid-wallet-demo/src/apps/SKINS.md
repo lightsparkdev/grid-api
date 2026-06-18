@@ -5,8 +5,17 @@ live once, shared; each persona ("skin") owns its entire UI. You can build or
 restyle a skin freely without touching — or breaking — any other skin (Aurora is
 shipped; treat it as untouchable unless you're explicitly changing Aurora).
 
-Aurora (`apps/aurora/`) is the reference skin ("skin zero"). Wiggle
-(`apps/wiggle/`) is a worked example of a fully custom skin. Copy from them.
+Aurora (`apps/aurora/`) is the reference skin ("skin zero"). The **creator** skin
+(`apps/creator/`, brand "Glitch") is a worked example of a fully custom skin. Copy
+from them.
+
+**Naming — code is the category, brand is data.** Name a skin's code by its stable
+*category*: folder `apps/creator/`, components `CreatorWalletScreen`, `id: 'creator'`,
+token `[data-app='creator']`. The mutable brand name is a **data value** —
+`export const BRAND = 'Glitch'` in the skin's `config.ts`, read by every face (auth
+copy, OTP sheet, card line) and the registry `label`. Re-branding is then a one-line
+edit; never bake a brand name into a filename or identifier. (Aurora keeps its
+`aurora` code id for historical reasons — it predates this rule.)
 
 ## The one rule
 
@@ -32,7 +41,7 @@ src/apps/
                     #   AddMoneySheet, SendReceiveSheet, CardHomeContent,
                     #   CardIssuanceContent, DebitCard, TapToPayStatus,
                     #   WalletCardDetailHeader, WalletListSection/Card/Item, Flag.
-  wiggle/           # full worked example: owns every face (auth, auth overlays,
+  creator/          # full worked example (brand "Glitch"): owns every face (auth, overlays,
                     #   home, + all flow faces) — each a thin view over the brains.
   <yourskin>/       # your skin lives here
   skins.ts          # persona -> skin registry (AuthScreen / WalletScreen / overlays)
@@ -69,7 +78,7 @@ implements `SkinAuthScreenProps` (both in `apps/types.ts`).
 
 A flow's **brain** (step machine, validation, FX, API callbacks) is a shared hook;
 its **face** (the sheet UI) is per-skin. Add money is fully split: `useMoneySheet()`
-(in `apps/shared/wallet`) is the brain, and both Aurora's and Wiggle's
+(in `apps/shared/wallet`) is the brain, and both Aurora's and the creator skin's
 `wallet/AddMoneySheet.tsx` are thin views over it. `BottomSheet` (rise/scrim) is a
 shared mechanic.
 
@@ -77,7 +86,7 @@ To give your skin its own sheet:
 
 - **Fork the face** — copy `apps/aurora/wallet/AddMoneySheet.tsx` (+ its
   `.module.scss`) into `apps/<skin>/wallet/`, point `WalletScreen` at it, and
-  restyle freely (Wiggle flattened the frosted search pill into a solid one, for
+  restyle freely (the creator skin flattened the frosted search pill into a solid one, for
   example). Because the face is a thin view over `useMoneySheet`, the copy carries
   **no logic** — the brain stays single-source, so flow changes happen once.
 - **Reuse Aurora's face** — `import { AddMoneySheet } from '@/apps/aurora/wallet/AddMoneySheet'`
@@ -89,12 +98,14 @@ Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
 > live in `useWalletHome` (card issuance, tap-to-pay, send/receive triggers) and the
 > components (SendReceiveSheet, the card flow, the activity list) are thin faces.
 > Fork them straight into `apps/<skin>/wallet/` and restyle — no extraction needed.
-> Wiggle does exactly this: it owns every flow face.
+> The creator skin does exactly this: it owns every flow face.
 
 ## Add a new skin (step by step)
 
-`creator`→Wiggle, `social`→`pulse`, `marketplace`→`bazaar` personas exist;
-`ondemand`/`messaging` are use-case tiles only (add the persona in step 1 first).
+`creator` (built; brand "Glitch") is the convention example. `social` and
+`marketplace` are registered too (token-only so far; brands "Pulse"/"Bazaar" live as
+the registry `label` until those skins get a `config.ts`). `ondemand`/`messaging` are
+use-case tiles only (add the persona in step 1 first).
 
 1. **Persona wiring:**
    - `data/flow.ts` — add the id to the `Persona` union.
@@ -107,7 +118,7 @@ Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
 3. **Auth** — `apps/<skin>/<Skin>AuthScreen.tsx` implementing `SkinAuthScreenProps`.
    Reusable auth blocks (marquee, brand header, CTA list) can live in `apps/<skin>/blocks/`.
 4. **Wallet** — `apps/<skin>/wallet/<Skin>WalletScreen.tsx` implementing
-   `SkinWalletScreenProps`. Start from `wiggle/wallet/WiggleWalletScreen.tsx` (custom
+   `SkinWalletScreenProps`. Start from `creator/wallet/CreatorWalletScreen.tsx` (custom
    home) or `aurora/wallet/AuroraWalletScreen.tsx` (baseline), call
    `useWalletHome(props)`, render your layout + the flow faces (reused or copied).
 5. **Register** — add the entry to `APP_SKINS` in `apps/skins.ts`
@@ -132,11 +143,11 @@ Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
 - Passkey sign-in needs real WebAuthn (won't auto-confirm in headless browsers);
   use the left-rail flow jumps (Add money, Issue a card, Tap to pay) to reach the
   wallet for testing.
-- `--font-family-inter` isn't loaded on this branch; Wiggle's `skin.scss` references
-  it and falls back to the SF Pro stack. Load Inter (or change the token) for the
-  intended Wiggle type.
+- `--font-family-inter` isn't loaded on this branch; the creator skin's `skin.scss`
+  references it and falls back to the SF Pro stack. Load Inter (or change the token)
+  for the intended type.
 
 ## Pointers
 
 - Branch: `pat/wallet-demo-skins` (off the launched `origin/main`).
-- Copy-from templates: `apps/aurora/` (baseline) and `apps/wiggle/` (custom home + auth).
+- Copy-from templates: `apps/aurora/` (baseline) and `apps/creator/` (custom home + auth).

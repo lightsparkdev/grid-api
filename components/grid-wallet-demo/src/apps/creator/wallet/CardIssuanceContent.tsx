@@ -8,6 +8,7 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-
 import { GlassTextButton } from '@/apps/shared/glass';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { motionTransition } from '@/lib/easing';
+import { BRAND } from '../config';
 import styles from './CardIssuanceContent.module.scss';
 
 const VALUE_PROPS = [
@@ -24,7 +25,7 @@ const VALUE_PROPS = [
   {
     Icon: IconWallet1,
     title: 'Add your card to Apple Wallet',
-    sub: 'Use your Wiggle card on all your devices',
+    sub: `Use your ${BRAND} card on all your devices`,
   },
 ];
 

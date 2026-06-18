@@ -3,6 +3,7 @@
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { GlassSymbolButton, GlassTextButton } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
+import { BRAND } from './config';
 import styles from './PasskeySheet.module.scss';
 
 interface PasskeySheetProps {
@@ -26,7 +27,7 @@ export function PasskeySheet({ open, onConfirm, onCancel }: PasskeySheetProps) {
         <div className={styles.copy}>
           <h2 className={styles.title}>Save a passkey?</h2>
           <p className={styles.description}>
-            &ldquo;Wiggle&rdquo; supports passkeys, a stronger alternative to
+            &ldquo;{BRAND}&rdquo; supports passkeys, a stronger alternative to
             passwords that cannot be leaked or stolen. A passkey will be saved in
             &ldquo;Passwords&rdquo;.
           </p>

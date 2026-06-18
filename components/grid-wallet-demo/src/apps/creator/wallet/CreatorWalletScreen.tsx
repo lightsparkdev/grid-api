@@ -27,9 +27,9 @@ import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import { SkinTabBar } from '../blocks/SkinTabBar';
-import { WIGGLE_LOGO, WIGGLE_TAB_BAR } from '../config';
-import { WiggleInsightCards } from './WiggleInsightCards';
-import styles from './WiggleWalletScreen.module.scss';
+import { CREATOR_LOGO, CREATOR_TAB_BAR } from '../config';
+import { CreatorInsightCards } from './CreatorInsightCards';
+import styles from './CreatorWalletScreen.module.scss';
 
 const SHEET_DURATION = 0.4;
 const HEADER_DURATION = 0.2;
@@ -53,11 +53,11 @@ const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 const ACTIVITY_TABS = ['All', 'Sent', 'Received'];
 
-/** Wiggle (creator) wallet home — Twitch-style: scrolling brand header, purple
+/** Creator (creator) wallet home — Twitch-style: scrolling brand header, purple
  *  wash balance hero, Deposit/Withdraw/Send, Yield + Followers metrics, filtered
  *  activity, decorative tab bar. All app logic is the shared `useWalletHome`; the
  *  card-issuance / tap-to-pay choreography reuses the shared flows. */
-export function WiggleWalletScreen(props: SkinWalletScreenProps) {
+export function CreatorWalletScreen(props: SkinWalletScreenProps) {
   const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
   const overlayEl = useScreenOverlay();
@@ -197,7 +197,7 @@ export function WiggleWalletScreen(props: SkinWalletScreenProps) {
           <div className={styles.headerScroll}>
             <img
               className={styles.avatar}
-              src={WIGGLE_LOGO}
+              src={CREATOR_LOGO}
               alt=""
               aria-hidden
               draggable={false}
@@ -292,7 +292,7 @@ export function WiggleWalletScreen(props: SkinWalletScreenProps) {
               </motion.div>
 
               <motion.div {...enter(2)}>
-                <WiggleInsightCards earningsTodayCents={earningsTodayCents} apyPercent={apyPercent} />
+                <CreatorInsightCards earningsTodayCents={earningsTodayCents} apyPercent={apyPercent} />
               </motion.div>
 
               <motion.div
@@ -313,7 +313,7 @@ export function WiggleWalletScreen(props: SkinWalletScreenProps) {
                     {t}
                     {i === activityTab && (
                       <motion.span
-                        layoutId="wiggleTabIndicator"
+                        layoutId="creatorTabIndicator"
                         className={styles.activityIndicator}
                         transition={reduceMotion ? { duration: 0 } : TAB_INDICATOR}
                       />
@@ -395,7 +395,7 @@ export function WiggleWalletScreen(props: SkinWalletScreenProps) {
         </AnimatePresence>
       </motion.div>
 
-      {!isOpen && !isTap ? <SkinTabBar {...WIGGLE_TAB_BAR} /> : null}
+      {!isOpen && !isTap ? <SkinTabBar {...CREATOR_TAB_BAR} /> : null}
 
       <SendReceiveSheet
         open={sendReceiveOpen}

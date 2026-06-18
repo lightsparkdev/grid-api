@@ -1,4 +1,4 @@
-/** Wiggle icon set — central-icons, 0px corner radius, 2px stroke. */
+/** Creator icon set — central-icons, 0px corner radius, 2px stroke. */
 import { IconApple } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconApple';
 import { IconArrowBottomTop } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconArrowBottomTop';
 import { IconArrowDownLeft } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconArrowDownLeft';
@@ -38,9 +38,9 @@ export {
   IconVideoClip,
 };
 
-export type WiggleIcon = typeof IconEmail1;
+export type CreatorIcon = typeof IconEmail1;
 
-export const WIGGLE_AUTH_METHOD_ICONS: Record<AuthMethod, WiggleIcon> = {
+export const CREATOR_AUTH_METHOD_ICONS: Record<AuthMethod, CreatorIcon> = {
   oauth: IconGoogle,
   passkey: IconUserKey,
   apple: IconApple,

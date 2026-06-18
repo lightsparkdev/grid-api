@@ -1058,7 +1058,7 @@ export function AddMoneySheet({
                     and frosts through (FrostPanel: backdrop-filter + specular
                     rim). Refraction over scrolling DOM isn't possible, so frost. */}
                 <div className={styles.searchPill}>
-                  {/* Wiggle: flat solid pill (no frost) — the skin owns this face. */}
+                  {/* Creator: flat solid pill (no frost) — the skin owns this face. */}
                   <div className={styles.searchPillFlat}>
                     <div className={styles.searchRow}>
                       <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />

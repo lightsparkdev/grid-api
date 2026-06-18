@@ -1,10 +1,11 @@
 import type { Persona } from '@/data/flow';
 import { AuroraAuthScreen } from './aurora/AuroraAuthScreen';
 import { AuroraWalletScreen } from './aurora/wallet';
-import { WiggleAuthScreen } from './wiggle/WiggleAuthScreen';
-import { WiggleWalletScreen } from './wiggle/wallet';
-import { PasskeySheet as WigglePasskeySheet } from './wiggle/PasskeySheet';
-import { AuthSheet as WiggleAuthSheet } from './wiggle/AuthSheet';
+import { CreatorAuthScreen } from './creator/CreatorAuthScreen';
+import { CreatorWalletScreen } from './creator/wallet';
+import { PasskeySheet as CreatorPasskeySheet } from './creator/PasskeySheet';
+import { AuthSheet as CreatorAuthSheet } from './creator/AuthSheet';
+import { BRAND } from './creator/config';
 import type {
   SkinAuthScreen,
   SkinWalletScreen,
@@ -12,7 +13,7 @@ import type {
   SkinAuthSheet,
 } from './types';
 
-export type AppSkinId = 'aurora' | 'wiggle' | 'pulse' | 'bazaar';
+export type AppSkinId = 'aurora' | 'creator' | 'social' | 'marketplace';
 
 /** A skin = a per-persona app. `AuthScreen` + `WalletScreen` are the per-skin
  *  view (Aurora is skin zero). When both are set the persona renders the full
@@ -43,23 +44,23 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     WalletScreen: AuroraWalletScreen,
   },
   creator: {
-    id: 'wiggle',
+    id: 'creator',
     persona: 'creator',
-    label: 'Wiggle',
+    label: BRAND,
     fontFamily: SF_PRO,
-    AuthScreen: WiggleAuthScreen,
-    WalletScreen: WiggleWalletScreen,
-    PasskeySheet: WigglePasskeySheet,
-    AuthSheet: WiggleAuthSheet,
+    AuthScreen: CreatorAuthScreen,
+    WalletScreen: CreatorWalletScreen,
+    PasskeySheet: CreatorPasskeySheet,
+    AuthSheet: CreatorAuthSheet,
   },
   social: {
-    id: 'pulse',
+    id: 'social',
     persona: 'social',
     label: 'Pulse',
     fontFamily: SF_PRO,
   },
   marketplace: {
-    id: 'bazaar',
+    id: 'marketplace',
     persona: 'marketplace',
     label: 'Bazaar',
     fontFamily: SF_PRO,

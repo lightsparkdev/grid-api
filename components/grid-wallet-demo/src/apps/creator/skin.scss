@@ -1,8 +1,8 @@
-/* Wiggle (creator) skin — Twitch-style: Inter, purple, dark-leaning home.
+/* Creator (creator) skin — Twitch-style: Inter, purple, dark-leaning home.
    Overrides --app-* (brand) + the shared ContentAreaButton tokens; leaves the
    canonical --ios-* alone. Light defaults + a [data-theme='dark'] block. */
 @mixin tokens {
-  &[data-app='wiggle'] {
+  &[data-app='creator'] {
     --ios-font-family: var(--font-family-inter);
     --app-tint: #9147ff;
     /* iOS accent — links, carets, secondary buttons, "Resend" — follows the brand. */

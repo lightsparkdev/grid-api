@@ -8,13 +8,17 @@ import {
   IconVideoClip,
 } from './icons';
 
-/** Wiggle (creator platform) — a Twitch-style live-streaming skin. Brand + auth
- *  copy live here; the home layout/visuals live in WiggleWalletScreen. */
-export const WIGGLE_LOGO = '/assets/creator/logo-creator-platform.svg';
+/** Creator (creator platform) — a Twitch-style live-streaming skin. Brand + auth
+ *  copy live here; the home layout/visuals live in CreatorWalletScreen. */
+/** Brand name shown in user-facing copy. To re-brand this skin, change this one
+ *  value — code identifiers stay category-named (creator). */
+export const BRAND = 'Glitch';
+
+export const CREATOR_LOGO = '/assets/creator/logo-creator-platform.svg';
 
 /** Auth hero copy + the scrolling category marquee (Figma 2375:10338). */
-export const WIGGLE_AUTH = {
-  headline: 'Join Wiggle',
+export const CREATOR_AUTH = {
+  headline: `Join ${BRAND}`,
   subhead: 'Watch anything live',
   marquee: [
     [
@@ -50,8 +54,8 @@ export const WIGGLE_AUTH = {
   ],
 };
 
-/** Decorative bottom tab bar for the Wiggle home (Figma 2375:10216). */
-export const WIGGLE_TAB_BAR: SkinTabBarConfig = {
+/** Decorative bottom tab bar for the Creator home (Figma 2375:10216). */
+export const CREATOR_TAB_BAR: SkinTabBarConfig = {
   items: [
     { Icon: IconHomeOpen, activeIcon: IconHomeOpenFilled, label: 'Home', active: true },
     { Icon: IconVideoClip, label: 'Content' },

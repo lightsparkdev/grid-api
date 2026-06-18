@@ -8,8 +8,8 @@ import type { SkinAuthScreenProps } from '@/apps/types';
 import { BrandHeader } from './blocks/BrandHeader';
 import { Marquee } from './blocks/Marquee';
 import { AuthCtaList } from './blocks/AuthCtaList';
-import { WIGGLE_AUTH, WIGGLE_LOGO } from './config';
-import styles from './WiggleAuthScreen.module.scss';
+import { CREATOR_AUTH, CREATOR_LOGO } from './config';
+import styles from './CreatorAuthScreen.module.scss';
 
 // Dismiss: the whole composition blur-fades out; the creating beat (logo +
 // caption) fades in centered, then the flow swaps to the home. Mirrors Aurora's
@@ -21,9 +21,9 @@ const CAPTION_OUT = motionTransition(easeOutQuick, 0.28);
 const CAPTION_HIDDEN = { opacity: 0, y: 10, filter: 'blur(8px)' };
 const CAPTION_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
-/** Wiggle (creator) auth — brand header top-left, scrolling category/title
+/** Creator (creator) auth — brand header top-left, scrolling category/title
  *  marquee as the hero, reused auth CTAs at the bottom (Figma 2375:10338). */
-export function WiggleAuthScreen({
+export function CreatorAuthScreen({
   busy,
   methods,
   dismissed = false,
@@ -52,13 +52,13 @@ export function WiggleAuthScreen({
       >
         <BrandHeader
           className={styles.header}
-          logoSrc={WIGGLE_LOGO}
-          name={WIGGLE_AUTH.headline}
-          tagline={WIGGLE_AUTH.subhead}
+          logoSrc={CREATOR_LOGO}
+          name={CREATOR_AUTH.headline}
+          tagline={CREATOR_AUTH.subhead}
         />
 
         <div className={styles.hero}>
-          <Marquee rows={WIGGLE_AUTH.marquee} interactive />
+          <Marquee rows={CREATOR_AUTH.marquee} interactive />
         </div>
 
         <div className={styles.footer}>
@@ -78,7 +78,7 @@ export function WiggleAuthScreen({
           >
             <img
               className={styles.creatingLogo}
-              src={WIGGLE_LOGO}
+              src={CREATOR_LOGO}
               alt=""
               aria-hidden
               draggable={false}

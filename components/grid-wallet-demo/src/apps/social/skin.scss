@@ -1,6 +1,6 @@
 /* Pulse (social / creator) — brand hue on app tokens; iOS tokens stay canonical. */
 @mixin tokens {
-  &[data-app='pulse'] {
+  &[data-app='social'] {
     --ios-font-family: var(--font-family-sf-pro);
     --app-text-primary: #2a1f3d;
     --app-text-secondary: color-mix(in srgb, var(--app-text-primary) 55%, transparent);

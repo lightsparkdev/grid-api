@@ -2,18 +2,18 @@
 
 import { IconGrowth, IconHeart } from '../icons';
 import { formatUsdCents } from '@/apps/shared/wallet';
-import styles from './WiggleInsightCards.module.scss';
+import styles from './CreatorInsightCards.module.scss';
 
-interface WiggleInsightCardsProps {
+interface CreatorInsightCardsProps {
   /** Today's accrual (cents) for the live Yield caption ("+$X today"). */
   earningsTodayCents: number;
   /** Yield rate shown on the card. */
   apyPercent: number;
 }
 
-/** Wiggle home metrics (Figma 2375:10216): Yield (live "+$X today") + Followers,
+/** Creator home metrics (Figma 2375:10216): Yield (live "+$X today") + Followers,
  *  each an icon-circle + big value over a caption, in their own squircle card. */
-export function WiggleInsightCards({ earningsTodayCents, apyPercent }: WiggleInsightCardsProps) {
+export function CreatorInsightCards({ earningsTodayCents, apyPercent }: CreatorInsightCardsProps) {
   const earned = formatUsdCents(earningsTodayCents);
   return (
     <div className={styles.cards}>
