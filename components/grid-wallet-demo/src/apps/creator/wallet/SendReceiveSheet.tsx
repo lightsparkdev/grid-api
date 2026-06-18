@@ -2,9 +2,9 @@
 
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
-import { GlassSymbolButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
-import { useThemeMode } from '@/hooks/useThemeMode';
+import { SheetIconButton } from '../blocks/SheetIconButton';
+import { CREATOR_FLAT_SHEET } from '../glass-presets';
 import styles from './SendReceiveSheet.module.scss';
 
 interface SendReceiveSheetProps {
@@ -23,16 +23,11 @@ interface SendReceiveSheetProps {
  * pills. Send chains into the money sheet; Receive opens the deposit list.
  */
 export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendReceiveSheetProps) {
-  const theme = useThemeMode();
   return (
     <BottomSheet
       open={open}
       onDismiss={onDismiss}
-      inset={16}
-      topRadius={40}
-      // Standard frost, tinted toward the wallet's #f9f9f9 on light — the same
-      // float-sheet treatment as the auth sheet; dark unchanged.
-      glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
+      glass={CREATOR_FLAT_SHEET}
     >
       {/* Persistent header: the activity-row icon tile top-left, glass X top-right. */}
       <div className={styles.header}>
@@ -41,15 +36,14 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
         </span>
       </div>
       <span className={styles.close}>
-        <GlassSymbolButton
+        <SheetIconButton
           aria-label="Close"
           size={40}
           type="button"
-          glass={{ brightness: headerGlassBrightness(theme) }}
           onClick={onDismiss}
         >
           <SfSymbol name="xmark" size={14} />
-        </GlassSymbolButton>
+        </SheetIconButton>
       </span>
 
       <h2 className={styles.heading}>Send or receive</h2>

@@ -1,7 +1,8 @@
 'use client';
 
-import { GlassSymbolButton, GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
+import { SheetIconButton } from '../blocks/SheetIconButton';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './WalletCardDetailHeader.module.scss';
 
@@ -27,15 +28,14 @@ export function WalletCardDetailHeader({
 
   return (
     <div className={styles.root}>
-      <GlassSymbolButton
+      <SheetIconButton
         aria-label="Close"
         size={40}
         type="button"
-        glass={{ brightness }}
         onClick={onClose}
       >
         <SfSymbol name="xmark" size={14} />
-      </GlassSymbolButton>
+      </SheetIconButton>
 
       {showActions ? (
         <GlassWindowButtonGroup

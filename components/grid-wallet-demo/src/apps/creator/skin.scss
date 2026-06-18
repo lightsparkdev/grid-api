@@ -17,8 +17,9 @@
     --content-btn-hover: rgba(255, 255, 255, 0.12);
     --content-btn-active: rgba(255, 255, 255, 0.2);
 
-    /* Primary glass CTA (sheets) — brand purple instead of iOS blue. */
-    --text-glass-primary-backdrop: linear-gradient(180deg, #a770ff 0%, #9147ff 55%, #7a30e6 100%);
+    /* Primary flat pills (ContentAreaButton filled) — brand purple, white label. */
+    --p-fill: #9147ff;
+    --p-fg: #ffffff;
 
     /* Brand wash — the balance-hero card + the card-issuance background (in place
        of Aurora's WebGL field). */
@@ -37,6 +38,9 @@
     --list-panel-bg: #ffffff;
     --list-panel-border: 0.5px solid rgba(0, 0, 0, 0.1);
 
+    /* Auth / passkey / send-receive overlays — flat solid sheet (no frost). */
+    --auth-sheet-bg: #ffffff;
+
     :global([data-theme='dark']) & {
       --ios-tint: var(--app-tint);
       --app-text-primary: #efeff1;
@@ -46,6 +50,7 @@
       /* Elevated surface on the dark page — mirrors insight cards / ios-bg-secondary. */
       --list-panel-bg: #1c1c1e;
       --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);
+      --auth-sheet-bg: #1c1c1e;
     }
   }
 }

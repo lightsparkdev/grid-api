@@ -18,7 +18,7 @@ export const CREATOR_LOGO = '/assets/creator/logo-creator-platform.svg';
 
 /** Auth hero copy + the scrolling category marquee (Figma 2375:10338). */
 export const CREATOR_AUTH = {
-  headline: `Join ${BRAND}`,
+  headline: BRAND,
   subhead: 'Watch anything live',
   marquee: [
     [

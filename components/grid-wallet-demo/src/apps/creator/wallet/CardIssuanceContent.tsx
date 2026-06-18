@@ -5,7 +5,7 @@ import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
-import { GlassTextButton } from '@/apps/shared/glass';
+import { PrimaryButton } from '../blocks/PrimaryButton';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { motionTransition } from '@/lib/easing';
 import { BRAND } from '../config';
@@ -50,9 +50,9 @@ export function IntroContent({ onCreate }: { onCreate?: () => void }) {
         </motion.p>
       </div>
       <motion.div {...reveal(2)} className={styles.ctaWrap}>
-        <GlassTextButton variant="primary" onClick={onCreate}>
+        <PrimaryButton onClick={onCreate}>
           Create card
-        </GlassTextButton>
+        </PrimaryButton>
       </motion.div>
     </>
   );
@@ -81,9 +81,9 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
         ))}
       </div>
       <motion.div {...reveal(VALUE_PROPS.length + 1)} className={styles.ctaWrap}>
-        <GlassTextButton variant="primary" onClick={onContinue}>
+        <PrimaryButton onClick={onContinue}>
           Continue
-        </GlassTextButton>
+        </PrimaryButton>
       </motion.div>
     </>
   );

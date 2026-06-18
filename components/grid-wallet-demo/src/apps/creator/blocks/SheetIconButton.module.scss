@@ -1,0 +1,60 @@
+@use '../../shared/glass/glass-button-shadow' as shadow;
+
+.button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--ios-fill-secondary);
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  @include shadow.glass-button-press(44px);
+
+  --content-area-hover: var(--ios-fill-tertiary);
+  --content-area-active: var(--ios-fill-secondary);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: round;
+    background: var(--content-area-hover);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled)::after {
+    opacity: 1;
+  }
+
+  &:active:not(:disabled) {
+    filter: none;
+  }
+
+  &:active:not(:disabled)::after {
+    opacity: 1;
+    background: var(--content-area-active);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.size40 {
+  width: 40px;
+  height: 40px;
+  @include shadow.glass-button-press(40px);
+}

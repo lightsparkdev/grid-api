@@ -18,16 +18,12 @@ import {
   NOTIFICATION_INSET_PX,
   NOTIFICATION_TOP_PX,
 } from '@/apps/shared/GlassNotification';
-import {
-  GlassSymbolButton,
-  GlassTextButton,
-  headerGlassBrightness,
-  SHEET_GLASS,
-} from '@/apps/shared/glass';
+import { PrimaryButton } from './blocks/PrimaryButton';
+import { SheetIconButton } from './blocks/SheetIconButton';
 import { AUTH_METHOD_ICONS, type AuthMethodIcon } from '@/apps/shared/authMethodIcons';
 import { SfSymbol } from '@/apps/shared/icons';
-import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { CREATOR_FLAT_SHEET } from './glass-presets';
 import { BRAND } from './config';
 import { formatUsPhone, maskUsPhone } from '@/lib/phoneFormat';
 import styles from './AuthSheet.module.scss';
@@ -164,7 +160,7 @@ interface AuthSheetProps {
 }
 
 /**
- * Floating (inset) auth sheet — two steps under one persistent header
+ * Full-bleed auth sheet — two steps under one persistent header
  * (icon tile + glass X): email/phone entry → verification code, pushed left
  * like the money sheet's steps so the flow reads as one continuous surface.
  */
@@ -178,7 +174,6 @@ export function AuthSheet({
   onBack,
   onCancel,
 }: AuthSheetProps) {
-  const theme = useThemeMode();
   const reduceMotion = useReducedMotion();
   const cfg = METHODS[method];
 
@@ -401,10 +396,7 @@ export function AuthSheet({
       open={open}
       // The scrim can't cancel mid-verify — the staged submit is committed.
       onDismiss={phase === 'idle' ? (onCancel ?? (() => {})) : () => {}}
-      inset={16}
-      topRadius={40}
-      // Same float-sheet treatment as the send/receive picker.
-      glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
+      glass={CREATOR_FLAT_SHEET}
     >
       {/* Persistent header: the activity-row icon tile top-left (the method's
           glyph), glass X top-right — steps push beneath it. */}
@@ -415,14 +407,10 @@ export function AuthSheet({
       </div>
       {/* Corner-pinned (16px) independent of the tile's header padding. */}
       <span className={styles.close}>
-        <GlassSymbolButton
+        <SheetIconButton
           aria-label={step === 'code' ? 'Back' : 'Close'}
           size={40}
           type="button"
-          glass={{ brightness: headerGlassBrightness(theme) }}
-          // Past the first step the X steps BACK (code → entry); the scrim
-          // still dismisses the whole flow. Mid-verify the X stays visually
-          // live but no-ops (cleaner than a disabled flash for a 1s window).
           onClick={
             phase === 'idle'
               ? step === 'code'
@@ -432,7 +420,7 @@ export function AuthSheet({
           }
         >
           <SfSymbol name="xmark" size={14} />
-        </GlassSymbolButton>
+        </SheetIconButton>
       </span>
 
       {/* Single-cell grid: steps overlap and cross blur-fade while the host's
@@ -536,10 +524,7 @@ export function AuthSheet({
           itself never animates. The spinner covers both the sending gap and
           the verifying beat; the checkmark holds until the staged submit. */}
       <div className={styles.actions}>
-        <GlassTextButton
-          variant="primary"
-          onClick={step === 'entry' ? submit : submitCode}
-        >
+        <PrimaryButton onClick={step === 'entry' ? submit : submitCode}>
           <span className={styles.ctaSwap}>
             <AnimatePresence initial={false}>
               {phase === 'done' ? (
@@ -584,7 +569,7 @@ export function AuthSheet({
               )}
             </AnimatePresence>
           </span>
-        </GlassTextButton>
+        </PrimaryButton>
       </div>
 
       {/* Above the status bar via AppShell's overlay layer (the Face ID /

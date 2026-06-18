@@ -15,9 +15,10 @@ import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import NumericText from '@/components/NumericText';
 import { FrostPanel, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { GlassSymbolButton, GlassTextButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
+import { PrimaryButton } from '../blocks/PrimaryButton';
+import { SheetIconButton } from '../blocks/SheetIconButton';
+import { SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
-import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { randomNetworkAddress } from '@/lib/cryptoAddresses';
 import { currencyFor, type BankCountry } from '@/data/bankCountries';
@@ -256,8 +257,6 @@ export function AddMoneySheet({
   onReceive,
 }: AddMoneySheetProps) {
   const reduceMotion = useReducedMotion();
-  const theme = useThemeMode();
-  const brightness = headerGlassBrightness(theme);
   // The amount paragraph animates a shake on an invalid attempt; the ref + the
   // animation stay in the view (DOM-coupled). The hook signals via shakeNonce.
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
@@ -558,26 +557,24 @@ export function AddMoneySheet({
         <div className={styles.toolbar}>
           <div className={styles.toolbarRow}>
             {isEntryStep ? (
-              <GlassSymbolButton
+              <SheetIconButton
                 aria-label="Close"
                 size={40}
                 type="button"
-                glass={{ brightness }}
                 onClick={dismiss}
               >
                 <SfSymbol name="xmark" size={14} />
-              </GlassSymbolButton>
+              </SheetIconButton>
             ) : (
-              <GlassSymbolButton
+              <SheetIconButton
                 aria-label="Back"
                 size={40}
                 type="button"
-                glass={{ brightness }}
                 onClick={() => go(backFrom[step] ?? 'source', true)}
                 disabled={confirming}
               >
                 <SfSymbol name="chevron.left" size={15} />
-              </GlassSymbolButton>
+              </SheetIconButton>
             )}
             <h2 className={styles.title}>
               {/* Slides at every screen boundary except amount ⇄ confirm, which
@@ -626,14 +623,13 @@ export function AddMoneySheet({
                   exit={{ opacity: 0, filter: 'blur(10px)' }}
                   transition={SWAP_TRANSITION}
                 >
-                  <GlassSymbolButton
+                  <SheetIconButton
                     aria-label="Scan QR code"
                     size={40}
                     type="button"
-                    glass={{ brightness }}
                   >
                     <SfSymbol name="viewfinder" size={17} />
-                  </GlassSymbolButton>
+                  </SheetIconButton>
                 </motion.span>
               )}
               {/* Glass + on the saved-banks step — the entry point to add one. */}
@@ -646,15 +642,14 @@ export function AddMoneySheet({
                   exit={{ opacity: 0, filter: 'blur(10px)' }}
                   transition={SWAP_TRANSITION}
                 >
-                  <GlassSymbolButton
+                  <SheetIconButton
                     aria-label={isSend ? 'Add recipient' : 'Add bank account'}
                     size={40}
                     type="button"
-                    glass={{ brightness }}
                     onClick={openAddBank}
                   >
                     <SfSymbol name="plus" size={15} />
-                  </GlassSymbolButton>
+                  </SheetIconButton>
                 </motion.span>
               )}
             </AnimatePresence>
@@ -826,12 +821,12 @@ export function AddMoneySheet({
                   </p>
                 </div>
                 <div className={styles.bottomCtaWrap}>
-                  <GlassTextButton variant="primary" onClick={shareFundingAndReceive}>
+                  <PrimaryButton onClick={shareFundingAndReceive}>
                     <span className={styles.shareCta}>
                       <IconArrowOutOfBox size={20} className={styles.shareCtaIcon} />
                       Share
                     </span>
-                  </GlassTextButton>
+                  </PrimaryButton>
                 </div>
               </motion.div>
             )}
@@ -1117,7 +1112,7 @@ export function AddMoneySheet({
                   </div>
                 </div>
                 <div className={styles.bottomCtaWrap}>
-                  <GlassTextButton variant="primary" onClick={addBank}>
+                  <PrimaryButton onClick={addBank}>
                     {saving ? (
                       <span className={styles.spinner} aria-label="Saving">
                         <IconLoadingCircle size={20} />
@@ -1127,7 +1122,7 @@ export function AddMoneySheet({
                     ) : (
                       'Add bank account'
                     )}
-                  </GlassTextButton>
+                  </PrimaryButton>
                 </div>
               </motion.div>
             )}
@@ -1350,8 +1345,7 @@ export function AddMoneySheet({
                       morphs and the Face ID glyph fades in on confirm. It rides
                       the real layout as the region above changes height. */}
                   <div className={styles.ctaWrap}>
-                    <GlassTextButton
-                      variant="primary"
+                    <PrimaryButton
                       onClick={() =>
                         step === 'amount'
                           ? tryContinue()
@@ -1394,7 +1388,7 @@ export function AddMoneySheet({
                           </TextMorph>
                         </span>
                       )}
-                    </GlassTextButton>
+                    </PrimaryButton>
                   </div>
                 </div>
               </motion.div>
@@ -1412,21 +1406,18 @@ export function AddMoneySheet({
     <BottomSheet
       open={pickerOpen}
       onDismiss={() => setPickerOpen(false)}
-      inset={16}
-      topRadius={40}
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
     >
       <div className={styles.clipboardHeader}>
         <h2 className={styles.clipboardHeading}>Paste address</h2>
-        <GlassSymbolButton
+        <SheetIconButton
           aria-label="Close"
           size={40}
           type="button"
-          glass={{ brightness }}
           onClick={() => setPickerOpen(false)}
         >
           <SfSymbol name="xmark" size={14} />
-        </GlassSymbolButton>
+        </SheetIconButton>
       </div>
 
       <div className={styles.clipboardList}>

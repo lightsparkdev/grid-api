@@ -3,7 +3,7 @@ import styles from './BrandHeader.module.scss';
 
 interface BrandHeaderProps {
   logoSrc: string;
-  /** Headline, e.g. "Join Creator". */
+  /** Headline, e.g. "Glitch". */
   name: string;
   /** Subhead, e.g. "Watch anything live". */
   tagline: string;
