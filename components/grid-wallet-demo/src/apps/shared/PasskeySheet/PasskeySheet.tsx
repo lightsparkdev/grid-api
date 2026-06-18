@@ -22,7 +22,15 @@ export function PasskeySheet({ open, appName, onConfirm, onCancel }: PasskeyShee
     <BottomSheet open={open} onDismiss={onCancel}>
       <div className={styles.sheet}>
         <div className={styles.toolbar}>
-          <GlassSymbolButton aria-label="Close" onClick={onCancel}>
+          {/* The close lens sits on the frosted sheet over the skin's auth surface.
+              Refract that surface — skins set --app-sheet-glass-backdrop to their
+              auth hue so the lens picks up the brand color like the frost does;
+              otherwise it falls back to the neutral sheet-surface token. */}
+          <GlassSymbolButton
+            aria-label="Close"
+            backdrop="var(--app-sheet-glass-backdrop, var(--glass-symbol-backdrop))"
+            onClick={onCancel}
+          >
             <SfSymbol name="xmark" size={17} />
           </GlassSymbolButton>
         </div>
