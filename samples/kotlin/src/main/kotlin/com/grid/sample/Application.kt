@@ -41,6 +41,7 @@ fun Application.module() {
         internalAccountRoutes()
         authCredentialRoutes()
         quoteRoutes()
+        exchangeRateRoutes()
         sandboxRoutes()
         webhookRoutes()
         sseRoutes()

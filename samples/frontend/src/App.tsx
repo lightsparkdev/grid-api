@@ -3,6 +3,7 @@ import Sidebar, { FlowKey } from './components/Sidebar'
 import WebhookStream from './components/WebhookStream'
 import PayoutFlow from './flows/PayoutFlow'
 import UsdcPayoutFlow from './flows/UsdcPayoutFlow'
+import ExchangeRatesFlow from './flows/ExchangeRatesFlow'
 import EmbeddedWalletFlow from './flows/EmbeddedWalletFlow'
 
 const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
@@ -14,6 +15,10 @@ const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
     title: 'Send USDC to a Wallet',
     subtitle: 'Send USDC on-chain to an external wallet, funded with USD',
   },
+  'exchange-rates': {
+    title: 'Exchange Rates',
+    subtitle: 'Look up FX rates and fees for a corridor',
+  },
   'embedded-wallet': {
     title: 'Global Account',
     subtitle: 'Issue a self-custody dollar account and withdraw on behalf of a user',
@@ -21,7 +26,7 @@ const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
 }
 
 export default function App() {
-  const [activeFlow, setActiveFlow] = useState<FlowKey>('payout')
+  const [activeFlow, setActiveFlow] = useState<FlowKey>('exchange-rates')
   const meta = FLOW_META[activeFlow]
 
   return (
@@ -36,6 +41,7 @@ export default function App() {
           <h2 className="text-lg font-semibold mb-4">{meta.title}</h2>
           {activeFlow === 'payout' && <PayoutFlow key="payout" />}
           {activeFlow === 'usdc-payout' && <UsdcPayoutFlow key="usdc-payout" />}
+          {activeFlow === 'exchange-rates' && <ExchangeRatesFlow key="exchange-rates" />}
           {activeFlow === 'embedded-wallet' && <EmbeddedWalletFlow key="embedded-wallet" />}
         </main>
       </div>
