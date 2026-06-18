@@ -19,6 +19,9 @@
   letter-spacing: 0;
   pointer-events: none;
   transition: color 0.2s ease;
+  /* System chrome: the iOS status bar always renders in the system font — pin SF Pro
+     so a skin's --ios-font-family override (creator -> Inter) can't bleed in. */
+  --ios-font-family: var(--font-family-sf-pro);
 }
 
 .statusBarLight {
