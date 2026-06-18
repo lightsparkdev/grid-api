@@ -22,10 +22,10 @@ export function PasskeySheet({ open, appName, onConfirm, onCancel }: PasskeyShee
     <BottomSheet open={open} onDismiss={onCancel}>
       <div className={styles.sheet}>
         <div className={styles.toolbar}>
-          {/* The close lens sits on the frosted sheet over the skin's auth surface.
-              Refract that surface — skins set --app-sheet-glass-backdrop to their
-              auth hue so the lens picks up the brand color like the frost does;
-              otherwise it falls back to the neutral sheet-surface token. */}
+          {/* The close lens refracts --app-sheet-glass-backdrop when a skin sets it
+              (the creator skin uses `transparent` so the purple sheet shows straight
+              through); otherwise it falls back to the neutral sheet-surface token.
+              The specular/edge rim comes from the glass config either way. */}
           <GlassSymbolButton
             aria-label="Close"
             backdrop="var(--app-sheet-glass-backdrop, var(--glass-symbol-backdrop))"

@@ -25,10 +25,10 @@
        of Aurora's WebGL field). */
     --app-wash: linear-gradient(170deg, #a770ff 0%, #9147ff 56%, #8434f0 100%);
 
-    /* The shared (system) passkey sheet floats over the purple auth wash; its
-       close-button lens refracts this so it picks up the brand hue instead of the
-       neutral gray — a milky lavender ~ the frosted sheet's purple. */
-    --app-sheet-glass-backdrop: linear-gradient(180deg, #c8b6f1 0%, #b49ae8 100%);
+    /* The shared (system) passkey sheet's close-button lens: transparent fill so the
+       purple sheet shows straight through (the specular/edge rim comes from the glass
+       config, not the backdrop). */
+    --app-sheet-glass-backdrop: transparent;
 
     /* Sheets are edge-to-edge here (inset 0), so the content gets compensatory
        breathing room off the screen edges. */
