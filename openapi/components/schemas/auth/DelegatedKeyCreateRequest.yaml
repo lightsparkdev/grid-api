@@ -1,0 +1,19 @@
+title: Delegated Key Create Request
+type: object
+required:
+  - cardId
+  - nickname
+properties:
+  cardId:
+    type: string
+    description: >-
+      The id of the card that will use this delegated signing key. Grid
+      derives the Embedded Wallet funding source from the card and creates
+      the key for that card's wallet funding account.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  nickname:
+    type: string
+    minLength: 1
+    maxLength: 256
+    description: Human-readable label for the delegated key.
+    example: Card payments key
