@@ -9,10 +9,10 @@
    (TEXT_GLASS_PRIMARY_BACKDROP), so it needs no reset. */
 .sheet {
   display: contents;
+  /* System chrome — canonical iOS colors (the Face ID glyph + "More Options" follow
+     --ios-tint, which skins re-map) and the system font, never the skin's brand. */
   @include ios-colors.tokens;
-  /* System chrome renders in the system font — pin SF Pro so a skin's
-     --ios-font-family override (creator → Inter) can't bleed in. */
-  --ios-font-family: var(--font-family-sf-pro);
+  @include ios.ios-system-font;
 }
 
 .toolbar {
