@@ -1,4 +1,5 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
+@use '../../shared/glass/glass-button-shadow' as shadow;
 
 .root {
   position: relative;
@@ -417,6 +418,7 @@
 }
 
 .actionPill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -436,9 +438,44 @@
   letter-spacing: -0.23px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  @include shadow.glass-button-press-scale(1.04);
+
+  /* Hover/press wash — themed iOS fills, like ContentAreaButton secondary. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: round;
+    background: var(--ios-fill-tertiary);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    pointer-events: none;
+  }
+
+  > svg,
+  > span {
+    position: relative;
+    z-index: 1;
+  }
+
+  &:hover:not(:disabled)::after {
+    opacity: 1;
+  }
+
+  &:active:not(:disabled)::after {
+    opacity: 1;
+    background: var(--ios-fill-secondary);
+  }
+
+  /* Press feedback is the fill deepening, not brightness (avoids washing the pill). */
+  &:active:not(:disabled) {
+    filter: none;
+  }
 }
 
 .cardButton {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -457,6 +494,39 @@
   letter-spacing: -0.23px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  @include shadow.glass-button-press-scale(1.04);
+
+  /* White wash on the purple fill — matches the creator auth CTAs. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: round;
+    background: rgba(255, 255, 255, 0.12);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    pointer-events: none;
+  }
+
+  > svg,
+  > span {
+    position: relative;
+    z-index: 1;
+  }
+
+  &:hover:not(:disabled)::after {
+    opacity: 1;
+  }
+
+  &:active:not(:disabled)::after {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    filter: none;
+  }
 }
 
 /* Activity filter tabs (Figma 2454:19436) — underline style: gap 24, p16,
