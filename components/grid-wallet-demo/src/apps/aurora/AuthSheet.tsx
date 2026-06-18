@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type InputHTMLAttributes,
+  type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
@@ -37,6 +38,8 @@ import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { formatUsPhone, maskUsPhone } from '@/lib/phoneFormat';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import styles from './AuthSheet.module.scss';
 
 const CODE_LENGTH = 6;
@@ -66,6 +69,24 @@ const STEP_SHOWN = { opacity: 1, filter: 'blur(0px)' };
 // The amount-entry error shake (Swift ShakeEffect, tightened).
 const SHAKE = { x: [0, 8, -8, 8, 0] };
 const SHAKE_OPTS = { duration: 0.28, ease: 'linear' as const };
+
+/** OTP digit cell — squircle clip-path for Safari (corner-shape fallback is circular). */
+function AuthCodeCell({ active, children }: { active?: boolean; children: ReactNode }) {
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
+  return (
+    <span className={styles.codeCellShell} data-active={active || undefined}>
+      <SquircleFocusHalo
+        path={clip.path}
+        width={clip.width}
+        height={clip.height}
+        className={styles.codeCellHalo}
+      />
+      <span ref={clip.ref} style={clip.style} className={styles.codeCell}>
+        {children}
+      </span>
+    </span>
+  );
+}
 
 /** "playground@lightspark.com" → "pl•••@lightspark.com". */
 function maskEmail(email: string): string {
@@ -188,6 +209,7 @@ export function AuthSheet({
   const theme = useThemeMode();
   const reduceMotion = useReducedMotion();
   const cfg = METHODS[method];
+  const inputClip = useSquircleClip({ figmaRadii: 22 });
 
   // The DISPLAYED step only follows the live prompts while the sheet is open —
   // when the flow completes, codeActive flips off mid-dismiss, and without the
@@ -485,17 +507,25 @@ export function AuthSheet({
               <h2 className={styles.heading}>{cfg.heading}</h2>
               <p className={styles.sub}>{cfg.sub}</p>
               <div className={styles.cardContainer} ref={entryScope}>
-                <div className={styles.card}>
-                  <input
-                    ref={inputRef}
-                    className={styles.input}
-                    {...cfg.input}
-                    value={value}
-                    onChange={(e) => setValue(cfg.format(e.target.value))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') submit();
-                    }}
+                <div className={styles.cardShell}>
+                  <SquircleFocusHalo
+                    path={inputClip.path}
+                    width={inputClip.width}
+                    height={inputClip.height}
+                    className={styles.cardHalo}
                   />
+                  <div ref={inputClip.ref} style={inputClip.style} className={styles.card}>
+                    <input
+                      ref={inputRef}
+                      className={styles.input}
+                      {...cfg.input}
+                      value={value}
+                      onChange={(e) => setValue(cfg.format(e.target.value))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') submit();
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -545,12 +575,11 @@ export function AuthSheet({
                       {i === CODE_LENGTH / 2 && (
                         <span className={styles.codeDash} aria-hidden />
                       )}
-                      <span
-                        className={styles.codeCell}
-                        data-active={i === Math.min(code.length, CODE_LENGTH - 1) || undefined}
+                      <AuthCodeCell
+                        active={i === Math.min(code.length, CODE_LENGTH - 1) || undefined}
                       >
                         {code[i] ?? ''}
-                      </span>
+                      </AuthCodeCell>
                     </Fragment>
                   ))}
                 </div>

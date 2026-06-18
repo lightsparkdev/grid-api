@@ -56,7 +56,7 @@
   height: 52px;
 }
 
-/* Squircle focus halo — single 3px stroke on the squircle edge. */
+/* Squircle stroke — sits outside the clip-path; default border, focus tint. */
 .cardHalo,
 .codeCellHalo {
   position: absolute;
@@ -69,23 +69,22 @@
 
   path {
     fill: none;
-    stroke: var(--input-halo);
+    stroke: var(--input-border);
     stroke-width: 2;
     vector-effect: non-scaling-stroke;
+    transition: stroke 0.15s ease;
   }
 }
 
-.cardHalo {
-  opacity: 0;
-  transition: opacity 0.15s ease;
+.cardContainer:focus-within .cardHalo path {
+  stroke: var(--input-halo);
 }
 
-.cardContainer:focus-within .cardHalo {
-  opacity: 1;
+.codeContainer:focus-within .codeCellShell[data-active] .codeCellHalo path {
+  stroke: var(--input-halo);
 }
 
-/* Input card — 48px pill, soft shadow (Figma "Card"). Elevation + focus halo
-   live on `.cardShell`; squircle clip stays on this node. */
+/* Clipped squircle surface — no fill; stroke lives on the halo SVG above. */
 .card {
   position: relative;
   z-index: 1;
@@ -96,15 +95,7 @@
   /* Squircle clip via useSquircleClip (Figma 10) — radius stays 0 so Safari
      doesn't fall back to a circular corner-shape. */
   border-radius: 0;
-  /* White on light — the wallet content-area pills' bordered surface; dark
-     keeps the secondary fill. */
-  background: var(--ios-bg-primary);
-  filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.06));
-
-  :global([data-theme='dark']) & {
-    background: var(--ios-fill-secondary);
-    filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.2));
-  }
+  background: transparent;
 }
 
 /* Callout / Regular — 16/21; placeholder is labels/tertiary. */
@@ -168,8 +159,13 @@
   min-width: 0;
   padding-bottom: 24px;
 
+  --input-border: rgba(35, 35, 33, 0.2);
   /* Focus ring — brand purple (Glitch `--app-tint`). */
   --input-halo: var(--app-tint);
+
+  :global([data-theme='dark']) & {
+    --input-border: rgba(245, 245, 245, 0.15);
+  }
 }
 
 /* ── Verification code cells ──────────────────────────────────────────────── */
@@ -202,15 +198,6 @@
   height: 52px;
 }
 
-.codeCellHalo {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.codeCellShell[data-active] .codeCellHalo {
-  opacity: 1;
-}
-
 .codeCell {
   position: relative;
   z-index: 1;
@@ -220,17 +207,11 @@
   align-items: center;
   justify-content: center;
   border-radius: 0;
-  background: var(--ios-bg-primary);
-  filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.06));
+  background: transparent;
   @include ios.ios-text-title-3;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
   color: var(--ios-label-primary);
-
-  :global([data-theme='dark']) & {
-    background: var(--ios-fill-secondary);
-    filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.2));
-  }
 }
 
 /* The 3 — 3 group separator. */

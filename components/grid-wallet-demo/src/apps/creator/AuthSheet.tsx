@@ -22,6 +22,7 @@ import {
 import { PrimaryButton } from './blocks/PrimaryButton';
 import { SheetIconButton } from './blocks/SheetIconButton';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import { IconCrossMedium } from './icons';
 import { AUTH_METHOD_ICONS, type AuthMethodIcon } from '@/apps/shared/authMethodIcons';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -58,31 +59,6 @@ const STEP_SHOWN = { opacity: 1, filter: 'blur(0px)' };
 // The amount-entry error shake (Swift ShakeEffect, tightened).
 const SHAKE = { x: [0, 8, -8, 8, 0] };
 const SHAKE_OPTS = { duration: 0.28, ease: 'linear' as const };
-
-/** SVG stroke behind the clipped surface — inner half is covered, outer half is the halo. */
-function SquircleFocusHalo({
-  path,
-  width,
-  height,
-  className,
-}: {
-  path: string;
-  width: number;
-  height: number;
-  className?: string;
-}) {
-  if (!path || width <= 0 || height <= 0) return null;
-  return (
-    <svg
-      className={className}
-      aria-hidden
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-    >
-      <path d={path} />
-    </svg>
-  );
-}
 
 /** OTP digit cell — squircle clip-path for Safari (corner-shape fallback is circular). */
 function AuthCodeCell({ active, children }: { active?: boolean; children: ReactNode }) {
