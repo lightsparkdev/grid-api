@@ -10,6 +10,9 @@
 .sheet {
   display: contents;
   @include ios-colors.tokens;
+  /* System chrome renders in the system font — pin SF Pro so a skin's
+     --ios-font-family override (creator → Inter) can't bleed in. */
+  --ios-font-family: var(--font-family-sf-pro);
 }
 
 .toolbar {

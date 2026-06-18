@@ -42,54 +42,68 @@
   padding: 8px 40px 24px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
-.cardContainer {
+.cardContainer,
+.codeContainer {
   padding: 0 32px;
 }
 
-/* Input card — 48px pill, soft shadow (Figma "Card").
-   Focus: Origin's input-focus recipe (30%-ink hairline + soft 3px halo),
-   HARDCODED as Aurora-local values so the phone stays self-contained and
-   doesn't ride docs-side Origin tokens. Box-shadows follow the pill radius
-   and never shift layout. */
+/* Positioning host for the halo SVG + clipped input card. */
+.cardShell {
+  position: relative;
+  height: 52px;
+}
+
+/* Squircle focus halo — single 3px stroke on the squircle edge. */
+.cardHalo,
+.codeCellHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--input-halo);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.cardHalo {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.cardContainer:focus-within .cardHalo {
+  opacity: 1;
+}
+
+/* Input card — 48px pill, soft shadow (Figma "Card"). Elevation + focus halo
+   live on `.cardShell`; squircle clip stays on this node. */
 .card {
   position: relative;
+  z-index: 1;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  /* Matches the 44px primary sheet CTA below. */
-  height: 44px;
+  height: 52px;
   /* Squircle clip via useSquircleClip (Figma 10) — radius stays 0 so Safari
      doesn't fall back to a circular corner-shape. */
   border-radius: 0;
   /* White on light — the wallet content-area pills' bordered surface; dark
      keeps the secondary fill. */
   background: var(--ios-bg-primary);
+  filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.06));
 
   :global([data-theme='dark']) & {
     background: var(--ios-fill-secondary);
-  }
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
-  transition: box-shadow 0.15s ease;
-
-  /* Origin light: border-secondary / input-focus halo. */
-  --input-ring: rgba(35, 35, 33, 0.3);
-  --input-halo: rgba(38, 38, 35, 0.1);
-
-  :global([data-theme='dark']) & {
-    /* Origin dark: border-secondary / state-focus. */
-    --input-ring: rgba(245, 245, 245, 0.3);
-    --input-halo: rgba(244, 244, 245, 0.1);
-  }
-
-  &:focus-within {
-    box-shadow:
-      inset 0 0 0 1px var(--input-ring),
-      0 0 0 3px var(--input-halo),
-      0 0 24px rgba(0, 0, 0, 0.04);
+    filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.2));
   }
 }
 
@@ -134,15 +148,28 @@
      when the leaver unmounts. */
   grid-template-rows: 100%;
   align-items: end;
+  /* Step cross-fades need a clip. Padding bleeds focus halos on older engines;
+     clip-margin does the same without inset when supported. */
   overflow: hidden;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+@supports (overflow-clip-margin: 1px) {
+  .steps {
+    overflow: clip;
+    padding: 0;
+    overflow-clip-margin: 6px;
+  }
 }
 
 .step {
   grid-area: 1 / 1;
   min-width: 0;
-  /* Room INSIDE the host's overflow clip for the field shadows/focus halos
-     (the CTA's top pad gives this back, so the rhythm is unchanged). */
   padding-bottom: 24px;
+
+  /* Focus ring — brand purple (Glitch `--app-tint`). */
+  --input-halo: var(--app-tint);
 }
 
 /* ── Verification code cells ──────────────────────────────────────────────── */
@@ -152,7 +179,6 @@
   position: relative;
   display: flex;
   gap: 8px;
-  padding: 0 32px 8px;
   cursor: text;
 }
 
@@ -170,16 +196,32 @@
 
 /* Same surface treatment as the entry input card; the ACTIVE cell carries the
    focus ring while the hidden input has focus. */
-.codeCell {
-  display: flex;
+.codeCellShell {
+  position: relative;
   flex: 1;
+  height: 52px;
+}
+
+.codeCellHalo {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.codeCellShell[data-active] .codeCellHalo {
+  opacity: 1;
+}
+
+.codeCell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
   align-items: center;
   justify-content: center;
-  height: 52px;
   border-radius: 0;
   background: var(--ios-bg-primary);
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.15s ease;
+  filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.06));
   @include ios.ios-text-title-3;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
@@ -187,6 +229,7 @@
 
   :global([data-theme='dark']) & {
     background: var(--ios-fill-secondary);
+    filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.2));
   }
 }
 
@@ -198,20 +241,6 @@
   height: 1px;
   border-radius: 0.5px;
   background: var(--ios-label-tertiary);
-}
-
-.codeContainer:focus-within .codeCell[data-active] {
-  box-shadow:
-    inset 0 0 0 1px var(--input-ring, rgba(35, 35, 33, 0.3)),
-    0 0 0 3px var(--input-halo, rgba(38, 38, 35, 0.1)),
-    0 0 24px rgba(0, 0, 0, 0.04);
-}
-
-:global([data-theme='dark']) .codeContainer:focus-within .codeCell[data-active] {
-  box-shadow:
-    inset 0 0 0 1px rgba(245, 245, 245, 0.3),
-    0 0 0 3px rgba(244, 244, 245, 0.1),
-    0 0 24px rgba(0, 0, 0, 0.04);
 }
 
 /* The notification lens's aurora copy — fills its (bled) wrapper. */

@@ -59,17 +59,45 @@ const STEP_SHOWN = { opacity: 1, filter: 'blur(0px)' };
 const SHAKE = { x: [0, 8, -8, 8, 0] };
 const SHAKE_OPTS = { duration: 0.28, ease: 'linear' as const };
 
+/** SVG stroke behind the clipped surface — inner half is covered, outer half is the halo. */
+function SquircleFocusHalo({
+  path,
+  width,
+  height,
+  className,
+}: {
+  path: string;
+  width: number;
+  height: number;
+  className?: string;
+}) {
+  if (!path || width <= 0 || height <= 0) return null;
+  return (
+    <svg
+      className={className}
+      aria-hidden
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+    >
+      <path d={path} />
+    </svg>
+  );
+}
+
 /** OTP digit cell — squircle clip-path for Safari (corner-shape fallback is circular). */
 function AuthCodeCell({ active, children }: { active?: boolean; children: ReactNode }) {
   const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
   return (
-    <span
-      ref={clip.ref}
-      style={clip.style}
-      className={styles.codeCell}
-      data-active={active || undefined}
-    >
-      {children}
+    <span className={styles.codeCellShell} data-active={active || undefined}>
+      <SquircleFocusHalo
+        path={clip.path}
+        width={clip.width}
+        height={clip.height}
+        className={styles.codeCellHalo}
+      />
+      <span ref={clip.ref} style={clip.style} className={styles.codeCell}>
+        {children}
+      </span>
     </span>
   );
 }
@@ -409,6 +437,7 @@ export function AuthSheet({
   );
 
   return (
+    <>
     <BottomSheet
       open={open}
       // The scrim can't cancel mid-verify — the staged submit is committed.
@@ -458,17 +487,25 @@ export function AuthSheet({
             >
               <p className={styles.sub}>{cfg.sub}</p>
               <div className={styles.cardContainer} ref={entryScope}>
-                <div ref={inputClip.ref} style={inputClip.style} className={styles.card}>
-                  <input
-                    ref={inputRef}
-                    className={styles.input}
-                    {...cfg.input}
-                    value={value}
-                    onChange={(e) => setValue(cfg.format(e.target.value))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') submit();
-                    }}
+                <div className={styles.cardShell}>
+                  <SquircleFocusHalo
+                    path={inputClip.path}
+                    width={inputClip.width}
+                    height={inputClip.height}
+                    className={styles.cardHalo}
                   />
+                  <div ref={inputClip.ref} style={inputClip.style} className={styles.card}>
+                    <input
+                      ref={inputRef}
+                      className={styles.input}
+                      {...cfg.input}
+                      value={value}
+                      onChange={(e) => setValue(cfg.format(e.target.value))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') submit();
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -583,9 +620,13 @@ export function AuthSheet({
         </PrimaryButton>
       </div>
 
-      {/* Above the status bar via AppShell's overlay layer (the Face ID /
-          toast slot); falls back to an in-sheet layer outside an AppShell. */}
-      {overlayEl ? createPortal(notification, overlayEl) : notification}
     </BottomSheet>
+      {/* Above the status bar via AppShell's overlay (Face ID / toast slot). A
+          SIBLING of the sheet (not a child) so its tuck-up exit plays on dismiss —
+          framer cuts a nested AnimatePresence exit when the sheet's own
+          AnimatePresence unmounts the subtree. Falls back to an in-sheet layer
+          outside an AppShell. */}
+      {overlayEl ? createPortal(notification, overlayEl) : notification}
+    </>
   );
 }

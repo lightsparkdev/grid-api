@@ -13,6 +13,9 @@
      (21 + 22 + 21 = 64). 20px sides — 362px capsule on the 402px screen. */
   padding: 64px 20px 0;
   pointer-events: none;
+  /* System chrome: an iOS push always renders in the system font — pin SF Pro so a
+     skin's --ios-font-family override (e.g. creator's Inter) can't bleed in. */
+  --ios-font-family: var(--font-family-sf-pro);
 }
 
 /* Figma 2343:49986 — iOS 26 collapsed notification on real glass (FrostPanel

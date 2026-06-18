@@ -424,6 +424,7 @@ export function AuthSheet({
   const TileIcon = cfg.Icon;
 
   return (
+    <>
     <BottomSheet
       open={open}
       // The scrim can't cancel mid-verify — the staged submit is committed.
@@ -614,9 +615,13 @@ export function AuthSheet({
         </GlassTextButton>
       </div>
 
-      {/* Above the status bar via AppShell's overlay layer (the Face ID /
-          toast slot); falls back to an in-sheet layer outside an AppShell. */}
-      {overlayEl ? createPortal(notification, overlayEl) : notification}
     </BottomSheet>
+      {/* Above the status bar via AppShell's overlay (Face ID / toast slot). A
+          SIBLING of the sheet (not a child) so its tuck-up exit plays on dismiss —
+          framer cuts a nested AnimatePresence exit when the sheet's own
+          AnimatePresence unmounts the subtree. Falls back to an in-sheet layer
+          outside an AppShell. */}
+      {overlayEl ? createPortal(notification, overlayEl) : notification}
+    </>
   );
 }
