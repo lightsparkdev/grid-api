@@ -6,15 +6,15 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   IconArrowBottomTop,
-  IconArrowDownLeft,
   IconCreditCard2,
+  IconMinusMedium,
+  IconPeople2,
   IconPlusMedium,
   IconSettingsGear2,
 } from '../icons';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
-import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { GlassToast } from '@/apps/shared/GlassToast';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
@@ -28,8 +28,7 @@ import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import { SkinTabBar } from '../blocks/SkinTabBar';
-import { CREATOR_LOGO_PURPLE, CREATOR_TAB_BAR } from '../config';
-import { CreatorInsightCards } from './CreatorInsightCards';
+import { CREATOR_HERO_STATS, CREATOR_TAB_BAR } from '../config';
 import styles from './CreatorWalletScreen.module.scss';
 
 const SHEET_DURATION = 0.4;
@@ -61,7 +60,6 @@ const ACTIVITY_TABS = ['All', 'Sent', 'Received'];
 export function CreatorWalletScreen(props: SkinWalletScreenProps) {
   const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
-  const heroClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 10 });
   const overlayEl = useScreenOverlay();
 
   const {
@@ -81,7 +79,6 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
     setToast,
     showToast,
     availableCents,
-    earningsTodayCents,
     apyPercent,
     homeActivity,
     isOpen,
@@ -175,12 +172,15 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
       )}
 
       {!isOpen && !isTap && (
-        <div className={styles.topFade} aria-hidden>
-          <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
-          <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
-          <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
-          <div className={styles.fadeTint} />
-        </div>
+        <header className={styles.brandHeader}>
+          <button type="button" className={styles.brandHeaderButton} aria-label="Community">
+            <IconPeople2 size={24} />
+          </button>
+          <span className={styles.brandHeaderTitle}>Wallet</span>
+          <button type="button" className={styles.brandHeaderButton} aria-label="Settings">
+            <IconSettingsGear2 size={24} />
+          </button>
+        </header>
       )}
 
       <motion.div
@@ -194,32 +194,6 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={CARD_TRANSITION}
       >
-        {/* Scrolling brand header — avatar + settings + debit card. */}
-        {!isOpen && !isTap && (
-          <div className={styles.headerScroll}>
-            <img
-              className={styles.avatar}
-              src={CREATOR_LOGO_PURPLE}
-              alt=""
-              aria-hidden
-              draggable={false}
-            />
-            <div className={styles.headerButtons}>
-              <button type="button" className={styles.headerButton} aria-label="Settings">
-                <IconSettingsGear2 size={24} />
-              </button>
-              <button
-                type="button"
-                className={styles.headerButton}
-                aria-label="Debit card"
-                onClick={openCard}
-              >
-                <IconCreditCard2 size={24} />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* The debit card — hidden on the closed home (the balance hero takes the
             slot); it still mounts for the issuance / card-home flow. */}
         {isOpen && (
@@ -266,40 +240,50 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
         >
           {!isOpen && (
             <>
-              <motion.div
-                {...enter(1)}
-                ref={heroClip.ref}
-                style={heroClip.style}
-                className={styles.heroWash}
-              >
-                <span className={styles.balanceLabel}>Available Balance</span>
-                <span className={styles.balanceAmount}>{formatUsdCents(availableCents)}</span>
-                <div className={styles.actions}>
-                  <button type="button" className={styles.action} onClick={() => openSheet('add')}>
+              <motion.div {...enter(1)} className={styles.hero}>
+                <div className={styles.heroTop}>
+                  <div className={styles.balanceRow}>
+                    <span className={styles.balanceLabel}>Balance</span>
+                    <span className={styles.apyPill}>{apyPercent.toFixed(2)}% APY</span>
+                  </div>
+                  <span className={styles.balanceAmount}>{formatUsdCents(availableCents)}</span>
+                </div>
+                <div className={styles.heroStats}>
+                  {CREATOR_HERO_STATS.map((stat) => (
+                    <p key={stat.label} className={styles.heroStat}>
+                      <span className={styles.heroStatAmount}>{stat.amount}</span> {stat.label}
+                    </p>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div {...enter(2)} className={styles.actionBlock}>
+                <div className={styles.actionRow}>
+                  <button type="button" className={styles.actionPill} onClick={() => openSheet('add')}>
                     <IconPlusMedium size={20} />
                     <span>Deposit</span>
                   </button>
                   <button
                     type="button"
-                    className={styles.action}
+                    className={styles.actionPill}
                     onClick={() => openSheet('withdraw')}
                   >
-                    <IconArrowDownLeft size={20} />
+                    <IconMinusMedium size={20} />
                     <span>Withdraw</span>
                   </button>
                   <button
                     type="button"
-                    className={clsx(styles.action, styles.actionIcon)}
-                    aria-label="Send"
+                    className={styles.actionPill}
                     onClick={() => setSendReceiveOpen(true)}
                   >
                     <IconArrowBottomTop size={20} />
+                    <span>Pay</span>
                   </button>
                 </div>
-              </motion.div>
-
-              <motion.div {...enter(2)}>
-                <CreatorInsightCards earningsTodayCents={earningsTodayCents} apyPercent={apyPercent} />
+                <button type="button" className={styles.cardButton} onClick={openCard}>
+                  <IconCreditCard2 size={20} />
+                  <span>{issued ? 'View card' : 'Get a free debit card'}</span>
+                </button>
               </motion.div>
 
               <motion.div

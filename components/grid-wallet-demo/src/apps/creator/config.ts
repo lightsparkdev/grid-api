@@ -18,6 +18,13 @@ export const CREATOR_LOGO = '/assets/creator/logo-creator-platform.svg';
 /** Purple logo — wallet header avatar on the dark home. */
 export const CREATOR_LOGO_PURPLE = '/assets/creator/logo-creator-platform-color.svg';
 
+/** Hero secondary stats (Figma 2454:19341). Static creator chrome — the balance
+ *  itself stays the unified, fresh-per-session demo value across every skin. */
+export const CREATOR_HERO_STATS: { amount: string; label: string }[] = [
+  { amount: '$0.00', label: 'since last stream' },
+  { amount: '$0.00', label: 'paid out this month' },
+];
+
 /** Auth hero copy + the scrolling category marquee (Figma 2375:10338). */
 export const CREATOR_AUTH = {
   headline: BRAND,

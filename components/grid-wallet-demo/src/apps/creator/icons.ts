@@ -10,7 +10,9 @@ import { IconGoogle } from '@central-icons-react/round-outlined-radius-0-stroke-
 import { IconGrowth } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconGrowth';
 import { IconHeart } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconHeart';
 import { IconHomeOpen } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconHomeOpen';
+import { IconMinusMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconMinusMedium';
 import { IconPeople } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPeople';
+import { IconPeople2 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPeople2';
 import { IconPhone } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPhone';
 import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPlusMedium';
 import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconSettingsGear2';
@@ -32,7 +34,9 @@ export {
   IconGrowth,
   IconHeart,
   IconHomeOpen,
+  IconMinusMedium,
   IconPeople,
+  IconPeople2,
   IconPhone,
   IconPlusMedium,
   IconSettingsGear2,

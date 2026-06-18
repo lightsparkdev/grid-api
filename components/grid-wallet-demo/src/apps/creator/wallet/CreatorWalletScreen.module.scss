@@ -96,69 +96,6 @@
   z-index: 0;
 }
 
-/* iOS scroll-edge: the strip under the status bar progressively blurs + fades the
-   scroll content into the bg so it never collides with the status-bar glyphs. z 2
-   sits above the body (z 1) and below the AppShell status bar. */
-.topFade {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* Progressive blur (3-layer stack, à la AddMoneySheet's <TopFade>): each layer
-   ups the blur radius and is masked to a band, so the blur RAMPS from 0 at the
-   bottom to full at the very top — a single uniform backdrop-filter + mask leaves
-   a hard edge where the blur stops, this crossfades it away. backdrop-filter is
-   clipped to each layer's own box; the .topFade parent has no overflow/clip/
-   isolation so the blur still samples the scrolling body beneath it. */
-.fadeBlur {
-  position: absolute;
-  inset: 0;
-  /* Hairline fill kicks backdrop-filter into compositing (the FaceIdAuth trick). */
-  background: rgba(255, 255, 255, 0.01);
-  -webkit-backdrop-filter: blur(var(--fade-blur));
-  backdrop-filter: blur(var(--fade-blur));
-  mask-image: var(--fade-mask);
-  -webkit-mask-image: var(--fade-mask);
-
-  :global([data-theme='dark']) & {
-    background: rgba(0, 0, 0, 0.01);
-  }
-}
-
-.fadeBlurStrong {
-  --fade-blur: 8px;
-  --fade-mask: linear-gradient(to bottom, #000 0%, #000 16%, transparent 46%);
-}
-
-.fadeBlurMid {
-  --fade-blur: 4px;
-  --fade-mask: linear-gradient(to bottom, #000 0%, #000 34%, transparent 68%);
-}
-
-.fadeBlurSoft {
-  --fade-blur: 2px;
-  --fade-mask: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
-}
-
-/* bg-color tint on top of the blur — fully resolves the very edge (under the
-   status bar) into the wallet bg so the fixed gear/title/card are covered, then
-   melts to transparent so the blurred content shows through below. */
-.fadeTint {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    var(--wallet-bg) 0%,
-    color-mix(in srgb, var(--wallet-bg) 50%, transparent) 50%,
-    transparent 100%
-  );
-}
-
 .headerInner {
   position: absolute;
   inset: 8px 24px;
@@ -199,18 +136,14 @@
   padding-top: var(--wallet-header-height);
 }
 
-/* Plain wallet home: the sheet page-scrolls up over the pinned card / aurora /
-   header. Underlap the status bar too so content runs to the very top edge; the
-   .topFade overlay (z 2) blurs + fades that edge. Scoped to home so the
-   issuance/open/tap states keep the aurora hit-testable under the bar (otherwise
-   the transparent body sits over it and the tone sampler reads the light wallet
-   bg → black glyphs over the aurora). */
+/* Plain wallet home: scrolls beneath the pinned purple .brandHeader (which owns
+   the status-bar bleed), so the body sits in normal flow with no underlap. */
 .bodyHome {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
-  padding-top: calc(62px + var(--wallet-header-height));
+  margin-top: 0;
+  padding-top: 0;
 
   &::-webkit-scrollbar {
     display: none;
@@ -357,133 +290,211 @@
   background: var(--app-wash);
 }
 
-/* Scrolling brand header — avatar left, icon buttons right. */
-.headerScroll {
+/* Pinned purple nav header (Figma 2454:19376) — bleeds up behind the status bar:
+   margin-top pulls into .root's 62px status clearance, padding-top drops the row
+   back below the glyphs. Purple + white content in both themes (sits on the tint). */
+.brandHeader {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  height: var(--wallet-header-height);
-  padding: 8px 24px;
-  box-sizing: border-box;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  corner-shape: superellipse;
-  object-fit: cover;
-}
-
-.headerButtons {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.headerButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  background: transparent;
-  color: var(--app-text-primary);
-  cursor: pointer;
-}
-
-/* Purple wash balance hero — label + amount + Deposit / Withdraw / Send. */
-.heroWash {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0 16px 12px;
-  padding: 20px;
-  background: var(--app-wash);
-  border-radius: 0;
+  margin-top: -62px;
+  padding: 74px 16px 12px;
+  background: var(--app-tint);
   color: #fff;
 }
 
+.brandHeaderButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Lone svg in a row flex gets width-squished to half; pin it square. */
+  svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.brandHeaderTitle {
+  font-family: var(--font-family-inter);
+  font-size: 17px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+}
+
+/* Balance hero (Figma 2454:19341) — flat on the page bg: label + APY pill, big
+   amount, then the two secondary stat lines pinned to the bottom of the block. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 200px;
+  padding: 24px;
+}
+
+.heroTop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .balanceLabel {
-  padding-left: 4px;
   font-size: 13px;
-  font-weight: 510;
-  opacity: 0.85;
+  letter-spacing: -0.08px;
+  color: var(--app-text-primary);
+}
+
+.apyPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ios-system-green) 20%, transparent);
+  color: var(--ios-system-green);
+  font-size: 11px;
+  font-weight: 590;
+  letter-spacing: 0.06px;
 }
 
 .balanceAmount {
   font-family: var(--font-family-inter);
   font-variation-settings: 'wght' 700;
   font-size: 40px;
-  line-height: 1.16;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--app-text-primary);
 }
 
-.actions {
+.heroStats {
   display: flex;
-  gap: 8px;
-  margin-top: 16px;
+  flex-direction: column;
 }
 
-.action {
+.heroStat {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--app-text-primary);
+}
+
+.heroStatAmount {
+  font-weight: 700;
+}
+
+/* Action block (Figma 2454:19411) — three secondary pills + full-width card CTA. */
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionRow {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px;
+}
+
+.actionPill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   flex: 1 1 0;
-  height: 48px;
+  min-width: 0;
+  height: 40px;
+  padding: 8px 16px 8px 12px;
   border: 0;
-  border-radius: 1000px;
+  border-radius: 999px;
   corner-shape: round;
-  background: #642cb0;
+  background: var(--creator-secondary-bg);
+  color: var(--creator-secondary-fg);
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 590;
+  letter-spacing: -0.23px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cardButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 16px;
+  height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--app-tint);
   color: #fff;
   font-family: var(--ios-font-family);
   font-size: 15px;
   font-weight: 590;
+  letter-spacing: -0.23px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.actionIcon {
-  flex: 0 0 auto;
-  width: 48px;
-  padding: 0;
-  border-radius: 50%;
-  corner-shape: round;
-}
-
-/* Activity filter tabs with a gliding underline. */
+/* Activity filter tabs (Figma 2454:19436) — underline style: gap 24, p16,
+   semibold; active text + a 3px gliding underline in the brand accent, inactive
+   in label-primary. */
 .activityTabs {
   position: relative;
   display: flex;
-  gap: 16px;
-  padding: 4px 24px 12px;
+  gap: 24px;
+  padding: 16px;
 }
 
 .activityTab {
   position: relative;
-  padding: 4px 0;
+  display: flex;
+  align-items: flex-start;
+  height: 32px;
+  padding: 0;
   border: 0;
   background: transparent;
   font-family: var(--ios-font-family);
   font-size: 15px;
-  font-weight: 510;
-  color: var(--app-text-secondary);
+  font-weight: 590;
+  letter-spacing: -0.23px;
+  color: var(--app-text-primary);
   cursor: pointer;
 }
 
 .activityTabActive {
-  color: var(--app-text-primary);
+  color: var(--app-tabbar-active);
 }
 
 .activityIndicator {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -2px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--app-tint);
+  bottom: 0;
+  height: 3px;
+  border-radius: 1.5px;
+  background: var(--app-tabbar-active);
 }

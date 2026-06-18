@@ -42,6 +42,11 @@
     --app-tabbar-fg: #0e0e10;
     --app-bg: #f7f7f8;
 
+    /* Home action pills (Deposit / Withdraw / Pay) — secondary fill + label.
+       Dark mirrors Figma #33333a/#fff; light is a soft gray on the off-white bg. */
+    --creator-secondary-bg: #e8e8eb;
+    --creator-secondary-fg: #0e0e10;
+
     /* Activity list panel — light white / dark elevated + hairline bottom edge. */
     --list-panel-bg: #ffffff;
     --list-panel-border: 0.5px solid rgba(0, 0, 0, 0.1);
@@ -58,6 +63,8 @@
       --app-tabbar-bg: #0e0e10;
       --app-tabbar-fg: #ffffff;
       --app-tabbar-active: #bf94ff;
+      --creator-secondary-bg: #33333a;
+      --creator-secondary-fg: #ffffff;
       /* Elevated surface on the dark page — mirrors insight cards / ios-bg-secondary. */
       --list-panel-bg: #1c1c1e;
       --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);
