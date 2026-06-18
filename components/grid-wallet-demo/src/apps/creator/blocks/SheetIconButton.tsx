@@ -6,6 +6,8 @@ interface SheetIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   /** 40px on wallet toolbars; 44px default (passkey close). */
   size?: 40 | 44;
+  /** No background or hover wash — icon + scale press only. */
+  ghost?: boolean;
   'aria-label': string;
 }
 
@@ -14,13 +16,19 @@ export function SheetIconButton({
   children,
   className,
   size = 44,
+  ghost = false,
   type = 'button',
   ...rest
 }: SheetIconButtonProps) {
   return (
     <button
       type={type}
-      className={clsx(styles.button, size === 40 && styles.size40, className)}
+      className={clsx(
+        styles.button,
+        size === 40 && styles.size40,
+        ghost && styles.ghost,
+        className,
+      )}
       {...rest}
     >
       {children}

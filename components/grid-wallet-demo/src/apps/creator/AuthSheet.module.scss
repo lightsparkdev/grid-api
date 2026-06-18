@@ -1,78 +1,45 @@
 @use '../shared/typography/ios-type-mixins' as ios;
 
-/* Header row — the icon tile (30px top/left). */
-.header {
+/* Title + ghost close — one row. */
+.titleRow {
   display: flex;
-  align-items: flex-start;
-  padding: 30px 24px 8px 30px;
-}
-
-/* Glass X — pinned 24px off the sheet's top-right corner. */
-.close {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  z-index: 1;
-}
-
-/* The activity-row graphic treatment (WalletListItem), sized up — 64px tile,
-   radius 16, centered 28px glyph at a true 2px stroke. The FILL lives on a
-   blurred under-layer (8px) so the tile's edges feather out, with the crisp
-   icon stacked on top. */
-.tile {
-  position: relative;
-  display: flex;
-  flex-shrink: 0;
   align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  color: #ffffff;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    corner-shape: var(--corner-shape);
-    /* Diagonal sweep through the aurora AS RENDERED (pixel-sampled from the
-       live WebGL field — its blending reads cooler than the raw stripe
-       tokens, so the tokens themselves don't match). */
-    background: linear-gradient(135deg, #98d9ed 0%, #32b9df 55%, #0698d0 100%);
-    filter: blur(6px);
-  }
-
-  :global([data-theme='dark']) &::before {
-    /* Dark field renders NAVY (sampled), not the teal of its raw tokens. */
-    background: linear-gradient(135deg, #024a82 0%, #00396a 55%, #00254a 100%);
-  }
-
-  svg {
-    position: relative;
-  }
-
-  svg path {
-    stroke-width: 2;
-    /* The glyph renders above its 24 viewBox (28px) — keep the stroke at a
-       true 2 screen px instead of scaling to ~2.33. */
-    vector-effect: non-scaling-stroke;
-  }
+  justify-content: space-between;
+  gap: 12px;
+  padding: 28px 28px 0px 40px;
 }
 
-/* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45. */
-.heading {
+.title {
   margin: 0;
-  padding: 16px 40px 0;
+  flex: 1 1 0;
+  min-width: 0;
   @include ios.ios-text-title-3;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
   color: var(--ios-label-primary);
 }
 
+/* Icon-only dismiss — ghost btn; secondary → primary on hover. */
+.closeBtn {
+  flex-shrink: 0;
+  color: var(--ios-label-secondary);
+  transition: color 0.2s ease;
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    color: var(--ios-label-primary);
+  }
+
+  svg path {
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
 /* Footnote / Regular — 13/18, tracking -0.08. Own row below the title. */
 .sub {
   margin: 0;
-  padding: 8px 40px 20px;
+  padding: 8px 40px 24px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
   text-wrap: pretty;
@@ -93,8 +60,7 @@
   align-items: center;
   /* Matches the 44px primary sheet CTA below. */
   height: 44px;
-  border-radius: 1000px;
-  /* globals.scss sets corner-shape on * — a full pill needs round. */
+  border-radius: 10px;
   corner-shape: round;
   /* White on light — the wallet content-area pills' bordered surface; dark
      keeps the secondary fill. */
@@ -130,7 +96,7 @@
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 0 24px;
+  padding: 0 16px;
   border: 0;
   background: transparent;
   color: var(--ios-label-primary);
@@ -172,7 +138,7 @@
   min-width: 0;
   /* Room INSIDE the host's overflow clip for the field shadows/focus halos
      (the CTA's top pad gives this back, so the rhythm is unchanged). */
-  padding-bottom: 12px;
+  padding-bottom: 24px;
 }
 
 /* ── Verification code cells ──────────────────────────────────────────────── */
@@ -182,7 +148,7 @@
   position: relative;
   display: flex;
   gap: 8px;
-  padding: 0 24px 8px;
+  padding: 0 32px 8px;
   cursor: text;
 }
 
@@ -206,8 +172,8 @@
   align-items: center;
   justify-content: center;
   height: 52px;
-  border-radius: 16px;
-  corner-shape: var(--corner-shape);
+  border-radius: 10px;
+  corner-shape: round;
   background: var(--ios-bg-primary);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.15s ease;

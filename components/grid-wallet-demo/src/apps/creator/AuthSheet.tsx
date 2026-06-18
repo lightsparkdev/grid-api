@@ -20,6 +20,7 @@ import {
 } from '@/apps/shared/GlassNotification';
 import { PrimaryButton } from './blocks/PrimaryButton';
 import { SheetIconButton } from './blocks/SheetIconButton';
+import { IconCrossMedium } from './icons';
 import { AUTH_METHOD_ICONS, type AuthMethodIcon } from '@/apps/shared/authMethodIcons';
 import { SfSymbol } from '@/apps/shared/icons';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -389,8 +390,6 @@ export function AuthSheet({
     />
   );
 
-  const TileIcon = cfg.Icon;
-
   return (
     <BottomSheet
       open={open}
@@ -398,16 +397,13 @@ export function AuthSheet({
       onDismiss={phase === 'idle' ? (onCancel ?? (() => {})) : () => {}}
       glass={CREATOR_FLAT_SHEET}
     >
-      {/* Persistent header: the activity-row icon tile top-left (the method's
-          glyph), glass X top-right — steps push beneath it. */}
-      <div className={styles.header}>
-        <span className={styles.tile} aria-hidden>
-          <TileIcon size={24} />
-        </span>
-      </div>
-      {/* Corner-pinned (16px) independent of the tile's header padding. */}
-      <span className={styles.close}>
+      <div className={styles.titleRow}>
+        <h2 className={styles.title}>
+          {step === 'entry' ? cfg.heading : 'Verification code'}
+        </h2>
         <SheetIconButton
+          className={styles.closeBtn}
+          ghost
           aria-label={step === 'code' ? 'Back' : 'Close'}
           size={40}
           type="button"
@@ -419,9 +415,9 @@ export function AuthSheet({
               : undefined
           }
         >
-          <SfSymbol name="xmark" size={14} />
+          <IconCrossMedium size={24} />
         </SheetIconButton>
-      </span>
+      </div>
 
       {/* Single-cell grid: steps overlap and cross blur-fade while the host's
           height tweens to the arriving step. */}
@@ -442,7 +438,6 @@ export function AuthSheet({
               exit={STEP_HIDDEN}
               transition={STEP_TRANSITION}
             >
-              <h2 className={styles.heading}>{cfg.heading}</h2>
               <p className={styles.sub}>{cfg.sub}</p>
               <div className={styles.cardContainer} ref={entryScope}>
                 <div className={styles.card}>
@@ -469,7 +464,6 @@ export function AuthSheet({
               exit={STEP_HIDDEN}
               transition={STEP_TRANSITION}
             >
-              <h2 className={styles.heading}>Verification code</h2>
                 <p className={styles.sub}>
                   Enter the 6-digit code we sent to {cfg.mask(value.trim())}.{' '}
                   <button type="button" className={styles.resend}>

@@ -1,4 +1,5 @@
 /** Creator icon set — central-icons, 0px corner radius, 2px stroke. */
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
 import { IconApple } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconApple';
 import { IconArrowBottomTop } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconArrowBottomTop';
 import { IconArrowDownLeft } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconArrowDownLeft';
@@ -24,6 +25,7 @@ export {
   IconArrowBottomTop,
   IconArrowDownLeft,
   IconCreditCard2,
+  IconCrossMedium,
   IconEmail1,
   IconGoogle,
   IconGrowth,

@@ -58,3 +58,19 @@
   height: 40px;
   @include shadow.glass-button-press(40px);
 }
+
+.ghost {
+  background: transparent;
+
+  --content-area-hover: transparent;
+  --content-area-active: transparent;
+
+  &::after {
+    display: none;
+  }
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    background: transparent;
+  }
+}
