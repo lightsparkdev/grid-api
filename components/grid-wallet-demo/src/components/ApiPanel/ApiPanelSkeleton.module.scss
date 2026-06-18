@@ -120,22 +120,38 @@ $skeleton-bone-dark: var(--color-gray-850);
 }
 
 .codeBlockToolbar {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-  padding: var(--spacing-xs);
+  position: relative;
+  min-height: 40px;
+  padding: 0 calc(32px + var(--spacing-xs)) 0 0;
   border-bottom: 0.5px solid var(--border-tertiary);
 }
 
 .tabGroup {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  position: relative;
+  height: 40px;
+  margin-bottom: -0.5px;
+}
+
+.tabIndicator {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  width: 52px;
+  height: 100%;
+  box-sizing: border-box;
+  border-right: 0.5px solid var(--border-tertiary);
+  background: var(--surface-base);
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
 }
 
 .tab {
   width: 52px;
-  height: 14px;
+  height: 100%;
 }
 
 .codeBody {

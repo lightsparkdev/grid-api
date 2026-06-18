@@ -161,6 +161,7 @@ export function ApiPanelSkeleton() {
                     <div className={styles.codeBlock}>
                       <div className={styles.codeBlockToolbar}>
                         <div className={styles.tabGroup}>
+                          <div className={styles.tabIndicator} aria-hidden />
                           <div className={clsx(styles.bone, styles.tab)} />
                           <div className={clsx(styles.bone, styles.tab)} />
                         </div>
