@@ -1,6 +1,7 @@
 type: string
 enum:
   - PENDING_KYC
+  - PENDING_AUTH
   - PROCESSING
   - ACTIVE
   - FROZEN
@@ -11,6 +12,7 @@ description: |
   | State | Description |
   |-------|-------------|
   | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this state cannot transact. |
+  | `PENDING_AUTH` | The card has been created with an Embedded Wallet funding source, but the cardholder has not yet completed card-specific delegated signing authorization with `POST /auth/delegated-keys`. Cards in this state cannot transact. |
   | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
   | `ACTIVE` | The card is live and can authorize transactions. |
   | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
