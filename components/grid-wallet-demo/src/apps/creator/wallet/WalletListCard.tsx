@@ -3,8 +3,7 @@
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
+import { useEffect, useRef, useState } from 'react';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { useNow } from '@/hooks/useNow';
 import { motionTransition } from '@/lib/easing';
@@ -87,36 +86,7 @@ export function WalletListCard({
 
   const revealTransition = motionTransition(undefined, REVEAL_DURATION_S);
 
-  // Bottom corners hug the phone screen (same math as BottomSheet) when concentric.
-  const [cornerRadii, setCornerRadii] = useState<
-    [number, number, number, number] | undefined
-  >();
-  const roRef = useRef<ResizeObserver | null>(null);
-  const wrapRef = useCallback(
-    (el: HTMLElement | null) => {
-      roRef.current?.disconnect();
-      if (!el || !concentricBottom) return;
-      const measure = () => {
-        const cs = getComputedStyle(el);
-        const screenRaw = cs.getPropertyValue('--screen-corner-radius').trim();
-        const screenR = screenRaw ? Number.parseFloat(screenRaw) : Number.NaN;
-        const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
-        const inset = Number.parseFloat(cs.paddingLeft.trim());
-        if (Number.isFinite(screenR) && Number.isFinite(topR) && Number.isFinite(inset)) {
-          const bottom = Math.max(0, screenR - inset);
-          setCornerRadii([topR, topR, bottom, bottom]);
-        } else {
-          setCornerRadii(undefined);
-        }
-      };
-      measure();
-      roRef.current = new ResizeObserver(measure);
-      roRef.current.observe(el);
-    },
-    [concentricBottom],
-  );
-
-  const cardClip = useSquircleClip({ cornerRadii });
+  const cardClip = useSquircleClip({ figmaRadii: 10 });
 
   useEffect(() => {
     if (reduceMotion || hasItems) return;
@@ -136,7 +106,6 @@ export function WalletListCard({
 
   return (
     <div
-      ref={wrapRef}
       className={clsx(
         styles.cardWrap,
         concentricBottom && styles.cardWrapInsetBottom,

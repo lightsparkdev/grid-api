@@ -257,32 +257,38 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
                 </div>
               </motion.div>
 
-              <motion.div {...enter(2)} className={styles.actionBlock}>
-                <div className={styles.actionRow}>
-                  <button type="button" className={styles.actionPill} onClick={() => openSheet('add')}>
-                    <IconPlusMedium size={20} />
-                    <span>Deposit</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.actionPill}
-                    onClick={() => openSheet('withdraw')}
-                  >
-                    <IconMinusMedium size={20} />
-                    <span>Withdraw</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.actionPill}
-                    onClick={() => setSendReceiveOpen(true)}
-                  >
-                    <IconArrowBottomTop size={20} />
-                    <span>Pay</span>
-                  </button>
-                </div>
-                <button type="button" className={styles.cardButton} onClick={openCard}>
-                  <IconCreditCard2 size={20} />
-                  <span>{issued ? 'View card' : 'Get a free debit card'}</span>
+              <motion.div {...enter(2)} className={styles.actionRow}>
+                <button
+                  type="button"
+                  className={styles.actionCircle}
+                  aria-label="Deposit"
+                  onClick={() => openSheet('add')}
+                >
+                  <IconPlusMedium size={24} />
+                </button>
+                <button
+                  type="button"
+                  className={styles.actionCircle}
+                  aria-label="Withdraw"
+                  onClick={() => openSheet('withdraw')}
+                >
+                  <IconMinusMedium size={24} />
+                </button>
+                <button
+                  type="button"
+                  className={styles.actionCircle}
+                  aria-label={issued ? 'View card' : 'Get a debit card'}
+                  onClick={openCard}
+                >
+                  <IconCreditCard2 size={24} />
+                </button>
+                <button
+                  type="button"
+                  className={styles.sendReceiveButton}
+                  onClick={() => setSendReceiveOpen(true)}
+                >
+                  <IconArrowBottomTop size={24} />
+                  <span>Send or receive</span>
                 </button>
               </motion.div>
 

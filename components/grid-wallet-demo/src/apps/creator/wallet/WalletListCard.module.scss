@@ -50,6 +50,15 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+
+  /* Full-width hairline divider between rows (edge-to-edge, last row none). */
+  > *:not(:last-child) {
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+  }
+
+  :global([data-theme='dark']) & > *:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
 }
 
 .skeletonLayer {

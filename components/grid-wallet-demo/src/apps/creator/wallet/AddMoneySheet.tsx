@@ -25,7 +25,7 @@ import { currencyFor, type BankCountry } from '@/data/bankCountries';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
-import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
+import { figmaSquircleRadius } from '@/apps/shared/figmaSquircleRadius';
 import {
   useMoneySheet,
   formatUsdCents,
@@ -147,7 +147,7 @@ function CountryPickRow({
  *  (bottom radius = screen corner − 16px inset) — the same hug WalletListCard's
  *  concentricBottom uses — so the bottom-most country card nests into the
  *  sheet's bottom corners instead of floating above them. Top keeps the
- *  wallet-card radius, so it reads like the round 32 of the other picker cards. */
+ *  list-card 10px radius, so it reads like the other picker cards. */
 function ConcentricBottomCard({
   className,
   children,
@@ -161,8 +161,7 @@ function ConcentricBottomCard({
     const el = clip.elementRef.current;
     if (!el) return;
     const measure = () => {
-      const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
-      if (!Number.isFinite(topR)) return;
+      const topR = figmaSquircleRadius(10);
       const screenR = Number.parseFloat(
         getComputedStyle(el).getPropertyValue('--screen-corner-radius').trim(),
       );
@@ -791,7 +790,6 @@ export function AddMoneySheet({
                             key={label}
                             className={clsx(
                               styles.detailRow,
-                              styles.fundingRow,
                               i < arr.length - 1 && styles.detailRowBordered,
                             )}
                           >

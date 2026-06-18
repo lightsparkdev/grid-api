@@ -381,7 +381,7 @@
 .balanceAmount {
   font-family: var(--font-family-inter);
   font-variation-settings: 'wght' 700;
-  font-size: 40px;
+  font-size: 48px;
   line-height: 1.1;
   letter-spacing: -0.04em;
   color: var(--app-text-primary);
@@ -404,50 +404,28 @@
   font-weight: 700;
 }
 
-/* Action block (Figma 2454:19411) — three secondary pills + full-width card CTA. */
-.actionBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
+/* Action row (Figma 2445:19032) — three icon circles (Deposit / Withdraw /
+   card) + a flexible "Send or receive" pill. */
 .actionRow {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 0 16px;
 }
 
-.actionPill {
+/* Shared hover/press wash + scale — themed iOS fill on the circles, white on the
+   purple pill; press feedback is the fill deepening, not brightness. */
+.actionCircle,
+.sendReceiveButton {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex: 1 1 0;
-  min-width: 0;
-  height: 40px;
-  padding: 8px 16px 8px 12px;
-  border: 0;
-  border-radius: 999px;
-  corner-shape: round;
-  background: var(--creator-secondary-bg);
-  color: var(--creator-secondary-fg);
-  font-family: var(--ios-font-family);
-  font-size: 15px;
-  font-weight: 590;
-  letter-spacing: -0.23px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-press-scale(1.04);
 
-  /* Hover/press wash — themed iOS fills, like ContentAreaButton secondary. */
   &::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
     corner-shape: round;
-    background: var(--ios-fill-tertiary);
     opacity: 0;
     transition: opacity 0.2s ease, background 0.2s ease;
     pointer-events: none;
@@ -465,23 +443,53 @@
 
   &:active:not(:disabled)::after {
     opacity: 1;
-    background: var(--ios-fill-secondary);
   }
 
-  /* Press feedback is the fill deepening, not brightness (avoids washing the pill). */
   &:active:not(:disabled) {
     filter: none;
   }
 }
 
-.cardButton {
-  position: relative;
+.actionCircle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 0 16px;
-  height: 40px;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--creator-secondary-bg);
+  color: var(--creator-secondary-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &::after {
+    background: var(--ios-fill-tertiary);
+  }
+
+  &:active:not(:disabled)::after {
+    background: var(--ios-fill-secondary);
+  }
+
+  /* Lone svg in a flex button gets width-squished; pin it square. */
+  > svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.sendReceiveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 52px;
   padding: 8px 16px;
   border: 0;
   border-radius: 999px;
@@ -489,43 +497,18 @@
   background: var(--app-tint);
   color: #fff;
   font-family: var(--ios-font-family);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 590;
-  letter-spacing: -0.23px;
+  letter-spacing: -0.43px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  @include shadow.glass-button-press-scale(1.04);
 
-  /* White wash on the purple fill — matches the creator auth CTAs. */
   &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    corner-shape: round;
     background: rgba(255, 255, 255, 0.12);
-    opacity: 0;
-    transition: opacity 0.2s ease, background 0.2s ease;
-    pointer-events: none;
-  }
-
-  > svg,
-  > span {
-    position: relative;
-    z-index: 1;
-  }
-
-  &:hover:not(:disabled)::after {
-    opacity: 1;
   }
 
   &:active:not(:disabled)::after {
-    opacity: 1;
     background: rgba(255, 255, 255, 0.2);
-  }
-
-  &:active:not(:disabled) {
-    filter: none;
   }
 }
 
@@ -536,7 +519,7 @@
   position: relative;
   display: flex;
   gap: 24px;
-  padding: 16px;
+  padding: 16px 24px;
 }
 
 .activityTab {
@@ -565,6 +548,6 @@
   right: 0;
   bottom: 0;
   height: 3px;
-  border-radius: 1.5px;
+  border-radius: 0;
   background: var(--app-tabbar-active);
 }

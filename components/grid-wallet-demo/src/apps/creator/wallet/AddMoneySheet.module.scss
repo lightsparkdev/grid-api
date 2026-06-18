@@ -98,13 +98,13 @@
   padding-top: 0;
 }
 
-/* ── Cards (Figma radius 32, straight — no 1.2x compensation) ─────────────── */
+/* ── Cards — 10px squircle (figma 10 × 1.2 scale), matching the wallet lists. ─ */
 .card {
   position: relative;
   width: 100%;
   padding: 4px 0;
-  border-radius: 32px;
-  corner-shape: round;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
   background: var(--add-card-bg);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
   --add-card-bg: var(--ios-bg-primary);
@@ -121,7 +121,7 @@
 
 /* Interactive list card: the 4px vertical inset lives on the first/last ROWS
    (padding, not card padding) so the hover/press fill runs all the way to the
-   card edge — and the card clips it to its rounded corners. */
+   card edge — and overflow:hidden clips the rows to the card's squircle corners. */
 .cardFlush {
   padding: 0;
   overflow: hidden;
@@ -388,11 +388,25 @@
   padding-right: 24px;
 }
 
+/* Full-width hairline divider: the border lives on the inset .sourceContent, so
+   draw it with a pseudo-element that reaches back past the 56px tile + 16px gap +
+   16px row pad (88px) to the card's left edge, and out to the right edge. */
 .sourceContentBordered {
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+  position: relative;
 
-  :global([data-theme='dark']) & {
-    border-bottom-color: rgba(255, 255, 255, 0.12);
+  &::after {
+    content: '';
+    position: absolute;
+    left: -88px;
+    right: 0;
+    bottom: 0;
+    height: 0.5px;
+    background: rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+  }
+
+  :global([data-theme='dark']) &::after {
+    background: rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -856,10 +870,11 @@
 }
 
 /* ── Step 3: details + Confirm ────────────────────────────────────────────── */
+/* Padding lives on the ROW (not this container) so the row spans the full card
+   width and its hairline divider runs edge-to-edge. */
 .detailRows {
   display: flex;
   flex-direction: column;
-  padding: 0 24px;
 }
 
 .detailRow {
@@ -867,7 +882,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 0;
+  padding: 16px 24px;
 }
 
 .detailRowBordered {
@@ -1032,16 +1047,6 @@
   .rowIconBtn:hover {
     background: var(--ios-fill-secondary);
   }
-}
-
-/* funding-details rows reuse the shared .detailRow; the only tweak is stretching
-   to the card's RIGHT edge so the divider touches it (iOS list: indented left,
-   flush right) while the value stays 24px off the edge. The left 24px inset +
-   the divider's left start both come from .detailRows' padding. (.detailRow is
-   already vertically centered, so the label centers against a wrapped value.) */
-.fundingRow {
-  margin-right: -24px;
-  padding-right: 24px;
 }
 
 .fundingValueWrap {
