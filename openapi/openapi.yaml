@@ -243,6 +243,10 @@ paths:
     $ref: paths/auth/auth_sessions_{id}.yaml
   /auth/sessions/{id}/refresh:
     $ref: paths/auth/auth_sessions_{id}_refresh.yaml
+  /auth/delegated-keys:
+    $ref: paths/auth/auth_delegated-keys.yaml
+  /auth/delegated-keys/{id}:
+    $ref: paths/auth/auth_delegated-keys_{id}.yaml
   /agents:
     $ref: paths/agents/agents.yaml
   /agents/approvals:

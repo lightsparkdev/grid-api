@@ -5040,6 +5040,268 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/delegated-keys:
+    post:
+      summary: Create a delegated signing key
+      description: |
+        Delegate Spark token-transaction signing authority for a card backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid derives the wallet funding account from the card's funding sources, generates the keypair server-side, creates a non-root Turnkey user holding the public key, then a policy granting that user signing authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+
+        1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Use the session API keypair of a verified credential on the card's Embedded Wallet funding account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
+
+        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status.
+
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the delegated user exists but holds no policy, so it cannot sign. After activation, Grid uses the custodied key to authorize signing for that card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+
+        Each card may have at most one non-revoked delegated key (`ACTIVE` or `PENDING`) for its Embedded Wallet funding account; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by Turnkey. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
+      operationId: createDelegatedKey
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified credential on the same internal account. Required on the signed retries; ignored on the initial call.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in the prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retries; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DelegatedKeyCreateRequest'
+            examples:
+              create:
+                summary: Delegate signing to a Grid-custodied key
+                value:
+                  cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                  nickname: Card payments key
+      responses:
+        '201':
+          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions for this card's Embedded Wallet funding account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedKey'
+              examples:
+                delegatedKey:
+                  summary: Active delegated key
+                  value:
+                    id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    publicKey: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+                    nickname: Card payments key
+                    status: ACTIVE
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:42Z'
+        '202':
+          description: Challenge issued for the next leg. Stamp `payloadToSign` and retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing on a retry, malformed, or does not match the pending challenge, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Card or Embedded Wallet funding account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: A non-revoked delegated key (`ACTIVE` or `PENDING`) already exists for this card. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List delegated signing keys
+      description: List delegated signing keys for an Embedded Wallet internal account, a card, or both, including `PENDING` keys (user created but policy leg never completed) and `REVOKED` keys. At least one of `accountId` or `cardId` must be supplied.
+      operationId: listDelegatedKeys
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          required: false
+          description: The id of the internal account whose delegated keys to list.
+          schema:
+            type: string
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        - name: cardId
+          in: query
+          required: false
+          description: The id of the card whose delegated keys to list.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      responses:
+        '200':
+          description: Delegated keys matching the supplied filters. Returns an empty `data` array when no matching delegated keys are visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedKeyListResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/delegated-keys/{id}:
+    get:
+      summary: Get a delegated signing key
+      description: Retrieve a delegated signing key by its system-generated id.
+      operationId: getDelegatedKeyById
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the delegated key to retrieve (the `id` field of the `DelegatedKey` returned from `POST /auth/delegated-keys` or `GET /auth/delegated-keys`).
+          required: true
+          schema:
+            type: string
+          example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedKey'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Delegated key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Revoke a delegated signing key
+      description: |
+        Revoke a delegated signing key. Revocation is a single signed-retry flow:
+
+        1. Call `DELETE /auth/delegated-keys/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+
+        2. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account and retry with `Grid-Wallet-Signature` and `Request-Id` headers. This deletes the delegated user and its API key, after which the key can no longer sign, and the response is `204`.
+
+        Deleting the user is the kill switch: it removes the API key the delegated key authenticated with, so signing stops regardless of the policy. The policy is left in place — its consensus references the now-deleted user, so it can never authorize anything (Turnkey user IDs are never reused), and deleting it is unnecessary for correctness or security.
+      operationId: revokeDelegatedKey
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the delegated key to revoke (the `id` field of the `DelegatedKey` returned from `POST /auth/delegated-keys`).
+          required: true
+          schema:
+            type: string
+          example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified credential on the same internal account. Required on the signed retries; ignored on the initial call.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in the prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retries; must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      responses:
+        '202':
+          description: Challenge issued. Stamp `payloadToSign` and retry to complete revocation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
+        '204':
+          description: Delegated key revoked. The key can no longer authorize signing.
+        '400':
+          description: Bad request. Returned when the delegated key has already been revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing on a retry, malformed, or does not match the pending challenge, or when the `Request-Id` does not match an unexpired pending challenge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Delegated key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents:
     post:
       summary: Create an agent
@@ -18387,6 +18649,98 @@ components:
           pattern: ^04[0-9a-fA-F]{128}$
           description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid binds this key into the session-creation payload on the initial call and seals the returned `encryptedSessionSigningKey` to it on the signed retry.
           example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+    DelegatedKeyStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACTIVE
+        - REVOKED
+      description: |-
+        Status of a delegated signing key.
+
+        - `PENDING`: The delegated user exists but the policy-creation leg never completed. The key cannot sign.
+        - `ACTIVE`: The policy is granted and the key may stamp quote executions.
+        - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
+      example: ACTIVE
+    DelegatedKey:
+      title: Delegated Key
+      type: object
+      required:
+        - id
+        - cardId
+        - accountId
+        - publicKey
+        - nickname
+        - status
+        - createdAt
+        - updatedAt
+      description: A delegated signing key for a card backed by an Embedded Wallet internal account. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the card's Embedded Wallet funding account in place of a session keypair. `publicKey` is informational metadata identifying the credential.
+      properties:
+        id:
+          type: string
+          description: Grid-issued `DelegatedKey:<uuid>` identifier.
+          example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+        cardId:
+          type: string
+          description: The card this key is delegated for.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        accountId:
+          type: string
+          description: The Embedded Wallet internal account this key is delegated for, derived from the card's funding sources.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        publicKey:
+          type: string
+          description: Compressed P-256 public key (hex) of the delegated API keypair.
+          example: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+        nickname:
+          type: string
+          description: Human-readable label for the delegated key.
+          example: Settlement service key
+        status:
+          $ref: '#/components/schemas/DelegatedKeyStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the delegated key was created.
+          example: '2026-04-08T15:30:01Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the delegated key was last updated.
+          example: '2026-04-08T15:30:42Z'
+    DelegatedKeyListResponse:
+      title: Delegated Key List Response
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: Delegated signing keys matching the list filters.
+          items:
+            $ref: '#/components/schemas/DelegatedKey'
+    DelegatedKeyCreateRequest:
+      title: Delegated Key Create Request
+      type: object
+      required:
+        - cardId
+        - nickname
+      properties:
+        cardId:
+          type: string
+          description: The id of the card that will use this delegated signing key. Grid derives the Embedded Wallet funding source from the card and creates the key for that card's wallet funding account.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Human-readable label for the delegated key.
+          example: Card payments key
+    DelegatedKeySignedRequestChallenge:
+      title: Delegated Key Signed Request Challenge
+      description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
+      allOf:
+        - $ref: '#/components/schemas/SignedRequestChallenge'
     AgentPermission:
       type: string
       enum:
