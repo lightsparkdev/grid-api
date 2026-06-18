@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type InputHTMLAttributes,
+  type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
@@ -20,6 +21,7 @@ import {
 } from '@/apps/shared/GlassNotification';
 import { PrimaryButton } from './blocks/PrimaryButton';
 import { SheetIconButton } from './blocks/SheetIconButton';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { IconCrossMedium } from './icons';
 import { AUTH_METHOD_ICONS, type AuthMethodIcon } from '@/apps/shared/authMethodIcons';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -56,6 +58,21 @@ const STEP_SHOWN = { opacity: 1, filter: 'blur(0px)' };
 // The amount-entry error shake (Swift ShakeEffect, tightened).
 const SHAKE = { x: [0, 8, -8, 8, 0] };
 const SHAKE_OPTS = { duration: 0.28, ease: 'linear' as const };
+
+/** OTP digit cell — squircle clip-path for Safari (corner-shape fallback is circular). */
+function AuthCodeCell({ active, children }: { active?: boolean; children: ReactNode }) {
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
+  return (
+    <span
+      ref={clip.ref}
+      style={clip.style}
+      className={styles.codeCell}
+      data-active={active || undefined}
+    >
+      {children}
+    </span>
+  );
+}
 
 /** "playground@lightspark.com" → "pl•••@lightspark.com". */
 function maskEmail(email: string): string {
@@ -177,6 +194,7 @@ export function AuthSheet({
 }: AuthSheetProps) {
   const reduceMotion = useReducedMotion();
   const cfg = METHODS[method];
+  const inputClip = useSquircleClip({ figmaRadii: 10 });
 
   // The DISPLAYED step only follows the live prompts while the sheet is open —
   // when the flow completes, codeActive flips off mid-dismiss, and without the
@@ -440,7 +458,7 @@ export function AuthSheet({
             >
               <p className={styles.sub}>{cfg.sub}</p>
               <div className={styles.cardContainer} ref={entryScope}>
-                <div className={styles.card}>
+                <div ref={inputClip.ref} style={inputClip.style} className={styles.card}>
                   <input
                     ref={inputRef}
                     className={styles.input}
@@ -499,12 +517,11 @@ export function AuthSheet({
                       {i === CODE_LENGTH / 2 && (
                         <span className={styles.codeDash} aria-hidden />
                       )}
-                      <span
-                        className={styles.codeCell}
-                        data-active={i === Math.min(code.length, CODE_LENGTH - 1) || undefined}
+                      <AuthCodeCell
+                        active={i === Math.min(code.length, CODE_LENGTH - 1) || undefined}
                       >
                         {code[i] ?? ''}
-                      </span>
+                      </AuthCodeCell>
                     </Fragment>
                   ))}
                 </div>

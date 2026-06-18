@@ -55,13 +55,15 @@
    doesn't ride docs-side Origin tokens. Box-shadows follow the pill radius
    and never shift layout. */
 .card {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   /* Matches the 44px primary sheet CTA below. */
   height: 44px;
-  border-radius: 10px;
-  corner-shape: round;
+  /* Squircle clip via useSquircleClip (Figma 10) — radius stays 0 so Safari
+     doesn't fall back to a circular corner-shape. */
+  border-radius: 0;
   /* White on light — the wallet content-area pills' bordered surface; dark
      keeps the secondary fill. */
   background: var(--ios-bg-primary);
@@ -99,6 +101,8 @@
   padding: 0 16px;
   border: 0;
   background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
   color: var(--ios-label-primary);
   outline: none;
   caret-color: var(--ios-tint);
@@ -172,8 +176,7 @@
   align-items: center;
   justify-content: center;
   height: 52px;
-  border-radius: 10px;
-  corner-shape: round;
+  border-radius: 0;
   background: var(--ios-bg-primary);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.15s ease;

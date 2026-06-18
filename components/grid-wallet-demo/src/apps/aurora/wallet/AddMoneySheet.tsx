@@ -176,7 +176,7 @@ function ConcentricBottomCard({
   const [cornerRadii, setCornerRadii] = useState<[number, number, number, number]>();
   const clip = useSquircleClip<HTMLDivElement>({ cornerRadii });
   useLayoutEffect(() => {
-    const el = clip.ref.current;
+    const el = clip.elementRef.current;
     if (!el) return;
     const measure = () => {
       const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
@@ -191,7 +191,7 @@ function ConcentricBottomCard({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [clip.ref]);
+  }, [clip.elementRef]);
   return (
     <div ref={clip.ref} style={clip.style} className={className}>
       {children}
