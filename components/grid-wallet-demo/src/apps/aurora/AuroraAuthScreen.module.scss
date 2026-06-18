@@ -163,11 +163,13 @@
 }
 
 /* CTA wrapper — animates its REAL height (+ bottom-margin gap) on add/remove so
-   the whole column reflows naturally per frame. overflow:hidden clips the
-   collapse; the negative inline margin + matching padding give the button's
-   hover/press bloom horizontal room so it isn't cut off at rest. */
+   the whole column reflows naturally per frame. overflow:clip still hides the
+   height collapse, while overflow-clip-margin lets the button's hover/press bloom
+   grow past the box top/bottom (the negative inline margin + matching padding
+   already give it horizontal room). */
 .action {
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 4px;
   margin: 0 -8px;
   padding: 0 8px;
 }

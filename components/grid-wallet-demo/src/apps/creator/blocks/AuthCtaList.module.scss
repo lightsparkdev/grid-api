@@ -7,15 +7,23 @@
 }
 
 /* CTA wrapper — animates real height (+ bottom-margin gap) on add/remove so the
-   column reflows. overflow:hidden clips the collapse; the negative inline margin
-   + matching padding give the press bloom horizontal room. */
+   column reflows. overflow:clip still hides the height collapse, while
+   overflow-clip-margin lets the press-scale bloom grow past the box top/bottom
+   (the negative inline margin + matching padding already give it horizontal room). */
 .action {
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 4px;
   margin: 0 -8px;
   padding: 0 8px;
 }
 
-/* Trailing pad optically balances each button's leading icon. */
+/* Trailing pad optically balances each button's leading icon. Solid brand fill
+   from creator skin tokens (quaternary defaults to ios-fill-quaternary). */
 .action button {
   padding-right: 24px;
+  background: var(--content-btn-bg, #a05fff);
+  color: var(--content-btn-fg, #efeff1);
+  font-weight: var(--content-btn-weight, 600);
+  --content-area-hover: var(--content-btn-hover, rgba(255, 255, 255, 0.12));
+  --content-area-active: var(--content-btn-active, rgba(255, 255, 255, 0.2));
 }

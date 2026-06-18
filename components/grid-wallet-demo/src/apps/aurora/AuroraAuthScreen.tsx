@@ -34,9 +34,9 @@ const CONTENT_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 const CTA_TOGGLE = motionTransition(easeOutSnappy, 0.32);
 // Each CTA animates its REAL height (+ the 12px gap) on add/remove, so the whole
 // column above it — gradient mask, copy, logo — reflows naturally per frame
-// instead of the buttons animating while everything above snaps. overflow:hidden
-// (in .action) clips the collapse; the negative inline margin gives the press
-// bloom horizontal room so it isn't cut off at rest.
+// instead of the buttons animating while everything above snaps. overflow:clip
+// (in .action) hides the collapse; overflow-clip-margin + the negative inline
+// margin give the press bloom room to grow past the box at rest.
 const CTA_COLLAPSED = { height: 0, opacity: 0, marginBottom: 0, filter: 'blur(8px)' };
 const CTA_SHOWN = { height: 'auto' as const, opacity: 1, marginBottom: 12, filter: 'blur(0px)' };
 const CTA_DISMISSED = { height: 'auto' as const, opacity: 0, marginBottom: 12, filter: 'blur(8px)' };
