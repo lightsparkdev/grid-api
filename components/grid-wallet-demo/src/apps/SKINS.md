@@ -36,7 +36,9 @@ src/apps/
                     #   types.ts (MoneySheetMode, TransferActivity, …) — the
                     #   canonical shared contract.
     BottomSheet/    # MECHANIC: sheet rise/scrim/portal (skin-blind). Reuse as-is.
-    AppShell, glass, icons, FaceIdAuth, GlassToast, AuroraBackground, useStaggerReveal, …  # primitives
+    PasskeySheet/   # SYSTEM CHROME: the iOS passkey dialog — shared, iOS colors
+                    #   pinned, takes appName. Not skinnable (it's an OS sheet).
+    AppShell, glass, icons, FaceIdAuth, GlassToast, useStaggerReveal, …  # primitives
   aurora/           # reference skin (skin zero). Its wallet/ holds the FACES:
                     #   AddMoneySheet, SendReceiveSheet, CardHomeContent,
                     #   CardIssuanceContent, DebitCard, TapToPayStatus,
@@ -100,6 +102,16 @@ Do **not** add props/tokens to a shared sheet to reskin it — fork the face.
 > Fork them straight into `apps/<skin>/wallet/` and restyle — no extraction needed.
 > The creator skin does exactly this: it owns every flow face.
 
+## iOS system sheets are shared, not skinned
+
+Some surfaces are OS chrome, not your app's UI — the **passkey sheet**
+(`apps/shared/PasskeySheet`) is the example. iOS renders these identically in every
+app, so they live in `shared/` as a **mechanic**: one component with its colors
+pinned to canonical iOS (it re-asserts `ios-colors.tokens` so a skin's `--ios-tint` /
+brand can't bleed in), and the only per-app input is `appName` (passed from the
+registry `label`). Don't fork it per skin. `AuthSheet` (email/phone OTP) is the
+opposite — that's *your* branded auth UI, so it stays a per-skin face.
+
 ## Add a new skin (step by step)
 
 `creator` (built; brand "Glitch") is the convention example. `social` and
@@ -122,10 +134,11 @@ use-case tiles only (add the persona in step 1 first).
    home) or `aurora/wallet/AuroraWalletScreen.tsx` (baseline), call
    `useWalletHome(props)`, render your layout + the flow faces (reused or copied).
 5. **Register** — add the entry to `APP_SKINS` in `apps/skins.ts`
-   (`{ id, persona, label, fontFamily, AuthScreen, WalletScreen }`, plus optional
-   `PasskeySheet` / `AuthSheet` to own the sign-in overlays — omit them to fall back
-   to Aurora's) and the id to `AppSkinId`. `DemoPhone` routes by persona
-   automatically; a skin with no `AuthScreen`/`WalletScreen` stays dark ("coming soon").
+   (`{ id, persona, label, fontFamily, AuthScreen, WalletScreen }`, plus an optional
+   `AuthSheet` to own the branded OTP overlay — omit it to fall back to Aurora's) and
+   the id to `AppSkinId`. `DemoPhone` routes by persona automatically; a skin with no
+   `AuthScreen`/`WalletScreen` stays dark ("coming soon"). (The passkey sheet is shared
+   system chrome — not registered per skin.)
 
 ## Run + verify
 

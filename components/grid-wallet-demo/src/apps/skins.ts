@@ -3,13 +3,11 @@ import { AuroraAuthScreen } from './aurora/AuroraAuthScreen';
 import { AuroraWalletScreen } from './aurora/wallet';
 import { CreatorAuthScreen } from './creator/CreatorAuthScreen';
 import { CreatorWalletScreen } from './creator/wallet';
-import { PasskeySheet as CreatorPasskeySheet } from './creator/PasskeySheet';
 import { AuthSheet as CreatorAuthSheet } from './creator/AuthSheet';
 import { BRAND } from './creator/config';
 import type {
   SkinAuthScreen,
   SkinWalletScreen,
-  SkinPasskeySheet,
   SkinAuthSheet,
 } from './types';
 
@@ -26,8 +24,8 @@ export interface AppSkin {
   fontFamily: string;
   AuthScreen?: SkinAuthScreen;
   WalletScreen?: SkinWalletScreen;
-  /** Sign-in auth overlays. Omit to fall back to Aurora's (DemoPhone default). */
-  PasskeySheet?: SkinPasskeySheet;
+  /** Sign-in OTP overlay. Omit to fall back to Aurora's (DemoPhone default).
+   *  (The passkey sheet is shared iOS system chrome — not skinnable.) */
   AuthSheet?: SkinAuthSheet;
 }
 
@@ -50,7 +48,6 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     fontFamily: SF_PRO,
     AuthScreen: CreatorAuthScreen,
     WalletScreen: CreatorWalletScreen,
-    PasskeySheet: CreatorPasskeySheet,
     AuthSheet: CreatorAuthSheet,
   },
   social: {

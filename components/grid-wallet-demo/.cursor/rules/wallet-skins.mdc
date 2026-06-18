@@ -21,6 +21,13 @@ or bank/address data inside a skin.
 To give a skin its own look, **copy the face** into `apps/<skin>/wallet/` and edit freely.
 Do NOT add props / tokens / variants to a shared component to reskin it.
 
+## iOS system sheets are shared mechanics, not faces
+
+OS chrome (the passkey sheet, `apps/shared/PasskeySheet`) looks identical in every app, so
+it lives in `apps/shared/` with colors pinned to canonical iOS and the app name passed as
+`appName` (from the registry `label`). Don't fork it per skin. Branded auth UI like
+`AuthSheet` (OTP) is the opposite — it stays a per-skin face.
+
 ## Don't edit these to change one skin
 
 `apps/shared/**`, `apps/aurora/**` (shipped — treat as untouchable), `data/`, `lib/`,

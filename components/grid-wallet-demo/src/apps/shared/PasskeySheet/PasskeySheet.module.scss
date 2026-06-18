@@ -1,4 +1,16 @@
-@use '../shared/typography/ios-type-mixins' as ios;
+@use '../colors/ios-colors' as ios-colors;
+@use '../typography/ios-type-mixins' as ios;
+
+/* This is iOS system chrome — it must look identical on every skin. Re-assert the
+   canonical iOS colors so a skin's brand tint can't cascade in (e.g. Creator maps
+   --ios-tint to its purple, which would otherwise tint the Face ID glyph and the
+   "More Options" action). display:contents scopes the reset to the sheet subtree
+   without adding a layout box. The primary CTA is already a fixed iOS-blue glass
+   (TEXT_GLASS_PRIMARY_BACKDROP), so it needs no reset. */
+.sheet {
+  display: contents;
+  @include ios-colors.tokens;
+}
 
 .toolbar {
   display: flex;

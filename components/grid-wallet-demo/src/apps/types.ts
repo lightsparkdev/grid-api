@@ -30,13 +30,6 @@ export interface SkinWalletScreenProps {
 export type SkinAuthScreen = ComponentType<SkinAuthScreenProps>;
 export type SkinWalletScreen = ComponentType<SkinWalletScreenProps>;
 
-/** Sign-in passkey-save overlay (rendered by DemoPhone over the auth screen). */
-export type SkinPasskeySheet = ComponentType<{
-  open: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}>;
-
 /** Sign-in email/phone OTP overlay (rendered by DemoPhone over the auth screen). */
 export type SkinAuthSheet = ComponentType<{
   method?: 'email' | 'phone';
