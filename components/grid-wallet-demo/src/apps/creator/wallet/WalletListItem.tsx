@@ -1,13 +1,38 @@
 'use client';
 
 import clsx from 'clsx';
+import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconHotDrinkCup';
+import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCheeseburger';
+import { IconStore1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconStore1';
+import { IconCup } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCup';
+import { IconFashion } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconFashion';
+import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconShoppingBag1';
+import { IconTag } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconTag';
+import { IconSofa } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconSofa';
+import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconDeskLamp';
+import { IconBasket1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconBasket1';
 import { Flag } from '@/apps/shared/Flag';
-import type { WalletListItemData, WalletItemAvatar } from '@/apps/shared/wallet';
+import type { WalletListItemData, WalletItemAvatar, MerchantCategory } from '@/apps/shared/wallet';
 import styles from './WalletListItem.module.scss';
 
 // The row data shape is the shared brain's contract — re-export it so this skin's
 // sibling faces still import it from here; only the rendering below is per-skin.
 export type { WalletListItemData, WalletItemAvatar };
+
+// Tap-to-pay / transaction merchant icons — Creator's variant (radius-0, stroke-2),
+// matching the rest of the skin. The brain supplies only the merchant `category`.
+const MERCHANT_ICONS: Record<MerchantCategory, typeof IconHotDrinkCup> = {
+  coffee: IconHotDrinkCup,
+  'fast-food': IconCheeseburger,
+  convenience: IconStore1,
+  cafe: IconCup,
+  fashion: IconFashion,
+  apparel: IconShoppingBag1,
+  accessories: IconTag,
+  furniture: IconSofa,
+  homeware: IconDeskLamp,
+  grocery: IconBasket1,
+};
 
 export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'timestamp'> {
   /** Pre-formatted relative time label, e.g. "Just now". */
@@ -20,7 +45,7 @@ export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'ti
  * Reusable across the wallet flows.
  */
 export function WalletListItem({
-  Icon,
+  category,
   image,
   imageSquare,
   tileCircle,
@@ -30,6 +55,7 @@ export function WalletListItem({
   time,
   amount,
 }: WalletListItemProps) {
+  const MerchantIcon = category ? MERCHANT_ICONS[category] : null;
   return (
     <div className={styles.row}>
       <span
@@ -51,7 +77,7 @@ export function WalletListItem({
             draggable={false}
           />
         ) : (
-          Icon && <Icon size={24} />
+          MerchantIcon && <MerchantIcon size={24} />
         )}
       </span>
       <div className={styles.content}>

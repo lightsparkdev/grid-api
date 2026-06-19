@@ -1,20 +1,17 @@
 @use '../../shared/fill-button' as fill;
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 84:12455 / 2143:40929 — 16px inset; card fills remainder. */
+/* Flush container — rows run edge-to-edge on the page bg (no inset). */
 .cardWrap {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
-  padding: 16px 16px 0;
+  padding: 0;
 }
 
-/* Bezel-hugging cards (concentricBottom, e.g. wallet Activity) keep a uniform
-   16px bottom inset; filling cards (card-home transactions) stay flush so the
-   list reaches down toward the CTA below it. */
 .cardWrapInsetBottom {
-  padding-bottom: 16px;
+  padding-bottom: 0;
 }
 
 /* Grow with content (vs. fill + clip) so a scrolling parent can scroll the list. */
@@ -23,18 +20,25 @@
   flex: 1 0 auto;
 }
 
-/* Figma 84:12456 / 2143:40930 — min 232pt empty state; grows to fill remainder. */
+/* Figma 84:12456 / 2143:40930 — min 232pt empty state; grows to fill remainder.
+   Transparent container (no elevated fill / border): rows sit on the page bg,
+   separated only by the full-width hairlines. */
 .card {
   @include fill.wallet-elevated-card;
   box-sizing: border-box;
   position: relative;
   flex: 1 1 0;
   min-height: 232px;
-  padding: 4px 0 0;
-  --list-card-bg: var(--ios-bg-primary);
+  padding: 0;
+  /* Override the elevated-card fill/shadow in BOTH themes (the mixin sets the
+     dark bg via a nested [data-theme] selector that out-specifies a flat rule). */
+  background: transparent;
+  box-shadow: none;
+  --list-card-bg: var(--app-bg, var(--ios-bg-primary));
 
   :global([data-theme='dark']) & {
-    --list-card-bg: var(--ios-bg-secondary);
+    background: transparent;
+    --list-card-bg: var(--app-bg, var(--ios-bg-secondary));
   }
 }
 
@@ -50,15 +54,6 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-
-  /* Full-width hairline divider between rows (edge-to-edge, last row none). */
-  > *:not(:last-child) {
-    border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
-  }
-
-  :global([data-theme='dark']) & > *:not(:last-child) {
-    border-bottom-color: rgba(255, 255, 255, 0.12);
-  }
 }
 
 .skeletonLayer {

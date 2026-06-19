@@ -7,6 +7,7 @@ export type {
   TransferActivity,
   WalletEntry,
   WalletEntryTarget,
+  MerchantCategory,
   WalletItemAvatar,
   WalletListItemData,
   WalletTransferMode,
@@ -45,5 +46,4 @@ export {
   type SavedRecipient,
   type SendNetwork,
   type DepositChain,
-  type SourceRow,
 } from './moneySheet';

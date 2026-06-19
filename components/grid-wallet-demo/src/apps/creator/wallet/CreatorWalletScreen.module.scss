@@ -345,7 +345,7 @@
   justify-content: space-between;
   gap: 24px;
   min-height: 200px;
-  padding: 24px;
+  padding: 28px 24px 16px;
 }
 
 .heroTop {
@@ -362,6 +362,7 @@
 
 .balanceLabel {
   font-size: 13px;
+  font-weight: 700;
   letter-spacing: -0.08px;
   color: var(--app-text-primary);
 }
@@ -390,6 +391,7 @@
 .heroStats {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .heroStat {
@@ -410,7 +412,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 16px;
+  padding: 0 16px 8px;
 }
 
 /* Shared hover/press wash + scale — themed iOS fill on the circles, white on the
@@ -519,7 +521,7 @@
   position: relative;
   display: flex;
   gap: 24px;
-  padding: 16px 24px;
+  padding: 16px 24px 8px;
 }
 
 .activityTab {

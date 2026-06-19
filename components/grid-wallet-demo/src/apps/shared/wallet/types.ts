@@ -1,5 +1,4 @@
 /** Headless wallet types shared by every skin's view. No JSX, no UI. */
-import type { ComponentType } from 'react';
 
 /** Debit-card issuance + card-home view state. */
 export type CardView = 'closed' | 'intro' | 'creating' | 'ready' | 'home';
@@ -49,8 +48,20 @@ export type TransferActivity =
   | { kind: 'bank'; countryCode: string; bankName: string; last4: string; recipientName: string }
   | { kind: 'crypto'; address: string; network: string; logo: string };
 
-/** central-icons component shape (accepts `size`, spreads the rest onto the svg). */
-type ListIcon = ComponentType<{ size?: number | string; className?: string }>;
+/** Merchant category for a tap-to-pay / transaction row. Each skin's WalletListItem
+ *  maps it to its own icon variant, so the icon STYLE follows the brand while the
+ *  category (the choice) stays shared data. */
+export type MerchantCategory =
+  | 'coffee'
+  | 'fast-food'
+  | 'convenience'
+  | 'cafe'
+  | 'fashion'
+  | 'apparel'
+  | 'accessories'
+  | 'furniture'
+  | 'homeware'
+  | 'grocery';
 
 /** Contact-style avatar for a person counterparty — initials + country flag. */
 export interface WalletItemAvatar {
@@ -61,9 +72,9 @@ export interface WalletItemAvatar {
 /** One activity/transaction row's data (skin views render it however they like). */
 export interface WalletListItemData {
   id: string;
-  /** Glyph graphic (central-icons). */
-  Icon?: ListIcon;
-  /** Image graphic (e.g. a country flag) — wins over Icon when both are set. */
+  /** Merchant category — the skin's WalletListItem maps it to its own icon variant. */
+  category?: MerchantCategory;
+  /** Image graphic (e.g. a country flag) — wins over the merchant icon when set. */
   image?: string;
   /** Self-contained brand tile with its own corner radius (e.g. a crypto logo). */
   imageSquare?: boolean;

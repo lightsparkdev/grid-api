@@ -4,7 +4,6 @@
  * (the stateful hook) so every skin's sheet FACE shares one source of truth for
  * steps, FX data, networks, and field handling.
  */
-import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { BANK_COUNTRIES, currencyFor, type BankCountry } from '@/data/bankCountries';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import type { MoneySheetMode } from './types';
@@ -129,41 +128,16 @@ export const QUOTE_MS = 750;
 /** Validate+save beat: the add bank/recipient CTA spins this long before amount. */
 export const SAVE_MS = 500;
 
-export interface SourceRow {
-  id: string;
-  /** SVG asset graphic — most rows. */
-  icon?: string;
-  /** central-icons glyph (e.g. IconWallet1) — wins over `icon` when set. */
-  Icon?: typeof IconWallet1;
-  title: string;
-  sub: string;
-  speed: string;
-}
-
-const BANK_SOURCE: SourceRow = {
-  id: 'bank',
-  icon: '/assets/add-money/IconBank.svg',
-  title: 'Bank account',
-  sub: 'Local transfer in 65+ countries',
-  speed: 'Instant',
-};
-
-/** The crypto-wallet source row — inactive in withdraw, the live path in send. */
-const CRYPTO_SOURCE: SourceRow = {
-  id: 'crypto',
-  Icon: IconWallet1,
-  title: 'Crypto wallet',
-  sub: 'Spark, Solana, Base address',
-  speed: 'Instant',
-};
-
-/** Per-mode copy + source rows; everything else in the flow is shared. */
+/** Per-mode step copy + the ordered source-row IDs. The source visuals (icon +
+ *  title/sub/speed) are a FACE concern — each skin's AddMoneySheet maps these ids to
+ *  its own icon + copy; the brain only owns the list + routing (`activeSources`). */
 export const MODES: Record<
   MoneySheetMode,
   {
     /** `recipient` only renders in send mode — '' elsewhere (step unreachable). */
     titles: Record<Step, string>;
-    sources: SourceRow[];
+    /** Ordered source-row ids; the face maps each to its own icon + copy. */
+    sources: string[];
     /** The tappable source rows + the step each pushes to (send has two: bank
      *  and crypto). */
     activeSources: { id: string; next: Step }[];
@@ -189,30 +163,7 @@ export const MODES: Record<
       { id: 'bank', next: 'banks' },
       { id: 'crypto', next: 'deposit' },
     ],
-    sources: [
-      BANK_SOURCE,
-      {
-        id: 'crypto',
-        icon: '/assets/add-money/IconWallet2.svg',
-        title: 'Crypto wallet',
-        sub: 'Spark, Solana, Base address',
-        speed: 'Instant',
-      },
-      {
-        id: 'cashapp',
-        icon: '/assets/add-money/IconCash.svg',
-        title: 'Cash App',
-        sub: 'Use your Cash App balance',
-        speed: 'Instant',
-      },
-      {
-        id: 'applepay',
-        icon: '/assets/add-money/IconApple.svg',
-        title: 'Apple Pay',
-        sub: 'Use Apple Wallet',
-        speed: 'Instant',
-      },
-    ],
+    sources: ['bank', 'crypto', 'cashapp', 'applepay'],
     details: [
       ['Fee', '$0.60'],
       ['Conversion rate', '1 MXN = 0.06 USD'],
@@ -231,7 +182,7 @@ export const MODES: Record<
       deposit: '',
       fundingDetails: '',
     },
-    sources: [BANK_SOURCE, CRYPTO_SOURCE],
+    sources: ['bank', 'crypto'],
     activeSources: [
       { id: 'bank', next: 'banks' },
       { id: 'crypto', next: 'recipient' },
@@ -256,7 +207,7 @@ export const MODES: Record<
       deposit: '',
       fundingDetails: '',
     },
-    sources: [BANK_SOURCE, CRYPTO_SOURCE],
+    sources: ['bank', 'crypto'],
     // The "Add recipient" chooser (the recipient list is the entry): Bank → add a
     // bank recipient (country picker); Crypto → enter an address.
     activeSources: [

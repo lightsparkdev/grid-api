@@ -3,16 +3,6 @@
  * (no JSX): turns confirmed transfers / received payments / card charges into the
  * `WalletListItemData` rows the views render. Skins consume these, never re-author.
  */
-import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
-import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheeseburger';
-import { IconCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCup';
-import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
-import { IconFashion } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFashion';
-import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
-import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShoppingBag1';
-import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
-import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStore1';
-import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { formatUsdCents, truncateAddress } from './format';
 import type {
   ReceivedPayment,
@@ -30,16 +20,16 @@ export const WEEKLY_BAR_COUNT = 14;
 // recognizable chains with FIXED, plausible charges (deterministic per
 // merchant) so repeat taps read as real purchases around town.
 export const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp'>> = [
-  { Icon: IconHotDrinkCup, title: 'Starbucks', detail: 'Tap to Pay', amount: '$7.45' },
-  { Icon: IconCheeseburger, title: 'McDonald’s', detail: 'Tap to Pay', amount: '$11.84' },
-  { Icon: IconStore1, title: '7-Eleven', detail: 'Tap to Pay', amount: '$6.27' },
-  { Icon: IconCup, title: 'Pret a Manger', detail: 'Tap to Pay', amount: '$9.15' },
-  { Icon: IconFashion, title: 'Uniqlo', detail: 'Tap to Pay', amount: '$39.90' },
-  { Icon: IconShoppingBag1, title: 'Zara', detail: 'Tap to Pay', amount: '$45.90' },
-  { Icon: IconTag, title: 'H&M', detail: 'Tap to Pay', amount: '$34.99' },
-  { Icon: IconSofa, title: 'IKEA', detail: 'Tap to Pay', amount: '$86.53' },
-  { Icon: IconDeskLamp, title: 'Muji', detail: 'Tap to Pay', amount: '$28.40' },
-  { Icon: IconBasket1, title: 'Carrefour', detail: 'Tap to Pay', amount: '$43.76' },
+  { category: 'coffee', title: 'Starbucks', detail: 'Tap to Pay', amount: '$7.45' },
+  { category: 'fast-food', title: 'McDonald’s', detail: 'Tap to Pay', amount: '$11.84' },
+  { category: 'convenience', title: '7-Eleven', detail: 'Tap to Pay', amount: '$6.27' },
+  { category: 'cafe', title: 'Pret a Manger', detail: 'Tap to Pay', amount: '$9.15' },
+  { category: 'fashion', title: 'Uniqlo', detail: 'Tap to Pay', amount: '$39.90' },
+  { category: 'apparel', title: 'Zara', detail: 'Tap to Pay', amount: '$45.90' },
+  { category: 'accessories', title: 'H&M', detail: 'Tap to Pay', amount: '$34.99' },
+  { category: 'furniture', title: 'IKEA', detail: 'Tap to Pay', amount: '$86.53' },
+  { category: 'homeware', title: 'Muji', detail: 'Tap to Pay', amount: '$28.40' },
+  { category: 'grocery', title: 'Carrefour', detail: 'Tap to Pay', amount: '$43.76' },
 ];
 
 /** "$5,000.00" → cents. */

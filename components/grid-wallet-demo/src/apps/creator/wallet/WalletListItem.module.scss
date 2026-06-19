@@ -10,17 +10,17 @@
   padding-left: 16px;
 }
 
-/* Figma 2143:41029 — 56px square, radius 16, tertiary fill, centered 24px glyph. */
+/* 48px circular tile, tertiary fill, centered 24px glyph. */
 .graphic {
   position: relative;
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  corner-shape: var(--corner-shape);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  corner-shape: round;
   background: var(--ios-fill-tertiary);
   color: var(--ios-label-primary);
 

@@ -10,6 +10,12 @@ import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-
 import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
 import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
 import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
+// Creator source-row icons use the 0px-corner-radius central set (sharp corners),
+// unlike Aurora's rounded asset SVGs / radius-3 glyphs.
+import { IconBank } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconBank';
+import { IconCash } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCash';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconWallet1';
+import { IconApple } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconApple';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -52,6 +58,21 @@ import {
 import { WalletListSection } from './WalletListSection';
 import { Flag } from '@/apps/shared/Flag';
 import styles from './AddMoneySheet.module.scss';
+
+/** Creator source-row icons by source id — the radius-0 central glyphs override
+ *  the shared sheet's asset SVGs / radius-3 glyphs (this skin renders bare,
+ *  secondary-toned icons rather than Aurora's filled tiles). */
+// Add-money source visuals — Creator owns the icon + copy per source id; the brain
+// supplies only the ordered ids + routing.
+const CREATOR_SOURCE_META: Record<
+  string,
+  { Icon: typeof IconBank; title: string; sub: string; speed: string }
+> = {
+  bank: { Icon: IconBank, title: 'Bank account', sub: 'Local transfer in 65+ countries', speed: 'Instant' },
+  crypto: { Icon: IconWallet1, title: 'Crypto wallet', sub: 'Spark, Solana, Base address', speed: 'Instant' },
+  cashapp: { Icon: IconCash, title: 'Cash App', sub: 'Use your Cash App balance', speed: 'Instant' },
+  applepay: { Icon: IconApple, title: 'Apple Pay', sub: 'Use Apple Wallet', speed: 'Instant' },
+};
 
 /** Name-led recipient avatar — first+last initials with the country flag badged
  *  in the bottom-right corner. Used by the send flow's recipient rows. */
@@ -683,12 +704,7 @@ export function AddMoneySheet({
                     {mode === 'receive' && (
                       <button type="button" className={styles.sourceRow} onClick={openAddBank}>
                         <span className={styles.tile} aria-hidden>
-                          <img
-                            className={styles.tileIcon}
-                            src="/assets/add-money/IconBank.svg"
-                            alt=""
-                            draggable={false}
-                          />
+                          <IconBank size={24} className={styles.tileGlyph} />
                         </span>
                         <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
                           <span className={styles.sourceLabels}>
@@ -842,11 +858,13 @@ export function AddMoneySheet({
               >
                 <div className={styles.sourceWrap}>
                   <div className={clsx(styles.card, styles.cardFlush)}>
-                    {sources.map((s, i) => {
-                      const active = activeSources.find((a) => a.id === s.id);
+                    {sources.map((id, i) => {
+                      const active = activeSources.find((a) => a.id === id);
+                      const meta = CREATOR_SOURCE_META[id];
+                      const SourceIcon = meta.Icon;
                       return (
                       <button
-                        key={s.id}
+                        key={id}
                         type="button"
                         className={styles.sourceRow}
                         disabled={!active}
@@ -854,7 +872,7 @@ export function AddMoneySheet({
                           if (!active) return;
                           // Crypto path starts a fresh address; bank path drops any
                           // crypto destination so the two never bleed together.
-                          if (s.id === 'crypto') {
+                          if (id === 'crypto') {
                             setSelectedBankId(null);
                             setCryptoDest(null);
                             setPasted(false);
@@ -866,11 +884,7 @@ export function AddMoneySheet({
                         }}
                       >
                         <span className={styles.tile} aria-hidden>
-                          {s.Icon ? (
-                            <s.Icon size={24} className={styles.tileGlyph} />
-                          ) : (
-                            <img className={styles.tileIcon} src={s.icon} alt="" draggable={false} />
-                          )}
+                          <SourceIcon size={24} className={styles.tileGlyph} />
                         </span>
                         <span
                           className={clsx(
@@ -879,9 +893,9 @@ export function AddMoneySheet({
                           )}
                         >
                           <span className={styles.sourceLabels}>
-                            <span className={styles.rowTitle}>{s.title}</span>
-                            <span className={styles.rowSub}>{s.sub}</span>
-                            <span className={styles.rowSub}>{s.speed}</span>
+                            <span className={styles.rowTitle}>{meta.title}</span>
+                            <span className={styles.rowSub}>{meta.sub}</span>
+                            <span className={styles.rowSub}>{meta.speed}</span>
                           </span>
                           <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
                         </span>

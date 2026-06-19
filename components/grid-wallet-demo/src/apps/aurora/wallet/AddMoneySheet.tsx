@@ -10,6 +10,7 @@ import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-
 import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
 import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
 import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -69,6 +70,23 @@ export type {
   MoneySheetMode,
   ReceivedPayment,
   TransferActivity,
+};
+
+// Add-money source visuals — Aurora owns the icon + copy per source id; the brain
+// supplies only the ordered ids + routing (the face is where icons live).
+const SOURCE_COPY: Record<string, { title: string; sub: string; speed: string }> = {
+  bank: { title: 'Bank account', sub: 'Local transfer in 65+ countries', speed: 'Instant' },
+  crypto: { title: 'Crypto wallet', sub: 'Spark, Solana, Base address', speed: 'Instant' },
+  cashapp: { title: 'Cash App', sub: 'Use your Cash App balance', speed: 'Instant' },
+  applepay: { title: 'Apple Pay', sub: 'Use Apple Wallet', speed: 'Instant' },
+};
+// SVG asset set (the polished add-money icons). Crypto shows this SVG only in `add`;
+// withdraw/send use the IconWallet1 glyph (see the source render).
+const SOURCE_SVG: Record<string, string> = {
+  bank: '/assets/add-money/IconBank.svg',
+  crypto: '/assets/add-money/IconWallet2.svg',
+  cashapp: '/assets/add-money/IconCash.svg',
+  applepay: '/assets/add-money/IconApple.svg',
 };
 
 /** Name-led recipient avatar — first+last initials with the country flag badged
@@ -868,11 +886,15 @@ export function AddMoneySheet({
               >
                 <div className={styles.sourceWrap}>
                   <div className={clsx(styles.card, styles.cardFlush)}>
-                    {sources.map((s, i) => {
-                      const active = activeSources.find((a) => a.id === s.id);
+                    {sources.map((id, i) => {
+                      const active = activeSources.find((a) => a.id === id);
+                      const copy = SOURCE_COPY[id];
+                      // Crypto uses the glyph in withdraw/send; everything else (and
+                      // add-mode crypto) is the polished SVG.
+                      const Glyph = id === 'crypto' && mode !== 'add' ? IconWallet1 : null;
                       return (
                       <button
-                        key={s.id}
+                        key={id}
                         type="button"
                         className={styles.sourceRow}
                         disabled={!active}
@@ -880,7 +902,7 @@ export function AddMoneySheet({
                           if (!active) return;
                           // Crypto path starts a fresh address; bank path drops any
                           // crypto destination so the two never bleed together.
-                          if (s.id === 'crypto') {
+                          if (id === 'crypto') {
                             setSelectedBankId(null);
                             setCryptoDest(null);
                             setPasted(false);
@@ -892,10 +914,10 @@ export function AddMoneySheet({
                         }}
                       >
                         <span className={styles.tile} aria-hidden>
-                          {s.Icon ? (
-                            <s.Icon size={24} className={styles.tileGlyph} />
+                          {Glyph ? (
+                            <Glyph size={24} className={styles.tileGlyph} />
                           ) : (
-                            <img className={styles.tileIcon} src={s.icon} alt="" draggable={false} />
+                            <img className={styles.tileIcon} src={SOURCE_SVG[id]} alt="" draggable={false} />
                           )}
                         </span>
                         <span
@@ -905,9 +927,9 @@ export function AddMoneySheet({
                           )}
                         >
                           <span className={styles.sourceLabels}>
-                            <span className={styles.rowTitle}>{s.title}</span>
-                            <span className={styles.rowSub}>{s.sub}</span>
-                            <span className={styles.rowSub}>{s.speed}</span>
+                            <span className={styles.rowTitle}>{copy.title}</span>
+                            <span className={styles.rowSub}>{copy.sub}</span>
+                            <span className={styles.rowSub}>{copy.speed}</span>
                           </span>
                           <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
                         </span>

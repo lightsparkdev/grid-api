@@ -336,6 +336,28 @@
   }
 }
 
+/* Creator nav rows show the icon bare in a secondary tone — no filled tile
+   (Aurora keeps the tile everywhere; this skin does it differently). Scoped to
+   the interactive .sourceRow (not the static amount/confirm rows) and to
+   monochrome icons only — flags / brand logos keep their tile. */
+.sourceRow {
+  /* Collapse the tile to the bare 24px icon (no box / reserved space). */
+  .tile:has(.tileIcon),
+  .tile:has(.tileGlyph) {
+    width: auto;
+    height: auto;
+    background: none;
+  }
+
+  .tileGlyph {
+    color: var(--ios-label-secondary);
+  }
+
+  .tileIcon {
+    opacity: 0.6;
+  }
+}
+
 .flagIcon {
   width: 20px;
   height: 20px;
