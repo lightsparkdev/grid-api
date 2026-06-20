@@ -1,0 +1,167 @@
+name: Bump Grid API in webdev
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: bump-webdev
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout grid-api
+        uses: actions/checkout@v4
+        with:
+          path: grid-api
+
+      - name: Checkout webdev
+        uses: actions/checkout@v4
+        with:
+          repository: lightsparkdev/webdev
+          token: ${{ secrets.WEBDEV_GITHUB_TOKEN }}
+          path: webdev
+          sparse-checkout: |
+            grid-api
+            umaaas-api/generators/python-typed
+
+      - name: Check if openapi.yaml changed
+        id: check_diff
+        run: |
+          if ! diff -q grid-api/openapi.yaml webdev/grid-api/openapi.yaml > /dev/null 2>&1; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Java
+        if: steps.check_diff.outputs.changed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Copy updated OpenAPI spec
+        if: steps.check_diff.outputs.changed == 'true'
+        run: cp grid-api/openapi.yaml webdev/grid-api/openapi.yaml
+
+      - name: Build custom generator
+        if: steps.check_diff.outputs.changed == 'true'
+        working-directory: webdev/umaaas-api/generators/python-typed
+        run: mvn package -q -DskipTests
+
+      - name: Download openapi-generator CLI
+        if: steps.check_diff.outputs.changed == 'true'
+        run: |
+          OG_VERSION=7.18.0
+          curl -sL "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OG_VERSION}/openapi-generator-cli-${OG_VERSION}.jar" \
+            -o /tmp/openapi-generator-cli.jar
+          EXPECTED_SHA=$(curl -sL "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OG_VERSION}/openapi-generator-cli-${OG_VERSION}.jar.sha256")
+          echo "${EXPECTED_SHA}  /tmp/openapi-generator-cli.jar" | sha256sum -c -
+
+      - name: Run code generation
+        if: steps.check_diff.outputs.changed == 'true'
+        working-directory: webdev/grid-api
+        run: |
+          CUSTOM_JAR="../umaaas-api/generators/python-typed/target/python-alias-openapi-generator-1.0.0.jar"
+          CLI_JAR="/tmp/openapi-generator-cli.jar"
+
+          # Save previous FILES list
+          if [ -f .openapi-generator/FILES ]; then
+            cp .openapi-generator/FILES /tmp/FILES.prev
+          else
+            : > /tmp/FILES.prev
+          fi
+
+          # Generate code
+          java -cp "$CUSTOM_JAR:$CLI_JAR" org.openapitools.codegen.OpenAPIGenerator \
+            generate \
+            -g python-alias \
+            -i openapi.yaml \
+            -o . \
+            -c codegen-config/config.yml
+
+          # Remove stale generated files
+          if [ -f .openapi-generator/FILES ]; then
+            sort /tmp/FILES.prev > /tmp/FILES.prev.sorted
+            sort .openapi-generator/FILES > /tmp/FILES.new.sorted
+            comm -23 /tmp/FILES.prev.sorted /tmp/FILES.new.sorted \
+              | while IFS= read -r rel; do
+                  if [ -n "$rel" ]; then
+                    echo "Removing stale generated file: $rel"
+                    rm -f -- "$rel"
+                  fi
+                done
+          fi
+
+      - name: Bump patch version
+        if: steps.check_diff.outputs.changed == 'true'
+        working-directory: webdev/grid-api
+        run: |
+          # Read current version from pyproject.toml
+          CURRENT=$(grep -oP 'version = "\K[^"]+' pyproject.toml | head -1)
+          echo "Current version: $CURRENT"
+
+          # Increment patch version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "New version: $NEW_VERSION"
+
+          # Update pyproject.toml
+          sed -i "s/version = \"$CURRENT\"/version = \"$NEW_VERSION\"/" pyproject.toml
+
+          # Update codegen-config/config.yml
+          sed -i "s/packageVersion: $CURRENT/packageVersion: $NEW_VERSION/" codegen-config/config.yml
+
+          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
+
+      - name: Create pull request
+        if: steps.check_diff.outputs.changed == 'true'
+        working-directory: webdev
+        env:
+          GH_TOKEN: ${{ secrets.WEBDEV_GITHUB_TOKEN }}
+          HEAD_COMMIT_MSG: ${{ github.event.head_commit.message || format('Manual dispatch by @{0}', github.actor) }}
+        run: |
+          BRANCH="grid-api/bump-v${NEW_VERSION}"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add grid-api/
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+
+          git commit -m "chore(grid-api): bump to v${NEW_VERSION} (${SHORT_SHA})"
+          git push origin "$BRANCH" --force-with-lease
+
+          PR_BODY="$(cat <<EOF
+          ## Summary
+
+          Auto-generated PR to update the Grid API Python SDK based on changes to [grid-api@${SHORT_SHA}](https://github.com/lightsparkdev/grid-api/commit/${COMMIT_SHA}).
+
+          - Copies latest \`openapi.yaml\` from grid-api main
+          - Regenerates Python SDK code
+          - Bumps version from the previous release to \`${NEW_VERSION}\`
+
+          **Triggered by:** ${HEAD_COMMIT_MSG}
+          EOF
+          )"
+
+          gh pr create \
+            --repo lightsparkdev/webdev \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(grid-api): bump to v${NEW_VERSION}" \
+            --body "$PR_BODY" || \
+          gh pr edit "$BRANCH" \
+            --repo lightsparkdev/webdev \
+            --title "chore(grid-api): bump to v${NEW_VERSION}" \
+            --body "$PR_BODY"
