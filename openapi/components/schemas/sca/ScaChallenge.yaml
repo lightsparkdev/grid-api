@@ -1,0 +1,64 @@
+type: object
+description: >-
+  A Strong Customer Authentication challenge that must be satisfied before a
+  money-movement operation can complete. This object is **only present when the
+  customer's payment provider requires SCA** (e.g. EU customers on an e-money
+  provider); for customers whose provider has no such requirement it is omitted
+  entirely and no action is needed.
+
+
+  When present on a quote or transaction, authorize it by submitting an
+  `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or
+  `POST /transactions/{transactionId}/authorize`, or inline via the optional
+  `scaAuthorization` field on the originating `execute` / `transfer-out` call.
+required:
+  - id
+  - expiresAt
+  - factor
+  - availableFactors
+properties:
+  id:
+    type: string
+    description: >-
+      Unique identifier for this challenge. The server resolves the active
+      challenge from the quote or transaction being authorized, so this field
+      need not be supplied back; it is informational (e.g. for logging or
+      correlation).
+    example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
+  expiresAt:
+    type: string
+    format: date-time
+    description: Absolute UTC timestamp after which this challenge can no longer be authorized.
+    example: '2025-10-03T12:05:00Z'
+  factor:
+    $ref: ./ScaFactor.yaml
+    description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
+  availableFactors:
+    type: array
+    description: The factors the customer may use to satisfy this challenge.
+    items:
+      $ref: ./ScaFactor.yaml
+    example:
+      - SMS_OTP
+  passkeyAssertionOptions:
+    type:
+      - object
+      - 'null'
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn assertion request options (including the relying-party id,
+      challenge, and allowed credentials), present only when `factor` is
+      `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion
+      submitted back in `ScaAuthorization.passkeyAssertion`.
+  passkeyAllowedOrigins:
+    type:
+      - array
+      - 'null'
+    items:
+      type: string
+    description: >-
+      The origins the WebAuthn ceremony may run against, present only when
+      `factor` is `PASSKEY`. The origin the assertion is produced against must
+      be one of these and must be echoed back as `ScaAuthorization.origin`.
+    example:
+      - https://app.example.com

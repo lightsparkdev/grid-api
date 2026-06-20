@@ -1,0 +1,76 @@
+parameters:
+  - name: transactionId
+    in: path
+    description: The unique identifier of the transaction whose SCA challenge is being authorized.
+    required: true
+    schema:
+      type: string
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+post:
+  summary: Authorize a transaction's SCA challenge
+  description: |
+    Satisfy the Strong Customer Authentication challenge carried by a
+    transaction in `PENDING_AUTHORIZATION` status by submitting an
+    `ScaAuthorization` proof. On success the transaction advances to
+    `PROCESSING` (or `COMPLETED`) and the underlying transfer is released.
+
+    Transactions enter `PENDING_AUTHORIZATION` from `execute` (embedded-wallet
+    quotes) and `transfer-out` when the customer's provider requires SCA. The
+    same authorization can be supplied inline on those calls via their optional
+    `scaAuthorization` field instead of calling this endpoint.
+
+    This endpoint is only meaningful for customers whose payment provider
+    requires SCA (e.g. EU customers). For customers whose provider has no such
+    requirement, this returns `409`.
+
+    In sandbox, the SMS/TOTP code is always `123456`.
+  operationId: authorizeTransaction
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/ScaAuthorization.yaml
+  responses:
+    '200':
+      description: Challenge authorized; the updated transaction is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
+    '400':
+      description: Invalid or expired authorization proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's payment provider does not require SCA, or the
+        transaction has no pending challenge to authorize.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

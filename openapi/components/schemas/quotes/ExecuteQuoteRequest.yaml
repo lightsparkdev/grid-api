@@ -1,0 +1,15 @@
+type: object
+description: >-
+  Optional body for executing a quote. Only needed to supply an inline Strong
+  Customer Authentication proof; omit the body entirely for quotes that do not
+  require SCA.
+properties:
+  scaAuthorization:
+    $ref: ../sca/ScaAuthorization.yaml
+    description: >-
+      Optional inline Strong Customer Authentication proof. Only relevant for
+      customers whose provider requires SCA (e.g. EU): supply this to satisfy
+      the challenge in the same call once the customer has the code/assertion.
+      Omit it to receive the quote in `PENDING_AUTHORIZATION` with an
+      `scaChallenge`, then authorize separately. Ignored for customers whose
+      provider does not require SCA.

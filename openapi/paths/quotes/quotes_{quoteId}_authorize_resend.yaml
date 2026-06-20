@@ -1,0 +1,54 @@
+parameters:
+  - name: quoteId
+    in: path
+    description: The unique identifier of the quote whose SCA challenge code should be re-sent.
+    required: true
+    schema:
+      type: string
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+post:
+  summary: Resend a quote's SCA challenge code
+  description: |
+    Re-send the one-time code for a realtime-funding quote in
+    `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
+    existing challenge is reused — no new challenge is issued.
+
+    Only meaningful for customers whose provider requires SCA (e.g. EU); other
+    providers return 409. `PASSKEY` challenges cannot be re-sent and return 409.
+
+    In sandbox, the code is always `123456`.
+  operationId: resendQuoteScaCode
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Code re-sent.
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Quote not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's provider does not require SCA, the quote has no pending
+        SMS challenge, or the challenge uses a factor whose code cannot be
+        re-sent (e.g. passkey).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,33 @@
+type: object
+description: >-
+  Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for
+  `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a
+  `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound
+  to the origin it was produced against, and the provider rejects a passkey
+  confirmation without it.
+properties:
+  code:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The one-time code the customer received by SMS, or read from their
+      authenticator app. In sandbox, the code is always `123456`.
+    example: '123456'
+  passkeyAssertion:
+    type:
+      - object
+      - 'null'
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn assertion produced by the device from the challenge's
+      `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
+  origin:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The WebAuthn origin the `passkeyAssertion` was produced against (one of
+      the challenge's `passkeyAllowedOrigins`). **Required** alongside
+      `passkeyAssertion`; omit it for the `code` path.
+    example: https://app.example.com

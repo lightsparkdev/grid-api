@@ -1,0 +1,56 @@
+parameters:
+  - name: transactionId
+    in: path
+    description: The unique identifier of the transaction whose SCA challenge code should be re-sent.
+    required: true
+    schema:
+      type: string
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+post:
+  summary: Resend a transaction's SCA challenge code
+  description: |
+    Re-send the one-time code for a transaction in `PENDING_AUTHORIZATION`
+    status whose `scaChallenge.factor` is `SMS_OTP` (e.g. the customer didn't
+    receive it, or it expired). The existing challenge is reused — no new
+    challenge is issued.
+
+    Only meaningful for customers whose provider requires SCA (e.g. EU); other
+    providers return 409. `PASSKEY` challenges cannot be re-sent (there is no
+    code to deliver) and return 409.
+
+    In sandbox, the code is always `123456`.
+  operationId: resendTransactionScaCode
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Code re-sent.
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The customer's provider does not require SCA, the transaction has no
+        pending SMS challenge, or the challenge uses a factor whose code cannot
+        be re-sent (e.g. passkey).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
