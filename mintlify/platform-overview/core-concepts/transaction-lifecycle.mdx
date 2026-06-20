@@ -357,6 +357,22 @@ In the manual cancellation flow, `OUTGOING_PAYMENT.COMPLETED` fires after the re
 </Tab>
 </Tabs>
 
+## Receipt Delivery Confirmation
+
+Some platforms are contractually required to send a receipt to their customer after a transaction completes. Use the receipt confirmation endpoint to record when the receipt was delivered:
+
+```bash
+curl -X POST "https://api.example.com/transactions/{transactionId}/confirm" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{"receiptDeliveryConfirmedAt": "2025-08-15T14:31:00Z"}'
+
+If you omit `receiptDeliveryConfirmedAt` from the request body, Grid uses the current server time. Calling this endpoint again updates the stored confirmation time.
+
+<Info>
+This endpoint is only necessary if your platform agreement requires receipt confirmation. Most integrations do not need this step.
+</Info>
+
 ## Listing Transactions
 
 Query all transactions for a customer or date range:
