@@ -63,13 +63,12 @@
     document.documentElement.style.setProperty('--ls-sidebar-width', w + 'px');
   }
 
-  // Remembered preference wins everywhere; otherwise the playground defaults to
-  // collapsed and every other page defaults to expanded.
+  // The playground (demo) always starts collapsed — it needs the horizontal
+  // space — regardless of the saved preference. Every other page follows the
+  // remembered preference (default expanded).
   function shouldCollapse() {
-    var pref = getPref();
-    if (pref === '1') return true;
-    if (pref === '0') return false;
-    return isDemo();
+    if (isDemo()) return true;
+    return getPref() === '1';
   }
 
   function isCollapsed() {
