@@ -4281,6 +4281,23 @@ html.ls-nav-animating #sidebar-content > * {
   transition: opacity var(--ls-sidebar-dur) var(--ls-sidebar-ease);
 }
 
+/* Leaving the playground swaps in the new page's nav — brand-new child elements
+   that wouldn't transition on their own — so fade the whole content container in
+   (a keyframe animation plays regardless of element freshness) alongside the
+   width wipe. */
+@keyframes ls-nav-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+html.ls-nav-revealing #sidebar-content {
+  animation: ls-nav-reveal var(--ls-sidebar-dur) var(--ls-sidebar-ease);
+}
+
 /* During an active drag, kill transitions so width tracks the cursor 1:1. */
 html.ls-nav-dragging #sidebar-content,
 html.ls-nav-dragging #sidebar-content > *,
