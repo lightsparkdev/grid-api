@@ -4330,6 +4330,13 @@ html.ls-nav-collapsed #sidebar-content > * {
   justify-content: center;
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* Like the column, the rail only animates its slide on a deliberate toggle
+   (ls-nav-animating). On navigation it snaps straight to the collapsed/expanded
+   position instead of sliding across — so landing on the playground from a page
+   with the sidebar open collapses instantly, with no stray animation. */
+html.ls-nav-animating .ls-nav-rail {
   transition: left var(--ls-sidebar-dur) var(--ls-sidebar-ease),
     width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
     background-color var(--ls-sidebar-dur) var(--ls-sidebar-ease);
