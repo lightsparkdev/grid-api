@@ -22,7 +22,6 @@
   var DRAG_THRESHOLD = 4; // px of movement before a press counts as a drag
 
   var rail = null;
-  var navAnimTimer = 0;
 
   function isDesktop() {
     return window.innerWidth >= DESKTOP_MIN;
@@ -185,44 +184,19 @@
     });
   }
 
-  // Apply a navigation-driven state change without animating: snap the rail
-  // button (no opacity fade) so its icon doesn't ghost between pages, then
-  // restore its transition next frame so hover reveals still animate.
-  function snapState(collapsed) {
+  function sync() {
     var root = document.documentElement;
+    // Navigation/first paint must never animate (only deliberate toggles do —
+    // see the click handler). Clear the animate flag, and snap the rail button
+    // for this navigation-driven state change so its icon doesn't ghost in/out
+    // between pages; restore its transition next frame so hover reveals animate.
+    root.classList.remove('ls-nav-animating');
     root.classList.add('ls-nav-snap');
-    applyState(collapsed);
+    applyState(shouldCollapse());
+    ensureRail();
     requestAnimationFrame(function () {
       root.classList.remove('ls-nav-snap');
     });
-  }
-
-  function sync() {
-    var root = document.documentElement;
-    var collapsed = shouldCollapse();
-    // Leaving the playground (collapsed -> expanded) is the ONE navigation that
-    // animates: wipe the sidebar open so it reads as a smooth transition rather
-    // than a hard "pop" as the new page swaps in. Everything else (entering the
-    // playground, page-to-page) snaps instantly, per earlier feedback.
-    if (isCollapsed() && !collapsed) {
-      // The nav was just swapped to the new page's items (fresh elements), so the
-      // child opacity transition won't fire — fade the whole content in via a
-      // keyframe (ls-nav-revealing) alongside the width wipe (ls-nav-animating).
-      root.classList.add('ls-nav-animating');
-      root.classList.add('ls-nav-revealing');
-      root.getBoundingClientRect(); // reflow so the width wipe animates
-      applyState(false);
-      clearTimeout(navAnimTimer);
-      navAnimTimer = setTimeout(function () {
-        root.classList.remove('ls-nav-animating');
-        root.classList.remove('ls-nav-revealing');
-      }, 360);
-    } else {
-      root.classList.remove('ls-nav-animating');
-      root.classList.remove('ls-nav-revealing');
-      snapState(collapsed);
-    }
-    ensureRail();
   }
 
   if (document.readyState === 'loading') {
