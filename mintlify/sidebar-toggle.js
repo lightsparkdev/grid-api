@@ -28,6 +28,15 @@
     return DEMO_PATHS.indexOf(location.pathname) !== -1;
   }
 
+  // #sidebar-content is in the DOM on every docs page, but custom-layout pages
+  // (frontmatter mode: "custom", e.g. the flow builder) keep it and hide it
+  // (display:none). getClientRects() is empty for a non-rendered element, so this
+  // is true only when there's a real sidebar to toggle — no sidebar, no rail.
+  function hasVisibleSidebar() {
+    var sc = document.getElementById('sidebar-content');
+    return !!sc && sc.getClientRects().length > 0;
+  }
+
   function getPref() {
     try {
       return localStorage.getItem(KEY);
@@ -85,7 +94,7 @@
   }
 
   function ensureRail() {
-    if (!isDesktop() || !document.getElementById('sidebar-content')) {
+    if (!isDesktop() || !hasVisibleSidebar()) {
       removeRail();
       return;
     }
@@ -181,14 +190,27 @@
     sync();
   }
 
-  // SPA navigation: Mintlify swaps content without a full reload.
+  // SPA navigation: Mintlify swaps content without a full reload. Re-validate on
+  // each mutation batch (rAF-coalesced) so the rail is re-added if Mintlify wipes
+  // it, and removed the instant a page turns out to have no sidebar (e.g. the
+  // custom-layout flow builder, whose sidebar renders hidden a tick after the
+  // path changes).
   var lastPath = location.pathname;
+  var ensureScheduled = false;
+  function scheduleEnsureRail() {
+    if (ensureScheduled) return;
+    ensureScheduled = true;
+    requestAnimationFrame(function () {
+      ensureScheduled = false;
+      ensureRail();
+    });
+  }
   var observer = new MutationObserver(function () {
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       sync();
-    } else if (!rail || !document.body.contains(rail)) {
-      ensureRail();
+    } else {
+      scheduleEnsureRail();
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });

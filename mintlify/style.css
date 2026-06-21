@@ -4465,6 +4465,14 @@ html.ls-nav-collapsed .ls-nav-rail::after {
   display: none;
 }
 
+/* Custom-layout pages (frontmatter mode: "custom", e.g. the flow builder) have
+   no docs sidebar — Mintlify tags them with .is-custom — so there's nothing to
+   toggle. The JS won't inject the rail there either; this is the no-flash guard
+   during SPA navigation. */
+html:has(.is-custom) .ls-nav-rail {
+  display: none !important;
+}
+
 /* Desktop only — mobile uses the hamburger nav (no #sidebar-content). */
 @media (max-width: 1023px) {
   .ls-nav-rail {
