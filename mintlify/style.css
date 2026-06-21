@@ -4252,13 +4252,10 @@ html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text
   --ls-nav-rail-w: 48px; /* collapsed: visible left rail */
 }
 
-/* Animate the column width. The inner nav is pinned to the expanded width and
-   clipped (overflow-x) so it wipes cleanly instead of squishing/reflowing. */
+/* The inner nav is pinned to the expanded width and clipped (overflow-x) so it
+   wipes cleanly instead of squishing/reflowing. */
 #sidebar-content {
   overflow-x: hidden !important;
-  transition: width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
-    min-width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
-    max-width var(--ls-sidebar-dur) var(--ls-sidebar-ease) !important;
 }
 
 /* Pin children to the expanded width so they clip (not squish/reflow) as the
@@ -4268,6 +4265,19 @@ html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text
 #sidebar-content > * {
   width: var(--ls-sidebar-width, 280px) !important;
   box-sizing: border-box !important;
+}
+
+/* Animate the wipe ONLY on a deliberate toggle (ls-nav-animating is set by the
+   click handler). Off by default, so navigation/first paint render the final
+   state instantly — a collapsed sidebar landing on a new page never fades in
+   from expanded, which is what flashed nav content inside the rail. */
+html.ls-nav-animating #sidebar-content {
+  transition: width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    min-width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    max-width var(--ls-sidebar-dur) var(--ls-sidebar-ease) !important;
+}
+
+html.ls-nav-animating #sidebar-content > * {
   transition: opacity var(--ls-sidebar-dur) var(--ls-sidebar-ease);
 }
 

@@ -167,11 +167,14 @@
       if (Date.now() - dragEndAt < 300) return; // swallow the click after a drag
       var next = !isCollapsed();
       setPref(next ? '1' : '0');
-      applyState(next);
-      // Suppress the hover reveal during the open/close animation so the button
-      // and edge highlight don't flash from the cursor sitting over the rail
-      // mid-transition; they reveal together on a real hover once settled.
+      // ls-nav-animating turns the collapse transition on for this deliberate
+      // toggle (it's off by default so navigation never animates) and suppresses
+      // the hover reveal so the button/edge don't flash from the cursor sitting
+      // over the rail mid-transition. Add it + force a reflow before applyState
+      // so the width/opacity change animates from the current value, not snaps.
       document.documentElement.classList.add('ls-nav-animating');
+      void document.documentElement.offsetWidth;
+      applyState(next);
       clearTimeout(animTimer);
       animTimer = setTimeout(function () {
         document.documentElement.classList.remove('ls-nav-animating');
@@ -180,6 +183,10 @@
   }
 
   function sync() {
+    // Navigation/first paint must never animate (only deliberate toggles do —
+    // see the click handler). Clearing any leftover flag keeps a collapsed
+    // sidebar from fading in on a freshly-loaded page.
+    document.documentElement.classList.remove('ls-nav-animating');
     applyState(shouldCollapse());
     ensureRail();
   }
