@@ -4233,3 +4233,128 @@ html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text
   color: var(--ls-gray-700);
 }
 
+/* ===========================================
+   Collapsible sidebar (desktop)
+   A chevron tab (injected by sidebar-toggle.js) rides the sidebar's right edge.
+   Clicking it toggles html.ls-nav-collapsed; the sidebar wipes closed with
+   (class name avoids the substring "sidebar-collapse" so the hide-controls block
+   above doesn't match <html> and display:none the whole page)
+   an ease-out-snappy curve. State + the playground default are handled in JS;
+   first paint is set by the inline script in docs.json head.raw.
+   =========================================== */
+
+:root {
+  --ls-sidebar-ease: cubic-bezier(0.19, 1, 0.22, 1); /* easeOutSnappy */
+  --ls-sidebar-dur: 260ms;
+  --ls-nav-tab-w: 24px;
+  --ls-nav-tab-h: 80px;
+}
+
+/* Animate the column width. The inner nav is pinned to the expanded width and
+   clipped (overflow-x) so it wipes cleanly instead of squishing/reflowing. */
+#sidebar-content {
+  overflow-x: hidden !important;
+  transition: width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    min-width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    max-width var(--ls-sidebar-dur) var(--ls-sidebar-ease) !important;
+}
+
+/* Pin children to the expanded width so they clip (not squish/reflow) as the
+   column animates closed. Width is the cross axis here (#sidebar-content is a
+   flex COLUMN), so this must NOT touch `flex` — the nav keeps its flex-1 growth
+   and the footer row stays pinned to the bottom. */
+#sidebar-content > * {
+  width: 280px !important;
+  box-sizing: border-box !important;
+}
+
+html.ls-nav-collapsed #sidebar-content {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-right-color: transparent !important;
+}
+
+/* The tab. Fixed, vertically centered below the navbar (64px bar + 48px tabs).
+   Its right edge aligns to the sidebar's right edge when expanded; it slides to
+   the screen's left edge when collapsed (left animates with the same curve). */
+.ls-nav-tab {
+  position: fixed;
+  top: calc(50dvh + 56px);
+  /* nudged 0.5px under the sidebar's right border so the tab (higher z-index,
+     same fill, no left border) paints over the divider where it sits — reads as
+     one continuous surface with the sidebar. */
+  left: calc(var(--ls-sidebar-edge, 280px) - 0.5px);
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ls-nav-tab-w);
+  height: var(--ls-nav-tab-h);
+  margin: 0;
+  padding: 0;
+  border: 0.5px solid var(--ls-black-10);
+  border-left: none;
+  border-radius: 0 var(--ls-radius-md) var(--ls-radius-md) 0;
+  background-color: var(--ls-gray-100);
+  color: var(--ls-gray-500);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.04);
+  transition: left var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    background-color 150ms var(--ls-sidebar-ease),
+    color 150ms var(--ls-sidebar-ease);
+}
+
+html.dark .ls-nav-tab {
+  border-color: var(--ls-white-06);
+  background-color: var(--ls-gray-975);
+  color: var(--ls-gray-600);
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.24);
+}
+
+html.ls-nav-collapsed .ls-nav-tab {
+  left: 0;
+}
+
+.ls-nav-tab:hover {
+  background-color: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+}
+
+html.dark .ls-nav-tab:hover {
+  background-color: var(--ls-gray-900);
+  color: var(--ls-gray-050);
+}
+
+.ls-nav-tab-icon {
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
+  -webkit-mask: url("/images/icons/IconChevronLeftMedium.svg") center / 18px 18px
+    no-repeat;
+  mask: url("/images/icons/IconChevronLeftMedium.svg") center / 18px 18px
+    no-repeat;
+}
+
+html.ls-nav-collapsed .ls-nav-tab-icon {
+  -webkit-mask-image: url("/images/icons/IconChevronRightMedium.svg");
+  mask-image: url("/images/icons/IconChevronRightMedium.svg");
+}
+
+/* Desktop only — mobile uses the hamburger nav (no #sidebar-content). */
+@media (max-width: 1023px) {
+  .ls-nav-tab {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sidebar-content,
+  .ls-nav-tab {
+    transition: none !important;
+  }
+}
+
