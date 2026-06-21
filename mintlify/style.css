@@ -780,9 +780,9 @@ button[class*="text-primary"] * {
 #sidebar-content {
   background-color: var(--ls-gray-100) !important;
   border-right: 0.5px solid var(--ls-black-10) !important;
-  width: 280px !important;
-  min-width: 280px !important;
-  max-width: 280px !important;
+  width: var(--ls-sidebar-width, 280px) !important;
+  min-width: var(--ls-sidebar-width, 280px) !important;
+  max-width: var(--ls-sidebar-width, 280px) !important;
 }
 
 html.dark #sidebar-content {
@@ -4247,6 +4247,7 @@ html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text
 :root {
   --ls-sidebar-ease: cubic-bezier(0.19, 1, 0.22, 1); /* easeOutSnappy */
   --ls-sidebar-dur: 260ms;
+  --ls-sidebar-width: 280px; /* resizable: drag the rail to change */
   --ls-nav-rail-hit: 24px; /* expanded: invisible hover/click zone at the edge */
   --ls-nav-rail-w: 48px; /* collapsed: visible left rail */
 }
@@ -4265,9 +4266,24 @@ html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text
    flex COLUMN), so this must NOT touch `flex` — the nav keeps its flex-1 growth
    and the footer row stays pinned to the bottom. */
 #sidebar-content > * {
-  width: 280px !important;
+  width: var(--ls-sidebar-width, 280px) !important;
   box-sizing: border-box !important;
   transition: opacity var(--ls-sidebar-dur) var(--ls-sidebar-ease);
+}
+
+/* During an active drag, kill transitions so width tracks the cursor 1:1. */
+html.ls-nav-dragging #sidebar-content,
+html.ls-nav-dragging #sidebar-content > *,
+html.ls-nav-dragging .ls-nav-rail {
+  transition: none !important;
+}
+
+/* While dragging, let pointer events pass through the playground iframe so the
+   drag keeps tracking when the cursor moves over it (otherwise the iframe
+   swallows mousemove/mouseup and the resize stalls on the demo page). */
+html.ls-nav-dragging #wallet-demo-host,
+html.ls-nav-dragging #wallet-demo-iframe {
+  pointer-events: none !important;
 }
 
 /* Collapse to the rail's width (not 0) so the rail reserves real layout space —
@@ -4291,7 +4307,7 @@ html.ls-nav-collapsed #sidebar-content > * {
   position: fixed;
   top: 112px; /* below navbar: 64px bar + 48px tabs */
   bottom: 0;
-  left: calc(var(--ls-sidebar-edge, 280px) - (var(--ls-nav-rail-hit) / 2));
+  left: calc(var(--ls-sidebar-width, 280px) - (var(--ls-nav-rail-hit) / 2));
   width: var(--ls-nav-rail-hit);
   z-index: 30;
   margin: 0;
@@ -4328,6 +4344,8 @@ html.dark.ls-nav-collapsed .ls-nav-rail {
   display: grid;
   place-items: center;
   flex: none;
+  position: relative;
+  z-index: 1; /* keep the toggle above the edge highlight line */
   width: 30px;
   height: 30px;
   border-radius: var(--ls-radius-md);
@@ -4337,7 +4355,9 @@ html.dark.ls-nav-collapsed .ls-nav-rail {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   opacity: 0;
   transform: scale(0.92);
-  pointer-events: none; /* the rail handles the click */
+  /* auto (not none) so the button itself is hoverable; clicks/drags still
+     bubble up to the rail, which owns the handlers. */
+  pointer-events: auto;
   transition: opacity 150ms var(--ls-sidebar-ease),
     transform 150ms var(--ls-sidebar-ease), background-color 150ms ease,
     color 150ms ease;
@@ -4350,14 +4370,29 @@ html.dark .ls-nav-rail-btn {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.ls-nav-rail:hover .ls-nav-rail-btn {
+/* Edge hover: reveal the button in its resting state (colors stay at base). */
+html:not(.ls-nav-collapsed) .ls-nav-rail:hover .ls-nav-rail-btn {
   opacity: 1;
   transform: scale(1);
-  color: var(--ls-gray-950);
 }
 
-html.dark .ls-nav-rail:hover .ls-nav-rail-btn {
+/* Button hover: the button's own active state. */
+html:not(.ls-nav-collapsed) .ls-nav-rail-btn:hover {
+  color: var(--ls-gray-950);
+  background-color: var(--ls-gray-050);
+}
+
+html.dark:not(.ls-nav-collapsed) .ls-nav-rail-btn:hover {
   color: var(--ls-gray-050);
+  background-color: var(--ls-gray-950);
+}
+
+/* While the sidebar animates open from a click, suppress the hover reveal so a
+   cursor sitting over the rail mid-transition doesn't flash the button or edge
+   highlight — they reveal together on a genuine hover once it settles. */
+html.ls-nav-animating:not(.ls-nav-collapsed) .ls-nav-rail-btn,
+html.ls-nav-animating:not(.ls-nav-collapsed) .ls-nav-rail::after {
+  opacity: 0 !important;
 }
 
 /* COLLAPSED toggle: just the icon — no fill/border/shadow — always visible,
@@ -4397,6 +4432,37 @@ html.dark.ls-nav-collapsed .ls-nav-rail:hover .ls-nav-rail-btn {
 html.ls-nav-collapsed .ls-nav-rail-btn::before {
   -webkit-mask-image: url("/images/icons/IconSidebarRightArrow.svg");
   mask-image: url("/images/icons/IconSidebarRightArrow.svg");
+}
+
+/* Hover/drag edge highlight: a 2px line at the divider, drawn as an overlay so
+   it never shifts layout (the real border stays 0.5px). Expanded only. */
+.ls-nav-rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background-color: var(--ls-gray-300);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms var(--ls-sidebar-ease);
+}
+
+html.dark .ls-nav-rail::after {
+  background-color: var(--ls-gray-700);
+}
+
+/* Delay the hover reveal so a brief hover — e.g. the cursor sitting over the
+   rail the instant it slides back out on expand — doesn't flash the highlight. */
+.ls-nav-rail:hover::after,
+html.ls-nav-dragging .ls-nav-rail::after {
+  opacity: 1;
+}
+
+html.ls-nav-collapsed .ls-nav-rail::after {
+  display: none;
 }
 
 /* Desktop only — mobile uses the hamburger nav (no #sidebar-content). */

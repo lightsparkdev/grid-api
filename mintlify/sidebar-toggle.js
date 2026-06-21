@@ -1,22 +1,24 @@
-// Collapsible docs sidebar (desktop).
+// Collapsible + resizable docs sidebar (desktop).
 //
-// Injects a full-height "rail" on the right edge of #sidebar-content; hovering
-// it reveals a centered panel-toggle button. Clicking toggles
-// html.ls-nav-collapsed (the CSS in style.css animates the collapse with an
-// ease-out-snappy curve). The choice is remembered in
-// localStorage and applies on every page; the Global Accounts playground
-// defaults to collapsed until the visitor sets a preference.
-//
-// First-paint state is set by an inline script in docs.json head.raw so there's
-// no flash; this file handles the interactive tab + SPA route changes.
+// A rail on the right edge of #sidebar-content:
+//  - drag it to resize the sidebar (clamped MIN..MAX); release below the snap
+//    threshold to collapse.
+//  - click it (no drag) to toggle collapse.
+// Collapsed shows a slim visible rail with a bare icon (click/pointer to
+// reopen); expanded shows the toggle on hover at the edge (col-resize). Width +
+// collapsed state persist in localStorage and are restored pre-paint by the
+// inline script in docs.json head.raw, so there's no flash.
 
 (function () {
   var DESKTOP_MIN = 1024;
   var KEY = 'ls-nav-collapsed';
   var DEMO_PATHS = ['/global-accounts/demo', '/global-accounts/demo/'];
-  var SIDEBAR_WIDTH = 280; // matches #sidebar-content width in style.css
+  var MIN_WIDTH = 280; // the original sidebar width — only resizes wider
+  var MAX_WIDTH = 420;
+  var SNAP_COLLAPSE = 240; // drag left past this x -> collapse
+  var DRAG_THRESHOLD = 4; // px of movement before a press counts as a drag
 
-  var tab = null;
+  var rail = null;
 
   function isDesktop() {
     return window.innerWidth >= DESKTOP_MIN;
@@ -38,8 +40,18 @@
     try {
       localStorage.setItem(KEY, value);
     } catch (e) {
-      /* private mode / blocked storage — toggle still works for the session */
+      /* private mode — toggle still works for the session */
     }
+  }
+
+  function clampWidth(w) {
+    return Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.round(w)));
+  }
+
+  // Width is session-only — not persisted, so a refresh resets to the 280px
+  // default (the CSS var fallback) with no post-paint resize jump.
+  function applyWidth(w) {
+    document.documentElement.style.setProperty('--ls-sidebar-width', w + 'px');
   }
 
   // Remembered preference wins everywhere; otherwise the playground defaults to
@@ -55,61 +67,112 @@
     return document.documentElement.classList.contains('ls-nav-collapsed');
   }
 
-  // The sidebar's expanded right edge. Computed from its left offset + the fixed
-  // width so it's correct even while collapsed (width 0). Drives the tab's
-  // resting position via --ls-sidebar-edge.
-  function measureEdge() {
-    var sidebar = document.getElementById('sidebar-content');
-    if (!sidebar) return;
-    var left = sidebar.getBoundingClientRect().left;
-    var edge = Math.round(left + SIDEBAR_WIDTH);
-    document.documentElement.style.setProperty('--ls-sidebar-edge', edge + 'px');
-  }
-
-  function updateTab() {
-    if (!tab) return;
+  function updateRail() {
+    if (!rail) return;
     var collapsed = isCollapsed();
-    tab.setAttribute('aria-label', collapsed ? 'Show navigation' : 'Hide navigation');
-    tab.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    rail.setAttribute('aria-label', collapsed ? 'Show navigation' : 'Hide navigation');
+    rail.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   }
 
   function applyState(collapsed) {
     document.documentElement.classList.toggle('ls-nav-collapsed', collapsed);
-    updateTab();
+    updateRail();
   }
 
-  function removeTab() {
-    if (tab && tab.parentNode) tab.parentNode.removeChild(tab);
-    tab = null;
+  function removeRail() {
+    if (rail && rail.parentNode) rail.parentNode.removeChild(rail);
+    rail = null;
   }
 
-  function ensureTab() {
+  function ensureRail() {
     if (!isDesktop() || !document.getElementById('sidebar-content')) {
-      removeTab();
+      removeRail();
       return;
     }
-    if (tab && document.body.contains(tab)) return;
+    if (rail && document.body.contains(rail)) return;
 
-    tab = document.createElement('button');
-    tab.type = 'button';
-    tab.className = 'ls-nav-rail';
-    tab.innerHTML = '<span class="ls-nav-rail-btn" aria-hidden="true"></span>';
-    tab.addEventListener('click', function () {
-      var next = !isCollapsed();
-      setPref(next ? '1' : '0');
-      measureEdge();
-      applyState(next);
-    });
-    document.body.appendChild(tab);
-    measureEdge();
-    updateTab();
+    rail = document.createElement('button');
+    rail.type = 'button';
+    rail.className = 'ls-nav-rail';
+    rail.innerHTML = '<span class="ls-nav-rail-btn" aria-hidden="true"></span>';
+    attachInteractions(rail);
+    document.body.appendChild(rail);
+    updateRail();
   }
 
-  // Re-apply the default when no preference is stored (keeps a stored choice),
-  // then make sure the tab exists.
+  // Drag = resize (expanded only); plain click = toggle collapse (either state,
+  // mouse or keyboard).
+  function attachInteractions(el) {
+    var startX = 0;
+    var moved = false;
+    var dragging = false;
+    var dragEndAt = 0;
+    var animTimer = 0;
+
+    function onMove(e) {
+      if (!moved && Math.abs(e.clientX - startX) > DRAG_THRESHOLD) {
+        moved = true;
+        dragging = true;
+        document.documentElement.classList.add('ls-nav-dragging');
+        document.body.style.userSelect = 'none';
+      }
+      if (!dragging) return;
+      // Live: crossing the snap threshold collapses immediately (no release
+      // needed); dragging back out reopens and resumes resizing.
+      if (e.clientX < SNAP_COLLAPSE) {
+        if (!isCollapsed()) applyState(true);
+      } else {
+        if (isCollapsed()) applyState(false);
+        applyWidth(clampWidth(e.clientX));
+      }
+    }
+
+    function onUp(e) {
+      document.removeEventListener('mousemove', onMove, true);
+      document.removeEventListener('mouseup', onUp, true);
+      if (!moved) return; // a click — handled by the click listener
+      dragEndAt = Date.now();
+      document.documentElement.classList.remove('ls-nav-dragging');
+      document.body.style.userSelect = '';
+      // State was already applied live during the drag — just persist it.
+      if (isCollapsed()) {
+        setPref('1');
+      } else {
+        applyWidth(clampWidth(e.clientX));
+        setPref('0');
+      }
+    }
+
+    // Resize only from the expanded edge; the collapsed rail is click-only.
+    el.addEventListener('mousedown', function (e) {
+      if (e.button !== 0 || isCollapsed()) return;
+      e.preventDefault();
+      startX = e.clientX;
+      moved = false;
+      dragging = false;
+      document.addEventListener('mousemove', onMove, true);
+      document.addEventListener('mouseup', onUp, true);
+    });
+
+    el.addEventListener('click', function () {
+      if (Date.now() - dragEndAt < 300) return; // swallow the click after a drag
+      var next = !isCollapsed();
+      setPref(next ? '1' : '0');
+      applyState(next);
+      // Suppress the hover reveal during the open/close animation so the button
+      // and edge highlight don't flash from the cursor sitting over the rail
+      // mid-transition; they reveal together on a real hover once settled.
+      document.documentElement.classList.add('ls-nav-animating');
+      clearTimeout(animTimer);
+      animTimer = setTimeout(function () {
+        document.documentElement.classList.remove('ls-nav-animating');
+      }, 320);
+    });
+  }
+
   function sync() {
     applyState(shouldCollapse());
-    ensureTab();
+    ensureRail();
   }
 
   if (document.readyState === 'loading') {
@@ -124,8 +187,8 @@
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       sync();
-    } else if (!tab || !document.body.contains(tab)) {
-      ensureTab();
+    } else if (!rail || !document.body.contains(rail)) {
+      ensureRail();
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -137,8 +200,7 @@
     rafPending = true;
     requestAnimationFrame(function () {
       rafPending = false;
-      ensureTab();
-      measureEdge();
+      ensureRail();
     });
   });
 })();
