@@ -277,9 +277,13 @@ h1#page-title,
   text-shadow: none !important;
 }
 
-/* Navbar links: Medium weight (500) — avoids font flash during SPA navigation
-   since Medium is preloaded via next/font/local in docs.json */
+/* Navbar links (GitHub, Book a live demo, Dashboard): Medium weight (500). The
+   hosted Mintlify build wraps the link text in a <span> and applies a body-weight
+   rule to descendants, which drops the text back to 400 even though the anchor is
+   500 — so target the inner elements too, not just the anchor. (Medium is
+   preloaded via next/font/local in docs.json to avoid a flash on SPA nav.) */
 .navbar-link a,
+.navbar-link a *,
 #navbar a.link:not(.nav-tabs-item) {
   font-weight: 500 !important;
 }
