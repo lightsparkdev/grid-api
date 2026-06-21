@@ -4387,6 +4387,13 @@ html.dark .ls-nav-rail-btn {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* Navigation snaps the button (no opacity fade) so its icon doesn't ghost in/out
+   between pages as the collapse state changes; sync() adds this for the state
+   change and drops it next frame, leaving the hover reveal still animated. */
+html.ls-nav-snap .ls-nav-rail-btn {
+  transition: none !important;
+}
+
 /* Edge hover: reveal the button in its resting state (colors stay at base). */
 html:not(.ls-nav-collapsed) .ls-nav-rail:hover .ls-nav-rail-btn {
   opacity: 1;
@@ -4498,9 +4505,13 @@ html:has(.is-custom) .ls-nav-rail {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #sidebar-content,
-  .ls-nav-rail,
-  .ls-nav-rail-btn {
+  /* Match the gated selectors' specificity (html.ls-nav-animating …) so these
+     actually win and the toggle is instant for reduced-motion users. */
+  html.ls-nav-animating #sidebar-content,
+  html.ls-nav-animating #sidebar-content > *,
+  html.ls-nav-animating .ls-nav-rail,
+  .ls-nav-rail-btn,
+  .ls-nav-rail::after {
     transition: none !important;
   }
 }

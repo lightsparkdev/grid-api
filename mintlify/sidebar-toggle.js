@@ -12,6 +12,9 @@
 (function () {
   var DESKTOP_MIN = 1024;
   var KEY = 'ls-nav-collapsed';
+  // NOTE: keep in sync with the demo-path check in docs.json head.raw — the
+  // pre-paint script collapses the playground before this runs (no flash). The
+  // path lives in both because the pre-paint must run inline, before this file.
   var DEMO_PATHS = ['/global-accounts/demo', '/global-accounts/demo/'];
   var MIN_WIDTH = 280; // the original sidebar width — only resizes wider
   var MAX_WIDTH = 420;
@@ -172,7 +175,7 @@
       // over the rail mid-transition. Add it + force a reflow before applyState
       // so the width/opacity change animates from the current value, not snaps.
       document.documentElement.classList.add('ls-nav-animating');
-      void document.documentElement.offsetWidth;
+      document.documentElement.getBoundingClientRect(); // force reflow to arm the transition
       applyState(next);
       clearTimeout(animTimer);
       animTimer = setTimeout(function () {
@@ -182,12 +185,18 @@
   }
 
   function sync() {
+    var root = document.documentElement;
     // Navigation/first paint must never animate (only deliberate toggles do —
-    // see the click handler). Clearing any leftover flag keeps a collapsed
-    // sidebar from fading in on a freshly-loaded page.
-    document.documentElement.classList.remove('ls-nav-animating');
+    // see the click handler). Clear the animate flag, and snap the rail button
+    // for this navigation-driven state change so its icon doesn't ghost in/out
+    // between pages; restore its transition next frame so hover reveals animate.
+    root.classList.remove('ls-nav-animating');
+    root.classList.add('ls-nav-snap');
     applyState(shouldCollapse());
     ensureRail();
+    requestAnimationFrame(function () {
+      root.classList.remove('ls-nav-snap');
+    });
   }
 
   if (document.readyState === 'loading') {
@@ -196,11 +205,11 @@
     sync();
   }
 
-  // SPA navigation: Mintlify swaps content without a full reload. Re-validate on
-  // each mutation batch (rAF-coalesced) so the rail is re-added if Mintlify wipes
-  // it, and removed the instant a page turns out to have no sidebar (e.g. the
-  // custom-layout flow builder, whose sidebar renders hidden a tick after the
-  // path changes).
+  // SPA navigation: Mintlify swaps content without a full reload. On a path
+  // change, re-sync. Otherwise only re-add the rail if Mintlify wiped it — a
+  // cheap guard so we don't read layout every frame. Custom-layout pages are
+  // handled by sync() on navigation plus the CSS :has(.is-custom) rule, so the
+  // rail never lingers visibly even without per-frame polling here.
   var lastPath = location.pathname;
   var ensureScheduled = false;
   function scheduleEnsureRail() {
@@ -215,7 +224,7 @@
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       sync();
-    } else {
+    } else if (!rail || !document.body.contains(rail)) {
       scheduleEnsureRail();
     }
   });
