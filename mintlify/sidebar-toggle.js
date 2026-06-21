@@ -1,8 +1,9 @@
 // Collapsible docs sidebar (desktop).
 //
-// Injects a small chevron "tab" on the right edge of #sidebar-content. Clicking
-// it toggles html.ls-nav-collapsed (the CSS in style.css animates the
-// collapse with an ease-out-snappy curve). The choice is remembered in
+// Injects a full-height "rail" on the right edge of #sidebar-content; hovering
+// it reveals a centered panel-toggle button. Clicking toggles
+// html.ls-nav-collapsed (the CSS in style.css animates the collapse with an
+// ease-out-snappy curve). The choice is remembered in
 // localStorage and applies on every page; the Global Accounts playground
 // defaults to collapsed until the visitor sets a preference.
 //
@@ -91,8 +92,8 @@
 
     tab = document.createElement('button');
     tab.type = 'button';
-    tab.className = 'ls-nav-tab';
-    tab.innerHTML = '<span class="ls-nav-tab-icon" aria-hidden="true"></span>';
+    tab.className = 'ls-nav-rail';
+    tab.innerHTML = '<span class="ls-nav-rail-btn" aria-hidden="true"></span>';
     tab.addEventListener('click', function () {
       var next = !isCollapsed();
       setPref(next ? '1' : '0');
