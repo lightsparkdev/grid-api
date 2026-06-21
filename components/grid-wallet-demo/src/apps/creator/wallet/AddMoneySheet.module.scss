@@ -146,10 +146,10 @@
 .sourceRow {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
   width: 100%;
   margin: 0;
-  padding: 0 0 0 16px;
+  padding: 0 0 0 24px;
   border: 0;
   background: none;
   text-align: left;
@@ -349,8 +349,11 @@
     background: none;
   }
 
+  /* Opaque "secondary" tone — flatten the label onto the card surface so a
+     multi-path glyph (e.g. the bank) doesn't show its strokes overlapping where
+     a translucent --ios-label-secondary fill would double up. */
   .tileGlyph {
-    color: var(--ios-label-secondary);
+    color: color-mix(in srgb, var(--ios-label-primary) 50%, var(--add-card-bg));
   }
 
   .tileIcon {
@@ -411,15 +414,16 @@
 }
 
 /* Full-width hairline divider: the border lives on the inset .sourceContent, so
-   draw it with a pseudo-element that reaches back past the 56px tile + 16px gap +
-   16px row pad (88px) to the card's left edge, and out to the right edge. */
+   draw it with a pseudo-element that reaches back past the widest row inset
+   (24px pad + 56px tile + 24px gap) to the card's left edge — collapsed-tile
+   rows overshoot and are clipped by the card's overflow — and out to the right. */
 .sourceContentBordered {
   position: relative;
 
   &::after {
     content: '';
     position: absolute;
-    left: -88px;
+    left: -104px;
     right: 0;
     bottom: 0;
     height: 0.5px;

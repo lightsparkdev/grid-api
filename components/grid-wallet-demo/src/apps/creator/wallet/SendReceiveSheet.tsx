@@ -3,6 +3,7 @@
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { SfSymbol } from '@/apps/shared/icons';
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
 import { SheetIconButton } from '../blocks/SheetIconButton';
 import { CREATOR_FLAT_SHEET } from '../glass-presets';
 import styles from './SendReceiveSheet.module.scss';
@@ -40,9 +41,10 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
           aria-label="Close"
           size={40}
           type="button"
+          ghost
           onClick={onDismiss}
         >
-          <SfSymbol name="xmark" size={14} />
+          <IconCrossMedium size={24} />
         </SheetIconButton>
       </span>
 

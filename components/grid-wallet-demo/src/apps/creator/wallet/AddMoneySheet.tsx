@@ -16,6 +16,11 @@ import { IconBank } from '@central-icons-react/round-outlined-radius-0-stroke-2/
 import { IconCash } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCash';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconWallet1';
 import { IconApple } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconApple';
+// Sheet toolbar icon buttons — central glyphs (24px) matching the auth sheet's X.
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
+import { IconChevronLeftMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconChevronLeftMedium';
+import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconPlusMedium';
+import { IconArrowsAllSides2 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconArrowsAllSides2';
 import { TextMorph } from 'torph/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -581,19 +586,21 @@ export function AddMoneySheet({
                 aria-label="Close"
                 size={40}
                 type="button"
+                ghost
                 onClick={dismiss}
               >
-                <SfSymbol name="xmark" size={14} />
+                <IconCrossMedium size={24} />
               </SheetIconButton>
             ) : (
               <SheetIconButton
                 aria-label="Back"
                 size={40}
                 type="button"
+                ghost
                 onClick={() => go(backFrom[step] ?? 'source', true)}
                 disabled={confirming}
               >
-                <SfSymbol name="chevron.left" size={15} />
+                <IconChevronLeftMedium size={24} />
               </SheetIconButton>
             )}
             <h2 className={styles.title}>
@@ -647,8 +654,9 @@ export function AddMoneySheet({
                     aria-label="Scan QR code"
                     size={40}
                     type="button"
+                    ghost
                   >
-                    <SfSymbol name="viewfinder" size={17} />
+                    <IconArrowsAllSides2 size={24} />
                   </SheetIconButton>
                 </motion.span>
               )}
@@ -666,9 +674,10 @@ export function AddMoneySheet({
                     aria-label={isSend ? 'Add recipient' : 'Add bank account'}
                     size={40}
                     type="button"
+                    ghost
                     onClick={openAddBank}
                   >
-                    <SfSymbol name="plus" size={15} />
+                    <IconPlusMedium size={24} />
                   </SheetIconButton>
                 </motion.span>
               )}
@@ -1426,9 +1435,10 @@ export function AddMoneySheet({
           aria-label="Close"
           size={40}
           type="button"
+          ghost
           onClick={() => setPickerOpen(false)}
         >
-          <SfSymbol name="xmark" size={14} />
+          <IconCrossMedium size={24} />
         </SheetIconButton>
       </div>
 
