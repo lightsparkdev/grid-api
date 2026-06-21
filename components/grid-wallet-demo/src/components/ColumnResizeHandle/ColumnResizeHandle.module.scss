@@ -8,7 +8,9 @@
   margin-right: -6px;
   cursor: col-resize;
   position: relative;
-  z-index: 1;
+  // Above the panel headers (sticky, z-index 3) so the divider + hover highlight
+  // run the full height instead of being clipped by the "API calls" header.
+  z-index: 4;
 
   &::before {
     content: '';
@@ -20,18 +22,24 @@
     border-left: var(--stroke-xs) solid var(--border-primary);
   }
 
+  // Hover highlight: a full-height line over the divider, matching the Mintlify
+  // docs sidebar resize edge exactly (2px; gray-300 light / gray-700 dark — the
+  // same values as the docs' --ls-gray-300 / --ls-gray-700).
   &::after {
     content: '';
     position: absolute;
-    top: 50%;
+    top: 0;
+    bottom: 0;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 3px;
-    height: 32px;
-    border-radius: var(--corner-radius-2xs);
-    background: var(--border-secondary);
+    transform: translateX(-50%);
+    width: 2px;
+    background: var(--color-gray-300);
     opacity: 0;
     transition: opacity 150ms ease;
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-700);
+    }
   }
 
   &:hover::after,
