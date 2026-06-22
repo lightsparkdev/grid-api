@@ -181,9 +181,20 @@
 .sourceRowStatic {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   width: 100%;
-  padding: 12px 24px;
+  padding: 12px 16px;
+
+  /* Same gray circle as the bank list + people avatars: every selected
+     source/destination icon (flag, $, crypto logo) shares the container, so the
+     initials avatar reads as part of the system rather than an exception. */
+  .tile {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--ios-fill-tertiary);
+  }
 }
 
 /* "Use max" chip slot — labels are flex: 1, so it rides the row's right edge. */
@@ -456,26 +467,20 @@
 }
 
 /* ── Bank picker: saved-banks list, country picker, account form ───────────── */
-/* Saved bank / recipient / contact picker — reads like the wallet-home activity
-   list (gray circle icon, transparent container) rather than the bare action
-   buttons the choosers/pickers use. */
+/* Saved bank / recipient / contact picker — a contained card with the same bg
+   fill as the "Add money from" + country lists, but carrying the gray circle
+   icon (flag, crypto logo, initials) instead of the choosers' bare glyphs. */
 .bankList {
-  /* Full-bleed: rows run edge-to-edge on the sheet bg, exactly like the activity
-     list — transparent card, no shadow, no rounded corners on the press fill. */
-  margin: 4px 0 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  width: auto; // base .card is width:100%; the side margins would otherwise overflow
+  margin: 4px 16px 0;
 
-  /* Match the activity row spec 1:1 — pl 16 + 16 gap + 48px circle lands the
-     text column at 80, identical to the wallet activity list. */
   .sourceRow {
     gap: 16px;
     padding-left: 16px;
   }
 
-  /* Bring back the gray circle for every icon type — flag, crypto logo, and the
-     people-initials avatar already uses it (base .recipientAvatar). */
+  /* Gray circle for every icon type — flag, crypto logo, and the people-initials
+     avatar already uses it (base .recipientAvatar). */
   .tile,
   .recipientAvatar:has(.tokenIconSm) {
     width: 48px;
@@ -485,7 +490,6 @@
     background: var(--ios-fill-tertiary);
   }
 
-  /* Match the activity crypto-logo size on the gray circle. */
   .tokenIconSm {
     width: 24px;
     height: 24px;
@@ -773,6 +777,13 @@
   flex-direction: column;
   min-height: 0;
   margin-bottom: 16px;
+}
+
+/* Drop the base card's 4px top/bottom on the amount + destination cards so the
+   source row's circle sits symmetrically (the 4px otherwise added to the top
+   only, where the amount input follows the row). */
+.cardStack > .card {
+  padding: 0;
 }
 
 /* Amount card fills the stack; content centers in the remaining space. */
