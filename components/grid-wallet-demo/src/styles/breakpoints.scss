@@ -1,5 +1,10 @@
-/** App + API side-by-side inside the right column (large desktop). */
-$breakpoint-layout-wide: 1800px;
+/** App + API side-by-side inside the right column. Above this the layout is 3
+    columns: Configure (475) | App (phone) | API (475 default), so the App column
+    is roughly (viewport − 950). The phone needs ~466px (434 shell + 16px inset
+    each side) to render full size, i.e. ~1416px of viewport; below that the App
+    column squeezes the phone tiny. Stack at 1440px so the phone never shrinks
+    before App + API stack vertically (each full-width). Tune to taste. */
+$breakpoint-layout-wide: 1440px;
 
 /** Configure stacks above app + API (phone). */
 $breakpoint-layout-mobile: 767px;

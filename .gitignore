@@ -50,8 +50,9 @@ figma-*.md
 # Cursor IDE rules (personal config)
 .cursor/rules/
 
-# Personal todo files
+# Personal todo + notes files
 TODO-*.md
+pat-notes.md
 
 # Icon build script (local tool, requires license key)
 scripts/export-icons.js
