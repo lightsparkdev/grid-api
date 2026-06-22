@@ -80,10 +80,10 @@
 
 .rowGraphic {
   flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  corner-shape: var(--corner-shape);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  corner-shape: round;
   background: var(--ios-fill-quaternary);
 }
 

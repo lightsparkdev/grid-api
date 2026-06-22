@@ -177,13 +177,13 @@
   }
 }
 
-/* Non-interactive variant (amount/confirm screens). */
+/* Non-interactive variant (amount/confirm screens) — chooser-style spacing. */
 .sourceRowStatic {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 12px 24px;
 }
 
 /* "Use max" chip slot — labels are flex: 1, so it rides the row's right edge. */
@@ -302,17 +302,13 @@
   height: 20px;
 }
 
+/* Money-flow list rows are navigational buttons (like the "Add money from"
+   chooser): the icon sits bare — no gray container — sized to the icon itself. */
 .tile {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  corner-shape: var(--corner-shape);
-  background: var(--ios-fill-tertiary);
-  overflow: hidden;
 }
 
 .tileIcon {
@@ -336,19 +332,9 @@
   }
 }
 
-/* Creator nav rows show the icon bare in a secondary tone — no filled tile
-   (Aurora keeps the tile everywhere; this skin does it differently). Scoped to
-   the interactive .sourceRow (not the static amount/confirm rows) and to
-   monochrome icons only — flags / brand logos keep their tile. */
+/* Bare-icon list buttons render monochrome glyphs in a secondary tone (flags /
+   brand logos keep their own color). */
 .sourceRow {
-  /* Collapse the tile to the bare 24px icon (no box / reserved space). */
-  .tile:has(.tileIcon),
-  .tile:has(.tileGlyph) {
-    width: auto;
-    height: auto;
-    background: none;
-  }
-
   /* Opaque "secondary" tone — flatten the label onto the card surface so a
      multi-path glyph (e.g. the bank) doesn't show its strokes overlapping where
      a translucent --ios-label-secondary fill would double up. */
@@ -362,24 +348,33 @@
 }
 
 .flagIcon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
 }
 
-/* Send recipient avatar — first+last initials in a circular tile (fills the same
-   56px slot as .tile so rows align) with the country flag badged bottom-right. */
+/* People recipient avatar — first+last initials on a gray circle with the
+   country flag badged bottom-right. Initials need a container, so this is the
+   one money-flow row that keeps the gray circle (others go bare). */
 .recipientAvatar {
   position: relative;
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   corner-shape: round; // override the global squircle → a true circle
   background: var(--ios-fill-tertiary);
+}
+
+/* Crypto recipients / send-networks reuse .recipientAvatar but show a brand
+   logo — those go bare (no gray circle) like the other money-flow icons. */
+.recipientAvatar:has(.tokenIconSm) {
+  width: auto;
+  height: auto;
+  background: none;
 }
 
 .recipientInitials {
@@ -942,9 +937,9 @@
 .depositCryptoRow {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
   width: 100%;
-  padding: 0 0 0 16px;
+  padding: 0 0 0 24px;
 
   /* The copy/QR button group sits 16px off the row edge (vs the chevron's 24). */
   .sourceContent {
