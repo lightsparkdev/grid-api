@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- bankName
 - accountNumber
 - swiftCode
 properties:
