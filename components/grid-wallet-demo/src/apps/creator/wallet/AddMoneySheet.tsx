@@ -969,7 +969,7 @@ export function AddMoneySheet({
                             <RecipientAvatar name={b.beneficiary} code={b.country.code} />
                           ) : (
                             <span className={styles.tile} aria-hidden>
-                              <Flag code={b.country.code} size={24} />
+                              <Flag code={b.country.code} size={20} />
                             </span>
                           )}
                           <span

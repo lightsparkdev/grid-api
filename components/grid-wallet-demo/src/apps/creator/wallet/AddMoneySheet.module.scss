@@ -456,9 +456,40 @@
 }
 
 /* ── Bank picker: saved-banks list, country picker, account form ───────────── */
+/* Saved bank / recipient / contact picker — reads like the wallet-home activity
+   list (gray circle icon, transparent container) rather than the bare action
+   buttons the choosers/pickers use. */
 .bankList {
-  width: auto; // base .card is width:100%; margins would otherwise overflow
-  margin: 4px 16px 0;
+  /* Full-bleed: rows run edge-to-edge on the sheet bg, exactly like the activity
+     list — transparent card, no shadow, no rounded corners on the press fill. */
+  margin: 4px 0 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+
+  /* Match the activity row spec 1:1 — pl 16 + 16 gap + 48px circle lands the
+     text column at 80, identical to the wallet activity list. */
+  .sourceRow {
+    gap: 16px;
+    padding-left: 16px;
+  }
+
+  /* Bring back the gray circle for every icon type — flag, crypto logo, and the
+     people-initials avatar already uses it (base .recipientAvatar). */
+  .tile,
+  .recipientAvatar:has(.tokenIconSm) {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--ios-fill-tertiary);
+  }
+
+  /* Match the activity crypto-logo size on the gray circle. */
+  .tokenIconSm {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 /* Empty saved-banks state: pull the shared list card's 16px top inset back to
@@ -665,19 +696,19 @@
 }
 
 /* Editable fields styled like the confirm fee-details table (stacked label),
-   with a LEFT-indented hairline divider (iOS form rows). */
+   with a full-width hairline divider running edge-to-edge inside the card. */
 .formField {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 16px 24px;
+  padding: 16px;
 
   & + &::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 24px;
+    left: 0;
     right: 0;
     height: 0.5px;
     background: rgba(0, 0, 0, 0.12);
@@ -731,7 +762,9 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  padding: 6px 16px 16px;
+  /* Bottom gap lives on .ctaWrap (40px, matching the auth sheets) so the CTA
+     isn't doubly inset. */
+  padding: 6px 16px 0;
 }
 
 .cardStack {
@@ -859,6 +892,9 @@
 .detailsCard {
   width: auto;
   margin: 0 12px 20px;
+  /* Drop the base card's 4px top/bottom (Aurora needed it for its larger corner
+     radii); creator's tighter radius reads clean with just the rows' 16px. */
+  padding: 0;
 }
 
 .key {
@@ -887,7 +923,9 @@
 /* ── CTAs ─────────────────────────────────────────────────────────────────── */
 .ctaWrap {
   flex-shrink: 0;
-  padding: 0 16px 16px;
+  /* No side inset — the layout's 16px already lines the CTA up with the cards.
+     40px bottom gap to the screen edge, matching the auth sheets. */
+  padding: 0 0 40px;
 }
 
 /* ── Step 3: details + Confirm ────────────────────────────────────────────── */
@@ -903,7 +941,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 24px;
+  padding: 16px;
 }
 
 .detailRowBordered {
