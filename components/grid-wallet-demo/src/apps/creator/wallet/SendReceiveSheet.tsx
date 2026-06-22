@@ -2,7 +2,6 @@
 
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
-import { SfSymbol } from '@/apps/shared/icons';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
 import { SheetIconButton } from '../blocks/SheetIconButton';
 import { CREATOR_FLAT_SHEET } from '../glass-presets';
@@ -18,10 +17,10 @@ interface SendReceiveSheetProps {
 }
 
 /**
- * Figma 109:28513 — the "Send or receive" chooser, dressed in the auth
- * phone/email sheet's look (AuthSheet): a 64px gradient icon tile + glass X
- * header, a left-aligned title and subtitle, then the two bordered action
- * pills. Send chains into the money sheet; Receive opens the deposit list.
+ * Figma 109:28513 — the "Send or receive" chooser, dressed in the email/phone
+ * auth sheet's look (AuthSheet): a left-aligned title + ghost close row, a
+ * subtitle, then the two bordered action pills. Send chains into the money
+ * sheet; Receive opens the deposit list.
  */
 export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendReceiveSheetProps) {
   return (
@@ -29,15 +28,14 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
       open={open}
       onDismiss={onDismiss}
       glass={CREATOR_FLAT_SHEET}
+      // Match the auth sheet's 24px top corners (scoped; preset untouched).
+      topRadius={24}
     >
-      {/* Persistent header: the activity-row icon tile top-left, glass X top-right. */}
-      <div className={styles.header}>
-        <span className={styles.tile} aria-hidden>
-          <SfSymbol name="arrow.up.arrow.down" size={28} />
-        </span>
-      </div>
-      <span className={styles.close}>
+      {/* Title + ghost close in one row — matches the email/phone auth sheet. */}
+      <div className={styles.titleRow}>
+        <h2 className={styles.title}>Send or receive</h2>
         <SheetIconButton
+          className={styles.closeBtn}
           aria-label="Close"
           size={40}
           type="button"
@@ -46,16 +44,24 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
         >
           <IconCrossMedium size={24} />
         </SheetIconButton>
-      </span>
-
-      <h2 className={styles.heading}>Send or receive</h2>
+      </div>
       <p className={styles.sub}>Move money to and from any bank account or wallet</p>
 
       <div className={styles.actions}>
-        <ContentAreaButton type="button" variant="bordered" onClick={onSend}>
+        <ContentAreaButton
+          type="button"
+          variant="secondary"
+          className={styles.choiceBtn}
+          onClick={onSend}
+        >
           Send
         </ContentAreaButton>
-        <ContentAreaButton type="button" variant="bordered" onClick={onReceive}>
+        <ContentAreaButton
+          type="button"
+          variant="secondary"
+          className={styles.choiceBtn}
+          onClick={onReceive}
+        >
           Receive
         </ContentAreaButton>
       </div>

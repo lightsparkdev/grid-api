@@ -78,10 +78,12 @@
 }
 
 /* Resting fill-secondary chip (no border/shadow) — the hover/active wash layers
-   on top and deepens it. */
+   on top and deepens it. Surface is token-driven so a skin can recolor it
+   (--content-secondary-bg/-fg); the iOS values are the default fallback. */
 .secondary {
   border: 0;
-  background: var(--ios-fill-secondary);
+  background: var(--content-secondary-bg, var(--ios-fill-secondary));
+  color: var(--content-secondary-fg, var(--ios-label-primary));
   box-shadow: none;
 }
 

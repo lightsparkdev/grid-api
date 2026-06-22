@@ -1,80 +1,69 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Mirrors AuthSheet (the phone/email sheet): an icon tile + glass X header, a
-   left-aligned title and subtitle, then the action pills. */
+/* Mirrors the email/phone AuthSheet frame: title + ghost close row (no graphic),
+   a subtitle, then the action pills. Frame: top/right 24, title indented +8
+   (left 32), body indented to 32, bottom 40. */
 
-/* Header row — the icon tile (30px top/left). */
-.header {
+/* Title + ghost close — one row. */
+.titleRow {
   display: flex;
-  align-items: flex-start;
-  padding: 30px 24px 8px 30px;
-}
-
-/* Glass X — pinned 24px off the sheet's top-right corner. */
-.close {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  z-index: 1;
-}
-
-/* 64px gradient tile with a centered white glyph — the AuthSheet treatment, on
-   the same aurora-sampled fill with a blurred under-layer so the edges feather
-   out, the crisp glyph stacked on top. */
-.tile {
-  position: relative;
-  display: flex;
-  flex-shrink: 0;
   align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  color: #ffffff;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    corner-shape: var(--corner-shape);
-    background: linear-gradient(135deg, #98d9ed 0%, #32b9df 55%, #0698d0 100%);
-    filter: blur(6px);
-  }
-
-  :global([data-theme='dark']) &::before {
-    background: linear-gradient(135deg, #024a82 0%, #00396a 55%, #00254a 100%);
-  }
-
-  svg {
-    position: relative;
-  }
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 24px 0 32px;
 }
 
-/* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45, left-aligned. */
-.heading {
+/* Title3 / Emphasized — 20/25, semibold (590), left-aligned. */
+.title {
   margin: 0;
-  padding: 16px 32px 0;
+  flex: 1 1 0;
+  min-width: 0;
   @include ios.ios-text-title-3;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
   color: var(--ios-label-primary);
 }
 
-/* Footnote / Regular — 13/18, tracking -0.08, secondary; own row below title. */
+/* Icon-only dismiss — ghost btn; secondary → primary on hover. */
+.closeBtn {
+  flex-shrink: 0;
+  color: var(--ios-label-secondary);
+  transition: color 0.2s ease;
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    color: var(--ios-label-primary);
+  }
+
+  svg path {
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* Footnote / Regular — 13/18, secondary; own row below title, indented to 32. */
 .sub {
   margin: 0;
-  padding: 8px 32px 20px;
+  padding: 8px 32px 24px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
   text-wrap: pretty;
 }
 
-/* Two large bordered pills, stacked (Figma 109:28526). */
+/* Two large pills, stacked (Figma 109:28526). */
 .actions {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 24px 24px;
+  padding: 0 24px 40px;
+}
+
+/* Match the wallet-home secondary action buttons (Deposit / Withdraw / card):
+   feed the creator gray fill + label into ContentAreaButton's token-driven
+   secondary variant (ios-fill hover wash + press-scale come from its base). */
+.choiceBtn {
+  --content-secondary-bg: var(--creator-secondary-bg);
+  --content-secondary-fg: var(--creator-secondary-fg);
 }
 
 /* Receive is a no-op: it reads as a normal bordered button at rest, then dims
