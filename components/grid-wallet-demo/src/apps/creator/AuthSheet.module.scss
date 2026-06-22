@@ -1,12 +1,13 @@
 @use '../shared/typography/ios-type-mixins' as ios;
 
-/* Title + ghost close — one row. */
+/* Title + ghost close — one row. Frame: top/right 16; title indented +8 (left 24)
+   to match the body text. */
 .titleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 28px 28px 0px 40px;
+  padding: 24px 24px 0 32px;
 }
 
 .title {
@@ -39,7 +40,8 @@
 /* Footnote / Regular — 13/18, tracking -0.08. Own row below the title. */
 .sub {
   margin: 0;
-  padding: 8px 40px 24px;
+  /* Body text indented +8 (32 left/right) vs the 24 frame. */
+  padding: 8px 32px 24px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
   text-wrap: balance;
@@ -47,7 +49,7 @@
 
 .cardContainer,
 .codeContainer {
-  padding: 0 32px;
+  padding: 0 24px;
 }
 
 /* Positioning host for the halo SVG + clipped input card. */
@@ -118,9 +120,10 @@
   }
 }
 
-/* Button block — top spacing lives in .step's padding (inside the clip). */
+/* Button block — top spacing lives in .step's padding (inside the clip). Sheet
+   frame: right/left 24, bottom 40. */
 .actions {
-  padding: 0 32px 32px;
+  padding: 0 24px 40px;
 }
 
 /* ── Steps (entry → code) ─────────────────────────────────────────────────── */

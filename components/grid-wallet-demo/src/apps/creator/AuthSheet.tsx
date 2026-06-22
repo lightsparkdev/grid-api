@@ -419,6 +419,9 @@ export function AuthSheet({
       // The scrim can't cancel mid-verify — the staged submit is committed.
       onDismiss={phase === 'idle' ? (onCancel ?? (() => {})) : () => {}}
       glass={CREATOR_FLAT_SHEET}
+      // 24px top corners (squircle via FrostPanel clip-path, cross-browser).
+      // Scoped here so the shared CREATOR_FLAT_SHEET preset (Send/Receive) is untouched.
+      topRadius={24}
     >
       <div className={styles.titleRow}>
         <h2 className={styles.title}>
