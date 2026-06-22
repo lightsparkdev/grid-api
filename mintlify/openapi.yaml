@@ -11016,7 +11016,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - swiftCode
       properties:
@@ -11026,7 +11025,7 @@ components:
             - SGD_ACCOUNT
         bankName:
           type: string
-          description: Name of the beneficiary's bank
+          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation.
           minLength: 1
           maxLength: 255
           example: DBS Bank Ltd
@@ -12628,7 +12627,7 @@ components:
       description: |-
         Required fields depend on the selected paymentRails:
         - BANK_TRANSFER: accountNumber, bankName
-        - MOBILE_MONEY: phoneNumber, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -12636,26 +12635,26 @@ components:
             - CNY_ACCOUNT
         accountNumber:
           type: string
-          description: The destination bank account number (BANK_TRANSFER rail)
+          description: The account number of the bank
           minLength: 1
           maxLength: 34
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
         phoneNumber:
           type: string
-          description: The phone number in international format (MOBILE_MONEY rail)
+          description: The phone number in international format
           example: '+1234567890'
           minLength: 7
           maxLength: 15
           pattern: ^\+[0-9]{6,14}$
-        bankName:
-          type: string
-          description: The name of the bank or mobile-wallet provider
-          minLength: 1
-          maxLength: 255
       example:
         accountType: CNY_ACCOUNT
         accountNumber: '1234567890'
+        bankName: Example Bank
         phoneNumber: '+1234567890'
-        bankName: China Construction Bank
     CnyAccountInfo:
       allOf:
         - $ref: '#/components/schemas/CnyAccountInfoBase'
@@ -12668,8 +12667,8 @@ components:
               items:
                 type: string
                 enum:
-                  - MOBILE_MONEY
                   - BANK_TRANSFER
+                  - MOBILE_MONEY
     PaymentCnyAccountInfo:
       title: CNY Account
       allOf:
@@ -13593,31 +13592,24 @@ components:
           type: string
           enum:
             - INDIVIDUAL
-          example: INDIVIDUAL
         fullName:
           type: string
           description: The full name of the beneficiary
-          example: Jane Smith
         birthDate:
           type: string
           description: The birth date of the beneficiary
-          example: '1990-01-15'
         nationality:
           type: string
           description: The nationality of the beneficiary
-          example: GB
         email:
           type: string
           description: The email of the beneficiary
-          example: jane.smith@example.com
         phoneNumber:
           type: string
           description: The phone number of the beneficiary
-          example: '+447700900123'
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
-          example: GB
         address:
           $ref: '#/components/schemas/Address'
     GbpExternalAccountInfo:

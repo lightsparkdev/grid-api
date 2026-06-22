@@ -1,7 +1,6 @@
 type: object
 required:
 - accountType
-- bankName
 - accountNumber
 - swiftCode
 properties:
@@ -11,7 +10,8 @@ properties:
     - SGD_ACCOUNT
   bankName:
     type: string
-    description: Name of the beneficiary's bank
+    description: Name of the beneficiary's bank. When omitted, resolved from swiftCode
+      via the payout partner bank directory at account creation.
     minLength: 1
     maxLength: 255
     example: DBS Bank Ltd
