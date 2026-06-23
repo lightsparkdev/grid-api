@@ -6911,7 +6911,7 @@ paths:
             type: string
         - name: accountId
           in: query
-          description: Filter by internal account id. Returns cards whose `fundingSources` array contains the given internal account id.
+          description: Filter by internal account id. Returns cards with a funding source whose `internalAccountId` matches the given id.
           required: false
           schema:
             type: string
@@ -8527,7 +8527,9 @@ webhooks:
                     expYear: 2029
                     panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
                     fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                      - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+                        internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        status: ACTIVE
                     currency: USD
                     issuerRef: lithic_card_4f8d3a2b1c
                     createdAt: '2026-05-08T14:10:00Z'
@@ -8545,7 +8547,9 @@ webhooks:
                     stateReason: ISSUER_REJECTED
                     form: VIRTUAL
                     fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                      - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+                        internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        status: ACTIVE
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:12:00Z'
@@ -8566,7 +8570,9 @@ webhooks:
                     expMonth: 12
                     expYear: 2029
                     fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                      - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+                        internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        status: ACTIVE
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-09T09:00:00Z'
@@ -8639,8 +8645,12 @@ webhooks:
                     expMonth: 12
                     expYear: 2029
                     fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                      - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+                        internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        status: ACTIVE
+                      - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000012
+                        internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                        status: ACTIVE
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
@@ -19291,6 +19301,39 @@ components:
       description: |
         Physical form factor of the card. Only `VIRTUAL` is supported in v1;
         `PHYSICAL` will be added in a later release.
+    CardFundingSourceStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - PENDING_AUTH
+        - INACTIVE
+      description: |
+        Status of a card funding-source binding.
+
+        | Status | Description |
+        |--------|-------------|
+        | `ACTIVE` | The funding source is active and can be used by Authorization Decisioning. |
+        | `PENDING_AUTH` | The funding source is bound to the card, but additional authorization is required before Authorization Decisioning can use it. Embedded Wallet funding sources use this status until an active delegated key exists for the card funding source. |
+        | `INACTIVE` | The funding source is no longer active for the card. |
+      example: ACTIVE
+    CardFundingSource:
+      type: object
+      required:
+        - id
+        - internalAccountId
+        - status
+      properties:
+        id:
+          type: string
+          description: Grid-issued `CardFundingSource:<uuid>` identifier for this card-account binding.
+          readOnly: true
+          example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+        internalAccountId:
+          type: string
+          description: Internal account bound to the card through this funding source.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        status:
+          $ref: '#/components/schemas/CardFundingSourceStatus'
     Card:
       type: object
       required:
@@ -19347,12 +19390,16 @@ components:
           example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array
-          description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
+          description: Card funding-source bindings, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
           items:
-            type: string
+            $ref: '#/components/schemas/CardFundingSource'
           example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+            - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+              internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              status: ACTIVE
+            - id: CardFundingSource:019542f5-b3e7-1d02-0000-000000000012
+              internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+              status: ACTIVE
         currency:
           type: string
           description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
