@@ -99,6 +99,7 @@ post:
               value:
                 id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 publicKey: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
                 nickname: Card payments key
