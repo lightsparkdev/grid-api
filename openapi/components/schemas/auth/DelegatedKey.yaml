@@ -3,6 +3,7 @@ type: object
 required:
   - id
   - cardId
+  - fundingSourceId
   - accountId
   - publicKey
   - nickname
@@ -10,14 +11,14 @@ required:
   - createdAt
   - updatedAt
 description: >-
-  A delegated signing key for a card backed by an Embedded Wallet internal
-  account. Returned from `POST /auth/delegated-keys` (on activation),
+  A delegated signing key for a card funding source backed by an Embedded Wallet
+  internal account. Returned from `POST /auth/delegated-keys` (on activation),
   `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`.
   The keypair is generated and custodied by Grid; the private key is never
   returned. While `ACTIVE`, Grid may use the key to authorize Spark
-  token-transaction signing for the card's Embedded Wallet funding account in
-  place of a session keypair. `publicKey` is informational metadata
-  identifying the credential.
+  token-transaction signing for the card funding source's Embedded Wallet
+  funding account in place of a session keypair. `publicKey` is informational
+  metadata identifying the credential.
 properties:
   id:
     type: string
@@ -27,11 +28,15 @@ properties:
     type: string
     description: The card this key is delegated for.
     example: Card:019542f5-b3e7-1d02-0000-000000000010
+  fundingSourceId:
+    type: string
+    description: The card funding source this key is delegated for.
+    example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
   accountId:
     type: string
     description: >-
       The Embedded Wallet internal account this key is delegated for,
-      derived from the card's funding sources.
+      derived from the card funding source.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   publicKey:
     type: string
