@@ -319,8 +319,8 @@
 
 .tokenIconSm {
   display: block;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 
 /* Money-flow list rows are navigational buttons (like the "Add money from"
@@ -490,7 +490,8 @@
   }
 
   /* Gray circle for every icon type — flag, crypto logo, and the people-initials
-     avatar already uses it (base .recipientAvatar). */
+     avatar already uses it (base .recipientAvatar). The crypto logo inside keeps
+     its base 24px size. */
   .tile,
   .recipientAvatar:has(.tokenIconSm) {
     width: 48px;
@@ -498,11 +499,6 @@
     border-radius: 50%;
     corner-shape: round;
     background: var(--ios-fill-tertiary);
-  }
-
-  .tokenIconSm {
-    width: 24px;
-    height: 24px;
   }
 }
 
@@ -1034,7 +1030,9 @@
 }
 
 .clipboardList {
-  padding: 4px 16px 20px;
+  /* 40px bottom so the last row clears the sheet's rounded bottom corners (which
+     hug the phone screen) instead of clipping against them. */
+  padding: 4px 16px 40px;
 }
 
 /* Scroll container for the funding-details screen (below the overlaid toolbar). */
