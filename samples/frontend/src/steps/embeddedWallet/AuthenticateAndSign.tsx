@@ -78,8 +78,9 @@ export default function AuthenticateAndSign({
         { clientPublicKey },
       )
 
-      // 3. WebAuthn assertion against the Grid-issued challenge. The OS shows
-      //    its biometric prompt regardless of whether we send the real
+      // 3. WebAuthn assertion against the Grid-issued challenge. The challenge
+      //    is a lowercase hex string; UTF-8 encode it exactly as returned. The
+      //    OS shows its biometric prompt regardless of whether we send the real
       //    signature or the sandbox magic value below.
       const assertion = (await navigator.credentials.get({
         publicKey: {

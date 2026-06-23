@@ -121,9 +121,10 @@
   font-feature-settings: 'salt' 1;
 }
 
-/* Mobile (Playground): one screenful with the centered message, not the full
-   intrinsic skeleton height — so the API section isn't a tall empty void. */
-@media (max-width: $breakpoint-layout-mobile) {
+/* Stacked layouts (mobile + laptop): cap to one screenful with the centered
+   message, not the full intrinsic skeleton height — so the API section isn't a
+   tall empty void below the app. */
+@media (max-width: ($breakpoint-layout-wide - 1px)) {
   .root {
     flex: none;
     height: calc(100dvh - 52px);

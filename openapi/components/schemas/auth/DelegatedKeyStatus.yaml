@@ -1,0 +1,17 @@
+type: string
+enum:
+  - PENDING
+  - ACTIVE
+  - REVOKED
+description: >-
+  Status of a delegated signing key.
+
+
+  - `PENDING`: The delegated user exists but the policy-creation leg never
+  completed. The key cannot sign.
+
+  - `ACTIVE`: The policy is granted and the key may stamp quote executions.
+
+  - `REVOKED`: The delegated user has been deleted and the key can no
+  longer sign.
+example: ACTIVE

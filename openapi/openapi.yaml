@@ -18,6 +18,11 @@ tags:
       also configure these settings in the Grid dashboard.
   - name: Customers
     description: Customer management endpoints for creating and updating customer information
+  - name: Contact Verification
+    description: >-
+      Endpoints for verifying a customer's email and phone via one-time codes.
+      Required only for customers whose payment provider mandates contact
+      verification (e.g. EU customers); other providers return 409.
   - name: KYC/KYB Verifications
     description: >-
       Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)
@@ -77,6 +82,11 @@ tags:
       Card management endpoints. Issue debit cards against an internal
       account, freeze / unfreeze, close, manage card funding sources, and
       list card transactions.
+  - name: Stablecoins
+    description: >-
+      Stablecoin issuance endpoints. Link provider accounts, register
+      provider-created stablecoins, create mint/burn quotes, execute them, and
+      track the resulting operations.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -131,6 +141,14 @@ paths:
     $ref: paths/customers/customers_{customerId}.yaml
   /customers/{customerId}/kyc-link:
     $ref: paths/customers/customers_{customerId}_kyc-link.yaml
+  /customers/{customerId}/verify-email:
+    $ref: paths/customers/customers_{customerId}_verify-email.yaml
+  /customers/{customerId}/verify-email/confirm:
+    $ref: paths/customers/customers_{customerId}_verify-email_confirm.yaml
+  /customers/{customerId}/verify-phone:
+    $ref: paths/customers/customers_{customerId}_verify-phone.yaml
+  /customers/{customerId}/verify-phone/confirm:
+    $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:
@@ -225,6 +243,10 @@ paths:
     $ref: paths/auth/auth_sessions_{id}.yaml
   /auth/sessions/{id}/refresh:
     $ref: paths/auth/auth_sessions_{id}_refresh.yaml
+  /auth/delegated-keys:
+    $ref: paths/auth/auth_delegated-keys.yaml
+  /auth/delegated-keys/{id}:
+    $ref: paths/auth/auth_delegated-keys_{id}.yaml
   /agents:
     $ref: paths/agents/agents.yaml
   /agents/approvals:
@@ -280,6 +302,10 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /stablecoin-provider-accounts:
+    $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
+  /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
+    $ref: paths/stablecoins/stablecoin-provider-accounts_{stablecoinProviderAccountId}.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml

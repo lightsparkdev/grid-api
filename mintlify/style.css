@@ -277,9 +277,13 @@ h1#page-title,
   text-shadow: none !important;
 }
 
-/* Navbar links: Medium weight (500) — avoids font flash during SPA navigation
-   since Medium is preloaded via next/font/local in docs.json */
+/* Navbar links (GitHub, Book a live demo, Dashboard): Medium weight (500). The
+   hosted Mintlify build wraps the link text in a <span> and applies a body-weight
+   rule to descendants, which drops the text back to 400 even though the anchor is
+   500 — so target the inner elements too, not just the anchor. (Medium is
+   preloaded via next/font/local in docs.json to avoid a flash on SPA nav.) */
 .navbar-link a,
+.navbar-link a *,
 #navbar a.link:not(.nav-tabs-item) {
   font-weight: 500 !important;
 }
@@ -780,9 +784,9 @@ button[class*="text-primary"] * {
 #sidebar-content {
   background-color: var(--ls-gray-100) !important;
   border-right: 0.5px solid var(--ls-black-10) !important;
-  width: 280px !important;
-  min-width: 280px !important;
-  max-width: 280px !important;
+  width: var(--ls-sidebar-width, 280px) !important;
+  min-width: var(--ls-sidebar-width, 280px) !important;
+  max-width: var(--ls-sidebar-width, 280px) !important;
 }
 
 html.dark #sidebar-content {
@@ -4231,5 +4235,288 @@ html:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left
 
 html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"]::after {
   color: var(--ls-gray-700);
+}
+
+/* ===========================================
+   Collapsible sidebar (desktop)
+   A full-height "rail" (injected by sidebar-toggle.js) sits on the sidebar's
+   right edge; hovering it reveals a centered panel-toggle button. Clicking
+   toggles html.ls-nav-collapsed and the sidebar wipes closed with an
+   ease-out-snappy curve. State + the playground default are handled in JS;
+   first paint is set by the inline script in docs.json head.raw.
+   (The class is ls-nav-collapsed, not "sidebar-collapsed", so the broad
+   [class*="sidebar-collapse"] hide rule above doesn't match <html>.)
+   =========================================== */
+
+:root {
+  --ls-sidebar-ease: cubic-bezier(0.19, 1, 0.22, 1); /* easeOutSnappy */
+  --ls-sidebar-dur: 260ms;
+  --ls-sidebar-width: 280px; /* resizable: drag the rail to change */
+  --ls-nav-rail-hit: 24px; /* expanded: invisible hover/click zone at the edge */
+  --ls-nav-rail-w: 48px; /* collapsed: visible left rail */
+}
+
+/* The inner nav is pinned to the expanded width and clipped (overflow-x) so it
+   wipes cleanly instead of squishing/reflowing. */
+#sidebar-content {
+  overflow-x: hidden !important;
+}
+
+/* Pin children to the expanded width so they clip (not squish/reflow) as the
+   column animates closed. Width is the cross axis here (#sidebar-content is a
+   flex COLUMN), so this must NOT touch `flex` — the nav keeps its flex-1 growth
+   and the footer row stays pinned to the bottom. */
+#sidebar-content > * {
+  width: var(--ls-sidebar-width, 280px) !important;
+  box-sizing: border-box !important;
+}
+
+/* Animate the wipe ONLY on a deliberate toggle (ls-nav-animating is set by the
+   click handler). Off by default, so navigation/first paint render the final
+   state instantly — a collapsed sidebar landing on a new page never fades in
+   from expanded, which is what flashed nav content inside the rail. */
+html.ls-nav-animating #sidebar-content {
+  transition: width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    min-width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    max-width var(--ls-sidebar-dur) var(--ls-sidebar-ease) !important;
+}
+
+html.ls-nav-animating #sidebar-content > * {
+  transition: opacity var(--ls-sidebar-dur) var(--ls-sidebar-ease);
+}
+
+/* During an active drag, kill transitions so width tracks the cursor 1:1. */
+html.ls-nav-dragging #sidebar-content,
+html.ls-nav-dragging #sidebar-content > *,
+html.ls-nav-dragging .ls-nav-rail {
+  transition: none !important;
+}
+
+/* While dragging, let pointer events pass through the playground iframe so the
+   drag keeps tracking when the cursor moves over it (otherwise the iframe
+   swallows mousemove/mouseup and the resize stalls on the demo page). */
+html.ls-nav-dragging #wallet-demo-host,
+html.ls-nav-dragging #wallet-demo-iframe {
+  pointer-events: none !important;
+}
+
+/* Collapse to the rail's width (not 0) so the rail reserves real layout space —
+   content/iframe starts after it instead of being overlaid. */
+html.ls-nav-collapsed #sidebar-content {
+  width: var(--ls-nav-rail-w) !important;
+  min-width: var(--ls-nav-rail-w) !important;
+  max-width: var(--ls-nav-rail-w) !important;
+  border-right-color: transparent !important;
+}
+
+/* Hide the (clipped) nav + footer in the collapsed slot so only the rail shows. */
+html.ls-nav-collapsed #sidebar-content > * {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* EXPANDED: an invisible hover/click zone straddling the sidebar's right edge —
+   no visible rail here, just the hover-revealed button (below). */
+.ls-nav-rail {
+  position: fixed;
+  top: 112px; /* below navbar: 64px bar + 48px tabs */
+  bottom: 0;
+  left: calc(var(--ls-sidebar-width, 280px) - (var(--ls-nav-rail-hit) / 2));
+  width: var(--ls-nav-rail-hit);
+  z-index: 30;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: col-resize; /* match the demo's ColumnResizeHandle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Like the column, the rail only animates its slide on a deliberate toggle
+   (ls-nav-animating). On navigation it snaps straight to the collapsed/expanded
+   position instead of sliding across — so landing on the playground from a page
+   with the sidebar open collapses instantly, with no stray animation. */
+html.ls-nav-animating .ls-nav-rail {
+  transition: left var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    width var(--ls-sidebar-dur) var(--ls-sidebar-ease),
+    background-color var(--ls-sidebar-dur) var(--ls-sidebar-ease);
+}
+
+/* COLLAPSED: a visible left rail, full height, flush at the screen edge. */
+html.ls-nav-collapsed .ls-nav-rail {
+  left: 0;
+  width: var(--ls-nav-rail-w);
+  background-color: var(--ls-gray-100);
+  border-right: 0.5px solid var(--ls-black-10);
+  cursor: pointer; /* collapsed: it's a button to reopen, not a resize handle */
+}
+
+html.dark.ls-nav-collapsed .ls-nav-rail {
+  background-color: var(--ls-gray-975);
+  border-right-color: var(--ls-white-06);
+}
+
+/* EXPANDED toggle: a styled button, hidden until you hover the edge. */
+.ls-nav-rail-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  position: relative;
+  z-index: 1; /* keep the toggle above the edge highlight line */
+  width: 30px;
+  height: 30px;
+  border-radius: var(--ls-radius-md);
+  border: 0.5px solid var(--ls-black-10);
+  background-color: var(--ls-gray-100);
+  color: var(--ls-gray-500);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  transform: scale(0.92);
+  /* auto (not none) so the button itself is hoverable; clicks/drags still
+     bubble up to the rail, which owns the handlers. */
+  pointer-events: auto;
+  transition: opacity 150ms var(--ls-sidebar-ease),
+    transform 150ms var(--ls-sidebar-ease), background-color 150ms ease,
+    color 150ms ease;
+}
+
+html.dark .ls-nav-rail-btn {
+  border-color: var(--ls-white-06);
+  background-color: var(--ls-gray-975);
+  color: var(--ls-gray-600);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Navigation snaps the button (no opacity fade) so its icon doesn't ghost in/out
+   between pages as the collapse state changes; sync() adds this for the state
+   change and drops it next frame, leaving the hover reveal still animated. */
+html.ls-nav-snap .ls-nav-rail-btn {
+  transition: none !important;
+}
+
+/* Edge hover: reveal the button in its resting state (colors stay at base). */
+html:not(.ls-nav-collapsed) .ls-nav-rail:hover .ls-nav-rail-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Button hover: the button's own active state. */
+html:not(.ls-nav-collapsed) .ls-nav-rail-btn:hover {
+  color: var(--ls-gray-950);
+  background-color: var(--ls-gray-050);
+}
+
+html.dark:not(.ls-nav-collapsed) .ls-nav-rail-btn:hover {
+  color: var(--ls-gray-050);
+  background-color: var(--ls-gray-950);
+}
+
+/* While the sidebar animates open from a click, suppress the hover reveal so a
+   cursor sitting over the rail mid-transition doesn't flash the button or edge
+   highlight — they reveal together on a genuine hover once it settles. */
+html.ls-nav-animating:not(.ls-nav-collapsed) .ls-nav-rail-btn,
+html.ls-nav-animating:not(.ls-nav-collapsed) .ls-nav-rail::after {
+  opacity: 0 !important;
+}
+
+/* COLLAPSED toggle: just the icon — no fill/border/shadow — always visible,
+   centered in the rail. */
+html.ls-nav-collapsed .ls-nav-rail-btn {
+  opacity: 1;
+  transform: none;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ls-gray-500);
+}
+
+html.dark.ls-nav-collapsed .ls-nav-rail-btn {
+  color: var(--ls-gray-600);
+}
+
+html.ls-nav-collapsed .ls-nav-rail:hover .ls-nav-rail-btn {
+  color: var(--ls-gray-950);
+}
+
+html.dark.ls-nav-collapsed .ls-nav-rail:hover .ls-nav-rail-btn {
+  color: var(--ls-gray-050);
+}
+
+.ls-nav-rail-btn::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  background-color: currentColor;
+  -webkit-mask: url("/images/icons/IconSidebarLeftArrow.svg") center / 20px 20px
+    no-repeat;
+  mask: url("/images/icons/IconSidebarLeftArrow.svg") center / 20px 20px
+    no-repeat;
+}
+
+html.ls-nav-collapsed .ls-nav-rail-btn::before {
+  -webkit-mask-image: url("/images/icons/IconSidebarRightArrow.svg");
+  mask-image: url("/images/icons/IconSidebarRightArrow.svg");
+}
+
+/* Hover/drag edge highlight: a 2px line at the divider, drawn as an overlay so
+   it never shifts layout (the real border stays 0.5px). Expanded only. */
+.ls-nav-rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background-color: var(--ls-gray-300);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms var(--ls-sidebar-ease);
+}
+
+html.dark .ls-nav-rail::after {
+  background-color: var(--ls-gray-700);
+}
+
+/* Delay the hover reveal so a brief hover — e.g. the cursor sitting over the
+   rail the instant it slides back out on expand — doesn't flash the highlight. */
+.ls-nav-rail:hover::after,
+html.ls-nav-dragging .ls-nav-rail::after {
+  opacity: 1;
+}
+
+html.ls-nav-collapsed .ls-nav-rail::after {
+  display: none;
+}
+
+/* Custom-layout pages (frontmatter mode: "custom", e.g. the flow builder) have
+   no docs sidebar — Mintlify tags them with .is-custom — so there's nothing to
+   toggle. The JS won't inject the rail there either; this is the no-flash guard
+   during SPA navigation. */
+html:has(.is-custom) .ls-nav-rail {
+  display: none !important;
+}
+
+/* Desktop only — mobile uses the hamburger nav (no #sidebar-content). */
+@media (max-width: 1023px) {
+  .ls-nav-rail {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Match the gated selectors' specificity (html.ls-nav-animating …) so these
+     actually win and the toggle is instant for reduced-motion users. */
+  html.ls-nav-animating #sidebar-content,
+  html.ls-nav-animating #sidebar-content > *,
+  html.ls-nav-animating .ls-nav-rail,
+  .ls-nav-rail-btn,
+  .ls-nav-rail::after {
+    transition: none !important;
+  }
 }
 

@@ -1,0 +1,26 @@
+type: object
+description: >-
+  Email and/or phone verification state for the customer. This object is **only
+  present when the customer's regulatory jurisdiction requires contact
+  verification** (e.g. EU customers). For customers who have no such
+  requirement, this object is omitted entirely — no action is needed.
+
+
+  Each channel is reported independently: only the channels the customer's
+  provider actually requires are present. A provider may require both email and
+  phone, just one of them, or — when the object is absent — neither. Every
+  channel that **is** present must reach `VERIFIED` before the customer can
+  begin KYC. Drive each present channel with
+  `POST /customers/{customerId}/verify-email` and/or
+  `POST /customers/{customerId}/verify-phone` (and their `/confirm` sub-routes).
+properties:
+  email:
+    $ref: ./ContactVerificationStatus.yaml
+    description: >-
+      Verification status of the customer's email address. Present only when the
+      provider requires email verification.
+  phone:
+    $ref: ./ContactVerificationStatus.yaml
+    description: >-
+      Verification status of the customer's phone number. Present only when the
+      provider requires phone verification.

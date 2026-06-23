@@ -7,10 +7,18 @@ post:
     with `CARDHOLDER_KYC_NOT_APPROVED`.
 
 
+    If any funding source is an Embedded Wallet internal account, the
+    cardholder must authorize Grid to sign Spark token transactions for that
+    card funding source by completing the delegated-key creation flow with
+    `POST /auth/delegated-keys`. Until an active delegated key exists for that
+    funding source, Authorization Decisioning cannot use it to fund card
+    transactions.
+
+
     New cards start in `state: "PROCESSING"` while the card issuer
-    provisions the card. The `card.state_change` webhook fires on the
-    transition to `ACTIVE` (or to `CLOSED` with `stateReason:
-    "ISSUER_REJECTED"` if provisioning fails).
+    provisions the card. The `card.state_change` webhook fires on each state
+    transition, including the transition to `ACTIVE` (or to `CLOSED` with
+    `stateReason: "ISSUER_REJECTED"` if provisioning fails).
   operationId: createCard
   tags:
     - Cards
@@ -33,7 +41,11 @@ post:
                 - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   responses:
     '201':
-      description: Card issued successfully
+      description: >-
+        Card created successfully. Newly-created cards start in `PROCESSING`
+        while the issuer provisions them. Cards funded by an Embedded Wallet
+        internal account also require an active delegated key for that funding
+        source before Authorization Decisioning can use it.
       content:
         application/json:
           schema:

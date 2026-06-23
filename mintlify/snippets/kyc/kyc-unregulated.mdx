@@ -69,6 +69,21 @@ The response always includes `kycUrl` for the hosted flow. For providers that su
   Call `POST /customers` with `customerType` and any pre-fill fields you have. The returned `id` is the customer's Grid ID; their `kycStatus` is `PENDING` until verification completes.
 </Step>
 
+<Step title="Verify contact channels (only where required)">
+  Some regions (for example, the EU) require the customer's email and/or phone to be verified before KYC can begin. When this applies, the customer carries a `contactVerification` object listing **only the channels that are required** — for example `{ "email": "PENDING", "phone": "PENDING" }`, or just `{ "email": "PENDING" }` if a provider requires email alone. When the object is absent, no contact verification is required and you can skip this step.
+
+  For each channel that's present, drive a send-then-confirm pair (the provider delivers a one-time code by email/SMS):
+
+  - `POST /customers/{customerId}/verify-email`, then `POST /customers/{customerId}/verify-email/confirm` with `{ "code": "..." }`
+  - `POST /customers/{customerId}/verify-phone`, then `POST /customers/{customerId}/verify-phone/confirm` with `{ "code": "..." }`
+
+  Re-POST the send endpoint to resend a code. Each channel moves `PENDING` → `VERIFIED`. (`verify-email`/`verify-phone` return `409` for a channel the provider doesn't require.)
+
+  <Note>
+  Generating the KYC link before every present channel is `VERIFIED` returns `409`.
+  </Note>
+</Step>
+
 <Step title="Generate the KYC link">
   Call `POST /customers/{customerId}/kyc-link`. Each call returns a fresh single-use `kycUrl` and `expiresAt`; previously-issued links remain single-use but aren't invalidated.
 
@@ -132,6 +147,10 @@ The shape of the flow depends on the customer type:
       }
     }'
   ```
+
+  <Note>
+  Where the customer's provider requires it (for example, EU customers), the customer carries a `contactVerification` object and their email and phone must be `VERIFIED` before you submit for verification. Drive each channel with the send-then-confirm pairs (`verify-email` / `verify-email/confirm` and `verify-phone` / `verify-phone/confirm`) described in the Hosted flow's "Verify email and phone" step. When `contactVerification` is absent, no contact verification is required.
+  </Note>
 </Step>
 
 <Step title="Upload supporting documents (if requested)">

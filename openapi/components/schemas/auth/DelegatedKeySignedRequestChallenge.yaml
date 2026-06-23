@@ -1,0 +1,8 @@
+title: Delegated Key Signed Request Challenge
+description: >-
+  202 response returned from the delegated-key endpoints. Stamp `payloadToSign`
+  with the session API keypair of a verified credential on the delegated key's
+  Embedded Wallet funding account, then retry the same request with the full
+  stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
+allOf:
+  - $ref: ../common/SignedRequestChallenge.yaml

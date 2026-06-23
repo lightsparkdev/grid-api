@@ -1,0 +1,10 @@
+title: Delegated Key List Response
+type: object
+required:
+  - data
+properties:
+  data:
+    type: array
+    description: Delegated signing keys matching the list filters.
+    items:
+      $ref: ./DelegatedKey.yaml

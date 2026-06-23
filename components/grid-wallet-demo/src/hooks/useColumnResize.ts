@@ -4,7 +4,9 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 const CONFIGURE_WIDTH = 475;
 const MIN_APP = 320;
-const MIN_API = 320;
+// Never resize the API column below its default/snap width (= the configure
+// column width); dragging only widens it from there.
+const MIN_API = CONFIGURE_WIDTH;
 const SNAP_THRESHOLD = 28;
 
 /** Default + snap target — matches configure column width. */
