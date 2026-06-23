@@ -101,6 +101,8 @@ resources:
       platform_config: '#/components/schemas/PlatformConfig'
       embedded_wallet_config: "#/components/schemas/EmbeddedWalletConfig"
       platform_config_update_request: '#/components/schemas/PlatformConfigUpdateRequest'
+      transaction_fee_config: '#/components/schemas/TransactionFeeConfig'
+      transaction_fee_event_type: '#/components/schemas/TransactionFeeEventType'
     methods:
       retrieve: get /config
       update: patch /config
