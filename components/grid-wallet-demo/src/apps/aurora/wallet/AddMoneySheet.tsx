@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
@@ -415,6 +415,30 @@ export function AddMoneySheet({
     ro.observe(parent);
     return () => ro.disconnect();
   }, [step]);
+
+  // Keypad ⇄ details swap: tween each region to its MEASURED height (offsetHeight
+  // + margin) instead of height:auto. Motion's auto enter measures short of the
+  // content's trailing padding/margin, then settles to the true height — a snap
+  // at the end of the transition. Measuring on mount (deferred one frame so
+  // framer reads a target update, not an adoption) is the auth sheet's fix.
+  const [keypadH, setKeypadH] = useState<number | null>(null);
+  const [detailsH, setDetailsH] = useState<number | null>(null);
+  const measureKeypad = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
+      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      setKeypadH(el.offsetHeight + mb);
+    });
+  }, []);
+  const measureDetails = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
+      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      setDetailsH(el.offsetHeight + mb);
+    });
+  }, []);
 
   // Amount-entry decimals for NumericText: hidden until the user types the dot
   // ("1500" → "$1,500"); then typed digits solid + remaining placeholders dim
@@ -1364,10 +1388,10 @@ export function AddMoneySheet({
                         key="keypad"
                         className={styles.swapRegion}
                         initial={reduceMotion ? false : REGION_HIDDEN}
-                        animate={REGION_ENTER}
+                        animate={{ ...REGION_ENTER, height: keypadH ?? 'auto' }}
                         exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
                       >
-                        <div className={styles.keypad} role="group" aria-label="Amount keypad">
+                        <div ref={measureKeypad} className={styles.keypad} role="group" aria-label="Amount keypad">
                           {KEYPAD.flat().map((key) => (
                             <button
                               key={key}
@@ -1386,10 +1410,10 @@ export function AddMoneySheet({
                         key="details"
                         className={styles.swapRegion}
                         initial={reduceMotion ? false : REGION_HIDDEN}
-                        animate={REGION_ENTER}
+                        animate={{ ...REGION_ENTER, height: detailsH ?? 'auto' }}
                         exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
                       >
-                        <div className={clsx(styles.card, styles.detailsCard)}>
+                        <div ref={measureDetails} className={clsx(styles.card, styles.detailsCard)}>
                           <div className={styles.detailRows}>
                             {confirmDetails.map(([label, value], i) => (
                               <div
