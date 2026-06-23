@@ -104,8 +104,8 @@ get:
     - name: accountId
       in: query
       description: >-
-        Filter by internal account id. Returns cards with a funding source whose
-        `internalAccountId` matches the given id.
+        Filter by internal account id. Returns cards whose `fundingSources`
+        array contains the given internal account id.
       required: false
       schema:
         type: string
