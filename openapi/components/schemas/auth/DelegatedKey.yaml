@@ -3,6 +3,7 @@ type: object
 required:
   - id
   - cardId
+  - fundingSourceId
   - accountId
   - publicKey
   - nickname
@@ -27,11 +28,15 @@ properties:
     type: string
     description: The card this key is delegated for.
     example: Card:019542f5-b3e7-1d02-0000-000000000010
+  fundingSourceId:
+    type: string
+    description: The card funding source this key is delegated for.
+    example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
   accountId:
     type: string
     description: >-
       The Embedded Wallet internal account this key is delegated for,
-      derived from the card's funding sources.
+      derived from the card funding source.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   publicKey:
     type: string
