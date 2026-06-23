@@ -564,12 +564,12 @@ export function AddMoneySheet({
       open={open}
       onDismiss={dismiss}
       // Flat solid sheet per Figma (no frost, no glassy glint — glass stays on
-      // the toolbar buttons only). Top radius straight from Figma (38, no 1.2x);
-      // shell smoothing so the bottom corners nest concentrically in the screen
-      // squircle. The uniform hairline edge (themed: transparent on light, white
-      // 10% on dark) rides FrostPanel's squircle path so corners match exactly.
+      // the toolbar buttons only). 24px top corners to unify with the auth /
+      // Send-Receive sheets; shell smoothing so the bottom corners nest
+      // concentrically in the screen squircle. The uniform hairline edge (themed:
+      // transparent on light, white 10% on dark) rides FrostPanel's squircle path.
       glass={{
-        radius: 38,
+        radius: 24,
         cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
         tint: 'var(--wallet-bg)',
         edge: 'var(--sheet-flat-edge)',
@@ -1428,6 +1428,9 @@ export function AddMoneySheet({
       open={pickerOpen}
       onDismiss={() => setPickerOpen(false)}
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
+      // 24px top corners to match the auth / Send-Receive sheets (scoped; the
+      // shared SHEET_GLASS preset is untouched).
+      topRadius={24}
     >
       <div className={styles.clipboardHeader}>
         <h2 className={styles.clipboardHeading}>Paste address</h2>

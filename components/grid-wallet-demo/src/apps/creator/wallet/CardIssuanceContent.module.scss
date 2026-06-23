@@ -104,7 +104,9 @@
 /* Figma 2219:48745 / 2219:48772 — p 32. */
 .ctaWrap {
   width: 100%;
-  padding: 32px;
+  /* 16px sides + 40px from the screen bottom, matching the other bottom-anchored
+     CTAs across the creator app. */
+  padding: 32px 16px 40px;
 }
 
 /* Figma 2219:48913 — "Creating your card..." status (Subheadline/Regular 15/20). */

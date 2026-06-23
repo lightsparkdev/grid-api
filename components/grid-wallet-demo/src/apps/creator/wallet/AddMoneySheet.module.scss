@@ -183,7 +183,7 @@
   align-items: center;
   gap: 16px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 16px;
 
   /* Same gray circle as the bank list + people avatars: every selected
      source/destination icon (flag, $, crypto logo) shares the container, so the
@@ -194,6 +194,16 @@
     border-radius: 50%;
     corner-shape: round;
     background: var(--ios-fill-tertiary);
+  }
+
+  /* Top money-flow card only (the source row sits above the amount input):
+     full-width hairline under the row, matching the "Add money from" list. */
+  .amountCard & {
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+  }
+
+  :global([data-theme='dark']) .amountCard & {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -753,7 +763,9 @@
   right: 0;
   bottom: 0;
   z-index: 2;
-  padding: 32px;
+  /* 16px sides + 40px from the screen bottom, matching the other bottom-anchored
+     CTAs; the 32px top keeps the gradient fade above the button. */
+  padding: 32px 16px 40px;
   background: linear-gradient(to top, var(--wallet-bg), var(--wallet-bg) 56%, transparent);
 }
 
