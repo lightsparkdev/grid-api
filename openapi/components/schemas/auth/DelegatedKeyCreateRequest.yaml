@@ -1,16 +1,23 @@
 title: Delegated Key Create Request
 type: object
 required:
-  - fundingSourceId
+  - cardId
+  - internalAccountId
   - nickname
 properties:
-  fundingSourceId:
+  cardId:
     type: string
     description: >-
-      The id of the card funding source that will use this delegated signing
-      key. Grid creates the key for that funding source's Embedded Wallet
-      internal account.
-    example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+      The id of the card whose Embedded Wallet funding account will use this
+      delegated signing key.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  internalAccountId:
+    type: string
+    description: >-
+      The id of the Embedded Wallet internal account funding the card. Grid
+      uses the `(cardId, internalAccountId)` pair to find the active card
+      funding-source binding.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   nickname:
     type: string
     minLength: 1

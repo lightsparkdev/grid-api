@@ -5044,15 +5044,15 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
-        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card funding source to identify the wallet funding account, generates the keypair server-side, creates a non-root Turnkey user holding the public key, then a policy granting that user signing authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates a non-root Turnkey user holding the public key, then a policy granting that user signing authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Use the session API keypair of a verified credential on the card funding source's Embedded Wallet funding account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
+        2. Use the session API keypair of a verified credential on the requested Embedded Wallet internal account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
 
         3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the delegated user exists but holds no policy, so it cannot sign. After activation, Grid uses the custodied key to authorize signing for that card funding source's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the delegated user exists but holds no policy, so it cannot sign. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
 
         Each card funding source may have at most one non-revoked delegated key (`ACTIVE` or `PENDING`) for its Embedded Wallet funding account; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by Turnkey. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
@@ -5085,7 +5085,8 @@ paths:
               create:
                 summary: Delegate signing to a Grid-custodied key
                 value:
-                  fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+                  cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                  internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   nickname: Card payments key
       responses:
         '201':
@@ -5126,7 +5127,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: Card funding source or Embedded Wallet funding account not found
+          description: Card, card funding source, or Embedded Wallet funding account not found
           content:
             application/json:
               schema:
@@ -18723,13 +18724,18 @@ components:
       title: Delegated Key Create Request
       type: object
       required:
-        - fundingSourceId
+        - cardId
+        - internalAccountId
         - nickname
       properties:
-        fundingSourceId:
+        cardId:
           type: string
-          description: The id of the card funding source that will use this delegated signing key. Grid creates the key for that funding source's Embedded Wallet internal account.
-          example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        internalAccountId:
+          type: string
+          description: The id of the Embedded Wallet internal account funding the card. Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         nickname:
           type: string
           minLength: 1
