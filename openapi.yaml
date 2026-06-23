@@ -19333,6 +19333,7 @@ components:
           description: Internal account bound to the card through this funding source.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         status:
+          readOnly: true
           $ref: '#/components/schemas/CardFundingSourceStatus'
     Card:
       type: object
