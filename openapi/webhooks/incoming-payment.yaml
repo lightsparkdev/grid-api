@@ -81,6 +81,13 @@ post:
                 destination:
                   destinationType: UMA_ADDRESS
                   umaAddress: $recipient@uma.domain
+                  amount:
+                    amount: 50000
+                    currency:
+                      code: USD
+                      name: United States Dollar
+                      symbol: $
+                      decimals: 2
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
                 senderUmaAddress: $sender@external.domain
@@ -117,6 +124,13 @@ post:
                 destination:
                   destinationType: UMA_ADDRESS
                   umaAddress: $recipient@uma.domain
+                  amount:
+                    amount: 50000
+                    currency:
+                      code: USD
+                      name: United States Dollar
+                      symbol: $
+                      decimals: 2
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
                 senderUmaAddress: $sender@external.domain

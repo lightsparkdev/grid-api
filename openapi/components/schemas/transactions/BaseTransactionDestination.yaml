@@ -1,9 +1,17 @@
 type: object
 required:
   - destinationType
+  - amount
 properties:
   destinationType:
     $ref: ./TransactionDestinationType.yaml
+  amount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Amount moved on the destination side, in the destination's own currency,
+      signed by cash flow: positive when funds flow into the destination,
+      negative when they flow out. Mirrors the source amount with the opposite
+      sign.
   currency:
     type: string
     description: Currency code for the destination
