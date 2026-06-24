@@ -43,7 +43,7 @@ sequenceDiagram
     ```
   </Step>
   <Step title="Client stamps the payload">
-    Build a Turnkey API-key stamp over `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
+    Build a Grid wallet signature over `payloadToSign` with an active session signing key on the account. Keep the export private key on the client; Grid will use the matching `clientPublicKey` from step 1 to seal the wallet credentials.
   </Step>
   <Step title="Signed retry — receive the encrypted seed">
     ```bash
@@ -67,7 +67,7 @@ sequenceDiagram
     ```
   </Step>
   <Step title="Decrypt on the client">
-    `encryptedWalletCredentials` is a signed Turnkey export envelope, not the base58check session-bundle format used by `encryptedSessionSigningKey`. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
+    `encryptedWalletCredentials` is a signed wallet export envelope, not the base58check session-bundle format used by `encryptedSessionSigningKey`. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
 
     The plaintext is a BIP-39 mnemonic (the wallet's master seed).
   </Step>

@@ -62,7 +62,7 @@ Session refresh creates a new session signing key from an existing active sessio
     ```
   </Step>
   <Step title="Client stamps the payload">
-    Build a Turnkey API-key stamp over `payloadToSign` with the current session signing key.
+    Build a Grid wallet signature over `payloadToSign` with the current session signing key.
   </Step>
   <Step title="Signed retry — receive the refreshed session">
     ```bash
@@ -103,7 +103,7 @@ Session revocation uses the same <a href="authentication#the-signed-retry-patter
     ```
   </Step>
   <Step title="Client stamps the payload">
-    Build a Turnkey API-key stamp over `payloadToSign` with any active session signing key on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
+    Build a Grid wallet signature over `payloadToSign` with any active session signing key on the same account — either the session being revoked (self-logout) or another session (admin-style sign-out of a different device).
   </Step>
   <Step title="Signed retry — session is revoked">
     ```bash

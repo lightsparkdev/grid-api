@@ -2784,7 +2784,7 @@ paths:
 
         When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
         the request must include a `Grid-Wallet-Signature` header. The header value
-        is the full Turnkey API-key stamp built over the `payloadToSign` value from
+        is the full Grid wallet signature built over the `payloadToSign` value from
         the quote's `paymentInstructions[].accountOrWalletInfo` entry with the
         session private key of a verified authentication credential on the source
         Embedded Wallet.
@@ -2814,7 +2814,7 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full Turnkey API-key stamp over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
@@ -4726,7 +4726,7 @@ paths:
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
-        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical Turnkey session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -4941,7 +4941,7 @@ paths:
       description: |
         Refresh an active Embedded Wallet auth session and create a new session signing key. Session refresh is a two-step signed-retry flow:
 
-        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a Turnkey create-read-write-session payload, binds the supplied `clientPublicKey` into that payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a Grid session-refresh payload, binds the supplied `clientPublicKey` into that payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession` with an `encryptedSessionSigningKey` sealed to that client public key.
 
@@ -5044,7 +5044,7 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
-        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates a non-root Turnkey user holding the public key, then a policy granting that user signing authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
@@ -5052,9 +5052,9 @@ paths:
 
         3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the delegated user exists but holds no policy, so it cannot sign. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
 
-        Each card funding source may have at most one non-revoked delegated key (`ACTIVE` or `PENDING`) for its Embedded Wallet funding account; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by Turnkey. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
+        Each card funding source may have at most one `ACTIVE` delegated key for its Embedded Wallet funding account; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -5133,7 +5133,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: A non-revoked delegated key (`ACTIVE` or `PENDING`) already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: An `ACTIVE` delegated key already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
           content:
             application/json:
               schema:
@@ -5237,13 +5237,9 @@ paths:
     delete:
       summary: Revoke a delegated signing key
       description: |
-        Revoke a delegated signing key. Revocation is a single signed-retry flow:
+        Revoke an `ACTIVE` delegated signing key. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
 
-        1. Call `DELETE /auth/delegated-keys/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-        2. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account and retry with `Grid-Wallet-Signature` and `Request-Id` headers. This deletes the delegated user and its API key, after which the key can no longer sign, and the response is `204`.
-
-        Deleting the user is the kill switch: it removes the API key the delegated key authenticated with, so signing stops regardless of the policy. The policy is left in place — its consensus references the now-deleted user, so it can never authorize anything (Turnkey user IDs are never reused), and deleting it is unnecessary for correctness or security.
+        The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
       operationId: revokeDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -5257,37 +5253,17 @@ paths:
           schema:
             type: string
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified credential on the same internal account. Required on the signed retries; ignored on the initial call.
-          schema:
-            type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
-        - name: Request-Id
-          in: header
-          required: false
-          description: The `requestId` returned in the prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retries; must be paired with `Grid-Wallet-Signature`.
-          schema:
-            type: string
-          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
-        '202':
-          description: Challenge issued. Stamp `payloadToSign` and retry to complete revocation.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
         '204':
           description: Delegated key revoked. The key can no longer authorize signing.
         '400':
-          description: Bad request. Returned when the delegated key has already been revoked.
+          description: Bad request. Returned when the delegated key has already been revoked or is not `ACTIVE`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing on a retry, malformed, or does not match the pending challenge, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized.
           content:
             application/json:
               schema:
@@ -6288,7 +6264,7 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full Turnkey API-key stamp over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
@@ -12542,7 +12518,7 @@ components:
               description: Discriminator value identifying this as Embedded Wallet payment instructions.
             payloadToSign:
               type: string
-              description: JSON-encoded transaction signing payload that must be stamped, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting Turnkey API-key stamp is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
+              description: JSON-encoded transaction signing payload that must be stamped, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting Grid wallet signature is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     SwiftAccountInfoBase:
       type: object
@@ -18462,7 +18438,7 @@ components:
     PasskeyAssertion:
       title: Passkey Assertion
       type: object
-      description: WebAuthn assertion returned by `navigator.credentials.get()`. In sandbox, Grid validates the assertion against the registered passkey credential so the client-side flow can match production. In production, Turnkey validates the WebAuthn assertion.
+      description: WebAuthn assertion returned by `navigator.credentials.get()`. In sandbox, Grid validates the assertion against the registered passkey credential so the client-side flow can match production. In production, Grid validates the WebAuthn assertion.
       required:
         - credentialId
         - clientDataJson
@@ -18573,7 +18549,7 @@ components:
           additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
-      description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
+      description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
       type: object
       properties:
         clientPublicKey:
@@ -18581,11 +18557,11 @@ components:
           pattern: ^04[0-9a-fA-F]{128}$
           minLength: 130
           maxLength: 130
-          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the Turnkey session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP`.
+          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP`.
           example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
-      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical Turnkey session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
+      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
@@ -18601,7 +18577,7 @@ components:
               example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
             challenge:
               type: string
-              description: Lowercase hex-encoded SHA-256 digest of the canonical Turnkey session-creation request body for the pending passkey authentication. Do not base64url-decode this field; pass UTF-8 bytes of the string (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge to `navigator.credentials.get()`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
+              description: Lowercase hex-encoded SHA-256 digest of the canonical session-creation request body for the pending passkey authentication. Do not base64url-decode this field; pass UTF-8 bytes of the string (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge to `navigator.credentials.get()`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
               example: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
             requestId:
               type: string
@@ -18635,7 +18611,7 @@ components:
             $ref: '#/components/schemas/AuthSession'
     AuthSessionRefreshRequest:
       title: Auth Session Refresh Request
-      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow. On the initial call, Grid binds this key into the Turnkey session-creation payload returned as `payloadToSign`; on the signed retry, the client echoes the same key back and Grid uses it to encrypt the newly issued session signing key.
+      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow. On the initial call, Grid binds this key into the session-creation payload returned as `payloadToSign`; on the signed retry, the client echoes the same key back and Grid uses it to encrypt the newly issued session signing key.
       type: object
       required:
         - clientPublicKey

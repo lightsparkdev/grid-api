@@ -23,7 +23,7 @@ const SANDBOX_MODE = (import.meta.env.VITE_SANDBOX_PASSKEY ?? '1') !== '0'
 
 const SANDBOX_PASSKEY_SIGNATURE = 'sandbox-valid-passkey-signature'
 const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
-const TURNKEY_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
+const GRID_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
 
 // Step 7: Authenticate with the registered passkey and sign payloadToSign.
 //
@@ -36,7 +36,7 @@ const TURNKEY_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
 //      Grid returns encryptedSessionSigningKey sealed to clientPublicKey.
 //   5. HPKE-decrypt the session signing key with the client private key
 //      (DHKEM-P256 / HKDF-SHA256 / AES-256-GCM, base58check wire format).
-//   6. Build a Turnkey API-key stamp over payloadToSign with the session key
+//   6. Build a Grid wallet signature over payloadToSign with the session key
 //      and pass the base64url stamp to step 8 as Grid-Wallet-Signature.
 //
 // Sandbox flow (this is what runs by default):
@@ -193,13 +193,13 @@ async function decryptSessionSigningKey(
   const recipient = await suite.createRecipientContext({
     recipientKey: recipientPrivateKey,
     enc,
-    info: TURNKEY_HPKE_INFO,
+    info: GRID_HPKE_INFO,
   })
   const plaintext = await recipient.open(ciphertext, aad)
   return new Uint8Array(plaintext)
 }
 
-// Build the Turnkey API-key stamp expected by Grid-Wallet-Signature.
+// Build the signature expected by Grid-Wallet-Signature.
 function signPayload(sessionPrivateKey: Uint8Array, payloadToSign: string): string {
   const msg = new TextEncoder().encode(payloadToSign)
   const sig = p256.sign(msg, sessionPrivateKey, { format: 'der' })

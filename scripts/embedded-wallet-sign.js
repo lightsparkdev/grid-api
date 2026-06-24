@@ -27,7 +27,7 @@
  *       Prints the session API private key as hex.
  *
  *   stamp <sessionPrivHex> <payload>
- *       Build a Turnkey API stamp over a `payloadToSign`. Prints the value
+ *       Build a Grid wallet signature over a `payloadToSign`. Prints the value
  *       to drop into the `Grid-Wallet-Signature` header on
  *       `POST /quotes/{id}/execute` or EMAIL_OTP verify signed retry.
  *
@@ -89,10 +89,10 @@ function encryptOtp(otpEncryptionTargetBundle, pubHex, otpCode) {
 
 function privHexToCompressedPubHex(privHex) {
   // Build a JWK from the private key, then re-derive the public point in
-  // compressed SEC1 form (the format the Turnkey stamp expects).
+  // compressed SEC1 form (the format the Grid wallet signature expects).
   const dB64 = Buffer.from(privHex, "hex").toString("base64url");
   // We need x/y to construct a JWK key object, but we only have d.
-  // Use noble curves transitively from @turnkey/crypto.
+  // Use noble curves from the signing helper dependency.
   const { p256 } = require("@noble/curves/p256");
   const compressed = p256.getPublicKey(privHex, true); // Uint8Array
   return Buffer.from(compressed).toString("hex");
