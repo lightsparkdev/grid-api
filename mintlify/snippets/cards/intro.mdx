@@ -20,11 +20,12 @@ the same ledger you already use for payouts.
 
 ## Card lifecycle at a glance
 
-A card moves through five states:
+A card moves through six states:
 
 | State | Meaning |
 |-------|---------|
 | `PENDING_KYC` | Cardholder has not finished KYC; the card cannot transact yet. |
+| `PENDING_AUTH` | Card is backed by an Embedded Wallet funding source and the cardholder has not yet completed delegated signing authorization via `POST /auth/delegated-keys`. The card cannot transact. |
 | `PROCESSING` | Card has been requested and is being provisioned with the issuer. |
 | `ACTIVE` | Card is live and can authorize transactions. |
 | `FROZEN` | Card is temporarily disabled. New authorizations are declined; in-flight settlements continue. |
