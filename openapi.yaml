@@ -7680,6 +7680,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: PENDING
                     type: INCOMING
+                    direction: CREDIT
                     destination:
                       destinationType: UMA_ADDRESS
                       umaAddress: $recipient@uma.domain
@@ -7715,6 +7716,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: COMPLETED
                     type: INCOMING
+                    direction: CREDIT
                     destination:
                       destinationType: UMA_ADDRESS
                       umaAddress: $recipient@uma.domain
@@ -7823,6 +7825,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: COMPLETED
                     type: OUTGOING
+                    direction: DEBIT
                     source:
                       sourceType: ACCOUNT
                       accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
@@ -7870,6 +7873,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: FAILED
                     type: OUTGOING
+                    direction: DEBIT
                     source:
                       sourceType: ACCOUNT
                       accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
@@ -16642,6 +16646,12 @@ components:
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Payment was unable to complete and refunded |
         | `EXPIRED` | Quote has expired |
+    TransactionDirection:
+      type: string
+      enum:
+        - CREDIT
+        - DEBIT
+      description: 'Whether the transaction credits (funds in) or debits (funds out) the customer''s account. Independent of `type`: an incoming transaction is normally a `CREDIT`, but an inbound ACH pull, for example, is an `INCOMING` transaction with a `DEBIT` direction.'
     TransactionDestinationType:
       type: string
       enum:
@@ -16719,6 +16729,7 @@ components:
         - id
         - status
         - type
+        - direction
         - destination
         - customerId
         - platformCustomerId
@@ -16731,6 +16742,10 @@ components:
           $ref: '#/components/schemas/TransactionStatus'
         type:
           $ref: '#/components/schemas/TransactionType'
+        direction:
+          $ref: '#/components/schemas/TransactionDirection'
+          description: Whether this transaction credits or debits the customer's account.
+          example: CREDIT
         destination:
           $ref: '#/components/schemas/TransactionDestinationOneOf'
         customerId:
@@ -19555,6 +19570,7 @@ components:
         - id
         - cardId
         - status
+        - direction
         - merchant
         - authorizedAmount
         - accountId
@@ -19582,6 +19598,10 @@ components:
           readOnly: true
         status:
           $ref: '#/components/schemas/CardTransactionStatus'
+        direction:
+          $ref: '#/components/schemas/TransactionDirection'
+          description: Card transactions debit the customer's account.
+          example: DEBIT
         merchant:
           $ref: '#/components/schemas/CardMerchant'
         authorizedAmount:

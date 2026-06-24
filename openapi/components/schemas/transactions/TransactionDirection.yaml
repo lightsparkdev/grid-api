@@ -1,0 +1,9 @@
+type: string
+enum:
+  - CREDIT
+  - DEBIT
+description: >-
+  Whether the transaction credits (funds in) or debits (funds out) the
+  customer's account. Independent of `type`: an incoming transaction is
+  normally a `CREDIT`, but an inbound ACH pull, for example, is an `INCOMING`
+  transaction with a `DEBIT` direction.
