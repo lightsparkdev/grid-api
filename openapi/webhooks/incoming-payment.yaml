@@ -77,6 +77,7 @@ post:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                 status: PENDING
                 type: INCOMING
+                direction: CREDIT
                 destination:
                   destinationType: UMA_ADDRESS
                   umaAddress: $recipient@uma.domain
@@ -112,6 +113,7 @@ post:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                 status: COMPLETED
                 type: INCOMING
+                direction: CREDIT
                 destination:
                   destinationType: UMA_ADDRESS
                   umaAddress: $recipient@uma.domain

@@ -3,6 +3,7 @@ required:
   - id
   - cardId
   - status
+  - direction
   - merchant
   - authorizedAmount
   - accountId
@@ -38,6 +39,10 @@ properties:
     readOnly: true
   status:
     $ref: ./CardTransactionStatus.yaml
+  direction:
+    $ref: ../transactions/TransactionDirection.yaml
+    description: Card transactions debit the customer's account.
+    example: DEBIT
   merchant:
     $ref: ./CardMerchant.yaml
   authorizedAmount:
