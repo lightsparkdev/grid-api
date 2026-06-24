@@ -8910,7 +8910,7 @@ components:
           description: Variable fee in basis points (1 bps = 0.01%). Multiplied by the transaction's source-currency amount.
           example: 30
         fixedFee:
-          description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`.
+          description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount` must be non-negative.
           $ref: '#/components/schemas/CurrencyAmount'
         isActive:
           type: boolean

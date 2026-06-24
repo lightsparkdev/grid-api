@@ -35,7 +35,8 @@ properties:
   fixedFee:
     description: >-
       Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`.
-      `fixedFee.currency.code` must match `sourceCurrency`.
+      `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount`
+      must be non-negative.
     $ref: ../common/CurrencyAmount.yaml
   isActive:
     type: boolean
