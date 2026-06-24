@@ -1,16 +1,9 @@
 type: object
 required:
   - sourceType
-  - amount
 properties:
   sourceType:
     $ref: ./TransactionSourceType.yaml
-  amount:
-    $ref: ../common/CurrencyAmount.yaml
-    description: >-
-      Amount moved on the source side, in the source's own currency, signed by
-      cash flow: positive when funds flow into the source, negative when they
-      flow out. Mirrors the destination amount with the opposite sign.
   currency:
     type: string
     description: Currency code for the source

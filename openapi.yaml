@@ -7684,13 +7684,6 @@ webhooks:
                     destination:
                       destinationType: UMA_ADDRESS
                       umaAddress: $recipient@uma.domain
-                      amount:
-                        amount: 50000
-                        currency:
-                          code: USD
-                          name: United States Dollar
-                          symbol: $
-                          decimals: 2
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
                     senderUmaAddress: $sender@external.domain
@@ -7727,13 +7720,6 @@ webhooks:
                     destination:
                       destinationType: UMA_ADDRESS
                       umaAddress: $recipient@uma.domain
-                      amount:
-                        amount: 50000
-                        currency:
-                          code: USD
-                          name: United States Dollar
-                          symbol: $
-                          decimals: 2
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
                     senderUmaAddress: $sender@external.domain
@@ -7843,23 +7829,9 @@ webhooks:
                     source:
                       sourceType: ACCOUNT
                       accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                      amount:
-                        amount: -10550
-                        currency:
-                          code: USD
-                          name: United States Dollar
-                          symbol: $
-                          decimals: 2
                     destination:
                       destinationType: ACCOUNT
                       accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                      amount:
-                        amount: 9706
-                        currency:
-                          code: EUR
-                          name: Euro
-                          symbol: €
-                          decimals: 2
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
                     senderUmaAddress: $sender@uma.domain
@@ -7905,23 +7877,9 @@ webhooks:
                     source:
                       sourceType: ACCOUNT
                       accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                      amount:
-                        amount: -10550
-                        currency:
-                          code: USD
-                          name: United States Dollar
-                          symbol: $
-                          decimals: 2
                     destination:
                       destinationType: ACCOUNT
                       accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                      amount:
-                        amount: 9706
-                        currency:
-                          code: EUR
-                          name: Euro
-                          symbol: €
-                          decimals: 2
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
                     senderUmaAddress: $sender@uma.domain
@@ -16705,13 +16663,9 @@ components:
       type: object
       required:
         - destinationType
-        - amount
       properties:
         destinationType:
           $ref: '#/components/schemas/TransactionDestinationType'
-        amount:
-          $ref: '#/components/schemas/CurrencyAmount'
-          description: 'Amount moved on the destination side, in the destination''s own currency, signed by cash flow: positive when funds flow into the destination, negative when they flow out. Mirrors the source amount with the opposite sign.'
         currency:
           type: string
           description: Currency code for the destination
@@ -16844,13 +16798,9 @@ components:
       type: object
       required:
         - sourceType
-        - amount
       properties:
         sourceType:
           $ref: '#/components/schemas/TransactionSourceType'
-        amount:
-          $ref: '#/components/schemas/CurrencyAmount'
-          description: 'Amount moved on the source side, in the source''s own currency, signed by cash flow: positive when funds flow into the source, negative when they flow out. Mirrors the destination amount with the opposite sign.'
         currency:
           type: string
           description: Currency code for the source
