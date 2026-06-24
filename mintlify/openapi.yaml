@@ -16745,7 +16745,6 @@ components:
         direction:
           $ref: '#/components/schemas/TransactionDirection'
           description: Whether this transaction credits or debits the customer's account.
-          example: CREDIT
         destination:
           $ref: '#/components/schemas/TransactionDestinationOneOf'
         customerId:
