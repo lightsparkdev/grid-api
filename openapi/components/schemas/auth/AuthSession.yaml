@@ -37,8 +37,8 @@ allOf:
 
 
           Returned only by session-issuing responses for `OAUTH` and
-          `PASSKEY` credentials. `EMAIL_OTP` sessions omit this field —
-          the client generates a TEK keypair before verification and
+          `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this
+          field — the client generates a TEK keypair before verification and
           retains the private key throughout, so the server has nothing
           to deliver. Always omitted from list responses
           (`GET /auth/sessions`) since Grid does not retain the
