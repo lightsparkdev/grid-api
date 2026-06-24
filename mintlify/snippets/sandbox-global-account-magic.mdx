@@ -150,7 +150,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 
 ### Wallet signature header
 
-For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Turnkey API-key stamp over the exact `payloadToSign` string returned by Grid, then pass that full stamp as the `Grid-Wallet-Signature` HTTP header on signed flows:
+For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Grid wallet signature over the exact `payloadToSign` string returned by Grid, then pass that full signature as the `Grid-Wallet-Signature` HTTP header on signed flows:
 
 - `POST /auth/credentials` (add-additional-credential signed retry)
 - `DELETE /auth/credentials/{id}` (revoke credential)
@@ -160,7 +160,7 @@ For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with
 - `POST /quotes/{quoteId}/execute` (when source is an embedded wallet)
 
 <Note>
-  This example uses the sample signer in the Grid API repo's [scripts directory](https://github.com/lightsparkdev/grid-api/tree/main/scripts). See the [scripts README](https://github.com/lightsparkdev/grid-api/blob/main/scripts/README.md) for setup, or replace `SIGN` with your own Turnkey API-key stamp implementation.
+  This example uses the sample signer in the Grid API repo's [scripts directory](https://github.com/lightsparkdev/grid-api/tree/main/scripts). See the [scripts README](https://github.com/lightsparkdev/grid-api/blob/main/scripts/README.md) for setup, or replace `SIGN` with your own Grid wallet-signature implementation.
 </Note>
 
 ```bash
@@ -174,7 +174,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
   -H "Grid-Wallet-Signature: $STAMP"
 ```
 
-Sandbox validates that the stamp is a P-256 Turnkey API-key stamp over the exact pending Turnkey payload and that the public key belongs to an active sandbox session for the wallet.
+Sandbox validates that the signature is a P-256 signature over the exact pending Grid payload and that the public key belongs to an active sandbox session for the wallet.
 
 <Note>
   The legacy sandbox-only `Grid-Wallet-Signature: sandbox-valid-signature` value is still accepted for compatibility. Use a real session stamp when you want the client implementation to match production.

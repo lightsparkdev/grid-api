@@ -9,7 +9,7 @@ post:
 
     When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
     the request must include a `Grid-Wallet-Signature` header. The header value
-    is the full Turnkey API-key stamp built over the `payloadToSign` value from
+    is the full Grid wallet signature built over the `payloadToSign` value from
     the quote's `paymentInstructions[].accountOrWalletInfo` entry with the
     session private key of a verified authentication credential on the source
     Embedded Wallet.
@@ -41,7 +41,7 @@ post:
       in: header
       required: false
       description: >-
-        Full Turnkey API-key stamp over the `payloadToSign` returned in the
+        Full Grid wallet signature over the `payloadToSign` returned in the
         quote's `paymentInstructions[].accountOrWalletInfo` entry, produced
         with the session private key of a verified authentication credential on
         the source Embedded Wallet. Required when the quote's source is an

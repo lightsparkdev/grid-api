@@ -7,7 +7,7 @@ post:
 
     1. Call `POST /auth/sessions/{id}/refresh` with the request body
     `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a
-    Turnkey create-read-write-session payload, binds the supplied
+    Grid session-refresh payload, binds the supplied
     `clientPublicKey` into that payload, persists it as a pending request, and
     returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 

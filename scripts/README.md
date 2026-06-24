@@ -3,9 +3,8 @@
 Step-by-step guide for the **USDB embedded wallet → USD bank** offramp flow,
 plus onboarding and the on-ramp (USD → USDB) for completeness. Most steps
 are plain HTTP calls; the only operations that aren't expressible in curl
-are HPKE bundle decrypt and Turnkey API stamp construction, which live in
-[`embedded-wallet-sign.js`](./embedded-wallet-sign.js) (using
-`@turnkey/crypto` and `@turnkey/api-key-stamper`).
+are HPKE bundle decrypt and Grid wallet-signature construction, which live in
+[`embedded-wallet-sign.js`](./embedded-wallet-sign.js).
 
 > **For production integrations**, prefer the official Grid SDKs at
 > <https://docs.lightspark.com>. This README is intended for hands-on
@@ -79,8 +78,8 @@ Capture the **USDB account id** into `$USDB_ACCT`.
 
 ### 1.4 Bootstrap the embedded wallet (issue the EMAIL_OTP challenge)
 
-> **Required before the first quote.** The USDB embedded wallet's Turnkey
-> sub-org and Spark network wallet aren't fully provisioned at customer
+> **Required before the first quote.** The USDB embedded wallet's signing
+> account and Spark network wallet aren't fully provisioned at customer
 > creation time. Challenging and later verifying the auto-created auth
 > credential triggers that bootstrap. Skipping causes the first on-ramp quote to fail with
 > `to_network INTERNAL_FUNDED_FIAT does not support USDB`.
@@ -157,7 +156,7 @@ done
 
 ## 3. Off-ramp (USDB → USD bank)
 
-The customer's embedded wallet must produce a Turnkey-stamped signature
+The customer's embedded wallet must produce a Grid wallet signature
 over a `payloadToSign` returned by the quote. Step 1.4 already registered
 the credential — we just need a fresh OTP and an ephemeral keypair.
 
@@ -264,7 +263,7 @@ The quote response returns **both** signing/funding options in
 These are alternatives — pick one:
 
 - **`EMBEDDED_WALLET` path** (this README): debits the customer's existing
-  on-chain USDB balance. Needs a Turnkey-stamped signature over
+  on-chain USDB balance. Needs a Grid wallet signature over
   `payloadToSign`.
 - **`SPARK_WALLET` path**: pay USDB into the `invoice` from any external
   Spark wallet. No stamp needed; the deposit drives the offramp once

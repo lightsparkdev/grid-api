@@ -63,7 +63,7 @@ sequenceDiagram
   C->>C: decrypt with private key, hold session signing key
 ```
 
-The `challenge` on `POST /auth/credentials` is the one your backend issued for WebAuthn registration. The signed-retry `payloadToSign` is the Turnkey registration payload that the customer's current session authorizes. The challenge used for the WebAuthn assertion comes later from `POST /auth/credentials/{id}/challenge` — Grid bakes the `clientPublicKey` you send there into the session-creation payload, sealing the resulting session signing key to the device that generated it. Because that key plumbing happens on `/challenge`, the subsequent `/verify` call carries only the assertion (plus the `Request-Id` header).
+The `challenge` on `POST /auth/credentials` is the one your backend issued for WebAuthn registration. The signed-retry `payloadToSign` is the registration payload that the customer's current session authorizes. The challenge used for the WebAuthn assertion comes later from `POST /auth/credentials/{id}/challenge` — Grid bakes the `clientPublicKey` you send there into the session-creation payload, sealing the resulting session signing key to the device that generated it. Because that key plumbing happens on `/challenge`, the subsequent `/verify` call carries only the assertion (plus the `Request-Id` header).
 
 <Tip>
   Passkeys are domain-bound. Before shipping, set up your `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` entries so the platform authenticator binds the passkey to your origin and app bundles:
@@ -701,7 +701,7 @@ Requires an active session on an *existing* credential on the same account. The 
     ```
   </Step>
   <Step title="Client stamps the payload">
-    Send `payloadToSign` to the client. The client builds a Turnkey API-key stamp with the session signing key from the existing credential's active session — see <a href="client-keys#4-sign-a-payloadtosign">signing payloads</a>.
+    Send `payloadToSign` to the client. The client builds a Grid wallet signature with the session signing key from the existing credential's active session — see <a href="client-keys#4-sign-a-payloadtosign">signing payloads</a>.
   </Step>
   <Step title="Signed retry — credential is created">
     Re-run the same request with the stamp and request id in headers:
