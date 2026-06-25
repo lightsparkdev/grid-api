@@ -94,7 +94,8 @@ POST /transfer-out
 {
   "id": "Transaction:...",
   "status": "PENDING",
-  "type": "OUTGOING"
+  "type": "OUTGOING",
+  "direction": "DEBIT"
 }
 ```
 
@@ -170,6 +171,7 @@ When a payment fails or is cancelled, refunds are tracked in a dedicated object 
   "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
   "status": "FAILED",
   "type": "OUTGOING",
+  "direction": "DEBIT",
   "failureReason": "QUOTE_EXECUTION_FAILED",
   "refund": {
     "reference": "UMA-Q12345-REFUND",
@@ -209,6 +211,7 @@ Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhoo
     "id": "Transaction:...",
     "status": "PENDING",
     "type": "OUTGOING",
+    "direction": "DEBIT",
     "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
     "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
     "createdAt": "2025-10-03T15:00:00Z"
@@ -374,6 +377,7 @@ GET /transactions?customerId=Customer:abc123&startDate=2025-10-01T00:00:00Z&limi
       "id": "Transaction:...",
       "status": "COMPLETED",
       "type": "OUTGOING",
+      "direction": "DEBIT",
       "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
       "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
       "settledAt": "2025-10-03T15:05:00Z"
