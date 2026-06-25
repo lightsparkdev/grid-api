@@ -2865,6 +2865,11 @@ paths:
         Retrieve a paginated list of transactions with optional filtering.
         The transactions can be filtered by customer ID, platform customer ID, UMA address,
         date range, status, and transaction type.
+
+        Card transactions are included and identified by `type: CARD`. In Sandbox this is how
+        you discover a `CardTransaction` id after simulating an authorization — list the
+        transactions, take the card transaction's `id`, and pass it as the `cardTransactionId`
+        to the clearing and return simulate endpoints.
       operationId: listTransactions
       tags:
         - Transactions
@@ -17155,15 +17160,181 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+    CardTransactionStatus:
+      type: string
+      enum:
+        - AUTHORIZED
+        - PARTIALLY_SETTLED
+        - SETTLED
+        - REFUNDED
+        - EXCEPTION
+      description: |
+        Lifecycle status of a card transaction.
+
+        | Status | Description |
+        |--------|-------------|
+        | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
+        | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
+        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
+        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
+        | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
+    CardMerchant:
+      type: object
+      required:
+        - descriptor
+      properties:
+        descriptor:
+          type: string
+          description: Merchant descriptor string captured from the card network at authorization time.
+          example: BLUE BOTTLE COFFEE SF
+        mcc:
+          type: string
+          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
+          example: '5814'
+        country:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
+          example: US
+    CardPullSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
+          example: 2
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
+          example: 1500
+        pendingCount:
+          type: integer
+          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
+          example: 0
+    CardRefundSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Number of refund (return) events received for this transaction.
+          example: 0
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
+          example: 0
+    CardSettlementSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Number of settlement (clearing) events received for this transaction.
+          example: 1
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
+          example: 1500
+    CardTransaction:
+      type: object
+      required:
+        - type
+        - id
+        - status
+        - direction
+        - merchant
+        - authorizedAmount
+        - accountId
+        - authorizedAt
+        - createdAt
+        - updatedAt
+      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
+      properties:
+        type:
+          type: string
+          enum:
+            - CARD
+          description: Discriminator identifying this transaction as a card transaction in the `Transaction` list.
+        id:
+          type: string
+          description: System-generated unique card transaction identifier
+          readOnly: true
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        cardId:
+          type: string
+          description: The id of the `Card` this transaction was made on.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        issuerTransactionToken:
+          type: string
+          description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
+          example: lithic_txn_b81c2a4f
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/CardTransactionStatus'
+        direction:
+          $ref: '#/components/schemas/TransactionDirection'
+          description: Card transactions debit the customer's account.
+          example: DEBIT
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+        authorizedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        settledAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        refundedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        accountId:
+          type: string
+          description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        pullSummary:
+          $ref: '#/components/schemas/CardPullSummary'
+        refundSummary:
+          $ref: '#/components/schemas/CardRefundSummary'
+        settlementSummary:
+          $ref: '#/components/schemas/CardSettlementSummary'
+        authorizedAt:
+          type: string
+          format: date-time
+          description: When the auth was approved.
+          example: '2026-05-08T14:30:00Z'
+        lastEventAt:
+          type: string
+          format: date-time
+          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
+          example: '2026-05-08T15:42:11Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (same as `authorizedAt` for card transactions).
+          readOnly: true
+          example: '2026-05-08T14:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          readOnly: true
+          example: '2026-05-08T15:42:11Z'
     TransactionOneOf:
       oneOf:
         - $ref: '#/components/schemas/IncomingTransaction'
         - $ref: '#/components/schemas/OutgoingTransaction'
+        - $ref: '#/components/schemas/CardTransaction'
       discriminator:
         propertyName: type
         mapping:
           INCOMING: '#/components/schemas/IncomingTransaction'
           OUTGOING: '#/components/schemas/OutgoingTransaction'
+          CARD: '#/components/schemas/CardTransaction'
     ExternalAccountDestinationReference:
       type: object
       required:
@@ -19443,23 +19614,6 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
-    CardMerchant:
-      type: object
-      required:
-        - descriptor
-      properties:
-        descriptor:
-          type: string
-          description: Merchant descriptor string captured from the card network at authorization time.
-          example: BLUE BOTTLE COFFEE SF
-        mcc:
-          type: string
-          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
-          example: '5814'
-        country:
-          type: string
-          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
-          example: US
     SandboxCardAuthorizationRequest:
       type: object
       required:
@@ -19478,151 +19632,6 @@ components:
           $ref: '#/components/schemas/Currency'
         merchant:
           $ref: '#/components/schemas/CardMerchant'
-    CardTransactionStatus:
-      type: string
-      enum:
-        - AUTHORIZED
-        - PARTIALLY_SETTLED
-        - SETTLED
-        - REFUNDED
-        - EXCEPTION
-      description: |
-        Lifecycle status of a card transaction.
-
-        | Status | Description |
-        |--------|-------------|
-        | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
-        | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
-        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
-        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
-        | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
-    CardPullSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
-          example: 2
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
-          example: 1500
-        pendingCount:
-          type: integer
-          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
-          example: 0
-    CardRefundSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of refund (return) events received for this transaction.
-          example: 0
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
-          example: 0
-    CardSettlementSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of settlement (clearing) events received for this transaction.
-          example: 1
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
-          example: 1500
-    CardTransaction:
-      type: object
-      required:
-        - id
-        - cardId
-        - status
-        - direction
-        - merchant
-        - authorizedAmount
-        - accountId
-        - pullSummary
-        - refundSummary
-        - settlementSummary
-        - authorizedAt
-        - createdAt
-        - updatedAt
-      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
-      properties:
-        id:
-          type: string
-          description: System-generated unique card transaction identifier
-          readOnly: true
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
-        cardId:
-          type: string
-          description: The id of the `Card` this transaction was made on.
-          example: Card:019542f5-b3e7-1d02-0000-000000000010
-        issuerTransactionToken:
-          type: string
-          description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
-          example: lithic_txn_b81c2a4f
-          readOnly: true
-        status:
-          $ref: '#/components/schemas/CardTransactionStatus'
-        direction:
-          $ref: '#/components/schemas/TransactionDirection'
-          description: Card transactions debit the customer's account.
-          example: DEBIT
-        merchant:
-          $ref: '#/components/schemas/CardMerchant'
-        authorizedAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-        settledAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-        refundedAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-        accountId:
-          type: string
-          description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        pullSummary:
-          $ref: '#/components/schemas/CardPullSummary'
-        refundSummary:
-          $ref: '#/components/schemas/CardRefundSummary'
-        settlementSummary:
-          $ref: '#/components/schemas/CardSettlementSummary'
-        authorizedAt:
-          type: string
-          format: date-time
-          description: When the auth was approved.
-          example: '2026-05-08T14:30:00Z'
-        lastEventAt:
-          type: string
-          format: date-time
-          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
-          example: '2026-05-08T15:42:11Z'
-        createdAt:
-          type: string
-          format: date-time
-          description: Creation timestamp (same as `authorizedAt` for card transactions).
-          readOnly: true
-          example: '2026-05-08T14:30:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: Last update timestamp.
-          readOnly: true
-          example: '2026-05-08T15:42:11Z'
     SandboxCardClearingRequest:
       type: object
       required:

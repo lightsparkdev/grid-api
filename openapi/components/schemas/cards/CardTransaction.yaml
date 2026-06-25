@@ -1,15 +1,12 @@
 type: object
 required:
+  - type
   - id
-  - cardId
   - status
   - direction
   - merchant
   - authorizedAmount
   - accountId
-  - pullSummary
-  - refundSummary
-  - settlementSummary
   - authorizedAt
   - createdAt
   - updatedAt
@@ -21,6 +18,11 @@ description: >-
   webhook stream (extends the Transaction model with a card
   destination type) on every transition.
 properties:
+  type:
+    type: string
+    enum:
+      - CARD
+    description: Discriminator identifying this transaction as a card transaction in the `Transaction` list.
   id:
     type: string
     description: System-generated unique card transaction identifier
