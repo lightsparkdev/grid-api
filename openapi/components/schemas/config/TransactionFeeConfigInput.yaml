@@ -1,19 +1,17 @@
 type: object
 description: >-
-  Platform-collected transaction fee charged on top of corridor fees. Keyed
-  uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate
-  a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`.
+  Write-side variant of a platform transaction fee config, used in the
+  merge-by-key upsert on `PATCH /config`. Keyed uniquely by
+  `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee, send
+  the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`. The
+  system-generated `id` and the derived `isActive` flag are read-only and are
+  therefore omitted here.
 required:
   - feeEventType
   - sourceCurrency
   - variableFeeBps
   - fixedFee
 properties:
-  id:
-    type: string
-    description: System-generated unique identifier.
-    readOnly: true
-    example: GridPlatformTransactionFeeConfig:019ef5bf-a77e-93be-0000-479e9268bca9
   feeEventType:
     $ref: ./TransactionFeeEventType.yaml
   sourceCurrency:
@@ -38,10 +36,3 @@ properties:
       `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount`
       must be non-negative.
     $ref: ../common/CurrencyAmount.yaml
-  isActive:
-    type: boolean
-    description: >-
-      Whether this row is currently active. Reads return only active rows;
-      inactive rows are never returned by this endpoint.
-    readOnly: true
-    example: true

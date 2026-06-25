@@ -20,7 +20,7 @@ properties:
   transactionFeeConfigs:
     type: array
     items:
-      $ref: ./TransactionFeeConfig.yaml
+      $ref: ./TransactionFeeConfigInput.yaml
     description: |
       Merge-by-key upsert of platform transaction fee configs. Each item is
       keyed by `(feeEventType, sourceCurrency)`. To deactivate a fee, send

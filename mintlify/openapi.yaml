@@ -8914,7 +8914,7 @@ components:
           $ref: '#/components/schemas/CurrencyAmount'
         isActive:
           type: boolean
-          description: Whether this row is currently active. Reads return only active rows unless explicitly filtered otherwise.
+          description: Whether this row is currently active. Reads return only active rows; inactive rows are never returned by this endpoint.
           readOnly: true
           example: true
     PlatformConfig:
@@ -9047,6 +9047,31 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    TransactionFeeConfigInput:
+      type: object
+      description: 'Write-side variant of a platform transaction fee config, used in the merge-by-key upsert on `PATCH /config`. Keyed uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`. The system-generated `id` and the derived `isActive` flag are read-only and are therefore omitted here.'
+      required:
+        - feeEventType
+        - sourceCurrency
+        - variableFeeBps
+        - fixedFee
+      properties:
+        feeEventType:
+          $ref: '#/components/schemas/TransactionFeeEventType'
+        sourceCurrency:
+          type: string
+          description: ISO 4217 (fiat) or ticker (crypto) code of the source-side currency this fee applies to. Cross-currency fees are charged in the sending side's currency.
+          example: USD
+        variableFeeBps:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%). Multiplied by the transaction's source-currency amount.
+          example: 30
+        fixedFee:
+          description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount` must be non-negative.
+          $ref: '#/components/schemas/CurrencyAmount'
     PlatformConfigUpdateRequest:
       type: object
       properties:
@@ -9070,7 +9095,7 @@ components:
         transactionFeeConfigs:
           type: array
           items:
-            $ref: '#/components/schemas/TransactionFeeConfig'
+            $ref: '#/components/schemas/TransactionFeeConfigInput'
           description: |
             Merge-by-key upsert of platform transaction fee configs. Each item is
             keyed by `(feeEventType, sourceCurrency)`. To deactivate a fee, send
