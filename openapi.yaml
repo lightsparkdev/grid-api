@@ -8511,7 +8511,8 @@ webhooks:
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
-                    issuerRef: lithic_card_4f8d3a2b1c
+                    processorRef: card_b81c2a4f
+                    issuerRef: lead_card_7a1b9c3d
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:11:00Z'
               issuerRejected:
@@ -19317,11 +19318,6 @@ components:
           type: string
           description: Platform-specific card identifier. Optional on create — system-generated if omitted, mirroring `platformCustomerId` semantics.
           example: card-emp-aary-001
-        processorRef:
-          type: string
-          description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
-          example: card_b81c2a4f
-          readOnly: true
         state:
           $ref: '#/components/schemas/CardState'
         stateReason:
@@ -19350,7 +19346,7 @@ components:
         panEmbedUrl:
           type: string
           format: uri
-          description: URL of the card issuer's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
+          description: URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
           example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array
@@ -19364,6 +19360,11 @@ components:
           type: string
           description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
           example: USD
+          readOnly: true
+        processorRef:
+          type: string
+          description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
+          example: card_b81c2a4f
           readOnly: true
         issuerRef:
           type: string

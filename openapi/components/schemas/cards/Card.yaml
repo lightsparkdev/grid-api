@@ -23,14 +23,6 @@ properties:
       Platform-specific card identifier. Optional on create — system-generated
       if omitted, mirroring `platformCustomerId` semantics.
     example: card-emp-aary-001
-  processorRef:
-    type: string
-    description: >-
-      Opaque processor-side reference for the card (e.g. the Lithic card token).
-      Useful for cross-referencing in the processor's dashboards; not used for
-      any Grid request routing.
-    example: card_b81c2a4f
-    readOnly: true
   state:
     $ref: ./CardState.yaml
   stateReason:
@@ -62,7 +54,7 @@ properties:
     type: string
     format: uri
     description: >-
-      URL of the card issuer's iframe that securely displays the PAN, CVV,
+      URL of the card processor's iframe that securely displays the PAN, CVV,
       and expiry to the cardholder. The full PAN and CVV never cross Grid's
       servers — render this URL in an iframe in your client to reveal card
       details.
@@ -85,6 +77,14 @@ properties:
       Derived from the funding sources at issue time — all funding sources
       bound to a card must be denominated in the same card-eligible currency.
     example: USD
+    readOnly: true
+  processorRef:
+    type: string
+    description: >-
+      Opaque processor-side reference for the card (e.g. the Lithic card token).
+      Useful for cross-referencing in the processor's dashboards; not used for
+      any Grid request routing.
+    example: card_b81c2a4f
     readOnly: true
   issuerRef:
     type: string
