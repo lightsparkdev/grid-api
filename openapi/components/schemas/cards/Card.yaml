@@ -23,6 +23,14 @@ properties:
       Platform-specific card identifier. Optional on create — system-generated
       if omitted, mirroring `platformCustomerId` semantics.
     example: card-emp-aary-001
+  processorRef:
+    type: string
+    description: >-
+      Opaque processor-side reference for the card (e.g. the Lithic card token).
+      Useful for cross-referencing in the processor's dashboards; not used for
+      any Grid request routing.
+    example: card_b81c2a4f
+    readOnly: true
   state:
     $ref: ./CardState.yaml
   stateReason:
@@ -81,10 +89,10 @@ properties:
   issuerRef:
     type: string
     description: >-
-      Opaque identifier for the card on the underlying issuer. Useful for
-      cross-referencing in issuer dashboards; not used for any Grid request
-      routing.
-    example: lithic_card_4f8d3a2b1c
+      Opaque identifier for the card on the issuer of record (e.g. the Lead Bank
+      account/card identifier). Useful for cross-referencing in issuer
+      dashboards; not used for any Grid request routing.
+    example: lead_card_7a1b9c3d
     readOnly: true
   createdAt:
     type: string
