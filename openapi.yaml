@@ -8886,10 +8886,12 @@ components:
       type: object
       description: 'Platform-collected transaction fee charged on top of corridor fees. Keyed uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`.'
       required:
+        - id
         - feeEventType
         - sourceCurrency
         - variableFeeBps
         - fixedFee
+        - isActive
       properties:
         id:
           type: string
@@ -9071,7 +9073,12 @@ components:
           example: 30
         fixedFee:
           description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount` must be non-negative.
-          $ref: '#/components/schemas/CurrencyAmount'
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+            - type: object
+              properties:
+                amount:
+                  minimum: 0
     PlatformConfigUpdateRequest:
       type: object
       properties:

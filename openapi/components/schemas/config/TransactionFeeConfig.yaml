@@ -4,10 +4,12 @@ description: >-
   uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate
   a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`.
 required:
+  - id
   - feeEventType
   - sourceCurrency
   - variableFeeBps
   - fixedFee
+  - isActive
 properties:
   id:
     type: string
