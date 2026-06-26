@@ -8,6 +8,7 @@ object GridClientBuilder {
         LightsparkGridOkHttpClient.builder()
             .username(Config.apiTokenId)
             .password(Config.apiClientSecret)
+            .apply { Config.apiBaseUrl?.let { baseUrl(it) } }
             .build()
     }
 }
