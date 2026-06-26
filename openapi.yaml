@@ -4422,6 +4422,13 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                smsOtp:
+                  summary: Additional SMS OTP credential challenge
+                  value:
+                    type: SMS_OTP
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155550123"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
                 oauth:
                   summary: Additional OAuth credential challenge
                   value:
@@ -18616,10 +18623,7 @@ components:
           additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
-      description: |-
-        Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP`, where the credential
-            type alone is sufficient because the OTP is delivered out-of-band. OAuth
-        credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
+      description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
       type: object
       properties:
         clientPublicKey:
