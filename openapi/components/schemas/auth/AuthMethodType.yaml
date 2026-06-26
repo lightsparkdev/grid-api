@@ -2,6 +2,7 @@ type: string
 enum:
   - OAUTH
   - EMAIL_OTP
+  - SMS_OTP
   - PASSKEY
 description: >-
   The type of authentication credential.
@@ -10,5 +11,7 @@ description: >-
   Google or Apple.
 
   - `EMAIL_OTP`: A one-time password delivered to the user's email address.
+
+  - `SMS_OTP`: A one-time password delivered to the user's phone number.
 
   - `PASSKEY`: A WebAuthn passkey bound to the user's device.
