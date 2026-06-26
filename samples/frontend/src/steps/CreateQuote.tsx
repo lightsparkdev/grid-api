@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import JsonEditor from '../components/JsonEditor'
 import ResponsePanel from '../components/ResponsePanel'
-import { apiPost } from '../lib/api'
+import { apiPost, apiGet } from '../lib/api'
 
 interface Props {
   customerId: string | null
@@ -31,8 +31,28 @@ export default function CreateQuote({ customerId, externalAccountId, destCurrenc
   const [loading, setLoading] = useState(false)
   const [sourceCurrency, setSourceCurrency] = useState<string>(SOURCE_CURRENCIES[0])
   const [cryptoNetwork, setCryptoNetwork] = useState<string>(CRYPTO_NETWORKS[0])
+  const [minSendingAmount, setMinSendingAmount] = useState<number | null>(null)
 
   const isCryptoSource = CRYPTO_SOURCE_CURRENCIES.includes(sourceCurrency)
+
+  // Look up the corridor's minimum sending amount so the default clears it.
+  // Minimums vary widely by corridor (e.g. USD->EUR ~$23 vs USD->MXN ~$1).
+  useEffect(() => {
+    let cancelled = false
+    setMinSendingAmount(null)
+    const decimals = SOURCE_CURRENCY_DECIMALS[sourceCurrency] ?? 2
+    const probe = DEFAULT_SEND_UNITS * 10 ** decimals
+    apiGet<{ data?: Array<{ minSendingAmount?: number }> }>(
+      `/api/exchange-rates?sourceCurrency=${sourceCurrency}&destinationCurrency=${destCurrency}&sendingAmount=${probe}`
+    )
+      .then((res) => {
+        if (cancelled) return
+        const mins = (res.data ?? []).map((r) => r.minSendingAmount ?? 0)
+        setMinSendingAmount(mins.length ? Math.max(...mins) : null)
+      })
+      .catch(() => { if (!cancelled) setMinSendingAmount(null) })
+    return () => { cancelled = true }
+  }, [sourceCurrency, destCurrency])
 
   useEffect(() => {
     const source: Record<string, unknown> = {
@@ -45,7 +65,11 @@ export default function CreateQuote({ customerId, externalAccountId, destCurrenc
     // Scale the default amount to the source currency's smallest unit so it isn't
     // dust for high-decimal currencies (e.g. 1000 is $10.00 USD but only 0.001 USDC).
     const decimals = SOURCE_CURRENCY_DECIMALS[sourceCurrency] ?? 2
-    const lockedCurrencyAmount = DEFAULT_SEND_UNITS * 10 ** decimals
+    const defaultAmount = DEFAULT_SEND_UNITS * 10 ** decimals
+    // Floor to the corridor minimum (+5% buffer for FX drift) when it exceeds the
+    // default. Don't clamp to maxSendingAmount — it is unreliable for some corridors.
+    const flooredToMin = minSendingAmount ? Math.ceil(minSendingAmount * 1.05) : 0
+    const lockedCurrencyAmount = Math.max(defaultAmount, flooredToMin)
     setBody(JSON.stringify({
       source,
       destination: {
@@ -56,7 +80,7 @@ export default function CreateQuote({ customerId, externalAccountId, destCurrenc
       lockedCurrencySide: "SENDING",
       purposeOfPayment: "GIFT"
     }, null, 2))
-  }, [customerId, externalAccountId, sourceCurrency, destCurrency, isCryptoSource, cryptoNetwork])
+  }, [customerId, externalAccountId, sourceCurrency, destCurrency, isCryptoSource, cryptoNetwork, minSendingAmount])
 
   const submit = async () => {
     setLoading(true)
