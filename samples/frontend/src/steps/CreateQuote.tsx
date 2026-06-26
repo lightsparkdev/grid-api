@@ -18,6 +18,12 @@ const CRYPTO_SOURCE_CURRENCIES = ['USDC']
 // Networks a stablecoin funding source can deposit on.
 const CRYPTO_NETWORKS = ['BASE', 'ETHEREUM', 'POLYGON', 'SOLANA']
 
+// Decimals per source currency, used to scale the default sending amount into the
+// currency's smallest unit (lockedCurrencyAmount with lockedCurrencySide=SENDING).
+const SOURCE_CURRENCY_DECIMALS: Record<string, number> = { USD: 2, USDC: 6 }
+// Default amount to send, in major units of the source currency (e.g. 10 USD / 10 USDC).
+const DEFAULT_SEND_UNITS = 10
+
 export default function CreateQuote({ customerId, externalAccountId, destCurrency, onComplete, disabled }: Props) {
   const [body, setBody] = useState('')
   const [response, setResponse] = useState<string | null>(null)
@@ -36,13 +42,17 @@ export default function CreateQuote({ customerId, externalAccountId, destCurrenc
     }
     // cryptoNetwork is required when funding from a crypto currency (e.g. USDC).
     if (isCryptoSource) source.cryptoNetwork = cryptoNetwork
+    // Scale the default amount to the source currency's smallest unit so it isn't
+    // dust for high-decimal currencies (e.g. 1000 is $10.00 USD but only 0.001 USDC).
+    const decimals = SOURCE_CURRENCY_DECIMALS[sourceCurrency] ?? 2
+    const lockedCurrencyAmount = DEFAULT_SEND_UNITS * 10 ** decimals
     setBody(JSON.stringify({
       source,
       destination: {
         destinationType: "ACCOUNT",
         accountId: externalAccountId ?? "<external-account-id>"
       },
-      lockedCurrencyAmount: 1000,
+      lockedCurrencyAmount,
       lockedCurrencySide: "SENDING",
       purposeOfPayment: "GIFT"
     }, null, 2))
