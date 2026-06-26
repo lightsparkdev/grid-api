@@ -1,0 +1,16 @@
+type: string
+enum:
+  - CROSS_CURRENCY_TRANSACTION
+  - TRANSFER_OUT_TRANSACTION
+description: >-
+  The kind of transaction this fee applies to.
+
+  - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid send
+    (source currency differs from destination currency).
+
+  - `TRANSFER_OUT_TRANSACTION` — fee charged on a Grid Transfer Out
+    operation.
+
+  Note: only `CROSS_CURRENCY_TRANSACTION` is accepted by `PATCH /config`
+  today. Reads always return the full set, so configurations created by
+  Lightspark operators (e.g. Transfer Out rows) are still visible.

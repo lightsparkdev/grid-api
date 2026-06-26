@@ -8865,6 +8865,90 @@ components:
           maxLength: 512
           description: URL to a PNG logo for the OTP email. Resized to 340x124px.
           example: https://acme.com/logo.png
+    TransactionFeeEventType:
+      type: string
+      enum:
+        - CROSS_CURRENCY_TRANSACTION
+        - TRANSFER_OUT_TRANSACTION
+      description: |-
+        The kind of transaction this fee applies to.
+        - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid send
+          (source currency differs from destination currency).
+
+        - `TRANSFER_OUT_TRANSACTION` — fee charged on a Grid Transfer Out
+          operation.
+
+        Note: only `CROSS_CURRENCY_TRANSACTION` is accepted by `PATCH /config` today. Reads always return the full set, so configurations created by Lightspark operators (e.g. Transfer Out rows) are still visible.
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
+        name:
+          type: string
+          description: Full name of the currency
+          example: United States Dollar
+        symbol:
+          type: string
+          description: Symbol of the currency
+          example: $
+        decimals:
+          type: integer
+          description: Number of decimal places for the currency
+          minimum: 0
+          example: 2
+    CurrencyAmount:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
+        currency:
+          $ref: '#/components/schemas/Currency'
+    TransactionFeeConfig:
+      type: object
+      description: 'Platform-collected transaction fee charged on top of corridor fees. Keyed uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`.'
+      required:
+        - id
+        - feeEventType
+        - sourceCurrency
+        - variableFeeBps
+        - fixedFee
+        - isActive
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier.
+          readOnly: true
+          example: GridPlatformTransactionFeeConfig:019ef5bf-a77e-93be-0000-479e9268bca9
+        feeEventType:
+          $ref: '#/components/schemas/TransactionFeeEventType'
+        sourceCurrency:
+          type: string
+          description: ISO 4217 (fiat) or ticker (crypto) code of the source-side currency this fee applies to. Cross-currency fees are charged in the sending side's currency.
+          example: USD
+        variableFeeBps:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%). Multiplied by the transaction's source-currency amount.
+          example: 30
+        fixedFee:
+          description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount` must be non-negative.
+          $ref: '#/components/schemas/CurrencyAmount'
+        isActive:
+          type: boolean
+          description: Whether this row is currently active. Reads return only active rows; inactive rows are never returned by this endpoint.
+          readOnly: true
+          example: true
     PlatformConfig:
       type: object
       properties:
@@ -8906,6 +8990,15 @@ components:
             Embedded-wallet branding and OTP settings for this platform. Present
             only when the platform has configured embedded-wallet support;
             omitted otherwise.
+        transactionFeeConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionFeeConfig'
+          description: |
+            Platform-collected transaction fees, keyed uniquely by
+            `(feeEventType, sourceCurrency)`. Returned in reads regardless of
+            `feeEventType` so that operator-created rows (e.g. Transfer Out) are
+            visible even before the corresponding write path is enabled.
         createdAt:
           type: string
           format: date-time
@@ -8986,6 +9079,36 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    TransactionFeeConfigInput:
+      type: object
+      description: 'Write-side variant of a platform transaction fee config, used in the merge-by-key upsert on `PATCH /config`. Keyed uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`. The system-generated `id` and the derived `isActive` flag are read-only and are therefore omitted here.'
+      required:
+        - feeEventType
+        - sourceCurrency
+        - variableFeeBps
+        - fixedFee
+      properties:
+        feeEventType:
+          $ref: '#/components/schemas/TransactionFeeEventType'
+        sourceCurrency:
+          type: string
+          description: ISO 4217 (fiat) or ticker (crypto) code of the source-side currency this fee applies to. Cross-currency fees are charged in the sending side's currency.
+          example: USD
+        variableFeeBps:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%). Multiplied by the transaction's source-currency amount.
+          example: 30
+        fixedFee:
+          description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`, and `fixedFee.amount` must be non-negative.
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+            - type: object
+              properties:
+                amount:
+                  minimum: 0
     PlatformConfigUpdateRequest:
       type: object
       properties:
@@ -9006,6 +9129,18 @@ components:
             Fields omitted from the nested object are left unchanged. Omit this
             field at the top level to leave the embedded-wallet configuration
             unchanged entirely.
+        transactionFeeConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionFeeConfigInput'
+          description: |
+            Merge-by-key upsert of platform transaction fee configs. Each item is
+            keyed by `(feeEventType, sourceCurrency)`. To deactivate a fee, send
+            the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`. Only
+            `feeEventType: CROSS_CURRENCY_TRANSACTION` and `sourceCurrency: USD`
+            are accepted by this endpoint today; other values return a 400 error.
+            Omit this field at the top level to leave all transaction fee configs
+            unchanged.
     Error400:
       type: object
       required:
@@ -9138,26 +9273,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    Currency:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-          example: USD
-        name:
-          type: string
-          description: Full name of the currency
-          example: United States Dollar
-        symbol:
-          type: string
-          description: Symbol of the currency
-          example: $
-        decimals:
-          type: integer
-          description: Number of decimal places for the currency
-          minimum: 0
-          example: 2
     PaymentRail:
       type: string
       enum:
@@ -10296,19 +10411,6 @@ components:
         - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
       example: ACTIVE
-    CurrencyAmount:
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-          example: 12550
-        currency:
-          $ref: '#/components/schemas/Currency'
     PaymentAccountType:
       type: string
       enum:
