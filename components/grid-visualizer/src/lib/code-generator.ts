@@ -196,8 +196,9 @@ export function generateSteps(
           accountId: 'ExternalAccount:<external_account_id>',
         },
         amount: 100,
+        remittanceInformation: 'INV-12345',
       },
-      note: `Amount is in the smallest unit of ${source.code} (e.g., cents for USD).`,
+      note: `Amount is in the smallest unit of ${source.code} (e.g., cents for USD). The remittanceInformation field (max 80 chars) is optional — it carries a reference that travels with the payment to the recipient.`,
     });
 
     return steps;
