@@ -4,7 +4,7 @@ info:
   title: Grid API
   description: >
     API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
-  version: "2026-06-25"
+  version: "2026-06-26"
   contact:
     name: Lightspark Support
     email: support@lightspark.com

@@ -27,6 +27,8 @@ post:
               fullName: Jane Smith
               birthDate: '1990-01-15'
               nationality: US
+              email: jane.smith@example.com
+              phoneNumber: '+14155551234'
           individualCustomerInferred:
             summary: Create an individual customer with inferred currencies
             value:
@@ -36,6 +38,7 @@ post:
               fullName: Carlos García
               birthDate: '1988-05-22'
               nationality: MX
+              phoneNumber: '+525512345678'
           businessCustomer:
             summary: Create a business customer
             value:
@@ -45,6 +48,8 @@ post:
               currencies:
                 - USD
                 - USDC
+              email: finance@acme.com
+              phoneNumber: '+14155559876'
               businessInfo:
                 legalName: Acme Corporation
                 doingBusinessAs: Acme
