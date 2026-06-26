@@ -12216,6 +12216,7 @@ components:
         - accountType
         - accountNumber
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12232,10 +12233,16 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        bankName: Example Bank
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -12315,6 +12322,7 @@ components:
         - accountNumber
         - branchCode
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12337,11 +12345,17 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
+        bankName: Example Bank
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
