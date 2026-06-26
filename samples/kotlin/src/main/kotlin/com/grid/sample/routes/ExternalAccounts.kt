@@ -2,6 +2,7 @@ package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.BrlExternalAccountCreateInfo
+import com.lightspark.grid.models.EthereumWalletExternalAccountInfo
 import com.lightspark.grid.models.EurBeneficiary
 import com.lightspark.grid.models.EurExternalAccountCreateInfo
 import com.lightspark.grid.models.GbpExternalAccountCreateInfo
@@ -10,6 +11,7 @@ import com.lightspark.grid.models.MxnExternalAccountCreateInfo
 import com.lightspark.grid.models.PhpExternalAccountCreateInfo
 import com.lightspark.grid.models.UsdExternalAccountCreateInfo
 import com.lightspark.grid.models.customers.externalaccounts.Address
+import com.lightspark.grid.models.customers.externalaccounts.BaseWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.BrlBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreate
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreateParams
@@ -17,6 +19,9 @@ import com.lightspark.grid.models.customers.externalaccounts.GbpBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.MxnBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.PhpBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.PolygonWalletInfo
+import com.lightspark.grid.models.customers.externalaccounts.SolanaWalletInfo
+import com.lightspark.grid.models.customers.externalaccounts.TronWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.UsdBeneficiary
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
@@ -162,6 +167,43 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 }
                 .build()
             ExternalAccountCreate.AccountInfo.ofEurAccount(info)
+        }
+        // Crypto wallet destinations (e.g. for USDC payouts). These only need an
+        // on-chain address — no beneficiary.
+        "BASE_WALLET" -> {
+            val info = BaseWalletInfo.builder()
+                .accountType(BaseWalletInfo.AccountType.BASE_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofBaseWallet(info)
+        }
+        "ETHEREUM_WALLET" -> {
+            val info = EthereumWalletExternalAccountInfo.builder()
+                .accountType(EthereumWalletExternalAccountInfo.AccountType.ETHEREUM_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofEthereumWalletExternal(info)
+        }
+        "POLYGON_WALLET" -> {
+            val info = PolygonWalletInfo.builder()
+                .accountType(PolygonWalletInfo.AccountType.POLYGON_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofPolygonWallet(info)
+        }
+        "SOLANA_WALLET" -> {
+            val info = SolanaWalletInfo.builder()
+                .accountType(SolanaWalletInfo.AccountType.SOLANA_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofSolanaWallet(info)
+        }
+        "TRON_WALLET" -> {
+            val info = TronWalletInfo.builder()
+                .accountType(TronWalletInfo.AccountType.TRON_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofTronWallet(info)
         }
         else -> throw IllegalArgumentException("Unsupported account type: $accountType")
     }

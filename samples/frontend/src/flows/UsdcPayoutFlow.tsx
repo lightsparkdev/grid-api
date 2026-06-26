@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import StepWizard from '../components/StepWizard'
 import CreateCustomer from '../steps/CreateCustomer'
-import CreateExternalAccount, { COUNTRY_CONFIGS } from '../steps/CreateExternalAccount'
+import CreateUsdcExternalAccount from '../steps/CreateUsdcExternalAccount'
 import CreateQuote from '../steps/CreateQuote'
 import SandboxFund from '../steps/SandboxFund'
 
-export default function PayoutFlow() {
+export default function UsdcPayoutFlow() {
   const [activeStep, setActiveStep] = useState(0)
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [externalAccountId, setExternalAccountId] = useState<string | null>(null)
   const [quoteId, setQuoteId] = useState<string | null>(null)
-  const [selectedCountry, setSelectedCountry] = useState('MX')
+  const [selectedNetwork, setSelectedNetwork] = useState('BASE')
 
   const advance = () => setActiveStep((s) => s + 1)
 
@@ -35,14 +35,14 @@ export default function PayoutFlow() {
       ),
     },
     {
-      title: '2. Create External Account',
+      title: '2. Create USDC Wallet Account',
       summary: externalAccountId ? `ID: ${externalAccountId}` : null,
       content: (
-        <CreateExternalAccount
+        <CreateUsdcExternalAccount
           customerId={customerId}
           disabled={activeStep !== 1}
-          selectedCountry={selectedCountry}
-          onCountryChange={setSelectedCountry}
+          selectedNetwork={selectedNetwork}
+          onNetworkChange={setSelectedNetwork}
           onComplete={(data) => {
             setExternalAccountId(data.id as string)
             advance()
@@ -57,7 +57,7 @@ export default function PayoutFlow() {
         <CreateQuote
           customerId={customerId}
           externalAccountId={externalAccountId}
-          destCurrency={COUNTRY_CONFIGS[selectedCountry]?.currency ?? 'USD'}
+          destCurrency="USDC"
           disabled={activeStep !== 2}
           onComplete={(data) => {
             setQuoteId((data.quoteId ?? data.id) as string)

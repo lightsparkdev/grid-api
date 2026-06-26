@@ -2,26 +2,23 @@ import { useState, useEffect } from 'react'
 import JsonEditor from '../components/JsonEditor'
 import ResponsePanel from '../components/ResponsePanel'
 import { apiPost } from '../lib/api'
-import { COUNTRY_CONFIGS } from './CreateExternalAccount'
 
 interface Props {
   customerId: string | null
   externalAccountId: string | null
-  selectedCountry: string
+  destCurrency: string
   onComplete: (response: Record<string, unknown>) => void
   disabled: boolean
 }
 
 const SOURCE_CURRENCIES = ['USD', 'USDC'] as const
 
-export default function CreateQuote({ customerId, externalAccountId, selectedCountry, onComplete, disabled }: Props) {
+export default function CreateQuote({ customerId, externalAccountId, destCurrency, onComplete, disabled }: Props) {
   const [body, setBody] = useState('')
   const [response, setResponse] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [sourceCurrency, setSourceCurrency] = useState<string>(SOURCE_CURRENCIES[0])
-
-  const destCurrency = COUNTRY_CONFIGS[selectedCountry]?.currency ?? 'USD'
 
   useEffect(() => {
     setBody(JSON.stringify({
@@ -38,7 +35,7 @@ export default function CreateQuote({ customerId, externalAccountId, selectedCou
       lockedCurrencySide: "SENDING",
       purposeOfPayment: "GIFT"
     }, null, 2))
-  }, [customerId, externalAccountId, sourceCurrency, selectedCountry])
+  }, [customerId, externalAccountId, sourceCurrency, destCurrency])
 
   const submit = async () => {
     setLoading(true)
