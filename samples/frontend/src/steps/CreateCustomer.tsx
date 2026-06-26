@@ -7,6 +7,9 @@ const DEFAULT_BODY = JSON.stringify({
   platformCustomerId: `cust_${Math.random().toString(36).slice(2, 10)}`,
   customerType: "INDIVIDUAL",
   fullName: "Jack Doe",
+  // Must be a real, deliverable address (the API validates the domain's MX records).
+  // Required when the platform supports USDB embedded wallets.
+  email: `jack.doe+${Math.random().toString(36).slice(2, 10)}@gmail.com`,
   birthDate: "1992-03-25",
   address: {
     line1: "123 Pine Street",
