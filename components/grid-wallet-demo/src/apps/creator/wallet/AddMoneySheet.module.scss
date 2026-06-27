@@ -119,20 +119,13 @@
   padding: 4px 16px 48px;
 }
 
-/* Interactive list card: the 4px vertical inset lives on the first/last ROWS
-   (padding, not card padding) so the hover/press fill runs all the way to the
-   card edge — and overflow:hidden clips the rows to the card's squircle corners. */
+/* Interactive list card: rows run edge-to-edge so the hover/press fill reaches
+   the card edge, with overflow:hidden clipping them to the squircle corners.
+   (Aurora added a 4px first/last-row inset for its large corner radius; creator's
+   radius is small enough that the rows can sit flush.) */
 .cardFlush {
   padding: 0;
   overflow: hidden;
-
-  .sourceRow:first-child {
-    padding-top: 4px;
-  }
-
-  .sourceRow:last-child {
-    padding-bottom: 4px;
-  }
 
   /* No-op sources read normal at rest; entering the list dims them to signal
      they're unavailable, and leaving restores them. */
