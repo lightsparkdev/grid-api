@@ -553,12 +553,26 @@ export function AddMoneySheet({
   // AnimatePresence `custom` prop is re-resolved for exiting children instead.
   type NavDir = { back: boolean; reduceMotion: boolean };
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
+  // Creator-only title overrides matching the wallet-home buttons (Deposit /
+  // Withdraw / Transfer): the source step reads "Deposit via" / "Withdraw via"
+  // and the confirm step "Confirm deposit", rather than the shared "Add money
+  // from" / "Withdraw to" / "Confirm add".
+  const creatorTitle =
+    mode === 'add'
+      ? step === 'source'
+        ? 'Deposit via'
+        : step === 'confirm'
+          ? 'Confirm deposit'
+          : null
+      : mode === 'withdraw' && step === 'source'
+        ? 'Withdraw via'
+        : null;
   // The funding-details step titles itself with the picked country's name (e.g.
   // "Mexico"); every other step uses the mode's static step title.
   const displayTitle =
     step === 'fundingDetails' && pickedCountry
       ? `Receive from ${pickedCountry.name}`
-      : titles[step];
+      : (creatorTitle ?? titles[step]);
   // TRUE push: the incoming screen shares an edge with the outgoing one (full
   // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
   // screen arrives at full opacity — it's a push, not a crossfade.

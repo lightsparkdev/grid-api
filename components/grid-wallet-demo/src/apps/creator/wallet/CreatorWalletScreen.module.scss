@@ -406,21 +406,46 @@
   font-weight: 700;
 }
 
-/* Action row (Figma 2445:19032) — three icon circles (Deposit / Withdraw /
-   card) + a flexible "Send or receive" pill. */
-.actionRow {
+/* Action block (Figma 2454:19411) — two rows: Deposit / Withdraw / Transfer
+   pills, then a full-width debit-card pill. */
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 8px;
+}
+
+.actionRow,
+.cardRow {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 16px 8px;
+  padding: 0 16px;
 }
 
-/* Shared hover/press wash + scale — themed iOS fill on the circles, white on the
-   purple pill; press feedback is the fill deepening, not brightness. */
-.actionCircle,
-.sendReceiveButton {
+/* Shared hover/press wash + scale — themed iOS fill on the secondary pills,
+   white on the brand card pill; press feedback is the fill deepening. */
+.actionPill,
+.cardButton {
   position: relative;
   @include shadow.glass-button-press-scale(1.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 590;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 
   &::after {
     content: '';
@@ -439,10 +464,15 @@
     z-index: 1;
   }
 
-  &:hover:not(:disabled)::after {
-    opacity: 1;
+  /* Lone svgs in a flex button get width-squished; pin them. */
+  > svg {
+    display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
   }
 
+  &:hover:not(:disabled)::after,
   &:active:not(:disabled)::after {
     opacity: 1;
   }
@@ -452,20 +482,12 @@
   }
 }
 
-.actionCircle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: 999px;
-  corner-shape: round;
+/* Figma 2454:19413 — pl 12 / pr 16, 4px icon→label gap. */
+.actionPill {
+  gap: 4px;
+  padding: 8px 16px 8px 12px;
   background: var(--creator-secondary-bg);
   color: var(--creator-secondary-fg);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 
   &::after {
     background: var(--ios-fill-tertiary);
@@ -474,36 +496,14 @@
   &:active:not(:disabled)::after {
     background: var(--ios-fill-secondary);
   }
-
-  /* Lone svg in a flex button gets width-squished; pin it square. */
-  > svg {
-    display: block;
-    flex: none;
-    width: 24px;
-    height: 24px;
-  }
 }
 
-.sendReceiveButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex: 1 1 0;
-  min-width: 0;
-  height: 52px;
+/* Figma 2454:19429 — full-width brand pill, 8px icon→label gap. */
+.cardButton {
+  gap: 8px;
   padding: 8px 16px;
-  border: 0;
-  border-radius: 999px;
-  corner-shape: round;
   background: var(--app-tint);
   color: #fff;
-  font-family: var(--ios-font-family);
-  font-size: 17px;
-  font-weight: 590;
-  letter-spacing: -0.43px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 
   &::after {
     background: rgba(255, 255, 255, 0.12);

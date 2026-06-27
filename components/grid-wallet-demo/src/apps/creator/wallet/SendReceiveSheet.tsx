@@ -33,7 +33,7 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
     >
       {/* Title + ghost close in one row — matches the email/phone auth sheet. */}
       <div className={styles.titleRow}>
-        <h2 className={styles.title}>Send or receive</h2>
+        <h2 className={styles.title}>Transfer</h2>
         <SheetIconButton
           className={styles.closeBtn}
           aria-label="Close"
