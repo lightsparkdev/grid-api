@@ -54,7 +54,7 @@ properties:
     type: string
     format: uri
     description: >-
-      URL of the card issuer's iframe that securely displays the PAN, CVV,
+      URL of the card processor's iframe that securely displays the PAN, CVV,
       and expiry to the cardholder. The full PAN and CVV never cross Grid's
       servers — render this URL in an iframe in your client to reveal card
       details.
@@ -78,13 +78,21 @@ properties:
       bound to a card must be denominated in the same card-eligible currency.
     example: USD
     readOnly: true
+  processorRef:
+    type: string
+    description: >-
+      Opaque processor-side reference for the card (e.g. the Lithic card token).
+      Useful for cross-referencing in the processor's dashboards; not used for
+      any Grid request routing.
+    example: card_b81c2a4f
+    readOnly: true
   issuerRef:
     type: string
     description: >-
-      Opaque identifier for the card on the underlying issuer. Useful for
-      cross-referencing in issuer dashboards; not used for any Grid request
-      routing.
-    example: lithic_card_4f8d3a2b1c
+      Opaque identifier for the card on the issuer of record (e.g. the Lead Bank
+      account/card identifier). Useful for cross-referencing in issuer
+      dashboards; not used for any Grid request routing.
+    example: lead_card_7a1b9c3d
     readOnly: true
   createdAt:
     type: string
