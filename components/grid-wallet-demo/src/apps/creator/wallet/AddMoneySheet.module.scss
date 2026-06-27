@@ -77,6 +77,11 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  /* Round the top corners to the sheet's radius so the country step's solid
+     header (and any sliding content) is clipped to the sheet's corners during
+     the push transition — otherwise the fill pokes into the square corner. */
+  border-radius: 24px 24px 0 0;
+  corner-shape: var(--corner-shape);
 }
 
 /* Absolutely positioned so entering/exiting screens coexist during the push
@@ -505,41 +510,42 @@
   margin-top: -12px;
 }
 
-/* Frosted-glass search pill — pinned ~16px under the back button; the list
-   scrolls behind it and frosts through (FrostPanel: backdrop-filter + specular
-   rim). True refraction over scrolling DOM isn't possible on Safari, so frost. */
-.searchPill {
-  // Translucent neutral tint per theme so FrostPanel's backdrop blur still reads
-  // through: an off-white cast on light, near-black on dark (override below).
-  // ~70% keeps the color while the blurred list shows underneath.
-  --search-pill-tint: color-mix(in srgb, #f6f6f8 70%, transparent);
+/* Solid header backdrop — a flat fill behind the toolbar + search bar that the
+   list scrolls UP and disappears behind (this skin is flat: no blur/fade). The
+   sheet's rounded top corners are honored by .steps' clip (which rounds with the
+   sheet), so this stays square; the 8px past the search pill keeps scrolling rows
+   from bleeding into it. */
+.countryHeaderBg {
   position: absolute;
-  top: 70px; // ~14px under the 40px back button
-  left: 16px;
-  right: 16px;
-  z-index: 2; // above the scroll + the top fade (z-1), below the toolbar (z-3)
-  // Glass-button drop shadow (Figma 0/8/40) at a lighter 8% (buttons use 12%).
-  // It's a pill, so force round corners: the global `corner-shape: squircle`
-  // would draw the shadow as a squircle while FrostPanel clips the fill round
-  // (cornerSmoothing 0), and the two edges wouldn't line up. The radius only
-  // shapes the shadow — FrostPanel clips its own fill via clip-path.
-  border-radius: 22px;
-  corner-shape: round;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
-
-  :global([data-theme='dark']) & {
-    --search-pill-tint: color-mix(in srgb, #1f1f20 70%, transparent);
-  }
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1; // above the scrolling list, below the search pill (z-2) + toolbar (z-3)
+  height: 122px; // toolbar + search pill (bottom = top 70 + 44) + 8px clearance
+  background: var(--app-bg);
 }
 
-/* Icon + input row inside the glass pill (its height sets the pill height). */
-/* Creator owns this sheet: a flat solid search pill (skin bg + hairline) instead
-   of Aurora's FrostPanel — "share the brain, not the face." */
+/* Search bar — pinned ~14px under the back button; the list scrolls behind the
+   solid header backdrop above. */
+.searchPill {
+  position: absolute;
+  top: 70px;
+  left: 16px;
+  right: 16px;
+  z-index: 2; // above the header backdrop (z-1), below the toolbar (z-3)
+}
+
+/* Flat solid search field — same fill AND corners as the list cards (12px
+   superellipse, no glass, no shadow). */
 .searchPillFlat {
-  border-radius: 22px;
-  background: var(--app-bg);
-  border: 0.5px solid var(--list-panel-border);
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-bg-primary);
   overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: var(--ios-bg-secondary);
+  }
 }
 
 .searchRow {
@@ -547,7 +553,7 @@
   align-items: center;
   gap: 8px;
   height: 44px;
-  padding: 0 16px;
+  padding: 0 16px 0 12px;
 }
 
 /* central-icons magnifying glass — currentColor stroke, forced to a true 2px
@@ -596,14 +602,7 @@
    scrolls UP under it. Form keeps bottom room for the anchored CTA. */
 .pickerScrollCountry {
   padding-top: 126px; // "Popular" rests 16px under the pill (bottom 114 + label's 4px top)
-  padding-bottom: 16px; // match the cards' 16px left/right margins
-  /* Content fades by ALPHA toward the top — eased down to a LOW (not zero) alpha
-     so the upper rows read faint/blended into the sheet (visible, just less
-     clear), then back to solid below. A smooth ramp, NOT a hard dissolve.
-     Knobs: 0.2 = how faded the upper rows get (lower = fainter); 84px = the
-     faint plateau; 146px = where it returns to solid (~32px under the pill). */
-  mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, 0.2) 84px, #000 146px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, 0.2) 84px, #000 146px);
+  padding-bottom: 40px; // sit the last card clear of the sheet's rounded bottom
 }
 
 .pickerScrollForm {
@@ -613,7 +612,7 @@
 /* iOS grouped-list section header. */
 .sectionLabel {
   margin: 0;
-  padding: 16px 36px 14px;
+  padding: 16px 24px 14px;
   @include ios.ios-text-footnote;
   font-weight: 590;
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
@@ -627,63 +626,6 @@
 .pickerCard {
   width: auto; // base .card is width:100%; margins would otherwise overflow
   margin: 0 16px;
-}
-
-/* Top progressive blur + sheet-bg gradient (the FaceIdAuth recipe): the title
-   and header buttons sit above it; the page (search included) scrolls UP under
-   it, frosting and sinking into the sheet color as it passes below the header.
-   Heights/strengths are starting points — tune to taste. */
-/* Blur-only (no solid fill) so it starts at the very top — just the progressive
-   backdrop blur below. Clipped to the sheet's rounded top corners via clip-path
-   in <TopFade> (NOT overflow + border-radius, which kills the children's
-   backdrop-filter; a clip-path ANCESTOR is safe, like AppShell's screen clip). */
-.topFade {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1;
-  height: 146px; // blur falloff bottoms out ~32px under the search pill (ends 114)
-  pointer-events: none;
-}
-
-.fadeBlur {
-  position: absolute;
-  inset: 0;
-  /* Hairline fill triggers backdrop-filter compositing without a visible tint
-     (the FaceIdAuth trick). */
-  background: rgba(255, 255, 255, 0.01);
-  /* Round the top corners on the blur element ITSELF — backdrop-filter is
-     clipped by its own border-radius, so corners stay crisp with NO isolating
-     ancestor (a clip-path/overflow parent kills or isolates the blur). */
-  border-radius: 38px 38px 0 0;
-  -webkit-backdrop-filter: blur(var(--fade-blur));
-  backdrop-filter: blur(var(--fade-blur));
-  mask-image: var(--fade-mask);
-  -webkit-mask-image: var(--fade-mask);
-
-  :global([data-theme='dark']) & {
-    background: rgba(0, 0, 0, 0.01);
-  }
-}
-
-
-/* Progressive blur (FaceIdAuth-style 3-layer stack) tuned to ramp from ~0 just
-   under the pill up to full toward the top — the faceID defaults bunch the blur
-   at the very top, so it wasn't visible near the pill. Strengths nudged up. */
-.fadeBlurStrong {
-  --fade-blur: 1.2px;
-  --fade-mask: linear-gradient(to bottom, #000 0%, #000 45%, transparent 82%);
-}
-
-.fadeBlurMid {
-  --fade-blur: 0.65px;
-  --fade-mask: linear-gradient(to bottom, transparent 25%, #000 60%, transparent 95%);
-}
-
-.fadeBlurSoft {
-  --fade-blur: 0.4px;
-  --fade-mask: linear-gradient(to bottom, transparent 48%, #000 85%, transparent 100%);
 }
 
 .formCard {

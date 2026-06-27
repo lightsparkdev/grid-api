@@ -35,8 +35,6 @@ import { randomNetworkAddress } from '@/lib/cryptoAddresses';
 import { currencyFor, type BankCountry } from '@/data/bankCountries';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
-import { useSquircleClip } from '@/apps/shared/useSquircleClip';
-import { figmaSquircleRadius } from '@/apps/shared/figmaSquircleRadius';
 import {
   useMoneySheet,
   formatUsdCents,
@@ -127,19 +125,6 @@ function FormField({
   );
 }
 
-/** Progressive top blur — the list scrolls UP under it, frosting toward the
- *  pinned title + glass search pill. Pairs with the alpha-dissolve on the
- *  scroll content. */
-function TopFade() {
-  return (
-    <div className={styles.topFade} aria-hidden>
-      <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
-      <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
-      <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
-    </div>
-  );
-}
-
 /** One country row in the picker (flag tile + name + currency + chevron),
  *  shared by the Popular / All / search-result lists. */
 function CountryPickRow({
@@ -166,43 +151,6 @@ function CountryPickRow({
         <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
       </span>
     </button>
-  );
-}
-
-/** A picker card whose BOTTOM corners go concentric with the phone screen
- *  (bottom radius = screen corner − 16px inset) — the same hug WalletListCard's
- *  concentricBottom uses — so the bottom-most country card nests into the
- *  sheet's bottom corners instead of floating above them. Top keeps the
- *  list-card 10px radius, so it reads like the other picker cards. */
-function ConcentricBottomCard({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  const [cornerRadii, setCornerRadii] = useState<[number, number, number, number]>();
-  const clip = useSquircleClip<HTMLDivElement>({ cornerRadii });
-  useLayoutEffect(() => {
-    const el = clip.elementRef.current;
-    if (!el) return;
-    const measure = () => {
-      const topR = figmaSquircleRadius(10);
-      const screenR = Number.parseFloat(
-        getComputedStyle(el).getPropertyValue('--screen-corner-radius').trim(),
-      );
-      const bottom = Number.isFinite(screenR) ? Math.max(0, screenR - 16) : topR;
-      setCornerRadii([topR, topR, bottom, bottom]);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [clip.elementRef]);
-  return (
-    <div ref={clip.ref} style={clip.style} className={className}>
-      {children}
-    </div>
   );
 }
 
@@ -1092,9 +1040,7 @@ export function AddMoneySheet({
                         ))}
                       </div>
                       <p className={styles.sectionLabel}>All countries</p>
-                      <ConcentricBottomCard
-                        className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}
-                      >
+                      <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
                         {allCountries.map((c, i, arr) => (
                           <CountryPickRow
                             key={c.code}
@@ -1103,16 +1049,14 @@ export function AddMoneySheet({
                             onSelect={pickCountry}
                           />
                         ))}
-                      </ConcentricBottomCard>
+                      </div>
                     </>
                   )}
                 </div>
-                <TopFade />
-                {/* Pinned frosted-glass search pill — the list scrolls behind it
-                    and frosts through (FrostPanel: backdrop-filter + specular
-                    rim). Refraction over scrolling DOM isn't possible, so frost. */}
+                {/* Flat solid header — the list scrolls UP and disappears behind
+                    it (no blur/fade; this skin is flat). */}
+                <div className={styles.countryHeaderBg} aria-hidden />
                 <div className={styles.searchPill}>
-                  {/* Creator: flat solid pill (no frost) — the skin owns this face. */}
                   <div className={styles.searchPillFlat}>
                     <div className={styles.searchRow}>
                       <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />
