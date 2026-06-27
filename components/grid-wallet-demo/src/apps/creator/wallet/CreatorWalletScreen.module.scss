@@ -7,9 +7,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Clear the iOS status bar — screenBody underlaps it (see AppShell). */
-  padding-top: 62px;
-  background: var(--wallet-bg);
 
   /* Figma DS.screenBackground — off-white, a hair below the #fff cards. */
   --wallet-bg: #f9f9f9;
@@ -25,6 +22,15 @@
     /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
     --wallet-bg: #111111;
   }
+}
+
+/* Skin visuals for the PresentationStage card: the wallet bg + the 62px status-
+   bar clearance (screenBody underlaps it, see AppShell) that used to live on
+   .root. Kept here so the whole screen scales as one card behind a sheet, with
+   the dark backdrop (PresentationStage) showing through as it recedes. */
+.stageSkin {
+  background: var(--wallet-bg);
+  padding-top: 62px;
 }
 
 /* ── Full-screen issuance aurora (behind header + body) ───────────────────── */

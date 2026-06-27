@@ -13,6 +13,7 @@ import {
   IconSettingsGear2,
 } from '../icons';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
+import { PresentationStage, SheetPresentationProvider } from '@/apps/shared/SheetPresentation';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { GlassToast } from '@/apps/shared/GlassToast';
@@ -126,7 +127,11 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
   );
 
   return (
+    <SheetPresentationProvider>
     <div className={styles.root}>
+      {/* The presenting "card" surface — scales back behind a rising sheet (iOS
+          stacked-sheet effect). Sheets + overlay stay siblings, above the stage. */}
+      <PresentationStage className={styles.stageSkin}>
       {/* Purple brand wash behind the card during issuance (in place of Aurora's
           WebGL field). Same fade language so the bottom content reads on the bg. */}
       <AnimatePresence>
@@ -397,6 +402,7 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
       </motion.div>
 
       {!isOpen && !isTap ? <SkinTabBar {...CREATOR_TAB_BAR} /> : null}
+      </PresentationStage>
 
       <SendReceiveSheet
         open={sendReceiveOpen}
@@ -430,5 +436,6 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
 
       {screenOverlay}
     </div>
+    </SheetPresentationProvider>
   );
 }

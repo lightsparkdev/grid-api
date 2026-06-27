@@ -1,0 +1,34 @@
+/* Dark surface revealed behind the scaled card (and behind the status bar, which
+   then flips its glyphs white via the tone sampler). Sits below the stage; the
+   stage covers it at rest, so it only shows once the card scales back. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #000;
+}
+
+/* The scaled card. Structural only — skins add their own bg + status-bar padding
+   via the passed className. Scales from the top center so the top edge drops to a
+   gap below the status bar; corners round to the screen radius while presented.
+   overflow:hidden clips the inset card to those rounded corners (the outer screen
+   is already clipped by AppShell, so this never adds a visible clip at rest). */
+.stage {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: top center;
+  border-radius: 0;
+  corner-shape: var(--corner-shape);
+  transition: border-radius 0.4s var(--ease-out-snappy, ease-out);
+}
+
+.stagePresented {
+  /* A modest corner-smoothed round on the receded card (not the full screen
+     radius, which reads too large once the card is scaled back). */
+  border-radius: 16px;
+}

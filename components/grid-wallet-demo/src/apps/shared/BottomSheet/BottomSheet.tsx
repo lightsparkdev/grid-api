@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { FrostConfig } from '@/components/liquid-glass';
 import { FrostPanel } from '@/components/liquid-glass';
 import { useOverlayGlass } from '@/apps/shared/glass/OverlayGlassContext';
+import { useRegisterSheet } from '@/apps/shared/SheetPresentation';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './BottomSheet.module.scss';
 
@@ -32,6 +33,12 @@ interface BottomSheetProps {
    * top — e.g. a floating sheet with rounder top corners.
    */
   topRadius?: number;
+  /**
+   * Whether this sheet drives the stacked-sheet effect (scales the presenting
+   * content back under a SheetPresentationProvider). Default true; set false for
+   * small action/chooser sheets that shouldn't push the whole screen back.
+   */
+  scalesBackground?: boolean;
 }
 
 /**
@@ -50,9 +57,15 @@ export function BottomSheet({
   glass,
   inset = 0,
   topRadius,
+  scalesBackground = true,
 }: BottomSheetProps) {
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
+
+  // Drive the stacked-sheet effect: under a SheetPresentationProvider, the
+  // presenting screen scales back while this sheet is open. No-op otherwise, or
+  // when this sheet opts out (small chooser/action sheets).
+  useRegisterSheet(open && scalesBackground);
 
   // Read the inherited --screen-corner-radius (set by AppShell) so the sheet's
   // bottom corners can hug the phone screen concentrically.

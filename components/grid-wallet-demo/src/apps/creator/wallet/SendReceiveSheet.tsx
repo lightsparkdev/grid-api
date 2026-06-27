@@ -30,6 +30,9 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
       glass={CREATOR_FLAT_SHEET}
       // Match the auth sheet's 24px top corners (scoped; preset untouched).
       topRadius={24}
+      // Small chooser sheet — don't scale the whole screen back behind it (the
+      // stacked-sheet effect is reserved for the big money sheets).
+      scalesBackground={false}
     >
       {/* Title + ghost close in one row — matches the email/phone auth sheet. */}
       <div className={styles.titleRow}>
