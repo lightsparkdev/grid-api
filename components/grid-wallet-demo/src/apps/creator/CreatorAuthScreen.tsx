@@ -83,7 +83,7 @@ export function CreatorAuthScreen({
               aria-hidden
               draggable={false}
             />
-            <CreatingCaption label="Creating your account..." />
+            <CreatingCaption label="Signing you in..." />
           </motion.div>
         )}
       </AnimatePresence>

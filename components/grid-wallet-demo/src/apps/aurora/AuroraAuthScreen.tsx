@@ -248,7 +248,7 @@ export function AuroraAuthScreen({
             exit={{ ...CAPTION_HIDDEN, transition: CAPTION_OUT }}
             transition={CAPTION_IN}
           >
-            <CreatingCaption label="Creating your account..." />
+            <CreatingCaption label="Signing you in..." />
           </motion.div>
         )}
       </AnimatePresence>
