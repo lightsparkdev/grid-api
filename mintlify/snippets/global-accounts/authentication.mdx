@@ -1,12 +1,13 @@
-Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of three **credential types** on the account:
+Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of four **credential types** on the account:
 
 | Type | When to use it |
 |---|---|
 | **`PASSKEY`** | Best default. Biometric, phishing-resistant, usable across the user's devices via iCloud Keychain / Google Password Manager. |
 | **`OAUTH`** | Your platform already authenticates the user via OIDC (Google, Apple, your own IdP) and you want Grid to trust the same identity. |
 | **`EMAIL_OTP`** | Lowest-friction option. Works on any device with email access — no biometric hardware, identity provider, or client SDK required beyond the code entry field. |
+| **`SMS_OTP`** | Same flow as `EMAIL_OTP`, but delivered to the user's phone number instead of email. Useful when phone is the primary contact channel. |
 
-A single internal account can hold one `EMAIL_OTP` credential and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
+A single internal account can hold one `EMAIL_OTP` credential, one `SMS_OTP` credential, and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
 
 ## Registration vs. verification
 
