@@ -85,6 +85,8 @@
   mix-blend-mode: screen;
   opacity: 0.5;
   pointer-events: none;
+  /* The "speed in" warp scales about the card's centred (creating) position. */
+  transform-origin: 50% 52%;
 }
 
 /* True alpha mask (not a color fill): fade the rays themselves to transparent over
